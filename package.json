@@ -1,0 +1,10 @@
+{
+  "name": "zns-contracts",
+  "version": "0.0.0",
+  "description": "Zero Name Service Smart Contracts",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Zero CPT",
+  "license": "ISC"
+}
