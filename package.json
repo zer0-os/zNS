@@ -2,9 +2,38 @@
   "name": "zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  },
   "scripts": {
-    "test": "test"
+    "compile": "hardhat compile",
+    "typechain": "hardhat typechain",
+    "test": "hardhat test"
   },
   "author": "Zero CPT",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@ethersproject/providers": "5.7.2",
+    "@nomicfoundation/hardhat-chai-matchers": "1.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "1.0.0",
+    "@nomicfoundation/hardhat-toolbox": "2.0.2",
+    "@nomiclabs/hardhat-ethers": "2.2.2",
+    "@nomiclabs/hardhat-etherscan": "3.0.0",
+    "@openzeppelin/contracts": "4.8.2",
+    "@openzeppelin/contracts-upgradeable": "4.8.2",
+    "@typechain/ethers-v5": "10.1.0",
+    "@typechain/hardhat": "6.1.2",
+    "@types/chai": "4.2.0",
+    "@types/mocha": ">=9.1.0",
+    "chai": "4.2.0",
+    "ethers": "5.4.7",
+    "hardhat": "2.13.0",
+    "hardhat-gas-reporter": "1.0.8",
+    "logdown": "^3.3.1",
+    "solidity-coverage": "0.8.1",
+    "ts-node": "10.9.1",
+    "typechain": "8.1.0",
+    "typescript": "5.0.2"
+  }
 }
