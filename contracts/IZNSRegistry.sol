@@ -1,30 +1,42 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {IResolver} from "./IResolver.sol";
+import {IZNSResolver} from "./IZNSResolver.sol";
 
-interface IRegistry {
+interface IZNSRegistry {
   /**
    * @dev The `DomainRecord` struct is meant to hold relevant information
    * about a domain, such as its owner and resolver.
    */
   struct DomainRecord {
     address owner;
-    IResolver defaultResolver;
+    address resolver;
   }
   /**
    * @dev Emit when ownership of a domain is modified
-   * @param to The new domain owner
+   * @param owner The new domain owner
    * @param domainNameHash The identifying hash of a domain's name
    */
-  event DomainOwnerSet(address indexed to, bytes32 domainNameHash);
+  event DomainOwnerSet(address indexed owner, bytes32 domainNameHash);
 
   /**
    * @dev Emit when a domain's resolver is modified
-   * @param to The new resolver
+   * @param resolver The new resolver
    * @param domainNameHash The identifying hash of a domain's name
    */
-  event DomainResolverSet(IResolver indexed to, bytes32 domainNameHash);
+  event DomainResolverSet(address indexed resolver, bytes32 domainNameHash);
+
+  /**
+   * @dev Emit when a domain's record is created
+   * @param owner The owner of the domain
+   * @param resolver The resolver for the domain
+   * @param domainNameHash The identifying hash of a domain's name
+   */
+  event DomainRecordCreated(
+    address indexed owner,
+    address indexed resolver,
+    bytes32 domainNameHash
+  );
 
   /**
    * @dev Emit when a domain's record is set and all properties are modified
@@ -34,7 +46,7 @@ interface IRegistry {
    */
   event DomainRecordSet(
     address indexed owner,
-    IResolver indexed resolver,
+    address indexed resolver,
     bytes32 domainNameHash
   );
 
@@ -63,7 +75,7 @@ interface IRegistry {
    * @param operator The account to allow/disallow
    * @param allowed The true/false value to set
    */
-  function setDomainOperator(address operator, bool allowed) external;
+  function setOwnerOperator(address operator, bool allowed) external;
 
   /**
    * @dev Verify if an account is an allowed operator on domains owned by `owner`
@@ -76,6 +88,24 @@ interface IRegistry {
   ) external view returns (bool);
 
   /**
+   * @dev Creates a new domain record owned by `msg.sender`
+   * @param domainNameHash The identifying hash of a domain's name
+   * @param resolver The resolver to set
+   */
+  function createDomainRecord(
+    bytes32 domainNameHash,
+    address resolver
+  ) external;
+
+  /**
+   * @dev Get a record for a domain
+   * @param domainNameHash The identifying hash of a domain's name
+   */
+  function getDomainRecord(
+    bytes32 domainNameHash
+  ) external view returns (DomainRecord memory);
+
+  /**
    * @dev Set all properties for a domain's record
    * @param domainNameHash The identifying hash of a domain's name
    * @param owner The owner to set
@@ -84,7 +114,7 @@ interface IRegistry {
   function setDomainRecord(
     bytes32 domainNameHash,
     address owner,
-    IResolver resolver
+    address resolver
   ) external;
 
   /**
@@ -108,17 +138,14 @@ interface IRegistry {
    */
   function getDomainResolver(
     bytes32 domainNameHash
-  ) external view returns (IResolver);
+  ) external view returns (address);
 
   /**
    * Update the domain's default resolver
    * @param domainNameHash The identifying hash of a domain's name
    * @param resolver The new default resolver
    */
-  function setDomainResolver(
-    bytes32 domainNameHash,
-    IResolver resolver
-  ) external;
+  function setDomainResolver(bytes32 domainNameHash, address resolver) external;
 
   /**
    * @dev Get the hash for a given domain name
