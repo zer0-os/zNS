@@ -113,6 +113,13 @@ describe("ZNSRegistry Tests", () => {
       expect(record.owner).to.eq(operator.address);
       expect(record.resolver).to.eq(operator.address);
     });
+    it("Fails to set a record if all values to be set are the same as the current values", async () => {
+      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+
+      const tx = registry.connect(deployer).setDomainRecord(wilderDomainHash, deployer.address, mockResolver.address);
+      await expect(tx).to.be.revertedWith("ZNS: No record change");
+    })
     it("Fails to set an existing domain record if no domain is given", async () => {
       const wilderDomainHash = hre.ethers.utils.id("wilder");
       await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
@@ -214,6 +221,35 @@ describe("ZNSRegistry Tests", () => {
     });
   });
   describe("Event emitters", async () => {
-    // TODO
+    it("OperatorPermissionSet", async () => {
+      const tx = registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await expect(tx).to.emit(registry, "OperatorPermissionSet").withArgs(deployer.address, operator.address, true);
+    });
+    it("DomainRecordCreated", async () => {
+      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      const tx = registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+      await expect(tx).to.emit(registry, "DomainRecordCreated").withArgs(deployer.address, mockResolver.address, wilderDomainHash);
+    });
+    it("DomainRecordSet", async () => {
+      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+
+      const tx = registry.connect(deployer).setDomainRecord(wilderDomainHash, operator.address, mockResolver.address);
+      await expect(tx).to.emit(registry, "DomainRecordSet").withArgs(operator.address, mockResolver.address, wilderDomainHash);
+    });
+    it("DomainOwnerSet", async () => {
+      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+
+      const tx = registry.connect(deployer).setDomainOwner(wilderDomainHash, operator.address);
+      await expect(tx).to.emit(registry, "DomainOwnerSet").withArgs(operator.address, wilderDomainHash);
+    });
+    it("DomainResolverSet", async () => {
+      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+
+      const tx = registry.connect(deployer).setDomainResolver(wilderDomainHash, operator.address);
+      await expect(tx).to.emit(registry, "DomainResolverSet").withArgs(operator.address, wilderDomainHash);
+    });
   })
 })

@@ -111,7 +111,9 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   }
 
   /**
-   * @dev Set all properties for an existing domain record
+   * @dev Set any or all properties for an existing domain record
+   * Note must alter at least one property
+   *
    * @param domainNameHash The identifying hash of a domain's name
    * @param owner The owner to set
    * @param resolver The resolver to set
@@ -121,6 +123,12 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     address owner,
     address resolver
   ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
+    require(
+      records[domainNameHash].owner != owner ||
+        records[domainNameHash].resolver != resolver,
+      "ZNS: No record change"
+    );
+
     _setDomainOwner(domainNameHash, owner);
     _setDomainResolver(domainNameHash, resolver);
 
@@ -146,6 +154,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address owner
   ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
+    address currentOwner = records[domainNameHash].owner;
+    require(currentOwner != owner, "ZNS: Same owner");
     _setDomainOwner(domainNameHash, owner);
 
     emit DomainOwnerSet(owner, domainNameHash);
@@ -170,6 +180,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
+    address currentResolver = records[domainNameHash].resolver;
+    require(currentResolver != resolver, "ZNS: Same resolver");
     _setDomainResolver(domainNameHash, resolver);
 
     emit DomainResolverSet(resolver, domainNameHash);
@@ -205,9 +217,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param owner The owner to set
    */
   function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
-    address currentOwner = records[domainNameHash].owner;
-    require(currentOwner != owner, "ZNS: Same owner");
-
     records[domainNameHash].owner = owner;
   }
 
@@ -220,9 +229,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) internal {
-    address currentResolver = records[domainNameHash].resolver;
     require(resolver != address(0), "ZNS: Zero address");
-    require(currentResolver != resolver, "ZNS: Same resolver");
 
     records[domainNameHash].resolver = resolver;
   }
