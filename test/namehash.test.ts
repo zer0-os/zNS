@@ -17,7 +17,7 @@ describe("Namehash", function () {
   it("should return the correct namehash for a given domain", async function () {
     const domain = "example";
     const expectedName = hre.ethers.utils.namehash(`${domain}.eth`);
-
+    
     const name = await namehash.getNamehash(domain);
     expect(name).to.equal(expectedName);
   });
