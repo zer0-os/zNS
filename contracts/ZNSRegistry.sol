@@ -8,7 +8,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   /**
    * @dev Constant string used in the hashing of domain names
    */
-  // DELETE???
+  // What/where should this be?
   string public constant HASH_MARK = "ZNSDOMAIN";
 
   /**
