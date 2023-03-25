@@ -6,6 +6,7 @@ import {Counters} from "@openzeppelin/contracts/utils/Counters.sol"; //For Token
 import {IZNSDomainToken} from "./IZNSDomainToken.sol";
 import {IZNSRegistry} from "./IZNSRegistry.sol";
 
+//TODO: Add Documentation and Event Emission
 contract ZNSDomainToken is IZNSDomainToken, ERC721 {
   //ZNS Registry
   IZNSRegistry public ZNSRegistry;

@@ -6,7 +6,7 @@ interface IZNSDomainToken {
   event ZNSRegistrychanged(address value);
 
   // TODO
-  /**
+  /** Add Documentation and Events
    */
   function transfer(
     address from,
