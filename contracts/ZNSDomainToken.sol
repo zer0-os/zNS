@@ -20,7 +20,6 @@ contract ZNSDomainToken is IZNSDomainToken, ERC721 {
     bytes memory data
   ) external {}
 
-  // Set the price of this sale
   //TODO: Add Access Control
   function setZNSRegistry(IZNSRegistry ZNSRegistry_) external override {
     ZNSRegistry = ZNSRegistry_;
@@ -50,11 +49,14 @@ contract ZNSDomainToken is IZNSDomainToken, ERC721 {
   }
 
   //TODO: Add Access Control
+  //TODO: Delete Record in ZNSRegistry properly
   function revoke(uint256 tokenId) external {
     require(
       msg.sender == ownerOf(tokenId),
       "ERC721: Owner of sender does not match Owner of token"
     );
+    bytes32 domainNameHash = records[tokenId];
     _burn(tokenId);
+    ZNSRegistry.setDomainOwner(domainNameHash, address(0));
   }
 }
