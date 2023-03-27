@@ -4,15 +4,22 @@ pragma solidity ^0.8.18;
 // TODO change for the actual ZeroToken when ready
 // TODO adapt ZeroToken Interface
 import ".\mocks\IZeroTokenMock.sol";
+import ".\IZNSRegistry.sol";
 
 
 contract ZNSEthRegistrar {
 
-    // TODO possibly move these constants to PriceOracle. make the fees state vars??
+    // TODO possibly move these constants to PriceOracle. make the fee percentages state vars??
     uint256 public constant PERCENTAGE_BASIS = 10000;
     uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
 
+    // TODO this is here temporarily,
+    // figure out where this should be and how to set it up !
+    bytes32 public constant ETH_ROOT_HASH = keccak256(bytes("0xETH://"));
+
     IZeroTokenMock public zeroToken;
+    IZNSRegistry znsRegistry;
+//    ZNSDomainToken znsDomainToken; // TODO add token here when ready along with import
 
     // TODO change logic related to the 2 below mappings
     //  to work with actual contracts when they are ready
@@ -25,38 +32,72 @@ contract ZNSEthRegistrar {
     mapping(bytes32 => address) private subdomainApprovals;
 
     modifier onlyOwner(bytes32 hash) {
-        require(msg.sender == registry__records__owner[hash]);
+        require(msg.sender == znsRegistry.getDomainOwner(hash));
         _;
     }
 
-    constructor(address _zeroToken, uint256 _length, uint256 _price) {
+    constructor(address _zeroToken, address _znsRegistry, uint256 _length, uint256 _price) {
         // TODO consider removing require messsages altogether. what would we have instead?
         require(_zeroToken != address(0), "ZNSEthRegistrar: Zero address passed as _zeroToken");
-        // set up mock of zeroToken
+        require(_znsRegistry != address(0), "ZNSEthRegistrar: Zero address passed as _znsRegistry");
+
+        // TODO change from mock
         zeroToken = IZeroTokenMock(_zeroToken);
-        // add one price for one string length to test with
+        znsRegistry = IZNSRegistry(_znsRegistry);
+        // TODO switch to ZNSPriceOracle call
         priceOracle__prices[_length] = _price;
     }
 
-    function registerRootDomain(string label) external {
+    function hashWithParent(bytes32 parentHash, string name) public pure returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(
+                parentHash,
+                keccak256(bytes(name))
+            )
+        );
+    }
+
+    function registerRootDomain(string name, address resolver, address domainContent) external returns (bytes32) {
         // TODO are we doing commit-reveal here? if so, split this function
-        uint256 pricePerDomain = priceOracle__prices[label.length];
+        // get prices and fees
+        uint256 pricePerDomain = priceOracle__prices[name.length];
         uint256 deflationFee = pricePerDomain * FEE_PERCENTAGE / PERCENTAGE_BASIS;
 
+        // take the payment as a staking deposit
         zeroToken.transferFrom(
             msg.sender,
             address(this),
             pricePerDomain + deflationFee
         );
 
+        // burn the deflation fee
         zeroToken.burn(address(this), deflationFee);
 
-        // TODO change this for the finalized hashing function
-        bytes32 namehash = keccak256(bytes(label));
+        // generate hashes for the new domain
+        hashWithParent(ETH_ROOT_HASH, name);
 
-        stakes[namehash] = pricePerDomain;
+        // add stake data on the contract (this will possibly migrate to separate staking module)
+        stakes[domainHash] = pricePerDomain;
 
-        registry__records__owner[namehash] = msg.sender;
+        // get tokenId for the new token to be minted for the new domain
+        uint256 tokenId = uint256(domainHash);
+
+        // TODO add call to ZNSDomainToken to mint a new domain token with tokenId = uint256(namehash)
+
+        // znsDomainToken.mint(msg.sender, tokenId);
+
+        // set data on Registry storage
+        if (resolver == address(0)) {
+            require(
+                domainContent == address(0),
+                "ZNSEthRegistrar: Domain content provided without a valid resolver address"
+            );
+            znsRegistry.setDomainOwner(domainHash, msg.sender);
+        } else {
+            znsRegistry.setDomainRecord(domainHash, msg.sender, resolver);
+        }
+
+        return domainHash;
     }
 
     function approveSubdomain(bytes32 parentHash, address subdomainOwner) external onlyOwner(parentHash) {
