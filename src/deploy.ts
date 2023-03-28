@@ -1,19 +1,28 @@
-import { ethers } from "hardhat";
+import * as hre from "hardhat";
+import { Registry, Registry__factory } from "../typechain";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const [deployer, fakeResolver] = await hre.ethers.getSigners();
 
-  const lockedAmount = ethers.utils.parseEther("0.001");
+  const factory = new Registry__factory(deployer);
+  const registry: Registry = await factory.deploy();
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  await registry.deployed();
 
-  await lock.deployed();
+  const toBytes = hre.ethers.utils.toUtf8Bytes("WilderWorld");
+  const nameHash = hre.ethers.utils.keccak256(toBytes);
 
-  console.log(
-    `Lock with ${ethers.utils.formatEther(lockedAmount)}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  // Set record first    
+  await registry.connect(deployer).createDomainRecord(nameHash, fakeResolver.address);
+
+  const gasA = await registry.connect(deployer).testFuncA(nameHash);
+  const gasB = await registry.connect(deployer).testFuncB(nameHash);
+
+  // With internall function
+  console.log(gasA);
+
+  // With modifier
+  console.log(gasB);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
