@@ -13,7 +13,7 @@ describe("Initial test setup", () => {
 
     registry = await registryFactory.deploy();
   })
-  it ("Gets the number", async () => {
+  it("Gets the number", async () => {
     console.log(await registry.number());
   });
 })
