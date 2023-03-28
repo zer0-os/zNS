@@ -28,9 +28,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param domainNameHash The identifying hash of a domain's name
    */
   modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-    address owner = records[domainNameHash].owner;
     require(
-      msg.sender == owner || operators[owner][msg.sender],
+      isOwnerOrOperator(domainNameHash, msg.sender),
       "ZNS: Not allowed"
     );
     _;
@@ -55,6 +54,16 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    */
   function exists(bytes32 domainNameHash) external view returns (bool) {
     return _exists(domainNameHash);
+  }
+
+  /**
+   * @dev Checks if provided address is an owner or an operator of the provided domain
+   * @param domainNameHash The identifying hash of a domain's name
+   * @param candidate The address for which we are checking access
+   */
+  function isOwnerOrOperator(bytes32 domainNameHash, address candidate) public view returns (bool) {
+    address owner = records[domainNameHash].owner;
+    return candidate == owner || operators[owner][candidate];
   }
 
   /**

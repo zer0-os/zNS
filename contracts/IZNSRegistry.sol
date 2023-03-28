@@ -69,6 +69,13 @@ interface IZNSRegistry {
   function exists(bytes32 domainNameHash) external view returns (bool);
 
   /**
+   * @dev Checks if provided address is an owner or an operator of the provided domain
+   * @param domainNameHash The identifying hash of a domain's name
+   * @param candidate The address for which we are checking access
+   */
+  function isOwnerOrOperator(bytes32 domainNameHash, address candidate) public view returns (bool);
+
+  /**
    * @dev Set an `operator` as `allowed` to give or remove permissions for all
    * domains owned by `msg.sender`
    *
