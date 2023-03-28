@@ -99,6 +99,27 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     emit DomainRecordCreated(msg.sender, resolver, domainNameHash);
   }
+  /**
+   * @dev Creates a new domain record owned by `msg.sender`
+   * @param label The human readable, new label being registered eg "citizen"
+   * @param parentHash The namehash of the full parent tree eg "wilder.world"
+   * @param resolver The resolver to set
+  */
+  function createSubDomainRecord(string memory label, bytes32 parentHash, address resolver) public {
+    require(
+      parentHash.length != 0 && parentHash != 0x0,
+      "ZNS: No domain given"
+    );
+    require(!_exists(parentHash), "ZNS: Domain exists");
+
+    bytes32 labelhash = keccak256(bytes(label));
+    bytes32 domainId = keccak256(abi.encodePacked(parentHash, labelhash));
+
+    _setDomainOwner(domainId, msg.sender);
+    _setDomainResolver(domainId, resolver);
+
+    emit DomainRecordCreated(msg.sender, resolver, domainId);
+  }
 
   /**
    * @dev Get a record for a domain

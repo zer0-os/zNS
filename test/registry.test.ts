@@ -67,12 +67,42 @@ describe("ZNSRegistry Tests", () => {
   });
   describe("Create domain records", () => {
     it("Successfully creates a domain record", async () => {
-      // the `utils.id` function returns the keccak256 hash of the given string
-      const wilderDomainHash = hre.ethers.utils.id("wilder");
+      // the `utils.id` function returns the hash of the given string
+      const wilderDomainHash = hre.ethers.utils.namehash("wilder");
       await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
 
       // Successfully gets a domain record
       const record = await registry.getDomainRecord(wilderDomainHash);
+      expect(record.owner).to.eq(deployer.address);
+      expect(record.resolver).to.eq(mockResolver.address);
+    });
+    it("Successfully creates a 2LD record", async () => {
+      // the `utils.id` function returns the hash of the given string
+      const wilderDomainHash = hre.ethers.utils.namehash("wilder");
+      const label = "world";
+      await registry.connect(deployer).createSubDomainRecord(label, wilderDomainHash, mockResolver.address);
+      
+      // Reconstruct on-contract hash
+      const labelhash = hre.ethers.utils.keccak256(hre.ethers.utils.toUtf8Bytes(label));
+      const domainId = hre.ethers.utils.keccak256(hre.ethers.utils.solidityPack(['bytes32', 'bytes32'], [wilderDomainHash, labelhash]));
+
+      // Successfully gets a domain record
+      const record = await registry.getDomainRecord(domainId);
+      expect(record.owner).to.eq(deployer.address);
+      expect(record.resolver).to.eq(mockResolver.address);
+    });
+    it("Successfully creates a 3LD record", async () => {
+      // the `utils.id` function returns the keccak256 hash of the given string
+      const wilderDomainHash = hre.ethers.utils.namehash("wilder.world");
+      const label = "citizen";
+      await registry.connect(deployer).createSubDomainRecord(label, wilderDomainHash, mockResolver.address);
+
+      // Reconstruct on-contract hash
+      const labelhash = hre.ethers.utils.keccak256(hre.ethers.utils.toUtf8Bytes(label));
+      const domainId = hre.ethers.utils.keccak256(hre.ethers.utils.solidityPack(['bytes32', 'bytes32'], [wilderDomainHash, labelhash]));
+
+      // Successfully gets a domain record
+      const record = await registry.getDomainRecord(domainId);
       expect(record.owner).to.eq(deployer.address);
       expect(record.resolver).to.eq(mockResolver.address);
     });
