@@ -2,15 +2,10 @@
 pragma solidity ^0.8.18;
 
 import {ERC1967UpgradeUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IZNSRegistry} from "./IZNSRegistry.sol";
 
 contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
-  /**
-   * @dev Constant string used in the hashing of domain names
-   */
-  // What/where should this be?
-  string public constant HASH_MARK = "ZNSDOMAIN";
-
   /**
    * @dev Mapping `domainNameHash` to `DomainRecord` struct to hold information
    * about each domain
@@ -36,17 +31,24 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     _;
   }
 
+  // /**
+  //  * @dev Revert if the domain does not exist or the hash given is empty
+  //  * @param domainNameHash The identifying hash of the domain's name
+  //  */
+  // modifier validDomain(bytes32 domainNameHash) {
+  //   require(
+  //     domainNameHash.length != 0 && domainNameHash != 0x0,
+  //     "ZNS: No domain given"
+  //   );
+  //   _;
+  // }
+
   /**
-   * @dev Revert if the domain does not exist or the hash given is empty
-   * @param domainNameHash The identifying hash of the domain's name
+   * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
+   * to be the account that deploys this contract
    */
-  modifier validDomain(bytes32 domainNameHash) {
-    require(
-      domainNameHash.length != 0 && domainNameHash != 0x0,
-      "ZNS: No domain given"
-    );
-    require(_exists(domainNameHash), "ZNS: No domain found");
-    _;
+  function initialize(address owner) public initializer {
+    records[0x0].owner = owner;
   }
 
   /**
@@ -78,26 +80,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function isAllowedOperator(
     address owner,
     address operator
-  ) public view returns (bool) {
+  ) external view returns (bool) {
     return operators[owner][operator];
-  }
-
-  /**
-   * @dev Creates a new domain record owned by `msg.sender`
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param resolver The resolver to set
-   */
-  function createDomainRecord(bytes32 domainNameHash, address resolver) public {
-    require(
-      domainNameHash.length != 0 && domainNameHash != 0x0,
-      "ZNS: No domain given"
-    );
-    require(!_exists(domainNameHash), "ZNS: Domain exists");
-
-    _setDomainOwner(domainNameHash, msg.sender);
-    _setDomainResolver(domainNameHash, resolver);
-
-    emit DomainRecordCreated(msg.sender, resolver, domainNameHash);
   }
 
   /**
@@ -106,13 +90,12 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    */
   function getDomainRecord(
     bytes32 domainNameHash
-  ) public view returns (DomainRecord memory) {
+  ) external view returns (DomainRecord memory) {
     return records[domainNameHash];
   }
 
   /**
-   * @dev Set any or all properties for an existing domain record
-   * Note must alter at least one property
+   * @dev Set or create a domain record
    *
    * @param domainNameHash The identifying hash of a domain's name
    * @param owner The owner to set
@@ -122,17 +105,46 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address owner,
     address resolver
-  ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
-    require(
-      records[domainNameHash].owner != owner ||
-        records[domainNameHash].resolver != resolver,
-      "ZNS: No record change"
-    );
-
-    _setDomainOwner(domainNameHash, owner);
+  ) external {
+    setDomainOwner(domainNameHash, owner);
     _setDomainResolver(domainNameHash, resolver);
 
     emit DomainRecordSet(owner, resolver, domainNameHash);
+  }
+
+  /**
+   * @dev Set or create a subdomain record
+   * @param domainNameHash The base domain name hash
+   * @param label The label label of the subdomain
+   * @param owner The owner to set
+   * @param resolver The resolver to set
+   */
+  function setSubdomainRecord(
+    bytes32 domainNameHash,
+    bytes32 label,
+    address owner,
+    address resolver
+  ) external {
+    bytes32 subdomain = setSubdomainOwner(domainNameHash, label, owner);
+    setDomainResolver(subdomain, resolver);
+  }
+
+  /**
+   * @dev Update the subdomain's owner
+   * @param domainNameHash The base domain name hash
+   * @param label The label of the subdomain
+   * @param owner The owner to set
+   */
+  function setSubdomainOwner(
+    bytes32 domainNameHash,
+    bytes32 label,
+    address owner
+  ) public onlyOwnerOrOperator(domainNameHash) returns (bytes32) {
+    bytes32 subdomain = keccak256(abi.encodePacked(domainNameHash, label));
+    _setDomainOwner(subdomain, owner);
+
+    emit DomainOwnerSet(owner, subdomain);
+    return subdomain;
   }
 
   /**
@@ -141,7 +153,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    */
   function getDomainOwner(
     bytes32 domainNameHash
-  ) public view returns (address) {
+  ) external view returns (address) {
     return records[domainNameHash].owner;
   }
 
@@ -153,9 +165,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function setDomainOwner(
     bytes32 domainNameHash,
     address owner
-  ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
-    address currentOwner = records[domainNameHash].owner;
-    require(currentOwner != owner, "ZNS: Same owner");
+  ) public onlyOwnerOrOperator(domainNameHash) {
     _setDomainOwner(domainNameHash, owner);
 
     emit DomainOwnerSet(owner, domainNameHash);
@@ -167,7 +177,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    */
   function getDomainResolver(
     bytes32 domainNameHash
-  ) public view returns (address) {
+  ) external view returns (address) {
     return records[domainNameHash].resolver;
   }
 
@@ -179,24 +189,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function setDomainResolver(
     bytes32 domainNameHash,
     address resolver
-  ) public validDomain(domainNameHash) onlyOwnerOrOperator(domainNameHash) {
-    address currentResolver = records[domainNameHash].resolver;
-    require(currentResolver != resolver, "ZNS: Same resolver");
+  ) public onlyOwnerOrOperator(domainNameHash) {
     _setDomainResolver(domainNameHash, resolver);
 
     emit DomainResolverSet(resolver, domainNameHash);
-  }
-
-  /**
-   * @dev Get the hash for a given domain name
-   * @param domainName The name of the domain
-   */
-  function getDomainNameHash(
-    string memory domainName
-  ) external pure returns (bytes32) {
-    // TODO This function may be better suited in the Registrar contract
-    require(bytes(domainName).length != 0, "ZNS: No domain");
-    return keccak256(abi.encodePacked(HASH_MARK, domainName));
   }
 
   /**
