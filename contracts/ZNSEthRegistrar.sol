@@ -18,8 +18,8 @@ contract ZNSEthRegistrar {
     bytes32 public constant ETH_ROOT_HASH = keccak256(bytes("0xETH://"));
 
     IZeroTokenMock public zeroToken;
-    IZNSRegistry znsRegistry;
-//    ZNSDomainToken znsDomainToken; // TODO add token here when ready along with import
+    IZNSRegistry public znsRegistry;
+    ZNSDomainToken public znsDomainToken; // TODO add token here when ready along with import
 
     // TODO change logic related to the 2 below mappings
     //  to work with actual contracts when they are ready
@@ -36,7 +36,12 @@ contract ZNSEthRegistrar {
         _;
     }
 
-    constructor(address _zeroToken, address _znsRegistry, uint256 _length, uint256 _price) {
+    constructor(
+        address _zeroToken,
+        address _znsRegistry,
+        uint256 _length,
+        uint256 _price
+    ) {
         // TODO consider removing require messsages altogether. what would we have instead?
         require(_zeroToken != address(0), "ZNSEthRegistrar: Zero address passed as _zeroToken");
         require(_znsRegistry != address(0), "ZNSEthRegistrar: Zero address passed as _znsRegistry");
@@ -57,6 +62,8 @@ contract ZNSEthRegistrar {
         );
     }
 
+    // TODO do we only allow address type of content here? How do we set other types here?
+    //  Would we need to do separate calls from a wallet to a certain Resolver after we've registered a domain?
     function registerRootDomain(string name, address resolver, address domainContent) external returns (bytes32) {
         // TODO are we doing commit-reveal here? if so, split this function
         // get prices and fees
@@ -70,11 +77,12 @@ contract ZNSEthRegistrar {
             pricePerDomain + deflationFee
         );
 
+        // TODO is this how we want to burn?
         // burn the deflation fee
         zeroToken.burn(address(this), deflationFee);
 
         // generate hashes for the new domain
-        hashWithParent(ETH_ROOT_HASH, name);
+        bytes32 domainHash = hashWithParent(ETH_ROOT_HASH, name);
 
         // add stake data on the contract (this will possibly migrate to separate staking module)
         stakes[domainHash] = pricePerDomain;
@@ -83,19 +91,14 @@ contract ZNSEthRegistrar {
         uint256 tokenId = uint256(domainHash);
 
         // TODO add call to ZNSDomainToken to mint a new domain token with tokenId = uint256(namehash)
+        //  do we want to change attack surface here
+        //  by outsourcing the ZNSRegistry call to the DomainToken?
+        //  will it actually help?..
 
-        // znsDomainToken.mint(msg.sender, tokenId);
+         znsDomainToken.mint(msg.sender, tokenId);
 
-        // set data on Registry storage
-        if (resolver == address(0)) {
-            require(
-                domainContent == address(0),
-                "ZNSEthRegistrar: Domain content provided without a valid resolver address"
-            );
-            znsRegistry.setDomainOwner(domainHash, msg.sender);
-        } else {
-            znsRegistry.setDomainRecord(domainHash, msg.sender, resolver);
-        }
+        // set data on Registry and Resolver storage
+        _setDomainData(domainHash, msg.sender, resolver, domainAddress);
 
         return domainHash;
     }
@@ -104,39 +107,70 @@ contract ZNSEthRegistrar {
         subdomainApprovals[parentHash] = subdomainOwner;
     }
 
-    function registerSubdomain(bytes32 parentHash, string label) external {
+    function registerSubdomain(
+        bytes32 parentHash,
+        string name,
+        address beneficiary,
+        address resolver,
+        address domainAddress
+    ) external returns (bytes32) {
         // Should we add interface check here that every Registrar should implement
         // to only run the below require if an EOA is calling this?
         // We do not need a subdomain approval if it's a Registrar
         // contract calling this since the call from it already
         // serves as an "approval".
-        require(
-            subdomainApprovals[parentHash] == msg.sender,
-            "Subdomain purchase not authorized for this account"
-        );
 
-        // there should probably be storage structure for subdomain prices
+        address registerFor = beneficiary;
+        // Here if the caller is an owner or an operator
+        // (where a Registrar contract can be any of those),
+        // we do not need to check the approval.
+        if (!znsRegistry.isOwnerOrOperator(parentHash, msg.sender)) {
+            require(
+                subdomainApprovals[parentHash] == msg.sender,
+                "ZNSEthRegistrar: Subdomain purchase is not authorized for this account"
+            );
+
+            registerFor = msg.sender;
+        }
+
+        // there should probably be storage structure on PriceOracle for subdomain prices
         // that is separate from root domains
-        uint256 pricePerSubdomain = priceOracle__prices[label.length];
+        uint256 pricePerSubdomain = priceOracle__prices[name.length];
 
-        // How inconvenient is it to make a `subdomainOwner`
-        // call `approve()` on the ZeroToken, but then make a domain owner
-        // to call this in order to register a domain for someone else?
-        // What solutions can we make here to avoid this confusing call group?
-        // Solutions:
-        // 1. Add subdomain approval mapping to allow parent domain owners
-        // to add subdomain buyer to the mapping, allowing him to buy a subdomain
-        // under his parent domain.
+        // we are always charging the caller here
+        // RDO Registrar if present or direct buyer/caller if no RDO Registrar
         zeroToken.transferFrom(
             msg.sender,
             address(this),
             pricePerSubdomain
         );
 
-        bytes32 namehash = keccak256(abi.encodePacked(parentHash, bytes(label)));
+        // TODO do we have burning here or just for Root Domains?
 
-        stakes[namehash] = pricePerSubdomain;
+        bytes32 domainHash = hashWithParent(parentHash, name);
 
-        registry__records__owner[namehash] = msg.sender;
+        stakes[domainHash] = pricePerSubdomain;
+
+        _setDomainData(domainHash, registerFor, resolver, domainAddress);
+
+        return domainHash;
+    }
+
+    function _setDomainData(bytes32 domainHash, address owner, address resolver, address domainAddress) internal {
+        if (resolver == address(0)) {
+            require(
+                domainAddress == address(0),
+                "ZNSEthRegistrar: Domain content provided without a valid resolver address"
+            );
+
+            // TODO fix these calls once Registry is merged
+            znsRegistry.setDomainOwner(domainHash, owner);
+        } else {
+            // TODO fix these calls once Registry is merged
+            znsRegistry.setDomainRecord(domainHash, owner, resolver);
+
+            // TODO fix this once Resolvers are finalized
+            if (domainAddress != address(0)) Resolver(resolver).setAddress(domainHash, domainAddress);
+        }
     }
 }
