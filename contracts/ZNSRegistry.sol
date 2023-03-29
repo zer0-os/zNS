@@ -144,6 +144,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     emit DomainRecordSet(owner, resolver, domainNameHash);
   }
 
+  // TODO add access control. do we need to revoke operator as well?
+  function deleteDomainRecord(bytes32 domainNameHash) external {
+    delete records[domainNameHash];
+  }
+
   /**
    * @dev Get the owner of the given domain
    * @param domainNameHash The identifying hash of a domain's name
