@@ -21,10 +21,7 @@ contract ZNSEthRegistrar {
     IZNSRegistry public znsRegistry;
     ZNSDomainToken public znsDomainToken; // TODO add token here when ready along with import
 
-    // TODO change logic related to the 2 below mappings
-    //  to work with actual contracts when they are ready
-    mapping(bytes32 => address) public registry__records__owner;
-
+    // TODO remove and change when Oracle is ready
     mapping(uint256 => uint256) public priceOracle__prices;
 
     mapping(bytes32 => uint256) private stakes;
