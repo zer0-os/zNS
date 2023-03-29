@@ -31,6 +31,8 @@ contract ZNSEthRegistrar {
 
     mapping(bytes32 => address) private subdomainApprovals;
 
+    // TODO add events
+
     modifier onlyOwner(bytes32 hash) {
         require(msg.sender == znsRegistry.getDomainOwner(hash));
         _;
@@ -154,6 +156,32 @@ contract ZNSEthRegistrar {
         _setDomainData(domainHash, registerFor, resolver, domainAddress);
 
         return domainHash;
+    }
+
+    function revokeDomain(bytes32 domainHash) external {
+        require(
+            znsRegistry.getDomainOwner(domainHash) == msg.sender,
+            "ZNSEthRegistrar: Not an owner of the current domain name"
+        );
+
+        // TODO is this necessary?
+        require(
+            znsRegistry.exists(domainHash),
+            "ZNSEthRegistrar: Domain does not exist"
+        );
+
+        uint256 tokenId = uint256(domainHash);
+
+        znsDomainToken.revoke(tokenId);
+
+        znsRegistry.deleteDomainRecord(domainHash);
+
+        uint256 stakeAmount = stakes[domainHash];
+        delete stakes[domainHash];
+
+        zeroToken.transfer(msg.sender, stakeAmount);
+
+        // TODO what are we missing here?
     }
 
     function _setDomainData(bytes32 domainHash, address owner, address resolver, address domainAddress) internal {
