@@ -1,10 +1,17 @@
 import * as hre from "hardhat";
-// import { ethers } from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSRegistry, ZNSRegistry__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
+
+/**
+ * TODO should we disallow burning the root domain?
+ * The process of burning would transfer ownership to the 0x0 address
+ * Nobody would be able to successfully mint new subdomaisn in this scenario
+ * In the case the `owner` we set in the initializer is an EOA, it's a 
+ * possibility the account is compromised 
+ */
 
 describe("ZNSRegistry Tests", () => {
   let deployer: SignerWithAddress;
@@ -16,10 +23,10 @@ describe("ZNSRegistry Tests", () => {
 
   // Set owner of 0x0 domain in initalizer, will be used by every other subdomain
   const rootDomainHash = hre.ethers.constants.HashZero;
-  const wilderDomainLabel = hre.ethers.utils.id("wilder");
+  const wilderLabel = hre.ethers.utils.id("wilder");
 
   // Wilder subdomain hash created in `setSubdomainRecord` call to `setSubdomainOwner`
-  const wilderSubdomainHash = hre.ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [rootDomainHash, wilderDomainLabel]);
+  const wilderSubdomainHash = hre.ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [rootDomainHash, wilderLabel]);
 
   beforeEach(async () => {
     [deployer, operator, mockResolver] = await hre.ethers.getSigners();
@@ -30,8 +37,8 @@ describe("ZNSRegistry Tests", () => {
     // To set the owner of the zero domain to the deployer
     await registry.connect(deployer).initialize(deployer.address);
 
-    // Create a first domain
-    await registry.connect(deployer).setSubdomainRecord(rootDomainHash, wilderDomainLabel, deployer.address, mockResolver.address);
+    // Create a first domain from the base domain
+    await registry.connect(deployer).setSubdomainRecord(rootDomainHash, wilderLabel, deployer.address, mockResolver.address);
   })
 
   // a valid operator can change the owner of a domain, is this wanted?
@@ -64,193 +71,96 @@ describe("ZNSRegistry Tests", () => {
     });
 
     it("Does not permit a disallowed operator to modify a domain record", async () => {
+      await registry.connect(deployer).setOwnerOperator(operator.address, false);
+
       const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
+
+    it("Does not permit an operator that's never been allowed to modify a record", async () => {
+      const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
+      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+    })
   });
 
-  describe("Create domain records", () => {
-    it("Successfully creates a domain record", async () => {
-      // Create a first domain
-      await registry.connect(deployer).setSubdomainRecord(rootDomainHash, wilderDomainLabel, deployer.address, mockResolver.address)
+  describe("Domain and subdomain records", async () => {
+    it("Gets a domain record", async () => {
+      // Domain exists
+      const rootRecord = await registry.getDomainRecord(rootDomainHash);
+      expect(rootRecord.owner).to.eq(deployer.address);
 
-      const record = await registry.getDomainRecord(wilderSubdomainHash);
-      expect(record.owner).to.eq(deployer.address);
-      expect(record.resolver).to.eq(mockResolver.address);
+      // Domain exists
+      const wilderRecord = await registry.getDomainRecord(wilderSubdomainHash);
+      expect(wilderRecord.owner).to.eq(deployer.address);
+
+      // Domain does not exist
+      const domainHash = hre.ethers.utils.id("random-record");
+      const record = await registry.getDomainRecord(domainHash);
+      expect(record.owner).to.eq(hre.ethers.constants.AddressZero);
     });
 
-    // it("Fails to create a record if no domain is given", async () => {
-    //   const tx = registry.connect(deployer).createDomainRecord(hre.ethers.constants.HashZero, mockResolver.address);
-    //   await expect(tx).to.be.revertedWith("ZNS: No domain given");
-    // });
+    it("Gets a domain owner", async () => {
+      // The domain exists
+      const existOwner = await registry.getDomainOwner(wilderSubdomainHash);
+      expect(existOwner).to.eq(deployer.address);
 
-    // it("Fails to create a record if the domain already exists", async () => {
-    //   const wilderDomainHash = hre.ethers.utils.id("wilder");
-    //   await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+      // The domain does not exist
+      const domainHash = hre.ethers.utils.id("random-record");
+      const notExistOwner = await registry.getDomainOwner(domainHash);
+      expect(notExistOwner).to.eq(hre.ethers.constants.AddressZero);
+    });
 
-    //   const tx = registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-    //   await expect(tx).to.be.revertedWith("ZNS: Domain existance conflict");
-    // });
+    it("Gets a domain resolver", async () => {
+      // The domain exists
+      const existResolver = await registry.getDomainResolver(wilderSubdomainHash);
+      expect(existResolver).to.eq(mockResolver.address);
 
-    // it("Fails to create a domain if the resolver is the 0 address", async () => {
-    //   const wilderDomainHash = hre.ethers.utils.id("wilder");
+      // The domain does not exist
+      const domainHash = hre.ethers.utils.id("random-record");
+      const notExistResolver = await registry.getDomainResolver(domainHash);
+      expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
 
-    //   const tx = registry.connect(deployer).createDomainRecord(wilderDomainHash, hre.ethers.constants.AddressZero);
-    //   await expect(tx).to.be.revertedWith("ZNS: Zero address");
-    // });
-
-    // it("Returns 0 when getting a domain record that doesn't exist", async () => {
-    //   const wilderDomainHash = hre.ethers.utils.id("wilder");
-
-    //   const record = await registry.getDomainRecord(wilderDomainHash);
-    //   expect(record.owner).to.eq(hre.ethers.constants.AddressZero);
-    //   expect(record.resolver).to.eq(hre.ethers.constants.AddressZero);
-    // });
+    })
   });
 
-  // describe("Updating domain records", () => {
-  //   it("Successfully sets new data on an existing domain record", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+  describe("Setter functions for a domain's record, owner, or resolver", () => {
+    it("Sets a domain record", async () => {
+      await registry.connect(deployer).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
 
-  //     // Updating the record to modify both the `owner` and `resolver`
-  //     await registry.connect(deployer).setDomainRecord(wilderDomainHash, operator.address, operator.address);
+      const record = await registry.getDomainRecord(rootDomainHash);
+      expect(record.owner).to.eq(operator.address);
+    });
 
-  //     const record = await registry.getDomainRecord(wilderDomainHash);
-  //     expect(record.owner).to.eq(operator.address);
-  //     expect(record.resolver).to.eq(operator.address);
-  //   });
+    it("Fails to set a record when caller is not owner or operator", async () => {
+      const tx = registry.connect(operator).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
+      await expect(tx).to.be.revertedWith("ZNS: Not allowed")
+    });
 
-  //   it("Fails to set an existing domain record if no domain is given", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+    it("Sets a subdomain record", async () => {
+      // In order to set a subdomain, the caller must be the owner of the parent domain
+      const zeroLabel = hre.ethers.utils.id("zero");
 
-  //     const tx = registry.connect(deployer).setDomainRecord(hre.ethers.constants.HashZero, operator.address, operator.address);
-  //     await expect(tx).to.be.revertedWith("ZNS: No domain given");
-  //   });
+      await registry.connect(deployer).setSubdomainRecord(wilderSubdomainHash, zeroLabel, deployer.address, mockResolver.address);
 
-  //   it("Fails to set an existing domain record if a domain is given that doesn't exist", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     const tx = registry.connect(deployer).setDomainRecord(wilderDomainHash, operator.address, operator.address);
-  //     await expect(tx).to.be.revertedWith("ZNS: Domain existance conflict");
-  //   });
+      const zeroDomainHash = hre.ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [wilderSubdomainHash, zeroLabel]);
+      const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
+      expect(zeroOwner).to.eq(deployer.address);
+    });
 
-  //   it("Fails to set a domain record for an unowned domain", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
+    it("Fails to set a subdomain record because caller is not the owner of the parent domain", async () => {
+      const zeroLabel = hre.ethers.utils.id("zero");
 
-  //     const tx = registry.connect(operator).setDomainRecord(wilderDomainHash, operator.address, operator.address);
-  //     await expect(tx).to.be.revertedWith("ZNS: Not allowed");
-  //   });
+      const tx = registry.connect(operator).setSubdomainRecord(wilderSubdomainHash, zeroLabel, deployer.address, mockResolver.address);
+      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+    });
 
-  //   it("Allows setting domain record owner as the 0 address", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     await registry.connect(deployer).setDomainRecord(wilderDomainHash, hre.ethers.constants.AddressZero, operator.address);
-
-  //     const owner = await registry.getDomainOwner(wilderDomainHash);
-  //     expect(owner).to.eq(hre.ethers.constants.AddressZero);
-  //   });
-
-  //   it("Fails to set domain record if the resolver is the 0 address", async () => {
-  //     // should set to a default register? or just fail?
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const tx = registry.connect(deployer).setDomainRecord(wilderDomainHash, operator.address, hre.ethers.constants.AddressZero);
-  //     await expect(tx).to.be.revertedWith("ZNS: Zero address");
-  //   });
-  // });
-
-  // describe("Get functions", () => {
-  //   it("Successfully gets the domain owner", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const owner = await registry.getDomainOwner(wilderDomainHash);
-  //     expect(owner).to.eq(deployer.address);
-  //   });
-
-  //   it("Returns a domain owner of 0 if that domain doesn't exist", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-
-  //     // We have not called to create the domain record, so it won't exist
-  //     const owner = await registry.getDomainOwner(wilderDomainHash);
-  //     expect(owner).to.eq(hre.ethers.constants.AddressZero);
-  //   });
-
-  //   it("Successfully gets the domain resolver", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const resolver = await registry.getDomainResolver(wilderDomainHash);
-  //     expect(resolver).to.eq(mockResolver.address);
-  //   });
-  // });
-
-  // describe("Specific setters for domain owner and resolver", () => {
-  //   it("Successfully sets the domain owner", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const owner = await registry.getDomainOwner(wilderDomainHash);
-  //     expect(owner).to.eq(deployer.address);
-
-  //     await registry.connect(deployer).setDomainOwner(wilderDomainHash, operator.address);
-
-  //     const newOwner = await registry.getDomainOwner(wilderDomainHash);
-  //     expect(newOwner).to.eq(operator.address);
-  //   });
-
-  //   it("Successfully sets the domain resolver", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const resolver = await registry.getDomainResolver(wilderDomainHash);
-  //     expect(resolver).to.eq(mockResolver.address);
-
-  //     await registry.connect(deployer).setDomainResolver(wilderDomainHash, operator.address);
-
-  //     const newResolver = await registry.getDomainResolver(wilderDomainHash);
-  //     expect(newResolver).to.eq(operator.address);
-  //   });
-  // });
-
-  // describe("Event emitters", async () => {
-  //   it("OperatorPermissionSet", async () => {
-  //     const tx = registry.connect(deployer).setOwnerOperator(operator.address, true);
-  //     await expect(tx).to.emit(registry, "OperatorPermissionSet").withArgs(deployer.address, operator.address, true);
-  //   });
-
-  //   it("DomainRecordCreated", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     const tx = registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-  //     await expect(tx).to.emit(registry, "DomainRecordCreated").withArgs(deployer.address, mockResolver.address, wilderDomainHash);
-  //   });
-
-  //   it("DomainRecordSet", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const tx = registry.connect(deployer).setDomainRecord(wilderDomainHash, operator.address, mockResolver.address);
-  //     await expect(tx).to.emit(registry, "DomainRecordSet").withArgs(operator.address, mockResolver.address, wilderDomainHash);
-  //   });
-
-  //   it("DomainOwnerSet", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const tx = registry.connect(deployer).setDomainOwner(wilderDomainHash, operator.address);
-  //     await expect(tx).to.emit(registry, "DomainOwnerSet").withArgs(operator.address, wilderDomainHash);
-  //   });
-
-  //   it("DomainResolverSet", async () => {
-  //     const wilderDomainHash = hre.ethers.utils.id("wilder");
-  //     await registry.connect(deployer).createDomainRecord(wilderDomainHash, mockResolver.address);
-
-  //     const tx = registry.connect(deployer).setDomainResolver(wilderDomainHash, operator.address);
-  //     await expect(tx).to.emit(registry, "DomainResolverSet").withArgs(operator.address, wilderDomainHash);
-  //   });
-  // });
+    it("Fails to create another root domain", async () => {
+      // The root domain ownership is set in the initializer function
+      // Any additional root domains would fail because they are checked for owner,
+      // but because that owner can't exist as the record doesn't exist yet, it fails
+      const domainHash = hre.ethers.utils.id("random-record");
+      const tx = registry.connect(deployer).setDomainRecord(domainHash, operator.address, mockResolver.address);
+      await expect(tx).to.be.revertedWith("ZNS: Not allowed")
+    });
+  });
 });
