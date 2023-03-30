@@ -155,12 +155,7 @@ contract ZNSEthRegistrar {
         return domainHash;
     }
 
-    function revokeDomain(bytes32 domainHash) external {
-        require(
-            znsRegistry.getDomainOwner(domainHash) == msg.sender,
-            "ZNSEthRegistrar: Not an owner of the current domain name"
-        );
-
+    function revokeDomain(bytes32 domainHash) onlyOwner(domainHash) external {
         // TODO is this necessary?
         require(
             znsRegistry.exists(domainHash),
