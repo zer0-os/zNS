@@ -2,6 +2,9 @@ require("dotenv").config();
 
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-network-helpers";
+import "@nomicfoundation/hardhat-chai-matchers";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -27,7 +30,7 @@ const config: HardhatUserConfig = {
     outDir: "typechain"
   },
   mocha: {
-    timeout: 40000
+    timeout: 40000,
   },
   networks: {
     mainnet: {
@@ -36,7 +39,7 @@ const config: HardhatUserConfig = {
     },
     goerli: {
       url: "https://goerli.infura.io/v3/77c3d733140f4c12a77699e24cb30c27",
-      timeout: 10000000
+      timeout: 10000000,
     },
   },
   etherscan: {
