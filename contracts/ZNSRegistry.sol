@@ -31,18 +31,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     _;
   }
 
-  // /**
-  //  * @dev Revert if the domain does not exist or the hash given is empty
-  //  * @param domainNameHash The identifying hash of the domain's name
-  //  */
-  // modifier validDomain(bytes32 domainNameHash) {
-  //   require(
-  //     domainNameHash.length != 0 && domainNameHash != 0x0,
-  //     "ZNS: No domain given"
-  //   );
-  //   _;
-  // }
-
   /**
    * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
    * to be the account that deploys this contract
