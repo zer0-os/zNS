@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import ".\mocks\IZeroTokenMock.sol";
+import ".\mocks\IZeroTokenMock.sol"; // TODO: remove when token is sorted out
+import ".\IZNSTreasury.sol";
 
 
 // TODO is this an appropriate name??
-contract ZNSTreasury {
+contract ZNSTreasury is IZNSTreasury {
 
     // TODO: possibly move these constants to PriceOracle. make the fee percentages state vars??
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -47,22 +48,27 @@ contract ZNSTreasury {
         priceOracle__prices[_length] = _price;
     }
 
-    function stakeForDomain(bytes32 domainHash, string name, address depositor, bool useFee) external onlyRegistrar {
+    function stakeForDomain(
+        bytes32 domainHash,
+        string name,
+        address depositor,
+        bool useFee
+    ) external onlyRegistrar {
         // TODO:    there should probably be storage structure on PriceOracle for subdomain prices
         //          that is separate from root domains
         // get prices and fees
-        uint256 pricePerDomain = priceOracle__prices[name.length];
+        uint256 stakeAmount = priceOracle__prices[name.length];
 
         // take the payment as a staking deposit
         // TODO: should we transfer both price and fee here or can we burn deflationFee without transfer ??
         zeroToken.transferFrom(
             depositor,
             address(this),
-            pricePerDomain
+            stakeAmount
         );
 
         if (useFee) {
-            uint256 deflationFee = pricePerDomain * FEE_PERCENTAGE / PERCENTAGE_BASIS;
+            uint256 deflationFee = stakeAmount * FEE_PERCENTAGE / PERCENTAGE_BASIS;
 
             // TODO:    is this how we want to burn?
             // burn the deflation fee
@@ -70,7 +76,9 @@ contract ZNSTreasury {
         }
 
         // add stake data on the contract
-        domainStakes[domainHash] = pricePerDomain;
+        domainStakes[domainHash] = stakeAmount;
+
+        emit StakeDeposited(domainHash, name, depositor, stakeAmount);
     }
 
     function getStakedAmountForDomain(bytes32 domainHash) public returns (uint256) {
