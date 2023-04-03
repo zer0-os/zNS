@@ -22,7 +22,7 @@ describe("ZNSAddressResolver", function () {
 
     it("Should not allow non-registry address to setAddress", async function () {
         const domainNameHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("wilder"));
-        await expect(znsAddressResolver.connect(addr1).setAddress(domainNameHash, addr1.address)).to.be.reverted;
+        await expect(znsAddressResolver.connect(addr1).setAddress(domainNameHash, addr1.address)).to.be.revertedWith("ZNSR: Sender isnt registry");
     });
 
     it("Should allow registry to setAddress and emit event", async function () {
