@@ -6,9 +6,10 @@ pragma solidity ^0.8.18;
 import ".\mocks\IZeroTokenMock.sol";
 import ".\IZNSRegistry.sol";
 import ".\IZNSDomainToken.sol";
+import ".\IZNSEthRegistrar.sol";
 
 
-contract ZNSEthRegistrar {
+contract ZNSEthRegistrar is IZNSEthRegistrar {
 
     // TODO:    this is here temporarily,
     //          figure out where this should be and how to set it up !
@@ -79,6 +80,8 @@ contract ZNSEthRegistrar {
         // set data on Registry and Resolver storage
         _setDomainData(domainHash, msg.sender, resolver, domainAddress);
 
+        emit RootDomainRegistered(domainHash, name, msg.sender);
+
         return domainHash;
     }
 
@@ -89,7 +92,7 @@ contract ZNSEthRegistrar {
     function registerSubdomain(
         bytes32 parentHash,
         string name,
-        address beneficiary,
+        address registrant,
         address resolver,
         address domainAddress
     ) external returns (bytes32) {
@@ -99,7 +102,7 @@ contract ZNSEthRegistrar {
         //          contract calling this since the call from it already
         //          serves as an "approval".
 
-        address registerFor = beneficiary;
+        address registerFor = registrant;
         // Here if the caller is an owner or an operator
         // (where a Registrar contract can be any of those),
         // we do not need to check the approval.
@@ -121,10 +124,12 @@ contract ZNSEthRegistrar {
 
         _setDomainData(domainHash, registerFor, resolver, domainAddress);
 
+        emit SubdomainRegistered(domainHash, parentHash, name, registerFor);
+
         return domainHash;
     }
 
-    function revokeDomain(bytes32 domainHash) onlyOwner(domainHash) external {
+    function revokeDomain(bytes32 domainHash) external onlyOwner(domainHash) {
         // TODO: is this necessary?
         require(
             znsRegistry.exists(domainHash),
@@ -141,6 +146,8 @@ contract ZNSEthRegistrar {
         delete stakes[domainHash];
 
         zeroToken.transfer(msg.sender, stakeAmount);
+
+        emit DomainRevoked(domainHash, name, msg.sender);
 
         // TODO: what are we missing here?
     }
