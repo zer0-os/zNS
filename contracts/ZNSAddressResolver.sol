@@ -40,7 +40,11 @@ contract ZNSAddressResolver is IZNSAddressResolver {
     emit AddressSet(domainNameHash, newAddress);
   }
 
-  function supportsInterface(bytes4 interfaceId) external view returns (bool) {
+  /**
+   * @dev ERC-165 check for implementation identifier
+   * @param interfaceId ID to check
+   */
+  function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
     return interfaceId == RESOLVER_INTERFACE_ID;
   }
 }
