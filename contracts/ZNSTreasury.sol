@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import ".\mocks\IZeroTokenMock.sol"; // TODO: remove when token is sorted out
-import ".\IZNSTreasury.sol";
+import "./mocks/IZeroTokenMock.sol"; // TODO: remove when token is sorted out
+import "./IZNSTreasury.sol";
 
 
 // TODO is this an appropriate name??

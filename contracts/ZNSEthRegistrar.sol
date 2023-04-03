@@ -3,10 +3,10 @@ pragma solidity ^0.8.18;
 
 // TODO: change for the actual ZeroToken when ready
 // TODO: adapt ZeroToken Interface
-import ".\mocks\IZeroTokenMock.sol";
-import ".\IZNSRegistry.sol";
-import ".\IZNSDomainToken.sol";
-import ".\IZNSEthRegistrar.sol";
+import "./mocks/IZeroTokenMock.sol";
+import "./IZNSRegistry.sol";
+import "./IZNSDomainToken.sol";
+import "./IZNSEthRegistrar.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
