@@ -64,7 +64,7 @@ contract ZNSEthRegistrar {
         bytes32 domainHash = hashWithParent(ETH_ROOT_HASH, name);
 
         // do all the staking logic
-        znsTreasury.stakeForDomain(domainHash, msg.sender);
+        znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
 
         // get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
@@ -112,23 +112,12 @@ contract ZNSEthRegistrar {
             registerFor = msg.sender;
         }
 
-        // there should probably be storage structure on PriceOracle for subdomain prices
-        // that is separate from root domains
-        uint256 pricePerSubdomain = priceOracle__prices[name.length];
-
-        // we are always charging the caller here
-        // RDO Registrar if present or direct buyer/caller if no RDO Registrar
-        zeroToken.transferFrom(
-            msg.sender,
-            address(this),
-            pricePerSubdomain
-        );
-
-        // TODO: do we have burning here or just for Root Domains?
-
         bytes32 domainHash = hashWithParent(parentHash, name);
 
-        stakes[domainHash] = pricePerSubdomain;
+        // TODO: do we have burning here or just for Root Domains?
+        // we are always charging the caller here
+        // RDO Registrar if present or direct buyer/caller if no RDO Registrar
+        znsTreasury.stakeForDomain(domainHash, name, msg.sender, false);
 
         _setDomainData(domainHash, registerFor, resolver, domainAddress);
 

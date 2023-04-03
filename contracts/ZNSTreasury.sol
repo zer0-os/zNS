@@ -47,10 +47,11 @@ contract ZNSTreasury {
         priceOracle__prices[_length] = _price;
     }
 
-    function stakeForDomain(bytes32 domainHash, address depositor) external onlyRegistrar {
+    function stakeForDomain(bytes32 domainHash, string name, address depositor, bool useFee) external onlyRegistrar {
+        // TODO:    there should probably be storage structure on PriceOracle for subdomain prices
+        //          that is separate from root domains
         // get prices and fees
         uint256 pricePerDomain = priceOracle__prices[name.length];
-        uint256 deflationFee = pricePerDomain * FEE_PERCENTAGE / PERCENTAGE_BASIS;
 
         // take the payment as a staking deposit
         // TODO: should we transfer both price and fee here or can we burn deflationFee without transfer ??
@@ -60,11 +61,15 @@ contract ZNSTreasury {
             pricePerDomain
         );
 
-        // TODO:    is this how we want to burn?
-        // burn the deflation fee
-        zeroToken.burn(address(this), deflationFee);
+        if (useFee) {
+            uint256 deflationFee = pricePerDomain * FEE_PERCENTAGE / PERCENTAGE_BASIS;
 
-        // add stake data on the contract (this will possibly migrate to separate staking module)
+            // TODO:    is this how we want to burn?
+            // burn the deflation fee
+            zeroToken.burn(address(this), deflationFee);
+        }
+
+        // add stake data on the contract
         domainStakes[domainHash] = pricePerDomain;
     }
 
