@@ -7,7 +7,7 @@ interface IZNSEthRegistrar {
     // TODO: what other params do we need here for all the events ??
     event RootDomainRegistered(bytes32 indexed domainHash, string name, address indexed registrant);
     event SubdomainRegistered(bytes32 indexed domainHash, bytes32 indexed parentHash, string name, address indexed registrant);
-    event DomainRevoked(bytes32 indexed domainHash, string name, address indexed registrant);
+    event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
     function hashWithParent(bytes32 parentHash, string name) external pure returns (bytes32);
 

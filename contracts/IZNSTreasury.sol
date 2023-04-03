@@ -5,10 +5,16 @@ pragma solidity ^0.8.18;
 interface IZNSTreasury {
 
     event ZNSRegistrarSet(address znsRegistrar);
+    // TODO: do we actually need "domainName" in all these events??
     event StakeDeposited(
         bytes32 indexed domainHash,
-        string name,
+        string domainName,
         address indexed depositor,
+        uint256 indexed amount
+    );
+    event StakeWithdrawn(
+        bytes32 indexed domainHash,
+        address indexed owner,
         uint256 indexed amount
     );
 
@@ -18,6 +24,8 @@ interface IZNSTreasury {
         address depositor,
         bool useFee
     ) external;
+
+    function unstakeForDomain(bytes32 domainHash, address owner) external;
 
     function getStakedAmountForDomain(bytes32 domainHash) public returns (uint256);
 

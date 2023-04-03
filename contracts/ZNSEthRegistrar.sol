@@ -142,12 +142,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
         znsRegistry.deleteDomainRecord(domainHash);
 
-        uint256 stakeAmount = stakes[domainHash];
-        delete stakes[domainHash];
+        znsTreasury.unstakeForDomain(domainHash, msg.sender);
 
-        zeroToken.transfer(msg.sender, stakeAmount);
-
-        emit DomainRevoked(domainHash, name, msg.sender);
+        emit DomainRevoked(domainHash, msg.sender);
 
         // TODO: what are we missing here?
     }

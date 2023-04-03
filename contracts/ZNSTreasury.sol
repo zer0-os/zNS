@@ -14,7 +14,7 @@ contract ZNSTreasury is IZNSTreasury {
 
     IZNSEthRegistrar private znsRegistrar;
 
-    IPriceORacle public priceOracle;
+    IPriceOracle public priceOracle;
     IZeroTokenMock public zeroToken;
 
     // TODO should this be tied to domain hash only?? do we need extra data here??
@@ -50,14 +50,14 @@ contract ZNSTreasury is IZNSTreasury {
 
     function stakeForDomain(
         bytes32 domainHash,
-        string name,
+        string domainName,
         address depositor,
         bool useFee
     ) external onlyRegistrar {
         // TODO:    there should probably be storage structure on PriceOracle for subdomain prices
         //          that is separate from root domains
         // get prices and fees
-        uint256 stakeAmount = priceOracle__prices[name.length];
+        uint256 stakeAmount = priceOracle__prices[domainName.length];
 
         // take the payment as a staking deposit
         // TODO: should we transfer both price and fee here or can we burn deflationFee without transfer ??
@@ -78,14 +78,23 @@ contract ZNSTreasury is IZNSTreasury {
         // add stake data on the contract
         domainStakes[domainHash] = stakeAmount;
 
-        emit StakeDeposited(domainHash, name, depositor, stakeAmount);
+        emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
+    }
+
+    function unstakeForDomain(bytes32 domainHash, address owner) external onlyRegistrar {
+        uint256 stakeAmount = domainStakes[domainHash];
+        delete stakes[domainHash];
+
+        zeroToken.transfer(owner, stakeAmount);
+
+        emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
     function getStakedAmountForDomain(bytes32 domainHash) public returns (uint256) {
         return domainStakes[domainHash];
     }
 
-    function setZnsRegistrar(address _znsRegistrar) external onlyAdmin {
+    function setZnsRegistrar(address _znsRegistrar) external { // onlyAdmin { TODO: add access control !!
         require(_znsRegistrar != address(0), "ZNSTreasury: Zero address passed as _znsRegistrar");
 
         znsRegistrar = _znsRegistrar;
