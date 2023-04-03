@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {IZNSResolver} from "./IZNSResolver.sol";
-
 interface IZNSRegistry {
   /**
    * @dev The `DomainRecord` struct is meant to hold relevant information
@@ -95,16 +93,6 @@ interface IZNSRegistry {
   ) external view returns (bool);
 
   /**
-   * @dev Creates a new domain record owned by `msg.sender`
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param resolver The resolver to set
-   */
-  function createDomainRecord(
-    bytes32 domainNameHash,
-    address resolver
-  ) external;
-
-  /**
    * @dev Get a record for a domain
    * @param domainNameHash The identifying hash of a domain's name
    */
@@ -125,6 +113,20 @@ interface IZNSRegistry {
   ) external;
 
   /**
+   * @dev Set or create a subdomain record
+   * @param domainNameHash The base domain hash
+   * @param label The label to for the subdomain
+   * @param owner The owner to set
+   * @param resolver The resolver to set
+   */
+  function setSubdomainRecord(
+    bytes32 domainNameHash,
+    bytes32 label,
+    address owner,
+    address resolver
+  ) external;
+
+  /**
    * @dev Get the owner of the given domain
    * @param domainNameHash The identifying hash of a domain's name
    */
@@ -140,6 +142,18 @@ interface IZNSRegistry {
   function setDomainOwner(bytes32 domainNameHash, address owner) external;
 
   /**
+   * @dev Update the subdomain's owner
+   * @param domainNameHash The base domain name hash
+   * @param label The label of the subdomain
+   * @param owner The owner to set
+   */
+  function setSubdomainOwner(
+    bytes32 domainNameHash,
+    bytes32 label,
+    address owner
+  ) external returns (bytes32);
+
+  /**
    * @dev Get the default resolver for the given domain
    * @param domainNameHash The identifying hash of a domain's name
    */
@@ -153,12 +167,4 @@ interface IZNSRegistry {
    * @param resolver The new default resolver
    */
   function setDomainResolver(bytes32 domainNameHash, address resolver) external;
-
-  /**
-   * @dev Get the hash for a given domain name
-   * @param domainName The name of the domain
-   */
-  function getDomainNameHash(
-    string memory domainName
-  ) external pure returns (bytes32);
 }
