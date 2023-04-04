@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import "./mocks/IZeroTokenMock.sol"; // TODO: remove when token is sorted out
 import "./IZNSTreasury.sol";
+import "./IZNSEthRegistrar.sol";
 
 
 // TODO is this an appropriate name??
@@ -14,7 +15,9 @@ contract ZNSTreasury is IZNSTreasury {
 
     IZNSEthRegistrar private znsRegistrar;
 
-    IPriceOracle public priceOracle;
+    // TODO:    uncomment when Oracle is ready and connected
+    //          change Oracle logic to call actual contract
+//    IPriceOracle public priceOracle;
     IZeroTokenMock public zeroToken;
 
     // TODO should this be tied to domain hash only?? do we need extra data here??
@@ -39,25 +42,25 @@ contract ZNSTreasury is IZNSTreasury {
         require(_priceOracle != address(0), "ZNSTreasury: Zero address passed as _priceOracle");
         require(_zeroToken != address(0), "ZNSTreasury: Zero address passed as _zeroToken");
 
-        // TODO: change from mock
+        // TODO: change from mock and uncomment oracle
         zeroToken = IZeroTokenMock(_zeroToken);
-        priceOracle = IPriceOracle(_priceOracle);
+//        priceOracle = IPriceOracle(_priceOracle);
 
         // TODO:    switch to ZNSPriceOracle call
         //          we need this here for the prototype testing only! remove when ready
-        priceOracle__prices[_length] = _price;
+        priceOracle__prices[6] = 512 * 10**18;
     }
 
     function stakeForDomain(
         bytes32 domainHash,
-        string domainName,
+        string calldata domainName,
         address depositor,
         bool useFee
     ) external onlyRegistrar {
         // TODO:    there should probably be storage structure on PriceOracle for subdomain prices
         //          that is separate from root domains
         // get prices and fees
-        uint256 stakeAmount = priceOracle__prices[domainName.length];
+        uint256 stakeAmount = priceOracle__prices[bytes(domainName).length]; // TODO: fix this with correct method!!!
 
         // take the payment as a staking deposit
         // TODO: should we transfer both price and fee here or can we burn deflationFee without transfer ??
@@ -83,25 +86,25 @@ contract ZNSTreasury is IZNSTreasury {
 
     function unstakeForDomain(bytes32 domainHash, address owner) external onlyRegistrar {
         uint256 stakeAmount = domainStakes[domainHash];
-        delete stakes[domainHash];
+        delete domainStakes[domainHash];
 
         zeroToken.transfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
-    function getStakedAmountForDomain(bytes32 domainHash) public returns (uint256) {
+    function getStakedAmountForDomain(bytes32 domainHash) public view returns (uint256) {
         return domainStakes[domainHash];
     }
 
     function setZnsRegistrar(address _znsRegistrar) external { // onlyAdmin { TODO: add access control !!
         require(_znsRegistrar != address(0), "ZNSTreasury: Zero address passed as _znsRegistrar");
 
-        znsRegistrar = _znsRegistrar;
+        znsRegistrar = IZNSEthRegistrar(_znsRegistrar);
         emit ZNSRegistrarSet(_znsRegistrar);
     }
 
-    function getZnsRegistrar() external returns (address) {
+    function getZnsRegistrar() external view returns (address) {
         return address(znsRegistrar);
     }
 }

@@ -7,6 +7,7 @@ import "./mocks/IZeroTokenMock.sol";
 import "./IZNSRegistry.sol";
 import "./IZNSDomainToken.sol";
 import "./IZNSEthRegistrar.sol";
+import "./IZNSTreasury.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
@@ -33,9 +34,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     constructor(
         address _znsRegistry,
         address _znsTreasury,
-        address _znsDomainToken,
-        uint256 _length,
-        uint256 _price
+        address _znsDomainToken
     ) {
         // TODO: consider removing require messsages altogether. what would we have instead?
         require(_znsRegistry != address(0), "ZNSEthRegistrar: Zero address passed as _znsRegistry");
@@ -47,7 +46,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         znsDomainToken = IZNSDomainToken(_znsDomainToken);
     }
 
-    function hashWithParent(bytes32 parentHash, string name) public pure returns (bytes32) {
+    function hashWithParent(bytes32 parentHash, string calldata name) public pure returns (bytes32) {
         return keccak256(
             abi.encodePacked(
                 parentHash,
@@ -58,7 +57,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
     // TODO:    Do we only allow address type of content here? How do we set other types here?
     //          Would we need to do separate calls from a wallet to a certain Resolver after we've registered a domain?
-    function registerRootDomain(string name, address resolver, address domainContent) external returns (bytes32) {
+    function registerRootDomain(string calldata name, address resolver, address domainAddress) external returns (bytes32) {
         // TODO:    are we doing commit-reveal here? if so, split this function
 
         // generate hashes for the new domain
@@ -75,7 +74,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         //          by outsourcing the ZNSRegistry call to the DomainToken?
         //          will it actually help?..
 
-         znsDomainToken.mint(msg.sender, tokenId);
+         znsDomainToken.register(msg.sender, tokenId);
 
         // set data on Registry and Resolver storage
         _setDomainData(domainHash, msg.sender, resolver, domainAddress);
@@ -91,7 +90,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
     function registerSubdomain(
         bytes32 parentHash,
-        string name,
+        string calldata name,
         address registrant,
         address resolver,
         address domainAddress
@@ -163,7 +162,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
             znsRegistry.setDomainRecord(domainHash, owner, resolver);
 
             // TODO: fix this once Resolvers are finalized
-            if (domainAddress != address(0)) Resolver(resolver).setAddress(domainHash, domainAddress);
+//            if (domainAddress != address(0)) Resolver(resolver).setAddress(domainHash, domainAddress);
         }
     }
 }

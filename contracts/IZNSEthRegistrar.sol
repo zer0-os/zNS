@@ -9,15 +9,15 @@ interface IZNSEthRegistrar {
     event SubdomainRegistered(bytes32 indexed domainHash, bytes32 indexed parentHash, string name, address indexed registrant);
     event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
-    function hashWithParent(bytes32 parentHash, string name) external pure returns (bytes32);
+    function hashWithParent(bytes32 parentHash, string calldata name) external pure returns (bytes32);
 
-    function registerRootDomain(string name, address resolver, address domainContent) external returns (bytes32);
+    function registerRootDomain(string calldata name, address resolver, address domainContent) external returns (bytes32);
 
     function approveSubdomain(bytes32 parentHash, address subdomainOwner) external;
 
     function registerSubdomain(
         bytes32 parentHash,
-        string name,
+        string calldata name,
         address beneficiary,
         address resolver,
         address domainAddress

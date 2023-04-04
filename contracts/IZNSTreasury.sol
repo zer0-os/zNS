@@ -20,14 +20,14 @@ interface IZNSTreasury {
 
     function stakeForDomain(
         bytes32 domainHash,
-        string name,
+        string calldata name,
         address depositor,
         bool useFee
     ) external;
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;
 
-    function getStakedAmountForDomain(bytes32 domainHash) public returns (uint256);
+    function getStakedAmountForDomain(bytes32 domainHash) external returns (uint256);
 
     function setZnsRegistrar(address _znsRegistrar) external;
 

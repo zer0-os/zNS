@@ -2,6 +2,8 @@
   "name": "zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
+  "author": "Zero CPT",
+  "license": "ISC",
   "engines": {
     "node": ">=18",
     "npm": ">=9"
@@ -13,8 +15,6 @@
     "typechain": "hardhat typechain",
     "test": "hardhat test"
   },
-  "author": "Zero CPT",
-  "license": "ISC",
   "devDependencies": {
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",

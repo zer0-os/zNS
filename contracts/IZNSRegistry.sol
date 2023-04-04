@@ -71,7 +71,7 @@ interface IZNSRegistry {
    * @param domainNameHash The identifying hash of a domain's name
    * @param candidate The address for which we are checking access
    */
-  function isOwnerOrOperator(bytes32 domainNameHash, address candidate) public view returns (bool);
+  function isOwnerOrOperator(bytes32 domainNameHash, address candidate) external view returns (bool);
 
   /**
    * @dev Set an `operator` as `allowed` to give or remove permissions for all
@@ -111,6 +111,8 @@ interface IZNSRegistry {
     address owner,
     address resolver
   ) external;
+
+  function deleteDomainRecord(bytes32 domainNameHash) external;
 
   /**
    * @dev Set or create a subdomain record
