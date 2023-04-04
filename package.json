@@ -28,6 +28,7 @@
     "@typechain/hardhat": "6.1.2",
     "@types/chai": "4.2.0",
     "@types/mocha": "9.1.0",
+    "@semantic-release/git": "^10.0.1",
     "chai": "4.2.0",
     "ethers": "5.4.7",
     "hardhat": "2.13.0",
