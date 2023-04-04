@@ -20,8 +20,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSTreasury public znsTreasury;
     IZNSDomainToken public znsDomainToken; // TODO: add token here when ready along with import
 
-    mapping(bytes32 => uint256) private stakes;
-
     mapping(bytes32 => address) private subdomainApprovals;
 
     // TODO: add events
