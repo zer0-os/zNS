@@ -84,8 +84,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         return domainHash;
     }
 
-    function approveSubdomain(bytes32 parentHash, address subdomainOwner) external onlyOwner(parentHash) {
-        subdomainApprovals[parentHash] = subdomainOwner;
+    function approveSubdomain(bytes32 parentHash, address ownerCandidate) external onlyOwner(parentHash) {
+        subdomainApprovals[parentHash] = ownerCandidate;
+        emit SubdomainApproved(parentHash, ownerCandidate);
     }
 
     function registerSubdomain(
