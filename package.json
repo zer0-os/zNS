@@ -2,6 +2,7 @@
   "name": "zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
+  "repository": "https://github.com/zer0-os/zNS.git",
   "engines": {
     "node": ">=18",
     "npm": ">=9"
