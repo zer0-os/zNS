@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-// TODO: change for the actual ZeroToken when ready
-// TODO: adapt ZeroToken Interface
-import "./mocks/IZeroTokenMock.sol";
-import "./IZNSRegistry.sol";
-import "./IZNSDomainToken.sol";
 import "./IZNSEthRegistrar.sol";
+import "../registry/IZNSRegistry.sol";
 import "./IZNSTreasury.sol";
+import "../token/IZNSDomainToken.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
@@ -72,7 +69,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         //          by outsourcing the ZNSRegistry call to the DomainToken?
         //          will it actually help?..
 
-         znsDomainToken.register(msg.sender, tokenId);
+        znsDomainToken.register(msg.sender, tokenId);
 
         // set data on Registry and Resolver storage
         _setDomainData(domainHash, msg.sender, resolver, domainAddress);
@@ -161,7 +158,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
             znsRegistry.setDomainRecord(domainHash, owner, resolver);
 
             // TODO: fix this once Resolvers are finalized
-//            if (domainAddress != address(0)) Resolver(resolver).setAddress(domainHash, domainAddress);
+            //            if (domainAddress != address(0)) Resolver(resolver).setAddress(domainHash, domainAddress);
         }
     }
 }
