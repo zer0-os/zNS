@@ -35,7 +35,9 @@ workflows:
       - test:
           filters:
             branches:
-              ignore: main, circleci-project-setup
+              ignore: 
+                - main
+                - circleci-project-setup
   development:
     jobs:
       - test:
