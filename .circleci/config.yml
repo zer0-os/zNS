@@ -46,6 +46,8 @@ workflows:
                 - main
                 - develop
       - coverage:
+          requires:
+            - test
           filters:
             branches:
               ignore: 
