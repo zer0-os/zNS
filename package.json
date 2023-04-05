@@ -13,6 +13,7 @@
     "build": "yarn run clean && yarn run compile",
     "typechain": "hardhat typechain",
     "test": "hardhat test",
+    "semantic-release": "semantic-release --tag-format='dev-v${version}'",
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
   },
