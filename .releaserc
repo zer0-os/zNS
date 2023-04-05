@@ -1,6 +1,6 @@
 {
   "branches": [
-    "circleci-project-setup"
+    "development"
   ],
   "plugins": [
     "@semantic-release/commit-analyzer",

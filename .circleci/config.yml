@@ -16,7 +16,7 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
-      - run: yarn test
+      - run: yarn test # Validate Unit Tests Pass
       - persist_to_workspace:
           root: ~/repo
           paths: .
@@ -25,16 +25,20 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: yarn coverage
-      - run: yarn check-coverage
+      - run: 
+        name: Code Coverage Report
+        command: yarn coverage
+      - run: 
+        name: Validate Code Coverage Threshold
+        command: yarn check-coverage #Validate code is adequately covered by unit tests
   publish:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Execute Semantic Release
-          command: yarn semantic-release
+          name: Execute Semantic Release - Development
+          command: yarn semantic-release # Create a new Development Tag
 workflows:
   version: 2
   build:
@@ -44,8 +48,7 @@ workflows:
             branches:
               ignore: 
                 - main
-                - develop
-                - circleci-project-setup
+                - development
       - coverage:
           requires:
             - test
@@ -53,20 +56,19 @@ workflows:
             branches:
               ignore: 
                 - main
-                - develop
-                - circleci-project-setup
+                - development
   development:
     jobs:
       - test:
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
-              only: circleci-project-setup
+              only: development
       - coverage:
           requires:
             - test
           filters:
-            <<: *filters-development # this yaml anchor is setting these values to "filters-production"
+            <<: *filters-development # this is calling the previously set yaml anchor
       - publish:
           context: CPT
           requires:
