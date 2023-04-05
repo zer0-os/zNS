@@ -25,6 +25,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      - run: ls -l ~/repo
       - run: yarn coverage
       - run: yarn check-coverage
   publish:
