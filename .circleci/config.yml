@@ -25,7 +25,6 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: ls -l ~/repo
       - run: yarn coverage
       - run: yarn check-coverage
   publish:
@@ -60,6 +59,8 @@ workflows:
             branches:
               only: circleci-project-setup
       - coverage:
+          requires:
+            - test
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
@@ -68,5 +69,6 @@ workflows:
           context: CPT
           requires:
             - test
+            - coverage
           filters:
             <<: *filters-development # this is calling the previously set yaml anchor
