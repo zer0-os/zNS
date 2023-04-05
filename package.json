@@ -8,6 +8,7 @@
   },
   "scripts": {
     "compile": "hardhat compile",
+    "lint": "eslint ./test/**/*.ts",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",
     "typechain": "hardhat typechain",
@@ -15,7 +16,11 @@
   },
   "author": "Zero CPT",
   "license": "ISC",
+  "pre-commit": [
+    "lint"
+  ],
   "devDependencies": {
+    "@zero-tech/eslint-config-cpt": "0.1.0",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
@@ -29,6 +34,7 @@
     "@types/chai": "4.2.0",
     "@types/mocha": "9.1.0",
     "chai": "4.2.0",
+    "eslint": "^8.37.0",
     "ethers": "5.4.7",
     "hardhat": "2.13.0",
     "hardhat-gas-reporter": "1.0.8",
@@ -36,8 +42,7 @@
     "solidity-coverage": "0.8.1",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
-    "typescript": "5.0.2",
-    "eslint": "^8.37.0"
+    "typescript": "^5.0.2"
   },
   "dependencies": {
     "dotenv": "16.0.3"
