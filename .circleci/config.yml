@@ -44,27 +44,29 @@ workflows:
             branches:
               ignore: 
                 - main
-                - circleci-project-setup
-      - test:
+                - develop
+      - coverage:
+          requires:
+            - test
           filters:
             branches:
               ignore: 
                 - main
-                - circleci-project-setup
+                - develop
   development:
     jobs:
       - test:
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
-              only: circleci-project-setup
+              only: develop
       - coverage:
           requires:
             - test
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
-              only: circleci-project-setup
+              only: develop
       - publish:
           context: CPT
           requires:
