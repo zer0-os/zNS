@@ -20,6 +20,13 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths: .
+  coverage:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn coverage
+      - run: yarn check-coverage
   publish:
     <<: *defaults
     steps:
@@ -38,9 +45,20 @@ workflows:
               ignore: 
                 - main
                 - circleci-project-setup
+      - test:
+          filters:
+            branches:
+              ignore: 
+                - main
+                - circleci-project-setup
   development:
     jobs:
       - test:
+          filters:
+            &filters-development # this yaml anchor is setting these values to "filters-production"
+            branches:
+              only: circleci-project-setup
+      - coverage:
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
