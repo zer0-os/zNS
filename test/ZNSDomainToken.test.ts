@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { ZNSDomainToken, ZNSDomainToken__factory } from "../typechain";
+import { ZNSDomainToken } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";

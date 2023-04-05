@@ -3,6 +3,7 @@ import {
   ZNSDomainToken__factory,
   ZNSEthRegistrar__factory,
   ZNSRegistry__factory,
+  ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -38,17 +39,25 @@ export const deployTreasury = async (
 
 export const deployRegistrar = async ({
   deployer,
+  treasury,
   registryAddress,
-  treasuryAddress,
   domainTokenAddress,
 }: {
   deployer: SignerWithAddress;
+  treasury: ZNSTreasury;
   registryAddress: string;
-  treasuryAddress: string;
   domainTokenAddress: string;
 }) => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
-  return registrarFactory.deploy(registryAddress, treasuryAddress, domainTokenAddress);
+  const registrar = await registrarFactory.deploy(
+    registryAddress,
+    treasury.address,
+    domainTokenAddress
+  );
+
+  await treasury.connect(deployer).setZnsRegistrar(registrar.address);
+
+  return registrar;
 };
 
 export const deployZNS = async (deployer: SignerWithAddress) => {
@@ -62,8 +71,8 @@ export const deployZNS = async (deployer: SignerWithAddress) => {
 
   const registrar = await deployRegistrar({
     deployer,
+    treasury,
     registryAddress: registry.address,
-    treasuryAddress: treasury.address,
     domainTokenAddress: domainToken.address,
   });
 

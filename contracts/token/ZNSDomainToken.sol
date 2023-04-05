@@ -6,6 +6,7 @@ import {IZNSDomainToken} from "./IZNSDomainToken.sol";
 
 ///@title A contract for tokenizing domains under the ZNS Architecture
 contract ZNSDomainToken is ERC721, IZNSDomainToken {
+  // TODO: change for proper name !
   constructor() ERC721("ZNSDomainToken", "ZDT") {}
 
   ///@notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
