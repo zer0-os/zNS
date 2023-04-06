@@ -20,7 +20,7 @@
     "lint"
   ],
   "devDependencies": {
-    "@zero-tech/eslint-config-cpt": "0.1.0",
+    "@zero-tech/eslint-config-cpt": "0.2.2",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
