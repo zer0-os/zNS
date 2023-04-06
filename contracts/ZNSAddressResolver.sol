@@ -5,14 +5,12 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./IZNSAddressResolver.sol";
 import "./IZNSRegistry.sol";
 
-contract ZNSAddressResolver is IZNSAddressResolver {
-  bytes4 internal resolverInterfaceId; /// @notice erc-165 interface ID, calculated in constructor
+contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
   IZNSRegistry public registry; /// @notice IZNSRegistry
   mapping(bytes32 => address) private addressOf; /// @notice mapping of domain hash to address
 
   constructor(IZNSRegistry _registry) {
     registry = _registry;
-    resolverInterfaceId = calculateSelector();
   }
 
   /**
@@ -52,22 +50,20 @@ contract ZNSAddressResolver is IZNSAddressResolver {
 
   /**
    * @dev ERC-165 check for implementation identifier
-   * @param interfaceId ID to check
+   * @dev Supports interfaces IZNSAddressResolver and IERC165
+   * @param interfaceId ID to check, XOR of the first 4 bytes of each function signature
    */
-  function supportsInterface(bytes4 interfaceId) external view returns (bool) {
-    return interfaceId == resolverInterfaceId;
+  function supportsInterface(
+    bytes4 interfaceId
+  ) public view virtual override(ERC165, IZNSAddressResolver) returns (bool) {
+    return
+      interfaceId == getInterfaceId() || super.supportsInterface(interfaceId);
   }
 
   /**
-   * @dev Calculate the erc165 interfaceID
-   * XOR of the function selectors, which are the first 4 bytes of the keccak256 hash of the function signatures
+   * @dev Exposes IZNSAddressResolver interfaceId
    */
-  function calculateSelector() public pure returns (bytes4) {
-    bytes4 getAddressSelector = bytes4(keccak256("getAddress(bytes32)"));
-    bytes4 setAddressSelector = bytes4(
-      keccak256("setAddress(bytes32,address)")
-    );
-
-    return getAddressSelector ^ setAddressSelector;
+  function getInterfaceId() public pure returns (bytes4) {
+    return type(IZNSAddressResolver).interfaceId;
   }
 }

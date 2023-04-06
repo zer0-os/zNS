@@ -45,10 +45,12 @@ describe("ZNSAddressResolver", function () {
         const someDomainHash = hre.ethers.utils.id("random-record");
         const notExistResolver = await znsRegistry.getDomainResolver(someDomainHash);
         expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
-    })
+    });
+
     it("Should have registry address correctly set", async function () {
         expect(await znsAddressResolver.registry()).to.equal(znsRegistry.address);
     });
+
     it("Should not allow non-owner address to setAddress", async function () {
         await expect(znsAddressResolver.connect(addr1).setAddress(wilderDomainNameHash, addr1.address)).to.be.revertedWith("ZNS: Not allowed");
     });
@@ -63,9 +65,10 @@ describe("ZNSAddressResolver", function () {
         const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
         expect(resolvedAddress).to.equal(addr1.address);
     });
-    it("Should support its own calculated interface ID", async function () {
-        const selector = znsAddressResolver.calculateSelector();
-        const supported = await znsAddressResolver.supportsInterface(selector);
+
+    it("Should support the IZNSAddressResolver interface ID", async function () {
+        const interfaceId = await znsAddressResolver.getInterfaceId();
+        const supported = await znsAddressResolver.supportsInterface(interfaceId);
         expect(supported).to.be.true;
     });
 
