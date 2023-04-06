@@ -44,11 +44,7 @@ contract ZNSAddressResolver is IZNSAddressResolver {
   function setAddress(
     bytes32 domainNameHash,
     address newAddress
-<<<<<<< HEAD
-  ) external onlyRegistry {
-=======
   ) external onlyOwnerOrOperator(domainNameHash) {
->>>>>>> MUD-188/AddressResolver
     addressOf[domainNameHash] = newAddress;
 
     emit AddressSet(domainNameHash, newAddress);
@@ -58,10 +54,6 @@ contract ZNSAddressResolver is IZNSAddressResolver {
    * @dev ERC-165 check for implementation identifier
    * @param interfaceId ID to check
    */
-<<<<<<< HEAD
-  function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
-    return interfaceId == RESOLVER_INTERFACE_ID;
-=======
   function supportsInterface(bytes4 interfaceId) external view returns (bool) {
     return interfaceId == resolverInterfaceId;
   }
@@ -77,6 +69,5 @@ contract ZNSAddressResolver is IZNSAddressResolver {
     );
 
     return getAddressSelector ^ setAddressSelector;
->>>>>>> MUD-188/AddressResolver
   }
 }
