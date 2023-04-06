@@ -26,11 +26,11 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: 
-        name: Code Coverage Report
-        command: yarn coverage
+          name: Code Coverage Report
+          command: yarn coverage
       - run: 
-        name: Validate Code Coverage Threshold
-        command: yarn check-coverage #Validate code is adequately covered by unit tests
+          name: Validate Code Coverage Threshold
+          command: yarn check-coverage #Validate code is adequately covered by unit tests
   publish:
     <<: *defaults
     steps:
