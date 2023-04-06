@@ -31,6 +31,7 @@
     "@openzeppelin/contracts-upgradeable": "4.8.2",
     "@typechain/ethers-v5": "10.1.0",
     "@typechain/hardhat": "6.1.2",
+    "@types/node": "^18.15.11",
     "@types/chai": "4.2.0",
     "@types/mocha": "9.1.0",
     "chai": "4.2.0",
