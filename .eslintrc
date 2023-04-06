@@ -4,6 +4,12 @@
     {
       "files": ["src/**/*.ts", "test/**/*.ts"],
       "extends": ["@zero-tech/eslint-config-cpt/node-ts/.eslintrc.json"]
+    },
+    {
+      "files": ["*.test.ts"],
+      "rules": {
+        "no-unused-expressions": "off"
+      }
     }
   ]
 }
