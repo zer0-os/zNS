@@ -38,7 +38,13 @@ describe('ZNSRegistry Tests', () => {
     await registry.connect(deployer).initialize(deployer.address);
 
     // Create a first domain from the base domain
-    await registry.connect(deployer).setSubdomainRecord(rootDomainHash, wilderLabel, deployer.address, mockResolver.address);
+    await registry.connect(deployer)
+      .setSubdomainRecord(
+        rootDomainHash,
+        wilderLabel,
+        deployer.address,
+        mockResolver.address
+      );
   });
 
   // a valid operator can change the owner of a domain, is this wanted?
@@ -140,9 +146,19 @@ describe('ZNSRegistry Tests', () => {
       // In order to set a subdomain, the caller must be the owner of the parent domain
       const zeroLabel = hre.ethers.utils.id('zero');
 
-      await registry.connect(deployer).setSubdomainRecord(wilderSubdomainHash, zeroLabel, deployer.address, mockResolver.address);
+      await registry.connect(deployer)
+        .setSubdomainRecord(
+          wilderSubdomainHash,
+          zeroLabel,
+          deployer.address,
+          mockResolver.address
+        );
 
-      const zeroDomainHash = hre.ethers.utils.solidityKeccak256(['bytes32', 'bytes32'], [wilderSubdomainHash, zeroLabel]);
+      const zeroDomainHash = hre.ethers.utils
+        .solidityKeccak256(
+          ['bytes32', 'bytes32'],
+          [wilderSubdomainHash, zeroLabel]
+        );
       const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
       expect(zeroOwner).to.eq(deployer.address);
     });
@@ -150,7 +166,13 @@ describe('ZNSRegistry Tests', () => {
     it('Fails to set a subdomain record because caller is not the owner of the parent domain', async () => {
       const zeroLabel = hre.ethers.utils.id('zero');
 
-      const tx = registry.connect(operator).setSubdomainRecord(wilderSubdomainHash, zeroLabel, deployer.address, mockResolver.address);
+      const tx = registry.connect(operator)
+        .setSubdomainRecord(
+          wilderSubdomainHash,
+          zeroLabel,
+          deployer.address,
+          mockResolver.address
+        );
       await expect(tx).to.be.revertedWith('ZNS: Not allowed');
     });
 
@@ -159,7 +181,12 @@ describe('ZNSRegistry Tests', () => {
       // Any additional root domains would fail because they are checked for owner,
       // but because that owner can't exist as the record doesn't exist yet, it fails
       const domainHash = hre.ethers.utils.id('random-record');
-      const tx = registry.connect(deployer).setDomainRecord(domainHash, operator.address, mockResolver.address);
+      const tx = registry.connect(deployer)
+        .setDomainRecord(
+          domainHash,
+          operator.address,
+          mockResolver.address
+        );
       await expect(tx).to.be.revertedWith('ZNS: Not allowed');
     });
   });
