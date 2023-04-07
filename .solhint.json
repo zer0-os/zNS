@@ -10,7 +10,6 @@
     "no-complex-fallback": "off",
     "reason-string": "off",
     "func-visibility": ["warn", {"ignoreConstructors": true}],
-    "constructor-syntax": "warn",
-    "named-parameters-mapping": "error"
+    "constructor-syntax": "warn"
   }
 }
