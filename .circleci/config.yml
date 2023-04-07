@@ -47,7 +47,6 @@ workflows:
           filters:
             branches:
               ignore: 
-                - main
                 - development
       - coverage:
           requires:
@@ -55,7 +54,6 @@ workflows:
           filters:
             branches:
               ignore: 
-                - main
                 - development
   development:
     jobs:
