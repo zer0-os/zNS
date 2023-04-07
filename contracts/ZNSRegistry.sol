@@ -10,13 +10,13 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @dev Mapping `domainNameHash` to `DomainRecord` struct to hold information
    * about each domain
    */
-  mapping(bytes32 domainHash => DomainRecord record) private records;
+  mapping(bytes32 => DomainRecord) private records;
 
   /**
    * @dev Mapping of `owner` => `operator` => `bool` to show accounts that
    * are or aren't allowed access to domains that `owner` has access to.
    */
-  mapping(address owner => mapping(address operator => bool)) private operators;
+  mapping(address => mapping(address => bool)) private operators;
 
   /**
    * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
