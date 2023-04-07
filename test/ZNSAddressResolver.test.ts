@@ -59,6 +59,10 @@ describe("ZNSAddressResolver", function () {
         await expect(znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, addr1.address)).to.emit(znsAddressResolver, "AddressSet").withArgs(wilderDomainNameHash, addr1.address);
     });
 
+    it("Should not allow owner to setAddress(0)", async function () {
+        await expect(znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, hre.ethers.constants.AddressZero)).to.be.revertedWith("ZNS: Cant set address to 0");
+    });
+
     it("Should resolve address correctly", async function () {
         await znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, addr1.address);
 

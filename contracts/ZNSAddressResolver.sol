@@ -7,7 +7,7 @@ import "./IZNSRegistry.sol";
 
 contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
   IZNSRegistry public registry; /// @notice IZNSRegistry
-  mapping(bytes32 => address) private addressOf; /// @notice mapping of domain hash to address
+  mapping(bytes32 domainNameHash => address resolvedAddress) private addressOf; /// @notice mapping of domain hash to address
 
   constructor(IZNSRegistry _registry) {
     registry = _registry;
@@ -43,6 +43,8 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     bytes32 domainNameHash,
     address newAddress
   ) external onlyOwnerOrOperator(domainNameHash) {
+    require(newAddress != address(0), "ZNS: Cant set address to 0");
+
     addressOf[domainNameHash] = newAddress;
 
     emit AddressSet(domainNameHash, newAddress);
