@@ -2,6 +2,7 @@
   "name": "zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
+  "repository": "https://github.com/zer0-os/zNS.git",
   "engines": {
     "node": ">=18",
     "npm": ">=9"
@@ -14,7 +15,10 @@
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",
     "typechain": "hardhat typechain",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "semantic-release": "semantic-release --tag-format='v${version}-dev'",
+    "coverage": "hardhat coverage",
+    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
   },
   "author": "Zero CPT",
   "license": "ISC",
@@ -31,6 +35,7 @@
     "@nomiclabs/hardhat-etherscan": "3.0.0",
     "@openzeppelin/contracts": "4.8.2",
     "@openzeppelin/contracts-upgradeable": "4.8.2",
+    "@semantic-release/git": "^10.0.1",
     "@typechain/ethers-v5": "10.1.0",
     "@typechain/hardhat": "6.1.2",
     "@types/node": "^18.15.11",
@@ -42,7 +47,8 @@
     "hardhat": "2.13.0",
     "hardhat-gas-reporter": "1.0.8",
     "logdown": "3.3.1",
-    "solidity-coverage": "0.8.1",
+    "semantic-release": "^21.0.1",
+    "solidity-coverage": "^0.8.2",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
     "typescript": "^5.0.2",

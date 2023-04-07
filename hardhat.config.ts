@@ -6,6 +6,7 @@ import '@nomicfoundation/hardhat-toolbox';
 import '@nomiclabs/hardhat-ethers';
 import '@nomicfoundation/hardhat-network-helpers';
 import '@nomicfoundation/hardhat-chai-matchers';
+import 'solidity-coverage';
 
 const config : HardhatUserConfig = {
   solidity: {
