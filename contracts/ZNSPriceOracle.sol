@@ -18,10 +18,18 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   /**
    * @notice The price multiplier used in calculation for a given domain name's length
-   * Note, 3.9 is an arbitrary choice to use as a multiplier. I used it because it created
-   * a reasonable decline in pricing form visually when graphed.
+   * @dev 3.9 is an arbitrary choice to use as a multiplier. I used it because it created
+   * a reasonable decline in pricing visually when graphed.
    */
-  uint priceMultiplier = 39 * 10 ** 17;
+  // ufixed public priceMultiplier = 3.9;
+  uint public priceMultiplier = 39;
+
+  /**
+   * @notice The base domain name length is used in pricing to identify domains
+   * that should recieve the default base price for that type of domain or not.
+   * Domains that are `<= baseLength` will receive the default base price.
+   */
+  uint8 public baseLength = 3;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -48,9 +56,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   ) public initializer {
     rootDomainBasePrice = rootDomainBasePrice_;
     subdomainBasePrice = subdomainBasePrice_;
-
     znsRegistrar = znsRegistrar_;
-
     authorized[msg.sender] = true;
     authorized[znsRegistrar_] = true;
   }
@@ -58,19 +64,19 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   /**
    * @notice Get the price of a given domain name length
    * @param length The length of the name to check
-   * @param isSubdomain Flag for which base price to use
+   * @param isRootDomain Flag for which base price to use. True for subdomain, false for root.
    */
   function getPrice(
     uint8 length,
-    bool isSubdomain
+    bool isRootDomain
   ) external view returns (uint) {
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
 
-    if (isSubdomain) {
-      return _getPrice(length, subdomainBasePrice);
-    } else {
+    if (isRootDomain) {
       return _getPrice(length, rootDomainBasePrice);
+    } else {
+      return _getPrice(length, subdomainBasePrice);
     }
   }
 
@@ -79,19 +85,19 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * If this value or the `priceMultiplier` value is `0` the price of any domain will also be `0`
    *
    * @param basePrice The price to set in $ZERO
-   * @param isSubdomain Flag for if the price is to be set for a root or subdomain
+   * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
   function setBasePrice(
     uint basePrice,
-    bool isSubdomain
+    bool isRootDomain
   ) external onlyAuthorized {
-    if (isSubdomain) {
-      subdomainBasePrice = basePrice;
-    } else {
+    if (isRootDomain) {
       rootDomainBasePrice = basePrice;
+    } else {
+      subdomainBasePrice = basePrice;
     }
 
-    emit BasePriceSet(basePrice, isSubdomain);
+    emit BasePriceSet(basePrice, isRootDomain);
   }
 
   /**
@@ -105,6 +111,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     priceMultiplier = multiplier;
 
     emit PriceMultiplierSet(multiplier);
+  }
+
+  /**
+   * @notice Set the value of the domain name length boundary where the default price applies
+   * e.g. A value of '5' means all domains <= 5 in length cost the default price
+   * @param length Boundary to set
+   */
+  function setBaseLength(uint8 length) external onlyAuthorized {
+    baseLength = length;
+
+    emit BaseLengthSet(length);
   }
 
   /**
@@ -126,12 +143,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint8 length,
     uint basePrice
   ) internal view returns (uint) {
-    if (length <= 3) return basePrice;
+    if (length <= baseLength) return basePrice;
 
     // TODO truncate to everything after the decimal, we don't want fractional prices
+    // Should this be here vs. in the dApp?
 
-    // The price function is `price = (basePrice * 3.9) / length`
-    // This creates an asymptotic curve that decreases in pricing base on length
-    return (basePrice * priceMultiplier) / length;
+    // This creates an asymptotic curve that decreases in pricing based on domain name length
+    // Because there are no decimals in ETH we set the muliplier as an order of magnitutde 
+    // higher than it is meant to be, so we divide by 10 to reverse that action.
+    return (priceMultiplier * basePrice) / length / 10;
   }
 }
