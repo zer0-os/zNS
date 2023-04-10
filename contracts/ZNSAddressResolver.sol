@@ -6,8 +6,16 @@ import "./IZNSAddressResolver.sol";
 import "./IZNSRegistry.sol";
 
 contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
-  IZNSRegistry public registry; /// @notice IZNSRegistry
-  mapping(bytes32 domainNameHash => address resolvedAddress) private addressOf; /// @notice mapping of domain hash to address
+  /**
+   * @notice Address of the ZNSRegistry contract that holds all crucial data
+   *         for every domain in the system
+  */
+  IZNSRegistry public registry;
+  /**
+   * @notice Mapping of domain hash to address used to bind domains
+   *         to Ethereum wallets or contracts registered in ZNS
+  */
+  mapping(bytes32 domainNameHash => address resolvedAddress) private addressOf;
 
   constructor(IZNSRegistry _registry) {
     registry = _registry;
