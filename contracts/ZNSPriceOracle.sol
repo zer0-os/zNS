@@ -18,18 +18,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   /**
    * @notice The price multiplier used in calculation for a given domain name's length
-   * @dev 3.9 is an arbitrary choice to use as a multiplier. I used it because it created
-   * a reasonable decline in pricing visually when graphed.
+   * Note 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use 
+   * it here because it creates a reasonable decline in pricing visually when graphed.
    */
-  // ufixed public priceMultiplier = 3.9;
-  uint public priceMultiplier = 39;
+  uint public priceMultiplier;
 
   /**
    * @notice The base domain name length is used in pricing to identify domains
    * that should recieve the default base price for that type of domain or not.
    * Domains that are `<= baseLength` will receive the default base price.
    */
-  uint8 public baseLength = 3;
+  uint8 public baseLength;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -38,6 +37,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   /**
    * @notice Track authorized users or contracts
+   * TODO access control
    */
   mapping(address => bool) public authorized;
 
@@ -52,11 +52,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function initialize(
     uint rootDomainBasePrice_,
     uint subdomainBasePrice_,
+    uint priceMultiplier_,
+    uint8 baseLength_,
     address znsRegistrar_
   ) public initializer {
     rootDomainBasePrice = rootDomainBasePrice_;
     subdomainBasePrice = subdomainBasePrice_;
-    znsRegistrar = znsRegistrar_;
+    priceMultiplier = priceMultiplier_;
+    baseLength = baseLength_;
+
+    _setZNSRegistrar(znsRegistrar_);
+    
     authorized[msg.sender] = true;
     authorized[znsRegistrar_] = true;
   }
@@ -64,7 +70,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   /**
    * @notice Get the price of a given domain name length
    * @param length The length of the name to check
-   * @param isRootDomain Flag for which base price to use. True for subdomain, false for root.
+   * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
    */
   function getPrice(
     uint8 length,
@@ -125,6 +131,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   }
 
   /**
+   * @notice Set the ZNSRegistrar for this contract
+   * @param registrar The registrar to set
+   */
+  function setZNSRegistrar(address registrar) external onlyAuthorized {
+    _setZNSRegistrar(registrar);
+  }
+
+  /**
    * @notice Return true if a user is authorized, otherwise false
    * @param user The user to check
    */
@@ -152,5 +166,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     // Because there are no decimals in ETH we set the muliplier as an order of magnitutde 
     // higher than it is meant to be, so we divide by 10 to reverse that action.
     return (priceMultiplier * basePrice) / length / 10;
+  }
+
+  /**
+   * @notice Set the ZNSRegistrar for this contract
+   * @param registrar The address to update
+   */
+  function _setZNSRegistrar(address registrar) internal {
+    require(registrar != address(0), "ZNS: Zero address for Registrar");
+    znsRegistrar = registrar;
   }
 }

@@ -22,7 +22,16 @@ describe("ZNSPriceOracle", () => {
     factory = new ZNSPriceOracle__factory(deployer);
     contract = await factory.deploy();
 
-    await contract.initialize(priceForRootDomain, priceForSubdomain, mockRegistrar.address);
+    const priceMultiplier = BigNumber.from("39");
+    const baseLength = 3;
+
+    await contract.initialize(
+      priceForRootDomain,
+      priceForSubdomain,
+      priceMultiplier,
+      baseLength,
+      mockRegistrar.address
+    );
   });
 
   it("Confirms the mockRegistrar is authorized", async () => {
@@ -166,7 +175,7 @@ describe("ZNSPriceOracle", () => {
       expect(updatedMultiplier).to.eq(newMultiplier);
     });
 
-    it("Disallows an unauthorized user to set the base price", async () => {
+    it("Disallows an unauthorized user to set the price multiplier", async () => {
       const newMultiplier = BigNumber.from("25");
 
       const tx = contract.connect(user).setPriceMultipler(newMultiplier);
@@ -193,7 +202,7 @@ describe("ZNSPriceOracle", () => {
       expect(updatedBoundary).to.eq(newBoundary);
     });
 
-    it("Disallows an unauthorized user to set the base price", async () => {
+    it("Disallows an unauthorized user to set the base length", async () => {
       const newBoundary = 5;
 
       const tx = contract.connect(user).setBaseLength(newBoundary);
