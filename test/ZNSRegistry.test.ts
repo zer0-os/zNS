@@ -16,6 +16,7 @@ require('@nomicfoundation/hardhat-chai-matchers');
 describe('ZNSRegistry Tests', () => {
   let deployer: SignerWithAddress;
   let operator: SignerWithAddress;
+  let randomUser: SignerWithAddress;
 
   // ZNSResolver has not been created, but an address will be equivalent for now
   let mockResolver: SignerWithAddress;
@@ -26,10 +27,12 @@ describe('ZNSRegistry Tests', () => {
   const wilderLabel = hre.ethers.utils.id('wilder');
 
   // Wilder subdomain hash created in `setSubdomainRecord` call to `setSubdomainOwner`
+  // TODO:  change all the calls for hashing in all the tests to use ENS `namehash` lib
+  //        that checks and validates strings before hashing
   const wilderSubdomainHash = hre.ethers.utils.solidityKeccak256(['bytes32', 'bytes32'], [rootDomainHash, wilderLabel]);
 
   beforeEach(async () => {
-    [deployer, operator, mockResolver] = await hre.ethers.getSigners();
+    [deployer, operator, randomUser, mockResolver] = await hre.ethers.getSigners();
 
     const registryFactory = new ZNSRegistry__factory(deployer);
     registry = await registryFactory.deploy();
@@ -90,6 +93,19 @@ describe('ZNSRegistry Tests', () => {
   });
 
   describe('Domain and subdomain records', async () => {
+    it('Checks existence of a domain correctly', async () => {
+      const exists = await registry.connect(randomUser).exists(wilderSubdomainHash);
+      expect(exists).to.be.true;
+
+      const nonExistentDomainHash = hre.ethers.utils
+        .solidityKeccak256(
+          ['bytes32'],
+          [hre.ethers.utils.id('wild')]
+        );
+      const notExists = await registry.connect(randomUser).exists(nonExistentDomainHash);
+      expect(notExists).to.be.false;
+    });
+
     it('Gets a domain record', async () => {
       // Domain exists
       const rootRecord = await registry.getDomainRecord(rootDomainHash);
