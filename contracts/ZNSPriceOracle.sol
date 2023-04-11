@@ -39,7 +39,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @notice Track authorized users or contracts
    * TODO access control
    */
-  mapping(address => bool) public authorized;
+  mapping(address user => bool isAuthorized) public authorized;
 
   /**
    * @notice Restrict a function to only be callable by authorized users

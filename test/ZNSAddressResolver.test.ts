@@ -4,7 +4,7 @@ import {
   ZNSRegistry__factory,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
-  IERC165__factory, ERC165__factory,
+  ERC165__factory,
 } from '../typechain';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
@@ -17,12 +17,12 @@ const { expect } = require('chai');
  * Consider moving these tests to ZNSRegistry since they deploy a registry.
  */
 describe('ZNSAddressResolver', () => {
-  let deployer : SignerWithAddress;
-  let znsAddressResolver : ZNSAddressResolver;
-  let znsRegistry : ZNSRegistry;
-  let owner : SignerWithAddress;
-  let addr1 : SignerWithAddress;
-  let operator : SignerWithAddress;
+  let deployer: SignerWithAddress;
+  let znsAddressResolver: ZNSAddressResolver;
+  let znsRegistry: ZNSRegistry;
+  let owner: SignerWithAddress;
+  let addr1: SignerWithAddress;
+  let operator: SignerWithAddress;
   const rootDomainHash = hre.ethers.constants.HashZero;
   const wilderLabel = hre.ethers.utils.id('wilder');
   const wilderDomainNameHash = hre.ethers.utils

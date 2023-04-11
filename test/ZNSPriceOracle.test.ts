@@ -2,7 +2,9 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
+import { PriceOracleConfig as ZNSPriceOracleConfig } from "./helpers/types";
+import { getPrice } from "./helpers";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -13,8 +15,13 @@ describe("ZNSPriceOracle", () => {
   let contract: ZNSPriceOracle;
   let factory: ZNSPriceOracle__factory;
 
-  const priceForRootDomain = hre.ethers.utils.parseEther("1");
-  const priceForSubdomain = hre.ethers.utils.parseEther("0.2");
+  const config: ZNSPriceOracleConfig = {
+    rootDomainPrice: utils.parseEther("1"),
+    subdomainPrice: utils.parseEther("0.2"),
+    priceMultiplier: BigNumber.from("39"),
+    baseLength: 3,
+    registrarAddress: "", // Not declared until `beforeEach` below
+  };
 
   beforeEach(async () => {
     [deployer, user, mockRegistrar] = await hre.ethers.getSigners();
@@ -22,15 +29,14 @@ describe("ZNSPriceOracle", () => {
     factory = new ZNSPriceOracle__factory(deployer);
     contract = await factory.deploy();
 
-    const priceMultiplier = BigNumber.from("39");
-    const baseLength = 3;
+    config.registrarAddress = mockRegistrar.address;
 
     await contract.initialize(
-      priceForRootDomain,
-      priceForSubdomain,
-      priceMultiplier,
-      baseLength,
-      mockRegistrar.address
+      config.rootDomainPrice,
+      config.subdomainPrice,
+      config.priceMultiplier,
+      config.baseLength,
+      config.registrarAddress
     );
   });
 
@@ -100,10 +106,8 @@ describe("ZNSPriceOracle", () => {
 
     it("Returns the expected price for a domain greater than the base length", async () => {
       const domain = "wilder";
-      const defaultRootPrice = await contract.rootDomainBasePrice();
-      const defaultMultiplier = await contract.priceMultiplier();
 
-      const expectedPrice = (defaultRootPrice.mul(defaultMultiplier)).div(domain.length).div(10);
+      const expectedPrice = await getPrice(domain.length, contract, true);
       const price = await contract.getPrice(domain.length, true);
 
       expect(price).to.eq(expectedPrice);
@@ -111,10 +115,8 @@ describe("ZNSPriceOracle", () => {
 
     it("Returns the expected price for a subdomain greater than the base length", async () => {
       const domain = "wilder";
-      const defaultSubdomainPrice = await contract.subdomainBasePrice();
-      const defaultMultiplier = await contract.priceMultiplier();
 
-      const expectedPrice = (defaultSubdomainPrice.mul(defaultMultiplier)).div(domain.length).div(10);
+      const expectedPrice = await getPrice(domain.length, contract, false);
       const price = await contract.getPrice(domain.length, false);
 
       expect(price).to.eq(expectedPrice);
@@ -128,10 +130,7 @@ describe("ZNSPriceOracle", () => {
         `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz` +
         `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu`;
 
-      const defaultRootPrice = await contract.rootDomainBasePrice();
-      const defaultMultiplier = await contract.priceMultiplier();
-
-      const expectedPrice = (defaultRootPrice.mul(defaultMultiplier)).div(domain.length).div(10);
+      const expectedPrice = await getPrice(domain.length, contract, true);
       const price = await contract.getPrice(domain.length, true);
 
       expect(price).to.eq(expectedPrice);

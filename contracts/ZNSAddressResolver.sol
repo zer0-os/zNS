@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
-import "./IZNSAddressResolver.sol";
-import "./IZNSRegistry.sol";
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import {IZNSAddressResolver} from "./IZNSAddressResolver.sol";
+import {IZNSRegistry} from "./IZNSRegistry.sol";
 
 contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
   /**
