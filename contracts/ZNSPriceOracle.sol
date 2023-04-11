@@ -174,6 +174,10 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    */
   function _setZNSRegistrar(address registrar) internal {
     require(registrar != address(0), "ZNS: Zero address for Registrar");
+
+    // Modify the access control for the new registrar
+    authorized[znsRegistrar] =  false;
     znsRegistrar = registrar;
+    authorized[registrar] = true;
   }
 }
