@@ -14,12 +14,12 @@ require('@nomicfoundation/hardhat-chai-matchers');
  */
 
 describe('ZNSRegistry Tests', () => {
-  let deployer : SignerWithAddress;
-  let operator : SignerWithAddress;
+  let deployer: SignerWithAddress;
+  let operator: SignerWithAddress;
 
   // ZNSResolver has not been created, but an address will be equivalent for now
-  let mockResolver : SignerWithAddress;
-  let registry : ZNSRegistry;
+  let mockResolver: SignerWithAddress;
+  let registry: ZNSRegistry;
 
   // Set owner of 0x0 domain in initalizer, will be used by every other subdomain
   const rootDomainHash = hre.ethers.constants.HashZero;

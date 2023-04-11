@@ -11,9 +11,9 @@ describe('ZNSDomainToken:', () => {
   const TokenName = 'ZNSDomainToken';
   const TokenSymbol = 'ZDT';
 
-  let deployer : SignerWithAddress;
-  let caller : SignerWithAddress;
-  let domainToken : ZNSDomainToken;
+  let deployer: SignerWithAddress;
+  let caller: SignerWithAddress;
+  let domainToken: ZNSDomainToken;
 
   beforeEach(async () => {
     [deployer, caller] = await hre.ethers.getSigners();

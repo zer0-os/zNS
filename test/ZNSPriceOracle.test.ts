@@ -13,8 +13,8 @@ describe("ZNSPriceOracle", () => {
   let contract: ZNSPriceOracle;
   let factory: ZNSPriceOracle__factory;
 
-  const rootDomainPrice = hre.ethers.utils.parseEther("1");
-  const subdomainPrice = hre.ethers.utils.parseEther("0.2");
+  const priceForRootDomain = hre.ethers.utils.parseEther("1");
+  const priceForSubdomain = hre.ethers.utils.parseEther("0.2");
 
   beforeEach(async () => {
     [deployer, user, mockRegistrar] = await hre.ethers.getSigners();
@@ -22,7 +22,7 @@ describe("ZNSPriceOracle", () => {
     factory = new ZNSPriceOracle__factory(deployer);
     contract = await factory.deploy();
 
-    await contract.initialize(rootDomainPrice, subdomainPrice, mockRegistrar.address);
+    await contract.initialize(priceForRootDomain, priceForSubdomain, mockRegistrar.address);
   });
 
   it("Confirms the mockRegistrar is authorized", async () => {
@@ -143,7 +143,7 @@ describe("ZNSPriceOracle", () => {
       const newBasePrice = hre.ethers.utils.parseEther("0.7");
 
       const tx = contract.connect(user).setBasePrice(newBasePrice, true);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed")
+      expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
     it("Allows setting the price to zero", async () => {
@@ -170,7 +170,7 @@ describe("ZNSPriceOracle", () => {
       const newMultiplier = BigNumber.from("25");
 
       const tx = contract.connect(user).setPriceMultipler(newMultiplier);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed")
+      expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
     it("Allows setting the multiplier to zero", async () => {
@@ -197,7 +197,7 @@ describe("ZNSPriceOracle", () => {
       const newBoundary = 5;
 
       const tx = contract.connect(user).setBaseLength(newBoundary);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed")
+      expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
     it("Allows setting the boundary to zero", async () => {
