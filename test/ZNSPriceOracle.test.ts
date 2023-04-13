@@ -51,11 +51,18 @@ describe("ZNSPriceOracle", () => {
     expect(authorized).to.be.true;
   });
 
+  it("Confirms a random user is not authorized", async () => {
+    const authorized = await contract.isAuthorized(user.address);
+    expect(authorized).to.be.false;
+  });
+
   describe("getPrice", async () => {
-    it("Returns 0 price for a root or subdomain name with no length", async () => {
+    it("Returns 0 price for a root name with no length", async () => {
       const priceRootDomain = await contract.getPrice(BigNumber.from("0"), true);
       expect(priceRootDomain).to.eq(0);
+    });
 
+    it("Returns 0 price for a subdomain name with no length", async () => {
       const priceSubdomain = await contract.getPrice(BigNumber.from("0"), false);
       expect(priceSubdomain).to.eq(0);
     });
@@ -136,6 +143,20 @@ describe("ZNSPriceOracle", () => {
 
       expect(price).to.eq(expectedPrice);
     });
+
+    it("Returns a price even if the subdomain name is very long", async () => {
+      // 255 length
+      const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
+
+      const expectedPrice = await getPrice(domain.length, contract, false);
+      const price = await contract.getPrice(domain.length, false);
+
+      expect(price).to.eq(expectedPrice);
+    });
   });
 
   describe("setBasePrice", () => {
@@ -177,6 +198,25 @@ describe("ZNSPriceOracle", () => {
 
       expect(shortPrice).to.eq(BigNumber.from("0"));
       expect(longPrice).to.eq(BigNumber.from("0"));
+    });
+
+    it("The price of a domain is modified relatively when the basePrice is changed", async () => {
+      const newBasePrice = parseEther("0.1");
+      const domain = "wilder";
+
+      const expectedPriceBefore = await getPrice(domain.length, contract, false);
+      const priceBefore = await contract.getPrice(domain.length, false);
+
+      expect(expectedPriceBefore).to.eq(priceBefore);
+
+      await contract.connect(deployer).setBasePrice(newBasePrice, false);
+
+      const expectedPriceAfter = await getPrice(domain.length, contract, false);
+      const priceAfter = await contract.getPrice(domain.length, false);
+
+      expect(expectedPriceAfter).to.eq(priceAfter);
+      expect(expectedPriceAfter).to.be.lt(expectedPriceBefore);
+      expect(priceAfter).to.be.lt(priceBefore);
     });
   });
 
