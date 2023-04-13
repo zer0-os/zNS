@@ -10,9 +10,13 @@ import { ZNSPriceOracle } from "../../typechain";
  */
 export const getPrice = async (length: number, contract: ZNSPriceOracle, isRootDomain: boolean): Promise<BigNumber> => {
 
-  const defaultPrice = isRootDomain ? await contract.rootDomainBasePrice() : await contract.subdomainBasePrice();
-  const defaultMultiplier = await contract.priceMultiplier();
+  const basePrice = isRootDomain ? await contract.rootDomainBasePrice() : await contract.subdomainBasePrice();
+  const baseLength = await contract.baseLength();
+  const multiplier = await contract.priceMultiplier();
 
-  const expectedPrice = (defaultPrice.mul(defaultMultiplier)).div(length).div(10);
+  const numerator = basePrice.mul(baseLength).mul(multiplier);
+  const denominator = length + (3 * multiplier);
+
+  const expectedPrice = numerator.div(denominator).div(100);
   return expectedPrice;
 };

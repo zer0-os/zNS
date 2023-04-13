@@ -2,7 +2,8 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
-import { BigNumber, utils } from "ethers";
+import { BigNumber } from "ethers";
+import { parseEther } from "ethers/lib/utils";
 import { PriceOracleConfig as ZNSPriceOracleConfig } from "./helpers/types";
 import { getPrice } from "./helpers";
 
@@ -16,9 +17,9 @@ describe("ZNSPriceOracle", () => {
   let factory: ZNSPriceOracle__factory;
 
   const config: ZNSPriceOracleConfig = {
-    rootDomainPrice: utils.parseEther("1"),
-    subdomainPrice: utils.parseEther("0.2"),
-    priceMultiplier: BigNumber.from("39"),
+    rootDomainPrice: parseEther("1"),
+    subdomainPrice: parseEther("0.2"),
+    priceMultiplier: BigNumber.from("390"),
     baseLength: 3,
     registrarAddress: "", // Not declared until `beforeEach` below
   };
@@ -124,11 +125,11 @@ describe("ZNSPriceOracle", () => {
 
     it("Returns a price even if the domain name is very long", async () => {
       // 255 length
-      const domain = `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz` +
-        `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz` +
-        `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz` +
-        `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz` +
-        `abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu`;
+      const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
       const expectedPrice = await getPrice(domain.length, contract, true);
       const price = await contract.getPrice(domain.length, true);
@@ -139,7 +140,7 @@ describe("ZNSPriceOracle", () => {
 
   describe("setBasePrice", () => {
     it("Allows an authorized user to set the base price", async () => {
-      const newBasePrice = hre.ethers.utils.parseEther("0.7");
+      const newBasePrice = parseEther("0.7");
 
       await contract.connect(deployer).setBasePrice(newBasePrice, true);
 
@@ -148,7 +149,7 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("Disallows an unauthorized user to set the base price", async () => {
-      const newBasePrice = hre.ethers.utils.parseEther("0.7");
+      const newBasePrice = parseEther("0.7");
 
       const tx = contract.connect(user).setBasePrice(newBasePrice, true);
       expect(tx).to.be.revertedWith("ZNS: Not allowed");
@@ -162,74 +163,120 @@ describe("ZNSPriceOracle", () => {
       const updatedBasePrice = await contract.rootDomainBasePrice();
       expect(updatedBasePrice).to.eq(newBasePrice);
     });
+
+    it("Causes any length domain to have a price of 0 if the basePrice is 0", async () => {
+      const newBasePrice = BigNumber.from("0");
+
+      await contract.connect(deployer).setBasePrice(newBasePrice, true);
+
+      const shortDomain = "a";
+      const longDomain = "abcdefghijklmnopqrstuvwxyz";
+
+      const shortPrice = await contract.getPrice(shortDomain.length, true);
+      const longPrice = await contract.getPrice(longDomain.length, true);
+
+      expect(shortPrice).to.eq(BigNumber.from("0"));
+      expect(longPrice).to.eq(BigNumber.from("0"));
+    });
   });
 
   describe("setPriceMultiplier", () => {
     it("Allows an authorized user to set the price multiplier", async () => {
-      const newMultiplier = BigNumber.from("25");
+      const newMultiplier = BigNumber.from("300");
 
-      await contract.connect(deployer).setPriceMultipler(newMultiplier);
+      await contract.connect(deployer).setPriceMultiplier(newMultiplier);
 
       const updatedMultiplier = await contract.priceMultiplier();
       expect(updatedMultiplier).to.eq(newMultiplier);
     });
 
     it("Disallows an unauthorized user to set the price multiplier", async () => {
-      const newMultiplier = BigNumber.from("25");
+      const newMultiplier = BigNumber.from("300");
 
-      const tx = contract.connect(user).setPriceMultipler(newMultiplier);
+      const tx = contract.connect(user).setPriceMultiplier(newMultiplier);
       expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
-    it("Allows setting the multiplier to zero", async () => {
-      const newMultiplier = BigNumber.from("0");
+    it("Fails when setting to a value below the specified range", async () => {
+      // Valid range is 300 - 400
+      const newMultiplier = BigNumber.from("299");
 
-      await contract.connect(deployer).setPriceMultipler(newMultiplier);
+      const tx = contract.connect(deployer).setPriceMultiplier(newMultiplier);
+      await expect(tx).to.be.revertedWith("ZNS: Multiplier out of range");
+    });
 
-      const updatedMultiplier = await contract.priceMultiplier();
-      expect(updatedMultiplier).to.eq(newMultiplier);
+    it("Fails when setting to a value above the specified range", async () => {
+      // Valid range is 300 - 400
+      const newMultiplier = BigNumber.from("401");
+
+      const tx = contract.connect(deployer).setPriceMultiplier(newMultiplier);
+      await expect(tx).to.be.revertedWith("ZNS: Multiplier out of range");
+    });
+
+    it("Succeeds when setting a value within the allowed range", async () => {
+      // Valid range is 300 - 400
+      const newMultiplier = BigNumber.from("350");
+
+      await contract.connect(deployer).setPriceMultiplier(newMultiplier);
+
+      const multiplier = await contract.priceMultiplier();
+      expect(multiplier).to.eq(newMultiplier);
     });
   });
 
   describe("setBaseLength", () => {
     it("Allows an authorized user to set the length boundary", async () => {
-      const newBoundary = 5;
+      const newLength = 5;
 
-      await contract.connect(deployer).setBaseLength(newBoundary);
+      await contract.connect(deployer).setBaseLength(newLength);
 
-      const updatedBoundary = await contract.baseLength();
-      expect(updatedBoundary).to.eq(newBoundary);
+      const updatedLength = await contract.baseLength();
+      expect(updatedLength).to.eq(newLength);
     });
 
     it("Disallows an unauthorized user to set the base length", async () => {
-      const newBoundary = 5;
+      const newLength = 5;
 
-      const tx = contract.connect(user).setBaseLength(newBoundary);
+      const tx = contract.connect(user).setBaseLength(newLength);
       expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
-    it("Allows setting the boundary to zero", async () => {
-      const newBoundary = 0;
+    it("Allows setting the base length to zero", async () => {
+      const newLength = 0;
 
-      await contract.connect(deployer).setBaseLength(newBoundary);
+      await contract.connect(deployer).setBaseLength(newLength);
 
-      const updatedBoundary = await contract.baseLength();
-      expect(updatedBoundary).to.eq(newBoundary);
+      const updatedLength = await contract.baseLength();
+      expect(updatedLength).to.eq(newLength);
+    });
+
+    it("Causes any length domain to cost the base fee when set to max length of 255", async () => {
+      const newLength = 255;
+      await contract.connect(deployer).setBaseLength(newLength);
+
+      const shortDomain = "a";
+      const longDomain = "abcdefghijklmnopqrstuvwxyz";
+
+      const shortPrice = await contract.getPrice(shortDomain.length, true);
+      const longPrice = await contract.getPrice(longDomain.length, true);
+
+      expect(shortPrice).to.eq(config.rootDomainPrice);
+      expect(longPrice).to.eq(config.rootDomainPrice);
     });
   });
 
   describe("Events", () => {
     it("Emits BasePriceSet", async () => {
-      const newBasePrice = hre.ethers.utils.parseEther("0.7");
+      const newBasePrice = parseEther("0.7");
 
       const tx = contract.connect(deployer).setBasePrice(newBasePrice, true);
       await expect(tx).to.emit(contract, "BasePriceSet").withArgs(newBasePrice, true);
     });
 
     it("Emits PriceMultiplierSet", async () => {
-      const newMultiplier = BigNumber.from("25");
+      const newMultiplier = BigNumber.from("350");
 
-      const tx = contract.connect(deployer).setPriceMultipler(newMultiplier);
+      const tx = contract.connect(deployer).setPriceMultiplier(newMultiplier);
       await expect(tx).to.emit(contract, "PriceMultiplierSet").withArgs(newMultiplier);
     });
 

@@ -35,7 +35,7 @@ interface IZNSPriceOracle {
    *
    * @param multiplier The new price multiplier to set
    */
-  function setPriceMultipler(uint multiplier) external;
+  function setPriceMultiplier(uint16 multiplier) external;
 
   /**
    * @notice Set the value of the domain name length boundary where the default price applies

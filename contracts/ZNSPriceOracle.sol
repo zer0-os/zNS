@@ -18,10 +18,12 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   /**
    * @notice The price multiplier used in calculation for a given domain name's length
-   * Note 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use 
+   * We store this value with two decimals of precision for division later in calculation
+   * This means if we use a multiplier of 3.9, it is stored as 390
+   * Note that 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use 
    * it here because it creates a reasonable decline in pricing visually when graphed.
    */
-  uint public priceMultiplier;
+  uint16 public priceMultiplier;
 
   /**
    * @notice The base domain name length is used in pricing to identify domains
@@ -37,7 +39,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   /**
    * @notice Track authorized users or contracts
-   * TODO access control
+   * TODO access control for the entire system
    */
   mapping(address user => bool isAuthorized) public authorized;
 
@@ -52,7 +54,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function initialize(
     uint rootDomainBasePrice_,
     uint subdomainBasePrice_,
-    uint priceMultiplier_,
+    uint16 priceMultiplier_,
     uint8 baseLength_,
     address znsRegistrar_
   ) public initializer {
@@ -113,7 +115,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    *
    * @param multiplier The new price multiplier to set
    */
-  function setPriceMultipler(uint multiplier) external onlyAuthorized {
+  function setPriceMultiplier(uint16 multiplier) external onlyAuthorized {
+    require(multiplier >= 300 && multiplier <= 400, "ZNS: Multiplier out of range");
     priceMultiplier = multiplier;
 
     emit PriceMultiplierSet(multiplier);
@@ -163,9 +166,10 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     // Should this be here vs. in the dApp?
 
     // This creates an asymptotic curve that decreases in pricing based on domain name length
-    // Because there are no decimals in ETH we set the muliplier as an order of magnitutde 
-    // higher than it is meant to be, so we divide by 10 to reverse that action.
-    return (priceMultiplier * basePrice) / length / 10;
+    // Because there are no decimals in ETH we set the muliplier as 100x higher 
+    // than it is meant to be, so we divide by 100 to reverse that action here.
+    // =(baseLength*basePrice*multiplier)/(length+(3*multiplier)
+    return (baseLength * priceMultiplier * basePrice) / (length + (3 * priceMultiplier)) / 100;
   }
 
   /**
@@ -177,7 +181,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
     // Modify the access control for the new registrar
     authorized[znsRegistrar] =  false;
-    znsRegistrar = registrar;
     authorized[registrar] = true;
+    znsRegistrar = registrar;
   }
 }

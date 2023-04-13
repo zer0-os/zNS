@@ -16,8 +16,8 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
-      - run: yarn test # Validate Unit Tests Pass
       - run: yarn lint
+      - run: yarn test # Validate Unit Tests Pass
       - persist_to_workspace:
           root: ~/repo
           paths: .
