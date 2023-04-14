@@ -5,9 +5,9 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 import { deployDomainToken } from "./helpers/deploy-zns";
 
-describe("ZNSDomainToken:", () => {
-  const TokenName = "ZNSDomainToken";
-  const TokenSymbol = "ZDT";
+describe('ZNSDomainToken:', () => {
+  const TokenName = 'ZNSDomainToken';
+  const TokenSymbol = 'ZDT';
 
   let deployer: SignerWithAddress;
   let caller: SignerWithAddress;
@@ -66,7 +66,7 @@ describe("ZNSDomainToken:", () => {
       //Revoke domain
       const tx = domainToken.connect(deployer).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNSDomainToken: Owner of sender does not match Owner of token"
+        'ZNSDomainToken: Owner of sender does not match Owner of token'
       );
 
       //Verify token has not been burned
@@ -74,14 +74,14 @@ describe("ZNSDomainToken:", () => {
     });
   });
 
-  describe("Contract Configuration", () => {
-    it("Verify token name", async () => {
-      let name = await domainToken.name();
+  describe('Contract Configuration', () => {
+    it('Verify token name', async () => {
+      const name = await domainToken.name();
       expect(name).to.equal(TokenName);
     });
 
-    it("Verify token symbol", async () => {
-      let symbol = await domainToken.symbol();
+    it('Verify token symbol', async () => {
+      const symbol = await domainToken.symbol();
       expect(symbol).to.equal(TokenSymbol);
     });
   });
