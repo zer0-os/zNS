@@ -56,5 +56,8 @@
   },
   "dependencies": {
     "dotenv": "16.0.3"
+  },
+  "resolutions": {
+    "@solidity-parser/parser": "0.16.0"
   }
 }

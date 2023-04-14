@@ -17,6 +17,7 @@ require('@nomicfoundation/hardhat-chai-matchers');
 describe('ZNSRegistry Tests', () => {
   let deployer: SignerWithAddress;
   let operator: SignerWithAddress;
+  let randomUser: SignerWithAddress;
 
   // ZNSResolver has not been created, but an address will be equivalent for now
   let mockResolver: SignerWithAddress;
@@ -33,7 +34,7 @@ describe('ZNSRegistry Tests', () => {
   );
 
   beforeEach(async () => {
-    [deployer, operator, mockResolver] = await hre.ethers.getSigners();
+    [deployer, operator, mockResolver, randomUser] = await hre.ethers.getSigners();
 
     registry = await deployRegistry(deployer);
 
@@ -106,6 +107,19 @@ describe('ZNSRegistry Tests', () => {
   });
 
   describe('Domain and subdomain records', async () => {
+    it('Checks existence of a domain correctly', async () => {
+      const exists = await registry.connect(randomUser).exists(wilderSubdomainHash);
+      expect(exists).to.be.true;
+
+      const nonExistentDomainHash = hre.ethers.utils
+        .solidityKeccak256(
+          ['bytes32'],
+          [hre.ethers.utils.id('wild')]
+        );
+      const notExists = await registry.connect(randomUser).exists(nonExistentDomainHash);
+      expect(notExists).to.be.false;
+    });
+
     it('Gets a domain record', async () => {
       // Domain exists
       const rootRecord = await registry.getDomainRecord(rootDomainHash);
