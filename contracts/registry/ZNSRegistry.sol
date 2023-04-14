@@ -23,10 +23,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param domainNameHash The identifying hash of a domain's name
    */
   modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-    require(
-      isOwnerOrOperator(domainNameHash, msg.sender),
-      "ZNS: Not allowed"
-    );
+    require(isOwnerOrOperator(domainNameHash, msg.sender), "ZNS: Not allowed");
     _;
   }
 
@@ -51,7 +48,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param domainNameHash The identifying hash of a domain's name
    * @param candidate The address for which we are checking access
    */
-  function isOwnerOrOperator(bytes32 domainNameHash, address candidate) public view returns (bool) {
+  function isOwnerOrOperator(
+    bytes32 domainNameHash,
+    address candidate
+  ) public view returns (bool) {
     address owner = records[domainNameHash].owner;
     return candidate == owner || operators[owner][candidate];
   }
@@ -111,6 +111,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
   // TODO add access control. do we need to revoke operator as well?
   function deleteDomainRecord(bytes32 domainNameHash) external {
+    // this could call to an internal func _deleteDomainRecord
+    // Then when `setDomainRecord` is `0x0` values, we can also delete there
     delete records[domainNameHash];
   }
 
