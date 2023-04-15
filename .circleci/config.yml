@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   node: circleci/node@4.7.0
+  codecov: codecov/codecov@3.2.4
 
 defaults: &defaults
   working_directory: ~/repo
@@ -31,6 +32,8 @@ jobs:
       - run: 
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
+      - codecov/upload:
+          file: ./coverage
   publish:
     <<: *defaults
     steps:
