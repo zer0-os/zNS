@@ -32,8 +32,7 @@ jobs:
       - run: 
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
-      - codecov/upload:
-          file: ./coverage
+      - codecov/upload
   publish:
     <<: *defaults
     steps:
