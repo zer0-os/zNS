@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-library ZNSHasher {
+library ZNSUtils {
   function hashWithParent(
     bytes32 parentHash,
     string calldata name

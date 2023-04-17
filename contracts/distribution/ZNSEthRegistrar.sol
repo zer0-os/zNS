@@ -6,7 +6,7 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-// import { Utility } from "../utils/Utility.sol";
+import { ZNSUtils } from "../utils/ZNSUtils.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO:    this is here temporarily, figure out where this should be and how to set it up !
