@@ -10,7 +10,7 @@ defaults: &defaults
     - image: cimg/node:18.15.0
 
 jobs:
-  test_and_coverage:
+  test and coverage:
     <<: *defaults
     steps:
       - checkout
@@ -39,14 +39,14 @@ workflows:
   version: 2
   build:
     jobs:
-      - test_and_coverage:
+      - test and coverage:
           filters:
             branches:
               ignore: 
                 - development
   development:
     jobs:
-      - test_and_coverage:
+      - test and coverage:
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
@@ -54,6 +54,6 @@ workflows:
       - publish:
           context: CPT
           requires:
-            - test_and_coverage
+            - test and coverage
           filters:
             <<: *filters-development # this is calling the previously set yaml anchor
