@@ -25,7 +25,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
     address owner = records[domainNameHash].owner;
     require(
-      msg.sender == owner || operators[owner][msg.sender],
+      msg.sender == owner || isAllowedOperator(owner, msg.sender),
       "ZNS: Not allowed"
     );
     _;
@@ -68,7 +68,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function isAllowedOperator(
     address owner,
     address operator
-  ) external view returns (bool) {
+  ) public view returns (bool) {
     return operators[owner][operator];
   }
 
@@ -102,33 +102,33 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
   /**
    * @dev Set or create a subdomain record
-   * @param domainNameHash The base domain name hash
+   * @param parentNameHash The parent domain name hash
    * @param label The label label of the subdomain
    * @param owner The owner to set
    * @param resolver The resolver to set
    */
   function setSubdomainRecord(
-    bytes32 domainNameHash,
+    bytes32 parentNameHash,
     bytes32 label,
     address owner,
     address resolver
   ) external {
-    bytes32 subdomain = setSubdomainOwner(domainNameHash, label, owner);
+    bytes32 subdomain = setSubdomainOwner(parentNameHash, label, owner);
     setDomainResolver(subdomain, resolver);
   }
 
   /**
    * @dev Update the subdomain's owner
-   * @param domainNameHash The base domain name hash
+   * @param parentNameHash The parent domain name hash
    * @param label The label of the subdomain
    * @param owner The owner to set
    */
   function setSubdomainOwner(
-    bytes32 domainNameHash,
+    bytes32 parentNameHash,
     bytes32 label,
     address owner
-  ) public onlyOwnerOrOperator(domainNameHash) returns (bytes32) {
-    bytes32 subdomain = keccak256(abi.encodePacked(domainNameHash, label));
+  ) public onlyOwnerOrOperator(parentNameHash) returns (bytes32) {
+    bytes32 subdomain = keccak256(abi.encodePacked(parentNameHash, label));
     _setDomainOwner(subdomain, owner);
 
     emit DomainOwnerSet(owner, subdomain);
@@ -201,6 +201,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param owner The owner to set
    */
   function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
+    require(owner != address(0), "ZNS: Owner can NOT be zero address");
     records[domainNameHash].owner = owner;
   }
 
@@ -213,7 +214,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) internal {
-    require(resolver != address(0), "ZNS: Zero address");
+    require(resolver != address(0), "ZNS: Resolver can NOT be zero address");
 
     records[domainNameHash].resolver = resolver;
   }
