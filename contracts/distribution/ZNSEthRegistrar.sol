@@ -6,7 +6,7 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { Utility } from "../utils/Utility.sol";
+// import { Utility } from "../utils/Utility.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO:    this is here temporarily, figure out where this should be and how to set it up !
@@ -25,6 +25,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   modifier onlyOwner(bytes32 domainNameHash) {
     require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
     _;
+  }
+
+  function hashWithParent(
+    bytes32 parentHash,
+    string calldata name
+  ) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(parentHash, keccak256(bytes(name))));
   }
 
   constructor(
@@ -63,7 +70,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // Create hash for given domain name
-    bytes32 domainHash = Utility.hashWithParent(ETH_ROOT_HASH, name);
+    bytes32 domainHash = hashWithParent(ETH_ROOT_HASH, name);
     require(
       !znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain already exists"
@@ -122,7 +129,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       registerFor = msg.sender;
     }
 
-    bytes32 domainHash = Utility.hashWithParent(parentHash, name);
+    bytes32 domainHash = hashWithParent(parentHash, name);
 
     // TODO: do we have burning here or just for Root Domains?
     // we are always charging the caller here

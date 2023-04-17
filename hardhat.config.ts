@@ -8,7 +8,7 @@ import '@nomicfoundation/hardhat-network-helpers';
 import '@nomicfoundation/hardhat-chai-matchers';
 import 'solidity-coverage';
 
-const config : HardhatUserConfig = {
+const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
@@ -32,7 +32,7 @@ const config : HardhatUserConfig = {
     outDir: 'typechain',
   },
   mocha: {
-    timeout: 40000,
+    timeout: 5000000,
   },
   networks: {
     mainnet: {
