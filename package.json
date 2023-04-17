@@ -52,8 +52,7 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
-    "typescript": "^5.0.2",
-    "typescript-eslint": "^0.0.1-alpha.0"
+    "typescript": "^5.0.2"
   },
   "dependencies": {
     "dotenv": "16.0.3"

@@ -6,7 +6,6 @@
       "extends": ["@zero-tech/eslint-config-cpt/node-ts/.eslintrc.json"],
       "rules": {
         "no-unused-expressions": "off",
-        "@typescript-eslint/type-annotation-spacing": "off"
       }
     }
   ]
