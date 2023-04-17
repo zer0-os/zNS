@@ -18,13 +18,14 @@ jobs:
           pkg-manager: yarn
       - run: yarn build
       - run: yarn lint
-      - run: 
+      - run:
           name: Code Coverage Report
           command: yarn coverage
-      - run: 
+      - run:
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
-      - codecov/upload
+      - codecov/upload:
+          conf: ~/repo/codecov.yml
       - persist_to_workspace:
           root: ~/repo
           paths: .
@@ -43,7 +44,7 @@ workflows:
       - test and coverage:
           filters:
             branches:
-              ignore: 
+              ignore:
                 - development
   development:
     jobs:
