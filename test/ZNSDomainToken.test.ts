@@ -6,6 +6,7 @@ import {
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'ethers';
+import exp from 'constants';
 
 describe('ZNSDomainToken:', () => {
   const TokenName = 'ZNSDomainToken';
@@ -110,6 +111,7 @@ describe('ZNSDomainToken:', () => {
 
   describe('Contract Configuration', () => {
     it('Verify token name', async () => {
+      expect.fail();
       const name = await domainToken.name();
       expect(name).to.equal(TokenName);
     });
