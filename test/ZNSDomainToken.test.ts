@@ -6,7 +6,6 @@ import {
 import { expect } from 'chai';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { ethers } from 'ethers';
-import exp from 'constants';
 
 describe('ZNSDomainToken:', () => {
   const TokenName = 'ZNSDomainToken';
@@ -99,7 +98,7 @@ describe('ZNSDomainToken:', () => {
         .connect(deployer)
         .revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        'ZNSDomainToken: Owner of sender does not match Owner of token'
+        'ZNSDomainToken: Only token owner can burn a token'
       );
 
       // Verify token has not been burned
