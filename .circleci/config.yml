@@ -17,7 +17,6 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
-      - run: yarn test # Validate Unit Tests Pass
       - run: 
           name: Code Coverage Report
           command: yarn coverage
