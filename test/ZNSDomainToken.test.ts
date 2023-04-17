@@ -111,7 +111,6 @@ describe('ZNSDomainToken:', () => {
 
   describe('Contract Configuration', () => {
     it('Verify token name', async () => {
-      expect.fail();
       const name = await domainToken.name();
       expect(name).to.equal(TokenName);
     });
