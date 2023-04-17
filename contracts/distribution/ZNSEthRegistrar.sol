@@ -16,6 +16,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken; // TODO: add token here when ready along with import
   IZNSAddressResolver public znsAddressResolver;
+  // IZNSPriceOracle public znsPriceOracle;
 
   // why do we need this?
   mapping(bytes32 => address) private subdomainApprovals;
@@ -70,7 +71,11 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // Create hash for given domain name
+<<<<<<< Updated upstream
     bytes32 domainHash = hashWithParent(ETH_ROOT_HASH, name);
+=======
+    bytes32 domainHash = ZNSHasher.hashWithParent(ETH_ROOT_HASH, name);
+>>>>>>> Stashed changes
     require(
       !znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain already exists"
@@ -129,7 +134,11 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       registerFor = msg.sender;
     }
 
+<<<<<<< Updated upstream
     bytes32 domainHash = hashWithParent(parentHash, name);
+=======
+    bytes32 domainHash = ZNSHasher.hashWithParent(parentHash, name);
+>>>>>>> Stashed changes
 
     // TODO: do we have burning here or just for Root Domains?
     // we are always charging the caller here
