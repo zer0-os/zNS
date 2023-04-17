@@ -7,12 +7,15 @@ import {
   ZNSDomainToken__factory,
   ZNSEthRegistrar,
   ZNSEthRegistrar__factory,
+  ZNSPriceOracle,
+  ZNSPriceOracle__factory,
   ZNSRegistry,
   ZNSRegistry__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import { RegistrarConfig } from "./types";
+import { ethers } from "hardhat"
+import { PriceOracleConfig, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export const deployRegistry = async (
@@ -35,6 +38,29 @@ export const deployAddressResolver = async (
   const addressResolver = await addressResolverFactory.deploy(registryAddress);
 
   return addressResolver;
+}
+
+export const deployPriceOracle = async (
+  deployer: SignerWithAddress,
+  config: PriceOracleConfig
+): Promise<ZNSPriceOracle> => {
+  const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
+  const priceOracle = await priceOracleFactory.deploy();
+
+  // The Registrar may not be deployed yet because of the cyclic dependency
+  // between it and the ZNSPriceOracle. Use an empty string if so
+  const registrarAddress = !config.registrarAddress ? "" : config.registrarAddress;
+
+  await priceOracle.initialize(
+    config.rootDomainPrice,
+    config.subdomainPrice,
+    config.priceMultiplier,
+    config.rootDomainBaseLength,
+    config.subdomainBaseLength,
+    registrarAddress
+  )
+
+  return priceOracle;
 }
 
 export const deployDomainToken = async (
@@ -69,7 +95,8 @@ export const deployRegistrar = async (
     config.treasury.address,
     config.registryAddress,
     config.domainTokenAddress,
-    config.addressResolverAddress
+    config.addressResolverAddress,
+    config.priceOracleAddress
   );
 
   await config.treasury.connect(deployer).setZnsRegistrar(registrar.address);
@@ -77,7 +104,7 @@ export const deployRegistrar = async (
   return registrar;
 };
 
-export const deployZNS = async (deployer: SignerWithAddress) => {
+export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContracts> => {
   const registry = await deployRegistry(deployer);
 
   const domainToken = await deployDomainToken(deployer);
@@ -88,24 +115,38 @@ export const deployZNS = async (deployer: SignerWithAddress) => {
 
   const treasury = await deployTreasury(deployer, zTokenMock.address);
 
-  const config = {
+  // TODO parameterize these values
+  // Set "registrarAddress" after the registrar is deployed
+  const oracleConfig: PriceOracleConfig = {
+    rootDomainPrice: ethers.utils.parseEther("1"),
+    subdomainPrice: ethers.utils.parseEther("0.2"),
+    priceMultiplier: ethers.BigNumber.from("390"),
+    rootDomainBaseLength: 3,
+    subdomainBaseLength: 3,
+    registrarAddress: ethers.constants.AddressZero
+  }
+
+  const priceOracle = await deployPriceOracle(deployer, oracleConfig);
+
+  const config: RegistrarConfig = {
     treasury: treasury,
     registryAddress: registry.address,
     domainTokenAddress: domainToken.address,
-    addressResolverAddress: addressResolver.address
+    addressResolverAddress: addressResolver.address,
+    priceOracleAddress: priceOracle.address
   }
-  // const registrar = await deployRegistrar({
-  //   deployer,
-  //   treasury,
-  //   registryAddress: registry.address,
-  //   domainTokenAddress: domainToken.address,
-  // });
+  const registrar = await deployRegistrar(deployer, config);
 
-  // return {
-  //   registry,
-  //   domainToken,
-  //   zTokenMock,
-  //   treasury,
-  //   registrar,
-  // };
+  const znsContracts: ZNSContracts = {
+    registry: registry,
+    domainToken: domainToken,
+    zToken: zTokenMock,
+    treasury: treasury,
+    priceOracle: priceOracle,
+    registrar: registrar,
+  }
+
+  await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
+
+  return znsContracts;
 };

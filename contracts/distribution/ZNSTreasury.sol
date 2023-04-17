@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
+import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol"; // TODO: fix when token is sorted out
 
 // TODO is this an appropriate name??
@@ -12,17 +13,14 @@ contract ZNSTreasury is IZNSTreasury {
   uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
 
   IZNSEthRegistrar private znsRegistrar;
-
-  // TODO:    uncomment when Oracle is ready and connected
-  //          change Oracle logic to call actual contract
-  //    IPriceOracle public priceOracle;
+  IZNSPriceOracle public znsPriceOracle;
   IZeroTokenMock public zeroToken;
 
   // TODO should this be tied to domain hash only?? do we need extra data here??
   mapping(bytes32 domainName => uint256 amountStaked) private stakedForDomain;
 
   // TODO: remove and change when Oracle is ready
-  mapping(uint256 => uint256) public priceOraclePrices;
+  // mapping(uint256 => uint256) public priceOraclePrices;
 
   modifier onlyRegistrar() {
     require(
@@ -32,25 +30,10 @@ contract ZNSTreasury is IZNSTreasury {
     _;
   }
 
-  // TODO:    figure out the best order of deployment and
-  //          if ZNSRegistrar address should/can be passed at construction time
-  constructor(address _priceOracle, address _zeroToken) {
-    require(
-      _priceOracle != address(0),
-      "ZNSTreasury: Zero address passed as _priceOracle"
-    );
-    require(
-      _zeroToken != address(0),
-      "ZNSTreasury: Zero address passed as _zeroToken"
-    );
-
-    // TODO: change from mock and uncomment oracle
-    zeroToken = IZeroTokenMock(_zeroToken);
-    //        priceOracle = IPriceOracle(_priceOracle);
-
-    // TODO:    switch to ZNSPriceOracle call
-    //          we need this here for the prototype testing only! remove when ready
-    priceOraclePrices[6] = 512 * 10 ** 18;
+  constructor(address znsPriceOracle_, address zeroToken_) {
+    // TODO change from mock
+    zeroToken = IZeroTokenMock(zeroToken_);
+    znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
   }
 
   function stakeForDomain(
@@ -59,8 +42,8 @@ contract ZNSTreasury is IZNSTreasury {
     address depositor,
     bool useFee
   ) external onlyRegistrar {
-    // TODO when we merge real PriceOracle
-    uint256 stakeAmount = priceOraclePrices[bytes(domainName).length];
+    // When `useFee` is true, it's a top level domain
+    uint256 stakeAmount = znsPriceOracle.getPrice(domainName, useFee);
 
     // Take the payment as a staking deposit
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
@@ -84,6 +67,7 @@ contract ZNSTreasury is IZNSTreasury {
     uint256 stakeAmount = stakedForDomain[domainHash];
     delete stakedForDomain[domainHash];
 
+    // require owner == ownerOrOperator from registry?
     zeroToken.transfer(owner, stakeAmount);
 
     emit StakeWithdrawn(domainHash, owner, stakeAmount);

@@ -66,9 +66,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     priceMultiplier = priceMultiplier_;
     rootDomainBaseLength = rootDomainBaseLength_;
     subdomainBaseLength = subdomainBaseLength_;
-
-    _setZNSRegistrar(znsRegistrar_);
-
+    znsRegistrar = znsRegistrar_;
     authorized[msg.sender] = true;
     authorized[znsRegistrar_] = true;
   }
@@ -177,7 +175,12 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param registrar The registrar to set
    */
   function setZNSRegistrar(address registrar) external onlyAuthorized {
-    _setZNSRegistrar(registrar);
+    require(registrar != address(0), "ZNS: Zero address for Registrar");
+
+    // Modify the access control for the new registrar
+    authorized[znsRegistrar] = false;
+    authorized[registrar] = true;
+    znsRegistrar = registrar;
 
     emit ZNSRegistrarSet(registrar);
   }
@@ -215,18 +218,5 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       (baseLength * priceMultiplier * basePrice) /
       (length + (3 * priceMultiplier)) /
       100;
-  }
-
-  /**
-   * @notice Set the ZNSRegistrar for this contract
-   * @param registrar The address to update
-   */
-  function _setZNSRegistrar(address registrar) internal {
-    require(registrar != address(0), "ZNS: Zero address for Registrar");
-
-    // Modify the access control for the new registrar
-    authorized[znsRegistrar] = false;
-    authorized[registrar] = true;
-    znsRegistrar = registrar;
   }
 }

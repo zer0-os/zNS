@@ -10,11 +10,11 @@ interface IZNSPriceOracle {
 
   /**
    * @notice Get the price of a given domain name length
-   * @param length The length of the name to check
-   * @param isRootDomain Flag for which base price to use. True for subdomain, false for root.
+   * @param name The name of the domain to check
+   * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
    */
   function getPrice(
-    string calldata length,
+    string calldata name,
     bool isRootDomain
   ) external view returns (uint256);
 

@@ -1,64 +1,44 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { IZNSTreasury } from "./IZNSTreasury.sol";
-import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { ZNSUtils } from "../utils/ZNSUtils.sol";
+import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
+import {IZNSRegistry} from "../registry/IZNSRegistry.sol";
+import {IZNSTreasury} from "./IZNSTreasury.sol";
+import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
+import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
+import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+// import {ZNSUtils} from "../utils/ZNSUtils.sol";
 
+// TODO: add events
 contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO:    this is here temporarily, figure out where this should be and how to set it up !
   bytes32 public constant ETH_ROOT_HASH = keccak256(bytes("0xETH://"));
 
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
-  IZNSDomainToken public znsDomainToken; // TODO: add token here when ready along with import
+  IZNSDomainToken public znsDomainToken;
   IZNSAddressResolver public znsAddressResolver;
-  // IZNSPriceOracle public znsPriceOracle;
+  IZNSPriceOracle public znsPriceOracle;
 
-  // why do we need this?
   mapping(bytes32 => address) private subdomainApprovals;
-
-  // TODO: add events
 
   modifier onlyOwner(bytes32 domainNameHash) {
     require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
     _;
   }
 
-  function hashWithParent(
-    bytes32 parentHash,
-    string calldata name
-  ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(parentHash, keccak256(bytes(name))));
-  }
-
   constructor(
     address znsRegistry_,
     address znsTreasury_,
     address znsDomainToken_,
-    address znsAddressResolver_
+    address znsAddressResolver_,
+    address znsPriceOracle_
   ) {
-    // TODO: consider removing require messsages altogether. what would we have instead?
-    require(
-      znsRegistry_ != address(0),
-      "ZNSEthRegistrar: Zero address passed as _znsRegistry"
-    );
-    require(
-      znsDomainToken_ != address(0),
-      "ZNSEthRegistrar: Zero address passed as _znsDomainToken"
-    );
-    require(
-      znsTreasury_ != address(0),
-      "ZNSEthRegistrar: Zero address passed as _znsTreasury"
-    );
-
     znsRegistry = IZNSRegistry(znsRegistry_);
     znsTreasury = IZNSTreasury(znsTreasury_);
     znsDomainToken = IZNSDomainToken(znsDomainToken_);
     znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
+    znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
   }
 
   // TODO:    Do we only allow address type of content here? How do we set other types here?
@@ -71,11 +51,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // Create hash for given domain name
-<<<<<<< Updated upstream
     bytes32 domainHash = hashWithParent(ETH_ROOT_HASH, name);
-=======
-    bytes32 domainHash = ZNSHasher.hashWithParent(ETH_ROOT_HASH, name);
->>>>>>> Stashed changes
     require(
       !znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain already exists"
@@ -96,9 +72,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  // seems like maybe this is overwriting some of the
-  // functionality from the registry?
-  // basically just allowing a third authority to call to register
   function approveSubdomain(
     bytes32 parentHash,
     address ownerCandidate
@@ -120,7 +93,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     //          contract calling this since the call from it already
     //          serves as an "approval".
 
-    // Already in calldata, why reassign?
     address registerFor = registrant;
     // Here if the caller is an owner or an operator
     // (where a Registrar contract can be any of those),
@@ -134,18 +106,14 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       registerFor = msg.sender;
     }
 
-<<<<<<< Updated upstream
     bytes32 domainHash = hashWithParent(parentHash, name);
-=======
-    bytes32 domainHash = ZNSHasher.hashWithParent(parentHash, name);
->>>>>>> Stashed changes
 
     // TODO: do we have burning here or just for Root Domains?
     // we are always charging the caller here
     // RDO Registrar if present or direct buyer/caller if no RDO Registrar
     znsTreasury.stakeForDomain(domainHash, name, msg.sender, false);
 
-    uint tokenId = uint(domainHash);
+    uint256 tokenId = uint256(domainHash);
 
     znsDomainToken.register(msg.sender, tokenId);
 
@@ -177,6 +145,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     emit DomainRevoked(domainHash, msg.sender);
 
     // TODO: what are we missing here?
+  }
+
+  function hashWithParent(
+    bytes32 parentHash,
+    string calldata name
+  ) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(parentHash, keccak256(bytes(name))));
   }
 
   function _setDomainData(
