@@ -1,6 +1,8 @@
 import { BigNumber } from "ethers";
 import { ZNSPriceOracle } from "../../typechain";
 
+const fs = require("fs");
+
 /**
  * Helper function to get the domain name price base on its length when given
  * an already deployed contract
