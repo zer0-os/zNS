@@ -10,7 +10,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "lint-sol": "yarn solhint \"contracts/**/*.sol\"",
-    "lint-ts": "yarn eslint ./test/**/*.ts",
+    "lint-ts": "yarn eslint ./test/** ./src/**",
     "lint": "yarn lint-sol && yarn lint-ts",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",
@@ -22,9 +22,6 @@
   },
   "author": "Zero CPT",
   "license": "ISC",
-  "pre-commit": [
-    "lint"
-  ],
   "devDependencies": {
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",

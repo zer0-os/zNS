@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   node: circleci/node@4.7.0
+  codecov: codecov/codecov@3.2.4
 
 defaults: &defaults
   working_directory: ~/repo
@@ -9,7 +10,7 @@ defaults: &defaults
     - image: cimg/node:18.15.0
 
 jobs:
-  test:
+  test and coverage:
     <<: *defaults
     steps:
       - checkout
@@ -17,21 +18,16 @@ jobs:
           pkg-manager: yarn
       - run: yarn build
       - run: yarn lint
-      - run: yarn test # Validate Unit Tests Pass
-      - persist_to_workspace:
-          root: ~/repo
-          paths: .
-  coverage:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/repo
       - run: 
           name: Code Coverage Report
           command: yarn coverage
       - run: 
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
+      - codecov/upload
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
   publish:
     <<: *defaults
     steps:
@@ -44,34 +40,21 @@ workflows:
   version: 2
   build:
     jobs:
-      - test:
-          filters:
-            branches:
-              ignore: 
-                - development
-      - coverage:
-          requires:
-            - test
+      - test and coverage:
           filters:
             branches:
               ignore: 
                 - development
   development:
     jobs:
-      - test:
+      - test and coverage:
           filters:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
               only: development
-      - coverage:
-          requires:
-            - test
-          filters:
-            <<: *filters-development # this is calling the previously set yaml anchor
       - publish:
           context: CPT
           requires:
-            - test
-            - coverage
+            - test and coverage
           filters:
             <<: *filters-development # this is calling the previously set yaml anchor

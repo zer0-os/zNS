@@ -7,6 +7,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 
+
 describe("ZNSDomainToken:", () => {
   const TokenName = "ZNSDomainToken";
   const TokenSymbol = "ZDT";
