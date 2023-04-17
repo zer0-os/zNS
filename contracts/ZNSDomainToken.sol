@@ -29,7 +29,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
   function revoke(uint256 tokenId) external {
     require(
       msg.sender == ownerOf(tokenId),
-      "ZNSDomainToken: Only token owner can revoke"
+      "ZNSDomainToken: Only token owner can burn a token"
     );
     _burn(tokenId);
   }

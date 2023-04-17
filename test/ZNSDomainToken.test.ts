@@ -98,7 +98,7 @@ describe("ZNSDomainToken:", () => {
         .connect(deployer)
         .revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNSDomainToken: Owner of sender does not match Owner of token"
+        "ZNSDomainToken: Only token owner can burn a token"
       );
 
       // Verify token has not been burned
