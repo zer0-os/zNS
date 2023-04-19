@@ -11,6 +11,8 @@
     "reason-string": "off",
     "func-visibility": ["warn", {"ignoreConstructors": true}],
     "constructor-syntax": "warn",
-    "named-parameters-mapping": "error"
+    "named-parameters-mapping": "error",
+    "comprehensive-interface": "error",
+    "max-line-length": ["error", 120]
   }
 }
