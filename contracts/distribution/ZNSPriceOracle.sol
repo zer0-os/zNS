@@ -60,7 +60,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint8 rootDomainBaseLength_,
     uint8 subdomainBaseLength_,
     address znsRegistrar_
-  ) public initializer {
+  ) public override initializer {
     rootDomainBasePrice = rootDomainBasePrice_;
     subdomainBasePrice = subdomainBasePrice_;
     priceMultiplier = priceMultiplier_;
@@ -81,7 +81,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function getPrice(
     string calldata name,
     bool isRootDomain
-  ) external view returns (uint256) {
+  ) external override view returns (uint256) {
     // TODO Getting string length this way may be misleading
     // when considering unicode encoded characters. Find a
     // better solution for this
@@ -107,7 +107,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function setBasePrice(
     uint256 basePrice,
     bool isRootDomain
-  ) external onlyAuthorized {
+  ) external override onlyAuthorized {
     if (isRootDomain) {
       rootDomainBasePrice = basePrice;
     } else {
@@ -128,7 +128,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * to make up for this.
    * @param multiplier The new price multiplier to set
    */
-  function setPriceMultiplier(uint256 multiplier) external onlyAuthorized {
+  function setPriceMultiplier(uint256 multiplier) external override onlyAuthorized {
     require(
       multiplier >= 300 && multiplier <= 400,
       "ZNS: Multiplier out of range"
@@ -147,7 +147,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function setBaseLength(
     uint8 length,
     bool isRootDomain
-  ) external onlyAuthorized {
+  ) external override onlyAuthorized {
     if (isRootDomain) {
       rootDomainBaseLength = length;
     } else {
@@ -165,7 +165,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function setBaseLengths(
     uint8 rootLength,
     uint8 subdomainLength
-  ) external onlyAuthorized {
+  ) external override onlyAuthorized {
     rootDomainBaseLength = rootLength;
     subdomainBaseLength = subdomainLength;
 
@@ -176,7 +176,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @notice Set the ZNSRegistrar for this contract
    * @param registrar The registrar to set
    */
-  function setZNSRegistrar(address registrar) external onlyAuthorized {
+  function setZNSRegistrar(address registrar) external override onlyAuthorized {
     _setZNSRegistrar(registrar);
 
     emit ZNSRegistrarSet(registrar);
@@ -186,7 +186,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @notice Return true if a user is authorized, otherwise false
    * @param user The user to check
    */
-  function isAuthorized(address user) external view returns (bool) {
+  function isAuthorized(address user) external view override returns (bool) {
     return authorized[user];
   }
 
@@ -201,7 +201,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint8 length,
     uint8 baseLength,
     uint256 basePrice
-  ) internal view returns (uint256) {
+  ) internal view override returns (uint256) {
     if (length <= baseLength) return basePrice;
 
     // TODO truncate to everything after the decimal, we don't want fractional prices

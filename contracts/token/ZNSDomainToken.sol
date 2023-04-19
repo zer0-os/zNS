@@ -17,7 +17,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @param to The address that will recieve the newly minted domain token
    * @param tokenId The TokenId that the caller wishes to mint/register
    */
-  function register(address to, uint256 tokenId) external {
+  function register(address to, uint256 tokenId) external override {
     _safeMint(to, tokenId);
   }
 
@@ -26,7 +26,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @dev TODO: Add Access Control, replace require to also other specific contracts to revoke
    * @param tokenId The tokenId that the caller wishes to burn/revoke
    */
-  function revoke(uint256 tokenId) external {
+  function revoke(uint256 tokenId) external override {
     require(
       msg.sender == ownerOf(tokenId),
       "ZNSDomainToken: Only token owner can burn a token"
