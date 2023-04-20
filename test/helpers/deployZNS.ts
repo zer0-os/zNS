@@ -70,20 +70,21 @@ export const deployDomainToken = async (
   return domainTokenFactory.deploy();
 };
 
-export const deployZTokenMock = async (
+export const deployZeroTokenMock = async (
   deployer: SignerWithAddress
 ): Promise<ZeroTokenMock> => {
-  const zTokenMockFactory = new ZeroTokenMock__factory(deployer);
-  return zTokenMockFactory.deploy(deployer.address);
+  const zTokenMockMockFactory = new ZeroTokenMock__factory(deployer);
+  return zTokenMockMockFactory.deploy(deployer.address);
 };
 
 export const deployTreasury = async (
   deployer: SignerWithAddress,
-  zTokenMockAddress: string
+  znsPriceOracleAddress: string,
+  zTokenMockMockAddress: string
 ): Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  // TODO:  fix this when Oracle is ready
-  return treasuryFactory.deploy(deployer.address, zTokenMockAddress);
+  const treasury = await treasuryFactory.deploy(znsPriceOracleAddress, zTokenMockMockAddress);
+  return treasury;
 };
 
 export const deployRegistrar = async (
@@ -92,8 +93,8 @@ export const deployRegistrar = async (
 ): Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
   const registrar = await registrarFactory.deploy(
-    config.treasury.address,
     config.registryAddress,
+    config.treasury.address,
     config.domainTokenAddress,
     config.addressResolverAddress,
     config.priceOracleAddress
@@ -109,13 +110,11 @@ export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContrac
 
   const domainToken = await deployDomainToken(deployer);
 
-  const zTokenMock = await deployZTokenMock(deployer);
+  const zeroTokenMock = await deployZeroTokenMock(deployer);
 
   const addressResolver = await deployAddressResolver(deployer, registry.address);
 
-  const treasury = await deployTreasury(deployer, zTokenMock.address);
-
-  // TODO parameterize these values
+  // TODO parameterize these numbers
   // Set "registrarAddress" after the registrar is deployed
   const oracleConfig: PriceOracleConfig = {
     rootDomainPrice: ethers.utils.parseEther("1"),
@@ -128,6 +127,8 @@ export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContrac
 
   const priceOracle = await deployPriceOracle(deployer, oracleConfig);
 
+  const treasury = await deployTreasury(deployer, priceOracle.address, zeroTokenMock.address);
+
   const config: RegistrarConfig = {
     treasury: treasury,
     registryAddress: registry.address,
@@ -138,15 +139,22 @@ export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContrac
   const registrar = await deployRegistrar(deployer, config);
 
   const znsContracts: ZNSContracts = {
+    addressResolver: addressResolver,
     registry: registry,
     domainToken: domainToken,
-    zToken: zTokenMock,
+    zeroToken: zeroTokenMock,
     treasury: treasury,
     priceOracle: priceOracle,
     registrar: registrar,
   }
 
+  // Final configuration steps
   await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
+  await registry.connect(deployer).setOwnerOperator(registrar.address, true)
+
+  // Give 15 ZERO to the deployer
+  await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256)
+  await zeroTokenMock.transfer(deployer.address, ethers.utils.parseEther("15"));
 
   return znsContracts;
 };

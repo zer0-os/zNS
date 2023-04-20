@@ -5,14 +5,18 @@ interface IZNSEthRegistrar {
   // TODO: what other params do we need here for all the events ??
   event RootDomainRegistered(
     bytes32 indexed domainHash,
+    uint256 tokenId,
     string name,
-    address indexed registrant
+    address indexed registrant,
+    address resolver
   );
   event SubdomainRegistered(
     bytes32 indexed domainHash,
     bytes32 indexed parentHash,
+    uint256 tokenId,
     string name,
-    address indexed registrant
+    address indexed registrant,
+    address resolver
   );
   event SubdomainApproved(
     bytes32 indexed parentHash,

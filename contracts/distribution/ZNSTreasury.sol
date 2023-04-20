@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSTreasury } from "./IZNSTreasury.sol";
-import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol"; // TODO: fix when token is sorted out
+import {IZNSTreasury} from "./IZNSTreasury.sol";
+import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
+import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol"; // TODO: fix when token is sorted out
 
 // TODO is this an appropriate name??
 contract ZNSTreasury is IZNSTreasury {

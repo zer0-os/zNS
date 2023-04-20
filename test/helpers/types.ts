@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { ZNSDomainToken, ZNSEthRegistrar, ZNSPriceOracle, ZNSRegistry, ZNSTreasury, ZeroTokenMock } from "../../typechain";
+import { ZNSAddressResolver, ZNSDomainToken, ZNSEthRegistrar, ZNSPriceOracle, ZNSRegistry, ZNSTreasury, ZeroTokenMock } from "../../typechain";
 
 export type Maybe<T> = T | undefined;
 
@@ -21,10 +21,11 @@ export interface RegistrarConfig {
 }
 
 export interface ZNSContracts {
-  registry: ZNSRegistry
-  domainToken: ZNSDomainToken
-  zToken: ZeroTokenMock // TODO fix
-  treasury: ZNSTreasury
-  priceOracle: ZNSPriceOracle
-  registrar: ZNSEthRegistrar
+  addressResolver: ZNSAddressResolver;
+  registry: ZNSRegistry;
+  domainToken: ZNSDomainToken;
+  zeroToken: ZeroTokenMock; // TODO fix when real token
+  treasury: ZNSTreasury;
+  priceOracle: ZNSPriceOracle;
+  registrar: ZNSEthRegistrar;
 }
