@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-
+import { StringUtils } from "./StringUtils.sol";
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   /**
    * @notice Base price for root domains
@@ -82,18 +82,16 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     string calldata name,
     bool isRootDomain
   ) external view returns (uint256) {
-    // TODO Getting string length this way may be misleading
-    // when considering unicode encoded characters. Find a
-    // better solution for this
-    uint8 length = uint8(bytes(name).length);
-
+    uint256 length = StringUtils.strlen(name);
+    require(length <= 255, "ZNS: Only names up to 255 characters in length are supported");
+    
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
 
     if (isRootDomain) {
-      return _getPrice(length, rootDomainBaseLength, rootDomainBasePrice);
+      return _getPrice(uint8(length), rootDomainBaseLength, rootDomainBasePrice);
     } else {
-      return _getPrice(length, subdomainBaseLength, subdomainBasePrice);
+      return _getPrice(uint8(length), subdomainBaseLength, subdomainBasePrice);
     }
   }
 
