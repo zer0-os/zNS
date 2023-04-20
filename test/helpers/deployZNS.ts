@@ -80,10 +80,14 @@ export const deployZeroTokenMock = async (
 export const deployTreasury = async (
   deployer: SignerWithAddress,
   znsPriceOracleAddress: string,
-  zTokenMockMockAddress: string
+  zTokenMockMockAddress: string,
 ): Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  const treasury = await treasuryFactory.deploy(znsPriceOracleAddress, zTokenMockMockAddress);
+  const treasury = await treasuryFactory.deploy(
+    znsPriceOracleAddress,
+    zTokenMockMockAddress,
+    deployer.address
+  );
   return treasury;
 };
 
@@ -97,15 +101,16 @@ export const deployRegistrar = async (
     config.treasury.address,
     config.domainTokenAddress,
     config.addressResolverAddress,
-    config.priceOracleAddress
+    config.priceOracleAddress,
+    config.burnAddress
   );
 
-  await config.treasury.connect(deployer).setZnsRegistrar(registrar.address);
+  await config.treasury.connect(deployer).setZNSRegistrar(registrar.address);
 
   return registrar;
 };
 
-export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContracts> => {
+export const deployZNS = async (deployer: SignerWithAddress, burnAddress: string): Promise<ZNSContracts> => {
   const registry = await deployRegistry(deployer);
 
   const domainToken = await deployDomainToken(deployer);
@@ -134,8 +139,10 @@ export const deployZNS = async (deployer: SignerWithAddress): Promise<ZNSContrac
     registryAddress: registry.address,
     domainTokenAddress: domainToken.address,
     addressResolverAddress: addressResolver.address,
-    priceOracleAddress: priceOracle.address
+    priceOracleAddress: priceOracle.address,
+    burnAddress: burnAddress
   }
+
   const registrar = await deployRegistrar(deployer, config);
 
   const znsContracts: ZNSContracts = {

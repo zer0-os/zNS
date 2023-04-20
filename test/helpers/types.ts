@@ -18,6 +18,7 @@ export interface RegistrarConfig {
   domainTokenAddress: string;
   addressResolverAddress: string;
   priceOracleAddress: string;
+  burnAddress: string; // TODO rename / fix
 }
 
 export interface ZNSContracts {

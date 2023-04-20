@@ -16,11 +16,18 @@ interface IZNSTreasury {
     uint256 indexed amount
   );
 
+  event AdminSet(
+    address user
+  );
+
+  function getPriceFee(uint256 stakeAmount) external pure returns (uint256);
+
   function stakeForDomain(
     bytes32 domainHash,
     string calldata domainName,
     address depositor,
-    bool useFee
+    address burnAddress,
+    bool isTopLevelDomain
   ) external;
 
   function unstakeForDomain(bytes32 domainHash, address owner) external;
@@ -29,7 +36,7 @@ interface IZNSTreasury {
     bytes32 domainHash
   ) external returns (uint256);
 
-  function setZnsRegistrar(address _znsRegistrar) external;
+  function setZNSRegistrar(address _znsRegistrar) external;
 
-  function getZnsRegistrar() external returns (address);
+  function getZNSRegistrar() external returns (address);
 }

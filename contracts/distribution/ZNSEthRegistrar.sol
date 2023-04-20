@@ -15,6 +15,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSAddressResolver public znsAddressResolver;
   IZNSPriceOracle public znsPriceOracle;
 
+  // TODO figure out what this should be and rename it
+  address public burnAddress;
+
   mapping(bytes32 => address) private subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
@@ -27,13 +30,15 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address znsTreasury_,
     address znsDomainToken_,
     address znsAddressResolver_,
-    address znsPriceOracle_
+    address znsPriceOracle_,
+    address burnAddress_
   ) {
     znsRegistry = IZNSRegistry(znsRegistry_);
     znsTreasury = IZNSTreasury(znsTreasury_);
     znsDomainToken = IZNSDomainToken(znsDomainToken_);
     znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
     znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
+    burnAddress = burnAddress_;
   }
 
   // TODO:    Do we only allow address type of content here? How do we set other types here?
@@ -57,7 +62,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
 
     // Staking logic
-    znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
+    znsTreasury.stakeForDomain(domainHash, name, msg.sender, burnAddress, true);
 
     // get tokenId for the new token to be minted for the new domain
     uint256 tokenId = uint256(domainHash);
@@ -120,15 +125,18 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       !znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain already exists"
     );
-    // TODO: do we have burning here or just for Root Domains?
-    // we are always charging the caller here
     // RDO Registrar if present or direct buyer/caller if no RDO Registrar
-    znsTreasury.stakeForDomain(domainHash, name, msg.sender, false);
+    znsTreasury.stakeForDomain(
+      domainHash,
+      name,
+      msg.sender,
+      burnAddress,
+      false
+    );
 
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.register(msg.sender, tokenId);
 
-    // TODO because the registry hashes again, the emit below is inaccurate
     _setSubdomainData(
       parentDomainHash,
       domainHash,

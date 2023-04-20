@@ -13,13 +13,14 @@ describe("ZNSEthRegistrar", () => {
   let user: SignerWithAddress;
 
   let zns: ZNSContracts;
-
+  let burn: SignerWithAddress
   const defaultDomain = "wilder";
   const defaultSubdomain = "world";
 
   beforeEach(async () => {
-    [deployer, user] = await hre.ethers.getSigners();
-    zns = await deployZNS(deployer);
+    [deployer, burn, user] = await hre.ethers.getSigners();
+    // Burn address is used to hold the fee charged to the user when registering
+    zns = await deployZNS(deployer, burn.address);
 
     // Give the user permission on behalf of the parent domain owner
     await zns.registry.connect(deployer).setOwnerOperator(user.address, true);

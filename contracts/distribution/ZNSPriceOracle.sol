@@ -72,7 +72,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   }
 
   /**
-   * @notice Get the price of a given domain name length
+   * @notice Get the price of a given domain name
    * @param name The name of the domain to check
    * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
    */

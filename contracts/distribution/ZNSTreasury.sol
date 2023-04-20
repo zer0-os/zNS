@@ -4,11 +4,10 @@ pragma solidity ^0.8.18;
 import {IZNSTreasury} from "./IZNSTreasury.sol";
 import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
-import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol"; // TODO: fix when token is sorted out
+// TODO: fix when token is sorted out
+import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol";
 
-// TODO is this an appropriate name??
 contract ZNSTreasury is IZNSTreasury {
-  // TODO: possibly move these constants to PriceOracle. make the fee percentages state vars??
   uint256 public constant PERCENTAGE_BASIS = 10000;
   uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
 
@@ -16,11 +15,9 @@ contract ZNSTreasury is IZNSTreasury {
   IZNSPriceOracle public znsPriceOracle;
   IZeroTokenMock public zeroToken;
 
-  // TODO should this be tied to domain hash only?? do we need extra data here??
   mapping(bytes32 domainName => uint256 amountStaked) private stakedForDomain;
 
-  // TODO: remove and change when Oracle is ready
-  // mapping(uint256 => uint256) public priceOraclePrices;
+  mapping(address user => bool isAdmin) public admin;
 
   modifier onlyRegistrar() {
     require(
@@ -30,31 +27,52 @@ contract ZNSTreasury is IZNSTreasury {
     _;
   }
 
-  constructor(address znsPriceOracle_, address zeroToken_) {
+  modifier onlyAdmin() {
+    require(admin[msg.sender], "ZNSTreasury: Not an allowed admin");
+    _;
+  }
+
+  constructor(address znsPriceOracle_, address zeroToken_, address admin_) {
     // TODO change from mock
     zeroToken = IZeroTokenMock(zeroToken_);
     znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
+    admin[admin_] = true;
+  }
+
+  function getPriceFee(uint256 stakeAmount) public pure returns (uint256) {
+    return (stakeAmount * FEE_PERCENTAGE) / PERCENTAGE_BASIS;
   }
 
   function stakeForDomain(
     bytes32 domainHash,
     string calldata domainName,
     address depositor,
-    bool useFee
+    address burnAddress, // TODO not burning, rename?
+    bool isTopLevelDomain
   ) external onlyRegistrar {
-    // When `useFee` is true, it's a top level domain
-    uint256 stakeAmount = znsPriceOracle.getPrice(domainName, useFee);
-
     // Take the payment as a staking deposit
-    zeroToken.transferFrom(depositor, address(this), stakeAmount);
+    uint256 stakeAmount = znsPriceOracle.getPrice(domainName, isTopLevelDomain);
+    uint256 deflationFee = getPriceFee(stakeAmount);
 
-    if (useFee) {
-      // Burn the deflation fee
-      uint256 deflationFee = (stakeAmount * FEE_PERCENTAGE) / PERCENTAGE_BASIS;
-      zeroToken.burn(address(this), deflationFee);
-    }
+    require(
+      zeroToken.balanceOf(depositor) >= stakeAmount + deflationFee,
+      "ZNSTreasury: Not enough funds"
+    );
 
-    // Add staked data
+    // Transfer stake amount and fee
+    zeroToken.transferFrom(
+      depositor,
+      address(this),
+      stakeAmount
+    );
+
+    zeroToken.transferFrom(
+      depositor,
+      burnAddress,
+      deflationFee
+    );
+
+    // Record staked amount for this domain
     stakedForDomain[domainHash] = stakeAmount;
 
     emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
@@ -79,8 +97,7 @@ contract ZNSTreasury is IZNSTreasury {
     return stakedForDomain[domainHash];
   }
 
-  function setZnsRegistrar(address _znsRegistrar) external {
-    // onlyAdmin { TODO: add access control !!
+  function setZNSRegistrar(address _znsRegistrar) external onlyAdmin {
     require(
       _znsRegistrar != address(0),
       "ZNSTreasury: Zero address passed as _znsRegistrar"
@@ -90,7 +107,21 @@ contract ZNSTreasury is IZNSTreasury {
     emit ZNSRegistrarSet(_znsRegistrar);
   }
 
-  function getZnsRegistrar() external view returns (address) {
+  function getZNSRegistrar() external view returns (address) {
     return address(znsRegistrar);
+  }
+
+  function setAdmin(address user) external onlyAdmin {
+    require(user != address(0), "ZNSTreasury: No zero address admins");
+    admin[user] = true;
+
+    emit AdminSet(user);
+    // TODO emit
+    // TODO if we parameterize the bool to `status` then
+    // any admin can unset any other admin
+  }
+
+  function isAdmin(address user) external view returns (bool) {
+    return admin[user];
   }
 }
