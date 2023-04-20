@@ -14,4 +14,6 @@ interface IZNSAddressResolver {
   function getAddress(bytes32 domainNameHash) external view returns (address);
 
   function setAddress(bytes32 domainNameHash, address newAddress) external;
+
+  function getInterfaceId() external pure returns (bytes4);
 }

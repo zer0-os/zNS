@@ -8,12 +8,12 @@ import { ZNSRoles } from "./ZNSRoles.sol";
 
 contract ZNSAccessManager is AccessControlUpgradeable, ZNSRoles, IZNSAccessManager {
     // solhint-disable-next-line func-name-mixedcase
-    function __ZNSAccessManager_init(
+    function initialize(
         // TODO AC: is there a better way to setup all the roles here param-wise?
         address superAdmin,
         address[] calldata governorAddresses,
         address[] calldata operatorAddresses
-    ) internal onlyInitializing {
+    ) external override onlyInitializing {
         // TODO AC: should this be msg.sender?
         require(superAdmin != address(0), "ZNSAM: Super Admin can not be 0 address!");
         /**

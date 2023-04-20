@@ -201,7 +201,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint8 length,
     uint8 baseLength,
     uint256 basePrice
-  ) internal view override returns (uint256) {
+  ) internal view returns (uint256) {
     if (length <= baseLength) return basePrice;
 
     // TODO truncate to everything after the decimal, we don't want fractional prices

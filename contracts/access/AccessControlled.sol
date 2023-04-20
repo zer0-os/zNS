@@ -21,9 +21,9 @@ abstract contract AccessControlled is ZNSRoles {
      * not get to the final interface of a child).
      * TODO AC: how do we make sure this gets to the final interface?
      */
-    function setAccessManager(address _accessManager) external;
+    function setAccessManager(address _accessManager) external virtual;
 
-    function setAccessManager(address _accessManager) internal {
+    function _setAccessManager(address _accessManager) internal {
         require(_accessManager != address(0), "AC: _accessManager is 0x0 address");
         accessManager = IZNSAccessManager(_accessManager);
     }

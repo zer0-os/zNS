@@ -60,6 +60,8 @@ interface IZNSRegistry {
     bool allowed
   );
 
+  function initialize(address owner) external;
+
   /**
    * @dev Check if a given domain exists
    * @param domainNameHash The identifying hash of a domain's name

@@ -8,6 +8,15 @@ interface IZNSPriceOracle {
   event BaseLengthsSet(uint8 rootDomainLength, uint8 subdomainLength);
   event ZNSRegistrarSet(address registrar);
 
+  function initialize(
+    uint256 rootDomainBasePrice_,
+    uint256 subdomainBasePrice_,
+    uint256 priceMultiplier_,
+    uint8 rootDomainBaseLength_,
+    uint8 subdomainBaseLength_,
+    address znsRegistrar_
+  ) external;
+
   /**
    * @notice Get the price of a given domain name length
    * @param length The length of the name to check
