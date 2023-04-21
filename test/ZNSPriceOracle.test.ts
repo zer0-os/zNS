@@ -10,14 +10,14 @@ import { getPrice } from "./helpers";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSPriceOracle", () => {
-  let deployer : SignerWithAddress;
-  let user : SignerWithAddress;
-  let mockRegistrar : SignerWithAddress;
-  let updatedMockRegistrar : SignerWithAddress;
-  let contract : ZNSPriceOracle;
-  let factory : ZNSPriceOracle__factory;
+  let deployer: SignerWithAddress;
+  let user: SignerWithAddress;
+  let mockRegistrar: SignerWithAddress;
+  let updatedMockRegistrar: SignerWithAddress;
+  let contract: ZNSPriceOracle;
+  let factory: ZNSPriceOracle__factory;
 
-  const config : PriceOracleConfig = {
+  const config: PriceOracleConfig = {
     rootDomainPrice: parseEther("1"),
     subdomainPrice: parseEther("0.2"),
     priceMultiplier: BigNumber.from("390"),

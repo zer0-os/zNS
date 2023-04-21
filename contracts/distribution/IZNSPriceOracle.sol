@@ -4,8 +4,8 @@ pragma solidity ^0.8.18;
 interface IZNSPriceOracle {
   event BasePriceSet(uint256 price, bool isSubdomain);
   event PriceMultiplierSet(uint256 multiplier);
-  event BaseLengthSet(uint8 length, bool isRootDomain);
-  event BaseLengthsSet(uint8 rootDomainLength, uint8 subdomainLength);
+  event BaseLengthSet(uint256 length, bool isRootDomain);
+  event BaseLengthsSet(uint256 rootDomainLength, uint256 subdomainLength);
   event ZNSRegistrarSet(address registrar);
 
   /**
@@ -42,14 +42,14 @@ interface IZNSPriceOracle {
    * @param length Boundary to set
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
-  function setBaseLength(uint8 length, bool isRootDomain) external;
+  function setBaseLength(uint256 length, bool isRootDomain) external;
 
   /**
    * @notice Set the value of both base lengt variables
    * @param rootLength The length for root domains
    * @param subdomainLength The length for subdomains
    */
-  function setBaseLengths(uint8 rootLength, uint8 subdomainLength) external;
+  function setBaseLengths(uint256 rootLength, uint256 subdomainLength) external;
 
   /**
    * @notice Set the ZNSRegistrar for this contract

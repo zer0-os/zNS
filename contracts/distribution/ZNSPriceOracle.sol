@@ -30,9 +30,9 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * that should recieve the default base price for that type of domain or not.
    * Domains that are `<= baseLength` will receive the default base price.
    */
-  uint8 public rootDomainBaseLength;
+  uint256 public rootDomainBaseLength;
 
-  uint8 public subdomainBaseLength;
+  uint256 public subdomainBaseLength;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -57,8 +57,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint256 rootDomainBasePrice_,
     uint256 subdomainBasePrice_,
     uint256 priceMultiplier_,
-    uint8 rootDomainBaseLength_,
-    uint8 subdomainBaseLength_,
+    uint256 rootDomainBaseLength_,
+    uint256 subdomainBaseLength_,
     address znsRegistrar_
   ) public initializer {
     rootDomainBasePrice = rootDomainBasePrice_;
@@ -83,7 +83,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     // TODO Getting string length this way may be misleading
     // when considering unicode encoded characters. Find a
     // better solution for this
-    uint8 length = uint8(bytes(name).length);
+    uint256 length = bytes(name).length;
 
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
@@ -143,7 +143,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
   function setBaseLength(
-    uint8 length,
+    uint256 length,
     bool isRootDomain
   ) external onlyAuthorized {
     if (isRootDomain) {
@@ -161,8 +161,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param subdomainLength The length for subdomains
    */
   function setBaseLengths(
-    uint8 rootLength,
-    uint8 subdomainLength
+    uint256 rootLength,
+    uint256 subdomainLength
   ) external onlyAuthorized {
     rootDomainBaseLength = rootLength;
     subdomainBaseLength = subdomainLength;
@@ -198,11 +198,12 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * a root domain or a subdomain.
    *
    * @param length The length of the domain name
+   * @param baseLength The base length to reach before we actually do the calculation
    * @param basePrice The base price to calculate with
    */
   function _getPrice(
-    uint8 length,
-    uint8 baseLength,
+    uint256 length,
+    uint256 baseLength,
     uint256 basePrice
   ) internal view returns (uint256) {
     if (length <= baseLength) return basePrice;
