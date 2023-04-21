@@ -5,7 +5,10 @@ import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "./StringUtils.sol";
+
+
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
+  using StringUtils for string;
   /**
    * @notice Base price for root domains
    */
@@ -82,16 +85,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     string calldata name,
     bool isRootDomain
   ) external view returns (uint256) {
-    uint256 length = StringUtils.strlen(name);
-    require(length <= 255, "ZNS: Only names up to 255 characters in length are supported");
-    
+    uint256 length = name.strlen();
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
 
     if (isRootDomain) {
-      return _getPrice(uint8(length), rootDomainBaseLength, rootDomainBasePrice);
+      return _getPrice(length, rootDomainBaseLength, rootDomainBasePrice);
     } else {
-      return _getPrice(uint8(length), subdomainBaseLength, subdomainBasePrice);
+      return _getPrice(length, subdomainBaseLength, subdomainBasePrice);
     }
   }
 
@@ -196,8 +197,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param basePrice The base price to calculate with
    */
   function _getPrice(
-    uint8 length,
-    uint8 baseLength,
+    uint256 length,
+    uint256 baseLength,
     uint256 basePrice
   ) internal view returns (uint256) {
     if (length <= baseLength) return basePrice;
@@ -214,7 +215,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       (length + (3 * priceMultiplier)) /
       100;
   }
-
+  
   /**
    * @notice Set the ZNSRegistrar for this contract
    * @param registrar The address to update

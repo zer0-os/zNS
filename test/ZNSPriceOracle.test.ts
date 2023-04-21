@@ -244,17 +244,17 @@ describe("ZNSPriceOracle", () => {
       expect(price).to.eq(expectedPrice);
     });
 
-    it("Requires Pricing to be 255 Characters or Less", async () => {
+    it("Can Price Names Longer Than 255 Characters", async () => {
       // 256 length
       const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
-      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu" +
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "a";
-
-      const tx =  contract.getPrice(domain, true);
-      await expect(tx).to.be.revertedWith("ZNS: Only names up to 255 characters in length are supported");
+      const expectedPrice = await getPrice(domain, contract, false);
+      const price = await contract.getPrice(domain, false);
+      expect(price).to.eq(expectedPrice);
     });
   });
 
