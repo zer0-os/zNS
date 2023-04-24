@@ -4,8 +4,11 @@ pragma solidity ^0.8.18;
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import { StringUtils } from "./StringUtils.sol";
+
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
+  using StringUtils for string;
   /**
    * @notice Base price for root domains
    */
@@ -82,11 +85,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     string calldata name,
     bool isRootDomain
   ) external view returns (uint256) {
-    // TODO Getting string length this way may be misleading
-    // when considering unicode encoded characters. Find a
-    // better solution for this
-    uint8 length = uint8(bytes(name).length);
-
+    uint256 length = name.strlen();
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
 
@@ -198,8 +197,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param basePrice The base price to calculate with
    */
   function _getPrice(
-    uint8 length,
-    uint8 baseLength,
+    uint256 length,
+    uint256 baseLength,
     uint256 basePrice
   ) internal view returns (uint256) {
     if (length <= baseLength) return basePrice;
@@ -216,7 +215,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       (length + (3 * priceMultiplier)) /
       100;
   }
-
+  
   /**
    * @notice Set the ZNSRegistrar for this contract
    * @param registrar The address to update

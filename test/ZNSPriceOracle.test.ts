@@ -231,6 +231,31 @@ describe("ZNSPriceOracle", () => {
       const longPrice = await contract.getPrice(long, true);
       expect(expectedLongPrice).to.eq(longPrice);
     });
+
+    it("Prices Special Characters Accurately", async () => {
+      const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
+      const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
+      const domainWithoutSpecials = "abcdef";
+      const expectedPrice = await getPrice(domainWithoutSpecials, contract, false);
+      let price = await contract.getPrice(domainSpecialCharacterSet1, false);
+      expect(price).to.eq(expectedPrice);
+
+      price = await contract.getPrice(domainSpecialCharacterSet2, false);
+      expect(price).to.eq(expectedPrice);
+    });
+
+    it("Can Price Names Longer Than 255 Characters", async () => {
+      // 256 length
+      const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
+      "a";
+      const expectedPrice = await getPrice(domain, contract, false);
+      const price = await contract.getPrice(domain, false);
+      expect(price).to.eq(expectedPrice);
+    });
   });
 
   describe("setBasePrice", () => {
