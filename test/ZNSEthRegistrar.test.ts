@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployRegistrar, deployZNS, getDomainHash, getEvent, getPrice, getTokenId } from "./helpers";
+import { deployZNS, getDomainHash, getEvent, getPrice, getTokenId } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
@@ -35,13 +35,13 @@ describe("ZNSEthRegistrar", () => {
 
   // Uncomment if needed
   // it("Confirms deployment", async () => {
-    // console.log(`Registrar: ${zns.registrar.address}`);
-    // console.log(`Registry: ${zns.registry.address}`);
-    // console.log(`PriceOracle: ${zns.priceOracle.address}`);
-    // console.log(`AddressResolver: ${zns.addressResolver.address}`);
-    // console.log(`DomainToken: ${zns.domainToken.address}`);
-    // console.log(`Treasury: ${zns.treasury.address}`);
-    // console.log(`zeroToken: ${zns.zeroToken.address}`);
+  // console.log(`Registrar: ${zns.registrar.address}`);
+  // console.log(`Registry: ${zns.registry.address}`);
+  // console.log(`PriceOracle: ${zns.priceOracle.address}`);
+  // console.log(`AddressResolver: ${zns.addressResolver.address}`);
+  // console.log(`DomainToken: ${zns.domainToken.address}`);
+  // console.log(`Treasury: ${zns.treasury.address}`);
+  // console.log(`zeroToken: ${zns.zeroToken.address}`);
   // });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
@@ -55,19 +55,19 @@ describe("ZNSEthRegistrar", () => {
   describe("Registers a top level domain", () => {
     it("Staked the correct amount", async () => {
       // Deploy "wilder" with default configuration
-      const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
-
-      const domainHash = await getDomainHash(tx, "RootDomainRegistered");
+      const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(tx);
 
       const expectedStaked = await getPrice(defaultDomain, zns.priceOracle, true);
-      const staked = await zns.treasury.getStakedAmountForDomain(domainHash);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+
       expect(staked).to.eq(expectedStaked);
     });
 
     it("Records the correct domain hash", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
 
-      const domainHash = await getDomainHash(tx, "RootDomainRegistered");
+      const domainHash = await getDomainHash(tx);
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
@@ -76,14 +76,14 @@ describe("ZNSEthRegistrar", () => {
     it("Creates and finds the correct tokenId", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
 
-      const tokenId = await getTokenId(tx, "RootDomainRegistered");
+      const tokenId = await getTokenId(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
       expect(owner).to.eq(deployer.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const domainHash = await getDomainHash(tx, "RootDomainRegistered");
+      const domainHash = await getDomainHash(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
@@ -93,24 +93,24 @@ describe("ZNSEthRegistrar", () => {
   describe("Registers a subdomain", () => {
     it("Staked the correct amount", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx, "SubdomainRegistered");
+      const domainHash = await getDomainHash(tx);
 
       const expectedStaked = await getPrice(defaultSubdomain, zns.priceOracle, false);
-      const staked = await zns.treasury.getStakedAmountForDomain(domainHash);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
     });
 
     it("Records the correct subdomain hash", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx, "SubdomainRegistered");
+      const domainHash = await getDomainHash(tx);
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
@@ -118,22 +118,22 @@ describe("ZNSEthRegistrar", () => {
 
     it("Creates and finds the correct tokenId", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const tokenId = await getTokenId(tx, "SubdomainRegistered");
+      const tokenId = await getTokenId(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
       expect(owner).to.eq(user.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx, "SubdomainRegistered");
+      const domainHash = await getDomainHash(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);

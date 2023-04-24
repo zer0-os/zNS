@@ -7,32 +7,9 @@ import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   /**
-   * @notice Base price for root domains
+   * @notice Struct for each configurable price variable
    */
-  uint256 public rootDomainBasePrice;
-
-  /**
-   * @notice Base price for subdomains
-   */
-  uint256 public subdomainBasePrice;
-
-  /**
-   * @notice The price multiplier used in calculation for a given domain name's length
-   * We store this value with two decimals of precision for division later in calculation
-   * This means if we use a multiplier of 3.9, it is stored as 390
-   * Note that 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use
-   * it here because it creates a reasonable decline in pricing visually when graphed.
-   */
-  uint256 public priceMultiplier;
-
-  /**
-   * @notice The base domain name length is used in pricing to identify domains
-   * that should recieve the default base price for that type of domain or not.
-   * Domains that are `<= baseLength` will receive the default base price.
-   */
-  uint256 public rootDomainBaseLength;
-
-  uint256 public subdomainBaseLength;
+  PriceParams public params;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -54,18 +31,13 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   }
 
   function initialize(
-    uint256 rootDomainBasePrice_,
-    uint256 subdomainBasePrice_,
-    uint256 priceMultiplier_,
-    uint256 rootDomainBaseLength_,
-    uint256 subdomainBaseLength_,
+    PriceParams calldata params_,
     address znsRegistrar_
   ) public initializer {
-    rootDomainBasePrice = rootDomainBasePrice_;
-    subdomainBasePrice = subdomainBasePrice_;
-    priceMultiplier = priceMultiplier_;
-    rootDomainBaseLength = rootDomainBaseLength_;
-    subdomainBaseLength = subdomainBaseLength_;
+    // Set pricing and length parameters
+    params = params_;
+
+    // Set the user and registrar we allow to modify prices
     znsRegistrar = znsRegistrar_;
     authorized[msg.sender] = true;
     authorized[znsRegistrar_] = true;
@@ -89,36 +61,52 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     if (length == 0) return 0;
 
     if (isRootDomain) {
-      return _getPrice(length, rootDomainBaseLength, rootDomainBasePrice);
+      return
+        _getPrice(
+          length,
+          params.baseRootDomainLength,
+          params.maxRootDomainPrice,
+          params.maxRootDomainLength,
+          params.minRootDomainPrice
+        );
     } else {
-      return _getPrice(length, subdomainBaseLength, subdomainBasePrice);
+      return
+        _getPrice(
+          length,
+          params.baseSubdomainLength,
+          params.maxSubdomainPrice,
+          params.maxSubdomainLength,
+          params.minSubdomainPrice
+        );
     }
   }
 
   /**
-   * @notice Set the base price for root domains
-   * If this value or the `priceMultiplier` value is `0` the price of any domain will also be `0`
+   * @notice Set the max price for root domains or subdomains. If this value or the
+   * `priceMultiplier` value is `0` the price of any domain will also be `0`
    *
-   * @param basePrice The price to set in $ZERO
+   * @param maxPrice The price to set in $ZERO
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
-  function setBasePrice(
-    uint256 basePrice,
+  function setMaxPrice(
+    uint256 maxPrice,
     bool isRootDomain
   ) external onlyAuthorized {
     if (isRootDomain) {
-      rootDomainBasePrice = basePrice;
+      params.maxRootDomainPrice = maxPrice;
     } else {
-      subdomainBasePrice = basePrice;
+      params.maxSubdomainPrice = maxPrice;
     }
 
-    emit BasePriceSet(basePrice, isRootDomain);
+    emit BasePriceSet(maxPrice, isRootDomain);
   }
+
+  // TODO function setMaxPrices(root, subdomains)
 
   /**
    * @notice In price calculation we use a `multiplier` to adjust how steep the
    * price curve is after the base price. This allows that value to be changed.
-   * If this value or the `basePrice` is `0` the price of any domain will also be `0`
+   * If this value or the `maxPrice` is `0` the price of any domain will also be `0`
    *
    * Valid values for the multiplier range are between 300 - 400 inclusively.
    * These are decimal values with two points of precision, meaning they are really 3.00 - 4.00
@@ -131,7 +119,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       multiplier >= 300 && multiplier <= 400,
       "ZNS: Multiplier out of range"
     );
-    priceMultiplier = multiplier;
+    params.priceMultiplier = multiplier;
 
     emit PriceMultiplierSet(multiplier);
   }
@@ -147,9 +135,9 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     bool isRootDomain
   ) external onlyAuthorized {
     if (isRootDomain) {
-      rootDomainBaseLength = length;
+      params.baseRootDomainLength = length;
     } else {
-      subdomainBaseLength = length;
+      params.baseSubdomainLength = length;
     }
 
     emit BaseLengthSet(length, isRootDomain);
@@ -164,8 +152,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint256 rootLength,
     uint256 subdomainLength
   ) external onlyAuthorized {
-    rootDomainBaseLength = rootLength;
-    subdomainBaseLength = subdomainLength;
+    params.baseRootDomainLength = rootLength;
+    params.baseSubdomainLength = subdomainLength;
 
     emit BaseLengthsSet(rootLength, subdomainLength);
   }
@@ -199,25 +187,33 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    *
    * @param length The length of the domain name
    * @param baseLength The base length to reach before we actually do the calculation
-   * @param basePrice The base price to calculate with
+   * @param maxPrice The base price to calculate with
+   * @param maxLength The maximum length of a name before turning the minimum price
+   * @param minPrice The minimum price for that domain category
    */
   function _getPrice(
     uint256 length,
     uint256 baseLength,
-    uint256 basePrice
+    uint256 maxPrice,
+    uint256 maxLength,
+    uint256 minPrice
   ) internal view returns (uint256) {
-    if (length <= baseLength) return basePrice;
+    if (length <= baseLength) return maxPrice;
+    if (length > maxLength) return minPrice;
 
+    // Pull into memory to save external calls to storage
+    uint256 multiplier = params.priceMultiplier;
+    
     // TODO truncate to everything after the decimal, we don't want fractional prices
     // Should this be here vs. in the dApp?
 
     // This creates an asymptotic curve that decreases in pricing based on domain name length
     // Because there are no decimals in ETH we set the muliplier as 100x higher
     // than it is meant to be, so we divide by 100 to reverse that action here.
-    // =(baseLength*basePrice*multiplier)/(length+(3*multiplier)
+    // =(minLength*maxPrice*multiplier)/(length+(3*multiplier)
     return
-      (baseLength * priceMultiplier * basePrice) /
-      (length + (3 * priceMultiplier)) /
+      (baseLength * multiplier * maxPrice) /
+      (length + (3 * multiplier)) /
       100;
   }
 }

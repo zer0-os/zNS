@@ -3,16 +3,10 @@ pragma solidity ^0.8.18;
 
 interface IZNSEthRegistrar {
   // TODO: what other params do we need here for all the events ??
-  event RootDomainRegistered(
-    bytes32 indexed domainHash,
-    uint256 tokenId,
-    string name,
-    address indexed registrant,
-    address resolver
-  );
-  event SubdomainRegistered(
-    bytes32 indexed domainHash,
+
+  event DomainRegistered(
     bytes32 indexed parentHash,
+    bytes32 indexed domainHash,
     uint256 tokenId,
     string name,
     address indexed registrant,

@@ -100,28 +100,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     return records[domainNameHash];
   }
 
-  /**
-   * @notice Set or create a domain record
-   *
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param owner The owner to set
-   * @param resolver The resolver to set
-   */
-  function setDomainRecord(
-    bytes32 domainNameHash,
-    address owner,
-    address resolver
-  ) external {
-    setDomainOwner(domainNameHash, owner);
-    _setDomainResolver(domainNameHash, resolver);
-
-    emit DomainRecordSet(owner, resolver, domainNameHash);
-  }
-
   // TODO add access control. do we need to revoke operator as well?
-  function deleteDomainRecord(bytes32 domainNameHash) external {
+  function deleteRecord(bytes32 domainNameHash) external {
     // this could call to an internal func _deleteDomainRecord
     // Then when `setDomainRecord` is `0x0` values, we can also delete there
+    require(msg.sender == records[domainNameHash].owner, "ZNSRegistry");
     delete records[domainNameHash];
   }
 
@@ -145,7 +128,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   }
 
   /**
-   * @notice Update the subdomain's owner
+   * @notice Update the domain's owner
    * @param parentDomainHash The base domain name hash
    * @param domainHash The label of the subdomain
    * @param owner The owner to set
@@ -175,15 +158,15 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param domainHash The identifying hash of a domain's name
    * @param owner The account to transfer ownership to
    */
-  function setDomainOwner(
-    bytes32 domainHash,
-    address owner
-  ) public onlyOwnerOrOperator(domainHash) {
-    _setDomainOwner(domainHash, owner);
+  // function setDomainOwner(
+  //   bytes32 domainHash,
+  //   address owner
+  // ) public onlyOwnerOrOperator(domainHash) {
+  //   _setDomainOwner(domainHash, owner);
 
-    // TODO probably don't need any "domain" functions
-    // emit DomainOwnerSet(owner, domainNameHash);
-  }
+  //   // TODO probably don't need any "domain" functions
+  //   // emit DomainOwnerSet(owner, domainNameHash);
+  // }
 
   /**
    * @notice Get the default resolver for the given domain

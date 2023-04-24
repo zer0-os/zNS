@@ -25,29 +25,38 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     _;
   }
 
+  /**
+   * @notice Create an instance of the ZNSEthRegistrar
+   * for registering ZNS domains and subdomains
+   */
   constructor(
-    address znsRegistry_,
-    address znsTreasury_,
-    address znsDomainToken_,
-    address znsAddressResolver_,
-    address znsPriceOracle_,
-    address burnAddress_
+    IZNSRegistry znsRegistry_,
+    IZNSTreasury znsTreasury_,
+    IZNSDomainToken znsDomainToken_,
+    IZNSAddressResolver znsAddressResolver_,
+    IZNSPriceOracle znsPriceOracle_,
+    address burnAddress_ // TODO rename, we are not burning
   ) {
-    znsRegistry = IZNSRegistry(znsRegistry_);
-    znsTreasury = IZNSTreasury(znsTreasury_);
-    znsDomainToken = IZNSDomainToken(znsDomainToken_);
-    znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
-    znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
+    znsRegistry = znsRegistry_;
+    znsTreasury = znsTreasury_;
+    znsDomainToken = znsDomainToken_;
+    znsAddressResolver = znsAddressResolver_;
+    znsPriceOracle = znsPriceOracle_;
     burnAddress = burnAddress_;
   }
 
-  // TODO:    Do we only allow address type of content here? How do we set other types here?
-  //          Would we need to do separate calls from a wallet to a certain Resolver after we've registered a domain?
+  /**
+   * @notice Register a root domain such as `0://wilder`
+   * @param name Name of the domain to register
+   * @param resolver Address of the resolver for that domain
+   * @param domainAddress Address for the resolver to return when requested
+   */
   function registerRootDomain(
     string calldata name,
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
+    // TODO use better name length utility still in PR
     require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // To not repeat external calls, we load into memory
@@ -64,12 +73,12 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // Staking logic
     znsTreasury.stakeForDomain(domainHash, name, msg.sender, burnAddress, true);
 
-    // get tokenId for the new token to be minted for the new domain
+    // Get tokenId for the new token to be minted for the new domain
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.register(msg.sender, tokenId);
 
-    // Because a "root" in our system is technically still a subdomain of the `0://` address
-    // we call `_setSubdomainData` with the parent hash as the root hash
+    // Because a "root" in our system is actually a top-level domain that is a subdomain
+    // of the actual root address `0://`, we call `_setSubdomainData` with the parent hash as the root hash
     _setSubdomainData(
       rootHash,
       domainHash,
@@ -78,7 +87,16 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       domainAddress
     );
 
-    emit RootDomainRegistered(domainHash, tokenId, name, msg.sender, resolver);
+    // TODO Is it useful to register with a specific ROOT_HASH
+    // value vs. just address(0)? What are pros and cons?
+    emit DomainRegistered(
+      rootHash,
+      domainHash,
+      tokenId,
+      name,
+      msg.sender,
+      resolver
+    );
 
     return domainHash;
   }
@@ -107,6 +125,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     //          serves as an "approval".
 
     address registerFor = registrant;
+
     // Here if the caller is an owner or an operator
     // (where a Registrar contract can be any of those),
     // we do not need to check the approval.
@@ -125,7 +144,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       !znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain already exists"
     );
-    // RDO Registrar if present or direct buyer/caller if no RDO Registrar
+
     znsTreasury.stakeForDomain(
       domainHash,
       name,
@@ -145,12 +164,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       domainAddress
     );
 
-    // We create a tokenId and call znsDomainToken.registerFor
-    // for above rootDomain function, why not here?
-    // should we?
-    emit SubdomainRegistered(
-      domainHash,
+    emit DomainRegistered(
       parentDomainHash,
+      domainHash,
       tokenId,
       name,
       registerFor,
@@ -160,6 +176,8 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
+  // TODO We need to decide what happens if we include this functionality
+  // but the domain that is revoked has subdomains
   function revokeDomain(bytes32 domainHash) external onlyOwner(domainHash) {
     // TODO: is this necessary?
     require(
@@ -171,7 +189,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
     znsDomainToken.revoke(tokenId);
 
-    znsRegistry.deleteDomainRecord(domainHash);
+    znsRegistry.deleteRecord(domainHash);
 
     znsTreasury.unstakeForDomain(domainHash, msg.sender);
 
@@ -189,20 +207,21 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
   function _setSubdomainData(
     bytes32 parentDomainHash,
-    bytes32 domainHash, // probably change, this is readable name i think
+    bytes32 domainHash,
     address owner,
     address resolver,
     address domainAddress
   ) internal {
-    // If no resolver given, require no domain data exists either
+    // If no resolver is given, require no domain data exists either
     if (resolver == address(0)) {
       require(
         domainAddress == address(0),
         "ZNSEthRegistrar: Domain content provided without a valid resolver address"
       );
+      // Set only the domain owner
       znsRegistry.setSubdomainOwner(parentDomainHash, domainHash, owner);
     } else {
-      // If valid resolver given, require domain data as well
+      // If a valid resolver is given, require domain data as well
       require(
         domainAddress != address(0),
         "ZNSEthRegistrar: No domain content provided"

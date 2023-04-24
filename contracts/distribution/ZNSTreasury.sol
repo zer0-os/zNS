@@ -15,7 +15,7 @@ contract ZNSTreasury is IZNSTreasury {
    * @notice The address of the registrar we are using
    */
   address public znsRegistrar;
-  
+
   /**
    * @notice The price oracle
    */
@@ -26,7 +26,7 @@ contract ZNSTreasury is IZNSTreasury {
    */
   IZeroTokenMock public zeroToken;
 
-  mapping(bytes32 domainName => uint256 amountStaked) public stakedForDomain;
+  mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
   mapping(address user => bool isAdmin) public admin;
 
@@ -77,22 +77,19 @@ contract ZNSTreasury is IZNSTreasury {
     );
 
     // Transfer stake amount and fee
-    zeroToken.transferFrom(
-      depositor,
-      address(this),
-      stakeAmount
-    );
+    zeroToken.transferFrom(depositor, address(this), stakeAmount);
 
-    zeroToken.transferFrom(
-      depositor,
-      burnAddress,
-      deflationFee
-    );
+    zeroToken.transferFrom(depositor, burnAddress, deflationFee);
 
     // Record staked amount for this domain
     stakedForDomain[domainHash] = stakeAmount;
 
     emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
+  }
+
+  function getStakedForDomain(bytes32 domainHash) public view returns(uint256) {
+    uint256 amountStaked = stakedForDomain[domainHash];
+    return amountStaked;
   }
 
   function unstakeForDomain(

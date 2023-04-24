@@ -107,7 +107,7 @@ describe("ZNSRegistry Tests", () => {
     });
   });
 
-  describe("Domain and subdomain records", async () => {
+  describe("Domain records", async () => {
     it("Checks existence of a domain correctly", async () => {
       const exists = await registry.connect(randomUser).exists(wilderSubdomainHash);
       expect(exists).to.be.true;
@@ -160,18 +160,6 @@ describe("ZNSRegistry Tests", () => {
   });
 
   describe("Setter functions for a domain's record, owner, or resolver", () => {
-    it("Sets a domain record", async () => {
-      await registry.connect(deployer).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
-
-      const record = await registry.getDomainRecord(rootDomainHash);
-      expect(record.owner).to.eq(operator.address);
-    });
-
-    it("Fails to set a record when caller is not owner or operator", async () => {
-      const tx = registry.connect(operator).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
-    });
-
     it("Sets a subdomain record", async () => {
       // In order to set a subdomain, the caller must be the owner of the parent domain
       const domain = ethers.utils.id("zero");
@@ -200,20 +188,6 @@ describe("ZNSRegistry Tests", () => {
           wilderSubdomainHash,
           zeroLabel,
           deployer.address,
-          mockResolver.address
-        );
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
-    });
-
-    it("Fails to create another root domain", async () => {
-      // The root domain ownership is set in the initializer function
-      // Any additional root domains would fail because they are checked for owner,
-      // but because that owner can't exist as the record doesn't exist yet, it fails
-      const domainHash = ethers.utils.id("random-record");
-      const tx = registry.connect(deployer)
-        .setDomainRecord(
-          domainHash,
-          operator.address,
           mockResolver.address
         );
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
