@@ -2,6 +2,8 @@
   "name": "zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
+  "author": "Zero CPT",
+  "license": "ISC",
   "repository": "https://github.com/zer0-os/zNS.git",
   "engines": {
     "node": ">=18",
@@ -20,8 +22,9 @@
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
   },
-  "author": "Zero CPT",
-  "license": "ISC",
+  "pre-commit": [
+    "lint"
+  ],
   "devDependencies": {
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",

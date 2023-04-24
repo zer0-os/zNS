@@ -6,23 +6,20 @@ import {
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
+import { deployDomainToken } from "./helpers";
 
 
 describe("ZNSDomainToken:", () => {
   const TokenName = "ZNSDomainToken";
   const TokenSymbol = "ZDT";
 
-  let deployer : SignerWithAddress;
-  let caller : SignerWithAddress;
-  let domainToken : ZNSDomainToken;
+  let deployer: SignerWithAddress;
+  let caller: SignerWithAddress;
+  let domainToken: ZNSDomainToken;
 
   beforeEach(async () => {
     [deployer, caller] = await hre.ethers.getSigners();
-    const domainTokenFactory = new ZNSDomainToken__factory(
-      deployer
-    );
-
-    domainToken = await domainTokenFactory.deploy();
+    domainToken = await deployDomainToken(deployer);
   });
 
   describe("External functions", () => {
@@ -42,10 +39,8 @@ describe("ZNSDomainToken:", () => {
         caller.address
       );
 
-      // Verify caller owns tokenId
-      expect(await domainToken.ownerOf(tokenId)).to.equal(
-        caller.address
-      );
+      //Verify caller owns tokenId
+      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
     it("Revokes a token", async () => {
@@ -59,10 +54,8 @@ describe("ZNSDomainToken:", () => {
         caller.address
       );
 
-      // Revoke domain
-      const tx = await domainToken
-        .connect(caller)
-        .revoke(tokenId);
+      //Revoke domain
+      const tx = await domainToken.connect(caller).revoke(tokenId);
       const receipt = await tx.wait(0);
 
       // Verify Transfer event is emitted
@@ -94,18 +87,17 @@ describe("ZNSDomainToken:", () => {
         caller.address
       );
 
-      // Revoke domain
-      const tx = domainToken
-        .connect(deployer)
-        .revoke(tokenId);
+      //Verify caller owns tokenId
+      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
+
+      //Revoke domain
+      const tx = domainToken.connect(deployer).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
         "ZNSDomainToken: Only token owner can burn a token"
       );
 
-      // Verify token has not been burned
-      expect(await domainToken.ownerOf(tokenId)).to.equal(
-        caller.address
-      );
+      //Verify token has not been burned
+      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
   });
 

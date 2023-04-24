@@ -8,6 +8,7 @@ import { IZNSDomainToken } from "./IZNSDomainToken.sol";
  * @title A contract for tokenizing domains under the ZNS Architecture
 */
 contract ZNSDomainToken is ERC721, IZNSDomainToken {
+  // TODO: change for proper name !
   // solhint-disable-next-line no-empty-blocks
   constructor() ERC721("ZNSDomainToken", "ZDT") {}
 

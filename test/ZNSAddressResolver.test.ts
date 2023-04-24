@@ -7,6 +7,7 @@ import {
   ERC165__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+// import { ROOT_HASH } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -23,14 +24,10 @@ describe("ZNSAddressResolver", () => {
   let owner : SignerWithAddress;
   let addr1 : SignerWithAddress;
   let operator : SignerWithAddress;
-  const rootDomainHash = hre.ethers.constants.HashZero;
+  let wilderDomainNameHash: string;
+  
   const wilderLabel = hre.ethers.utils.id("wilder");
-  const wilderDomainNameHash = hre.ethers.utils
-    .solidityKeccak256(
-      ["bytes32", "bytes32"],
-      [rootDomainHash, wilderLabel]
-    );
-
+  
   beforeEach(async () => {
     [owner, addr1] = await hre.ethers.getSigners();
     [deployer, operator] = await hre.ethers.getSigners();
@@ -43,10 +40,20 @@ describe("ZNSAddressResolver", () => {
 
     // Initialize registry and domain
     await znsRegistry.connect(deployer).initialize(deployer.address);
+    
+    const rootHash = await znsRegistry.ROOT_HASH();
+
+    // Have to get this value for every test, but can be fixed
+    wilderDomainNameHash = hre.ethers.utils
+    .solidityKeccak256(
+      ["bytes32", "bytes32"],
+      [rootHash, wilderLabel]
+    );
+
     await znsRegistry.connect(deployer)
       .setSubdomainRecord(
-        rootDomainHash,
-        wilderLabel,
+        rootHash,
+        wilderDomainNameHash,
         deployer.address,
         znsAddressResolver.address
       );
@@ -70,7 +77,7 @@ describe("ZNSAddressResolver", () => {
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
       znsAddressResolver.connect(addr1).setAddress(wilderDomainNameHash, addr1.address)
-    ).to.be.revertedWith("ZNS: Not allowed");
+    ).to.be.revertedWith("ZNSAddressResolver: Not allowed");
   });
 
   it("Should allow owner to setAddress and emit event", async () => {
