@@ -124,7 +124,7 @@ contract ZNSTreasury is IZNSTreasury {
 
     // TODO if we parameterize the bool to `status` then
     // any admin can unset any other admin
-    emit AdminSet(user);
+    emit AdminSet(user, status);
   }
 
   function isAdmin(address user) external view returns (bool) {

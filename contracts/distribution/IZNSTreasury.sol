@@ -40,7 +40,8 @@ interface IZNSTreasury {
    * @param user The admin user to set
    */
   event AdminSet(
-    address user
+    address user,
+    bool status
   );
 
   function getPriceFee(uint256 stakeAmount) external pure returns (uint256);
