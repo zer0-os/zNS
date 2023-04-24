@@ -18,7 +18,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO figure out what this should be and rename it
   address public burnAddress;
 
-  mapping(bytes32 => address) private subdomainApprovals;
+  mapping(bytes32 b => address a) private subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
     require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
@@ -170,10 +170,8 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     uint256 tokenId = uint256(domainHash);
 
     znsDomainToken.revoke(tokenId);
-
-    znsRegistry.deleteDomainRecord(domainHash);
-
     znsTreasury.unstakeForDomain(domainHash, msg.sender);
+    znsRegistry.deleteDomainRecord(domainHash);
 
     emit DomainRevoked(domainHash, msg.sender);
 
