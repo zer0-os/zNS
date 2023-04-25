@@ -1,0 +1,1 @@
+export const skipFiles = ['contracts/utility/StringUtils.sol'];

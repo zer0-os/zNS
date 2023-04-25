@@ -21,7 +21,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
    * are or aren't allowed access to domains that `owner` has access to.
    */
-  mapping(address owner => mapping(address operator => bool)) private operators;
+  mapping(address owner => mapping(address operator => bool b) m) private operators;
 
   /**
    * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner

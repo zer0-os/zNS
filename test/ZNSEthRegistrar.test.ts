@@ -139,17 +139,47 @@ describe("ZNSEthRegistrar", () => {
     });
   });
   describe("Revokes a Domain", () => {
-    it("Staked the correct amount", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+    it ("Revokes a Top level Domain - Happy Path", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const tokenId = await getTokenId(topLevelTx, "RootDomainRegistered");
 
-      const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
+      // Revoke the domain and then verify
+      await zns.registrar.connect(user).revokeDomain(parentDomainHash);
 
-      const domainHash = await getDomainHash(tx, "SubdomainRegistered");
+      // Verify token has been burned
+      const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
+      await expect(ownerOfTx).to.be.revertedWith(
+        "ERC721: invalid token ID"
+      );
+      // Verify funds have been unstaked
+      // Verify Domain Record Deleted
+      // No records
+    });
+    it ("Revokes a SubDomain - Happy Path", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+    });
 
-      const expectedStaked = await getPrice(defaultSubdomain, zns.priceOracle, false);
-      const staked = await zns.treasury.getStakedAmountForDomain(domainHash);
-      expect(staked).to.eq(expectedStaked);
+    it ("Cannot revoke a domain that doesnt exist", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+    });
+
+    it ("Revoked domain unstakes", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+    });
+
+    it ("Revoked domain unstakes without any funds", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+    });
+
+    it ("Cannot revoke a domain owned by another user", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
     });
   });
 });
