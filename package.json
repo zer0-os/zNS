@@ -12,7 +12,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "lint-sol": "yarn solhint \"contracts/**/*.sol\"",
-    "lint-ts": "yarn eslint ./test/**/*.ts",
+    "lint-ts": "yarn eslint ./test/** ./src/**",
     "lint": "yarn lint-sol && yarn lint-ts",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",

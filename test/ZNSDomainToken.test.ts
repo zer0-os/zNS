@@ -8,6 +8,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 import { deployDomainToken } from "./helpers";
 
+
 describe("ZNSDomainToken:", () => {
   const TokenName = "ZNSDomainToken";
   const TokenSymbol = "ZDT";
@@ -92,7 +93,7 @@ describe("ZNSDomainToken:", () => {
       //Revoke domain
       const tx = domainToken.connect(deployer).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNSDomainToken: Owner of sender does not match Owner of token"
+        "ZNSDomainToken: Only token owner can burn a token"
       );
 
       //Verify token has not been burned

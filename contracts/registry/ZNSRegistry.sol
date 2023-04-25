@@ -86,7 +86,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function isAllowedOperator(
     address owner,
     address operator
-  ) external view returns (bool) {
+  ) public view returns (bool) {
     return operators[owner][operator];
   }
 
@@ -210,6 +210,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param owner The owner to set
    */
   function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
+    require(owner != address(0), "ZNS: Owner can NOT be zero address");
     records[domainNameHash].owner = owner;
   }
 
@@ -222,7 +223,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) internal {
-    require(resolver != address(0), "ZNSRegistry: Zero address");
+    require(resolver != address(0), "ZNSRegistry: Resolver cannot be the zero address");
 
     records[domainNameHash].resolver = resolver;
   }

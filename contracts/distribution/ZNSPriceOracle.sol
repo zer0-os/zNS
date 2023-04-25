@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import { StringUtils } from "../StringUtils.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
+  using StringUtils for string;
   /**
    * @notice Struct for each configurable price variable
    */
@@ -52,11 +54,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     string calldata name,
     bool isRootDomain
   ) external view returns (uint256) {
-    // TODO Getting string length this way may be misleading
-    // when considering unicode encoded characters. Find a
-    // better solution for this
-    uint256 length = bytes(name).length;
-
+    uint256 length = name.strlen();
     // No pricing is set for 0 length domains
     if (length == 0) return 0;
 
@@ -215,5 +213,18 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       (baseLength * multiplier * maxPrice) /
       (length + (3 * multiplier)) /
       100;
+  }
+  
+  /**
+   * @notice Set the ZNSRegistrar for this contract
+   * @param registrar The address to update
+   */
+  function _setZNSRegistrar(address registrar) internal {
+    require(registrar != address(0), "ZNS: Zero address for Registrar");
+
+    // Modify the access control for the new registrar
+    authorized[znsRegistrar] = false;
+    authorized[registrar] = true;
+    znsRegistrar = registrar;
   }
 }
