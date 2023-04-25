@@ -23,9 +23,8 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO figure out what this should be and rename it
   address public burnAddress;
 
-  // mapping(bytes32 parentDomainHash => address user) public subdomainApprovals;
-
-  mapping(bytes32 parentDomainHash => mapping(address user => bool status)) public subdomainApprovals;
+  mapping(bytes32 parentDomainHash => mapping(address user => bool status))
+    public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
     require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
@@ -124,11 +123,11 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   }
 
   function registerSubdomain(
-    bytes32 parentDomainHash, // wilder
-    string calldata name, // world
-    address registrant, // user
-    address resolver, // addressResolver
-    address domainAddress // value
+    bytes32 parentDomainHash,
+    string calldata name,
+    address registrant,
+    address resolver,
+    address domainAddress
   ) external returns (bytes32) {
     require(name.strlen() != 0, "ZNSEthRegistrar: No subdomain name");
 

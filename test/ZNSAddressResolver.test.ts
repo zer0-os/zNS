@@ -24,10 +24,10 @@ describe("ZNSAddressResolver", () => {
   let owner : SignerWithAddress;
   let addr1 : SignerWithAddress;
   let operator : SignerWithAddress;
-  let wilderDomainNameHash: string;
-  
+  let wilderDomainNameHash : string;
+
   const wilderLabel = hre.ethers.utils.id("wilder");
-  
+
   beforeEach(async () => {
     [owner, addr1] = await hre.ethers.getSigners();
     [deployer, operator] = await hre.ethers.getSigners();
@@ -40,15 +40,15 @@ describe("ZNSAddressResolver", () => {
 
     // Initialize registry and domain
     await znsRegistry.connect(deployer).initialize(deployer.address);
-    
+
     const rootHash = await znsRegistry.ROOT_HASH();
 
     // Have to get this value for every test, but can be fixed
     wilderDomainNameHash = hre.ethers.utils
-    .solidityKeccak256(
-      ["bytes32", "bytes32"],
-      [rootHash, wilderLabel]
-    );
+      .solidityKeccak256(
+        ["bytes32", "bytes32"],
+        [rootHash, wilderLabel]
+      );
 
     await znsRegistry.connect(deployer)
       .setSubdomainRecord(

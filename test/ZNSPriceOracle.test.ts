@@ -10,13 +10,13 @@ import { deployZNS, getPrice } from "./helpers";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSPriceOracle", () => {
-  let deployer: SignerWithAddress;
-  let user: SignerWithAddress;
-  let mockRegistrar: SignerWithAddress;
-  let updatedMockRegistrar: SignerWithAddress;
-  let burnAddress: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let user : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
+  let updatedMockRegistrar : SignerWithAddress;
+  let burnAddress : SignerWithAddress;
 
-  let zns: ZNSContracts;
+  let zns : ZNSContracts;
 
   // const config: PriceParams = {
   //   maxroot: parseEther("1"),
@@ -33,12 +33,12 @@ describe("ZNSPriceOracle", () => {
       user,
       mockRegistrar,
       updatedMockRegistrar,
-      burnAddress
+      burnAddress,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS(deployer, burnAddress.address);
 
-    await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address)
+    await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address);
   });
 
   it("Confirms the mockRegistrar is authorized", async () => {
@@ -145,7 +145,7 @@ describe("ZNSPriceOracle", () => {
 
       const expectedPrice = await getPrice(domain, zns.priceOracle, true);
       const price = await zns.priceOracle.getPrice(domain, true);
-      
+
       expect(price).to.eq(expectedPrice);
     });
 
@@ -465,9 +465,9 @@ describe("ZNSPriceOracle", () => {
 
     it("Allows an authorized user to set both base lengths", async () => {
       const newLength = 5;
-      
+
       await zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
-      
+
       const params = await zns.priceOracle.params();
       expect(params.baseRootDomainLength).to.eq(newLength);
       expect(params.baseSubdomainLength).to.eq(newLength);

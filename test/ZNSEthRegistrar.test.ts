@@ -13,7 +13,7 @@ describe("ZNSEthRegistrar", () => {
   let user: SignerWithAddress;
 
   let zns: ZNSContracts;
-  let burn: SignerWithAddress
+  let burn: SignerWithAddress;
   const defaultDomain = "wilder";
   const defaultSubdomain = "world";
 
@@ -29,7 +29,7 @@ describe("ZNSEthRegistrar", () => {
     await zns.registry.connect(user).setOwnerOperator(zns.registrar.address, true);
 
     // Give funds to user
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256)
+    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
   });
 
@@ -98,7 +98,7 @@ describe("ZNSEthRegistrar", () => {
         ethers.constants.AddressZero
       );
 
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided")
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided");
     });
 
     it("Fails when a resolution address is given but not a resolver", async () => {
@@ -108,7 +108,7 @@ describe("ZNSEthRegistrar", () => {
         zns.registrar.address // Content to resolve to
       );
 
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address")
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address");
     });
 
     it("Successfully registers a domain without a resolver or resolver content", async () => {
@@ -122,7 +122,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Records the correct domain hash", async () => {
-      const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
       const domainHash = await getDomainHash(tx);
 
@@ -131,7 +131,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Creates and finds the correct tokenId", async () => {
-      const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
       const tokenId = await getTokenId(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
@@ -139,7 +139,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Resolves the correct address from the domain", async () => {
-      const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const domainHash = await getDomainHash(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
@@ -179,7 +179,7 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx).to.be.revertedWith("ZNSTreasury: Not enough funds");
     });
 
-    it.only("Allows unicode characters in domain names", async () => {
+    it("Allows unicode characters in domain names", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(parentTx);
 
@@ -218,10 +218,10 @@ describe("ZNSEthRegistrar", () => {
         ethers.constants.AddressZero
       );
 
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided")
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided");
     });
 
-    // verify costs using a struct or not
+    // verify costs using a struct or not in price oracle
     // it("Calls on behalf of a user as a registrar")
     // it("fails if not approved subdomain creator")
     // it("immediately revokes subdomain approval after tx")
@@ -233,7 +233,7 @@ describe("ZNSEthRegistrar", () => {
         zns.registrar.address // Content to resolve to
       );
 
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address")
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address");
     });
 
     it("Successfully registers a domain without a resolver or resolver content", async () => {
@@ -247,7 +247,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Records the correct subdomain hash", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
@@ -259,7 +259,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Creates and finds the correct tokenId", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
@@ -270,7 +270,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Resolves the correct address from the domain", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);

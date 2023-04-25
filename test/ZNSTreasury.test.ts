@@ -10,11 +10,11 @@ import { ZNSTreasury, ZNSTreasury__factory } from "../typechain";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSTreasury", () => {
-  let deployer: SignerWithAddress;
-  let user: SignerWithAddress;
-  let burn: SignerWithAddress; // TODO fix when decided
-  let mockRegistrar: SignerWithAddress
-  let zns: ZNSContracts;
+  let deployer : SignerWithAddress;
+  let user : SignerWithAddress;
+  let burn : SignerWithAddress; // TODO fix when decided
+  let mockRegistrar : SignerWithAddress;
+  let zns : ZNSContracts;
 
   beforeEach(async () => {
     [deployer, burn, user, mockRegistrar] = await hre.ethers.getSigners();
@@ -24,7 +24,7 @@ describe("ZNSTreasury", () => {
     await zns.treasury.connect(deployer).setZNSRegistrar(mockRegistrar.address);
 
     // Give funds to user
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256)
+    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
   });
 

@@ -7,7 +7,9 @@ import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
 // TODO: fix when token is sorted out
 import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol";
 
+// TODO: Make upgradeable
 contract ZNSTreasury is IZNSTreasury {
+  // TODO move to price oracle
   uint256 public constant PERCENTAGE_BASIS = 10000;
   uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
 
@@ -28,6 +30,7 @@ contract ZNSTreasury is IZNSTreasury {
 
   mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
+  // TODO access control
   mapping(address user => bool isAdmin) public admin;
 
   modifier onlyRegistrar() {
@@ -70,6 +73,8 @@ contract ZNSTreasury is IZNSTreasury {
     // Take the payment as a staking deposit
     uint256 stakeAmount = znsPriceOracle.getPrice(domainName, isTopLevelDomain);
     uint256 deflationFee = getPriceFee(stakeAmount);
+    // TODO move the fee to be returned in the price oracle's `getPrice` function as well
+    // just return as a tuple
 
     require(
       zeroToken.balanceOf(depositor) >= stakeAmount + deflationFee,
@@ -78,7 +83,7 @@ contract ZNSTreasury is IZNSTreasury {
 
     // Transfer stake amount and fee
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
-
+    // TODO make sure we show the approval process to the user here to avoid failed transfer
     zeroToken.transferFrom(depositor, burnAddress, deflationFee);
 
     // Record staked amount for this domain
