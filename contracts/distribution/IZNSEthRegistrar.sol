@@ -12,10 +12,12 @@ interface IZNSEthRegistrar {
     address indexed registrant,
     address resolver
   );
-  event SubdomainApproved(
+  event SubdomainApprovalSet(
     bytes32 indexed parentHash,
-    address indexed ownerCandidate
+    address indexed user,
+    bool indexed status
   );
+
   event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
   function registerRootDomain(
@@ -24,9 +26,10 @@ interface IZNSEthRegistrar {
     address domainContent
   ) external returns (bytes32);
 
-  function approveSubdomain(
+  function setSubdomainApproval(
     bytes32 parentHash,
-    address subdomainOwner
+    address user,
+    bool status
   ) external;
 
   function registerSubdomain(

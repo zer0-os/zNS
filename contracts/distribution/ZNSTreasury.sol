@@ -87,7 +87,9 @@ contract ZNSTreasury is IZNSTreasury {
     emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
   }
 
-  function getStakedForDomain(bytes32 domainHash) public view returns(uint256) {
+  function getStakedForDomain(
+    bytes32 domainHash
+  ) public view returns (uint256) {
     uint256 amountStaked = stakedForDomain[domainHash];
     return amountStaked;
   }
@@ -108,7 +110,7 @@ contract ZNSTreasury is IZNSTreasury {
   function setZNSRegistrar(address znsRegistrar_) external onlyAdmin {
     require(
       znsRegistrar_ != address(0),
-      "ZNSTreasury: Zero address passed as _znsRegistrar"
+      "ZNSTreasury: Zero address passed as znsRegistrar"
     );
 
     znsRegistrar = znsRegistrar_;
@@ -117,10 +119,19 @@ contract ZNSTreasury is IZNSTreasury {
 
   function setAdmin(address user, bool status) external onlyAdmin {
     require(user != address(0), "ZNSTreasury: No zero address admins");
+
+    // If a user is given Admin status, they can remove any other admin's status as well
+    // To protect against this, we require that the user is the sender if setting
+    // status to `false`
+    if (status == false) {
+      require(
+        msg.sender == user,
+        "ZNSTreasury: Cannot unset another users admin access"
+      );
+    }
+
     admin[user] = status;
 
-    // TODO if we parameterize the bool to `status` then
-    // any admin can unset any other admin
     emit AdminSet(user, status);
   }
 

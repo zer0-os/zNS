@@ -7,6 +7,7 @@ import {IZNSTreasury} from "./IZNSTreasury.sol";
 import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
 import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+import {StringUtils} from "../StringUtils.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSRegistry public znsRegistry;
@@ -15,10 +16,16 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSAddressResolver public znsAddressResolver;
   IZNSPriceOracle public znsPriceOracle;
 
+  // Use custom string util for length calculation to
+  // support domains with unicode characters
+  using StringUtils for string;
+
   // TODO figure out what this should be and rename it
   address public burnAddress;
 
-  mapping(bytes32 => address) private subdomainApprovals;
+  // mapping(bytes32 parentDomainHash => address user) public subdomainApprovals;
+
+  mapping(bytes32 parentDomainHash => mapping(address user => bool status)) public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
     require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
@@ -56,8 +63,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
-    // TODO use better name length utility still in PR
-    require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
+    require(name.strlen() != 0, "ZNSEthRegistrar: No domain name");
 
     // To not repeat external calls, we load into memory
     bytes32 rootHash = znsRegistry.ROOT_HASH();
@@ -101,12 +107,20 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  function approveSubdomain(
+  /**
+   * @notice Approve creation of subdomains for the parent domain
+   * @param parentHash The hash of the parent domain name
+   * @param user The allowed address
+   * @param status The status of this user's approval
+   */
+  function setSubdomainApproval(
     bytes32 parentHash,
-    address ownerCandidate
-  ) external onlyOwner(parentHash) {
-    subdomainApprovals[parentHash] = ownerCandidate;
-    emit SubdomainApproved(parentHash, ownerCandidate);
+    address user,
+    bool status
+  ) public onlyOwner(parentHash) {
+    subdomainApprovals[parentHash][user] = status;
+
+    emit SubdomainApprovalSet(parentHash, user, status);
   }
 
   function registerSubdomain(
@@ -116,7 +130,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address resolver, // addressResolver
     address domainAddress // value
   ) external returns (bytes32) {
-    require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
+    require(name.strlen() != 0, "ZNSEthRegistrar: No subdomain name");
 
     // TODO:    Should we add interface check here that every Registrar should implement
     //          to only run the below require if an EOA is calling this?
@@ -131,11 +145,14 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // we do not need to check the approval.
     if (!znsRegistry.isOwnerOrOperator(parentDomainHash, msg.sender)) {
       require(
-        subdomainApprovals[parentDomainHash] == msg.sender,
+        subdomainApprovals[parentDomainHash][msg.sender],
         "ZNSEthRegistrar: Subdomain purchase is not authorized for this account"
       );
 
       registerFor = msg.sender;
+
+      // We remove subdomain approval immediately after it is used
+      setSubdomainApproval(parentDomainHash, msg.sender, false);
     }
 
     bytes32 domainHash = hashWithParent(parentDomainHash, name);

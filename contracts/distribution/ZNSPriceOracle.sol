@@ -208,23 +208,10 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     // This creates an asymptotic curve that decreases in pricing based on domain name length
     // Because there are no decimals in ETH we set the muliplier as 100x higher
     // than it is meant to be, so we divide by 100 to reverse that action here.
-    // =(minLength*maxPrice*multiplier)/(length+(3*multiplier)
+    // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
     return
       (baseLength * multiplier * maxPrice) /
       (length + (3 * multiplier)) /
       100;
-  }
-  
-  /**
-   * @notice Set the ZNSRegistrar for this contract
-   * @param registrar The address to update
-   */
-  function _setZNSRegistrar(address registrar) internal {
-    require(registrar != address(0), "ZNS: Zero address for Registrar");
-
-    // Modify the access control for the new registrar
-    authorized[znsRegistrar] = false;
-    authorized[registrar] = true;
-    znsRegistrar = registrar;
   }
 }

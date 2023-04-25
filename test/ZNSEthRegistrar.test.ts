@@ -64,6 +64,63 @@ describe("ZNSEthRegistrar", () => {
       expect(staked).to.eq(expectedStaked);
     });
 
+    it("Fails when the user does not have enough funds", async () => {
+      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
+
+      const tx = defaultRootRegistration(user, zns, defaultDomain);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Not enough funds");
+    });
+
+    it("Allows unicode characters in domain names", async () => {
+      const unicodeDomain = "œ柸þ€§ﾪ";
+
+      const tx = await defaultRootRegistration(user, zns, unicodeDomain);
+
+      const domainHash = await getDomainHash(tx);
+      expect(await zns.registry.exists(domainHash)).to.be.true;
+
+      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, true);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(expectedStaked).to.eq(staked);
+    });
+
+    it("Disallows creation of a duplicate domain", async () => {
+      await defaultRootRegistration(user, zns, defaultDomain);
+      const failTx = defaultRootRegistration(deployer, zns, defaultDomain);
+
+      await expect(failTx).to.be.revertedWith("ZNSEthRegistrar: Domain already exists");
+    });
+
+    it("Fails when a resolver is given without an address to resolve to", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultDomain,
+        zns.addressResolver.address,
+        ethers.constants.AddressZero
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided")
+    });
+
+    it("Fails when a resolution address is given but not a resolver", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        zns.registrar.address // Content to resolve to
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address")
+    });
+
+    it("Successfully registers a domain without a resolver or resolver content", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+      );
+
+      await expect(tx).to.not.be.reverted;
+    });
+
     it("Records the correct domain hash", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain)
 
@@ -87,21 +144,106 @@ describe("ZNSEthRegistrar", () => {
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
-    })
+    });
   });
 
   describe("Registers a subdomain", () => {
+    // let parentDomainHash: string;
+
+    // beforeEach(async () => {
+    //   const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
+    //   parentDomainHash = await getDomainHash(topLevelTx);
+    // });
+
     it("Staked the correct amount", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+
+      const parentDomainHash = await getDomainHash(parentTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx);
+      const subdomainHash = await getDomainHash(tx);
 
       const expectedStaked = await getPrice(defaultSubdomain, zns.priceOracle, false);
-      const staked = await zns.treasury.stakedForDomain(domainHash);
+      const staked = await zns.treasury.stakedForDomain(subdomainHash);
       expect(staked).to.eq(expectedStaked);
+    });
+
+    it("Fails when the user does not have enough funds", async () => {
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(parentTx);
+
+      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
+
+      const tx = defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Not enough funds");
+    });
+
+    it.only("Allows unicode characters in domain names", async () => {
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(parentTx);
+
+      const unicodeDomain = "œ柸þ€§ﾪ";
+
+      const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, unicodeDomain);
+
+      const domainHash = await getDomainHash(tx);
+      expect(await zns.registry.exists(domainHash)).to.be.true;
+
+      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, false);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(expectedStaked).to.eq(staked);
+    });
+
+    it("Disallows creation of a duplicate domain", async () => {
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(parentTx);
+
+      await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
+      const failTx = defaultSubdomainRegistration(deployer, zns, parentDomainHash, defaultSubdomain);
+
+      await expect(failTx).to.be.revertedWith("ZNSEthRegistrar: Domain already exists");
+    });
+
+    // TODO call as mock registrar
+    it("Fails when a resolver is given without an address to resolve to", async () => {
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(parentTx);
+
+      const tx = zns.registrar.connect(user).registerSubdomain(
+        parentDomainHash,
+        defaultDomain,
+        user.address,
+        zns.addressResolver.address,
+        ethers.constants.AddressZero
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided")
+    });
+
+    // verify costs using a struct or not
+    // it("Calls on behalf of a user as a registrar")
+    // it("fails if not approved subdomain creator")
+    // it("immediately revokes subdomain approval after tx")
+
+    it("Fails when a resolution address is given but not a resolver", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        zns.registrar.address // Content to resolve to
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address")
+    });
+
+    it("Successfully registers a domain without a resolver or resolver content", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultSubdomain,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+      );
+
+      await expect(tx).to.not.be.reverted;
     });
 
     it("Records the correct subdomain hash", async () => {

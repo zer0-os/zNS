@@ -236,24 +236,24 @@ describe("ZNSPriceOracle", () => {
       const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
       const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
       const domainWithoutSpecials = "abcdef";
-      const expectedPrice = await getPrice(domainWithoutSpecials, contract, false);
-      let price = await contract.getPrice(domainSpecialCharacterSet1, false);
+      const expectedPrice = await getPrice(domainWithoutSpecials, zns.priceOracle, false);
+      let price = await zns.priceOracle.getPrice(domainSpecialCharacterSet1, false);
       expect(price).to.eq(expectedPrice);
 
-      price = await contract.getPrice(domainSpecialCharacterSet2, false);
+      price = await zns.priceOracle.getPrice(domainSpecialCharacterSet2, false);
       expect(price).to.eq(expectedPrice);
     });
 
     it("Can Price Names Longer Than 255 Characters", async () => {
-      // 256 length
+      // 261 length
       const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "a";
-      const expectedPrice = await getPrice(domain, contract, false);
-      const price = await contract.getPrice(domain, false);
+      const expectedPrice = await getPrice(domain, zns.priceOracle, false);
+      const price = await zns.priceOracle.getPrice(domain, false);
       expect(price).to.eq(expectedPrice);
     });
   });
