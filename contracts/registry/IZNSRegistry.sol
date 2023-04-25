@@ -103,19 +103,19 @@ interface IZNSRegistry {
     bytes32 domainNameHash
   ) external view returns (DomainRecord memory);
 
-  /**
-   * @dev Set all properties for a domain's record
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param owner The owner to set
-   * @param resolver The resolver to set
-   */
-  function setDomainRecord(
-    bytes32 domainNameHash,
-    address owner,
-    address resolver
-  ) external;
+  // /**
+  //  * @dev Set all properties for a domain's record
+  //  * @param domainNameHash The identifying hash of a domain's name
+  //  * @param owner The owner to set
+  //  * @param resolver The resolver to set
+  //  */
+  // function setDomainRecord(
+  //   bytes32 domainNameHash,
+  //   address owner,
+  //   address resolver
+  // ) external;
 
-  function deleteDomainRecord(bytes32 domainNameHash) external;
+  function deleteRecord(bytes32 domainNameHash) external;
 
   /**
    * @notice Set or create a subdomain record
@@ -139,12 +139,12 @@ interface IZNSRegistry {
     bytes32 domainNameHash
   ) external view returns (address);
 
-  /**
-   * @dev Update the domain's owner
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param owner The account to transfer ownership to
-   */
-  function setDomainOwner(bytes32 domainNameHash, address owner) external;
+  // /**
+  //  * @dev Update the domain's owner
+  //  * @param domainNameHash The identifying hash of a domain's name
+  //  * @param owner The account to transfer ownership to
+  //  */
+  // function setDomainOwner(bytes32 domainNameHash, address owner) external;
 
   /**
    * @notice Update the subdomain's owner

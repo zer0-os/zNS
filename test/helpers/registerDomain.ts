@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSContracts } from "./types";
 import { ContractTransaction } from "ethers";
-import { getDomainHash } from ".";
 
 export const defaultRootRegistration = async (
   user: SignerWithAddress,

@@ -15,7 +15,7 @@ import {
   ZNSTreasury__factory,
 } from "../../typechain";
 import { ethers } from "hardhat";
-import { PriceOracleConfig, RegistrarConfig, ZNSContracts } from "./types";
+import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export const deployRegistry = async (
@@ -42,22 +42,19 @@ export const deployAddressResolver = async (
 
 export const deployPriceOracle = async (
   deployer : SignerWithAddress,
-  config : PriceOracleConfig
+  registrarAddress : string,
+  params : PriceParams
 ) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
   const priceOracle = await priceOracleFactory.deploy();
 
   // The Registrar may not be deployed yet because of the cyclic dependency
   // between it and the ZNSPriceOracle. Use an empty string if so
-  const registrarAddress = !config.registrarAddress ? "" : config.registrarAddress;
+  const registrar = !registrarAddress ? "" : registrarAddress;
 
   await priceOracle.initialize(
-    config.rootDomainPrice,
-    config.subdomainPrice,
-    config.priceMultiplier,
-    config.rootDomainBaseLength,
-    config.subdomainBaseLength,
-    registrarAddress
+    params,
+    registrar
   );
 
   return priceOracle;
@@ -124,16 +121,23 @@ export const deployZNS = async (deployer : SignerWithAddress, burnAddress : stri
 
   // TODO parameterize these numbers
   // Set "registrarAddress" after the registrar is deployed
-  const oracleConfig : PriceOracleConfig = {
-    rootDomainPrice: ethers.utils.parseEther("1"),
-    subdomainPrice: ethers.utils.parseEther("0.2"),
+  const params : PriceParams = {
+    maxRootDomainPrice: ethers.utils.parseEther("1"),
+    minRootDomainPrice: ethers.utils.parseEther("0.001"),
+    maxSubdomainPrice: ethers.utils.parseEther("0.2"),
+    minSubdomainPrice: ethers.utils.parseEther("0.0002"),
+    maxRootDomainLength: 100,
+    baseRootDomainLength: 3,
+    maxSubdomainLength: 100,
+    baseSubdomainLength: 3,
     priceMultiplier: ethers.BigNumber.from("390"),
-    rootDomainBaseLength: 3,
-    subdomainBaseLength: 3,
-    registrarAddress: ethers.constants.AddressZero,
   };
 
-  const priceOracle = await deployPriceOracle(deployer, oracleConfig);
+  const priceOracle = await deployPriceOracle(
+    deployer,
+    ethers.constants.AddressZero, // set to ZNSRegistrar later
+    params
+  );
 
   const treasury = await deployTreasury(
     deployer,
@@ -165,13 +169,10 @@ export const deployZNS = async (deployer : SignerWithAddress, burnAddress : stri
 
   // Final configuration steps
   await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
-  await domainToken.connect(deployer).authorize(registrar.address);
+  await treasury.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
-  // Set the registrar after deployment
-  await treasury.connect(deployer).setZNSRegistrar(registrar.address);
-
-  // Give 15 ZERO to the deployer
+  // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
   await zeroTokenMock.transfer(deployer.address, ethers.utils.parseEther("15"));
 

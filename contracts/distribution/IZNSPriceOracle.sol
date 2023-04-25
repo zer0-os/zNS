@@ -9,6 +9,56 @@ interface IZNSPriceOracle {
   event ZNSRegistrarSet(address registrar);
 
   /**
+   * @notice Struct for each configurable price variable
+   */
+  struct PriceParams {
+    /**
+     * @notice Maximum price for root domains
+     */
+    uint256 maxRootDomainPrice;
+    /**
+     * @notice Minimum price for root domains
+     */
+    uint256 minRootDomainPrice;
+    /**
+     * @notice Maximum price for subdomains
+     */
+    uint256 maxSubdomainPrice;
+    /**
+     * @notice Minimum price for subdomains
+     */
+    uint256 minSubdomainPrice;
+    /**
+     * @notice Maximum length of a domain name. If the name is longer than this
+     * value we return the `minRootDomainPrice`
+     */
+    uint256 maxRootDomainLength;
+    /**
+     * @notice Base length of a domain name. If the name is less than or equal to
+     * this value we return the `maxRootDomainPrice`
+     */
+    uint256 baseRootDomainLength;
+    /**
+     * @notice Maximum length of a domain name. If the name is longer than this
+     * value, we return the `minSubdomainPrice`
+     */
+    uint256 maxSubdomainLength;
+    /*
+     * @notice The base domain name length for subdomains. If the name is less than
+     * or equal to this value we return the `maxRootDomainPrice`
+     */
+    uint256 baseSubdomainLength;
+    /**
+     * @notice The price multiplier used in calculation for a given domain name's length
+     * We store this value with two decimals of precision for division later in calculation
+     * This means if we use a multiplier of 3.9, it is stored as 390
+     * Note that 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use
+     * it here because it creates a reasonable decline in pricing visually when graphed.
+     */
+    uint256 priceMultiplier;
+  }
+
+  /**
    * @notice Get the price of a given domain name length
    * @param name The name of the domain to check
    * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
@@ -25,7 +75,7 @@ interface IZNSPriceOracle {
    * @param basePrice The price to set in $ZERO
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
-  function setBasePrice(uint256 basePrice, bool isRootDomain) external;
+  function setMaxPrice(uint256 basePrice, bool isRootDomain) external;
 
   /**
    * @notice In price calculation we use a `multiplier` to adjust how steep the

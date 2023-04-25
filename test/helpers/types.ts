@@ -3,13 +3,16 @@ import { ZNSAddressResolver, ZNSDomainToken, ZNSEthRegistrar, ZNSPriceOracle, ZN
 
 export type Maybe<T> = T | undefined;
 
-export interface PriceOracleConfig {
-  rootDomainPrice: BigNumber;
-  subdomainPrice: BigNumber;
+export interface PriceParams {
+  maxRootDomainPrice: BigNumber;
+  minRootDomainPrice: BigNumber;
+  maxSubdomainPrice: BigNumber;
+  minSubdomainPrice: BigNumber;
+  maxRootDomainLength: number;
+  baseRootDomainLength: number;
+  maxSubdomainLength: number;
+  baseSubdomainLength: number;
   priceMultiplier: BigNumber;
-  rootDomainBaseLength: number;
-  subdomainBaseLength: number;
-  registrarAddress: string;
 }
 
 export interface RegistrarConfig {

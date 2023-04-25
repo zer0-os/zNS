@@ -18,23 +18,35 @@ export const getPrice = async (
   contract: ZNSPriceOracle,
   isRootDomain: boolean
 ): Promise<BigNumber> => {
+  // Get price configuration for contract
+  const params = await contract.params();
 
-  const basePrice = isRootDomain
-    ? await contract.rootDomainBasePrice()
-    : await contract.subdomainBasePrice();
+  const maxPrice = isRootDomain
+    ? params.maxRootDomainPrice
+    : params.maxSubdomainPrice;
 
   const baseLength = isRootDomain
-    ? await contract.rootDomainBaseLength()
-    : await contract.subdomainBaseLength();
+    ? params.baseRootDomainLength
+    : params.baseSubdomainLength;
 
-  if (name.length <= baseLength) {
-    return basePrice;
+  if (BigNumber.from(name.length).lte(baseLength)) {
+    return maxPrice;
   }
 
-  const multiplier = await contract.priceMultiplier();
+  const maxLength = isRootDomain
+    ? params.maxRootDomainLength
+    : params.maxSubdomainLength;
 
-  const numerator = basePrice.mul(baseLength).mul(multiplier);
-  const denominator = (multiplier.mul(3).add(name.length));
+  const minPrice = isRootDomain
+    ? params.minRootDomainPrice
+    : params.minSubdomainPrice
+
+  if (BigNumber.from(name.length).gt(maxLength)) {
+    return minPrice;
+  }
+
+  const numerator = maxPrice.mul(baseLength).mul(params.priceMultiplier);
+  const denominator = (params.priceMultiplier.mul(3).add(name.length));
 
   const expectedPrice = numerator.div(denominator).div(100);
   return expectedPrice;
@@ -71,7 +83,7 @@ export const getEvent = async (
 
 export const getDomainHash = async (
   tx: ContractTransaction,
-  eventName: string
+  eventName: string = "DomainRegistered"
 ): Promise<string> => {
   const receipt = await tx.wait();
   const event = receipt.events?.find((event) => {
@@ -89,9 +101,8 @@ export const getDomainHash = async (
 
 export const getTokenId = async (
   tx: ContractTransaction,
-  eventName: string,
+  eventName: string = "DomainRegistered"
 ): Promise<BigNumber> => {
-  // `toString()` will also automatically convert to decimal numbers
   const tokenId = await getDomainHash(tx, eventName);
   return BigNumber.from(tokenId);
 }
