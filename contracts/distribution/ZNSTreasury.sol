@@ -7,7 +7,9 @@ import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
 // TODO: fix when token is sorted out
 import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol";
 
+// TODO: Make upgradeable
 contract ZNSTreasury is IZNSTreasury {
+  // TODO move to price oracle
   uint256 public constant PERCENTAGE_BASIS = 10000;
   uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
 
@@ -28,6 +30,7 @@ contract ZNSTreasury is IZNSTreasury {
 
   mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
+  // TODO access control
   mapping(address user => bool isAdmin) public admin;
 
   modifier onlyRegistrar() {
@@ -70,6 +73,8 @@ contract ZNSTreasury is IZNSTreasury {
     // Take the payment as a staking deposit
     uint256 stakeAmount = znsPriceOracle.getPrice(domainName, isTopLevelDomain);
     uint256 deflationFee = getPriceFee(stakeAmount);
+    // TODO move the fee to be returned in the price oracle's `getPrice` function as well
+    // just return as a tuple
 
     require(
       zeroToken.balanceOf(depositor) >= stakeAmount + deflationFee,
@@ -78,7 +83,7 @@ contract ZNSTreasury is IZNSTreasury {
 
     // Transfer stake amount and fee
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
-
+    // TODO make sure we show the approval process to the user here to avoid failed transfer
     zeroToken.transferFrom(depositor, burnAddress, deflationFee);
 
     // Record staked amount for this domain
@@ -87,7 +92,9 @@ contract ZNSTreasury is IZNSTreasury {
     emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
   }
 
-  function getStakedForDomain(bytes32 domainHash) public view returns(uint256) {
+  function getStakedForDomain(
+    bytes32 domainHash
+  ) public view returns (uint256) {
     uint256 amountStaked = stakedForDomain[domainHash];
     return amountStaked;
   }
@@ -108,7 +115,7 @@ contract ZNSTreasury is IZNSTreasury {
   function setZNSRegistrar(address znsRegistrar_) external onlyAdmin {
     require(
       znsRegistrar_ != address(0),
-      "ZNSTreasury: Zero address passed as _znsRegistrar"
+      "ZNSTreasury: Zero address passed as znsRegistrar"
     );
 
     znsRegistrar = znsRegistrar_;
@@ -117,10 +124,19 @@ contract ZNSTreasury is IZNSTreasury {
 
   function setAdmin(address user, bool status) external onlyAdmin {
     require(user != address(0), "ZNSTreasury: No zero address admins");
+
+    // If a user is given Admin status, they can remove any other admin's status as well
+    // To protect against this, we require that the user is the sender if setting
+    // status to `false`
+    if (status == false) {
+      require(
+        msg.sender == user,
+        "ZNSTreasury: Cannot unset another users admin access"
+      );
+    }
+
     admin[user] = status;
 
-    // TODO if we parameterize the bool to `status` then
-    // any admin can unset any other admin
     emit AdminSet(user, status);
   }
 

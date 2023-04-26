@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { StringUtils } from "../utility/StringUtils.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   using StringUtils for string;
@@ -201,30 +201,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
     // Pull into memory to save external calls to storage
     uint256 multiplier = params.priceMultiplier;
-    
+
     // TODO truncate to everything after the decimal, we don't want fractional prices
     // Should this be here vs. in the dApp?
 
     // This creates an asymptotic curve that decreases in pricing based on domain name length
     // Because there are no decimals in ETH we set the muliplier as 100x higher
     // than it is meant to be, so we divide by 100 to reverse that action here.
-    // =(minLength*maxPrice*multiplier)/(length+(3*multiplier)
+    // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
     return
       (baseLength * multiplier * maxPrice) /
       (length + (3 * multiplier)) /
       100;
-  }
-  
-  /**
-   * @notice Set the ZNSRegistrar for this contract
-   * @param registrar The address to update
-   */
-  function _setZNSRegistrar(address registrar) internal {
-    require(registrar != address(0), "ZNS: Zero address for Registrar");
-
-    // Modify the access control for the new registrar
-    authorized[znsRegistrar] = false;
-    authorized[registrar] = true;
-    znsRegistrar = registrar;
   }
 }

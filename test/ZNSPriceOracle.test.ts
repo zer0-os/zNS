@@ -10,13 +10,13 @@ import { deployZNS, getPrice } from "./helpers";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSPriceOracle", () => {
-  let deployer: SignerWithAddress;
-  let user: SignerWithAddress;
-  let mockRegistrar: SignerWithAddress;
-  let updatedMockRegistrar: SignerWithAddress;
-  let burnAddress: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let user : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
+  let updatedMockRegistrar : SignerWithAddress;
+  let burnAddress : SignerWithAddress;
 
-  let zns: ZNSContracts;
+  let zns : ZNSContracts;
 
   // const config: PriceParams = {
   //   maxroot: parseEther("1"),
@@ -33,12 +33,12 @@ describe("ZNSPriceOracle", () => {
       user,
       mockRegistrar,
       updatedMockRegistrar,
-      burnAddress
+      burnAddress,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS(deployer, burnAddress.address);
 
-    await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address)
+    await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address);
   });
 
   it("Confirms the mockRegistrar is authorized", async () => {
@@ -145,7 +145,7 @@ describe("ZNSPriceOracle", () => {
 
       const expectedPrice = await getPrice(domain, zns.priceOracle, true);
       const price = await zns.priceOracle.getPrice(domain, true);
-      
+
       expect(price).to.eq(expectedPrice);
     });
 
@@ -236,24 +236,24 @@ describe("ZNSPriceOracle", () => {
       const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
       const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
       const domainWithoutSpecials = "abcdef";
-      const expectedPrice = await getPrice(domainWithoutSpecials, contract, false);
-      let price = await contract.getPrice(domainSpecialCharacterSet1, false);
+      const expectedPrice = await getPrice(domainWithoutSpecials, zns.priceOracle, false);
+      let price = await zns.priceOracle.getPrice(domainSpecialCharacterSet1, false);
       expect(price).to.eq(expectedPrice);
 
-      price = await contract.getPrice(domainSpecialCharacterSet2, false);
+      price = await zns.priceOracle.getPrice(domainSpecialCharacterSet2, false);
       expect(price).to.eq(expectedPrice);
     });
 
     it("Can Price Names Longer Than 255 Characters", async () => {
-      // 256 length
+      // 261 length
       const domain = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "a";
-      const expectedPrice = await getPrice(domain, contract, false);
-      const price = await contract.getPrice(domain, false);
+      const expectedPrice = await getPrice(domain, zns.priceOracle, false);
+      const price = await zns.priceOracle.getPrice(domain, false);
       expect(price).to.eq(expectedPrice);
     });
   });
@@ -465,9 +465,9 @@ describe("ZNSPriceOracle", () => {
 
     it("Allows an authorized user to set both base lengths", async () => {
       const newLength = 5;
-      
+
       await zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
-      
+
       const params = await zns.priceOracle.params();
       expect(params.baseRootDomainLength).to.eq(newLength);
       expect(params.baseSubdomainLength).to.eq(newLength);

@@ -9,17 +9,21 @@ import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
 import "hardhat/console.sol";
 
+
 contract ZNSEthRegistrar is IZNSEthRegistrar {
+
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken;
   IZNSAddressResolver public znsAddressResolver;
   IZNSPriceOracle public znsPriceOracle;
 
+
   // TODO figure out what this should be and rename it
   address public burnAddress;
 
-  mapping(bytes32 b => address a) private subdomainApprovals;
+  mapping(bytes32 parentDomainHash => mapping(address user => bool status))
+    public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
     console.log("EthRegistrar Owner: %s, Sender: %s Address: %s", znsRegistry.getDomainOwner(domainNameHash), msg.sender, address(this));
@@ -58,7 +62,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
-    // TODO use better name length utility still in PR
     require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // To not repeat external calls, we load into memory
@@ -103,20 +106,28 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  function approveSubdomain(
+  /**
+   * @notice Approve creation of subdomains for the parent domain
+   * @param parentHash The hash of the parent domain name
+   * @param user The allowed address
+   * @param status The status of this user's approval
+   */
+  function setSubdomainApproval(
     bytes32 parentHash,
-    address ownerCandidate
-  ) external onlyOwner(parentHash) {
-    subdomainApprovals[parentHash] = ownerCandidate;
-    emit SubdomainApproved(parentHash, ownerCandidate);
+    address user,
+    bool status
+  ) public onlyOwner(parentHash) {
+    subdomainApprovals[parentHash][user] = status;
+
+    emit SubdomainApprovalSet(parentHash, user, status);
   }
 
   function registerSubdomain(
-    bytes32 parentDomainHash, // wilder
-    string calldata name, // world
-    address registrant, // user
-    address resolver, // addressResolver
-    address domainAddress // value
+    bytes32 parentDomainHash,
+    string calldata name,
+    address registrant,
+    address resolver,
+    address domainAddress
   ) external returns (bytes32) {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
@@ -133,11 +144,14 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // we do not need to check the approval.
     if (!znsRegistry.isOwnerOrOperator(parentDomainHash, msg.sender)) {
       require(
-        subdomainApprovals[parentDomainHash] == msg.sender,
+        subdomainApprovals[parentDomainHash][msg.sender],
         "ZNSEthRegistrar: Subdomain purchase is not authorized for this account"
       );
 
       registerFor = msg.sender;
+
+      // We remove subdomain approval immediately after it is used
+      setSubdomainApproval(parentDomainHash, msg.sender, false);
     }
 
     bytes32 domainHash = hashWithParent(parentDomainHash, name);
@@ -208,7 +222,12 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     bytes32 parentHash,
     string calldata name
   ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(parentHash, keccak256(bytes(name))));
+    return keccak256(
+      abi.encodePacked(
+        parentHash,
+        keccak256(bytes(name))
+      )
+    );
   }
 
   function _setSubdomainData(

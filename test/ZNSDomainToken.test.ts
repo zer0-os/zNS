@@ -55,7 +55,7 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Revoke domain
-      const tx = await domainToken.connect(deployer).revoke(tokenId);
+      const tx = await domainToken.connect(caller).revoke(tokenId);
       const receipt = await tx.wait(0);
 
       // Verify Transfer event is emitted
@@ -91,7 +91,7 @@ describe("ZNSDomainToken:", () => {
       expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
 
       // Revoke domain
-      const tx = domainToken.connect(caller).revoke(tokenId);
+      const tx = domainToken.connect(deployer).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
         "ZNS: Not authorized"
       );

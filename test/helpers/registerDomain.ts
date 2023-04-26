@@ -3,10 +3,10 @@ import { ZNSContracts } from "./types";
 import { ContractTransaction } from "ethers";
 
 export const defaultRootRegistration = async (
-  user: SignerWithAddress,
-  zns: ZNSContracts,
-  domain: string
-): Promise<ContractTransaction> => {
+  user : SignerWithAddress,
+  zns : ZNSContracts,
+  domain : string
+) : Promise<ContractTransaction> => {
   const tx = await zns.registrar.connect(user).registerRootDomain(
     domain,
     zns.addressResolver.address,
@@ -14,14 +14,14 @@ export const defaultRootRegistration = async (
   );
 
   return tx;
-}
+};
 
 export const defaultSubdomainRegistration = async (
-  user: SignerWithAddress,
-  zns: ZNSContracts,
-  parentDomainHash: string,
-  domain: string
-): Promise<ContractTransaction> => {
+  user : SignerWithAddress,
+  zns : ZNSContracts,
+  parentDomainHash : string,
+  domain : string
+) : Promise<ContractTransaction> => {
   const tx = await zns.registrar.connect(user).registerSubdomain(
     parentDomainHash,
     domain,
@@ -31,4 +31,4 @@ export const defaultSubdomainRegistration = async (
   );
 
   return tx;
-}
+};

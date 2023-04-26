@@ -17,15 +17,15 @@ require("@nomicfoundation/hardhat-chai-matchers");
  */
 
 describe("ZNSRegistry Tests", () => {
-  let deployer: SignerWithAddress;
-  let operator: SignerWithAddress;
-  let randomUser: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let operator : SignerWithAddress;
+  let randomUser : SignerWithAddress;
 
   // ZNSResolver has not been created, but an address will be equivalent for now
-  let mockResolver: SignerWithAddress;
-  let registry: ZNSRegistry;
-  let rootDomainHash: string;
-  let wilderSubdomainHash: string;
+  let mockResolver : SignerWithAddress;
+  let registry : ZNSRegistry;
+  let rootDomainHash : string;
+  let wilderSubdomainHash : string;
 
   const wilderLabel = ethers.utils.id("wilder");
 
