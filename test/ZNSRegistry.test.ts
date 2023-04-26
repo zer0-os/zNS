@@ -172,8 +172,9 @@ describe("ZNSRegistry Tests", () => {
           deployer.address,
           mockResolver.address
         );
+      const receipt = await tx.wait();
 
-      const domainHash = await getDomainHash(tx, "DomainOwnerSet");
+      const domainHash = await getDomainHash(receipt, "DomainOwnerSet");
 
       const zeroOwner = await registry.getDomainOwner(domainHash);
       expect(zeroOwner).to.eq(deployer.address);

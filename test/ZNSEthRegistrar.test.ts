@@ -53,6 +53,14 @@ describe("ZNSEthRegistrar", () => {
   });
 
   describe("Registers a top level domain", () => {
+    it("Can NOT register a TLD with an empty name", async () => {
+      const emptyName = "";
+
+      expect(
+        defaultRootRegistration(deployer, zns, emptyName)
+      ).to.be.revertedWith("ZNSEthRegistrar: No domain name");
+    });
+
     it("Staked the correct amount", async () => {
       // Deploy "wilder" with default configuration
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
@@ -150,10 +158,22 @@ describe("ZNSEthRegistrar", () => {
   describe("Registers a subdomain", () => {
     // let parentDomainHash: string;
 
+    // TODO reg: do we need this?
     // beforeEach(async () => {
     //   const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
     //   parentDomainHash = await getDomainHash(topLevelTx);
     // });
+
+    it("Can NOT register a subdomain with an empty name", async () => {
+      const emptyName = "";
+
+      const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(parentTx);
+
+      expect(
+        defaultSubdomainRegistration(user, zns, parentDomainHash, emptyName)
+      ).to.be.revertedWith("ZNSEthRegistrar: No subdomain name");
+    });
 
     it("Staked the correct amount", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);

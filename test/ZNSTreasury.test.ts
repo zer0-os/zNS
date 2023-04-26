@@ -37,6 +37,7 @@ describe("ZNSTreasury", () => {
     expect(token).to.eq(zns.zeroToken.address);
     expect(isAdmin).to.be.true;
   });
+
   describe("getPriceFee", () => {
     it("Successfully gets the fee for a price", async () => {
       const stake = ethers.utils.parseEther("0.2");
