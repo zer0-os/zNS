@@ -94,7 +94,7 @@ contract ZNSTreasury is IZNSTreasury {
 
   function getStakedForDomain(
     bytes32 domainHash
-  ) public view returns (uint256) {
+  ) public view override returns (uint256) {
     uint256 amountStaked = stakedForDomain[domainHash];
     return amountStaked;
   }
