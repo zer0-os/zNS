@@ -1,5 +1,4 @@
-import { BigNumber, ContractTransaction, Event } from "ethers";
-import * as ethers from "ethers";
+import { BigNumber, ContractReceipt, Event } from "ethers";
 import { ZNSPriceOracle } from "../../typechain";
 
 export * from "./deployZNS";
@@ -11,6 +10,7 @@ export * from "./toTokenValues";
  *
  * @param name Length of the domain name
  * @param contract The deployer ZNSPriceOracle contract
+ * @param isRootDomain Flag if this is root or subdomain
  * @returns The expected price for that domain
  */
 export const getPrice = async (
@@ -55,16 +55,15 @@ export const getPrice = async (
 /**
  * Get a specific named event from a transaction log
  *
- * @param tx The transaction
+ * @param txReceipt The transaction receipt
  * @param eventName The name of the event to get
  * @returns The event data, if found
  */
 export const getEvent = async (
-  tx : ContractTransaction,
+  txReceipt : ContractReceipt,
   eventName : string
 ) : Promise<Array<Event> | undefined> => {
-  const receipt = await tx.wait();
-  const customEvent = receipt.events?.filter(event => {
+  const customEvent = txReceipt.events?.filter(event => {
     if (event.event === eventName) return event;
   });
 
@@ -83,11 +82,10 @@ export const getEvent = async (
 // }
 
 export const getDomainHash = async (
-  tx : ContractTransaction,
+  txReceipt : ContractReceipt,
   eventName  = "DomainRegistered"
 ) : Promise<string> => {
-  const receipt = await tx.wait();
-  const customEvent = receipt.events?.find(event => {
+  const customEvent = txReceipt.events?.find(event => {
     if (event.event === eventName) return event;
   });
 
@@ -101,9 +99,9 @@ export const getDomainHash = async (
 };
 
 export const getTokenId = async (
-  tx : ContractTransaction,
+  txReceipt : ContractReceipt,
   eventName  = "DomainRegistered"
 ) : Promise<BigNumber> => {
-  const tokenId = await getDomainHash(tx, eventName);
+  const tokenId = await getDomainHash(txReceipt, eventName);
   return BigNumber.from(tokenId);
 };
