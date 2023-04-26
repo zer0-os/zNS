@@ -1,34 +1,34 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSContracts } from "./types";
-import { ContractTransaction } from "ethers";
+import { ContractReceipt } from "ethers";
 
 export const defaultRootRegistration = async (
   user : SignerWithAddress,
   zns : ZNSContracts,
-  domain : string
-) : Promise<ContractTransaction> => {
+  domainName : string
+) : Promise<ContractReceipt> => {
   const tx = await zns.registrar.connect(user).registerRootDomain(
-    domain,
+    domainName,
     zns.addressResolver.address,
     zns.registrar.address // Arbitrary domainAddress value
   );
 
-  return tx;
+  return tx.wait();
 };
 
 export const defaultSubdomainRegistration = async (
   user : SignerWithAddress,
   zns : ZNSContracts,
   parentDomainHash : string,
-  domain : string
-) : Promise<ContractTransaction> => {
+  domainName : string
+) : Promise<ContractReceipt> => {
   const tx = await zns.registrar.connect(user).registerSubdomain(
     parentDomainHash,
-    domain,
+    domainName,
     user.address,
     zns.addressResolver.address,
     zns.registrar.address
   );
 
-  return tx;
+  return tx.wait();
 };
