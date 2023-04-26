@@ -55,6 +55,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param operator The account to allow/disallow
    * @param allowed The true/false value to set
    */
+  // TODO AC: add access control
   function setOwnerOperator(address operator, bool allowed) external override {
     operators[msg.sender][operator] = allowed;
 
