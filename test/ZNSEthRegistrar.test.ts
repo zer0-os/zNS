@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS, getDomainHash, getEvent, getPrice, getTokenId } from "./helpers";
+import { deployZNS, getDomainHash, getPrice, getTokenId } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
@@ -9,11 +9,11 @@ import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSEthRegistrar", () => {
-  let deployer: SignerWithAddress;
-  let user: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let user : SignerWithAddress;
 
-  let zns: ZNSContracts;
-  let burn: SignerWithAddress;
+  let zns : ZNSContracts;
+  let burn : SignerWithAddress;
   const defaultDomain = "wilder";
   const defaultSubdomain = "world";
 

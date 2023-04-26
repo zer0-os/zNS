@@ -1,11 +1,9 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployRegistrar, deployZNS, getDomainHash, getEvent, getPrice, getTokenId } from "./helpers";
+import { deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
-import { ZNSTreasury, ZNSTreasury__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

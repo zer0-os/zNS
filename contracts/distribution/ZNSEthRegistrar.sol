@@ -10,15 +10,16 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
+  // Use custom string util for length calculation to
+  // support domains with unicode characters
+  using StringUtils for string;
+
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken;
   IZNSAddressResolver public znsAddressResolver;
   IZNSPriceOracle public znsPriceOracle;
 
-  // Use custom string util for length calculation to
-  // support domains with unicode characters
-  using StringUtils for string;
 
   // TODO figure out what this should be and rename it
   address public burnAddress;
