@@ -169,6 +169,7 @@ export const deployZNS = async (deployer : SignerWithAddress, burnAddress : stri
 
   // Final configuration steps
   await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
+  await domainToken.connect(deployer).authorize(registrar.address);
   await treasury.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 

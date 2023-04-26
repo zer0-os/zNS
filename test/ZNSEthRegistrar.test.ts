@@ -142,7 +142,7 @@ describe("ZNSEthRegistrar", () => {
     it ("Revokes a Top level Domain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx, "RootDomainRegistered");
+      const parentDomainHash = await getDomainHash(topLevelTx);
       const tokenId = await getTokenId(topLevelTx);
 
       // Revoke the domain and then verify

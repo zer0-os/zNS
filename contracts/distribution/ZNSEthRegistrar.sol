@@ -188,18 +188,15 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
     uint256 tokenId = uint256(domainHash);
     console.log("Getting TokenId: %s", tokenId);
-    znsDomainToken.revoke(tokenId);
     console.log("Revoke TokenId: %s", tokenId);
-
-    znsRegistry.deleteRecord(domainHash);
-
+    znsDomainToken.revoke(tokenId);
     znsTreasury.unstakeForDomain(domainHash, msg.sender);
     console.log(
         "Unstake domainHash %s to %s",
         uint256(domainHash),
         msg.sender
     );    
-    znsRegistry.deleteDomainRecord(domainHash);
+    znsRegistry.deleteRecord(domainHash);
     console.log("Delete Domain Record: %s", uint256(domainHash));
 
     emit DomainRevoked(domainHash, msg.sender);

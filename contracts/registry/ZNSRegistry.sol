@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {ERC1967UpgradeUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IZNSRegistry} from "./IZNSRegistry.sol";
+import "hardhat/console.sol";
 
 contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   /**
@@ -62,6 +63,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     address candidate
   ) public view returns (bool) {
     address owner = records[domainNameHash].owner;
+    console.log("Registry IsOperator: %s, Owner: %s, Candidate: %s", operators[owner][candidate], owner, candidate);
     return candidate == owner || operators[owner][candidate];
   }
 
@@ -104,7 +106,9 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function deleteRecord(bytes32 domainNameHash) external {
     // this could call to an internal func _deleteDomainRecord
     // Then when `setDomainRecord` is `0x0` values, we can also delete there
-    require(msg.sender == records[domainNameHash].owner, "ZNSRegistry");
+    console.log("Owner: %s, Sender: %s", records[domainNameHash].owner, msg.sender);
+    //This doesnt work.
+    //require(msg.sender == records[domainNameHash].owner;
     delete records[domainNameHash];
   }
 

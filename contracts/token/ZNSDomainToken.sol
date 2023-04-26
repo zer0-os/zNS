@@ -35,6 +35,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @param account The registrar to set
    */
   function authorize(address account) external onlyAuthorized {
+    console.log("Authorized: %s, Sender: %s", account);
     require(account != address(0), "ZNS: Zero address for authorized account");
 
     // Modify the access control for the given address
