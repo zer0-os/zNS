@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { StringUtils } from "../StringUtils.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   using StringUtils for string;
@@ -201,7 +201,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
     // Pull into memory to save external calls to storage
     uint256 multiplier = params.priceMultiplier;
-    
+
     // TODO truncate to everything after the decimal, we don't want fractional prices
     // Should this be here vs. in the dApp?
 
