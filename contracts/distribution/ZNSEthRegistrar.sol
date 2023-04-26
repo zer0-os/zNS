@@ -7,12 +7,9 @@ import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { StringUtils } from "../utils/StringUtils.sol";
+
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
-  // Use custom string util for length calculation to
-  // support domains with unicode characters
-  using StringUtils for string;
 
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
@@ -63,7 +60,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
-    require(name.strlen() != 0, "ZNSEthRegistrar: No domain name");
+    require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
 
     // To not repeat external calls, we load into memory
     bytes32 rootHash = znsRegistry.ROOT_HASH();
@@ -130,7 +127,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
-    require(name.strlen() != 0, "ZNSEthRegistrar: No subdomain name");
+    require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
     // TODO:    Should we add interface check here that every Registrar should implement
     //          to only run the below require if an EOA is calling this?
@@ -219,7 +216,12 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     bytes32 parentHash,
     string calldata name
   ) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(parentHash, keccak256(bytes(name))));
+    return keccak256(
+      abi.encodePacked(
+        parentHash,
+        keccak256(bytes(name))
+      )
+    );
   }
 
   function _setSubdomainData(
