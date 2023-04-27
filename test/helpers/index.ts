@@ -49,7 +49,38 @@ export const getPrice = async (
   const denominator = (params.priceMultiplier.mul(3).add(name.length));
 
   const expectedPrice = numerator.div(denominator).div(100);
+
   return expectedPrice;
+};
+
+/**
+ * Get the domain name price, the registration fee and the total
+ * based on name length when given an already deployed contract
+ *
+ * @param name Length of the domain name
+ * @param contract The deployer ZNSPriceOracle contract
+ * @param isRootDomain Flag if this is root or subdomain
+ * @returns The full expected price object for that domain
+ */
+export const getPriceObject = async (
+  name : string,
+  contract : ZNSPriceOracle,
+  isRootDomain : boolean
+) : Promise<{
+  totalPrice : BigNumber;
+  expectedPrice : BigNumber;
+  fee : BigNumber;
+}> => {
+  const expectedPrice = await getPrice(name, contract, isRootDomain);
+
+  const fee = await contract.getRegistrationFee(expectedPrice);
+  const totalPrice = expectedPrice.add(fee);
+
+  return {
+    totalPrice,
+    expectedPrice,
+    fee,
+  };
 };
 
 /**

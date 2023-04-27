@@ -5,12 +5,13 @@ import { ContractReceipt } from "ethers";
 export const defaultRootRegistration = async (
   user : SignerWithAddress,
   zns : ZNSContracts,
-  domainName : string
+  domainName : string,
+  domainContent = zns.registrar.address,
 ) : Promise<ContractReceipt> => {
   const tx = await zns.registrar.connect(user).registerRootDomain(
     domainName,
     zns.addressResolver.address,
-    zns.registrar.address // Arbitrary domainAddress value
+    domainContent // Arbitrary domainAddress value
   );
 
   return tx.wait();
