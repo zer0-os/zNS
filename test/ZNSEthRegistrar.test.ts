@@ -1,10 +1,11 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS, getDomainHash, getPrice, getTokenId } from "./helpers";
+import { deployZNS, getDomainHash, getPrice, getPriceObject, getTokenId } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
+import { checkBalance } from "./helpers/balances";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -22,9 +23,11 @@ describe("ZNSEthRegistrar", () => {
     // Burn address is used to hold the fee charged to the user when registering
     zns = await deployZNS(deployer, burn.address);
 
+    // TODO reg: is this the correct way of doing this?
     // Give the user permission on behalf of the parent domain owner
     await zns.registry.connect(deployer).setOwnerOperator(user.address, true);
 
+    // TODO reg: is this the correct way of doing this? doesn't seem like it.
     // Give the registrar permission on behalf of the user
     await zns.registry.connect(user).setOwnerOperator(zns.registrar.address, true);
 
@@ -33,6 +36,7 @@ describe("ZNSEthRegistrar", () => {
     await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
   });
 
+  // TODO reg: delete this
   // Uncomment if needed
   // it("Confirms deployment", async () => {
   // console.log(`Registrar: ${zns.registrar.address}`);
@@ -61,24 +65,54 @@ describe("ZNSEthRegistrar", () => {
       ).to.be.revertedWith("ZNSEthRegistrar: No domain name");
     });
 
-    it("Staked the correct amount", async () => {
+    it("Stakes the correct amount and takes the correct fee", async () => {
+      const balanceBefore = await zns.zeroToken.balanceOf(deployer.address);
       // Deploy "wilder" with default configuration
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const domainHash = await getDomainHash(tx);
+      const {
+        totalPrice,
+        expectedPrice,
+      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
 
-      const expectedStaked = await getPrice(defaultDomain, zns.priceOracle, true);
+      await checkBalance({
+        token: zns.zeroToken,
+        balanceBefore,
+        userAddress: deployer.address,
+        target: totalPrice,
+      });
+
       const staked = await zns.treasury.stakedForDomain(domainHash);
 
-      expect(staked).to.eq(expectedStaked);
+      expect(staked).to.eq(expectedPrice);
+    });
+
+    it("Sets the correct data in Registry", async () => {
+      const tx = await defaultRootRegistration(
+        deployer,
+        zns,
+        defaultDomain
+      );
+      const domainHash = await getDomainHash(tx);
+
+      const {
+        owner: ownerFromReg,
+        resolver: resolverFromReg,
+      } = await zns.registry.getDomainRecord(domainHash);
+
+      expect(ownerFromReg).to.eq(deployer.address);
+      expect(resolverFromReg).to.eq(zns.addressResolver.address);
     });
 
     it("Fails when the user does not have enough funds", async () => {
       await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
 
       const tx = defaultRootRegistration(user, zns, defaultDomain);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Not enough funds");
+      await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
+    // TODO this needs to be checked also with ENS namehash lib
+    //  to make sure that hashing process allows for these characters as well
     it("Allows unicode characters in domain names", async () => {
       const unicodeDomain = "œ柸þ€§ﾪ";
 
@@ -175,18 +209,54 @@ describe("ZNSEthRegistrar", () => {
       ).to.be.revertedWith("ZNSEthRegistrar: No subdomain name");
     });
 
-    it("Staked the correct amount", async () => {
+    it("Sets the correct data in Registry", async () => {
+      const parentReceipt = await defaultRootRegistration(
+        deployer,
+        zns,
+        defaultDomain
+      );
+      const parentDomainHash = await getDomainHash(parentReceipt);
+      const subReceipt = await defaultSubdomainRegistration(
+        user,
+        zns,
+        parentDomainHash,
+        defaultSubdomain
+      );
+
+      const subdomainHash = await getDomainHash(subReceipt);
+
+      const {
+        owner: ownerFromReg,
+        resolver: resolverFromReg,
+      } = await zns.registry.getDomainRecord(subdomainHash);
+
+      expect(ownerFromReg).to.eq(user.address);
+      expect(resolverFromReg).to.eq(zns.addressResolver.address);
+    });
+
+    it("Staked the correct amount and takes the correct fee", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
       const parentDomainHash = await getDomainHash(parentTx);
 
+      const balanceBefore = await zns.zeroToken.balanceOf(user.address);
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
-
       const subdomainHash = await getDomainHash(tx);
 
-      const expectedStaked = await getPrice(defaultSubdomain, zns.priceOracle, false);
+      const {
+        totalPrice,
+        expectedPrice,
+      } = await getPriceObject(defaultSubdomain, zns.priceOracle, false);
+
+      await checkBalance({
+        token: zns.zeroToken,
+        balanceBefore,
+        userAddress: user.address,
+        target: totalPrice,
+      });
+
       const staked = await zns.treasury.stakedForDomain(subdomainHash);
-      expect(staked).to.eq(expectedStaked);
+      expect(staked).to.eq(expectedPrice);
     });
 
     it("Fails when the user does not have enough funds", async () => {
@@ -196,7 +266,7 @@ describe("ZNSEthRegistrar", () => {
       await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
 
       const tx = defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Not enough funds");
+      await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
     it("Allows unicode characters in domain names", async () => {

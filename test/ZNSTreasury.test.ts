@@ -38,16 +38,6 @@ describe("ZNSTreasury", () => {
     expect(isAdmin).to.be.true;
   });
 
-  describe("getPriceFee", () => {
-    it("Successfully gets the fee for a price", async () => {
-      const stake = ethers.utils.parseEther("0.2");
-      const fee = await zns.treasury.getPriceFee(stake);
-      const expectedFee = stake.mul("222").div("10000");
-
-      expect(fee).to.eq(expectedFee);
-    });
-  });
-
   describe("stakeForDomain", () => {
     it("Stakes the correct amount", async () => {
       const domain = "wilder";
@@ -62,7 +52,7 @@ describe("ZNSTreasury", () => {
       );
 
       const stake = await zns.treasury.stakedForDomain(domainHash);
-      const expectedStake = await zns.priceOracle.getPrice(domain, true);
+      const { domainPrice: expectedStake } = await zns.priceOracle.getPrice(domain, true);
       expect(stake).to.eq(expectedStake);
     });
   });
