@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {IZNSTreasury} from "./IZNSTreasury.sol";
-import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
-import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+import { IZNSTreasury } from "./IZNSTreasury.sol";
+import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
+import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 // TODO: fix when token is sorted out
-import {IZeroTokenMock} from "../token/mocks/IZeroTokenMock.sol";
+import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol";
 
 // TODO: Make upgradeable
 contract ZNSTreasury is IZNSTreasury {
-  // TODO move to price oracle
-  uint256 public constant PERCENTAGE_BASIS = 10000;
-  uint256 public constant FEE_PERCENTAGE = 222; // 2.22% in basis points (parts per 10,000)
-
   /**
    * @notice The address of the registrar we are using
    */
@@ -59,10 +55,6 @@ contract ZNSTreasury is IZNSTreasury {
     admin[admin_] = true;
   }
 
-  function getPriceFee(uint256 stakeAmount) public pure returns (uint256) {
-    return (stakeAmount * FEE_PERCENTAGE) / PERCENTAGE_BASIS;
-  }
-
   function stakeForDomain(
     bytes32 domainHash,
     string calldata domainName,
@@ -70,21 +62,16 @@ contract ZNSTreasury is IZNSTreasury {
     address burnAddress, // TODO not burning, rename
     bool isTopLevelDomain
   ) external onlyRegistrar {
-    // Take the payment as a staking deposit
-    uint256 stakeAmount = znsPriceOracle.getPrice(domainName, isTopLevelDomain);
-    uint256 deflationFee = getPriceFee(stakeAmount);
-    // TODO move the fee to be returned in the price oracle's `getPrice` function as well
-    // just return as a tuple
-
-    require(
-      zeroToken.balanceOf(depositor) >= stakeAmount + deflationFee,
-      "ZNSTreasury: Not enough funds"
+    // Get price and fee for the domain
+    (, uint256 stakeAmount, uint256 registrationFee) = znsPriceOracle.getPrice(
+      domainName,
+      isTopLevelDomain
     );
 
     // Transfer stake amount and fee
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
     // TODO make sure we show the approval process to the user here to avoid failed transfer
-    zeroToken.transferFrom(depositor, burnAddress, deflationFee);
+    zeroToken.transferFrom(depositor, burnAddress, registrationFee);
 
     // Record staked amount for this domain
     stakedForDomain[domainHash] = stakeAmount;
@@ -95,8 +82,7 @@ contract ZNSTreasury is IZNSTreasury {
   function getStakedForDomain(
     bytes32 domainHash
   ) public view override returns (uint256) {
-    uint256 amountStaked = stakedForDomain[domainHash];
-    return amountStaked;
+    return stakedForDomain[domainHash];
   }
 
   function unstakeForDomain(

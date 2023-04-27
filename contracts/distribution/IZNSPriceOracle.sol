@@ -66,10 +66,20 @@ interface IZNSPriceOracle {
   function getPrice(
     string calldata name,
     bool isRootDomain
-  ) external view returns (uint256);
+  ) external view returns (
+    uint256 totalPrice,
+    uint256 domainPrice,
+    uint256 fee
+  );
 
   /**
-   * @notice Set the base price for root domains
+   * @notice Returns the registration fee based on domain price
+   * @param domainPrice Price of the domain in question
+   */
+  function getRegistrationFee(uint256 domainPrice) external view returns (uint256);
+
+    /**
+     * @notice Set the base price for root domains
    * If this value or the `priceMultiplier` value is `0` the price of any domain will also be `0`
    *
    * @param basePrice The price to set in $ZERO

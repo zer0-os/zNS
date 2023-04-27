@@ -44,8 +44,6 @@ interface IZNSTreasury {
     bool status
   );
 
-  function getPriceFee(uint256 stakeAmount) external pure returns (uint256);
-
   function stakeForDomain(
     bytes32 domainHash,
     string calldata domainName,

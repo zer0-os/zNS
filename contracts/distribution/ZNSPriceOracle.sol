@@ -8,6 +8,12 @@ import { StringUtils } from "../utils/StringUtils.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   using StringUtils for string;
+
+  uint256 public constant PERCENTAGE_BASIS = 10000;
+
+  // TODO reg: make this configurable and test
+  uint256 public feePercentage = 222; // 2.22% in basis points (parts per 10,000)
+
   /**
    * @notice Struct for each configurable price variable
    */
@@ -53,14 +59,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function getPrice(
     string calldata name,
     bool isRootDomain
-  ) external view returns (uint256) {
+  ) external view returns (
+    uint256 totalPrice,
+    uint256 domainPrice,
+    uint256 fee
+  ) {
     uint256 length = name.strlen();
     // No pricing is set for 0 length domains
-    if (length == 0) return 0;
+    if (length == 0) return (0, 0, 0);
 
     if (isRootDomain) {
-      return
-        _getPrice(
+      domainPrice = _getPrice(
           length,
           params.baseRootDomainLength,
           params.maxRootDomainPrice,
@@ -68,8 +77,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
           params.minRootDomainPrice
         );
     } else {
-      return
-        _getPrice(
+      domainPrice = _getPrice(
           length,
           params.baseSubdomainLength,
           params.maxSubdomainPrice,
@@ -77,6 +85,13 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
           params.minSubdomainPrice
         );
     }
+
+    fee = getRegistrationFee(domainPrice);
+    totalPrice = domainPrice + fee;
+  }
+
+  function getRegistrationFee(uint256 domainPrice) public view returns (uint256) {
+    return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
   }
 
   /**
