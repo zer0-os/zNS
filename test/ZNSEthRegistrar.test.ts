@@ -295,33 +295,90 @@ describe("ZNSEthRegistrar", () => {
       await expect(ownerOfTx).to.be.revertedWith(
         "ERC721: invalid token ID"
       );
-      // Verify funds have been unstaked
+
       // Verify Domain Record Deleted
-      // No records
+      const exists = await zns.registry.exists(parentDomainHash);
+      expect(exists).to.be.false;
+
     });
     it ("Revokes a SubDomain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(topLevelTx);
+
+      // Register Subdomain
+      const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
+      const subDomainHash = await getDomainHash(tx);
+      const tokenId = await getTokenId(tx);
+
+      // Revoke the domain and then verify
+      await zns.registrar.connect(user).revokeDomain(subDomainHash);
+
+      // Verify token has been burned
+      const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
+      await expect(ownerOfTx).to.be.revertedWith(
+        "ERC721: invalid token ID"
+      );
+
+      // Verify Domain Record Deleted
+      const exists = await zns.registry.exists(subDomainHash);
+      expect(exists).to.be.false;
     });
 
     it ("Cannot revoke a domain that doesnt exist", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const fakeHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
+      const exists = await zns.registry.exists(fakeHash);
+      expect(exists).to.be.false;
+
+      // Verify transaction is reverted
+      const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
     });
 
     it ("Revoked domain unstakes", async () => {
-      // Register Top level
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-    });
+      // Verify Balance
+      const balance = await zns.zeroToken.balanceOf(user.address);
+      expect(balance).to.eq(ethers.utils.parseEther("15"));
 
-    it ("Revoked domain unstakes without any funds", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const tx = await defaultRootRegistration(user, zns, defaultDomain);
+      const domainHash = await getDomainHash(tx);
+
+      // Validated staked values
+      const expectedStaked = await getPrice(defaultDomain, zns.priceOracle, true);
+      const expectedStakeFee = await zns.treasury.getPriceFee(expectedStaked);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.eq(expectedStaked);
+
+      // Get balance after staking
+      const balanceAfterStaking = await zns.zeroToken.balanceOf(user.address);
+
+      // Revoke the domain
+      await zns.registrar.connect(user).revokeDomain(domainHash);
+
+      // Validated funds are unstaked
+      const finalstaked = await zns.treasury.stakedForDomain(domainHash);
+      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+
+      // Verify final balances
+      const computedBalanceAfterStaking = balanceAfterStaking.add(staked);
+      const balanceMinusFee = balance.sub(expectedStakeFee);
+      expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
+      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      expect(computedBalanceAfterStaking).to.equal(finalBalance);
     });
 
     it ("Cannot revoke a domain owned by another user", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(topLevelTx);
+      const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
+      expect(owner).to.not.equal(user.address);
+
+      // Try to revoke domain
+      const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
     });
   });
 });

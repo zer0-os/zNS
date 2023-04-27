@@ -3,7 +3,6 @@ pragma solidity ^0.8.18;
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
-import "hardhat/console.sol";
 
 /**
  * @title A contract for tokenizing domains under the ZNS Architecture
@@ -25,7 +24,6 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
   * @notice Restrict a function to only be callable by authorized users
   */
   modifier onlyAuthorized() {
-    console.log("Domain Token Authorized Check: %s, Sender: %s", authorized[msg.sender], msg.sender);
     require(authorized[msg.sender], "ZNS: Not authorized");
     _;
   }
@@ -35,7 +33,6 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @param account The registrar to set
    */
   function authorize(address account) external onlyAuthorized {
-    console.log("Authorized: %s, Sender: %s", account);
     require(account != address(0), "ZNS: Zero address for authorized account");
 
     // Modify the access control for the given address

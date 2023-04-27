@@ -7,7 +7,6 @@ import {IZNSTreasury} from "./IZNSTreasury.sol";
 import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
 import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
-import "hardhat/console.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
@@ -26,8 +25,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
-    console.log("EthRegistrar Owner: %s, Sender: %s Address: %s", znsRegistry.getDomainOwner(domainNameHash), msg.sender, address(this));
-    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
+    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not Owner" );
     _;
   }
 
@@ -201,17 +199,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       "ZNSEthRegistrar: Domain does not exist"
     );
     uint256 tokenId = uint256(domainHash);
-    console.log("Getting TokenId: %s", tokenId);
-    console.log("Revoke TokenId: %s", tokenId);
     znsDomainToken.revoke(tokenId);
-    znsTreasury.unstakeForDomain(domainHash, msg.sender);
-    console.log(
-        "Unstake domainHash %s to %s",
-        uint256(domainHash),
-        msg.sender
-    );    
+    znsTreasury.unstakeForDomain(domainHash, msg.sender);   
     znsRegistry.deleteRecord(domainHash);
-    console.log("Delete Domain Record: %s", uint256(domainHash));
 
     emit DomainRevoked(domainHash, msg.sender);
 
