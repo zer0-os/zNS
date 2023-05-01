@@ -1,5 +1,4 @@
 import { BigNumber, ContractTransaction, Event } from "ethers";
-import * as ethers from "ethers";
 import { ZNSPriceOracle } from "../../typechain";
 
 export * from "./deployZNS";
