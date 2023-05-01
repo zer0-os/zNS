@@ -212,6 +212,20 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // TODO: what are we missing here?
   }
 
+  // TODO We need to decide what happens if we include this functionality
+  function reclaimDomain(bytes32 domainHash) external {
+    require(
+      znsRegistry.exists(domainHash),
+      "ZNSEthRegistrar: Domain does not exist"
+    );
+    // Get TokenId
+    // Check owner of of domain token
+    // Transfer name ownership
+    // Transfer stake ownership
+    
+    emit DomainReclaimed(domainHash, msg.sender);
+  }
+
   function hashWithParent(
     bytes32 parentHash,
     string calldata name

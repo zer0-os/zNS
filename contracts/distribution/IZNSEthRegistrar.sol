@@ -20,6 +20,8 @@ interface IZNSEthRegistrar {
 
   event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
+  event DomainReclaimed(bytes32 indexed domainHash, address indexed registrant);
+
   function registerRootDomain(
     string calldata name,
     address resolver,
@@ -41,4 +43,6 @@ interface IZNSEthRegistrar {
   ) external returns (bytes32);
 
   function revokeDomain(bytes32 domainHash) external;
+
+  function reclaimDomain(bytes32 domainHash) external;
 }

@@ -371,4 +371,30 @@ describe("ZNSEthRegistrar", () => {
       expect(resolvedAddress).to.eq(zns.registrar.address);
     });
   });
+
+  describe("Reclaiming Domains", () => {
+    it("Can reclaim name/stake if Token is owned", async () => {
+      expect(true);
+    });
+
+    it("Cannot reclaim name/stake if Token is not owned", async () => {
+      expect(true);
+    });
+
+    it("Cannot reclaim if domain does not exist", async () => {
+      expect(true);
+    });
+
+    it("Reclaimed domain can now revoke", async () => {
+      expect(true);
+    });
+
+    it("Domain Token can be gifted and then reclaimed", async () => {
+      expect(true);
+    });
+
+    it("Cannot reclaim if name/stake is already owned by caller", async () => {
+      expect(true);
+    });
+  });
 });
