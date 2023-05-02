@@ -5,4 +5,6 @@ interface IZNSDomainToken {
   function register(address to, uint256 tokenId) external;
 
   function revoke(uint256 tokenId) external;
+
+  function isOwner(uint256 tokenId, address candidate) external view returns (bool);
 }

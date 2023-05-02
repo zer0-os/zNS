@@ -374,10 +374,56 @@ describe("ZNSEthRegistrar", () => {
 
   describe("Reclaiming Domains", () => {
     it("Can reclaim name/stake if Token is owned", async () => {
-      expect(true);
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      const tokenId = await getTokenId(topLevelTx);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      // Verify domain token is still owned
+      const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      expect(owner).to.equal(user.address);
+
+      // Verify domain is owned in registrar
+      const isRegistryOwner = await zns.registry.connect(user).isOwnerOrOperator(domainHash, user.address);
+      expect(isRegistryOwner).to.be.true;
+
+      // Verify same amount is staked
+      const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.equal(stakedAfterReclaim);
+
+      // Verify address of owner in addressResolver
+      const addressResolverAddress = await zns.addressResolver.getAddress(domainHash);
+      expect(addressResolverAddress).to.equal(user.address);
     });
 
-    it("Cannot reclaim name/stake if Token is not owned", async () => {
+    it("Reclaiming domain token emits DomainReclaimed event", async () => {
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      const tokenId = await getTokenId(topLevelTx);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+      // Reclaim the Domain
+      const tx = await zns.registrar.connect(user).reclaimDomain(domainHash);
+      const receipt = await tx.wait(0);
+
+      // Verify Transfer event is emitted
+      expect(receipt.events?.[2].event).to.eq("DomainReclaimed");
+      expect(receipt.events?.[2].args?.domainHash).to.eq(
+        domainHash
+      );
+      expect(receipt.events?.[2].args?.registrant).to.eq(
+        user.address
+      );
+    });
+
+    it("Cannot reclaim name/stake if token is not owned", async () => {
       expect(true);
     });
 

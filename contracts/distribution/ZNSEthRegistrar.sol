@@ -212,16 +212,19 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // TODO: what are we missing here?
   }
 
-  // TODO We need to decide what happens if we include this functionality
   function reclaimDomain(bytes32 domainHash) external {
     require(
       znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain does not exist"
     );
-    // Get TokenId
+    uint256 tokenId = uint256(domainHash);
     // Check owner of of domain token
+    require(znsDomainToken.isOwner(tokenId, msg.sender), "ZNSEthRegistrar: Not owner of domain.");
+    address owner = znsRegistry.getDomainRecord(domainHash).owner;
+    require(owner != msg.sender, "ZNSEthRegistrar: Caller already owner of domain registry");
     // Transfer name ownership
-    // Transfer stake ownership
+    znsAddressResolver.setAddress(domainHash, msg.sender); 
+    znsRegistry.setSubdomainOwner(domainHash, domainHash, msg.sender);
     
     emit DomainReclaimed(domainHash, msg.sender);
   }
