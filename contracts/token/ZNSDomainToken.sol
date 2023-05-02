@@ -9,10 +9,9 @@ import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 */
 contract ZNSDomainToken is ERC721, IZNSDomainToken {
   // TODO: change for proper name !
-  // solhint-disable-next-line no-empty-blocks
-  constructor() ERC721("ZNSDomainToken", "ZDT") {
+  constructor(string memory tokenName, string memory tokenSymbol) ERC721(tokenName, tokenSymbol) {
     authorized[msg.sender] = true;
-  }
+  } 
   
   /**
   * @notice Track authorized users or contracts
@@ -38,7 +37,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
     // Modify the access control for the given address
     authorized[account] = true;
 
-    emit SetAuthorization(account);
+    emit SetAccessAuthorization(account);
   }
 
   /**

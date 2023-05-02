@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
-import {IZNSRegistry} from "../registry/IZNSRegistry.sol";
-import {IZNSTreasury} from "./IZNSTreasury.sol";
-import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
-import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
-import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
+import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
+import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+import { IZNSTreasury } from "./IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
+import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
