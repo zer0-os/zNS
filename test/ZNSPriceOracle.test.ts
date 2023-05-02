@@ -287,7 +287,7 @@ describe("ZNSPriceOracle", () => {
       const newMaxPrice = parseEther("0.7");
 
       const tx = zns.priceOracle.connect(user).setMaxPrice(newMaxPrice, true);
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNS: Not authorized");
     });
 
     it("Allows setting the price to zero", async () => {
@@ -360,7 +360,7 @@ describe("ZNSPriceOracle", () => {
       const newMultiplier = BigNumber.from("300");
 
       const tx = zns.priceOracle.connect(user).setPriceMultiplier(newMultiplier);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNS: Not authorized");
     });
 
     it("Fails when setting to a value below the specified range", async () => {
@@ -404,7 +404,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 5;
 
       const tx = zns.priceOracle.connect(user).setBaseLength(newLength, true);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNS: Not authorized");
     });
 
     it("Allows setting the base length to zero", async () => {
@@ -490,7 +490,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 5;
 
       const tx = zns.priceOracle.connect(user).setBaseLengths(newLength, newLength);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNS: Not authorized");
     });
 
     it("Adjusts prices correctly when setting base lengths to different values", async () => {

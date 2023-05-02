@@ -61,7 +61,7 @@ describe("ZNSEthRegistrar", () => {
     it("Can NOT register a TLD with an empty name", async () => {
       const emptyName = "";
 
-      expect(
+      await expect(
         defaultRootRegistration(deployer, zns, emptyName)
       ).to.be.revertedWith("ZNSEthRegistrar: No domain name");
     });
@@ -217,7 +217,7 @@ describe("ZNSEthRegistrar", () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(parentTx);
 
-      expect(
+      await expect(
         defaultSubdomainRegistration(user, zns, parentDomainHash, emptyName)
       ).to.be.revertedWith("ZNSEthRegistrar: No subdomain name");
     });

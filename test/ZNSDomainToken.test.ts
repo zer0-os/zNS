@@ -67,7 +67,7 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Verify token has been burned
-      expect(
+      await expect(
         domainToken.ownerOf(tokenId)
       ).to.be.revertedWith("ERC721: invalid token ID");
     });
