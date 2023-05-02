@@ -2,12 +2,10 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSRegistry, ZNSRegistry__factory } from "../typechain";
-import { reverseInputName } from "./helpers";
+import { hashDomainLabel, hashDomainName } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const ensjs = require("@ensdomains/ensjs");
 
 /**
  * TODO should we disallow burning the root domain?
@@ -28,12 +26,12 @@ describe("ZNSRegistry Tests", () => {
 
   // Set owner of 0x0 domain in initalizer, will be used by every other subdomain
   const rootDomainHash = hre.ethers.constants.HashZero;
-  const wilderLabel = ensjs.labelhash("wilder");
+  const wilderLabel = hashDomainLabel("wilder");
 
   // Wilder subdomain hash created in `setSubdomainRecord` call to `setSubdomainOwner`
   // TODO:  change all the calls for hashing in all the tests to use ENS `namehash` lib
   //        that checks and validates strings before hashing
-  const wilderSubdomainHash  = ensjs.namehash("wilder");
+  const wilderSubdomainHash  = hashDomainName("wilder");
 
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver] = await hre.ethers.getSigners();
@@ -120,7 +118,7 @@ describe("ZNSRegistry Tests", () => {
       expect(wilderRecord.owner).to.eq(deployer.address);
 
       // Domain does not exist
-      const domainHash = ensjs.labelhash("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const record = await registry.getDomainRecord(domainHash);
       expect(record.owner).to.eq(hre.ethers.constants.AddressZero);
     });
@@ -131,7 +129,7 @@ describe("ZNSRegistry Tests", () => {
       expect(existOwner).to.eq(deployer.address);
 
       // The domain does not exist
-      const domainHash = ensjs.labelhash("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const notExistOwner = await registry.getDomainOwner(domainHash);
       expect(notExistOwner).to.eq(hre.ethers.constants.AddressZero);
     });
@@ -142,7 +140,7 @@ describe("ZNSRegistry Tests", () => {
       expect(existResolver).to.eq(mockResolver.address);
 
       // The domain does not exist
-      const domainHash = ensjs.labelhash("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const notExistResolver = await registry.getDomainResolver(domainHash);
       expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
 
@@ -164,7 +162,7 @@ describe("ZNSRegistry Tests", () => {
 
     it("Sets a subdomain record", async () => {
       // In order to set a subdomain, the caller must be the owner of the parent domain
-      const zeroLabel = ensjs.labelhash("zero");
+      const zeroLabel = hashDomainLabel("zero");
 
       await registry.connect(deployer)
         .setSubdomainRecord(
@@ -174,11 +172,8 @@ describe("ZNSRegistry Tests", () => {
           mockResolver.address
         );
 
-      // format for ens lib is subdomain.parentdomain unlike legacy ZNS format
-      const inputName = reverseInputName("wilder.zero");
-
       // zero.wilder
-      const zeroDomainHash = ensjs.namehash(inputName);
+      const zeroDomainHash = hashDomainName("wilder.zero");
 
       const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
       expect(zeroOwner).to.eq(deployer.address);
@@ -201,7 +196,7 @@ describe("ZNSRegistry Tests", () => {
       // The root domain ownership is set in the initializer function
       // Any additional root domains would fail because they are checked for owner,
       // but because that owner can't exist as the record doesn't exist yet, it fails
-      const domainHash = ensjs.labelhash("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const tx = registry.connect(deployer)
         .setDomainRecord(
           domainHash,

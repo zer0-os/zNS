@@ -1,6 +1,9 @@
 import { BigNumber } from "ethers";
 import { ZNSPriceOracle } from "../../typechain";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ensjs = require("@ensdomains/ensjs");
+
 /**
  * Helper function to get the domain name price base on its length when given
  * an already deployed contract
@@ -47,3 +50,16 @@ export const reverseInputName = (name : string) => {
   const reversedName = splitName.reverse();
   return reversedName.join(".");
 };
+
+/**
+ *
+ */
+export const hashDomainName = (name : string) => {
+  // ens namehash lib expects child.parent for hashing algorithm as opposed to our format: parent.child
+  const reversedInputName = reverseInputName(name);
+  const hashedName = ensjs.namehash(reversedInputName);
+
+  return hashedName;
+};
+
+export const hashDomainLabel = (label : string) => ensjs.labelhash(label);
