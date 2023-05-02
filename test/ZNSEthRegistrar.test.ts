@@ -189,6 +189,7 @@ describe("ZNSEthRegistrar", () => {
     });
   });
 
+  // TODO reg: add tests for approval process
   describe("Registers a subdomain", () => {
     // let parentDomainHash: string;
 

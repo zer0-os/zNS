@@ -21,7 +21,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
    * are or aren't allowed access to domains that `owner` has access to.
    */
-  mapping(address owner => mapping(address operator => bool)) private operators;
+  mapping(address owner => mapping(address operator => bool allowed)) private operators;
 
   /**
    * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
@@ -37,7 +37,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * to be the account that deploys this contract
    */
   function initialize(address owner) public initializer {
-    require(owner != address(0), "ZNSRegistry: No zero owner allowed");
+    require(owner != address(0), "ZNSRegistry: Owner can not be 0x0 address");
     records[ROOT_HASH].owner = owner;
     // TODO use the hash constant here ?
     // Does it benefit us? is it problematic ?
@@ -83,6 +83,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param owner Owner of the domains to be operated on
    * @param operator Operator of modifications to the domains, if allowed
    */
+  // TODO do we need this function ??
   function isAllowedOperator(
     address owner,
     address operator
@@ -104,7 +105,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function deleteRecord(bytes32 domainNameHash) external {
     // this could call to an internal func _deleteDomainRecord
     // Then when `setDomainRecord` is `0x0` values, we can also delete there
-    require(msg.sender == records[domainNameHash].owner, "ZNSRegistry");
+    require(msg.sender == records[domainNameHash].owner, "ZNSRegistry: Not the owner");
     delete records[domainNameHash];
   }
 

@@ -135,6 +135,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     //          contract calling this since the call from it already
     //          serves as an "approval".
 
+    bytes32 domainHash = hashWithParent(parentDomainHash, name);
+
+    require(
+      !znsRegistry.exists(domainHash),
+      "ZNSEthRegistrar: Domain already exists"
+    );
+
     address registerFor = registrant;
 
     // Here if the caller is an owner or an operator
@@ -151,13 +158,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       // We remove subdomain approval immediately after it is used
       setSubdomainApproval(parentDomainHash, msg.sender, false);
     }
-
-    bytes32 domainHash = hashWithParent(parentDomainHash, name);
-
-    require(
-      !znsRegistry.exists(domainHash),
-      "ZNSEthRegistrar: Domain already exists"
-    );
 
     znsTreasury.stakeForDomain(
       domainHash,

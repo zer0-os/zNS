@@ -59,7 +59,7 @@ contract ZNSTreasury is IZNSTreasury {
     bytes32 domainHash,
     string calldata domainName,
     address depositor,
-    address burnAddress, // TODO not burning, rename
+    address burnAddress, // TODO reg: not burning, rename
     bool isTopLevelDomain
   ) external onlyRegistrar {
     // Get price and fee for the domain
