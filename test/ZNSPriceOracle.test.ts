@@ -38,7 +38,7 @@ describe("ZNSPriceOracle", () => {
       burnAddress,
     ] = await hre.ethers.getSigners();
 
-    zns = await deployZNS(deployer, burnAddress.address);
+    zns = await deployZNS(deployer);
 
     await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address);
   });

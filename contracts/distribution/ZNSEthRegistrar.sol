@@ -18,9 +18,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSPriceOracle public znsPriceOracle;
 
 
-  // TODO figure out what this should be and rename it
-  address public burnAddress;
-
   mapping(bytes32 parentDomainHash => mapping(address user => bool status))
     public subdomainApprovals;
 
@@ -38,15 +35,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSTreasury znsTreasury_,
     IZNSDomainToken znsDomainToken_,
     IZNSAddressResolver znsAddressResolver_,
-    IZNSPriceOracle znsPriceOracle_,
-    address burnAddress_ // TODO rename, we are not burning
+    IZNSPriceOracle znsPriceOracle_
   ) {
     znsRegistry = znsRegistry_;
     znsTreasury = znsTreasury_;
     znsDomainToken = znsDomainToken_;
     znsAddressResolver = znsAddressResolver_;
     znsPriceOracle = znsPriceOracle_;
-    burnAddress = burnAddress_;
   }
 
   /**
@@ -74,7 +69,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
 
     // Staking logic
-    znsTreasury.stakeForDomain(domainHash, name, msg.sender, burnAddress, true);
+    znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
 
     // Get tokenId for the new token to be minted for the new domain
     uint256 tokenId = uint256(domainHash);
@@ -163,7 +158,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       domainHash,
       name,
       msg.sender,
-      burnAddress,
       false
     );
 

@@ -44,7 +44,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   function initialize(
     PriceParams calldata priceConfig_,
-    address znsRegistrar_,
+    address znsRegistrar_, // TODO do we need to keep this here if we always set it through the setter?
     uint256 regFeePercentage_
   ) public initializer {
     // Set pricing and length parameters

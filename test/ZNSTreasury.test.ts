@@ -16,7 +16,7 @@ describe("ZNSTreasury", () => {
 
   beforeEach(async () => {
     [deployer, burn, user, mockRegistrar] = await hre.ethers.getSigners();
-    zns = await deployZNS(deployer, burn.address);
+    zns = await deployZNS(deployer);
 
     // Set the registrar as a mock so that we can call the functions
     await zns.treasury.connect(deployer).setZNSRegistrar(mockRegistrar.address);
@@ -47,7 +47,6 @@ describe("ZNSTreasury", () => {
         domainHash,
         domain,
         user.address,
-        burn.address,
         true
       );
 

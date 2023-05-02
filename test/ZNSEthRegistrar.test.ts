@@ -6,6 +6,7 @@ import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
 import { checkBalance } from "./helpers/balances";
+import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -14,14 +15,14 @@ describe("ZNSEthRegistrar", () => {
   let user : SignerWithAddress;
 
   let zns : ZNSContracts;
-  let burn : SignerWithAddress;
+  let zeroVault : SignerWithAddress;
   const defaultDomain = "wilder";
   const defaultSubdomain = "world";
 
   beforeEach(async () => {
-    [deployer, burn, user] = await hre.ethers.getSigners();
+    [deployer, zeroVault, user] = await hre.ethers.getSigners();
     // Burn address is used to hold the fee charged to the user when registering
-    zns = await deployZNS(deployer, burn.address);
+    zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
 
     // TODO reg: is this the correct way of doing this?
     // Give the user permission on behalf of the parent domain owner
@@ -65,21 +66,32 @@ describe("ZNSEthRegistrar", () => {
       ).to.be.revertedWith("ZNSEthRegistrar: No domain name");
     });
 
-    it("Stakes the correct amount and takes the correct fee", async () => {
-      const balanceBefore = await zns.zeroToken.balanceOf(deployer.address);
+    it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
+      const balanceBeforeUser = await zns.zeroToken.balanceOf(user.address);
+      const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
+
       // Deploy "wilder" with default configuration
-      const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const tx = await defaultRootRegistration(user, zns, defaultDomain);
       const domainHash = await getDomainHash(tx);
       const {
         totalPrice,
         expectedPrice,
+        fee,
       } = await getPriceObject(defaultDomain, zns.priceOracle, true);
 
       await checkBalance({
         token: zns.zeroToken,
-        balanceBefore,
-        userAddress: deployer.address,
+        balanceBefore: balanceBeforeUser,
+        userAddress: user.address,
         target: totalPrice,
+      });
+
+      await checkBalance({
+        token: zns.zeroToken,
+        balanceBefore: balanceBeforeVault,
+        userAddress: zeroVault.address,
+        target: fee,
+        shouldDecrease: false,
       });
 
       const staked = await zns.treasury.stakedForDomain(domainHash);
