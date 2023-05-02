@@ -10,7 +10,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
-const ensjs = require('@ensdomains/ensjs')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ensjs = require("@ensdomains/ensjs");
 /**
  * TODO the registry should have a function for checking isOwnerOrOperator,
  * so that the AddressResolver can implement a single call in its modifier.
@@ -25,8 +26,8 @@ describe("ZNSAddressResolver", () => {
   let addr1 : SignerWithAddress;
   let operator : SignerWithAddress;
   const rootDomainHash = hre.ethers.constants.HashZero;
-  const wilderLabel = ensjs.labelhash("wilder")
-  const wilderDomainNameHash = ensjs.namehash("wilder")
+  const wilderLabel = ensjs.labelhash("wilder");
+  const wilderDomainNameHash = ensjs.namehash("wilder");
 
   beforeEach(async () => {
     [owner, addr1] = await hre.ethers.getSigners();

@@ -4,8 +4,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSRegistry, ZNSRegistry__factory } from "../typechain";
 import { reverseInputName } from "./helpers";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
-const ensjs = require('@ensdomains/ensjs')
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ensjs = require("@ensdomains/ensjs");
 
 /**
  * TODO should we disallow burning the root domain?
@@ -176,7 +178,7 @@ describe("ZNSRegistry Tests", () => {
       const inputName = reverseInputName("wilder.zero");
 
       // zero.wilder
-      const zeroDomainHash = ensjs.namehash(inputName)
+      const zeroDomainHash = ensjs.namehash(inputName);
 
       const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
       expect(zeroOwner).to.eq(deployer.address);
