@@ -14,7 +14,7 @@ zNS TLD Registrar/SubdomainRegistrar (ZNSEthRegistrar)
 
 zNSPriceOracle
 
-Reference Code 
+Reference Code https://github.com/zer0-os/zNS/pull/18/
 
 Goal: Identify internal operations and assign them sec, no sec
 Identify admin only operations
