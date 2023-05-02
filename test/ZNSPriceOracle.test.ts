@@ -1,10 +1,9 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
-import { BigNumber, Signer } from "ethers";
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { PriceParams, ZNSContracts } from "./helpers/types";
+import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice } from "./helpers";
 import * as ethers from "ethers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
@@ -16,7 +15,6 @@ describe("ZNSPriceOracle", () => {
   let user : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let updatedMockRegistrar : SignerWithAddress;
-  let burnAddress : SignerWithAddress;
 
   let zns : ZNSContracts;
 
@@ -35,7 +33,6 @@ describe("ZNSPriceOracle", () => {
       user,
       mockRegistrar,
       updatedMockRegistrar,
-      burnAddress,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS(deployer);
@@ -76,6 +73,8 @@ describe("ZNSPriceOracle", () => {
     const priceConfigArr = Object.values(priceConfigDefault);
 
     priceConfigArr.forEach(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       (val, idx) => expect(val).to.eq(priceConfigFromSC[idx])
     );
 
@@ -286,10 +285,9 @@ describe("ZNSPriceOracle", () => {
 
     it("Disallows an unauthorized user to set the base price", async () => {
       const newMaxPrice = parseEther("0.7");
-      const params = await zns.priceOracle.priceConfig();
 
       const tx = zns.priceOracle.connect(user).setMaxPrice(newMaxPrice, true);
-      expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
     });
 
     it("Allows setting the price to zero", async () => {
@@ -316,7 +314,6 @@ describe("ZNSPriceOracle", () => {
 
     it("Causes any length domain to have a price of 0 if the basePrice is 0", async () => {
       const newMaxPrice = BigNumber.from("0");
-      const params = await zns.priceOracle.priceConfig();
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, true);
 

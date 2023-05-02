@@ -1,5 +1,13 @@
 import { BigNumber } from "ethers";
-import { ZNSAddressResolver, ZNSDomainToken, ZNSEthRegistrar, ZNSPriceOracle, ZNSRegistry, ZNSTreasury, ZeroTokenMock } from "../../typechain";
+import {
+  ZNSAddressResolver,
+  ZNSDomainToken,
+  ZNSEthRegistrar,
+  ZNSPriceOracle,
+  ZNSRegistry,
+  ZNSTreasury,
+  ZeroTokenMock,
+} from "../../typechain";
 
 export type Maybe<T> = T | undefined;
 

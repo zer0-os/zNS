@@ -4,19 +4,20 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
+import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
-  let burn : SignerWithAddress; // TODO fix when decided
+  let zeroVault : SignerWithAddress; // TODO fix when decided
   let mockRegistrar : SignerWithAddress;
   let zns : ZNSContracts;
 
   beforeEach(async () => {
-    [deployer, burn, user, mockRegistrar] = await hre.ethers.getSigners();
-    zns = await deployZNS(deployer);
+    [deployer, zeroVault, user, mockRegistrar] = await hre.ethers.getSigners();
+    zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
 
     // Set the registrar as a mock so that we can call the functions
     await zns.treasury.connect(deployer).setZNSRegistrar(mockRegistrar.address);
