@@ -49,10 +49,10 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "@ensdomains/ensjs": "2.1.0"
   },
   "dependencies": {
-    "@ensdomains/ensjs": "2.1.0",
     "dotenv": "16.0.3"
   },
   "resolutions": {
