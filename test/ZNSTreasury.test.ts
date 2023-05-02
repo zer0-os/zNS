@@ -8,6 +8,7 @@ import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+// TODO reg: test unstake
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;

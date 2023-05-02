@@ -10,6 +10,8 @@ import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+
+// TODO reg: test revocation process
 describe("ZNSEthRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
