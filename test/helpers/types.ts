@@ -8,10 +8,10 @@ export interface PriceParams {
   minRootDomainPrice : BigNumber;
   maxSubdomainPrice : BigNumber;
   minSubdomainPrice : BigNumber;
-  maxRootDomainLength : number;
-  baseRootDomainLength : number;
-  maxSubdomainLength : number;
-  baseSubdomainLength : number;
+  maxRootDomainLength : BigNumber;
+  baseRootDomainLength : BigNumber;
+  maxSubdomainLength : BigNumber;
+  baseSubdomainLength : BigNumber;
   priceMultiplier : BigNumber;
 }
 

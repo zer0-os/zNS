@@ -17,6 +17,7 @@ import {
 import { ethers } from "hardhat";
 import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 
 export const deployRegistry = async (
   deployer : SignerWithAddress
@@ -43,7 +44,8 @@ export const deployAddressResolver = async (
 export const deployPriceOracle = async (
   deployer : SignerWithAddress,
   registrarAddress : string,
-  params : PriceParams
+  priceConfig : PriceParams,
+  registrationFee = registrationFeePercDefault
 ) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
   const priceOracle = await priceOracleFactory.deploy();
@@ -53,8 +55,9 @@ export const deployPriceOracle = async (
   const registrar = !registrarAddress ? "" : registrarAddress;
 
   await priceOracle.initialize(
-    params,
-    registrar
+    priceConfig,
+    registrar,
+    registrationFee
   );
 
   return priceOracle;
@@ -109,7 +112,11 @@ export const deployRegistrar = async (
   return registrar;
 };
 
-export const deployZNS = async (deployer : SignerWithAddress, burnAddress : string) : Promise<ZNSContracts> => {
+export const deployZNS = async (
+  deployer : SignerWithAddress,
+  burnAddress : string,
+  priceConfig = priceConfigDefault
+) : Promise<ZNSContracts> => {
   const registry = await deployRegistry(deployer);
 
   const domainToken = await deployDomainToken(deployer);
@@ -118,24 +125,10 @@ export const deployZNS = async (deployer : SignerWithAddress, burnAddress : stri
 
   const addressResolver = await deployAddressResolver(deployer, registry.address);
 
-  // TODO parameterize these numbers
-  // Set "registrarAddress" after the registrar is deployed
-  const params : PriceParams = {
-    maxRootDomainPrice: ethers.utils.parseEther("1"),
-    minRootDomainPrice: ethers.utils.parseEther("0.001"),
-    maxSubdomainPrice: ethers.utils.parseEther("0.2"),
-    minSubdomainPrice: ethers.utils.parseEther("0.0002"),
-    maxRootDomainLength: 100,
-    baseRootDomainLength: 3,
-    maxSubdomainLength: 100,
-    baseSubdomainLength: 3,
-    priceMultiplier: ethers.BigNumber.from("390"),
-  };
-
   const priceOracle = await deployPriceOracle(
     deployer,
     ethers.constants.AddressZero, // set to ZNSRegistrar later
-    params
+    priceConfig
   );
 
   const treasury = await deployTreasury(

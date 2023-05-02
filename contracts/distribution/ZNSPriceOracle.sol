@@ -11,13 +11,17 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
 
   uint256 public constant PERCENTAGE_BASIS = 10000;
 
-  // TODO reg: make this configurable and test
-  uint256 public feePercentage = 222; // 2.22% in basis points (parts per 10,000)
+  /**
+   * @notice The registration fee value in percentage as basis points (parts per 10,000)
+   *  so the 2% value would be represented as 200.
+   *  See {getRegistrationFee} for the actual fee calc process.
+   */
+  uint256 public feePercentage;
 
   /**
    * @notice Struct for each configurable price variable
    */
-  PriceParams public params;
+  PriceParams public priceConfig;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -39,11 +43,13 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   }
 
   function initialize(
-    PriceParams calldata params_,
-    address znsRegistrar_
+    PriceParams calldata priceConfig_,
+    address znsRegistrar_,
+    uint256 regFeePercentage_
   ) public initializer {
     // Set pricing and length parameters
-    params = params_;
+    priceConfig = priceConfig_;
+    feePercentage = regFeePercentage_;
 
     // Set the user and registrar we allow to modify prices
     znsRegistrar = znsRegistrar_;
@@ -71,18 +77,18 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     if (isRootDomain) {
       domainPrice = _getPrice(
           length,
-          params.baseRootDomainLength,
-          params.maxRootDomainPrice,
-          params.maxRootDomainLength,
-          params.minRootDomainPrice
+          priceConfig.baseRootDomainLength,
+          priceConfig.maxRootDomainPrice,
+          priceConfig.maxRootDomainLength,
+          priceConfig.minRootDomainPrice
         );
     } else {
       domainPrice = _getPrice(
           length,
-          params.baseSubdomainLength,
-          params.maxSubdomainPrice,
-          params.maxSubdomainLength,
-          params.minSubdomainPrice
+          priceConfig.baseSubdomainLength,
+          priceConfig.maxSubdomainPrice,
+          priceConfig.maxSubdomainLength,
+          priceConfig.minSubdomainPrice
         );
     }
 
@@ -106,15 +112,15 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     bool isRootDomain
   ) external onlyAuthorized {
     if (isRootDomain) {
-      params.maxRootDomainPrice = maxPrice;
+      priceConfig.maxRootDomainPrice = maxPrice;
     } else {
-      params.maxSubdomainPrice = maxPrice;
+      priceConfig.maxSubdomainPrice = maxPrice;
     }
 
     emit BasePriceSet(maxPrice, isRootDomain);
   }
 
-  // TODO function setMaxPrices(root, subdomains)
+  // TODO reg: function setMaxPrices(root, subdomains)
 
   /**
    * @notice In price calculation we use a `multiplier` to adjust how steep the
@@ -132,9 +138,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       multiplier >= 300 && multiplier <= 400,
       "ZNS: Multiplier out of range"
     );
-    params.priceMultiplier = multiplier;
+    priceConfig.priceMultiplier = multiplier;
 
     emit PriceMultiplierSet(multiplier);
+  }
+
+  function setRegistrationFeePercentage(uint256 regFeePercentage) external onlyAuthorized {
+    feePercentage = regFeePercentage;
+    emit FeePercentageSet(regFeePercentage);
   }
 
   /**
@@ -143,14 +154,15 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param length Boundary to set
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
+  // TODO reg: make these 2 functions better
   function setBaseLength(
     uint256 length,
     bool isRootDomain
   ) external onlyAuthorized {
     if (isRootDomain) {
-      params.baseRootDomainLength = length;
+      priceConfig.baseRootDomainLength = length;
     } else {
-      params.baseSubdomainLength = length;
+      priceConfig.baseSubdomainLength = length;
     }
 
     emit BaseLengthSet(length, isRootDomain);
@@ -165,8 +177,8 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     uint256 rootLength,
     uint256 subdomainLength
   ) external onlyAuthorized {
-    params.baseRootDomainLength = rootLength;
-    params.baseSubdomainLength = subdomainLength;
+    priceConfig.baseRootDomainLength = rootLength;
+    priceConfig.baseSubdomainLength = subdomainLength;
 
     emit BaseLengthsSet(rootLength, subdomainLength);
   }
@@ -215,7 +227,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     if (length > maxLength) return minPrice;
 
     // Pull into memory to save external calls to storage
-    uint256 multiplier = params.priceMultiplier;
+    uint256 multiplier = priceConfig.priceMultiplier;
 
     // TODO truncate to everything after the decimal, we don't want fractional prices
     // Should this be here vs. in the dApp?

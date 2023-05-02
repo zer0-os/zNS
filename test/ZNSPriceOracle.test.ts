@@ -7,6 +7,7 @@ import { parseEther } from "ethers/lib/utils";
 import { PriceParams, ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice } from "./helpers";
 import * as ethers from "ethers";
+import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -60,27 +61,26 @@ describe("ZNSPriceOracle", () => {
 
   it("Confirms values were initially set correctly", async () => {
 
-    // const valueCalls = [
-    //   zns.priceOracle.rootDomainBasePrice(),
-    //   zns.priceOracle.subdomainBasePrice(),
-    //   zns.priceOracle.priceMultiplier(),
-    //   zns.priceOracle.rootDomainBaseLength(),
-    //   zns.priceOracle.subdomainBaseLength(),
-    // ];
+    const valueCalls = [
+      zns.priceOracle.feePercentage(),
+      zns.priceOracle.priceConfig(),
+      zns.priceOracle.znsRegistrar(),
+    ];
 
-    // const [
-    //   rootDomainBasePrice,
-    //   subdomainBasePrice,
-    //   multiplier,
-    //   rootDomainBaseLength,
-    //   subdomainBaseLength,
-    // ] = await Promise.all(valueCalls);
+    const [
+      feePercentageFromSC,
+      priceConfigFromSC,
+      znsRegistrarFromSC,
+    ] = await Promise.all(valueCalls);
 
-    // expect(rootDomainBasePrice).to.eq(params.maxRootDomainPrice);
-    // expect(subdomainBasePrice).to.eq(config.subdomainPrice);
-    // expect(multiplier).to.eq(config.priceMultiplier);
-    // expect(rootDomainBaseLength).to.eq(config.rootDomainBaseLength);
-    // expect(subdomainBaseLength).to.eq(config.subdomainBaseLength);
+    const priceConfigArr = Object.values(priceConfigDefault);
+
+    priceConfigArr.forEach(
+      (val, idx) => expect(val).to.eq(priceConfigFromSC[idx])
+    );
+
+    expect(feePercentageFromSC).to.eq(registrationFeePercDefault);
+    expect(znsRegistrarFromSC).to.eq(mockRegistrar.address);
   });
 
   describe("getPrice", async () => {
@@ -109,7 +109,7 @@ describe("ZNSPriceOracle", () => {
     it("Returns the base price for domains that are equal to the base length", async () => {
       // Using the default length of 3
       const domain = "eth";
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       const {
         domainPrice,
@@ -120,7 +120,7 @@ describe("ZNSPriceOracle", () => {
     it("Returns the base price for subdomains that are equal to the base length", async () => {
       const domain = "eth";
 
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       const {
         domainPrice,
@@ -131,7 +131,7 @@ describe("ZNSPriceOracle", () => {
     it("Returns the base price for domains that are less than the base length", async () => {
       const domainA = "et";
       const domainB = "e";
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       // const rootPrice = await zns.priceOracle.rootDomainBasePrice();
 
@@ -145,7 +145,7 @@ describe("ZNSPriceOracle", () => {
     it("Returns the base price for subdomains that are less than the base length", async () => {
       const domainA = "et";
       const domainB = "e";
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       // const subdomainPrice = await zns.priceOracle.subdomainBasePrice();
 
@@ -280,13 +280,13 @@ describe("ZNSPriceOracle", () => {
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, true);
 
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
       expect(params.maxRootDomainPrice).to.eq(newMaxPrice);
     });
 
     it("Disallows an unauthorized user to set the base price", async () => {
       const newMaxPrice = parseEther("0.7");
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       const tx = zns.priceOracle.connect(user).setMaxPrice(newMaxPrice, true);
       expect(tx).to.be.revertedWith("ZNS: Not allowed");
@@ -296,7 +296,7 @@ describe("ZNSPriceOracle", () => {
       const newMaxPrice = BigNumber.from("0");
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, true);
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       expect(params.maxRootDomainPrice).to.eq(newMaxPrice);
     });
@@ -305,18 +305,18 @@ describe("ZNSPriceOracle", () => {
       const newMaxPrice = parseEther("0.5");
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, true);
 
-      const paramsBefore = await zns.priceOracle.params();
+      const paramsBefore = await zns.priceOracle.priceConfig();
       expect(paramsBefore.maxRootDomainPrice).to.eq(newMaxPrice);
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, false);
 
-      const paramsAfter = await zns.priceOracle.params();
+      const paramsAfter = await zns.priceOracle.priceConfig();
       expect(paramsAfter.maxSubdomainPrice).to.eq(newMaxPrice);
     });
 
     it("Causes any length domain to have a price of 0 if the basePrice is 0", async () => {
       const newMaxPrice = BigNumber.from("0");
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice, true);
 
@@ -355,7 +355,7 @@ describe("ZNSPriceOracle", () => {
       const newMultiplier = BigNumber.from("300");
 
       await zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
       expect(params.priceMultiplier).to.eq(newMultiplier);
     });
 
@@ -388,7 +388,7 @@ describe("ZNSPriceOracle", () => {
 
       await zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
 
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
       expect(params.priceMultiplier).to.eq(newMultiplier);
     });
   });
@@ -398,7 +398,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 5;
 
       await zns.priceOracle.connect(deployer).setBaseLength(newLength, true);
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       expect(params.baseRootDomainLength).to.eq(newLength);
     });
@@ -414,7 +414,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 0;
 
       await zns.priceOracle.connect(deployer).setBaseLength(newLength, true);
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       expect(params.baseRootDomainLength).to.eq(newLength);
     });
@@ -422,7 +422,7 @@ describe("ZNSPriceOracle", () => {
     it("Causes any length domain to cost the base fee when set to max length of 255", async () => {
       const newLength = 255;
       await zns.priceOracle.connect(deployer).setBaseLength(newLength, true);
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
 
       const shortDomain = "a";
       const longDomain = "abcdefghijklmnopqrstuvwxyz";
@@ -437,7 +437,7 @@ describe("ZNSPriceOracle", () => {
     it("Causes prices to adjust correctly when length is increased", async () => {
       const newLength = 8;
       const domain = "wilder";
-      const paramsBefore = await zns.priceOracle.params();
+      const paramsBefore = await zns.priceOracle.priceConfig();
 
       const expectedPriceBefore = await getPrice(domain, zns.priceOracle, true);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(domain, true);
@@ -446,7 +446,7 @@ describe("ZNSPriceOracle", () => {
 
       await zns.priceOracle.connect(deployer).setBaseLength(newLength, true);
 
-      const paramsAfter = await zns.priceOracle.params();
+      const paramsAfter = await zns.priceOracle.priceConfig();
 
       const expectedPriceAfter = await getPrice(domain, zns.priceOracle, true);
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(domain, true);
@@ -461,7 +461,7 @@ describe("ZNSPriceOracle", () => {
       const domain = "wilder";
 
       // const basePrice = await zns.priceOracle.rootDomainBasePrice();
-      const paramsBefore = await zns.priceOracle.params();
+      const paramsBefore = await zns.priceOracle.priceConfig();
 
       const expectedPriceBefore = await getPrice(domain, zns.priceOracle, true);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(domain, true);
@@ -471,7 +471,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 3;
       await zns.priceOracle.connect(deployer).setBaseLength(newLength, true);
 
-      const paramsAfter = await zns.priceOracle.params();
+      const paramsAfter = await zns.priceOracle.priceConfig();
 
       const expectedPriceAfter = await getPrice(domain, zns.priceOracle, true);
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(domain, true);
@@ -484,7 +484,7 @@ describe("ZNSPriceOracle", () => {
 
       await zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
 
-      const params = await zns.priceOracle.params();
+      const params = await zns.priceOracle.priceConfig();
       expect(params.baseRootDomainLength).to.eq(newLength);
       expect(params.baseSubdomainLength).to.eq(newLength);
     });
@@ -538,6 +538,16 @@ describe("ZNSPriceOracle", () => {
 
       expect(isOldAuthorized).to.be.false;
       expect(isNewAuthorized).to.be.true;
+    });
+  });
+
+  describe("setRegistrationFeePercentage", () => {
+    it("Successfully sets the fee percentage", async () => {
+      const newFeePerc = BigNumber.from(222);
+      await zns.priceOracle.setRegistrationFeePercentage(newFeePerc);
+      const feeFromSC = await zns.priceOracle.feePercentage();
+
+      expect(feeFromSC).to.eq(newFeePerc);
     });
   });
 
