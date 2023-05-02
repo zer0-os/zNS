@@ -52,7 +52,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "@ensdomains/ensjs": "^2.1.0",
+    "@ensdomains/ensjs": "2.1.0",
     "dotenv": "16.0.3"
   },
   "resolutions": {
