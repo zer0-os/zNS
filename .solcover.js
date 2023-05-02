@@ -1,1 +1,3 @@
-export const skipFiles = ['contracts/utility/StringUtils.sol'];
+module.exports = {
+  skipFiles: ['contracts/utility/StringUtils.sol'] 
+};
