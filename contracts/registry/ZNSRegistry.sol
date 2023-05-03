@@ -105,7 +105,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function deleteRecord(bytes32 domainNameHash) external {
     // this could call to an internal func _deleteDomainRecord
     // Then when `setDomainRecord` is `0x0` values, we can also delete there
-    require(msg.sender == records[domainNameHash].owner, "ZNSRegistry: Not the owner");
 
     //TODO: This doesnt work because the znsRegistrar does not pass this validation.
     //require(msg.sender == records[domainNameHash].owner;

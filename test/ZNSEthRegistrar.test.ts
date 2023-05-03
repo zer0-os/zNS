@@ -388,6 +388,7 @@ describe("ZNSEthRegistrar", () => {
       expect(exists).to.be.false;
 
     });
+
     it ("Revokes a SubDomain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
@@ -433,8 +434,10 @@ describe("ZNSEthRegistrar", () => {
       const domainHash = await getDomainHash(tx);
 
       // Validated staked values
-      const expectedStaked = await getPrice(defaultDomain, zns.priceOracle, true);
-      const expectedStakeFee = await zns.treasury.getPriceFee(expectedStaked);
+      const {
+        expectedPrice: expectedStaked,
+        fee: expectedStakeFee,
+      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
 
