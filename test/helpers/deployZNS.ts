@@ -67,7 +67,7 @@ export const deployDomainToken = async (
   deployer : SignerWithAddress
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy();
+  return domainTokenFactory.deploy("ZNSDomainToken", "ZDT");
 };
 
 export const deployZeroTokenMock = async (
@@ -163,6 +163,7 @@ export const deployZNS = async (
 
   // Final configuration steps
   await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
+  await domainToken.connect(deployer).authorize(registrar.address);
   await treasury.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 

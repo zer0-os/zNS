@@ -39,18 +39,6 @@ describe("ZNSEthRegistrar", () => {
     await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
   });
 
-  // TODO reg: delete this
-  // Uncomment if needed
-  // it("Confirms deployment", async () => {
-  // console.log(`Registrar: ${zns.registrar.address}`);
-  // console.log(`Registry: ${zns.registry.address}`);
-  // console.log(`PriceOracle: ${zns.priceOracle.address}`);
-  // console.log(`AddressResolver: ${zns.addressResolver.address}`);
-  // console.log(`DomainToken: ${zns.domainToken.address}`);
-  // console.log(`Treasury: ${zns.treasury.address}`);
-  // console.log(`zeroToken: ${zns.zeroToken.address}`);
-  // });
-
   it("Confirms a user has funds and allowance for the Registrar", async () => {
     const balance = await zns.zeroToken.balanceOf(user.address);
     expect(balance).to.eq(ethers.utils.parseEther("15"));
@@ -205,14 +193,6 @@ describe("ZNSEthRegistrar", () => {
 
   // TODO reg: add tests for approval process
   describe("Registers a subdomain", () => {
-    // let parentDomainHash: string;
-
-    // TODO reg: do we need this?
-    // beforeEach(async () => {
-    //   const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain)
-    //   parentDomainHash = await getDomainHash(topLevelTx);
-    // });
-
     it("Can NOT register a subdomain with an empty name", async () => {
       const emptyName = "";
 
@@ -384,6 +364,108 @@ describe("ZNSEthRegistrar", () => {
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
+    });
+  });
+
+  describe("Revokes a Domain", () => {
+    it ("Revokes a Top level Domain - Happy Path", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(topLevelTx);
+      const tokenId = await getTokenId(topLevelTx);
+
+      // Revoke the domain and then verify
+      await zns.registrar.connect(user).revokeDomain(parentDomainHash);
+
+      // Verify token has been burned
+      const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
+      await expect(ownerOfTx).to.be.revertedWith(
+        "ERC721: invalid token ID"
+      );
+
+      // Verify Domain Record Deleted
+      const exists = await zns.registry.exists(parentDomainHash);
+      expect(exists).to.be.false;
+
+    });
+    it ("Revokes a SubDomain - Happy Path", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(topLevelTx);
+
+      // Register Subdomain
+      const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
+      const subDomainHash = await getDomainHash(tx);
+      const tokenId = await getTokenId(tx);
+
+      // Revoke the domain and then verify
+      await zns.registrar.connect(user).revokeDomain(subDomainHash);
+
+      // Verify token has been burned
+      const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
+      await expect(ownerOfTx).to.be.revertedWith(
+        "ERC721: invalid token ID"
+      );
+
+      // Verify Domain Record Deleted
+      const exists = await zns.registry.exists(subDomainHash);
+      expect(exists).to.be.false;
+    });
+
+    it ("Cannot revoke a domain that doesnt exist", async () => {
+      // Register Top level
+      const fakeHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
+      const exists = await zns.registry.exists(fakeHash);
+      expect(exists).to.be.false;
+
+      // Verify transaction is reverted
+      const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
+    });
+
+    it ("Revoked domain unstakes", async () => {
+      // Verify Balance
+      const balance = await zns.zeroToken.balanceOf(user.address);
+      expect(balance).to.eq(ethers.utils.parseEther("15"));
+
+      // Register Top level
+      const tx = await defaultRootRegistration(user, zns, defaultDomain);
+      const domainHash = await getDomainHash(tx);
+
+      // Validated staked values
+      const expectedStaked = await getPrice(defaultDomain, zns.priceOracle, true);
+      const expectedStakeFee = await zns.treasury.getPriceFee(expectedStaked);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.eq(expectedStaked);
+
+      // Get balance after staking
+      const balanceAfterStaking = await zns.zeroToken.balanceOf(user.address);
+
+      // Revoke the domain
+      await zns.registrar.connect(user).revokeDomain(domainHash);
+
+      // Validated funds are unstaked
+      const finalstaked = await zns.treasury.stakedForDomain(domainHash);
+      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+
+      // Verify final balances
+      const computedBalanceAfterStaking = balanceAfterStaking.add(staked);
+      const balanceMinusFee = balance.sub(expectedStakeFee);
+      expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
+      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      expect(computedBalanceAfterStaking).to.equal(finalBalance);
+    });
+
+    it ("Cannot revoke a domain owned by another user", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHash(topLevelTx);
+      const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
+      expect(owner).to.not.equal(user.address);
+
+      // Try to revoke domain
+      const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
     });
   });
 });

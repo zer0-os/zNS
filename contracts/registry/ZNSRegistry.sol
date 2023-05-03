@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {ERC1967UpgradeUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IZNSRegistry} from "./IZNSRegistry.sol";
+import { ERC1967UpgradeUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { IZNSRegistry } from "./IZNSRegistry.sol";
 
 contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   /**
@@ -21,7 +21,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
    * are or aren't allowed access to domains that `owner` has access to.
    */
-  mapping(address owner => mapping(address operator => bool allowed)) private operators;
+  mapping(address owner => mapping(address operator => bool isOperator)) private operators;
 
   /**
    * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
@@ -106,6 +106,9 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     // this could call to an internal func _deleteDomainRecord
     // Then when `setDomainRecord` is `0x0` values, we can also delete there
     require(msg.sender == records[domainNameHash].owner, "ZNSRegistry: Not the owner");
+
+    //TODO: This doesnt work because the znsRegistrar does not pass this validation.
+    //require(msg.sender == records[domainNameHash].owner;
     delete records[domainNameHash];
   }
 

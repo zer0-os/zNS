@@ -22,7 +22,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
-    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
+    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not Owner" );
     _;
   }
 
@@ -192,14 +192,10 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain does not exist"
     );
-
     uint256 tokenId = uint256(domainHash);
-
     znsDomainToken.revoke(tokenId);
-
+    znsTreasury.unstakeForDomain(domainHash, msg.sender);   
     znsRegistry.deleteRecord(domainHash);
-
-    znsTreasury.unstakeForDomain(domainHash, msg.sender);
 
     emit DomainRevoked(domainHash, msg.sender);
 
