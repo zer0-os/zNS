@@ -154,7 +154,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param length Boundary to set
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
-  // TODO reg: make these 2 functions better
+  // TODO reg: make these 2 functions better when removing subdomain logic
   function setBaseLength(
     uint256 length,
     bool isRootDomain

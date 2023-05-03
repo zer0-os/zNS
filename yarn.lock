@@ -1803,10 +1803,10 @@
     "@typescript-eslint/types" "5.57.1"
     eslint-visitor-keys "^3.3.0"
 
-"@zero-tech/eslint-config-cpt@0.2.5":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@zero-tech/eslint-config-cpt/-/eslint-config-cpt-0.2.5.tgz#0e963c7c4e9911813792ea8313fc6a098c4b9d05"
-  integrity sha512-XHtNAHULvfoz+S1Zr63JLYb5S+8NZOp5bBAv4SmECPrcHpaqO7NiJ/qU1YUJwASGtqQK55CZhjyhjMittNgelA==
+"@zero-tech/eslint-config-cpt@0.2.7":
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/@zero-tech/eslint-config-cpt/-/eslint-config-cpt-0.2.7.tgz#ec1d94848737863a8c9b9e226fd586b7f8a97346"
+  integrity sha512-reFmMkcPBjkQgq2hD5FDWfuGIl4dWvKoIdigq3zS375QNLAqQwuY2EPK2RRLQw7Qcw8nTvPFfv4Gwu2fm8yVfQ==
   dependencies:
     "@typescript-eslint/eslint-plugin" "^5.57.1"
     "@typescript-eslint/parser" "^5.57.1"

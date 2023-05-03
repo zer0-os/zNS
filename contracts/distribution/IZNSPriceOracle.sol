@@ -12,6 +12,8 @@ interface IZNSPriceOracle {
   /**
    * @notice Struct for each configurable price variable
    */
+  // TODO: split this into 2 structs. one for domains, one for subdomains
+  //   we can remove the subdomain one for the MVP and then add later.
   struct PriceParams {
     /**
      * @notice Maximum price for root domains

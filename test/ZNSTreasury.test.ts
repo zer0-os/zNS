@@ -8,6 +8,7 @@ import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+// TODO reg: add no-floating-promises to eslint
 // TODO reg: test unstake
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
