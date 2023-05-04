@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
-import { expect } from "chai";
+import { expect, use } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers";
+import { checkBalance, deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
@@ -46,6 +46,8 @@ describe("ZNSTreasury", () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
 
+      const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
+
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domain,
@@ -54,8 +56,16 @@ describe("ZNSTreasury", () => {
       );
 
       const stake = await zns.treasury.stakedForDomain(domainHash);
-      const { domainPrice: expectedStake } = await zns.priceOracle.getPrice(domain, true);
+      const { domainPrice: expectedStake, fee } = await zns.priceOracle.getPrice(domain, true);
       expect(stake).to.eq(expectedStake);
+
+      await checkBalance({
+        token: zns.zeroToken,
+        balanceBefore: balanceBeforeStake,
+        userAddress: user.address,
+        target: stake.add(fee),
+        shouldDecrease: true,
+      });
     });
 
     it("Should revert if called from any address that is not ZNSRegistrar", async () => {
@@ -72,6 +82,46 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.be.revertedWith("ZNSTreasury: Only ZNSRegistrar is allowed to call");
     });
   });
+
+  describe("unstakeForDomain", () => {
+    it("Unstakes the correct amount", async () => {
+      const domain = "wilder";
+      const domainHash = hashDomainLabel(domain);
+
+      await zns.treasury.connect(mockRegistrar).stakeForDomain(
+        domainHash,
+        domain,
+        user.address,
+        true
+      );
+
+      const balanceBeforeUnstake = await zns.zeroToken.balanceOf(user.address);
+      const stake = await zns.treasury.stakedForDomain(domainHash);
+
+      await zns.treasury.connect(mockRegistrar).unstakeForDomain(domainHash, user.address);
+
+      await checkBalance({
+        token: zns.zeroToken,
+        balanceBefore: balanceBeforeUnstake,
+        userAddress: user.address,
+        target: stake,
+        shouldDecrease: false,
+      });
+    });
+
+    it("Should revert if called from any address that is not ZNSRegistrar", async () => {
+      const domain = "wilder";
+      const domainHash = hashDomainLabel(domain);
+
+      const tx = zns.treasury.connect(user).unstakeForDomain(
+        domainHash,
+        user.address
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Only ZNSRegistrar is allowed to call");
+    });
+  });
+
 
   describe("setZeroVaultAddress() and ZeroVaultAddressSet event", () => {
     it("sets the correct address of Zero Vault", async () => {

@@ -49,6 +49,7 @@ export const getPrice = async (
 
   return expectedPrice;
 };
+
 /**
  * Get the domain name price, the registration fee and the total
  * based on name length when given an already deployed contract
