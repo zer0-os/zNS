@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSRegistry, ZNSRegistry__factory } from "../typechain";
 import { hashDomainLabel, hashDomainName } from "./helpers";
+import { ethers } from "ethers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -153,6 +154,18 @@ describe("ZNSRegistry Tests", () => {
 
       const record = await registry.getDomainRecord(rootDomainHash);
       expect(record.owner).to.eq(operator.address);
+    });
+
+    it("Can NOT set a domain owner if owner is zero address", async () => {
+      const tx = registry.connect(deployer).setDomainOwner(rootDomainHash, ethers.constants.AddressZero);
+
+      await expect(tx).to.be.revertedWith("ZNS: Owner can NOT be zero address");
+    });
+
+    it("Can NOT set a domain resolver if resolver is zero address", async () => {
+      const tx = registry.connect(deployer).setDomainResolver(rootDomainHash, ethers.constants.AddressZero);
+
+      await expect(tx).to.be.revertedWith("ZNS: Resolver can NOT be zero address");
     });
 
     it("Fails to set a record when caller is not owner or operator", async () => {
