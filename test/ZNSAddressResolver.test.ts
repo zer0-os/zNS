@@ -7,7 +7,7 @@ import {
   ERC165__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { hashDomainLabel, hashDomainName } from "./helpers";
+import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");

@@ -5,8 +5,9 @@ import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice } from "./helpers";
+import { deployZNS } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
+import { getPrice } from "./helpers/pricing";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

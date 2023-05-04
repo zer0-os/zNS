@@ -1,12 +1,14 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS, getDomainHash, getPrice, getPriceObject, getTokenId } from "./helpers";
+import { deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/registerDomain";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
+import { getPrice, getPriceObject } from "./helpers/pricing";
+import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -61,7 +63,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Deploy "wilder" with default configuration
       const tx = await defaultRootRegistration(user, zns, defaultDomain);
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
       const {
         totalPrice,
         expectedPrice,
@@ -94,7 +96,7 @@ describe("ZNSEthRegistrar", () => {
         zns,
         defaultDomain
       );
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       const {
         owner: ownerFromReg,
@@ -119,7 +121,7 @@ describe("ZNSEthRegistrar", () => {
 
       const tx = await defaultRootRegistration(user, zns, unicodeDomain);
 
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
       const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, true);
@@ -167,7 +169,7 @@ describe("ZNSEthRegistrar", () => {
     it("Records the correct domain hash", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
@@ -176,14 +178,14 @@ describe("ZNSEthRegistrar", () => {
     it("Creates and finds the correct tokenId", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
-      const tokenId = await getTokenId(tx);
+      const tokenId = await getTokenIdFromEvent(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
       expect(owner).to.eq(deployer.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
       const tx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
@@ -196,7 +198,7 @@ describe("ZNSEthRegistrar", () => {
       const emptyName = "";
 
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       await expect(
         defaultSubdomainRegistration(user, zns, parentDomainHash, emptyName)
@@ -209,7 +211,7 @@ describe("ZNSEthRegistrar", () => {
         zns,
         defaultDomain
       );
-      const parentDomainHash = await getDomainHash(parentReceipt);
+      const parentDomainHash = await getDomainHashFromEvent(parentReceipt);
       const subReceipt = await defaultSubdomainRegistration(
         user,
         zns,
@@ -217,7 +219,7 @@ describe("ZNSEthRegistrar", () => {
         defaultSubdomain
       );
 
-      const subdomainHash = await getDomainHash(subReceipt);
+      const subdomainHash = await getDomainHashFromEvent(subReceipt);
 
       const {
         owner: ownerFromReg,
@@ -231,11 +233,11 @@ describe("ZNSEthRegistrar", () => {
     it("Staked the correct amount and takes the correct fee", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
 
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       const balanceBefore = await zns.zeroToken.balanceOf(user.address);
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
-      const subdomainHash = await getDomainHash(tx);
+      const subdomainHash = await getDomainHashFromEvent(tx);
 
       const {
         totalPrice,
@@ -255,7 +257,7 @@ describe("ZNSEthRegistrar", () => {
 
     it("Fails when the user does not have enough funds", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
 
@@ -265,13 +267,13 @@ describe("ZNSEthRegistrar", () => {
 
     it("Allows unicode characters in domain names", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       const unicodeDomain = "œ柸þ€§ﾪ";
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, unicodeDomain);
 
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
       const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, false);
@@ -281,7 +283,7 @@ describe("ZNSEthRegistrar", () => {
 
     it("Disallows creation of a duplicate domain", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
       const failTx = defaultSubdomainRegistration(deployer, zns, parentDomainHash, defaultSubdomain);
@@ -292,7 +294,7 @@ describe("ZNSEthRegistrar", () => {
     // TODO call as mock registrar
     it("Fails when a resolver is given without an address to resolve to", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(parentTx);
+      const parentDomainHash = await getDomainHashFromEvent(parentTx);
 
       const tx = zns.registrar.connect(user).registerSubdomain(
         parentDomainHash,
@@ -332,11 +334,11 @@ describe("ZNSEthRegistrar", () => {
 
     it("Records the correct subdomain hash", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
@@ -344,22 +346,22 @@ describe("ZNSEthRegistrar", () => {
 
     it("Creates and finds the correct tokenId", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const tokenId = await getTokenId(tx);
+      const tokenId = await getTokenIdFromEvent(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
       expect(owner).to.eq(user.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
 
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
 
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
@@ -370,8 +372,8 @@ describe("ZNSEthRegistrar", () => {
     it("Revokes a Top level Domain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
-      const tokenId = await getTokenId(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
 
       // Revoke the domain and then verify
       await zns.registrar.connect(user).revokeDomain(parentDomainHash);
@@ -390,12 +392,12 @@ describe("ZNSEthRegistrar", () => {
     it("Revokes a SubDomain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
 
       // Register Subdomain
       const tx = await defaultSubdomainRegistration(user, zns, parentDomainHash, defaultSubdomain);
-      const subDomainHash = await getDomainHash(tx);
-      const tokenId = await getTokenId(tx);
+      const subDomainHash = await getDomainHashFromEvent(tx);
+      const tokenId = await getTokenIdFromEvent(tx);
 
       // Revoke the domain and then verify
       await zns.registrar.connect(user).revokeDomain(subDomainHash);
@@ -429,7 +431,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Register Top level
       const tx = await defaultRootRegistration(user, zns, defaultDomain);
-      const domainHash = await getDomainHash(tx);
+      const domainHash = await getDomainHashFromEvent(tx);
 
       // Validated staked values
       const {
@@ -460,7 +462,7 @@ describe("ZNSEthRegistrar", () => {
     it("Cannot revoke a domain owned by another user", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const parentDomainHash = await getDomainHash(topLevelTx);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
 
