@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { PriceOracleConfig } from "./helpers/types";
 import { getPrice } from "./helpers";
@@ -508,6 +508,12 @@ describe("ZNSPriceOracle", () => {
       const tx = contract.connect(user).setZNSRegistrar(updatedMockRegistrar.address);
 
       await expect(tx).to.be.revertedWith("ZNS: Not authorized");
+    });
+
+    it("Can NOT set znsRegistrar if with zero address", async () => {
+      const tx = contract.connect(deployer).setZNSRegistrar(ethers.constants.AddressZero);
+
+      await expect(tx).to.be.revertedWith("ZNS: Zero address for Registrar");
     });
 
     it("Revokes authorized status from the old registrar when updated", async () => {
