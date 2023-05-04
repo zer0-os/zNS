@@ -202,17 +202,17 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // TODO: what are we missing here?
   }
 
+  //Todo: Access Control
   function reclaimDomain(bytes32 domainHash) external {
     require(
       znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain does not exist"
     );
     uint256 tokenId = uint256(domainHash);
-    // Check owner of of domain token
     require(znsDomainToken.isOwner(tokenId, msg.sender), "ZNSEthRegistrar: Not owner of domain");
     address owner = znsRegistry.getDomainRecord(domainHash).owner;
     require(owner != msg.sender, "ZNSEthRegistrar: Caller already owner of domain registry");
-    // Transfer name ownership
+
     znsAddressResolver.setAddress(domainHash, msg.sender); 
     znsRegistry.setSubdomainOwner(domainHash, domainHash, msg.sender);
     
