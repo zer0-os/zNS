@@ -1,5 +1,7 @@
 import { BigNumber, ContractReceipt, Event } from "ethers";
 import { ZNSPriceOracle } from "../../typechain";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ensjs = require("@ensdomains/ensjs");
 
 export * from "./deployZNS";
 export * from "./toTokenValues";
@@ -101,17 +103,7 @@ export const getEvent = async (
   return customEvent;
 };
 
-// TODO need?
-// TODO move all hashing to the namehash library
-// const hashWithParent = (parentHash: string, domainName: string): string => {
-//   const nameBytes = ethers.utils.formatBytes32String(domainName);
-//   const nameHash = ethers.utils.solidityKeccak256(["bytes"], [nameBytes]);
-//   const packed = ethers.utils.solidityPack(["bytes32", "bytes32"], [parentHash, nameHash]);
-//   const hash = ethers.utils.solidityKeccak256(["bytes32"], [packed]);
-
-//   return hash;
-// }
-
+// TODO reg: reorganize into separate files
 export const getDomainHash = async (
   txReceipt : ContractReceipt,
   eventName  = "DomainRegistered"
@@ -136,3 +128,28 @@ export const getTokenId = async (
   const tokenId = await getDomainHash(txReceipt, eventName);
   return BigNumber.from(tokenId);
 };
+
+/**
+ * The ens lib takes the inverse of our domain name format to
+ * produce the same namehash as the one produced from our
+ * registrar contract, so we need to inverse the input here.
+ *
+ */
+export const reverseInputName = (name : string) => {
+  const splitName = name.split(".");
+  const reversedName = splitName.reverse();
+  return reversedName.join(".");
+};
+
+/**
+ *
+ */
+export const hashDomainName = (name : string) => {
+  // ens namehash lib expects child.parent for hashing algorithm as opposed to our format: parent.child
+  const reversedInputName = reverseInputName(name);
+  const hashedName = ensjs.namehash(reversedInputName);
+
+  return hashedName;
+};
+
+export const hashDomainLabel = (label : string) => ensjs.labelhash(label);

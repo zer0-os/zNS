@@ -1,11 +1,11 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber } from "ethers";
+import { ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
+import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice } from "./helpers";
-import * as ethers from "ethers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -17,15 +17,6 @@ describe("ZNSPriceOracle", () => {
   let updatedMockRegistrar : SignerWithAddress;
 
   let zns : ZNSContracts;
-
-  // const config: PriceParams = {
-  //   maxroot: parseEther("1"),
-  //   subdomainPrice: parseEther("0.2"),
-  //   priceMultiplier: BigNumber.from("390"),
-  //   rootDomainBaseLength: 3,
-  //   subdomainBaseLength: 3,
-  //   // registrarAddress: "", // Not declared until `beforeEach` below
-  // };
 
   beforeEach(async () => {
     [
@@ -146,7 +137,7 @@ describe("ZNSPriceOracle", () => {
       const domainB = "e";
       const params = await zns.priceOracle.priceConfig();
 
-      // const subdomainPrice = await zns.priceOracle.subdomainBasePrice();
+      const subdomainPrice = await contract.subdomainBasePrice();
 
       let { domainPrice: subdomainPrice } = await zns.priceOracle.getPrice(domainA, false);
       expect(subdomainPrice).to.eq(params.maxSubdomainPrice);
@@ -525,6 +516,12 @@ describe("ZNSPriceOracle", () => {
       const tx = zns.priceOracle.connect(user).setZNSRegistrar(updatedMockRegistrar.address);
 
       await expect(tx).to.be.revertedWith("ZNS: Not authorized");
+    });
+
+    it("Can NOT set znsRegistrar if with zero address", async () => {
+      const tx = contract.connect(deployer).setZNSRegistrar(ethers.constants.AddressZero);
+
+      await expect(tx).to.be.revertedWith("ZNS: Zero address for Registrar");
     });
 
     it("Revokes authorized status from the old registrar when updated", async () => {

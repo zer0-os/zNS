@@ -7,10 +7,11 @@ import {
   ERC165__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-// import { ROOT_HASH } from "./helpers";
+import { hashDomainLabel, hashDomainName } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
+
 /**
  * TODO the registry should have a function for checking isOwnerOrOperator,
  * so that the AddressResolver can implement a single call in its modifier.
@@ -25,8 +26,6 @@ describe("ZNSAddressResolver", () => {
   let addr1 : SignerWithAddress;
   let operator : SignerWithAddress;
   let wilderDomainNameHash : string;
-
-  const wilderLabel = hre.ethers.utils.id("wilder");
 
   beforeEach(async () => {
     [owner, addr1] = await hre.ethers.getSigners();
@@ -44,11 +43,7 @@ describe("ZNSAddressResolver", () => {
     const rootHash = await znsRegistry.ROOT_HASH();
 
     // Have to get this value for every test, but can be fixed
-    wilderDomainNameHash = hre.ethers.utils
-      .solidityKeccak256(
-        ["bytes32", "bytes32"],
-        [rootHash, wilderLabel]
-      );
+    wilderDomainNameHash = hashDomainName(`${rootHash}.wilder`);
 
     await znsRegistry.connect(deployer)
       .setSubdomainRecord(
@@ -65,7 +60,7 @@ describe("ZNSAddressResolver", () => {
     expect(existResolver).to.eq(znsAddressResolver.address);
 
     // The domain does not exist
-    const someDomainHash = hre.ethers.utils.id("random-record");
+    const someDomainHash = hashDomainLabel("random-record");
     const notExistResolver = await znsRegistry.getDomainResolver(someDomainHash);
     expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
   });
