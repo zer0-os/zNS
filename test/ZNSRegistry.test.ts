@@ -153,41 +153,56 @@ describe("ZNSRegistry Tests", () => {
 
   describe("Setter functions for a domain's record, owner, or resolver", () => {
     it("Can NOT set a domain owner if owner is zero address", async () => {
-      const tx = registry.connect(deployer).setDomainOwner(rootDomainHash, ethers.constants.AddressZero);
+      const tx = registry
+        .connect(deployer)
+        .setSubdomainOwner(
+          rootDomainHash,
+          wilderSubdomainHash,
+          ethers.constants.AddressZero
+        );
 
       await expect(tx).to.be.revertedWith("ZNS: Owner can NOT be zero address");
     });
 
     it("Can NOT set a domain resolver if resolver is zero address", async () => {
-      const tx = registry.connect(deployer).setDomainResolver(rootDomainHash, ethers.constants.AddressZero);
+      const tx = registry
+        .connect(deployer)
+        .setDomainResolver(
+          rootDomainHash,
+          ethers.constants.AddressZero
+        );
 
-      await expect(tx).to.be.revertedWith("ZNS: Resolver can NOT be zero address");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Resolver can NOT be zero address");
     });
 
     it("Fails to set a record when caller is not owner or operator", async () => {
-      const tx = registry.connect(operator).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      const tx = registry
+        .connect(operator)
+        .setSubdomainRecord(
+          rootDomainHash,
+          wilderSubdomainHash,
+          operator.address,
+          mockResolver.address
+        );
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
     });
 
     it("Sets a subdomain record", async () => {
       // In order to set a subdomain, the caller must be the owner of the parent domain
-      const zeroLabel = hashDomainLabel("zero");
+      const zeroWilderHash = hashDomainName("wilder.zero");
 
-      const tx = await registry
+      await registry
         .connect(deployer)
         .setSubdomainRecord(
           wilderSubdomainHash,
-          domain,
+          zeroWilderHash,
           deployer.address,
           mockResolver.address
         );
-      const receipt = await tx.wait();
 
-      // zero.wilder
-      const zeroDomainHash = hashDomainName("wilder.zero");
-
-      const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
-      expect(zeroOwner).to.eq(deployer.address);
+      const { owner, resolver } = await registry.getDomainRecord(zeroWilderHash);
+      expect(owner).to.eq(deployer.address);
+      expect(resolver).to.eq(mockResolver.address);
     });
 
     it("Fails to set a subdomain record because caller is not the owner of the parent domain", async () => {
@@ -210,12 +225,13 @@ describe("ZNSRegistry Tests", () => {
       // but because that owner can't exist as the record doesn't exist yet, it fails
       const domainHash = hashDomainLabel("random-record");
       const tx = registry.connect(deployer)
-        .setDomainRecord(
+        .setSubdomainRecord(
           domainHash,
+          wilderSubdomainHash,
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
     });
   });
 });

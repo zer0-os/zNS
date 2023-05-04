@@ -226,7 +226,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) internal {
-    require(resolver != address(0), "ZNSRegistry: Resolver cannot be the zero address");
+    require(resolver != address(0), "ZNSRegistry: Resolver can NOT be zero address");
 
     records[domainNameHash].resolver = resolver;
   }

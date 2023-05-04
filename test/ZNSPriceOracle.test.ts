@@ -137,8 +137,6 @@ describe("ZNSPriceOracle", () => {
       const domainB = "e";
       const params = await zns.priceOracle.priceConfig();
 
-      const subdomainPrice = await contract.subdomainBasePrice();
-
       let { domainPrice: subdomainPrice } = await zns.priceOracle.getPrice(domainA, false);
       expect(subdomainPrice).to.eq(params.maxSubdomainPrice);
 
@@ -519,7 +517,7 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("Can NOT set znsRegistrar if with zero address", async () => {
-      const tx = contract.connect(deployer).setZNSRegistrar(ethers.constants.AddressZero);
+      const tx = zns.priceOracle.connect(deployer).setZNSRegistrar(ethers.constants.AddressZero);
 
       await expect(tx).to.be.revertedWith("ZNS: Zero address for Registrar");
     });
