@@ -7,7 +7,7 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 // TODO: fix when token is sorted out
 import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol";
 
-// TODO: Make upgradeable
+
 contract ZNSTreasury is IZNSTreasury {
   /**
    * @notice The address of the registrar we are using
@@ -23,6 +23,11 @@ contract ZNSTreasury is IZNSTreasury {
    * @notice The ZERO ERC20 token
    */
   IZeroTokenMock public zeroToken;
+
+  /**
+   * @notice Address of the Zero Vault, a wallet or contract which gathers all the fees.
+   */
+  address public zeroVault;
 
   mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
@@ -46,8 +51,10 @@ contract ZNSTreasury is IZNSTreasury {
     IZNSPriceOracle znsPriceOracle_,
     IZeroTokenMock zeroToken_,
     address znsRegistrar_,
-    address admin_
+    address admin_, // TODO remove when proper access control is added,
+    address zeroVault_
   ) {
+    _setZeroVaultAddress(zeroVault_);
     // TODO change from mock
     zeroToken = zeroToken_;
     znsPriceOracle = znsPriceOracle_;
@@ -59,7 +66,6 @@ contract ZNSTreasury is IZNSTreasury {
     bytes32 domainHash,
     string calldata domainName,
     address depositor,
-    address burnAddress, // TODO not burning, rename
     bool isTopLevelDomain
   ) external onlyRegistrar {
     // Get price and fee for the domain
@@ -71,7 +77,7 @@ contract ZNSTreasury is IZNSTreasury {
     // Transfer stake amount and fee
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
     // TODO make sure we show the approval process to the user here to avoid failed transfer
-    zeroToken.transferFrom(depositor, burnAddress, registrationFee);
+    zeroToken.transferFrom(depositor, zeroVault, registrationFee);
 
     // Record staked amount for this domain
     stakedForDomain[domainHash] = stakeAmount;
@@ -106,6 +112,17 @@ contract ZNSTreasury is IZNSTreasury {
 
     znsRegistrar = znsRegistrar_;
     emit ZNSRegistrarSet(znsRegistrar_);
+  }
+
+  function setZeroVaultAddress(address zeroVaultAddress) external onlyAdmin {
+    _setZeroVaultAddress(zeroVaultAddress);
+  }
+
+  function _setZeroVaultAddress(address zeroVaultAddress) internal {
+    require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
+
+    zeroVault = zeroVaultAddress;
+    emit ZeroVaultAddressSet(zeroVaultAddress);
   }
 
   function setAdmin(address user, bool status) external onlyAdmin {

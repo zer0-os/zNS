@@ -54,7 +54,7 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Revoke domain
-      const tx = await domainToken.connect(caller).revoke(tokenId);
+      const tx = await domainToken.connect(deployer).revoke(tokenId);
       const receipt = await tx.wait(0);
 
       // Verify Transfer event is emitted
@@ -67,14 +67,14 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Verify token has been burned
-      expect(
+      await expect(
         domainToken.ownerOf(tokenId)
       ).to.be.revertedWith("ERC721: invalid token ID");
     });
   });
 
   describe("Require Statement Validation", () => {
-    it("Only owner can revoke a token", async () => {
+    it("Only authorized can revoke a token", async () => {
       const tokenId = ethers.BigNumber.from("1");
       // Mint domain
       await domainToken
@@ -90,9 +90,9 @@ describe("ZNSDomainToken:", () => {
       expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
 
       // Revoke domain
-      const tx = domainToken.connect(deployer).revoke(tokenId);
+      const tx = domainToken.connect(caller).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNSDomainToken: Only token owner can burn a token"
+        "ZNS: Not authorized"
       );
 
       // Verify token has not been burned

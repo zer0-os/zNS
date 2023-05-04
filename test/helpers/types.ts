@@ -1,5 +1,13 @@
 import { BigNumber } from "ethers";
-import { ZNSAddressResolver, ZNSDomainToken, ZNSEthRegistrar, ZNSPriceOracle, ZNSRegistry, ZNSTreasury, ZeroTokenMock } from "../../typechain";
+import {
+  ZNSAddressResolver,
+  ZNSDomainToken,
+  ZNSEthRegistrar,
+  ZNSPriceOracle,
+  ZNSRegistry,
+  ZNSTreasury,
+  ZeroTokenMock,
+} from "../../typechain";
 
 export type Maybe<T> = T | undefined;
 
@@ -8,10 +16,10 @@ export interface PriceParams {
   minRootDomainPrice : BigNumber;
   maxSubdomainPrice : BigNumber;
   minSubdomainPrice : BigNumber;
-  maxRootDomainLength : number;
-  baseRootDomainLength : number;
-  maxSubdomainLength : number;
-  baseSubdomainLength : number;
+  maxRootDomainLength : BigNumber;
+  baseRootDomainLength : BigNumber;
+  maxSubdomainLength : BigNumber;
+  baseSubdomainLength : BigNumber;
   priceMultiplier : BigNumber;
 }
 
@@ -21,7 +29,6 @@ export interface RegistrarConfig {
   domainTokenAddress : string;
   addressResolverAddress : string;
   priceOracleAddress : string;
-  burnAddress : string; // TODO rename / fix
 }
 
 export interface ZNSContracts {

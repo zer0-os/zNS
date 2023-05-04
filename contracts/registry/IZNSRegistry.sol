@@ -177,5 +177,6 @@ interface IZNSRegistry {
    * Will be auto created by the compiler for the public
    * constant variable ROOT_HASH
    */
+  // solhint-disable-next-line func-name-mixedcase
   function ROOT_HASH() external returns (bytes32);
 }

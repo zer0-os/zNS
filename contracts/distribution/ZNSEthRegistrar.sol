@@ -18,14 +18,11 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   IZNSPriceOracle public znsPriceOracle;
 
 
-  // TODO figure out what this should be and rename it
-  address public burnAddress;
-
   mapping(bytes32 parentDomainHash => mapping(address user => bool status))
     public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
-    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash));
+    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not Owner" );
     _;
   }
 
@@ -38,15 +35,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSTreasury znsTreasury_,
     IZNSDomainToken znsDomainToken_,
     IZNSAddressResolver znsAddressResolver_,
-    IZNSPriceOracle znsPriceOracle_,
-    address burnAddress_ // TODO rename, we are not burning
+    IZNSPriceOracle znsPriceOracle_
   ) {
     znsRegistry = znsRegistry_;
     znsTreasury = znsTreasury_;
     znsDomainToken = znsDomainToken_;
     znsAddressResolver = znsAddressResolver_;
     znsPriceOracle = znsPriceOracle_;
-    burnAddress = burnAddress_;
   }
 
   /**
@@ -74,7 +69,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
 
     // Staking logic
-    znsTreasury.stakeForDomain(domainHash, name, msg.sender, burnAddress, true);
+    znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
 
     // Get tokenId for the new token to be minted for the new domain
     uint256 tokenId = uint256(domainHash);
@@ -135,6 +130,13 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     //          contract calling this since the call from it already
     //          serves as an "approval".
 
+    bytes32 domainHash = hashWithParent(parentDomainHash, name);
+
+    require(
+      !znsRegistry.exists(domainHash),
+      "ZNSEthRegistrar: Domain already exists"
+    );
+
     address registerFor = registrant;
 
     // Here if the caller is an owner or an operator
@@ -152,18 +154,10 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       setSubdomainApproval(parentDomainHash, msg.sender, false);
     }
 
-    bytes32 domainHash = hashWithParent(parentDomainHash, name);
-
-    require(
-      !znsRegistry.exists(domainHash),
-      "ZNSEthRegistrar: Domain already exists"
-    );
-
     znsTreasury.stakeForDomain(
       domainHash,
       name,
       msg.sender,
-      burnAddress,
       false
     );
 
@@ -198,14 +192,10 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       znsRegistry.exists(domainHash),
       "ZNSEthRegistrar: Domain does not exist"
     );
-
     uint256 tokenId = uint256(domainHash);
-
     znsDomainToken.revoke(tokenId);
-
+    znsTreasury.unstakeForDomain(domainHash, msg.sender);   
     znsRegistry.deleteRecord(domainHash);
-
-    znsTreasury.unstakeForDomain(domainHash, msg.sender);
 
     emit DomainRevoked(domainHash, msg.sender);
 

@@ -44,11 +44,12 @@ interface IZNSTreasury {
     bool status
   );
 
+  event ZeroVaultAddressSet(address zeroVault);
+
   function stakeForDomain(
     bytes32 domainHash,
     string calldata domainName,
     address depositor,
-    address burnAddress,
     bool isTopLevelDomain
   ) external;
 
@@ -59,6 +60,8 @@ interface IZNSTreasury {
    ) external returns (uint256);
 
   function setZNSRegistrar(address znsRegistrar_) external;
+
+  function setZeroVaultAddress(address zeroVaultAddress) external;
 
   function setAdmin(address user, bool status) external;
 }

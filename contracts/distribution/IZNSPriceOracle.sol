@@ -7,10 +7,13 @@ interface IZNSPriceOracle {
   event BaseLengthSet(uint256 length, bool isRootDomain);
   event BaseLengthsSet(uint256 rootDomainLength, uint256 subdomainLength);
   event ZNSRegistrarSet(address registrar);
+  event FeePercentageSet(uint256 feePercentage);
 
   /**
    * @notice Struct for each configurable price variable
    */
+  // TODO: split this into 2 structs. one for domains, one for subdomains
+  //   we can remove the subdomain one for the MVP and then add later.
   struct PriceParams {
     /**
      * @notice Maximum price for root domains
@@ -95,6 +98,8 @@ interface IZNSPriceOracle {
    * @param multiplier The new price multiplier to set
    */
   function setPriceMultiplier(uint256 multiplier) external;
+
+  function setRegistrationFeePercentage(uint256 regFeePercentage) external;
 
   /**
    * @notice Set the value of the domain name length boundary where the default price applies

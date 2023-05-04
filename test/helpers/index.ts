@@ -19,7 +19,7 @@ export const getPrice = async (
   isRootDomain : boolean
 ) : Promise<BigNumber> => {
   // Get price configuration for contract
-  const params = await contract.params();
+  const params = await contract.priceConfig();
 
   const maxPrice = isRootDomain
     ? params.maxRootDomainPrice
