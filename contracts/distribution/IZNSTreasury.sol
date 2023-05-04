@@ -55,10 +55,6 @@ interface IZNSTreasury {
 
   function unstakeForDomain(bytes32 domainHash, address owner) external;
 
-   function getStakedForDomain(
-     bytes32 domainHash
-   ) external returns (uint256);
-
   function setZNSRegistrar(address znsRegistrar_) external;
 
   function setZeroVaultAddress(address zeroVaultAddress) external;

@@ -124,12 +124,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   ) external returns (bytes32) {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
-    // TODO:    Should we add interface check here that every Registrar should implement
-    //          to only run the below require if an EOA is calling this?
-    //          We do not need a subdomain approval if it's a Registrar
-    //          contract calling this since the call from it already
-    //          serves as an "approval".
-
     bytes32 domainHash = hashWithParent(parentDomainHash, name);
 
     require(
@@ -187,14 +181,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   // TODO We need to decide what happens if we include this functionality
   // but the domain that is revoked has subdomains
   function revokeDomain(bytes32 domainHash) external onlyOwner(domainHash) {
-    // TODO: is this necessary?
-    require(
-      znsRegistry.exists(domainHash),
-      "ZNSEthRegistrar: Domain does not exist"
-    );
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.revoke(tokenId);
-    znsTreasury.unstakeForDomain(domainHash, msg.sender);   
+    znsTreasury.unstakeForDomain(domainHash, msg.sender);
     znsRegistry.deleteRecord(domainHash);
 
     emit DomainRevoked(domainHash, msg.sender);

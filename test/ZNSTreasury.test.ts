@@ -8,7 +8,6 @@ import { priceConfigDefault } from "./helpers/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
-// TODO reg: add no-floating-promises to eslint
 // TODO reg: test unstake
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
@@ -56,6 +55,20 @@ describe("ZNSTreasury", () => {
       const stake = await zns.treasury.stakedForDomain(domainHash);
       const { domainPrice: expectedStake } = await zns.priceOracle.getPrice(domain, true);
       expect(stake).to.eq(expectedStake);
+    });
+  });
+
+  describe("setZeroVaultAddress() and ZeroVaultAddressSet event", () => {
+    it("sets the correct address of Zero Vault", async () => {
+      const currentZeroVault = await zns.treasury.zeroVault();
+      expect(currentZeroVault).to.not.eq(mockRegistrar.address);
+
+      const tx = await zns.treasury.setZeroVaultAddress(mockRegistrar.address);
+
+      const newZeroVault = await zns.treasury.zeroVault();
+      expect(newZeroVault).to.eq(mockRegistrar.address);
+
+      await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(newZeroVault);
     });
   });
 });

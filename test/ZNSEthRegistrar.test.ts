@@ -368,7 +368,7 @@ describe("ZNSEthRegistrar", () => {
   });
 
   describe("Revokes a Domain", () => {
-    it ("Revokes a Top level Domain - Happy Path", async () => {
+    it("Revokes a Top level Domain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);
@@ -386,10 +386,9 @@ describe("ZNSEthRegistrar", () => {
       // Verify Domain Record Deleted
       const exists = await zns.registry.exists(parentDomainHash);
       expect(exists).to.be.false;
-
     });
 
-    it ("Revokes a SubDomain - Happy Path", async () => {
+    it("Revokes a SubDomain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);
@@ -424,7 +423,7 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
     });
 
-    it ("Revoked domain unstakes", async () => {
+    it("Revoked domain unstakes", async () => {
       // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
       expect(balance).to.eq(ethers.utils.parseEther("15"));
@@ -459,7 +458,7 @@ describe("ZNSEthRegistrar", () => {
       expect(computedBalanceAfterStaking).to.equal(finalBalance);
     });
 
-    it ("Cannot revoke a domain owned by another user", async () => {
+    it("Cannot revoke a domain owned by another user", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHash(topLevelTx);

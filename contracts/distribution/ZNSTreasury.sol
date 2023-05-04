@@ -85,12 +85,6 @@ contract ZNSTreasury is IZNSTreasury {
     emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
   }
 
-  function getStakedForDomain(
-    bytes32 domainHash
-  ) public view override returns (uint256) {
-    return stakedForDomain[domainHash];
-  }
-
   function unstakeForDomain(
     bytes32 domainHash,
     address owner
@@ -98,7 +92,7 @@ contract ZNSTreasury is IZNSTreasury {
     uint256 stakeAmount = stakedForDomain[domainHash];
     delete stakedForDomain[domainHash];
 
-    // require owner == ownerOrOperator from registry?
+    // TODO: require owner == ownerOrOperator from registry?
     zeroToken.transfer(owner, stakeAmount);
 
     emit StakeWithdrawn(domainHash, owner, stakeAmount);
