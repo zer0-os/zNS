@@ -219,7 +219,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
     uint256 tokenId = uint256(domainHash);
     // Check owner of of domain token
-    require(znsDomainToken.isOwner(tokenId, msg.sender), "ZNSEthRegistrar: Not owner of domain.");
+    require(znsDomainToken.isOwner(tokenId, msg.sender), "ZNSEthRegistrar: Not owner of domain");
     address owner = znsRegistry.getDomainRecord(domainHash).owner;
     require(owner != msg.sender, "ZNSEthRegistrar: Caller already owner of domain registry");
     // Transfer name ownership

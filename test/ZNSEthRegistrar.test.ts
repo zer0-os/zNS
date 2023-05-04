@@ -390,8 +390,8 @@ describe("ZNSEthRegistrar", () => {
       expect(owner).to.equal(user.address);
 
       // Verify domain is owned in registrar
-      const isRegistryOwner = await zns.registry.connect(user).isOwnerOrOperator(domainHash, user.address);
-      expect(isRegistryOwner).to.be.true;
+      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(user.address);
 
       // Verify same amount is staked
       const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
@@ -424,23 +424,79 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Cannot reclaim name/stake if token is not owned", async () => {
-      expect(true);
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      // Reclaim the Domain
+      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Verify Domain is not reclaimed
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not owner of domain");
+
+      // Verify domain is not owned in registrar
+      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(deployer.address);
     });
 
     it("Cannot reclaim if domain does not exist", async () => {
-      expect(true);
+      const domainHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
+      // Reclaim the Domain
+      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Verify Domain is not reclaimed
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain does not exist");
     });
 
-    it("Reclaimed domain can now revoke", async () => {
-      expect(true);
-    });
+    it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      const tokenId = await getTokenId(topLevelTx);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
 
-    it("Domain Token can be gifted and then reclaimed", async () => {
-      expect(true);
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      // Verify domain token is still owned
+      let owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      expect(owner).to.equal(user.address);
+
+      // Transfer the domain token back
+      await zns.domainToken.connect(user).transferFrom(user.address, deployer.address, tokenId);
+
+      // Reclaim the Domain again
+      await zns.registrar.connect(deployer).reclaimDomain(domainHash);
+
+      // Verify domain token is owned
+      owner  = await zns.domainToken.connect(deployer).ownerOf(tokenId);
+      expect(owner).to.equal(deployer.address);
+
+      // Verify domain is owned in registrar
+      const registryOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(deployer.address);
+
+      // Verify same amount is staked
+      const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.equal(stakedAfterReclaim);
+
+      // Verify address of owner in addressResolver
+      const addressResolverAddress = await zns.addressResolver.getAddress(domainHash);
+      expect(addressResolverAddress).to.equal(deployer.address);
     });
 
     it("Cannot reclaim if name/stake is already owned by caller", async () => {
-      expect(true);
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      // Reclaim the Domain
+      const tx = zns.registrar.connect(deployer).reclaimDomain(domainHash);
+
+      // Verify Domain is not reclaimed
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Caller already owner of domain registry");
+
+      // Verify domain is not owned in registrar
+      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(deployer.address);
     });
   });
 });
