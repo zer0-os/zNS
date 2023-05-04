@@ -11,7 +11,6 @@ import { priceConfigDefault } from "./helpers/constants";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-// TODO reg: test revocation process
 describe("ZNSEthRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
@@ -26,11 +25,11 @@ describe("ZNSEthRegistrar", () => {
     // Burn address is used to hold the fee charged to the user when registering
     zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
 
-    // TODO reg: is this the correct way of doing this?
+    // TODO change this when access control implemented
     // Give the user permission on behalf of the parent domain owner
     await zns.registry.connect(deployer).setOwnerOperator(user.address, true);
 
-    // TODO reg: is this the correct way of doing this? doesn't seem like it.
+    // TODO change this when access control implemented
     // Give the registrar permission on behalf of the user
     await zns.registry.connect(user).setOwnerOperator(zns.registrar.address, true);
 
