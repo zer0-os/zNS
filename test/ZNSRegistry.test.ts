@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSRegistry } from "../typechain";
 import { deployRegistry } from "./helpers/deployZNS";
 import { ethers } from "ethers";
-import { hashDomainLabel, hashDomainName } from "./helpers";
+import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -104,11 +104,8 @@ describe("ZNSRegistry Tests", () => {
       const exists = await registry.connect(randomUser).exists(wilderSubdomainHash);
       expect(exists).to.be.true;
 
-      const nonExistentDomainHash = ethers.utils
-        .solidityKeccak256(
-          ["bytes32"],
-          [ethers.utils.id("wild")]
-        );
+      const nonExistentDomainHash = hashDomainName("wild");
+
       const notExists = await registry.connect(randomUser).exists(nonExistentDomainHash);
       expect(notExists).to.be.false;
     });

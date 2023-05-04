@@ -5,6 +5,7 @@ import { deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
+import { hashDomainLabel } from "./helpers/hashing";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -43,7 +44,7 @@ describe("ZNSTreasury", () => {
   describe("stakeForDomain", () => {
     it("Stakes the correct amount", async () => {
       const domain = "wilder";
-      const domainHash = ethers.utils.id(domain);
+      const domainHash = hashDomainLabel(domain);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
@@ -55,6 +56,20 @@ describe("ZNSTreasury", () => {
       const stake = await zns.treasury.stakedForDomain(domainHash);
       const { domainPrice: expectedStake } = await zns.priceOracle.getPrice(domain, true);
       expect(stake).to.eq(expectedStake);
+    });
+
+    it("Should revert if called from any address that is not ZNSRegistrar", async () => {
+      const domain = "wilder";
+      const domainHash = hashDomainLabel(domain);
+
+      const tx = zns.treasury.connect(user).stakeForDomain(
+        domainHash,
+        domain,
+        user.address,
+        true
+      );
+
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Only ZNSRegistrar is allowed to call");
     });
   });
 
