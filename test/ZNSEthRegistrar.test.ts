@@ -376,7 +376,7 @@ describe("ZNSEthRegistrar", () => {
       const staked = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
-      await zns.domainToken.connect(deployer).transfer(deployer.address, user.address, tokenId);
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
 
       // Reclaim the Domain
       await zns.registrar.connect(user).reclaimDomain(domainHash);
@@ -492,6 +492,43 @@ describe("ZNSEthRegistrar", () => {
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
       expect(registryOwner).to.equal(deployer.address);
+    });
+
+    it("Can revoke and unstake after reclaiming", async () => {
+
+      // Verify Balance
+      const balance = await zns.zeroToken.balanceOf(user.address);
+      expect(balance).to.eq(ethers.utils.parseEther("15"));
+
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHash(topLevelTx);
+      const tokenId = await getTokenId(topLevelTx);
+
+      // Validated staked values
+      const {
+        expectedPrice: expectedStaked,
+      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.eq(expectedStaked);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Revoke the Domain
+      await zns.registrar.connect(user).revokeDomain(domainHash);
+
+      // Validated funds are unstaked
+      const finalstaked = await zns.treasury.stakedForDomain(domainHash);
+      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+
+      // Verify final balances
+      const computedFinalBalance = balance.add(staked);
+      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      expect(computedFinalBalance).to.equal(finalBalance);
     });
   });
 
