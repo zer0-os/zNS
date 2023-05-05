@@ -28,8 +28,6 @@ describe("ZNSRegistry Tests", () => {
   let rootDomainHash : string;
   let wilderSubdomainHash : string;
 
-  const wilderLabel = hashDomainLabel("wilder");
-
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver] = await hre.ethers.getSigners();
 

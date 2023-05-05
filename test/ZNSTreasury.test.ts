@@ -1,12 +1,11 @@
 import * as hre from "hardhat";
-import { expect, use } from "chai";
+import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkBalance, deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
 import { hashDomainLabel } from "./helpers/hashing";
-import { extendConfig } from "hardhat/config";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
