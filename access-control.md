@@ -2,13 +2,16 @@
 
 Reference Code https://github.com/zer0-os/zNS/pull/18/
 
+**Abstract** 
 Goal: Identify an appropriate level of access control for zNS administration and its consumers for the current suite of functionality. This does not include subdomain minting.  
 
 This analysis assumes a few guiding architecture principles of zNS
 1. Maximize User Ownership:  Operations on entities within zNS are owned (and also the responsibility of) the user. 
 2. Open: Inspection of code yields confidence that these are the building blocks of a decentralized system to associate a domain with any type of content.  This means Zero Administrator access should be limited to operations required to maintain integrity of the system for all users. 
 
-** Operations Analysis: **
+The analysis here presumes the 3 roles of access defined in the reference code - Owner, Operator, and Zero Admin. A Zero admin may be an account or another smart contract. Operators are controlled by the owner and can perform a subset of domain management operations. 
+
+**Operations Analysis**
 Below are access level security recommendations and associated thoughts for zNS MVP operations for today's (5/5/2023) implementation for zNS. 
 * nosec = no access control security needed. 
 * sec = access control recommended, will be followed by a list of roles
@@ -41,24 +44,32 @@ Below are access level security recommendations and associated thoughts for zNS 
     * setZNSRegistrar ()
     * Summary: Zero admin should only have control over initalization/upgradeability based on our principles, everything else can be owner
 
-
-**Analysis**:
-This analysis presumes 3 roles of access - Owner, Operator, and Zero Admin. A Zero admin may be an account or another smart contract. Operators are controlled by the owner and can perform a subset of domain management operations. 
-
-zNSPriceOracle - All price setting operation access can be limited to owners & operators. Zero Admin control can be limited to upgradeability, if there is a need to maintain registrar mappings in the price oracle then it may be appropriate for ZAC to assign those mappings
+**Conclusions and Recommendations**:
+zNSPriceOracle - All price setting operation access can be limited to owners & operators. Zero Admin control can be limited to upgradeability, if there is a need to maintain registrar mappings in the price oracle then it may be appropriate for ZAC to assign those mappings. Monetary operations to guarantee revenue of Zero system (e.g. royalties) should be hardcoded and immutable (or at a minimum separate operations controlled by Zero Admins)
 
 
-zNSAddressResolver - Resolution of zNS name to a system (setting the contract that acts as the resolver) is data that should be the sole propriety of the owner. This is a key relationship of zNS, and answers (in what way does this domain name have meaning? E.g. is it tied to another system of SCs or is it just a name)
-zNSRegistry - Modification of records
+zNSAddressResolver - Resolution of zNS name to a system (setting the contract that acts as the resolver) is data that should be the sole propriety of the owner. This is a key relationship of zNS, and answers (in what way does this domain name have meaning within ethereum? E.g. is it tied to another system of SCs or is it just a name)
 
 
-zNSRegistry - Similar to the address resolver operations that require access control are 
+zNSRegistry - Modification of records and resolvers require such a high degree of trust that a decision needs to be made on what the purview of operators should be. (See aside on operators and owners for recommendations)
+
+
+zNSRegistry - The ownership of the domain record and the resolver(s) of that domain should exclusively be the purview of the owner.  Similarly 
+
+**Aside on Operators and Owners:**
+The analysis of the above these contracts suggests that almost any operation granted to an operator in zNS MVP requires an extreme degree of trust to the point that operators may as well be owners. One possible simplification of access control is to simply allow for multiple owners, and remove the operator role entirely.  
+
+Another possible route is to allow operators to perform any role with the exception of minting, changing domain ownership, and managing operators. Allowing operators full bandwidth to help manage a system, but with owners always have the capability to recover from a breach of trust
 
 Recommendations: Access Control by Zero should be limited to the cases where the user is minting a domain under default contracts that provide some base level of utility in our ecosystem. E.g. Zero Access Control can set a domains resolver to the default if no custom resolver is provided. One these defaults are overriden by the owner. zNS has no access to revoke.
 
-While zNS matures and is in development I can propose two potential paths for admin level access
 
-Option 2:
+**On Zero Administrator Access:**
+
+While the zNS MVP matures and is in development I can propose two potential paths for admin level access
+
+
+Option 1:
  Zero maintains rights to upgradeability over contracts until such a time that Zero Access control decisions are made via DAO or some other multisig. This may provide some assurances to the userbase about our commitment to a decentralized, democratic system, but in reality we are only obscuring centralization that is still there.
 
 Option 2:
