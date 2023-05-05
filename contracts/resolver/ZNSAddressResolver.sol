@@ -39,9 +39,10 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
 
   /**
    * @dev Resolves address given domain name hash
+   * 
    * @param domainNameHash The identifying hash of a domain's name
    */
-  function getAddress(bytes32 domainNameHash) external view override returns (address) {
+    function getAddress(bytes32 domainNameHash) external view override returns (address) {
     return addressOf[domainNameHash];
   }
 
