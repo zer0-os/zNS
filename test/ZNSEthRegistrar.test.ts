@@ -376,7 +376,7 @@ describe("ZNSEthRegistrar", () => {
       const staked = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
-      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+      await zns.domainToken.connect(deployer).transfer(deployer.address, user.address, tokenId);
 
       // Reclaim the Domain
       await zns.registrar.connect(user).reclaimDomain(domainHash);
@@ -384,7 +384,7 @@ describe("ZNSEthRegistrar", () => {
       const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
       expect(owner).to.equal(user.address);
 
-      // Verify domain is owned in registrar
+      // Verify domain is owned in registry
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
       expect(registryOwner).to.equal(user.address);
 
@@ -425,7 +425,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not owner of domain");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not owner of Token");
 
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
@@ -487,7 +487,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(deployer).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Caller already owner of domain registry");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain is already owned by the caller");
 
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
