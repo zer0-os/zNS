@@ -6,19 +6,20 @@ import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
 import { hashDomainLabel } from "./helpers/hashing";
+import { extendConfig } from "hardhat/config";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
-// TODO reg: test unstake
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
-  let zeroVault : SignerWithAddress; // TODO fix when decided
+  let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
+  let randomAcc : SignerWithAddress;
   let zns : ZNSContracts;
 
   beforeEach(async () => {
-    [deployer, zeroVault, user, mockRegistrar] = await hre.ethers.getSigners();
+    [ deployer, zeroVault, user, mockRegistrar, randomAcc ] = await hre.ethers.getSigners();
     zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
 
     // Set the registrar as a mock so that we can call the functions
@@ -122,9 +123,8 @@ describe("ZNSTreasury", () => {
     });
   });
 
-
   describe("setZeroVaultAddress() and ZeroVaultAddressSet event", () => {
-    it("sets the correct address of Zero Vault", async () => {
+    it("Should set the correct address of Zero Vault", async () => {
       const currentZeroVault = await zns.treasury.zeroVault();
       expect(currentZeroVault).to.not.eq(mockRegistrar.address);
 
@@ -134,6 +134,25 @@ describe("ZNSTreasury", () => {
       expect(newZeroVault).to.eq(mockRegistrar.address);
 
       await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(newZeroVault);
+    });
+
+    it("Should revert when zeroVault is address 0", async () => {
+      const tx = zns.treasury.setZeroVaultAddress(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: zeroVault passed as 0x0 address");
+    });
+  });
+
+  describe("setZNSRegistrar", () => {
+    it("Should set znsRegistrar in storage", async () => {
+      await zns.treasury.setZNSRegistrar(randomAcc.address);
+
+      const registrarFromSC = await zns.treasury.znsRegistrar();
+      expect(registrarFromSC).to.be.eq(randomAcc.address);
+    });
+
+    it("Should revert if Registrar is address 0", async () => {
+      const tx = zns.treasury.setZNSRegistrar(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Zero address passed as znsRegistrar");
     });
   });
 });

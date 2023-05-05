@@ -12,6 +12,7 @@ import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+const { constants: { AddressZero } } = ethers;
 
 describe("ZNSEthRegistrar", () => {
   let deployer : SignerWithAddress;
@@ -307,7 +308,7 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided");
     });
 
-    // verify costs using a struct or not in price oracle
+    // TODO verify costs using a struct or not in price oracle
     // it("Calls on behalf of a user as a registrar")
     // it("fails if not approved subdomain creator")
     // it("immediately revokes subdomain approval after tx")
@@ -323,6 +324,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Successfully registers a domain without a resolver or resolver content", async () => {
+      // TODO: fix or move this test. it's under a subdomain describe
       const tx = zns.registrar.connect(user).registerRootDomain(
         defaultSubdomain,
         ethers.constants.AddressZero,
@@ -365,6 +367,44 @@ describe("ZNSEthRegistrar", () => {
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
+    });
+
+    it("User registers subdomain with the parent owner approval and fires SubdomainApprovalSet", async () => {
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
+
+      const childName = "childer";
+      // TODO: this needs to be fixed! we need a way to check contracts
+      //  and hashes along with the namehash library, but the ":" char in
+      //  0:// is illegal for the library. Find a solution and test properly!
+      // const childHash = hashDomainName(`${ZERO_ROOT}${defaultDomain}.${childName}`);
+
+      const approveTx = await zns.registrar.setSubdomainApproval(parentDomainHash, user.address, true);
+      const approveReceipt = await approveTx.wait(0);
+      const eventObj = approveReceipt.events?.[0];
+      expect(eventObj?.event).to.eq("SubdomainApprovalSet");
+      expect(eventObj?.args?.parentHash).to.eq(parentDomainHash);
+      expect(eventObj?.args?.user).to.eq(user.address);
+      expect(eventObj?.args?.status).to.be.true;
+
+      const isApproved = await zns.registrar.subdomainApprovals(parentDomainHash, user.address);
+      expect(isApproved).to.be.true;
+
+      const tx = await zns.registrar.registerSubdomain(
+        parentDomainHash,
+        childName,
+        user.address,
+        AddressZero,
+        AddressZero
+      );
+      const receipt = await tx.wait(0);
+      const childHash = await getDomainHashFromEvent(receipt);
+
+      const exists = await zns.registry.exists(childHash);
+      const ownerFromRegistry = await zns.registry.getDomainOwner(childHash);
+
+      expect(exists).to.be.true;
+      expect(ownerFromRegistry).to.be.eq(user.address);
     });
   });
 
