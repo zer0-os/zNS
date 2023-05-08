@@ -88,12 +88,12 @@ describe("ZNSRegistry Tests", () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, false);
 
       const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
 
@@ -179,7 +179,7 @@ describe("ZNSRegistry Tests", () => {
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Sets a subdomain record", async () => {
@@ -211,7 +211,7 @@ describe("ZNSRegistry Tests", () => {
           deployer.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Fails to create another root domain", async () => {
@@ -226,7 +226,7 @@ describe("ZNSRegistry Tests", () => {
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
 });

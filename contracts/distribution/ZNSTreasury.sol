@@ -77,6 +77,7 @@ contract ZNSTreasury is IZNSTreasury {
     // Transfer stake amount and fee
     zeroToken.transferFrom(depositor, address(this), stakeAmount);
     // TODO make sure we show the approval process to the user here to avoid failed transfer
+    // TODO can we make it so it needs a single approval only?!
     zeroToken.transferFrom(depositor, zeroVault, registrationFee);
 
     // Record staked amount for this domain
@@ -90,9 +91,13 @@ contract ZNSTreasury is IZNSTreasury {
     address owner
   ) external onlyRegistrar {
     uint256 stakeAmount = stakedForDomain[domainHash];
+    require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
     delete stakedForDomain[domainHash];
 
     // TODO: require owner == ownerOrOperator from registry?
+    //  remove this comment when AccessControl is added.
+    //  if proper acccess control exists here and in Registrar.revoke
+    //  it will be sufficient to check the owner at the entry point
     zeroToken.transfer(owner, stakeAmount);
 
     emit StakeWithdrawn(domainHash, owner, stakeAmount);

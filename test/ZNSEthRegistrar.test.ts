@@ -20,11 +20,12 @@ describe("ZNSEthRegistrar", () => {
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
+  let operator : SignerWithAddress;
   const defaultDomain = "wilder";
   const defaultSubdomain = "world";
 
   beforeEach(async () => {
-    [deployer, zeroVault, user] = await hre.ethers.getSigners();
+    [deployer, zeroVault, user, operator] = await hre.ethers.getSigners();
     // Burn address is used to hold the fee charged to the user when registering
     zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
 
@@ -193,7 +194,7 @@ describe("ZNSEthRegistrar", () => {
     });
   });
 
-  // TODO reg: add tests for approval process
+  // TODO: add tests for approval process when subdomains are added back
   describe("Registers a subdomain", () => {
     it("Can NOT register a subdomain with an empty name", async () => {
       const emptyName = "";
@@ -509,6 +510,47 @@ describe("ZNSEthRegistrar", () => {
       // Try to revoke domain
       const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
+    });
+
+    it("After domain has been revoked, an old operator can NOT access Registry", async () => {
+      // Register Top level
+      const tx = await defaultRootRegistration(user, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(tx);
+
+      // assign an operator
+      await zns.registry.connect(user).setOwnerOperator(operator.address, true);
+
+      // Revoke the domain
+      await zns.registrar.connect(user).revokeDomain(domainHash);
+
+      // check operator access to the revoked domain
+      const rootHash = zns.registry.ROOT_HASH();
+      const tx2 = zns.registry
+        .connect(operator)
+        .setSubdomainOwner(
+          rootHash,
+          domainHash,
+          operator.address
+        );
+      await expect(tx2).to.be.revertedWith("ZNSRegistry: Not Authorized");
+
+      const tx3 = zns.registry
+        .connect(operator)
+        .setSubdomainRecord(
+          rootHash,
+          domainHash,
+          user.address,
+          operator.address
+        );
+      await expect(tx3).to.be.revertedWith("ZNSRegistry: Not Authorized");
+
+      const tx4 = zns.registry
+        .connect(operator)
+        .setDomainResolver(
+          domainHash,
+          zeroVault.address
+        );
+      await expect(tx4).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
 });
