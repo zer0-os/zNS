@@ -56,7 +56,7 @@ describe("ZNSEthRegistrar", () => {
 
       await expect(
         defaultRootRegistration(deployer, zns, emptyName)
-      ).to.be.revertedWith("ZNSEthRegistrar: No domain name");
+      ).to.be.revertedWith("ZNSEthRegistrar: Domain Name not provided");
     });
 
     it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
@@ -462,7 +462,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Verify transaction is reverted
       const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Domain Owner");
     });
 
     it("Revoked domain unstakes", async () => {
@@ -509,7 +509,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Try to revoke domain
       const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not Owner");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Domain Owner");
     });
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
