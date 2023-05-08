@@ -135,6 +135,11 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(newZeroVault);
     });
 
+    it("Should revert when called from any address that is not admin", async () => {
+      const tx = zns.treasury.connect(user).setZeroVaultAddress(mockRegistrar.address);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: Not an allowed admin");
+    });
+
     it("Should revert when zeroVault is address 0", async () => {
       const tx = zns.treasury.setZeroVaultAddress(ethers.constants.AddressZero);
       await expect(tx).to.be.revertedWith("ZNSTreasury: zeroVault passed as 0x0 address");
