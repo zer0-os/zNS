@@ -156,6 +156,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     return records[domainHash].owner;
   }
 
+  // TODO: review and remove all non-essential function when working
+  //  on the deletion of subdomains and/or reworking the Registry API
   /**
    * @notice Update a domain's owner
    * @param domainHash The identifying hash of a domain's name
