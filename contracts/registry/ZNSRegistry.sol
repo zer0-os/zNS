@@ -134,6 +134,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param parentDomainHash The base domain name hash
    * @param domainHash The label of the subdomain
    * @param owner The owner to set
+   * TODO: Add access control to limit function invocation to owner of the subdomain or parent domain
    */
   function setSubdomainOwner(
     bytes32 parentDomainHash,
