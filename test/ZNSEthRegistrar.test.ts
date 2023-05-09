@@ -409,9 +409,157 @@ describe("ZNSEthRegistrar", () => {
     });
   });
 
-  describe("Revokes a Domain", () => {
-    it("Revokes a Top level Domain - Happy Path", async () => {
+  describe("Reclaiming Domains", () => {
+    it("Can reclaim name/stake if Token is owned", async () => {
       // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Verify owner in registry
+      const originalOwner  = await zns.registry.connect(deployer).getDomainOwner(domainHash);
+      expect(originalOwner).to.equal(deployer.address);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Verify domain token is still owned
+      const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      expect(owner).to.equal(user.address);
+
+      // Verify domain is owned in registry
+      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(user.address);
+
+      // Verify same amount is staked
+      const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.equal(stakedAfterReclaim);
+    });
+
+    it("Reclaiming domain token emits DomainReclaimed event", async () => {
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+      // Reclaim the Domain
+      const tx = await zns.registrar.connect(user).reclaimDomain(domainHash);
+      const receipt = await tx.wait(0);
+
+      // Verify Transfer event is emitted
+      expect(receipt.events?.[1].event).to.eq("DomainReclaimed");
+      expect(receipt.events?.[1].args?.domainHash).to.eq(
+        domainHash
+      );
+      expect(receipt.events?.[1].args?.registrant).to.eq(
+        user.address
+      );
+    });
+
+    it("Cannot reclaim name/stake if token is not owned", async () => {
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      // Reclaim the Domain
+      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Verify Domain is not reclaimed
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not owner of Token");
+
+      // Verify domain is not owned in registrar
+      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(deployer.address);
+    });
+
+    it("Cannot reclaim if domain does not exist", async () => {
+      const domainHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
+      // Reclaim the Domain
+      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Verify Domain is not reclaimed
+      await expect(tx).to.be.revertedWith("ERC721: invalid token ID");
+    });
+
+    it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      // Verify domain token is still owned
+      let owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      expect(owner).to.equal(user.address);
+
+      // Transfer the domain token back
+      await zns.domainToken.connect(user).transferFrom(user.address, deployer.address, tokenId);
+
+      // Reclaim the Domain again
+      await zns.registrar.connect(deployer).reclaimDomain(domainHash);
+
+      // Verify domain token is owned
+      owner  = await zns.domainToken.connect(deployer).ownerOf(tokenId);
+      expect(owner).to.equal(deployer.address);
+
+      // Verify domain is owned in registrar
+      const registryOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
+      expect(registryOwner).to.equal(deployer.address);
+
+      // Verify same amount is staked
+      const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.equal(stakedAfterReclaim);
+    });
+
+    it("Can revoke and unstake after reclaiming", async () => {
+
+      // Verify Balance
+      const balance = await zns.zeroToken.balanceOf(user.address);
+      expect(balance).to.eq(ethers.utils.parseEther("15"));
+
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
+
+      // Validated staked values
+      const {
+        expectedPrice: expectedStaked,
+      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      const staked = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.eq(expectedStaked);
+
+      // Transfer the domain token
+      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+
+      // Reclaim the Domain
+      await zns.registrar.connect(user).reclaimDomain(domainHash);
+
+      // Revoke the Domain
+      await zns.registrar.connect(user).revokeDomain(domainHash);
+
+      // Validated funds are unstaked
+      const finalstaked = await zns.treasury.stakedForDomain(domainHash);
+      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+
+      // Verify final balances
+      const computedFinalBalance = balance.add(staked);
+      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      expect(computedFinalBalance).to.equal(finalBalance);
+    });
+  });
+
+  describe("Revoking Domains", () => {
+    it("Revokes a Top level Domain - Happy Path", async () => {
+    // Register Top level
       const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
       const tokenId = await getTokenIdFromEvent(topLevelTx);
@@ -454,8 +602,8 @@ describe("ZNSEthRegistrar", () => {
       expect(exists).to.be.false;
     });
 
-    it ("Cannot revoke a domain that doesnt exist", async () => {
-      // Register Top level
+    it("Cannot revoke a domain that doesnt exist", async () => {
+    // Register Top level
       const fakeHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
       const exists = await zns.registry.exists(fakeHash);
       expect(exists).to.be.false;
@@ -466,7 +614,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Revoked domain unstakes", async () => {
-      // Verify Balance
+    // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
       expect(balance).to.eq(ethers.utils.parseEther("15"));
 
@@ -501,7 +649,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Cannot revoke a domain owned by another user", async () => {
-      // Register Top level
+    // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);

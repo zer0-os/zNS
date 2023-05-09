@@ -190,6 +190,15 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // TODO: what are we missing here?
   }
 
+  //TODO: Access Control
+  function reclaimDomain(bytes32 domainHash) external {
+    uint256 tokenId = uint256(domainHash);
+    require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
+    znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
+    
+    emit DomainReclaimed(domainHash, msg.sender);
+  }
+
   function hashWithParent(
     bytes32 parentHash,
     string calldata name
