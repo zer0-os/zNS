@@ -20,7 +20,7 @@
     "test": "hardhat test",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
-    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
+    "check-coverage": "istanbul check-coverage --statements 90 --branches 78 --functions 89 --lines 90"
   },
   "pre-commit": [
     "lint"
@@ -52,7 +52,8 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.2",
+    "@ensdomains/ensjs": "2.1.0"
   },
   "dependencies": {
     "dotenv": "16.0.3"

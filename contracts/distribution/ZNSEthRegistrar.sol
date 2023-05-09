@@ -22,7 +22,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     public subdomainApprovals;
 
   modifier onlyOwner(bytes32 domainNameHash) {
-    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not Owner" );
+    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not the Domain Owner" );
     _;
   }
 
@@ -47,20 +47,21 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   /**
    * @notice Register a root domain such as `0://wilder`
    * @param name Name of the domain to register
-   * @param resolver Address of the resolver for that domain
-   * @param domainAddress Address for the resolver to return when requested
+   * @param resolver Address of the resolver for that domain (optional, send 0x0 if not needed)
+   * @param domainAddress Address for the resolver to return when requested (optional, send 0x0 if not needed)
    */
   function registerRootDomain(
     string calldata name,
     address resolver,
     address domainAddress
   ) external returns (bytes32) {
-    require(bytes(name).length != 0, "ZNSEthRegistrar: No domain name");
+    require(bytes(name).length != 0, "ZNSEthRegistrar: Domain Name not provided");
 
     // To not repeat external calls, we load into memory
     bytes32 rootHash = znsRegistry.ROOT_HASH();
 
     // Create hash for given domain name
+    // TODO: remove hashing with the rootHash and remove root hash completel!
     bytes32 domainHash = hashWithParent(rootHash, name);
 
     require(
@@ -124,12 +125,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   ) external returns (bytes32) {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
-    // TODO:    Should we add interface check here that every Registrar should implement
-    //          to only run the below require if an EOA is calling this?
-    //          We do not need a subdomain approval if it's a Registrar
-    //          contract calling this since the call from it already
-    //          serves as an "approval".
-
     bytes32 domainHash = hashWithParent(parentDomainHash, name);
 
     require(
@@ -184,17 +179,10 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  // TODO We need to decide what happens if we include this functionality
-  // but the domain that is revoked has subdomains
   function revokeDomain(bytes32 domainHash) external onlyOwner(domainHash) {
-    // TODO: is this necessary?
-    require(
-      znsRegistry.exists(domainHash),
-      "ZNSEthRegistrar: Domain does not exist"
-    );
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.revoke(tokenId);
-    znsTreasury.unstakeForDomain(domainHash, msg.sender);   
+    znsTreasury.unstakeForDomain(domainHash, msg.sender);
     znsRegistry.deleteRecord(domainHash);
 
     emit DomainRevoked(domainHash, msg.sender);
@@ -245,6 +233,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         "ZNSEthRegistrar: Domain content provided without a valid resolver address"
       );
       // Set only the domain owner
+      // TODO: rework these calls when Registry ABI has been changed
       znsRegistry.setSubdomainOwner(parentDomainHash, domainHash, owner);
     } else {
       // If a valid resolver is given, require domain data as well
@@ -252,12 +241,19 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         domainAddress != address(0),
         "ZNSEthRegistrar: No domain content provided"
       );
+      // TODO: what is the given Resolver already exists?
+      //  we do not want to re-set it again in Registry storage
+      //  iron this out!
       znsRegistry.setSubdomainRecord(
         parentDomainHash,
         domainHash,
         owner,
         resolver
       );
+      // TODO error: we are using a different Resolver here than the one passed!
+      //  and the one in the call above. This is an error that can cause undiscoverable domains
+      //  If we only have one AddressResolver, we should not take it as an argument
+      //  to the register function at all and assume the one in this storage is being used
       znsAddressResolver.setAddress(domainHash, domainAddress);
     }
   }

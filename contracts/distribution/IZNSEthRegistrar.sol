@@ -12,6 +12,7 @@ interface IZNSEthRegistrar {
     address indexed registrant,
     address resolver
   );
+
   event SubdomainApprovalSet(
     bytes32 indexed parentHash,
     address indexed user,

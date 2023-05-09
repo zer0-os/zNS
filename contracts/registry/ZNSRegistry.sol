@@ -28,7 +28,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
    * @param domainNameHash The identifying hash of a domain's name
    */
   modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-    require(isOwnerOrOperator(domainNameHash, msg.sender), "ZNSRegistry: Not allowed");
+    require(isOwnerOrOperator(domainNameHash, msg.sender), "ZNSRegistry: Not Authorized");
     _;
   }
 
@@ -102,10 +102,9 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   }
 
   // TODO add access control. do we need to revoke operator as well?
+  //  Test if after revocation an operator can do anything to verify
+  //  we don't need to clear them.
   function deleteRecord(bytes32 domainNameHash) external {
-    // this could call to an internal func _deleteDomainRecord
-    // Then when `setDomainRecord` is `0x0` values, we can also delete there
-
     //TODO: This doesnt work because the znsRegistrar does not pass this validation.
     //require(msg.sender == records[domainNameHash].owner;
     delete records[domainNameHash];
@@ -156,6 +155,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     return records[domainHash].owner;
   }
 
+  // TODO: review and remove all non-essential function when working
+  //  on the deletion of subdomains and/or reworking the Registry API
   /**
    * @notice Update a domain's owner
    * @param domainHash The identifying hash of a domain's name
@@ -226,7 +227,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     bytes32 domainNameHash,
     address resolver
   ) internal {
-    require(resolver != address(0), "ZNSRegistry: Resolver cannot be the zero address");
+    require(resolver != address(0), "ZNSRegistry: Resolver can NOT be zero address");
 
     records[domainNameHash].resolver = resolver;
   }

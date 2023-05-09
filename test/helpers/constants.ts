@@ -2,6 +2,13 @@ import { BigNumber } from "ethers";
 import { PriceParams } from "./types";
 import { ethers } from "hardhat";
 
+
+export const ZERO_ROOT = "0://";
+
+// TODO: figure out what to do with this
+//   namehash lib does not support the ":" symbol
+// export const ZERO_ROOT_HASH = hashDomainName(ZERO_ROOT);
+
 export const registrationFeePercDefault = BigNumber.from("222");
 
 export const priceConfigDefault : PriceParams = {
