@@ -433,10 +433,6 @@ describe("ZNSEthRegistrar", () => {
       // Verify same amount is staked
       const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-
-      // Verify address of owner in addressResolver
-      const addressResolverAddress = await zns.addressResolver.getAddress(domainHash);
-      expect(addressResolverAddress).to.equal(user.address);
     });
 
     it("Reclaiming domain token emits DomainReclaimed event", async () => {
@@ -451,11 +447,11 @@ describe("ZNSEthRegistrar", () => {
       const receipt = await tx.wait(0);
 
       // Verify Transfer event is emitted
-      expect(receipt.events?.[2].event).to.eq("DomainReclaimed");
-      expect(receipt.events?.[2].args?.domainHash).to.eq(
+      expect(receipt.events?.[1].event).to.eq("DomainReclaimed");
+      expect(receipt.events?.[1].args?.domainHash).to.eq(
         domainHash
       );
-      expect(receipt.events?.[2].args?.registrant).to.eq(
+      expect(receipt.events?.[1].args?.registrant).to.eq(
         user.address
       );
     });
@@ -516,10 +512,6 @@ describe("ZNSEthRegistrar", () => {
       // Verify same amount is staked
       const stakedAfterReclaim = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-
-      // Verify address of owner in addressResolver
-      const addressResolverAddress = await zns.addressResolver.getAddress(domainHash);
-      expect(addressResolverAddress).to.equal(deployer.address);
     });
 
     it("Cannot reclaim if name/stake is already owned by caller", async () => {

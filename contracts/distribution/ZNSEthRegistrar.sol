@@ -201,7 +201,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address owner = znsRegistry.getDomainRecord(domainHash).owner;
     require(owner != msg.sender, "ZNSEthRegistrar: Domain is already owned by the caller");
 
-    znsAddressResolver.setAddress(domainHash, msg.sender); 
     znsRegistry.setSubdomainOwner(domainHash, domainHash, msg.sender);
     
     emit DomainReclaimed(domainHash, msg.sender);
