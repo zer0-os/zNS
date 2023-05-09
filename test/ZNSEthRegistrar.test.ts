@@ -420,8 +420,13 @@ describe("ZNSEthRegistrar", () => {
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
 
+      // Verify owner in registry
+      const originalOwner  = await zns.registry.connect(deployer).getDomainOwner(domainHash);
+      expect(originalOwner).to.equal(deployer.address);
+
       // Reclaim the Domain
       await zns.registrar.connect(user).reclaimDomain(domainHash);
+
       // Verify domain token is still owned
       const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
       expect(owner).to.equal(user.address);
