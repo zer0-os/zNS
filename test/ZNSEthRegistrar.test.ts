@@ -481,7 +481,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain does not exist");
+      await expect(tx).to.be.revertedWith("ERC721: invalid token ID");
     });
 
     it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {

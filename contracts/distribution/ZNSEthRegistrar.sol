@@ -192,10 +192,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
 
   //TODO: Access Control
   function reclaimDomain(bytes32 domainHash) external {
-    require(
-      znsRegistry.exists(domainHash),
-      "ZNSEthRegistrar: Domain does not exist"
-    );
     uint256 tokenId = uint256(domainHash);
     require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
     znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
