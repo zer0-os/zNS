@@ -209,7 +209,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
       "ZNSEthRegistrar: Domain does not exist"
     );
     uint256 tokenId = uint256(domainHash);
-    require(znsDomainToken.isOwner(tokenId, msg.sender), "ZNSEthRegistrar: Not owner of Token");
+    require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
     address owner = znsRegistry.getDomainRecord(domainHash).owner;
     require(owner != msg.sender, "ZNSEthRegistrar: Domain is already owned by the caller");
 

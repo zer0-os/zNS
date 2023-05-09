@@ -41,18 +41,6 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
   }
 
   /**
-   * @notice Checks if provided address is an owner of the provided domain token
-   * @param tokenId The identifying tokenId of a domain
-   * @param candidate The address for which we are checking access
-   */
-  function isOwner(
-    uint256 tokenId,
-    address candidate
-  ) public view returns (bool) {
-    return ownerOf(tokenId) == candidate;
-  }
-
-  /**
    * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
    * @dev TODO: Add Access Control
    * @param to The address that will recieve the newly minted domain token
