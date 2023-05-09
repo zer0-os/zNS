@@ -413,8 +413,8 @@ describe("ZNSEthRegistrar", () => {
     it("Can reclaim name/stake if Token is owned", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
-      const tokenId = await getTokenId(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
       const staked = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
@@ -441,8 +441,8 @@ describe("ZNSEthRegistrar", () => {
 
     it("Reclaiming domain token emits DomainReclaimed event", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
-      const tokenId = await getTokenId(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
 
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
@@ -462,7 +462,7 @@ describe("ZNSEthRegistrar", () => {
 
     it("Cannot reclaim name/stake if token is not owned", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
       // Reclaim the Domain
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
@@ -486,8 +486,8 @@ describe("ZNSEthRegistrar", () => {
     it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
-      const tokenId = await getTokenId(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
       const staked = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
@@ -524,7 +524,7 @@ describe("ZNSEthRegistrar", () => {
 
     it("Cannot reclaim if name/stake is already owned by caller", async () => {
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
       // Reclaim the Domain
       const tx = zns.registrar.connect(deployer).reclaimDomain(domainHash);
 
@@ -544,8 +544,8 @@ describe("ZNSEthRegistrar", () => {
 
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHash(topLevelTx);
-      const tokenId = await getTokenId(topLevelTx);
+      const domainHash = await getDomainHashFromEvent(topLevelTx);
+      const tokenId = await getTokenIdFromEvent(topLevelTx);
 
       // Validated staked values
       const {
