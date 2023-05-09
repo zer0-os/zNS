@@ -572,7 +572,7 @@ describe("ZNSEthRegistrar", () => {
   });
 
   describe("Revoking Domains", () => {
-    it ("Revokes a Top level Domain - Happy Path", async () => {
+    it("Revokes a Top level Domain - Happy Path", async () => {
     // Register Top level
       const topLevelTx = await defaultRootRegistration(user, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
@@ -592,7 +592,7 @@ describe("ZNSEthRegistrar", () => {
       expect(exists).to.be.false;
     });
 
-    it ("Revokes a SubDomain - Happy Path", async () => {
+    it("Revokes a SubDomain - Happy Path", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
@@ -616,7 +616,7 @@ describe("ZNSEthRegistrar", () => {
       expect(exists).to.be.false;
     });
 
-    it ("Cannot revoke a domain that doesnt exist", async () => {
+    it("Cannot revoke a domain that doesnt exist", async () => {
     // Register Top level
       const fakeHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
       const exists = await zns.registry.exists(fakeHash);
@@ -627,7 +627,7 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Domain Owner");
     });
 
-    it ("Revoked domain unstakes", async () => {
+    it("Revoked domain unstakes", async () => {
     // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
       expect(balance).to.eq(ethers.utils.parseEther("15"));
@@ -662,7 +662,7 @@ describe("ZNSEthRegistrar", () => {
       expect(computedBalanceAfterStaking).to.equal(finalBalance);
     });
 
-    it ("Cannot revoke a domain owned by another user", async () => {
+    it("Cannot revoke a domain owned by another user", async () => {
     // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
