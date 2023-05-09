@@ -198,8 +198,6 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
     uint256 tokenId = uint256(domainHash);
     require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
-    address owner = znsRegistry.getDomainRecord(domainHash).owner;
-    require(owner != msg.sender, "ZNSEthRegistrar: Domain is already owned by the caller");
     znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
     
     emit DomainReclaimed(domainHash, msg.sender);

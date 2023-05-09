@@ -519,20 +519,6 @@ describe("ZNSEthRegistrar", () => {
       expect(staked).to.equal(stakedAfterReclaim);
     });
 
-    it("Cannot reclaim if name/stake is already owned by caller", async () => {
-      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
-      const domainHash = await getDomainHashFromEvent(topLevelTx);
-      // Reclaim the Domain
-      const tx = zns.registrar.connect(deployer).reclaimDomain(domainHash);
-
-      // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain is already owned by the caller");
-
-      // Verify domain is not owned in registrar
-      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
-      expect(registryOwner).to.equal(deployer.address);
-    });
-
     it("Can revoke and unstake after reclaiming", async () => {
 
       // Verify Balance
