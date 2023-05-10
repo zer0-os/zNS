@@ -6,7 +6,7 @@ import {
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
-  ZeroTokenMock,
+  ZeroTokenMock, ZNSAccessController,
 } from "../../typechain";
 
 export type Maybe<T> = T | undefined;
@@ -32,6 +32,7 @@ export interface RegistrarConfig {
 }
 
 export interface ZNSContracts {
+  accessController : ZNSAccessController;
   addressResolver : ZNSAddressResolver;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
