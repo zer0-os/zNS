@@ -156,7 +156,7 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(newZeroVault);
     });
 
-    it("Should revert when called from any address that is not admin", async () => {
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
       const tx = zns.treasury.connect(user).setZeroVaultAddress(mockRegistrar.address);
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(user.address, ADMIN_ROLE)
@@ -175,6 +175,13 @@ describe("ZNSTreasury", () => {
 
       const registrarFromSC = await zns.treasury.znsRegistrar();
       expect(registrarFromSC).to.be.eq(randomAcc.address);
+    });
+
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
+      const tx = zns.treasury.connect(user).setZNSRegistrar(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
     });
 
     it("Should revert if Registrar is address 0", async () => {
