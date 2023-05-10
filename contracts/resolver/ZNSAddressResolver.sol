@@ -9,12 +9,12 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
   /**
    * @notice Address of the ZNSRegistry contract that holds all crucial data
    *         for every domain in the system
-  */
+   */
   IZNSRegistry public registry;
   /**
    * @notice Mapping of domain hash to address used to bind domains
    *         to Ethereum wallets or contracts registered in ZNS
-  */
+   */
   mapping(bytes32 domainNameHash => address resolvedAddress) private addressOf;
 
   constructor(IZNSRegistry _registry) {
@@ -32,7 +32,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     address owner = registry.getDomainRecord(domainNameHash).owner;
     require(
       msg.sender == owner || registry.isAllowedOperator(owner, msg.sender),
-      "ZNS: Not allowed"
+      "ZNSAddressResolver: Not allowed"
     );
     _;
   }

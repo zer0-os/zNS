@@ -1,8 +1,12 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSRegistry, ZNSRegistry__factory } from "../typechain";
+import { ZNSRegistry } from "../typechain";
+import { deployRegistry } from "./helpers/deployZNS";
+import { ethers } from "ethers";
+import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
 
 /**
@@ -21,30 +25,23 @@ describe("ZNSRegistry Tests", () => {
   // ZNSResolver has not been created, but an address will be equivalent for now
   let mockResolver : SignerWithAddress;
   let registry : ZNSRegistry;
-
-  // Set owner of 0x0 domain in initalizer, will be used by every other subdomain
-  const rootDomainHash = hre.ethers.constants.HashZero;
-  const wilderLabel = hre.ethers.utils.id("wilder");
-
-  // Wilder subdomain hash created in `setSubdomainRecord` call to `setSubdomainOwner`
-  // TODO:  change all the calls for hashing in all the tests to use ENS `namehash` lib
-  //        that checks and validates strings before hashing
-  const wilderSubdomainHash = hre.ethers.utils.solidityKeccak256(["bytes32", "bytes32"], [rootDomainHash, wilderLabel]);
+  let rootDomainHash : string;
+  let wilderSubdomainHash : string;
 
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver] = await hre.ethers.getSigners();
 
-    const registryFactory = new ZNSRegistry__factory(deployer);
-    registry = await registryFactory.deploy();
+    registry = await deployRegistry(deployer);
 
-    // To set the owner of the zero domain to the deployer
-    await registry.connect(deployer).initialize(deployer.address);
+    rootDomainHash = await registry.ROOT_HASH();
+    wilderSubdomainHash = hashDomainName(`${rootDomainHash}.wilder`);
 
     // Create a first domain from the base domain
-    await registry.connect(deployer)
+    await registry
+      .connect(deployer)
       .setSubdomainRecord(
         rootDomainHash,
-        wilderLabel,
+        wilderSubdomainHash,
         deployer.address,
         mockResolver.address
       );
@@ -55,14 +52,20 @@ describe("ZNSRegistry Tests", () => {
     it("Returns false when an operator is not allowed by an owner", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, false);
 
-      const allowed = await registry.isAllowedOperator(deployer.address, operator.address);
+      const allowed = await registry.isAllowedOperator(
+        deployer.address,
+        operator.address
+      );
       expect(allowed).to.be.false;
     });
 
     it("Returns true when an operator is allowed by an owner", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, true);
 
-      const allowed = await registry.isAllowedOperator(deployer.address, operator.address);
+      const allowed = await registry.isAllowedOperator(
+        deployer.address,
+        operator.address
+      );
       expect(allowed).to.be.true;
     });
 
@@ -75,7 +78,9 @@ describe("ZNSRegistry Tests", () => {
     it("Permits an allowed operator to modify a domain record", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, true);
 
-      const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
+      const tx = registry
+        .connect(operator)
+        .setDomainResolver(wilderSubdomainHash, operator.address);
       await expect(tx).to.not.be.reverted;
     });
 
@@ -83,25 +88,22 @@ describe("ZNSRegistry Tests", () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, false);
 
       const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = registry.connect(operator).setDomainResolver(wilderSubdomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
 
-  describe("Domain and subdomain records", async () => {
+  describe("Domain records", async () => {
     it("Checks existence of a domain correctly", async () => {
       const exists = await registry.connect(randomUser).exists(wilderSubdomainHash);
       expect(exists).to.be.true;
 
-      const nonExistentDomainHash = hre.ethers.utils
-        .solidityKeccak256(
-          ["bytes32"],
-          [hre.ethers.utils.id("wild")]
-        );
+      const nonExistentDomainHash = hashDomainName("wild");
+
       const notExists = await registry.connect(randomUser).exists(nonExistentDomainHash);
       expect(notExists).to.be.false;
     });
@@ -116,9 +118,9 @@ describe("ZNSRegistry Tests", () => {
       expect(wilderRecord.owner).to.eq(deployer.address);
 
       // Domain does not exist
-      const domainHash = hre.ethers.utils.id("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const record = await registry.getDomainRecord(domainHash);
-      expect(record.owner).to.eq(hre.ethers.constants.AddressZero);
+      expect(record.owner).to.eq(ethers.constants.AddressZero);
     });
 
     it("Gets a domain owner", async () => {
@@ -127,9 +129,9 @@ describe("ZNSRegistry Tests", () => {
       expect(existOwner).to.eq(deployer.address);
 
       // The domain does not exist
-      const domainHash = hre.ethers.utils.id("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const notExistOwner = await registry.getDomainOwner(domainHash);
-      expect(notExistOwner).to.eq(hre.ethers.constants.AddressZero);
+      expect(notExistOwner).to.eq(ethers.constants.AddressZero);
     });
 
     it("Gets a domain resolver", async () => {
@@ -138,72 +140,93 @@ describe("ZNSRegistry Tests", () => {
       expect(existResolver).to.eq(mockResolver.address);
 
       // The domain does not exist
-      const domainHash = hre.ethers.utils.id("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const notExistResolver = await registry.getDomainResolver(domainHash);
-      expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
-
+      expect(notExistResolver).to.eq(ethers.constants.AddressZero);
     });
   });
 
   describe("Setter functions for a domain's record, owner, or resolver", () => {
-    it("Sets a domain record", async () => {
-      await registry.connect(deployer).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
+    it("Can NOT set a domain owner if owner is zero address", async () => {
+      const tx = registry
+        .connect(deployer)
+        .setSubdomainOwner(
+          rootDomainHash,
+          wilderSubdomainHash,
+          ethers.constants.AddressZero
+        );
 
-      const record = await registry.getDomainRecord(rootDomainHash);
-      expect(record.owner).to.eq(operator.address);
+      await expect(tx).to.be.revertedWith("ZNS: Owner can NOT be zero address");
+    });
+
+    it("Can NOT set a domain resolver if resolver is zero address", async () => {
+      const tx = registry
+        .connect(deployer)
+        .setDomainResolver(
+          rootDomainHash,
+          ethers.constants.AddressZero
+        );
+
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Resolver can NOT be zero address");
     });
 
     it("Fails to set a record when caller is not owner or operator", async () => {
-      const tx = registry.connect(operator).setDomainRecord(rootDomainHash, operator.address, mockResolver.address);
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      const tx = registry
+        .connect(operator)
+        .setSubdomainRecord(
+          rootDomainHash,
+          wilderSubdomainHash,
+          operator.address,
+          mockResolver.address
+        );
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Sets a subdomain record", async () => {
       // In order to set a subdomain, the caller must be the owner of the parent domain
-      const zeroLabel = hre.ethers.utils.id("zero");
+      const zeroWilderHash = hashDomainName("wilder.zero");
 
-      await registry.connect(deployer)
+      await registry
+        .connect(deployer)
         .setSubdomainRecord(
           wilderSubdomainHash,
-          zeroLabel,
+          zeroWilderHash,
           deployer.address,
           mockResolver.address
         );
 
-      const zeroDomainHash = hre.ethers.utils
-        .solidityKeccak256(
-          ["bytes32", "bytes32"],
-          [wilderSubdomainHash, zeroLabel]
-        );
-      const zeroOwner = await registry.getDomainOwner(zeroDomainHash);
-      expect(zeroOwner).to.eq(deployer.address);
+      const { owner, resolver } = await registry.getDomainRecord(zeroWilderHash);
+      expect(owner).to.eq(deployer.address);
+      expect(resolver).to.eq(mockResolver.address);
     });
 
     it("Fails to set a subdomain record because caller is not the owner of the parent domain", async () => {
-      const zeroLabel = hre.ethers.utils.id("zero");
+      const zeroLabel = hashDomainLabel("zero");
 
-      const tx = registry.connect(operator)
+      const tx = registry
+        .connect(operator)
         .setSubdomainRecord(
           wilderSubdomainHash,
           zeroLabel,
           deployer.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
 
     it("Fails to create another root domain", async () => {
       // The root domain ownership is set in the initializer function
       // Any additional root domains would fail because they are checked for owner,
       // but because that owner can't exist as the record doesn't exist yet, it fails
-      const domainHash = hre.ethers.utils.id("random-record");
+      const domainHash = hashDomainLabel("random-record");
       const tx = registry.connect(deployer)
-        .setDomainRecord(
+        .setSubdomainRecord(
           domainHash,
+          wilderSubdomainHash,
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNS: Not allowed");
+      await expect(tx).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
 });

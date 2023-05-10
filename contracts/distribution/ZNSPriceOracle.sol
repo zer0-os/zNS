@@ -4,35 +4,24 @@ pragma solidity ^0.8.18;
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
-  /**
-   * @notice Base price for root domains
-   */
-  uint256 public rootDomainBasePrice;
+  using StringUtils for string;
+
+  uint256 public constant PERCENTAGE_BASIS = 10000;
 
   /**
-   * @notice Base price for subdomains
+   * @notice The registration fee value in percentage as basis points (parts per 10,000)
+   *  so the 2% value would be represented as 200.
+   *  See {getRegistrationFee} for the actual fee calc process.
    */
-  uint256 public subdomainBasePrice;
+  uint256 public feePercentage;
 
   /**
-   * @notice The price multiplier used in calculation for a given domain name's length
-   * We store this value with two decimals of precision for division later in calculation
-   * This means if we use a multiplier of 3.9, it is stored as 390
-   * Note that 3.9 is recommended but is an arbitrary choice to use as a multiplier. We use
-   * it here because it creates a reasonable decline in pricing visually when graphed.
+   * @notice Struct for each configurable price variable
    */
-  uint256 public priceMultiplier;
-
-  /**
-   * @notice The base domain name length is used in pricing to identify domains
-   * that should recieve the default base price for that type of domain or not.
-   * Domains that are `<= baseLength` will receive the default base price.
-   */
-  uint8 public rootDomainBaseLength;
-
-  uint8 public subdomainBaseLength;
+  PriceParams public priceConfig;
 
   /**
    * @notice The address of the ZNS Registrar we are using
@@ -54,73 +43,89 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   }
 
   function initialize(
-    uint256 rootDomainBasePrice_,
-    uint256 subdomainBasePrice_,
-    uint256 priceMultiplier_,
-    uint8 rootDomainBaseLength_,
-    uint8 subdomainBaseLength_,
-    address znsRegistrar_
-  ) public override initializer {
-    rootDomainBasePrice = rootDomainBasePrice_;
-    subdomainBasePrice = subdomainBasePrice_;
-    priceMultiplier = priceMultiplier_;
-    rootDomainBaseLength = rootDomainBaseLength_;
-    subdomainBaseLength = subdomainBaseLength_;
+    PriceParams calldata priceConfig_,
+    address znsRegistrar_, // TODO do we need to keep this here if we always set it through the setter?
+    uint256 regFeePercentage_
+  ) public initializer {
+    // Set pricing and length parameters
+    priceConfig = priceConfig_;
+    feePercentage = regFeePercentage_;
 
-    _setZNSRegistrar(znsRegistrar_);
-
+    // Set the user and registrar we allow to modify prices
+    znsRegistrar = znsRegistrar_;
     authorized[msg.sender] = true;
     authorized[znsRegistrar_] = true;
   }
 
   /**
-   * @notice Get the price of a given domain name length
+   * @notice Get the price of a given domain name
    * @param name The name of the domain to check
    * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
    */
   function getPrice(
     string calldata name,
     bool isRootDomain
-  ) external override view returns (uint256) {
-    // TODO Getting string length this way may be misleading
-    // when considering unicode encoded characters. Find a
-    // better solution for this
-    uint8 length = uint8(bytes(name).length);
-
+  ) external view returns (
+    uint256 totalPrice,
+    uint256 domainPrice,
+    uint256 fee
+  ) {
+    uint256 length = name.strlen();
     // No pricing is set for 0 length domains
-    if (length == 0) return 0;
+    if (length == 0) return (0, 0, 0);
 
     if (isRootDomain) {
-      return _getPrice(length, rootDomainBaseLength, rootDomainBasePrice);
+      domainPrice = _getPrice(
+          length,
+          priceConfig.baseRootDomainLength,
+          priceConfig.maxRootDomainPrice,
+          priceConfig.maxRootDomainLength,
+          priceConfig.minRootDomainPrice
+        );
     } else {
-      return _getPrice(length, subdomainBaseLength, subdomainBasePrice);
+      domainPrice = _getPrice(
+          length,
+          priceConfig.baseSubdomainLength,
+          priceConfig.maxSubdomainPrice,
+          priceConfig.maxSubdomainLength,
+          priceConfig.minSubdomainPrice
+        );
     }
+
+    fee = getRegistrationFee(domainPrice);
+    totalPrice = domainPrice + fee;
+  }
+
+  function getRegistrationFee(uint256 domainPrice) public view returns (uint256) {
+    return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
   }
 
   /**
-   * @notice Set the base price for root domains
-   * If this value or the `priceMultiplier` value is `0` the price of any domain will also be `0`
+   * @notice Set the max price for root domains or subdomains. If this value or the
+   * `priceMultiplier` value is `0` the price of any domain will also be `0`
    *
-   * @param basePrice The price to set in $ZERO
+   * @param maxPrice The price to set in $ZERO
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
-  function setBasePrice(
-    uint256 basePrice,
+  function setMaxPrice(
+    uint256 maxPrice,
     bool isRootDomain
   ) external override onlyAuthorized {
     if (isRootDomain) {
-      rootDomainBasePrice = basePrice;
+      priceConfig.maxRootDomainPrice = maxPrice;
     } else {
-      subdomainBasePrice = basePrice;
+      priceConfig.maxSubdomainPrice = maxPrice;
     }
 
-    emit BasePriceSet(basePrice, isRootDomain);
+    emit BasePriceSet(maxPrice, isRootDomain);
   }
+
+  // TODO reg: function setMaxPrices(root, subdomains)
 
   /**
    * @notice In price calculation we use a `multiplier` to adjust how steep the
    * price curve is after the base price. This allows that value to be changed.
-   * If this value or the `basePrice` is `0` the price of any domain will also be `0`
+   * If this value or the `maxPrice` is `0` the price of any domain will also be `0`
    *
    * Valid values for the multiplier range are between 300 - 400 inclusively.
    * These are decimal values with two points of precision, meaning they are really 3.00 - 4.00
@@ -133,9 +138,14 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
       multiplier >= 300 && multiplier <= 400,
       "ZNS: Multiplier out of range"
     );
-    priceMultiplier = multiplier;
+    priceConfig.priceMultiplier = multiplier;
 
     emit PriceMultiplierSet(multiplier);
+  }
+
+  function setRegistrationFeePercentage(uint256 regFeePercentage) external onlyAuthorized {
+    feePercentage = regFeePercentage;
+    emit FeePercentageSet(regFeePercentage);
   }
 
   /**
@@ -144,14 +154,15 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param length Boundary to set
    * @param isRootDomain Flag for if the price is to be set for a root or subdomain
    */
+  // TODO reg: make these 2 functions better when removing subdomain logic
   function setBaseLength(
-    uint8 length,
+    uint256 length,
     bool isRootDomain
   ) external override onlyAuthorized {
     if (isRootDomain) {
-      rootDomainBaseLength = length;
+      priceConfig.baseRootDomainLength = length;
     } else {
-      subdomainBaseLength = length;
+      priceConfig.baseSubdomainLength = length;
     }
 
     emit BaseLengthSet(length, isRootDomain);
@@ -163,11 +174,11 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * @param subdomainLength The length for subdomains
    */
   function setBaseLengths(
-    uint8 rootLength,
-    uint8 subdomainLength
-  ) external override onlyAuthorized {
-    rootDomainBaseLength = rootLength;
-    subdomainBaseLength = subdomainLength;
+    uint256 rootLength,
+    uint256 subdomainLength
+  ) external onlyAuthorized {
+    priceConfig.baseRootDomainLength = rootLength;
+    priceConfig.baseSubdomainLength = subdomainLength;
 
     emit BaseLengthsSet(rootLength, subdomainLength);
   }
@@ -195,14 +206,23 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
    * a root domain or a subdomain.
    *
    * @param length The length of the domain name
-   * @param basePrice The base price to calculate with
+   * @param baseLength The base length to reach before we actually do the calculation
+   * @param maxPrice The base price to calculate with
+   * @param maxLength The maximum length of a name before turning the minimum price
+   * @param minPrice The minimum price for that domain category
    */
   function _getPrice(
-    uint8 length,
-    uint8 baseLength,
-    uint256 basePrice
+    uint256 length,
+    uint256 baseLength,
+    uint256 maxPrice,
+    uint256 maxLength,
+    uint256 minPrice
   ) internal view returns (uint256) {
-    if (length <= baseLength) return basePrice;
+    if (length <= baseLength) return maxPrice;
+    if (length > maxLength) return minPrice;
+
+    // Pull into memory to save external calls to storage
+    uint256 multiplier = priceConfig.priceMultiplier;
 
     // TODO truncate to everything after the decimal, we don't want fractional prices
     // Should this be here vs. in the dApp?
@@ -210,10 +230,10 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     // This creates an asymptotic curve that decreases in pricing based on domain name length
     // Because there are no decimals in ETH we set the muliplier as 100x higher
     // than it is meant to be, so we divide by 100 to reverse that action here.
-    // =(baseLength*basePrice*multiplier)/(length+(3*multiplier)
+    // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
     return
-      (baseLength * priceMultiplier * basePrice) /
-      (length + (3 * priceMultiplier)) /
+      (baseLength * multiplier * maxPrice) /
+      (length + (3 * multiplier)) /
       100;
   }
 

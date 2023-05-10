@@ -13,9 +13,9 @@ interface IZNSRegistry {
   /**
    * @dev Emit when ownership of a domain is modified
    * @param owner The new domain owner
-   * @param domainNameHash The identifying hash of a domain's name
+   * @param domainHash The identifying hash of a domain's name
    */
-  event DomainOwnerSet(address indexed owner, bytes32 domainNameHash);
+  event DomainOwnerSet(address indexed owner, bytes32 domainHash);
 
   /**
    * @dev Emit when a domain's resolver is modified
@@ -69,6 +69,16 @@ interface IZNSRegistry {
   function exists(bytes32 domainNameHash) external view returns (bool);
 
   /**
+   * @dev Checks if provided address is an owner or an operator of the provided domain
+   * @param domainNameHash The identifying hash of a domain's name
+   * @param candidate The address for which we are checking access
+   */
+  function isOwnerOrOperator(
+    bytes32 domainNameHash,
+    address candidate
+  ) external view returns (bool);
+
+  /**
    * @dev Set an `operator` as `allowed` to give or remove permissions for all
    * domains owned by `msg.sender`
    *
@@ -95,31 +105,33 @@ interface IZNSRegistry {
     bytes32 domainNameHash
   ) external view returns (DomainRecord memory);
 
-  /**
-   * @dev Set all properties for a domain's record
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param owner The owner to set
-   * @param resolver The resolver to set
-   */
-  function setDomainRecord(
-    bytes32 domainNameHash,
-    address owner,
-    address resolver
-  ) external;
+  // /**
+  //  * @dev Set all properties for a domain's record
+  //  * @param domainNameHash The identifying hash of a domain's name
+  //  * @param owner The owner to set
+  //  * @param resolver The resolver to set
+  //  */
+  // function setDomainRecord(
+  //   bytes32 domainNameHash,
+  //   address owner,
+  //   address resolver
+  // ) external;
+
+  function deleteRecord(bytes32 domainNameHash) external;
 
   /**
-   * @dev Set or create a subdomain record
-   * @param domainNameHash The base domain hash
-   * @param label The label to for the subdomain
+   * @notice Set or create a subdomain record
+   * @param parentDomainHash The parent domain name hash
+   * @param domainHash The label of the subdomain
    * @param owner The owner to set
    * @param resolver The resolver to set
    */
   function setSubdomainRecord(
-    bytes32 domainNameHash,
-    bytes32 label,
+    bytes32 parentDomainHash,
+    bytes32 domainHash,
     address owner,
     address resolver
-  ) external;
+  ) external returns (bytes32);
 
   /**
    * @dev Get the owner of the given domain
@@ -129,24 +141,24 @@ interface IZNSRegistry {
     bytes32 domainNameHash
   ) external view returns (address);
 
-  /**
-   * @dev Update the domain's owner
-   * @param domainNameHash The identifying hash of a domain's name
-   * @param owner The account to transfer ownership to
-   */
-  function setDomainOwner(bytes32 domainNameHash, address owner) external;
+  // /**
+  //  * @dev Update the domain's owner
+  //  * @param domainNameHash The identifying hash of a domain's name
+  //  * @param owner The account to transfer ownership to
+  //  */
+  // function setDomainOwner(bytes32 domainNameHash, address owner) external;
 
   /**
-   * @dev Update the subdomain's owner
-   * @param domainNameHash The base domain name hash
-   * @param label The label of the subdomain
+   * @notice Update the subdomain's owner
+   * @param parentDomainHash The base domain name hash
+   * @param domainHash The label of the subdomain
    * @param owner The owner to set
    */
   function setSubdomainOwner(
-    bytes32 domainNameHash,
-    bytes32 label,
+    bytes32 parentDomainHash,
+    bytes32 domainHash,
     address owner
-  ) external returns (bytes32);
+  ) external;
 
   /**
    * @dev Get the default resolver for the given domain
@@ -162,4 +174,11 @@ interface IZNSRegistry {
    * @param resolver The new default resolver
    */
   function setDomainResolver(bytes32 domainNameHash, address resolver) external;
+
+  /**
+   * Will be auto created by the compiler for the public
+   * constant variable ROOT_HASH
+   */
+  // solhint-disable-next-line func-name-mixedcase
+  function ROOT_HASH() external returns (bytes32);
 }
