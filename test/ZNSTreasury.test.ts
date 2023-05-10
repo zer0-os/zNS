@@ -4,7 +4,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkBalance, deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { priceConfigDefault } from "./helpers/constants";
 import { hashDomainLabel } from "./helpers/hashing";
 import { ADMIN_ROLE, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
 

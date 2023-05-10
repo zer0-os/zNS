@@ -13,7 +13,6 @@ require("@nomicfoundation/hardhat-chai-matchers");
 describe("ZNSPriceOracle", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
-  let updatedMockRegistrar : SignerWithAddress;
   let admin : SignerWithAddress;
 
   let zns : ZNSContracts;
@@ -22,7 +21,6 @@ describe("ZNSPriceOracle", () => {
     [
       deployer,
       user,
-      updatedMockRegistrar,
       admin,
     ] = await hre.ethers.getSigners();
 
