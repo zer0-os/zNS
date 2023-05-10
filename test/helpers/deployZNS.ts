@@ -18,6 +18,8 @@ import { ethers } from "hardhat";
 import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
+import { deployAccessController } from "./access";
+
 
 export const deployRegistry = async (
   deployer : SignerWithAddress
@@ -79,6 +81,7 @@ export const deployZeroTokenMock = async (
 
 export const deployTreasury = async (
   deployer : SignerWithAddress,
+  accessControllerAddress : string,
   znsPriceOracleAddress : string,
   zTokenMockMockAddress : string,
   znsRegistrarAddress : string,
@@ -86,6 +89,7 @@ export const deployTreasury = async (
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
   const treasury = await treasuryFactory.deploy(
+    accessControllerAddress,
     znsPriceOracleAddress,
     zTokenMockMockAddress,
     znsRegistrarAddress,
@@ -116,9 +120,17 @@ export const deployRegistrar = async (
 // TODO reg: make args an object here
 export const deployZNS = async (
   deployer : SignerWithAddress,
+  governorAddresses : Array<string>,
+  adminAddresses : Array<string>,
   priceConfig = priceConfigDefault,
   zeroVaultAddress = deployer.address
 ) : Promise<ZNSContracts> => {
+  const accessController = await deployAccessController({
+    deployer,
+    governorAddresses: [deployer.address, ...governorAddresses],
+    adminAddresses: [deployer.address, ...adminAddresses],
+  });
+
   const registry = await deployRegistry(deployer);
 
   const domainToken = await deployDomainToken(deployer);
@@ -135,6 +147,7 @@ export const deployZNS = async (
 
   const treasury = await deployTreasury(
     deployer,
+    accessController.address,
     priceOracle.address,
     zeroTokenMock.address,
     ethers.constants.AddressZero, // set to ZNSRegistrar later,
@@ -152,6 +165,7 @@ export const deployZNS = async (
   const registrar = await deployRegistrar(deployer, config);
 
   const znsContracts : ZNSContracts = {
+    accessController,
     addressResolver,
     registry,
     domainToken,

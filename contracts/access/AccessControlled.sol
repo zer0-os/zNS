@@ -2,16 +2,16 @@
 pragma solidity ^0.8.18;
 
 import { ZNSRoles } from "./ZNSRoles.sol";
-import { IZNSAccessManager } from "./IZNSAccessManager.sol";
+import { IZNSAccessController } from "./IZNSAccessController.sol";
 
 
 abstract contract AccessControlled is ZNSRoles {
-    event AccessManagerSet(address accessManager);
+    event AccessControllerSet(address accessController);
 
-    IZNSAccessManager internal accessManager;
+    IZNSAccessController internal accessController;
 
     modifier onlyRole(bytes32 role) {
-        accessManager.checkRole(role, msg.sender);
+        accessController.checkRole(role, msg.sender);
         _;
     }
 
@@ -21,10 +21,14 @@ abstract contract AccessControlled is ZNSRoles {
      * not get to the final interface of a child).
      * TODO AC: how do we make sure this gets to the final interface?
      */
-    function setAccessManager(address _accessManager) external virtual;
+    function setAccessController(address _accessController) external virtual;
 
-    function _setAccessManager(address _accessManager) internal {
-        require(_accessManager != address(0), "AC: _accessManager is 0x0 address");
-        accessManager = IZNSAccessManager(_accessManager);
+    function getAccessController() external view returns (address) {
+        return address(accessController);
+    }
+
+    function _setAccessController(address _accessController) internal {
+        require(_accessController != address(0), "AC: _accessController is 0x0 address");
+        accessController = IZNSAccessController(_accessController);
     }
 }
