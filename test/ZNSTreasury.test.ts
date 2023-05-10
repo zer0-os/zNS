@@ -6,7 +6,7 @@ import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
 import { hashDomainLabel } from "./helpers/hashing";
-import { getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -38,8 +38,8 @@ describe("ZNSTreasury", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    // Set the registrar as a mock so that we can call the functions
-    await zns.treasury.connect(deployer).setZNSRegistrar(mockRegistrar.address);
+    // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
+    await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
@@ -50,12 +50,12 @@ describe("ZNSTreasury", () => {
     const registrar = await zns.treasury.znsRegistrar();
     const priceOracle = await zns.treasury.znsPriceOracle();
     const token = await zns.treasury.zeroToken();
-    const isAdmin = await zns.treasury.isAdmin(deployer.address);
+    const accessController = await zns.treasury.getAccessController();
 
-    expect(registrar).to.eq(mockRegistrar.address);
+    expect(registrar).to.eq(zns.registrar.address);
     expect(priceOracle).to.eq(zns.priceOracle.address);
     expect(token).to.eq(zns.zeroToken.address);
-    expect(isAdmin).to.be.true;
+    expect(accessController).to.eq(zns.accessController.address);
   });
 
   describe("stakeForDomain", () => {
@@ -128,7 +128,7 @@ describe("ZNSTreasury", () => {
       });
     });
 
-    it("Should revert if called from any address that is not ZNSRegistrar", async () => {
+    it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
 
@@ -137,7 +137,9 @@ describe("ZNSTreasury", () => {
         user.address
       );
 
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Only ZNSRegistrar is allowed to call");
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, REGISTRAR_ROLE)
+      );
     });
   });
 
@@ -156,7 +158,9 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when called from any address that is not admin", async () => {
       const tx = zns.treasury.connect(user).setZeroVaultAddress(mockRegistrar.address);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Not an allowed admin");
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
     });
 
     it("Should revert when zeroVault is address 0", async () => {

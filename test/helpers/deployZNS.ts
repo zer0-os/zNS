@@ -93,7 +93,6 @@ export const deployTreasury = async (
     znsPriceOracleAddress,
     zTokenMockMockAddress,
     znsRegistrarAddress,
-    deployer.address,
     zeroVaultAddress
   );
   return treasury;
