@@ -39,7 +39,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     IZNSPriceOracle znsPriceOracle_,
     IZeroTokenMock zeroToken_,
     address znsRegistrar_,
-    address admin_, // TODO remove when proper access control is added,
     address zeroVault_
   ) {
     _setAccessController(accessController_);
@@ -48,7 +47,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     zeroToken = zeroToken_;
     znsPriceOracle = znsPriceOracle_;
     znsRegistrar = znsRegistrar_;
-    admin[admin_] = true;
   }
 
   function stakeForDomain(
