@@ -32,21 +32,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
 
   mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
-  // TODO access control
-  mapping(address user => bool isAdmin) public admin;
-
-  modifier onlyRegistrar() {
-    require(
-      msg.sender == znsRegistrar,
-      "ZNSTreasury: Only ZNSRegistrar is allowed to call"
-    );
-    _;
-  }
-
-  modifier onlyAdmin() {
-    require(admin[msg.sender], "ZNSTreasury: Not an allowed admin");
-    _;
-  }
 
   constructor(
     address accessController_,
@@ -107,7 +92,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     emit StakeWithdrawn(domainHash, owner, stakeAmount);
   }
 
-  function setZNSRegistrar(address znsRegistrar_) external override onlyAdmin {
+  function setZNSRegistrar(address znsRegistrar_) external override onlyRole(ADMIN_ROLE) {
     require(
       znsRegistrar_ != address(0),
       "ZNSTreasury: Zero address passed as znsRegistrar"
@@ -117,34 +102,12 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     emit ZNSRegistrarSet(znsRegistrar_);
   }
 
-  function setZeroVaultAddress(address zeroVaultAddress) external override onlyAdmin {
+  function setZeroVaultAddress(address zeroVaultAddress) external override onlyRole(ADMIN_ROLE) {
     _setZeroVaultAddress(zeroVaultAddress);
   }
 
-  function setAccessController(address accessController_) external override onlyAdmin {
+  function setAccessController(address accessController_) external override onlyRole(ADMIN_ROLE) {
     _setAccessController(accessController_);
-  }
-
-  function setAdmin(address user, bool status) external override onlyAdmin {
-    require(user != address(0), "ZNSTreasury: No zero address admins");
-
-    // If a user is given Admin status, they can remove any other admin's status as well
-    // To protect against this, we require that the user is the sender if setting
-    // status to `false`
-    if (status == false) {
-      require(
-        msg.sender == user,
-        "ZNSTreasury: Cannot unset another users admin access"
-      );
-    }
-
-    admin[user] = status;
-
-    emit AdminSet(user, status);
-  }
-
-  function isAdmin(address user) external view override returns (bool) {
-    return admin[user];
   }
 
   function _setZeroVaultAddress(address zeroVaultAddress) internal {
