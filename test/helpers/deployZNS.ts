@@ -19,6 +19,7 @@ import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 import { deployAccessController } from "./access";
+import { BigNumber } from "ethers";
 
 
 export const deployRegistry = async (
@@ -43,22 +44,23 @@ export const deployAddressResolver = async (
   return addressResolver;
 };
 
-export const deployPriceOracle = async (
-  deployer : SignerWithAddress,
-  registrarAddress : string,
-  priceConfig : PriceParams,
-  registrationFee = registrationFeePercDefault
-) : Promise<ZNSPriceOracle> => {
+export const deployPriceOracle = async ({
+  deployer,
+  accessControllerAddress,
+  priceConfig,
+  registrationFee,
+} : {
+  deployer : SignerWithAddress;
+  accessControllerAddress : string;
+  priceConfig : PriceParams;
+  registrationFee : BigNumber;
+}) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
   const priceOracle = await priceOracleFactory.deploy();
 
-  // The Registrar may not be deployed yet because of the cyclic dependency
-  // between it and the ZNSPriceOracle. Use an empty string if so
-  const registrar = !registrarAddress ? "" : registrarAddress;
-
   await priceOracle.initialize(
+    accessControllerAddress,
     priceConfig,
-    registrar,
     registrationFee
   );
 
@@ -121,12 +123,14 @@ export const deployZNS = async ({
   governorAddresses,
   adminAddresses,
   priceConfig = priceConfigDefault,
+  registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
 } : {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   priceConfig ?: PriceParams;
+  registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
 }) : Promise<ZNSContracts> => {
   const accessController = await deployAccessController({
@@ -143,11 +147,12 @@ export const deployZNS = async ({
 
   const addressResolver = await deployAddressResolver(deployer, registry.address);
 
-  const priceOracle = await deployPriceOracle(
+  const priceOracle = await deployPriceOracle({
     deployer,
-    ethers.constants.AddressZero, // set to ZNSRegistrar later
-    priceConfig
-  );
+    accessControllerAddress: accessController.address,
+    priceConfig,
+    registrationFee: registrationFeePerc,
+  });
 
   const treasury = await deployTreasury(
     deployer,
@@ -180,7 +185,7 @@ export const deployZNS = async ({
   };
 
   // Final configuration steps
-  await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
+  // TODO AC: remove all redundant calls here!
   await domainToken.connect(deployer).authorize(registrar.address);
   await treasury.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);

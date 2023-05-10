@@ -13,6 +13,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
   /**
    * @notice The address of the registrar we are using
    */
+  // TODO AC: do we need this var in this contract at all?! it's not used anywhere
   address public znsRegistrar;
 
   /**
