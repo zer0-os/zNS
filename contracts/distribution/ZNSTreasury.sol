@@ -4,11 +4,12 @@ pragma solidity ^0.8.18;
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-// TODO: fix when token is sorted out
+import { AccessControlled } from "../access/AccessControlled.sol";
+// TODO: fix when token is sorted out !!!
 import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol";
 
 
-contract ZNSTreasury is IZNSTreasury {
+contract ZNSTreasury is AccessControlled, IZNSTreasury {
   /**
    * @notice The address of the registrar we are using
    */
@@ -20,7 +21,7 @@ contract ZNSTreasury is IZNSTreasury {
   IZNSPriceOracle public znsPriceOracle;
 
   /**
-   * @notice The ZERO ERC20 token
+   * @notice The payment/staking token
    */
   IZeroTokenMock public zeroToken;
 
@@ -48,12 +49,15 @@ contract ZNSTreasury is IZNSTreasury {
   }
 
   constructor(
+    address accessController_,
+    // TODO: why some of these are contracts and others are addresses?
     IZNSPriceOracle znsPriceOracle_,
     IZeroTokenMock zeroToken_,
     address znsRegistrar_,
     address admin_, // TODO remove when proper access control is added,
     address zeroVault_
   ) {
+    _setAccessController(accessController_);
     _setZeroVaultAddress(zeroVault_);
     // TODO change from mock
     zeroToken = zeroToken_;
@@ -67,7 +71,7 @@ contract ZNSTreasury is IZNSTreasury {
     string calldata domainName,
     address depositor,
     bool isTopLevelDomain
-  ) external override onlyRegistrar {
+  ) external override onlyRole(REGISTRAR_ROLE) {
     // Get price and fee for the domain
     (, uint256 stakeAmount, uint256 registrationFee) = znsPriceOracle.getPrice(
       domainName,
@@ -89,7 +93,7 @@ contract ZNSTreasury is IZNSTreasury {
   function unstakeForDomain(
     bytes32 domainHash,
     address owner
-  ) external override onlyRegistrar {
+  ) external override onlyRole(REGISTRAR_ROLE) {
     uint256 stakeAmount = stakedForDomain[domainHash];
     require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
     delete stakedForDomain[domainHash];
@@ -115,6 +119,10 @@ contract ZNSTreasury is IZNSTreasury {
 
   function setZeroVaultAddress(address zeroVaultAddress) external override onlyAdmin {
     _setZeroVaultAddress(zeroVaultAddress);
+  }
+
+  function setAccessController(address accessController_) external override onlyAdmin {
+    _setAccessController(accessController_);
   }
 
   function setAdmin(address user, bool status) external override onlyAdmin {
