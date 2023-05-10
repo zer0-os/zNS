@@ -117,14 +117,19 @@ export const deployRegistrar = async (
   return registrar;
 };
 
-// TODO reg: make args an object here
-export const deployZNS = async (
-  deployer : SignerWithAddress,
-  governorAddresses : Array<string>,
-  adminAddresses : Array<string>,
+export const deployZNS = async ({
+  deployer,
+  governorAddresses,
+  adminAddresses,
   priceConfig = priceConfigDefault,
-  zeroVaultAddress = deployer.address
-) : Promise<ZNSContracts> => {
+  zeroVaultAddress = deployer.address,
+} : {
+  deployer : SignerWithAddress;
+  governorAddresses : Array<string>;
+  adminAddresses : Array<string>;
+  priceConfig ?: PriceParams;
+  zeroVaultAddress ?: string;
+}) : Promise<ZNSContracts> => {
   const accessController = await deployAccessController({
     deployer,
     governorAddresses: [deployer.address, ...governorAddresses],

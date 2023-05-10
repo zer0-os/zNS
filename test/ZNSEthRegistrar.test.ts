@@ -17,6 +17,8 @@ const { constants: { AddressZero } } = ethers;
 describe("ZNSEthRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
+  let governor : SignerWithAddress;
+  let admin : SignerWithAddress;
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
@@ -25,9 +27,15 @@ describe("ZNSEthRegistrar", () => {
   const defaultSubdomain = "world";
 
   beforeEach(async () => {
-    [deployer, zeroVault, user, operator] = await hre.ethers.getSigners();
-    // Burn address is used to hold the fee charged to the user when registering
-    zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
+    [deployer, zeroVault, user, operator, governor, admin] = await hre.ethers.getSigners();
+    // zeroVault address is used to hold the fee charged to the user when registering
+    zns = await deployZNS({
+      deployer,
+      governorAddresses: [deployer.address, governor.address],
+      adminAddresses: [admin.address],
+      priceConfig: priceConfigDefault,
+      zeroVaultAddress: zeroVault.address,
+    });
 
     // TODO change this when access control implemented
     // Give the user permission on behalf of the parent domain owner

@@ -14,6 +14,7 @@ describe("ZNSPriceOracle", () => {
   let user : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let updatedMockRegistrar : SignerWithAddress;
+  let admin : SignerWithAddress;
 
   let zns : ZNSContracts;
 
@@ -23,9 +24,14 @@ describe("ZNSPriceOracle", () => {
       user,
       mockRegistrar,
       updatedMockRegistrar,
+      admin,
     ] = await hre.ethers.getSigners();
 
-    zns = await deployZNS(deployer);
+    zns = await deployZNS({
+      deployer,
+      governorAddresses: [deployer.address],
+      adminAddresses: [admin.address],
+    });
 
     await zns.priceOracle.connect(deployer).setZNSRegistrar(mockRegistrar.address);
   });

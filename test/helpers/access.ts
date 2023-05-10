@@ -32,3 +32,6 @@ export const deployAccessController = async ({
   await controller.initialize(governorAddresses, adminAddresses);
   return controller;
 };
+
+export const getAccessRevertMsg = (addr : string, role : string) : string =>
+  `AccessControl: account ${addr.toLowerCase()} is missing role ${role}`;

@@ -8,7 +8,7 @@ import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 
 // TODO AC: test the full setup and that fact that role admins work properly
 //  test different configurations of roles
-describe.only("ZNSAccessController", () => {
+describe("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
   let znsAccessController : ZNSAccessController;
   let governorAddresses : Array<string>;

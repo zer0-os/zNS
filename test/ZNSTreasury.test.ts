@@ -6,11 +6,14 @@ import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { priceConfigDefault } from "./helpers/constants";
 import { hashDomainLabel } from "./helpers/hashing";
+import { getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ZNSTreasury", () => {
   let deployer : SignerWithAddress;
+  let governor : SignerWithAddress;
+  let admin : SignerWithAddress;
   let user : SignerWithAddress;
   let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
@@ -18,8 +21,22 @@ describe("ZNSTreasury", () => {
   let zns : ZNSContracts;
 
   beforeEach(async () => {
-    [ deployer, zeroVault, user, mockRegistrar, randomAcc ] = await hre.ethers.getSigners();
-    zns = await deployZNS(deployer, priceConfigDefault, zeroVault.address);
+    [
+      deployer,
+      governor,
+      admin,
+      zeroVault,
+      user,
+      mockRegistrar,
+      randomAcc,
+    ] = await hre.ethers.getSigners();
+
+    zns = await deployZNS({
+      deployer,
+      governorAddresses: [governor.address],
+      adminAddresses: [admin.address],
+      zeroVaultAddress: zeroVault.address,
+    });
 
     // Set the registrar as a mock so that we can call the functions
     await zns.treasury.connect(deployer).setZNSRegistrar(mockRegistrar.address);
@@ -68,18 +85,20 @@ describe("ZNSTreasury", () => {
       });
     });
 
-    it("Should revert if called from any address that is not ZNSRegistrar", async () => {
+    it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
 
-      const tx = zns.treasury.connect(user).stakeForDomain(
+      const tx = zns.treasury.connect(randomAcc).stakeForDomain(
         domainHash,
         domain,
         user.address,
         true
       );
 
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Only ZNSRegistrar is allowed to call");
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
+      );
     });
   });
 
