@@ -61,6 +61,12 @@ interface IZNSPriceOracle {
     uint256 priceMultiplier;
   }
 
+  function initialize(
+    PriceParams calldata priceConfig_,
+    address znsRegistrar_,
+    uint256 regFeePercentage_
+  ) external;
+
   /**
    * @notice Get the price of a given domain name length
    * @param name The name of the domain to check

@@ -31,7 +31,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @notice Authorize an address for this contract
    * @param account The registrar to set
    */
-  function authorize(address account) external onlyAuthorized {
+  function authorize(address account) external override onlyAuthorized {
     require(account != address(0), "ZNS: Zero address for authorized account");
 
     // Modify the access control for the given address
@@ -46,7 +46,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @param to The address that will recieve the newly minted domain token
    * @param tokenId The TokenId that the caller wishes to mint/register
    */
-  function register(address to, uint256 tokenId) external {
+  function register(address to, uint256 tokenId) external override {
     _safeMint(to, tokenId);
   }
 
@@ -55,7 +55,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @dev TODO: Add Access Control, replace require to also other specific contracts to revoke
    * @param tokenId The tokenId that the caller wishes to burn/revoke
    */
-  function revoke(uint256 tokenId) external onlyAuthorized{
+  function revoke(uint256 tokenId) external override onlyAuthorized{
     _burn(tokenId);
   }
 }

@@ -61,7 +61,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   function isOwnerOrOperator(
     bytes32 domainNameHash,
     address candidate
-  ) public view returns (bool) {
+  ) public view override returns (bool) {
     address owner = records[domainNameHash].owner;
     return candidate == owner || operators[owner][candidate];
   }
@@ -106,7 +106,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
   // TODO add access control. do we need to revoke operator as well?
   //  Test if after revocation an operator can do anything to verify
   //  we don't need to clear them.
-  function deleteRecord(bytes32 domainNameHash) external {
+  function deleteRecord(bytes32 domainNameHash) external override {
     //TODO: This doesnt work because the znsRegistrar does not pass this validation.
     //require(msg.sender == records[domainNameHash].owner;
     delete records[domainNameHash];

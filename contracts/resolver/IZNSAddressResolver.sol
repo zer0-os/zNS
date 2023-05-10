@@ -31,4 +31,6 @@ interface IZNSAddressResolver {
     bytes32 domainNameHash,
     address newAddress
   ) external;
+
+  function getInterfaceId() external pure returns (bytes4);
 }

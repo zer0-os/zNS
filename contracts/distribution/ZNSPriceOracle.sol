@@ -46,7 +46,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     PriceParams calldata priceConfig_,
     address znsRegistrar_, // TODO do we need to keep this here if we always set it through the setter?
     uint256 regFeePercentage_
-  ) public initializer {
+  ) public override initializer {
     // Set pricing and length parameters
     priceConfig = priceConfig_;
     feePercentage = regFeePercentage_;
@@ -65,7 +65,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function getPrice(
     string calldata name,
     bool isRootDomain
-  ) external view returns (
+  ) external view override returns (
     uint256 totalPrice,
     uint256 domainPrice,
     uint256 fee
@@ -96,7 +96,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     totalPrice = domainPrice + fee;
   }
 
-  function getRegistrationFee(uint256 domainPrice) public view returns (uint256) {
+  function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
     return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
   }
 
@@ -143,7 +143,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     emit PriceMultiplierSet(multiplier);
   }
 
-  function setRegistrationFeePercentage(uint256 regFeePercentage) external onlyAuthorized {
+  function setRegistrationFeePercentage(uint256 regFeePercentage) external override onlyAuthorized {
     feePercentage = regFeePercentage;
     emit FeePercentageSet(regFeePercentage);
   }
@@ -176,7 +176,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
   function setBaseLengths(
     uint256 rootLength,
     uint256 subdomainLength
-  ) external onlyAuthorized {
+  ) external override onlyAuthorized {
     priceConfig.baseRootDomainLength = rootLength;
     priceConfig.baseSubdomainLength = subdomainLength;
 

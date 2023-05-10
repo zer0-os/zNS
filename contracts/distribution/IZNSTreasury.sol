@@ -60,4 +60,6 @@ interface IZNSTreasury {
   function setZeroVaultAddress(address zeroVaultAddress) external;
 
   function setAdmin(address user, bool status) external;
+
+  function isAdmin(address user) external view returns (bool);
 }

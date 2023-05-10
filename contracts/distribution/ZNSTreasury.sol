@@ -67,7 +67,7 @@ contract ZNSTreasury is IZNSTreasury {
     string calldata domainName,
     address depositor,
     bool isTopLevelDomain
-  ) external onlyRegistrar {
+  ) external override onlyRegistrar {
     // Get price and fee for the domain
     (, uint256 stakeAmount, uint256 registrationFee) = znsPriceOracle.getPrice(
       domainName,
@@ -89,7 +89,7 @@ contract ZNSTreasury is IZNSTreasury {
   function unstakeForDomain(
     bytes32 domainHash,
     address owner
-  ) external onlyRegistrar {
+  ) external override onlyRegistrar {
     uint256 stakeAmount = stakedForDomain[domainHash];
     require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
     delete stakedForDomain[domainHash];
@@ -103,7 +103,7 @@ contract ZNSTreasury is IZNSTreasury {
     emit StakeWithdrawn(domainHash, owner, stakeAmount);
   }
 
-  function setZNSRegistrar(address znsRegistrar_) external onlyAdmin {
+  function setZNSRegistrar(address znsRegistrar_) external override onlyAdmin {
     require(
       znsRegistrar_ != address(0),
       "ZNSTreasury: Zero address passed as znsRegistrar"
@@ -113,18 +113,11 @@ contract ZNSTreasury is IZNSTreasury {
     emit ZNSRegistrarSet(znsRegistrar_);
   }
 
-  function setZeroVaultAddress(address zeroVaultAddress) external onlyAdmin {
+  function setZeroVaultAddress(address zeroVaultAddress) external override onlyAdmin {
     _setZeroVaultAddress(zeroVaultAddress);
   }
 
-  function _setZeroVaultAddress(address zeroVaultAddress) internal {
-    require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
-
-    zeroVault = zeroVaultAddress;
-    emit ZeroVaultAddressSet(zeroVaultAddress);
-  }
-
-  function setAdmin(address user, bool status) external onlyAdmin {
+  function setAdmin(address user, bool status) external override onlyAdmin {
     require(user != address(0), "ZNSTreasury: No zero address admins");
 
     // If a user is given Admin status, they can remove any other admin's status as well
@@ -142,7 +135,14 @@ contract ZNSTreasury is IZNSTreasury {
     emit AdminSet(user, status);
   }
 
-  function isAdmin(address user) external view returns (bool) {
+  function isAdmin(address user) external view override returns (bool) {
     return admin[user];
+  }
+
+  function _setZeroVaultAddress(address zeroVaultAddress) internal {
+    require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
+
+    zeroVault = zeroVaultAddress;
+    emit ZeroVaultAddressSet(zeroVaultAddress);
   }
 }

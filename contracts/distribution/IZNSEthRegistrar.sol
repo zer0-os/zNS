@@ -46,4 +46,9 @@ interface IZNSEthRegistrar {
   function revokeDomain(bytes32 domainHash) external;
 
   function reclaimDomain(bytes32 domainHash) external;
+
+  function hashWithParent(
+    bytes32 parentHash,
+    string calldata name
+  ) external pure returns (bytes32);
 }

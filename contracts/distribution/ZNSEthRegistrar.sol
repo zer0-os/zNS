@@ -54,7 +54,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     string calldata name,
     address resolver,
     address domainAddress
-  ) external returns (bytes32) {
+  ) external override returns (bytes32) {
     require(bytes(name).length != 0, "ZNSEthRegistrar: Domain Name not provided");
 
     // To not repeat external calls, we load into memory
@@ -110,7 +110,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     bytes32 parentHash,
     address user,
     bool status
-  ) public onlyOwner(parentHash) {
+  ) public override onlyOwner(parentHash) {
     subdomainApprovals[parentHash][user] = status;
 
     emit SubdomainApprovalSet(parentHash, user, status);
@@ -122,7 +122,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     address registrant,
     address resolver,
     address domainAddress
-  ) external returns (bytes32) {
+  ) external override returns (bytes32) {
     require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
     bytes32 domainHash = hashWithParent(parentDomainHash, name);
@@ -179,7 +179,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  function revokeDomain(bytes32 domainHash) external onlyOwner(domainHash) {
+  function revokeDomain(bytes32 domainHash) external override onlyOwner(domainHash) {
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.revoke(tokenId);
     znsTreasury.unstakeForDomain(domainHash, msg.sender);
@@ -191,18 +191,18 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   }
 
   //TODO: Access Control
-  function reclaimDomain(bytes32 domainHash) external {
+  function reclaimDomain(bytes32 domainHash) external override {
     uint256 tokenId = uint256(domainHash);
     require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
     znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
-    
+
     emit DomainReclaimed(domainHash, msg.sender);
   }
 
   function hashWithParent(
     bytes32 parentHash,
     string calldata name
-  ) public pure returns (bytes32) {
+  ) public pure override returns (bytes32) {
     return keccak256(
       abi.encodePacked(
         parentHash,
