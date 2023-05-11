@@ -6,11 +6,11 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
 
-contract ZNSEthRegistrar is IZNSEthRegistrar {
+contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
 
-  // TODO AC: add AC to all the setters!
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken;
@@ -41,15 +41,17 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
    * for registering ZNS domains and subdomains
    */
   constructor(
-    IZNSRegistry znsRegistry_,
-    IZNSTreasury znsTreasury_,
-    IZNSDomainToken znsDomainToken_,
-    IZNSAddressResolver znsAddressResolver_
+    address accessController_,
+    address znsRegistry_,
+    address znsTreasury_,
+    address znsDomainToken_,
+    address znsAddressResolver_
   ) {
-    znsRegistry = znsRegistry_;
-    znsTreasury = znsTreasury_;
-    znsDomainToken = znsDomainToken_;
-    znsAddressResolver = znsAddressResolver_;
+    _setAccessController(accessController_);
+    setZnsRegistry(znsRegistry_);
+    setZnsTreasury(znsTreasury_);
+    setZnsDomainToken(znsDomainToken_);
+    setZnsAddressResolver(znsAddressResolver_);
   }
 
   /**
@@ -221,17 +223,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     );
   }
 
-  function setZnsTreasury(address znsTreasury_) external override {
-    require(
-      znsTreasury_ != address(0),
-      "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
-    );
-    znsTreasury = IZNSTreasury(znsTreasury_);
-
-    emit ZnsTreasurySet(znsTreasury_);
-  }
-
-  function setZnsRegistry(address znsRegistry_) external override {
+  function setZnsRegistry(address znsRegistry_) public override onlyRole(ADMIN_ROLE) {
     require(
       znsRegistry_ != address(0),
       "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
@@ -241,17 +233,27 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     emit ZnsRegistrySet(znsRegistry_);
   }
 
-  function setDomainToken(address domainToken_) external override {
+  function setZnsTreasury(address znsTreasury_) public override onlyRole(ADMIN_ROLE) {
+    require(
+      znsTreasury_ != address(0),
+      "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
+    );
+    znsTreasury = IZNSTreasury(znsTreasury_);
+
+    emit ZnsTreasurySet(znsTreasury_);
+  }
+
+  function setZnsDomainToken(address domainToken_) public override onlyRole(ADMIN_ROLE) {
     require(
       domainToken_ != address(0),
       "ZNSEthRegistrar: domainToken_ is 0x0 address"
     );
     znsDomainToken = IZNSDomainToken(domainToken_);
 
-    emit DomainTokenSet(domainToken_);
+    emit ZnsDomainTokenSet(domainToken_);
   }
 
-  function setAddressResolver(address addressResolver_) external override {
+  function setZnsAddressResolver(address addressResolver_) public override onlyRole(ADMIN_ROLE) {
     require(
       addressResolver_ != address(0),
       "ZNSEthRegistrar: addressResolver_ is 0x0 address"
@@ -259,6 +261,14 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     znsAddressResolver = IZNSAddressResolver(addressResolver_);
 
     emit ZnsAddressResolverSet(addressResolver_);
+  }
+
+  function setAccessController(address accessController_)
+  external
+  override(AccessControlled, IZNSEthRegistrar)
+  onlyRole(ADMIN_ROLE)
+  {
+    _setAccessController(accessController_);
   }
 
   function _setSubdomainData(

@@ -105,6 +105,7 @@ export const deployRegistrar = async (
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
   const registrar = await registrarFactory.deploy(
+    accessController.address,
     config.registryAddress,
     config.treasury.address,
     config.domainTokenAddress,

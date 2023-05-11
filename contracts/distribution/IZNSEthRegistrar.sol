@@ -28,6 +28,8 @@ interface IZNSEthRegistrar {
 
   event ZnsTreasurySet(address znsTreasury);
 
+  event ZnsDomainTokenSet(address znsDomainToken);
+
   event ZnsAddressResolverSet(address znsAddressResolver);
 
   function registerRootDomain(
@@ -63,5 +65,9 @@ interface IZNSEthRegistrar {
 
   function setZnsTreasury(address znsTreasury_) external;
 
-  function setAddressResolver(address addressResolver_) external;
+  function setZnsDomainToken(address domainToken_) external;
+
+  function setZnsAddressResolver(address addressResolver_) external;
+
+  function setAccessController(address accessController_) external;
 }
