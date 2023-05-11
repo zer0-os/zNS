@@ -86,7 +86,6 @@ export const deployTreasury = async (
   accessControllerAddress : string,
   znsPriceOracleAddress : string,
   zTokenMockMockAddress : string,
-  znsRegistrarAddress : string,
   zeroVaultAddress : string
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
@@ -94,7 +93,6 @@ export const deployTreasury = async (
     accessControllerAddress,
     znsPriceOracleAddress,
     zTokenMockMockAddress,
-    znsRegistrarAddress,
     zeroVaultAddress
   );
   return treasury;
@@ -112,8 +110,6 @@ export const deployRegistrar = async (
     config.addressResolverAddress,
     config.priceOracleAddress
   );
-
-  await config.treasury.connect(deployer).setZNSRegistrar(registrar.address);
 
   return registrar;
 };
@@ -159,7 +155,6 @@ export const deployZNS = async ({
     accessController.address,
     priceOracle.address,
     zeroTokenMock.address,
-    ethers.constants.AddressZero, // set to ZNSRegistrar later,
     zeroVaultAddress
   );
 
@@ -187,7 +182,6 @@ export const deployZNS = async ({
   // Final configuration steps
   // TODO AC: remove all redundant calls here!
   await domainToken.connect(deployer).authorize(registrar.address);
-  await treasury.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give 15 ZERO to the deployer and allowance to the treasury

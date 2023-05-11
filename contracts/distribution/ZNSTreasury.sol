@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
-import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 // TODO: fix when token is sorted out !!!
@@ -10,12 +9,6 @@ import { IZeroTokenMock } from "../token/mocks/IZeroTokenMock.sol";
 
 
 contract ZNSTreasury is AccessControlled, IZNSTreasury {
-  /**
-   * @notice The address of the registrar we are using
-   */
-  // TODO AC: do we need this var in this contract at all?! it's not used anywhere
-  address public znsRegistrar;
-
   /**
    * @notice The price oracle
    */
@@ -39,7 +32,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     // TODO: why some of these are contracts and others are addresses?
     IZNSPriceOracle znsPriceOracle_,
     IZeroTokenMock zeroToken_,
-    address znsRegistrar_,
     address zeroVault_
   ) {
     _setAccessController(accessController_);
@@ -47,7 +39,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     // TODO change from mock
     zeroToken = zeroToken_;
     znsPriceOracle = znsPriceOracle_;
-    znsRegistrar = znsRegistrar_;
   }
 
   function stakeForDomain(
@@ -89,16 +80,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     zeroToken.transfer(owner, stakeAmount);
 
     emit StakeWithdrawn(domainHash, owner, stakeAmount);
-  }
-
-  function setZNSRegistrar(address znsRegistrar_) external override onlyRole(ADMIN_ROLE) {
-    require(
-      znsRegistrar_ != address(0),
-      "ZNSTreasury: Zero address passed as znsRegistrar"
-    );
-
-    znsRegistrar = znsRegistrar_;
-    emit ZNSRegistrarSet(znsRegistrar_);
   }
 
   function setZeroVaultAddress(address zeroVaultAddress) external override onlyRole(ADMIN_ROLE) {

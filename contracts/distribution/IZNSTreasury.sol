@@ -2,13 +2,6 @@
 pragma solidity ^0.8.18;
 
 interface IZNSTreasury {
-
-  /**
-   * @notice Emitted when the znsRegistrar is updated
-   * @param znsRegistrar The address of the new registrar
-   */
-  event ZNSRegistrarSet(address znsRegistrar);
-
   /**
    * @notice Emitted when a new stake is deposited
    * @param domainHash The hash of the domain name
@@ -54,8 +47,6 @@ interface IZNSTreasury {
   ) external;
 
   function unstakeForDomain(bytes32 domainHash, address owner) external;
-
-  function setZNSRegistrar(address znsRegistrar_) external;
 
   function setZeroVaultAddress(address zeroVaultAddress) external;
 }

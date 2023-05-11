@@ -46,12 +46,10 @@ describe("ZNSTreasury", () => {
   });
 
   it("Confirms deployment", async () => {
-    const registrar = await zns.treasury.znsRegistrar();
     const priceOracle = await zns.treasury.znsPriceOracle();
     const token = await zns.treasury.zeroToken();
     const accessController = await zns.treasury.getAccessController();
 
-    expect(registrar).to.eq(zns.registrar.address);
     expect(priceOracle).to.eq(zns.priceOracle.address);
     expect(token).to.eq(zns.zeroToken.address);
     expect(accessController).to.eq(zns.accessController.address);
@@ -165,27 +163,6 @@ describe("ZNSTreasury", () => {
     it("Should revert when zeroVault is address 0", async () => {
       const tx = zns.treasury.setZeroVaultAddress(ethers.constants.AddressZero);
       await expect(tx).to.be.revertedWith("ZNSTreasury: zeroVault passed as 0x0 address");
-    });
-  });
-
-  describe("setZNSRegistrar", () => {
-    it("Should set znsRegistrar in storage", async () => {
-      await zns.treasury.setZNSRegistrar(randomAcc.address);
-
-      const registrarFromSC = await zns.treasury.znsRegistrar();
-      expect(registrarFromSC).to.be.eq(randomAcc.address);
-    });
-
-    it("Should revert when called from any address without ADMIN_ROLE", async () => {
-      const tx = zns.treasury.connect(user).setZNSRegistrar(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
-    });
-
-    it("Should revert if Registrar is address 0", async () => {
-      const tx = zns.treasury.setZNSRegistrar(ethers.constants.AddressZero);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: Zero address passed as znsRegistrar");
     });
   });
 });
