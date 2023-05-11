@@ -1,6 +1,6 @@
 import {
   ZeroTokenMock,
-  ZeroTokenMock__factory,
+  ZeroTokenMock__factory, ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
   ZNSDomainToken,
@@ -18,7 +18,7 @@ import { ethers } from "hardhat";
 import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
-import { deployAccessController } from "./access";
+import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
 
 
@@ -100,6 +100,7 @@ export const deployTreasury = async (
 
 export const deployRegistrar = async (
   deployer : SignerWithAddress,
+  accessController : ZNSAccessController,
   config : RegistrarConfig
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
@@ -107,9 +108,10 @@ export const deployRegistrar = async (
     config.registryAddress,
     config.treasury.address,
     config.domainTokenAddress,
-    config.addressResolverAddress,
-    config.priceOracleAddress
+    config.addressResolverAddress
   );
+
+  await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
   return registrar;
 };
@@ -163,10 +165,9 @@ export const deployZNS = async ({
     registryAddress: registry.address,
     domainTokenAddress: domainToken.address,
     addressResolverAddress: addressResolver.address,
-    priceOracleAddress: priceOracle.address,
   };
 
-  const registrar = await deployRegistrar(deployer, config);
+  const registrar = await deployRegistrar(deployer, accessController, config);
 
   const znsContracts : ZNSContracts = {
     accessController,

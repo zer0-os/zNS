@@ -28,7 +28,6 @@ export interface RegistrarConfig {
   registryAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
-  priceOracleAddress : string;
 }
 
 export interface ZNSContracts {
