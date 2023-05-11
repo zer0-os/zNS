@@ -9,6 +9,7 @@ import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
+import { BigNumber } from "ethers";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -19,6 +20,7 @@ describe("ZNSEthRegistrar", () => {
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
+  let randomAcc : SignerWithAddress;
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
@@ -27,7 +29,7 @@ describe("ZNSEthRegistrar", () => {
   const defaultSubdomain = "world";
 
   beforeEach(async () => {
-    [deployer, zeroVault, user, operator, governor, admin] = await hre.ethers.getSigners();
+    [deployer, zeroVault, user, operator, governor, admin, randomAcc] = await hre.ethers.getSigners();
     // zeroVault address is used to hold the fee charged to the user when registering
     zns = await deployZNS({
       deployer,
@@ -37,11 +39,11 @@ describe("ZNSEthRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    // TODO change this when access control implemented
+    // TODO AC: change this when access control implemented
     // Give the user permission on behalf of the parent domain owner
     await zns.registry.connect(deployer).setOwnerOperator(user.address, true);
 
-    // TODO change this when access control implemented
+    // TODO AC: change this when access control implemented
     // Give the registrar permission on behalf of the user
     await zns.registry.connect(user).setOwnerOperator(zns.registrar.address, true);
 
@@ -476,7 +478,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not owner of Token");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the owner of the Token");
 
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
@@ -618,10 +620,10 @@ describe("ZNSEthRegistrar", () => {
 
       // Verify transaction is reverted
       const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Domain Owner");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
     });
 
-    it("Revoked domain unstakes", async () => {
+    it("Revoking domain unstakes", async () => {
     // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
       expect(balance).to.eq(ethers.utils.parseEther("15"));
@@ -656,7 +658,7 @@ describe("ZNSEthRegistrar", () => {
       expect(computedBalanceAfterStaking).to.equal(finalBalance);
     });
 
-    it("Cannot revoke a domain owned by another user", async () => {
+    it("Cannot revoke if Name is owned by another user", async () => {
     // Register Top level
       const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
@@ -665,7 +667,26 @@ describe("ZNSEthRegistrar", () => {
 
       // Try to revoke domain
       const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Domain Owner");
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
+    });
+
+    it("No one can revoke if Token and Name have different owners", async () => {
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration(deployer, zns, defaultDomain);
+      const parentDomainHash = await getDomainHashFromEvent(topLevelTx);
+      const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
+      expect(owner).to.not.equal(user.address);
+
+      const tokenId = BigNumber.from(parentDomainHash);
+
+      await zns.domainToken.transferFrom(deployer.address, user.address, tokenId);
+
+      // Try to revoke domain as a new owner of the token
+      const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
+
+      const tx2 = zns.registrar.connect(deployer).revokeDomain(parentDomainHash);
+      await expect(tx2).to.be.revertedWith("ZNSEthRegistrar: Not the owner of the Token");
     });
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
@@ -709,4 +730,65 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx4).to.be.revertedWith("ZNSRegistry: Not Authorized");
     });
   });
+
+  describe("State Setters", () => {
+    it("#setAccessController", async () => {
+      const currentAC = await zns.registrar.getAccessController();
+      const tx = await zns.registrar.connect(deployer).setAccessController(randomAcc.address);
+      const newAC = await zns.registrar.getAccessController();
+
+      await expect(tx).to.emit(zns.registrar, "AccessControllerSet").withArgs(randomAcc.address);
+
+      expect(newAC).to.equal(randomAcc.address);
+      expect(currentAC).to.not.equal(newAC);
+    });
+
+    it("#setZnsRegistry", async () => {
+      const currentRegistry = await zns.registrar.znsRegistry();
+      const tx = await zns.registrar.connect(deployer).setZnsRegistry(randomAcc.address);
+      const newRegistry = await zns.registrar.znsRegistry();
+
+      await expect(tx).to.emit(zns.registrar, "ZnsRegistrySet").withArgs(randomAcc.address);
+
+      expect(newRegistry).to.equal(randomAcc.address);
+      expect(currentRegistry).to.not.equal(newRegistry);
+    });
+
+    it("#setZnsTreasury", async () => {
+      const currentTreasury = await zns.registrar.znsTreasury();
+      const tx = await zns.registrar.connect(deployer).setZnsTreasury(randomAcc.address);
+      const newTreasury = await zns.registrar.znsTreasury();
+
+      await expect(tx).to.emit(zns.registrar, "ZnsTreasurySet").withArgs(randomAcc.address);
+
+      expect(newTreasury).to.equal(randomAcc.address);
+      expect(currentTreasury).to.not.equal(newTreasury);
+    });
+
+    it("#setZnsDomainToken", async () => {
+      const currentToken = await zns.registrar.znsDomainToken();
+      const tx = await zns.registrar.connect(deployer).setZnsDomainToken(randomAcc.address);
+      const newToken = await zns.registrar.znsDomainToken();
+
+      await expect(tx).to.emit(zns.registrar, "ZnsDomainTokenSet").withArgs(randomAcc.address);
+
+      expect(newToken).to.equal(randomAcc.address);
+      expect(currentToken).to.not.equal(newToken);
+    });
+
+    it("#setZnsAddressResolver", async () => {
+      const currentResolver = await zns.registrar.znsAddressResolver();
+      const tx = await zns.registrar.connect(deployer).setZnsAddressResolver(randomAcc.address);
+      const newResolver = await zns.registrar.znsAddressResolver();
+
+      await expect(tx).to.emit(zns.registrar, "ZnsAddressResolverSet").withArgs(randomAcc.address);
+
+      expect(newResolver).to.equal(randomAcc.address);
+      expect(currentResolver).to.not.equal(newResolver);
+    });
+  });
 });
+
+// TODO AC: Add tests for:
+// 1. Domains can not be revoked from the buyers when transferring token
+// 2. Ability to set accessController on all contracts!
