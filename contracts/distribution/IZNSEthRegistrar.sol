@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+
 interface IZNSEthRegistrar {
   // TODO: what other params do we need here for all the events ??
 
@@ -22,6 +23,12 @@ interface IZNSEthRegistrar {
   event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
   event DomainReclaimed(bytes32 indexed domainHash, address indexed registrant);
+
+  event ZnsRegistrySet(address znsRegistry);
+
+  event ZnsTreasurySet(address znsTreasury);
+
+  event ZnsAddressResolverSet(address znsAddressResolver);
 
   function registerRootDomain(
     string calldata name,
@@ -51,4 +58,10 @@ interface IZNSEthRegistrar {
     bytes32 parentHash,
     string calldata name
   ) external pure returns (bytes32);
+
+  function setZnsRegistry(address znsRegistry_) external;
+
+  function setZnsTreasury(address znsTreasury_) external;
+
+  function setAddressResolver(address addressResolver_) external;
 }

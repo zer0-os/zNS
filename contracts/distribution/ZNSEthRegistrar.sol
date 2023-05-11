@@ -6,31 +6,29 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
 
-  // TODO AC: add setters for all of these!
+  // TODO AC: add AC to all the setters!
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken;
   IZNSAddressResolver public znsAddressResolver;
-  IZNSPriceOracle public znsPriceOracle;
 
 
-  mapping(bytes32 parentDomainHash => mapping(address user => bool status))
-    public subdomainApprovals;
+  mapping(bytes32 parentDomainHash =>
+    mapping(address user => bool status)) public subdomainApprovals;
 
-  modifier onlyNameOwner(bytes32 domainNameHash) {
+  modifier onlyNameOwner(bytes32 domainHash) {
     require(
-      msg.sender == znsRegistry.getDomainOwner(domainNameHash),
+      msg.sender == znsRegistry.getDomainOwner(domainHash),
       "ZNSEthRegistrar: Not the Domain Owner"
     );
     _;
   }
 
-  modifier onlyTokenOwner(bytes32 domainNameHash) {
+  modifier onlyTokenOwner(bytes32 domainHash) {
     require(
       msg.sender == znsDomainToken.ownerOf(uint256(domainHash)),
       "ZNSEthRegistrar: Not the owner of the Token"
@@ -46,14 +44,12 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSRegistry znsRegistry_,
     IZNSTreasury znsTreasury_,
     IZNSDomainToken znsDomainToken_,
-    IZNSAddressResolver znsAddressResolver_,
-    IZNSPriceOracle znsPriceOracle_
+    IZNSAddressResolver znsAddressResolver_
   ) {
     znsRegistry = znsRegistry_;
     znsTreasury = znsTreasury_;
     znsDomainToken = znsDomainToken_;
     znsAddressResolver = znsAddressResolver_;
-    znsPriceOracle = znsPriceOracle_;
   }
 
   /**
@@ -223,6 +219,46 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         keccak256(bytes(name))
       )
     );
+  }
+
+  function setZnsTreasury(address znsTreasury_) external override {
+    require(
+      znsTreasury_ != address(0),
+      "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
+    );
+    znsTreasury = IZNSTreasury(znsTreasury_);
+
+    emit ZnsTreasurySet(znsTreasury_);
+  }
+
+  function setZnsRegistry(address znsRegistry_) external override {
+    require(
+      znsRegistry_ != address(0),
+      "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
+    );
+    znsRegistry = IZNSRegistry(znsRegistry_);
+
+    emit ZnsRegistrySet(znsRegistry_);
+  }
+
+  function setDomainToken(address domainToken_) external override {
+    require(
+      domainToken_ != address(0),
+      "ZNSEthRegistrar: domainToken_ is 0x0 address"
+    );
+    znsDomainToken = IZNSDomainToken(domainToken_);
+
+    emit DomainTokenSet(domainToken_);
+  }
+
+  function setAddressResolver(address addressResolver_) external override {
+    require(
+      addressResolver_ != address(0),
+      "ZNSEthRegistrar: addressResolver_ is 0x0 address"
+    );
+    znsAddressResolver = IZNSAddressResolver(addressResolver_);
+
+    emit ZnsAddressResolverSet(addressResolver_);
   }
 
   function _setSubdomainData(
