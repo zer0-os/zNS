@@ -30,5 +30,6 @@ abstract contract AccessControlled is ZNSRoles {
     function _setAccessController(address _accessController) internal {
         require(_accessController != address(0), "AC: _accessController is 0x0 address");
         accessController = IZNSAccessController(_accessController);
+        emit AccessControllerSet(_accessController);
     }
 }

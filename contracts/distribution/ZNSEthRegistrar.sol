@@ -23,7 +23,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
   modifier onlyNameOwner(bytes32 domainHash) {
     require(
       msg.sender == znsRegistry.getDomainOwner(domainHash),
-      "ZNSEthRegistrar: Not the Domain Owner"
+      "ZNSEthRegistrar: Not the Owner of the Name"
     );
     _;
   }
@@ -293,7 +293,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         domainAddress != address(0),
         "ZNSEthRegistrar: No domain content provided"
       );
-      // TODO: what is the given Resolver already exists?
+      // TODO: what if the given Resolver already exists?
       //  we do not want to re-set it again in Registry storage
       //  iron this out!
       znsRegistry.setSubdomainRecord(
