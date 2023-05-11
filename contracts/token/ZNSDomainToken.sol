@@ -55,7 +55,7 @@ contract ZNSDomainToken is ERC721, IZNSDomainToken {
    * @dev TODO: Add Access Control, replace require to also other specific contracts to revoke
    * @param tokenId The tokenId that the caller wishes to burn/revoke
    */
-  function revoke(uint256 tokenId) external override onlyAuthorized{
+  function revoke(uint256 tokenId) external override onlyAuthorized {
     _burn(tokenId);
   }
 }

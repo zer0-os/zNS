@@ -11,6 +11,7 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
 
+  // TODO AC: add setters for all of these!
   IZNSRegistry public znsRegistry;
   IZNSTreasury public znsTreasury;
   IZNSDomainToken public znsDomainToken;
@@ -21,8 +22,19 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
   mapping(bytes32 parentDomainHash => mapping(address user => bool status))
     public subdomainApprovals;
 
-  modifier onlyOwner(bytes32 domainNameHash) {
-    require(msg.sender == znsRegistry.getDomainOwner(domainNameHash), "ZNSEthRegistrar: Not the Domain Owner" );
+  modifier onlyNameOwner(bytes32 domainNameHash) {
+    require(
+      msg.sender == znsRegistry.getDomainOwner(domainNameHash),
+      "ZNSEthRegistrar: Not the Domain Owner"
+    );
+    _;
+  }
+
+  modifier onlyTokenOwner(bytes32 domainNameHash) {
+    require(
+      msg.sender == znsDomainToken.ownerOf(uint256(domainHash)),
+      "ZNSEthRegistrar: Not the owner of the Token"
+    );
     _;
   }
 
@@ -110,7 +122,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     bytes32 parentHash,
     address user,
     bool status
-  ) public override onlyOwner(parentHash) {
+  ) public override onlyNameOwner(parentHash) {
     subdomainApprovals[parentHash][user] = status;
 
     emit SubdomainApprovalSet(parentHash, user, status);
@@ -179,7 +191,12 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     return domainHash;
   }
 
-  function revokeDomain(bytes32 domainHash) external override onlyOwner(domainHash) {
+  function revokeDomain(bytes32 domainHash)
+  external
+  override
+  onlyNameOwner(domainHash)
+  onlyTokenOwner(domainHash)
+  {
     uint256 tokenId = uint256(domainHash);
     znsDomainToken.revoke(tokenId);
     znsTreasury.unstakeForDomain(domainHash, msg.sender);
@@ -190,10 +207,7 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     // TODO: what are we missing here?
   }
 
-  //TODO: Access Control
-  function reclaimDomain(bytes32 domainHash) external override {
-    uint256 tokenId = uint256(domainHash);
-    require(znsDomainToken.ownerOf(tokenId) == msg.sender, "ZNSEthRegistrar: Not owner of Token");
+  function reclaimDomain(bytes32 domainHash) external override onlyTokenOwner(domainHash) {
     znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
 
     emit DomainReclaimed(domainHash, msg.sender);
