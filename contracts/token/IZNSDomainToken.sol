@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 
-interface IZNSDomainToken is IERC721{
+interface IZNSDomainToken is IERC721Upgradeable {
   event SetAccessAuthorization(address indexed account);
 
   function register(address to, uint256 tokenId) external;

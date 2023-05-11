@@ -14,7 +14,7 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
@@ -67,7 +67,9 @@ export const deployDomainToken = async (
   deployer : SignerWithAddress
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy("ZNSDomainToken", "ZDT");
+  const contract = await upgrades.deployProxy(domainTokenFactory,["ZNSDomainToken", "ZDT"]);
+  await contract.deployed();
+  return contract as ZNSDomainToken;
 };
 
 export const deployZeroTokenMock = async (

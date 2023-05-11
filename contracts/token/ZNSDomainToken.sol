@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
-
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 
 /**
  * @title A contract for tokenizing domains under the ZNS Architecture
 */
-contract ZNSDomainToken is ERC721, IZNSDomainToken {
-  // TODO: change for proper name !
-  constructor(string memory tokenName, string memory tokenSymbol) ERC721(tokenName, tokenSymbol) {
-    authorized[msg.sender] = true;
-  } 
+contract ZNSDomainToken is Initializable, ERC721Upgradeable, IZNSDomainToken {
+
+  function initialize(string memory tokenName, string memory tokenSymbol) public initializer {
+        __ERC721_init(tokenName, tokenSymbol);
+        authorized[msg.sender] = true;
+  }
   
   /**
   * @notice Track authorized users or contracts
