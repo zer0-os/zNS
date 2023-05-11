@@ -10,6 +10,7 @@ import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
+import { ADMIN_ROLE, getAccessRevertMsg } from "./helpers/access";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -732,63 +733,108 @@ describe("ZNSEthRegistrar", () => {
   });
 
   describe("State Setters", () => {
-    it("#setAccessController", async () => {
-      const currentAC = await zns.registrar.getAccessController();
-      const tx = await zns.registrar.connect(deployer).setAccessController(randomAcc.address);
-      const newAC = await zns.registrar.getAccessController();
+    describe("#setAccessController", () => {
+      it("Should set AccessController and fire AccessControllerSet event", async () => {
+        const currentAC = await zns.registrar.getAccessController();
+        const tx = await zns.registrar.connect(deployer).setAccessController(randomAcc.address);
+        const newAC = await zns.registrar.getAccessController();
 
-      await expect(tx).to.emit(zns.registrar, "AccessControllerSet").withArgs(randomAcc.address);
+        await expect(tx).to.emit(zns.registrar, "AccessControllerSet").withArgs(randomAcc.address);
 
-      expect(newAC).to.equal(randomAcc.address);
-      expect(currentAC).to.not.equal(newAC);
+        expect(newAC).to.equal(randomAcc.address);
+        expect(currentAC).to.not.equal(newAC);
+      });
+
+      it("Should revert if not called by ADMIN", async () => {
+        const tx = zns.registrar.connect(user).setAccessController(randomAcc.address);
+        await expect(tx).to.be.revertedWith(
+          getAccessRevertMsg(user.address, ADMIN_ROLE)
+        );
+      });
     });
 
-    it("#setZnsRegistry", async () => {
-      const currentRegistry = await zns.registrar.znsRegistry();
-      const tx = await zns.registrar.connect(deployer).setZnsRegistry(randomAcc.address);
-      const newRegistry = await zns.registrar.znsRegistry();
+    describe("#setZnsRegistry", () => {
+      it("Should set ZNSRegistry and fire ZnsRegistrySet event", async () => {
+        const currentRegistry = await zns.registrar.znsRegistry();
+        const tx = await zns.registrar.connect(deployer).setZnsRegistry(randomAcc.address);
+        const newRegistry = await zns.registrar.znsRegistry();
 
-      await expect(tx).to.emit(zns.registrar, "ZnsRegistrySet").withArgs(randomAcc.address);
+        await expect(tx).to.emit(zns.registrar, "ZnsRegistrySet").withArgs(randomAcc.address);
 
-      expect(newRegistry).to.equal(randomAcc.address);
-      expect(currentRegistry).to.not.equal(newRegistry);
+        expect(newRegistry).to.equal(randomAcc.address);
+        expect(currentRegistry).to.not.equal(newRegistry);
+      });
+
+      it("Should revert if not called by ADMIN", async () => {
+        const tx = zns.registrar.connect(user).setZnsRegistry(randomAcc.address);
+        await expect(tx).to.be.revertedWith(
+          getAccessRevertMsg(user.address, ADMIN_ROLE)
+        );
+      });
     });
 
-    it("#setZnsTreasury", async () => {
-      const currentTreasury = await zns.registrar.znsTreasury();
-      const tx = await zns.registrar.connect(deployer).setZnsTreasury(randomAcc.address);
-      const newTreasury = await zns.registrar.znsTreasury();
+    describe("#setZnsTreasury", () => {
+      it("Should set ZNSTreasury and fire ZnsTreasurySet event", async () => {
+        const currentTreasury = await zns.registrar.znsTreasury();
+        const tx = await zns.registrar.connect(deployer).setZnsTreasury(randomAcc.address);
+        const newTreasury = await zns.registrar.znsTreasury();
 
-      await expect(tx).to.emit(zns.registrar, "ZnsTreasurySet").withArgs(randomAcc.address);
+        await expect(tx).to.emit(zns.registrar, "ZnsTreasurySet").withArgs(randomAcc.address);
 
-      expect(newTreasury).to.equal(randomAcc.address);
-      expect(currentTreasury).to.not.equal(newTreasury);
+        expect(newTreasury).to.equal(randomAcc.address);
+        expect(currentTreasury).to.not.equal(newTreasury);
+      });
+
+      it("Should revert if not called by ADMIN", async () => {
+        const tx = zns.registrar.connect(user).setZnsTreasury(randomAcc.address);
+        await expect(tx).to.be.revertedWith(
+          getAccessRevertMsg(user.address, ADMIN_ROLE)
+        );
+      });
     });
 
-    it("#setZnsDomainToken", async () => {
-      const currentToken = await zns.registrar.znsDomainToken();
-      const tx = await zns.registrar.connect(deployer).setZnsDomainToken(randomAcc.address);
-      const newToken = await zns.registrar.znsDomainToken();
+    describe("#setZnsDomainToken", () => {
+      it("Should set ZNSDomainToken and fire ZnsDomainTokenSet event", async () => {
+        const currentToken = await zns.registrar.znsDomainToken();
+        const tx = await zns.registrar.connect(deployer).setZnsDomainToken(randomAcc.address);
+        const newToken = await zns.registrar.znsDomainToken();
 
-      await expect(tx).to.emit(zns.registrar, "ZnsDomainTokenSet").withArgs(randomAcc.address);
+        await expect(tx).to.emit(zns.registrar, "ZnsDomainTokenSet").withArgs(randomAcc.address);
 
-      expect(newToken).to.equal(randomAcc.address);
-      expect(currentToken).to.not.equal(newToken);
+        expect(newToken).to.equal(randomAcc.address);
+        expect(currentToken).to.not.equal(newToken);
+      });
+
+      it("Should revert if not called by ADMIN", async () => {
+        const tx = zns.registrar.connect(user).setZnsDomainToken(randomAcc.address);
+        await expect(tx).to.be.revertedWith(
+          getAccessRevertMsg(user.address, ADMIN_ROLE)
+        );
+      });
     });
 
-    it("#setZnsAddressResolver", async () => {
-      const currentResolver = await zns.registrar.znsAddressResolver();
-      const tx = await zns.registrar.connect(deployer).setZnsAddressResolver(randomAcc.address);
-      const newResolver = await zns.registrar.znsAddressResolver();
+    describe("#setZnsAddressResolver", () => {
+      it("Should set ZNSAddressResolver and fire ZnsAddressResolverSet event", async () => {
+        const currentResolver = await zns.registrar.znsAddressResolver();
+        const tx = await zns.registrar.connect(deployer).setZnsAddressResolver(randomAcc.address);
+        const newResolver = await zns.registrar.znsAddressResolver();
 
-      await expect(tx).to.emit(zns.registrar, "ZnsAddressResolverSet").withArgs(randomAcc.address);
+        await expect(tx).to.emit(zns.registrar, "ZnsAddressResolverSet").withArgs(randomAcc.address);
 
-      expect(newResolver).to.equal(randomAcc.address);
-      expect(currentResolver).to.not.equal(newResolver);
+        expect(newResolver).to.equal(randomAcc.address);
+        expect(currentResolver).to.not.equal(newResolver);
+      });
+
+      it("Should revert if not called by ADMIN", async () => {
+        const tx = zns.registrar.connect(user).setZnsAddressResolver(randomAcc.address);
+        await expect(tx).to.be.revertedWith(
+          getAccessRevertMsg(user.address, ADMIN_ROLE)
+        );
+      });
     });
   });
 });
 
 // TODO AC: Add tests for:
-// 1. Domains can not be revoked from the buyers when transferring token
-// 2. Ability to set accessController on all contracts!
+// 1. Ability to set accessController on all contracts!
+// 2. Test treasury and priceOracle
