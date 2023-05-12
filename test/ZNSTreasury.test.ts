@@ -217,4 +217,30 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.be.revertedWith("ZNSTreasury: stakingToken_ passed as 0x0 address");
     });
   });
+
+  describe("setAccessController() and AccessControllerSet event", () => {
+    it("Should set the correct address of Access Controller", async () => {
+      const currentAccessController = await zns.treasury.getAccessController();
+      expect(currentAccessController).to.not.eq(randomAcc.address);
+
+      const tx = await zns.treasury.setAccessController(randomAcc.address);
+
+      const newAccessController = await zns.treasury.getAccessController();
+      expect(newAccessController).to.eq(randomAcc.address);
+
+      await expect(tx).to.emit(zns.treasury, "AccessControllerSet").withArgs(randomAcc.address);
+    });
+
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
+      const tx = zns.treasury.connect(user).setAccessController(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+
+    it("Should revert when accessController is address 0", async () => {
+      const tx = zns.treasury.setAccessController(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+    });
+  });
 });
