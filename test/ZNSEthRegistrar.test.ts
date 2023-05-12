@@ -11,6 +11,7 @@ import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
 import { ADMIN_ROLE, getAccessRevertMsg } from "./helpers/access";
+import { ZNSEthRegistrar__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -59,6 +60,23 @@ describe("ZNSEthRegistrar", () => {
 
     const allowance = await zns.zeroToken.allowance(user.address, zns.treasury.address);
     expect(allowance).to.eq(ethers.constants.MaxUint256);
+  });
+
+  // TODO AC: is this a problem it is set up this way?
+  it("Should initialize correctly from an ADMIN account only", async () => {
+    const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
+    expect(userHasAdmin).to.be.false;
+
+    const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+    const tx = registrarFactory.connect(user).deploy(
+      zns.accessController.address,
+      randomAcc.address,
+      randomAcc.address,
+      randomAcc.address,
+      randomAcc.address
+    );
+
+    await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
   });
 
   describe("Registers a top level domain", () => {
