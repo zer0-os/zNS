@@ -244,24 +244,24 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     emit ZnsTreasurySet(znsTreasury_);
   }
 
-  function setZnsDomainToken(address domainToken_) public override onlyRole(ADMIN_ROLE) {
+  function setZnsDomainToken(address znsDomainToken_) public override onlyRole(ADMIN_ROLE) {
     require(
-      domainToken_ != address(0),
-      "ZNSEthRegistrar: domainToken_ is 0x0 address"
+      znsDomainToken_ != address(0),
+      "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
     );
-    znsDomainToken = IZNSDomainToken(domainToken_);
+    znsDomainToken = IZNSDomainToken(znsDomainToken_);
 
-    emit ZnsDomainTokenSet(domainToken_);
+    emit ZnsDomainTokenSet(znsDomainToken_);
   }
 
-  function setZnsAddressResolver(address addressResolver_) public override onlyRole(ADMIN_ROLE) {
+  function setZnsAddressResolver(address znsAddressResolver_) public override onlyRole(ADMIN_ROLE) {
     require(
-      addressResolver_ != address(0),
-      "ZNSEthRegistrar: addressResolver_ is 0x0 address"
+      znsAddressResolver_ != address(0),
+      "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
     );
-    znsAddressResolver = IZNSAddressResolver(addressResolver_);
+    znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
 
-    emit ZnsAddressResolverSet(addressResolver_);
+    emit ZnsAddressResolverSet(znsAddressResolver_);
   }
 
   function setAccessController(address accessController_)

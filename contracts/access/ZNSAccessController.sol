@@ -6,6 +6,7 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
 import { ZNSRoles } from "./ZNSRoles.sol";
 
 
+// TODO AC: thoroughly test and expand this contract!
 contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessController {
     // TODO AC: make the initial role setup in this function better!
     // solhint-disable-next-line func-name-mixedcase

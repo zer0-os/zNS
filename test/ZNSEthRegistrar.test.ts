@@ -769,6 +769,11 @@ describe("ZNSEthRegistrar", () => {
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
+
+      it("Should revert if new AccessController is address zero", async () => {
+        const tx = zns.registrar.connect(deployer).setAccessController(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+      });
     });
 
     describe("#setZnsRegistry", () => {
@@ -788,6 +793,11 @@ describe("ZNSEthRegistrar", () => {
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
+      });
+
+      it("Should revert if ZNSRegistry is address zero", async () => {
+        const tx = zns.registrar.connect(deployer).setZnsRegistry(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: znsRegistry_ is 0x0 address");
       });
     });
 
@@ -809,6 +819,11 @@ describe("ZNSEthRegistrar", () => {
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
+
+      it("Should revert if ZNSTreasury is address zero", async () => {
+        const tx = zns.registrar.connect(deployer).setZnsTreasury(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: znsTreasury_ is 0x0 address");
+      });
     });
 
     describe("#setZnsDomainToken", () => {
@@ -829,6 +844,11 @@ describe("ZNSEthRegistrar", () => {
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
+
+      it("Should revert if ZNSDomainToken is address zero", async () => {
+        const tx = zns.registrar.connect(deployer).setZnsDomainToken(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: znsDomainToken_ is 0x0 address");
+      });
     });
 
     describe("#setZnsAddressResolver", () => {
@@ -848,6 +868,11 @@ describe("ZNSEthRegistrar", () => {
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
+      });
+
+      it("Should revert if ZNSAddressResolver is address zero", async () => {
+        const tx = zns.registrar.connect(deployer).setZnsAddressResolver(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: znsAddressResolver_ is 0x0 address");
       });
     });
   });

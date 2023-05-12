@@ -65,9 +65,9 @@ interface IZNSEthRegistrar {
 
   function setZnsTreasury(address znsTreasury_) external;
 
-  function setZnsDomainToken(address domainToken_) external;
+  function setZnsDomainToken(address znsDomainToken_) external;
 
-  function setZnsAddressResolver(address addressResolver_) external;
+  function setZnsAddressResolver(address znsAddressResolver_) external;
 
   function setAccessController(address accessController_) external;
 }
