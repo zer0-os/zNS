@@ -47,7 +47,7 @@ describe("ZNSTreasury", () => {
 
   it("Confirms deployment", async () => {
     const priceOracle = await zns.treasury.znsPriceOracle();
-    const token = await zns.treasury.zeroToken();
+    const token = await zns.treasury.stakingToken();
     const accessController = await zns.treasury.getAccessController();
 
     expect(priceOracle).to.eq(zns.priceOracle.address);
