@@ -34,7 +34,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
 
   constructor(
     address accessController_,
-    // TODO: why some of these are contracts and others are addresses?
     address znsPriceOracle_,
     address stakingToken_,
     address zeroVault_

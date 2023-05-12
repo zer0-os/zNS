@@ -150,7 +150,7 @@ describe("ZNSTreasury", () => {
       const newZeroVault = await zns.treasury.zeroVault();
       expect(newZeroVault).to.eq(mockRegistrar.address);
 
-      await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(newZeroVault);
+      await expect(tx).to.emit(zns.treasury, "ZeroVaultAddressSet").withArgs(mockRegistrar.address);
     });
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
@@ -163,6 +163,58 @@ describe("ZNSTreasury", () => {
     it("Should revert when zeroVault is address 0", async () => {
       const tx = zns.treasury.setZeroVaultAddress(ethers.constants.AddressZero);
       await expect(tx).to.be.revertedWith("ZNSTreasury: zeroVault passed as 0x0 address");
+    });
+  });
+
+  describe("setPriceOracle() and ZnsPriceOracleSet event", () => {
+    it("Should set the correct address of ZNS Price Oracle", async () => {
+      const currentPriceOracle = await zns.treasury.znsPriceOracle();
+      expect(currentPriceOracle).to.not.eq(randomAcc.address);
+
+      const tx = await zns.treasury.setPriceOracle(randomAcc.address);
+
+      const newPriceOracle = await zns.treasury.znsPriceOracle();
+      expect(newPriceOracle).to.eq(randomAcc.address);
+
+      await expect(tx).to.emit(zns.treasury, "ZnsPriceOracleSet").withArgs(randomAcc.address);
+    });
+
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
+      const tx = zns.treasury.connect(user).setPriceOracle(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+
+    it("Should revert when znsPriceOracle is address 0", async () => {
+      const tx = zns.treasury.setPriceOracle(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: znsPriceOracle_ passed as 0x0 address");
+    });
+  });
+
+  describe("setStakingToken() and ZnsStakingTokenSet event", () => {
+    it("Should set the correct address of ZNS Staking Token", async () => {
+      const currentStakingToken = await zns.treasury.stakingToken();
+      expect(currentStakingToken).to.not.eq(randomAcc.address);
+
+      const tx = await zns.treasury.setStakingToken(randomAcc.address);
+
+      const newStakingToken = await zns.treasury.stakingToken();
+      expect(newStakingToken).to.eq(randomAcc.address);
+
+      await expect(tx).to.emit(zns.treasury, "ZnsStakingTokenSet").withArgs(randomAcc.address);
+    });
+
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
+      const tx = zns.treasury.connect(user).setStakingToken(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+
+    it("Should revert when stakingToken is address 0", async () => {
+      const tx = zns.treasury.setStakingToken(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("ZNSTreasury: stakingToken_ passed as 0x0 address");
     });
   });
 });
