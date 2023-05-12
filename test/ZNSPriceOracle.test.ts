@@ -14,6 +14,7 @@ describe("ZNSPriceOracle", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
+  let randomAcc : SignerWithAddress;
 
   let zns : ZNSContracts;
 
@@ -22,6 +23,7 @@ describe("ZNSPriceOracle", () => {
       deployer,
       user,
       admin,
+      randomAcc,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS({
@@ -55,7 +57,7 @@ describe("ZNSPriceOracle", () => {
     expect(feePercentageFromSC).to.eq(registrationFeePercDefault);
   });
 
-  describe("getPrice", async () => {
+  describe("#getPrice", async () => {
     it("Returns 0 price for a root name with no length", async () => {
       const {
         totalPrice,
@@ -244,7 +246,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("setBasePrice", () => {
+  describe("#setBasePrice", () => {
     it("Allows an authorized user to set the base price", async () => {
       const newMaxPrice = parseEther("0.7");
 
@@ -320,7 +322,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("setPriceMultiplier", () => {
+  describe("#setPriceMultiplier", () => {
     it("Allows an authorized user to set the price multiplier", async () => {
       const newMultiplier = BigNumber.from("300");
 
@@ -365,7 +367,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("setBaseLength(s)", () => {
+  describe("#setBaseLength(s)", () => {
     it("Allows an authorized user to set the base length", async () => {
       const newLength = 5;
 
@@ -492,7 +494,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("setRegistrationFeePercentage", () => {
+  describe("#setRegistrationFeePercentage", () => {
     it("Successfully sets the fee percentage", async () => {
       const newFeePerc = BigNumber.from(222);
       await zns.priceOracle.setRegistrationFeePercentage(newFeePerc);
@@ -500,15 +502,51 @@ describe("ZNSPriceOracle", () => {
 
       expect(feeFromSC).to.eq(newFeePerc);
     });
+
+    it("Disallows an unauthorized user to set the fee percentage", async () => {
+      const newFeePerc = BigNumber.from(222);
+      const tx = zns.priceOracle.connect(user).setRegistrationFeePercentage(newFeePerc);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
   });
 
-  describe("getRegistrationFee", () => {
+  describe("#getRegistrationFee", () => {
     it("Successfully gets the fee for a price", async () => {
       const stake = ethers.utils.parseEther("0.2");
       const fee = await zns.priceOracle.getRegistrationFee(stake);
       const expectedFee = stake.mul("222").div("10000");
 
       expect(fee).to.eq(expectedFee);
+    });
+  });
+
+  describe("#setAccessController", () => {
+    it("Successfully sets the access controller", async () => {
+      const currentAccessController = await zns.priceOracle.getAccessController();
+      expect(currentAccessController).to.not.eq(randomAcc.address);
+
+      const tx = await zns.priceOracle.setAccessController(randomAcc.address);
+
+      const newAccessController = await zns.priceOracle.getAccessController();
+      expect(newAccessController).to.eq(randomAcc.address);
+
+      await expect(tx).to.emit(zns.priceOracle, "AccessControllerSet").withArgs(randomAcc.address);
+    });
+
+    it("Disallows an unauthorized user to set the access controller", async () => {
+      const tx = zns.priceOracle.connect(user).setAccessController(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+
+    it("Disallows setting the access controller to the zero address", async () => {
+      const tx = zns.priceOracle.connect(deployer).setAccessController(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith(
+        "AC: _accessController is 0x0 address"
+      );
     });
   });
 

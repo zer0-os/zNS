@@ -55,7 +55,7 @@ describe("ZNSTreasury", () => {
     expect(accessController).to.eq(zns.accessController.address);
   });
 
-  describe("stakeForDomain", () => {
+  describe("#stakeForDomain", () => {
     it("Stakes the correct amount", async () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
@@ -99,7 +99,7 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("unstakeForDomain", () => {
+  describe("#unstakeForDomain", () => {
     it("Unstakes the correct amount", async () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
@@ -140,7 +140,7 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("setZeroVaultAddress() and ZeroVaultAddressSet event", () => {
+  describe("#setZeroVaultAddress() and ZeroVaultAddressSet event", () => {
     it("Should set the correct address of Zero Vault", async () => {
       const currentZeroVault = await zns.treasury.zeroVault();
       expect(currentZeroVault).to.not.eq(mockRegistrar.address);
@@ -166,7 +166,7 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("setPriceOracle() and ZnsPriceOracleSet event", () => {
+  describe("#setPriceOracle() and ZnsPriceOracleSet event", () => {
     it("Should set the correct address of ZNS Price Oracle", async () => {
       const currentPriceOracle = await zns.treasury.znsPriceOracle();
       expect(currentPriceOracle).to.not.eq(randomAcc.address);
@@ -192,7 +192,7 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("setStakingToken() and ZnsStakingTokenSet event", () => {
+  describe("#setStakingToken() and ZnsStakingTokenSet event", () => {
     it("Should set the correct address of ZNS Staking Token", async () => {
       const currentStakingToken = await zns.treasury.stakingToken();
       expect(currentStakingToken).to.not.eq(randomAcc.address);
@@ -218,7 +218,7 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("setAccessController() and AccessControllerSet event", () => {
+  describe("#setAccessController() and AccessControllerSet event", () => {
     it("Should set the correct address of Access Controller", async () => {
       const currentAccessController = await zns.treasury.getAccessController();
       expect(currentAccessController).to.not.eq(randomAcc.address);

@@ -22,6 +22,7 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
   /**
    * @notice Struct for each configurable price variable
    */
+  // TODO: rework and add more setters for every single var
   PriceParams public priceConfig;
 
 
