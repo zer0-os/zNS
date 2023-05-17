@@ -11,4 +11,6 @@ interface IZNSAccessController is IAccessControlUpgradeable {
     ) external;
 
     function checkRole(bytes32 role, address account) external view;
+
+    function setRoleAdmin(bytes32 role, bytes32 adminRole) external;
 }
