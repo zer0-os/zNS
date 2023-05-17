@@ -877,7 +877,3 @@ describe("ZNSEthRegistrar", () => {
     });
   });
 });
-
-// TODO AC: Add tests for:
-// 1. Ability to set accessController on all contracts!
-// 2. Test treasury and priceOracle

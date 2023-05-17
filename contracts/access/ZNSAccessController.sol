@@ -9,7 +9,6 @@ import { ZNSRoles } from "./ZNSRoles.sol";
 contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessController {
     // solhint-disable-next-line func-name-mixedcase
     function initialize(
-        // TODO AC: is there a better way to setup all the roles here param-wise?
         address[] calldata governorAddresses,
         address[] calldata adminAddresses
     ) external override initializer {

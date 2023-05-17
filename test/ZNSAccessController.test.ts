@@ -6,8 +6,6 @@ import { expect } from "chai";
 import { ADMIN_ROLE, getAccessRevertMsg, GOVERNOR_ROLE, OPERATOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
 
 
-// TODO AC: test the full setup and that fact that role admins work properly
-//  test different configurations of roles
 describe("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
   let znsAccessController : ZNSAccessController;

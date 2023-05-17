@@ -182,7 +182,8 @@ export const deployZNS = async ({
   };
 
   // Final configuration steps
-  // TODO AC: remove all redundant calls here!
+  // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
+  //  for Registrar to be owner/operator of the root
   await domainToken.connect(deployer).authorize(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
