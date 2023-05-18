@@ -48,6 +48,24 @@ describe("ZNSAccessController", () => {
   });
 
   describe("Role Management from the Initial Setup", () => {
+    it("GOVERNOR_ROLE should be able to grant GOVERNOR_ROLE", async () => {
+      const [ governor ] = governorAccs;
+      const [ { address: newGovernor } ] = randomAccs;
+      await znsAccessController.connect(governor).grantRole(GOVERNOR_ROLE, newGovernor);
+
+      const hasRole = await znsAccessController.hasRole(GOVERNOR_ROLE, newGovernor);
+      expect(hasRole).to.be.true;
+    });
+
+    it("GOVERNOR_ROLE should be able to revoke GOVERNOR_ROLE", async () => {
+      const [ governor ] = governorAccs;
+      const [ { address: existingGovernor } ] = governorAccs;
+      await znsAccessController.connect(governor).revokeRole(GOVERNOR_ROLE, existingGovernor);
+
+      const hasRole = await znsAccessController.hasRole(GOVERNOR_ROLE, existingGovernor);
+      expect(hasRole).to.be.false;
+    });
+
     it("GOVERNOR_ROLE should be able to grant ADMIN_ROLE", async () => {
       const [ governor ] = governorAccs;
       const [ { address: newAdmin } ] = randomAccs;
