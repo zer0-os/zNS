@@ -29,12 +29,12 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     //        A function like that can be created in Registry, but think
     //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
     modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-      address owner = registry.getDomainRecord(domainNameHash).owner;
-      require(
-        msg.sender == owner || registry.isAllowedOperator(owner, msg.sender),
-        "ZNSAddressResolver: Not allowed"
-      );
-      _;
+        address owner = registry.getDomainRecord(domainNameHash).owner;
+        require(
+            msg.sender == owner || registry.isAllowedOperator(owner, msg.sender),
+            "ZNSAddressResolver: Not allowed"
+        );
+        _;
     }
 
     /**
@@ -42,7 +42,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @param domainNameHash The identifying hash of a domain's name
      */
     function getAddress(bytes32 domainNameHash) external view override returns (address) {
-      return addressOf[domainNameHash];
+          return addressOf[domainNameHash];
     }
 
     /**
@@ -51,10 +51,10 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @param newAddress The new domain owner
      */
     function setAddress(
-      bytes32 domainNameHash,
-      address newAddress
+          bytes32 domainNameHash,
+          address newAddress
     ) external override onlyOwnerOrOperator(domainNameHash) {
-      require(newAddress != address(0), "ZNS: Cant set address to 0");
+        require(newAddress != address(0), "ZNS: Cant set address to 0");
 
         addressOf[domainNameHash] = newAddress;
 
@@ -77,6 +77,6 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @dev Exposes IZNSAddressResolver interfaceId
      */
     function getInterfaceId() public pure override returns (bytes4) {
-      return type(IZNSAddressResolver).interfaceId;
+          return type(IZNSAddressResolver).interfaceId;
     }
 }
