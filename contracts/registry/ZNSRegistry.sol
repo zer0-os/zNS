@@ -58,7 +58,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
             "ZNSRegistry: Registrar can not be 0x0 address"
         );
         znsRegistrar = znsRegistrar_;
-        // records[ROOT_HASH].owner = owner;
         // TODO use the hash constant here ?
         // Does it benefit us? is it problematic ?
         // can people manipulate or own it?
