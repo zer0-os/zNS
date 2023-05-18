@@ -151,7 +151,7 @@ interface IZNSRegistry {
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
      */
-    function setDomainRecord(
+    function updateDomainRecord(
         bytes32 domainNameHash,
         address owner,
         address resolver
@@ -162,7 +162,7 @@ interface IZNSRegistry {
      * @param domainNameHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
-    function setDomainOwner(bytes32 domainNameHash, address owner) external;
+    function updateDomainOwner(bytes32 domainNameHash, address owner) external;
 
     /**
      * @notice Update the domain's default resolver
@@ -170,10 +170,17 @@ interface IZNSRegistry {
      * @param domainNameHash the hash of a domain's name
      * @param resolver The new default resolver
      */
-    function setDomainResolver(
+    function updateDomainResolver(
         bytes32 domainNameHash,
         address resolver
     ) external;
+
+    /**
+     * @notice Change the address of the ZNSRegistrar contract we use
+     *
+     * @param znsRegistrar_ The new ZNSRegistrar
+     */
+    function setZNSRegistrar(address znsRegistrar_) external;
 
     /**
      * @notice Delete a domain's record

@@ -88,7 +88,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param znsRegistrar_ The new ZNSRegistrar
      */
-    function setZNSRegistrar(address znsRegistrar_) public {
+    function setZNSRegistrar(address znsRegistrar_) external {
     // TODO When we have access control, only be callable by admin!!
         require(
             znsRegistrar_ != address(0),
@@ -175,7 +175,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
      */
-    function setDomainRecord(
+    function updateDomainRecord(
         bytes32 domainNameHash,
         address owner,
         address resolver
@@ -193,7 +193,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param domainNameHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
-    function setDomainOwner(
+    function updateDomainOwner(
         bytes32 domainNameHash,
         address owner
     ) external onlyOwnerOrOperator(domainNameHash) {
@@ -209,7 +209,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param domainNameHash the hash of a domain's name
      * @param resolver The new default resolver
      */
-    function setDomainResolver(
+    function updateDomainResolver(
         bytes32 domainNameHash,
         address resolver
     ) external onlyOwnerOrOperator(domainNameHash) {

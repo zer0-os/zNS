@@ -7,7 +7,7 @@ import {IZNSTreasury} from "./IZNSTreasury.sol";
 import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
 import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
-import {StringUtils} from "../utils/StringUtils.sol";
+// import {StringUtils} from "../utils/StringUtils.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSRegistry public znsRegistry;
@@ -17,14 +17,14 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSPriceOracle public znsPriceOracle;
 
     // To account for unicode strings, we need a custom length library
-    using StringUtils for string;
+    // using StringUtils for string;
 
-    mapping(bytes32 parentdomainNameHash => mapping(address user => bool status))
+    mapping(bytes32 parentdomainHash => mapping(address user => bool status))
         public subdomainApprovals;
 
-    modifier onlyOwner(bytes32 domainNameHash) {
+    modifier onlyOwner(bytes32 domainHash) {
         require(
-            msg.sender == znsRegistry.getDomainOwner(domainNameHash),
+            msg.sender == znsRegistry.getDomainOwner(domainHash),
             "ZNSEthRegistrar: Not the Domain Owner"
         );
         _;
@@ -52,114 +52,82 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
      * @notice Register a new domain such as `0://wilder`
      *
      * @param name Name of the domain to register
-     * @param resolver Address of the resolver for that domain (optional, send 0x0 if not needed)
      * @param resolverContent Address for the resolver to return when requested (optional, send 0x0 if not needed)
      */
     function registerDomain(
         string calldata name,
-        address resolver,
         address resolverContent
     ) external returns (bytes32) {
         require(
-            name.strlen() != 0,
+            bytes(name).length != 0,
             "ZNSEthRegistrar: Domain Name not provided"
         );
 
         // Create hash for given domain name
-        bytes32 domainNameHash = keccak256(bytes(name));
+        bytes32 domainHash = keccak256(bytes(name));
 
         require(
-            !znsRegistry.exists(domainNameHash),
+            !znsRegistry.exists(domainHash),
             "ZNSEthRegistrar: Domain already exists"
         );
 
         // Staking logic
-        znsTreasury.stakeForDomain(domainNameHash, name, msg.sender, true);
+        znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
 
         // Get tokenId for the new token to be minted for the new domain
-        uint256 tokenId = uint256(domainNameHash);
+        uint256 tokenId = uint256(domainHash);
         znsDomainToken.register(msg.sender, tokenId);
 
-        _setDomainData(domainNameHash, msg.sender, resolver, resolverContent);
+        _setDomainData(domainHash, msg.sender, resolverContent);
 
-        emit DomainRegistered(domainNameHash, tokenId, name, msg.sender, resolver);
+        emit DomainRegistered(domainHash, tokenId, name, msg.sender, address(znsAddressResolver));
 
-        return domainNameHash;
+        return domainHash;
     }
 
-    // TODO Functions for updating the domain already exist in ZNSRegistry
-    // We can have the dApp call those functions directly?
-    // Should we add an `updateDomain` function here instead?
-
     function revokeDomain(
-        bytes32 domainNameHash
-    ) external onlyOwner(domainNameHash) {
-        uint256 tokenId = uint256(domainNameHash);
+        bytes32 domainHash
+    ) external onlyOwner(domainHash) {
+        uint256 tokenId = uint256(domainHash);
         znsDomainToken.revoke(tokenId);
-        znsTreasury.unstakeForDomain(domainNameHash, msg.sender);
-        znsRegistry.deleteRecord(domainNameHash);
+        znsTreasury.unstakeForDomain(domainHash, msg.sender);
+        znsRegistry.deleteRecord(domainHash);
 
-        emit DomainRevoked(domainNameHash, msg.sender);
+        emit DomainRevoked(domainHash, msg.sender);
 
         // TODO: what are we missing here?
     }
 
     //TODO: Access Control
-    function reclaimDomain(bytes32 domainNameHash) external {
-        uint256 tokenId = uint256(domainNameHash);
+    function reclaimDomain(bytes32 domainHash) external {
+        uint256 tokenId = uint256(domainHash);
         require(
             znsDomainToken.ownerOf(tokenId) == msg.sender,
             "ZNSEthRegistrar: Not owner of Token"
         );
-        znsRegistry.setDomainOwner(domainNameHash, msg.sender);
+        znsRegistry.updateDomainOwner(domainHash, msg.sender);
 
-        emit DomainReclaimed(domainNameHash, msg.sender);
+        emit DomainReclaimed(domainHash, msg.sender);
     }
 
     /**
      * @notice Set domain data appropriately for a newly registered domain
      *
-     * @param domainNameHash The domain name hash
+     * @param domainHash The domain name hash
      * @param owner The owner of that domain
-     * @param resolver The address of the resolver
      * @param resolverContent The content it resolves to
      */
     function _setDomainData(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address owner,
-        address resolver,
         address resolverContent
     ) internal {
-        // If no resolver is given, require no domain data exists either
-        if (resolver == address(0)) {
-            require(
-                resolverContent == address(0),
-                "ZNSEthRegistrar: Domain content provided without a valid resolver address"
-            );
-            // Set only the domain owner
-            znsRegistry.createDomainRecord(domainNameHash, owner, address(0));
+        // Set only the domain owner if no resolver content is given
+        if (resolverContent != address(0)) {
+            znsRegistry.createDomainRecord(domainHash, owner, address(znsAddressResolver));
+            znsAddressResolver.setAddress(domainHash, resolverContent);
         } else {
-            // If a valid resolver is given, require domain data as well
-            require(
-                resolverContent != address(0),
-                "ZNSEthRegistrar: No domain content provided"
-            );
-
-            // TODO: what is the given Resolver already exists?
-            //  we do not want to re-set it again in Registry storage
-            //  iron this out!
-            znsRegistry.createDomainRecord(domainNameHash, owner, resolver);
-
-            // TODO error: we are using a different Resolver here than the one passed!
-            //  and the one in the call above. This is an error that can cause undiscoverable domains
-            //  If we only have one AddressResolver, we should not take it as an argument
-            //  to the register function at all and assume the one in this storage is being used
-
-            // On the above comment, if we only use this function for newly registered domains
-            // it is always going to be the AddressResolver contract we deployed.
-            // If we create a function to update an existing domain, then we should modify
-            // how this is used, or create a different `updateDomainData` function
-            znsAddressResolver.setAddress(domainNameHash, resolverContent);
+            znsRegistry.createDomainRecord(domainHash, owner, address(0));
         }
     }
 }

@@ -2,8 +2,6 @@
 pragma solidity ^0.8.18;
 
 interface IZNSEthRegistrar {
-    // TODO: what other params do we need here for all the events ??
-
     event DomainRegistered(
         bytes32 indexed domainHash,
         uint256 indexed tokenId,
@@ -27,23 +25,8 @@ interface IZNSEthRegistrar {
 
     function registerDomain(
         string calldata name,
-        address resolver,
         address domainContent
     ) external returns (bytes32);
-
-    // function setSubdomainApproval(
-    //   bytes32 parentHash,
-    //   address user,
-    //   bool status
-    // ) external;
-
-    // function registerSubdomain(
-    //     bytes32 parentHash,
-    //     string calldata name,
-    //     address registrant,
-    //     address resolver,
-    //     address domainAddress
-    // ) external returns (bytes32);
 
     function revokeDomain(bytes32 domainHash) external;
 

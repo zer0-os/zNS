@@ -138,30 +138,9 @@ describe("ZNSEthRegistrar", () => {
       await expect(failTx).to.be.revertedWith("ZNSEthRegistrar: Domain already exists");
     });
 
-    it("Fails when a resolver is given without an address to resolve to", async () => {
+    it("Successfully registers a domain without resolver content", async () => {
       const tx = zns.registrar.connect(user).registerDomain(
         defaultDomain,
-        zns.addressResolver.address,
-        ethers.constants.AddressZero
-      );
-
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided");
-    });
-
-    it("Fails when a resolution address is given but not a resolver", async () => {
-      const tx = zns.registrar.connect(user).registerDomain(
-        defaultDomain,
-        ethers.constants.AddressZero,
-        zns.registrar.address // Content to resolve to
-      );
-
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address");
-    });
-
-    it("Successfully registers a domain without a resolver or resolver content", async () => {
-      const tx = zns.registrar.connect(user).registerDomain(
-        defaultDomain,
-        ethers.constants.AddressZero,
         ethers.constants.AddressZero,
       );
 
@@ -435,7 +414,7 @@ describe("ZNSEthRegistrar", () => {
       // check operator access to the revoked domain
       const tx2 = zns.registry
         .connect(operator)
-        .setDomainOwner(
+        .updateDomainOwner(
           domainHash,
           operator.address
         );
@@ -443,7 +422,7 @@ describe("ZNSEthRegistrar", () => {
 
       const tx3 = zns.registry
         .connect(operator)
-        .setDomainRecord(
+        .updateDomainRecord(
           domainHash,
           user.address,
           operator.address
@@ -452,7 +431,7 @@ describe("ZNSEthRegistrar", () => {
 
       const tx4 = zns.registry
         .connect(operator)
-        .setDomainResolver(
+        .updateDomainResolver(
           domainHash,
           zeroVault.address
         );
