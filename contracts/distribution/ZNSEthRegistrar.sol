@@ -18,22 +18,22 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
 
 
     mapping(bytes32 parentDomainHash =>
-      mapping(address user => bool status)) public subdomainApprovals;
+        mapping(address user => bool status)) public subdomainApprovals;
 
     modifier onlyNameOwner(bytes32 domainHash) {
-      require(
-        msg.sender == znsRegistry.getDomainOwner(domainHash),
-        "ZNSEthRegistrar: Not the Owner of the Name"
-      );
-      _;
+        require(
+            msg.sender == znsRegistry.getDomainOwner(domainHash),
+            "ZNSEthRegistrar: Not the Owner of the Name"
+        );
+        _;
     }
 
     modifier onlyTokenOwner(bytes32 domainHash) {
-      require(
-        msg.sender == znsDomainToken.ownerOf(uint256(domainHash)),
-        "ZNSEthRegistrar: Not the owner of the Token"
-      );
-      _;
+        require(
+            msg.sender == znsDomainToken.ownerOf(uint256(domainHash)),
+            "ZNSEthRegistrar: Not the owner of the Token"
+        );
+        _;
     }
 
     /**
@@ -41,18 +41,18 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
      * for registering ZNS domains and subdomains
      */
     constructor(
-      address accessController_,
-      address znsRegistry_,
-      address znsTreasury_,
-      address znsDomainToken_,
-      address znsAddressResolver_
+        address accessController_,
+        address znsRegistry_,
+        address znsTreasury_,
+        address znsDomainToken_,
+        address znsAddressResolver_
     ) {
-      _setAccessController(accessController_);
-      // TODO AC: should we call protected functions in the constructor/initialize?
-      setZnsRegistry(znsRegistry_);
-      setZnsTreasury(znsTreasury_);
-      setZnsDomainToken(znsDomainToken_);
-      setZnsAddressResolver(znsAddressResolver_);
+        _setAccessController(accessController_);
+        // TODO AC: should we call protected functions in the constructor/initialize?
+        setZnsRegistry(znsRegistry_);
+        setZnsTreasury(znsTreasury_);
+        setZnsDomainToken(znsDomainToken_);
+        setZnsAddressResolver(znsAddressResolver_);
     }
 
     /**
@@ -62,17 +62,17 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
      * @param domainAddress Address for the resolver to return when requested (optional, send 0x0 if not needed)
      */
     function registerRootDomain(
-      string calldata name,
-      address resolver,
-      address domainAddress
+        string calldata name,
+        address resolver,
+        address domainAddress
     ) external override returns (bytes32) {
-      require(bytes(name).length != 0, "ZNSEthRegistrar: Domain Name not provided");
+        require(bytes(name).length != 0, "ZNSEthRegistrar: Domain Name not provided");
 
         // To not repeat external calls, we load into memory
         bytes32 rootHash = znsRegistry.ROOT_HASH();
 
-      // Create hash for given domain name
-      bytes32 domainHash = hashWithParent(rootHash, name);
+        // Create hash for given domain name
+        bytes32 domainHash = hashWithParent(rootHash, name);
 
         require(
             !znsRegistry.exists(domainHash),
@@ -96,14 +96,14 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
             domainAddress
         );
 
-      emit DomainRegistered(
-        rootHash,
-        domainHash,
-        tokenId,
-        name,
-        msg.sender,
-        resolver
-      );
+        emit DomainRegistered(
+            rootHash,
+            domainHash,
+            tokenId,
+            name,
+            msg.sender,
+            resolver
+        );
 
         return domainHash;
     }
@@ -115,23 +115,23 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
      * @param status The status of this user's approval
      */
     function setSubdomainApproval(
-      bytes32 parentHash,
-      address user,
-      bool status
+        bytes32 parentHash,
+        address user,
+        bool status
     ) public override onlyNameOwner(parentHash) {
-      subdomainApprovals[parentHash][user] = status;
+        subdomainApprovals[parentHash][user] = status;
 
         emit SubdomainApprovalSet(parentHash, user, status);
     }
 
     function registerSubdomain(
-      bytes32 parentDomainHash,
-      string calldata name,
-      address registrant,
-      address resolver,
-      address domainAddress
+        bytes32 parentDomainHash,
+        string calldata name,
+        address registrant,
+        address resolver,
+        address domainAddress
     ) external override returns (bytes32) {
-      require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
+        require(bytes(name).length != 0, "ZNSEthRegistrar: No subdomain name");
 
         bytes32 domainHash = hashWithParent(parentDomainHash, name);
 
@@ -193,70 +193,70 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     onlyNameOwner(domainHash)
     onlyTokenOwner(domainHash)
     {
-      uint256 tokenId = uint256(domainHash);
-      znsDomainToken.revoke(tokenId);
-      znsTreasury.unstakeForDomain(domainHash, msg.sender);
-      znsRegistry.deleteRecord(domainHash);
+        uint256 tokenId = uint256(domainHash);
+        znsDomainToken.revoke(tokenId);
+        znsTreasury.unstakeForDomain(domainHash, msg.sender);
+        znsRegistry.deleteRecord(domainHash);
 
-      emit DomainRevoked(domainHash, msg.sender);
+        emit DomainRevoked(domainHash, msg.sender);
     }
 
     function reclaimDomain(bytes32 domainHash) external override onlyTokenOwner(domainHash) {
-      znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
+        znsRegistry.setSubdomainOwner(znsRegistry.ROOT_HASH(), domainHash, msg.sender);
 
-      emit DomainReclaimed(domainHash, msg.sender);
+        emit DomainReclaimed(domainHash, msg.sender);
     }
 
     function hashWithParent(
-      bytes32 parentHash,
-      string calldata name
+        bytes32 parentHash,
+        string calldata name
     ) public pure override returns (bytes32) {
-      return keccak256(
-        abi.encodePacked(
-          parentHash,
-          keccak256(bytes(name))
-        )
-      );
+        return keccak256(
+            abi.encodePacked(
+                parentHash,
+                keccak256(bytes(name))
+            )
+        );
     }
 
     function setZnsRegistry(address znsRegistry_) public override onlyRole(ADMIN_ROLE) {
-      require(
-        znsRegistry_ != address(0),
-        "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
-      );
-      znsRegistry = IZNSRegistry(znsRegistry_);
+        require(
+            znsRegistry_ != address(0),
+            "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
+        );
+        znsRegistry = IZNSRegistry(znsRegistry_);
 
-      emit ZnsRegistrySet(znsRegistry_);
+        emit ZnsRegistrySet(znsRegistry_);
     }
 
     function setZnsTreasury(address znsTreasury_) public override onlyRole(ADMIN_ROLE) {
-      require(
-        znsTreasury_ != address(0),
-        "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
-      );
-      znsTreasury = IZNSTreasury(znsTreasury_);
+        require(
+            znsTreasury_ != address(0),
+            "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
+        );
+        znsTreasury = IZNSTreasury(znsTreasury_);
 
-      emit ZnsTreasurySet(znsTreasury_);
+        emit ZnsTreasurySet(znsTreasury_);
     }
 
     function setZnsDomainToken(address znsDomainToken_) public override onlyRole(ADMIN_ROLE) {
-      require(
-        znsDomainToken_ != address(0),
-        "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
-      );
-      znsDomainToken = IZNSDomainToken(znsDomainToken_);
+        require(
+            znsDomainToken_ != address(0),
+            "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
+        );
+        znsDomainToken = IZNSDomainToken(znsDomainToken_);
 
-      emit ZnsDomainTokenSet(znsDomainToken_);
+        emit ZnsDomainTokenSet(znsDomainToken_);
     }
 
     function setZnsAddressResolver(address znsAddressResolver_) public override onlyRole(ADMIN_ROLE) {
-      require(
-        znsAddressResolver_ != address(0),
-        "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
-      );
-      znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
+        require(
+            znsAddressResolver_ != address(0),
+            "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
+        );
+        znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
 
-      emit ZnsAddressResolverSet(znsAddressResolver_);
+        emit ZnsAddressResolverSet(znsAddressResolver_);
     }
 
     function setAccessController(address accessController_)
@@ -264,21 +264,21 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     override(AccessControlled, IZNSEthRegistrar)
     onlyRole(ADMIN_ROLE)
     {
-      _setAccessController(accessController_);
+        _setAccessController(accessController_);
     }
 
     function _setSubdomainData(
-      bytes32 parentDomainHash,
-      bytes32 domainHash,
-      address owner,
-      address resolver,
-      address domainAddress
+        bytes32 parentDomainHash,
+        bytes32 domainHash,
+        address owner,
+        address resolver,
+        address domainAddress
     ) internal {
         // If no resolver is given, require no domain data exists either
         if (resolver == address(0)) {
             require(
-              domainAddress == address(0),
-              "ZNSEthRegistrar: Domain content provided without a valid resolver address"
+                domainAddress == address(0),
+                "ZNSEthRegistrar: Domain content provided without a valid resolver address"
             );
             // Set only the domain owner
             // TODO: rework these calls when Registry ABI has been changed
@@ -286,17 +286,17 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         } else {
             // If a valid resolver is given, require domain data as well
             require(
-              domainAddress != address(0),
-              "ZNSEthRegistrar: No domain content provided"
+                domainAddress != address(0),
+                "ZNSEthRegistrar: No domain content provided"
             );
             // TODO: what if the given Resolver already exists?
             //  we do not want to re-set it again in Registry storage
             //  iron this out!
             znsRegistry.setSubdomainRecord(
-              parentDomainHash,
-              domainHash,
-              owner,
-              resolver
+                parentDomainHash,
+                domainHash,
+                owner,
+                resolver
             );
             // TODO error: we are using a different Resolver here than the one passed!
             //  and the one in the call above. This is an error that can cause undiscoverable domains

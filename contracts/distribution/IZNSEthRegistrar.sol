@@ -57,8 +57,8 @@ interface IZNSEthRegistrar {
     function reclaimDomain(bytes32 domainHash) external;
 
     function hashWithParent(
-      bytes32 parentHash,
-      string calldata name
+        bytes32 parentHash,
+        string calldata name
     ) external pure returns (bytes32);
 
     function setZnsRegistry(address znsRegistry_) external;
@@ -69,5 +69,5 @@ interface IZNSEthRegistrar {
 
     function setZnsAddressResolver(address znsAddressResolver_) external;
 
-  function setAccessController(address accessController_) external;
+    function setAccessController(address accessController_) external;
 }

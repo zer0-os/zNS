@@ -10,10 +10,10 @@ interface IZNSTreasury {
      * @param amount The amount they are depositing
      */
     event StakeDeposited(
-      bytes32 indexed domainHash,
-      string domainName,
-      address indexed depositor,
-      uint256 indexed amount
+        bytes32 indexed domainHash,
+        string domainName,
+        address indexed depositor,
+        uint256 indexed amount
     );
 
     /**

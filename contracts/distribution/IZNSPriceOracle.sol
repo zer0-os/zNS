@@ -61,9 +61,9 @@ interface IZNSPriceOracle {
     }
 
     function initialize(
-      address accessController_,
-      PriceParams calldata priceConfig_,
-      uint256 regFeePercentage_
+        address accessController_,
+        PriceParams calldata priceConfig_,
+        uint256 regFeePercentage_
     ) external;
 
     /**
@@ -72,12 +72,12 @@ interface IZNSPriceOracle {
      * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
      */
     function getPrice(
-      string calldata name,
-      bool isRootDomain
+        string calldata name,
+        bool isRootDomain
     ) external view returns (
-      uint256 totalPrice,
-      uint256 domainPrice,
-      uint256 fee
+        uint256 totalPrice,
+        uint256 domainPrice,
+        uint256 fee
     );
 
     /**
