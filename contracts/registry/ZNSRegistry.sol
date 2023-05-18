@@ -159,7 +159,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         address resolver
     ) external onlyRegistrar {
         _setDomainOwner(domainNameHash, owner);
-        _setDomainResolver(domainNameHash, resolver);
+        
+        // We allow creation of partial domains with no resolver address
+        if (resolver != address(0)) {
+            _setDomainResolver(domainNameHash, resolver);
+        }
         
         emit DomainRecordCreated(domainNameHash, owner, resolver);
     }
@@ -183,8 +187,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         emit DomainRecordSet(domainNameHash, owner, resolver);
     }
 
-    // TODO: review and remove all non-essential function when working
-    //  on the deletion of subdomains and/or reworking the Registry API
     /**
      * @notice Update a domain's owner
      *

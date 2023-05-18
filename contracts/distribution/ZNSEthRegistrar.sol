@@ -9,7 +9,7 @@ import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
 import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
 import {StringUtils} from "../utils/StringUtils.sol";
 
-contract ZNSEthRegistrar {
+contract ZNSEthRegistrar is IZNSEthRegistrar {
     IZNSRegistry public znsRegistry;
     IZNSTreasury public znsTreasury;
     IZNSDomainToken public znsDomainToken;
@@ -82,7 +82,7 @@ contract ZNSEthRegistrar {
 
         _setDomainData(domainNameHash, msg.sender, resolver, resolverContent);
 
-        // emit DomainRegistered(domainNameHash, tokenId, name, msg.sender, resolver);
+        emit DomainRegistered(domainNameHash, tokenId, name, msg.sender, resolver);
 
         return domainNameHash;
     }
@@ -99,7 +99,7 @@ contract ZNSEthRegistrar {
         znsTreasury.unstakeForDomain(domainNameHash, msg.sender);
         znsRegistry.deleteRecord(domainNameHash);
 
-        // emit DomainRevoked(domainNameHash, msg.sender);
+        emit DomainRevoked(domainNameHash, msg.sender);
 
         // TODO: what are we missing here?
     }
@@ -113,7 +113,7 @@ contract ZNSEthRegistrar {
         );
         znsRegistry.setDomainOwner(domainNameHash, msg.sender);
 
-        // emit DomainReclaimed(domainNameHash, msg.sender);
+        emit DomainReclaimed(domainNameHash, msg.sender);
     }
 
     /**
@@ -137,8 +137,7 @@ contract ZNSEthRegistrar {
                 "ZNSEthRegistrar: Domain content provided without a valid resolver address"
             );
             // Set only the domain owner
-            // TODO: rework these calls when Registry ABI has been changed
-            znsRegistry.setDomainOwner(domainNameHash, owner);
+            znsRegistry.createDomainRecord(domainNameHash, owner, address(0));
         } else {
             // If a valid resolver is given, require domain data as well
             require(
@@ -149,7 +148,7 @@ contract ZNSEthRegistrar {
             // TODO: what is the given Resolver already exists?
             //  we do not want to re-set it again in Registry storage
             //  iron this out!
-            znsRegistry.setDomainRecord(domainNameHash, owner, resolver);
+            znsRegistry.createDomainRecord(domainNameHash, owner, resolver);
 
             // TODO error: we are using a different Resolver here than the one passed!
             //  and the one in the call above. This is an error that can cause undiscoverable domains

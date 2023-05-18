@@ -19,10 +19,6 @@
       }
     ],
     "constructor-syntax": "warn",
-    "named-parameters-mapping": "error",
-    "indent": [
-      "warn",
-      4
-    ]
+    "named-parameters-mapping": "error"
   }
 }

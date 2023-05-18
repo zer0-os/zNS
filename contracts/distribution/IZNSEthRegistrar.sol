@@ -5,9 +5,8 @@ interface IZNSEthRegistrar {
     // TODO: what other params do we need here for all the events ??
 
     event DomainRegistered(
-        bytes32 indexed parentHash,
         bytes32 indexed domainHash,
-        uint256 tokenId,
+        uint256 indexed tokenId,
         string name,
         address indexed registrant,
         address resolver
@@ -26,7 +25,7 @@ interface IZNSEthRegistrar {
         address indexed registrant
     );
 
-    function registerRootDomain(
+    function registerDomain(
         string calldata name,
         address resolver,
         address domainContent
@@ -38,13 +37,13 @@ interface IZNSEthRegistrar {
     //   bool status
     // ) external;
 
-    function registerSubdomain(
-        bytes32 parentHash,
-        string calldata name,
-        address registrant,
-        address resolver,
-        address domainAddress
-    ) external returns (bytes32);
+    // function registerSubdomain(
+    //     bytes32 parentHash,
+    //     string calldata name,
+    //     address registrant,
+    //     address resolver,
+    //     address domainAddress
+    // ) external returns (bytes32);
 
     function revokeDomain(bytes32 domainHash) external;
 
