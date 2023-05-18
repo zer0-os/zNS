@@ -72,7 +72,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     bytes32 rootHash = znsRegistry.ROOT_HASH();
 
     // Create hash for given domain name
-    // TODO: remove hashing with the rootHash and remove root hash completel!
     bytes32 domainHash = hashWithParent(rootHash, name);
 
     require(
@@ -97,8 +96,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
       domainAddress
     );
 
-    // TODO Is it useful to register with a specific ROOT_HASH
-    // value vs. just address(0)? What are pros and cons?
     emit DomainRegistered(
       rootHash,
       domainHash,
@@ -202,8 +199,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     znsRegistry.deleteRecord(domainHash);
 
     emit DomainRevoked(domainHash, msg.sender);
-
-    // TODO: what are we missing here?
   }
 
   function reclaimDomain(bytes32 domainHash) external override onlyTokenOwner(domainHash) {

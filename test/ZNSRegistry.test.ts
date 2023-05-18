@@ -9,13 +9,6 @@ import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
 
-/**
- * TODO should we disallow burning the root domain?
- * The process of burning would transfer ownership to the 0x0 address
- * Nobody would be able to successfully mint new subdomaisn in this scenario
- * In the case the `owner` we set in the initializer is an EOA, it's a
- * possibility the account is compromised
- */
 
 describe("ZNSRegistry Tests", () => {
   let deployer : SignerWithAddress;

@@ -25,7 +25,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
    * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
    * @param domainNameHash The identifying hash of a domain's name
    */
-  // TODO:  Remove this when doing access control.
+  // TODO AC:  Remove this when doing access control (or adapt to work the best way here).
   //        A function like that can be created in Registry, but think
   //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
   modifier onlyOwnerOrOperator(bytes32 domainNameHash) {

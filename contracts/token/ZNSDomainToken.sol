@@ -8,7 +8,6 @@ import { IZNSDomainToken } from "./IZNSDomainToken.sol";
  * @title A contract for tokenizing domains under the ZNS Architecture
 */
 contract ZNSDomainToken is ERC721, IZNSDomainToken {
-  // TODO: change for proper name !
   constructor(string memory tokenName, string memory tokenSymbol) ERC721(tokenName, tokenSymbol) {
     authorized[msg.sender] = true;
   }

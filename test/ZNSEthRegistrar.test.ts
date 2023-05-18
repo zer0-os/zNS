@@ -88,6 +88,16 @@ describe("ZNSEthRegistrar", () => {
       ).to.be.revertedWith("ZNSEthRegistrar: Domain Name not provided");
     });
 
+    it("Successfully registers a domain without a resolver or resolver content", async () => {
+      const tx = zns.registrar.connect(user).registerRootDomain(
+        defaultSubdomain,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+      );
+
+      await expect(tx).to.not.be.reverted;
+    });
+
     it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
       const balanceBeforeUser = await zns.zeroToken.balanceOf(user.address);
       const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
@@ -322,7 +332,6 @@ describe("ZNSEthRegistrar", () => {
       await expect(failTx).to.be.revertedWith("ZNSEthRegistrar: Domain already exists");
     });
 
-    // TODO call as mock registrar
     it("Fails when a resolver is given without an address to resolve to", async () => {
       const parentTx = await defaultRootRegistration(deployer, zns, defaultDomain);
       const parentDomainHash = await getDomainHashFromEvent(parentTx);
@@ -338,11 +347,6 @@ describe("ZNSEthRegistrar", () => {
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: No domain content provided");
     });
 
-    // TODO verify costs using a struct or not in price oracle
-    // it("Calls on behalf of a user as a registrar")
-    // it("fails if not approved subdomain creator")
-    // it("immediately revokes subdomain approval after tx")
-
     it("Fails when a resolution address is given but not a resolver", async () => {
       const tx = zns.registrar.connect(user).registerRootDomain(
         defaultDomain,
@@ -351,17 +355,6 @@ describe("ZNSEthRegistrar", () => {
       );
 
       await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Domain content provided without a valid resolver address");
-    });
-
-    it("Successfully registers a domain without a resolver or resolver content", async () => {
-      // TODO: fix or move this test. it's under a subdomain describe
-      const tx = zns.registrar.connect(user).registerRootDomain(
-        defaultSubdomain,
-        ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
-      );
-
-      await expect(tx).to.not.be.reverted;
     });
 
     it("Records the correct subdomain hash", async () => {

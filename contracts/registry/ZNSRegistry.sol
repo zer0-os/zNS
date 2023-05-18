@@ -103,9 +103,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     return records[domainNameHash];
   }
 
-  // TODO add access control. do we need to revoke operator as well?
-  //  Test if after revocation an operator can do anything to verify
-  //  we don't need to clear them.
   function deleteRecord(bytes32 domainNameHash) external override {
     //TODO AC: This doesnt work because the znsRegistrar does not pass this validation.
     //  make sure this is protected
