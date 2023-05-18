@@ -6,55 +6,55 @@ import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 
 /**
  * @title A contract for tokenizing domains under the ZNS Architecture
-*/
+ */
 contract ZNSDomainToken is ERC721, IZNSDomainToken {
-  constructor(string memory tokenName, string memory tokenSymbol) ERC721(tokenName, tokenSymbol) {
-    authorized[msg.sender] = true;
-  }
+    constructor(string memory tokenName, string memory tokenSymbol) ERC721(tokenName, tokenSymbol) {
+        authorized[msg.sender] = true;
+    }
 
-  /**
-  * @notice Track authorized users or contracts
-  * TODO access control for the entire system
-  */
-  mapping(address user => bool isAuthorized) public authorized;
+    /**
+    * @notice Track authorized users or contracts
+    * TODO access control for the entire system
+    */
+    mapping(address user => bool isAuthorized) public authorized;
 
-  /**
-  * @notice Restrict a function to only be callable by authorized users
-  */
-  modifier onlyAuthorized() {
-    require(authorized[msg.sender], "ZNS: Not authorized");
-    _;
-  }
+    /**
+    * @notice Restrict a function to only be callable by authorized users
+    */
+    modifier onlyAuthorized() {
+        require(authorized[msg.sender], "ZNS: Not authorized");
+        _;
+    }
 
-  /**
-   * @notice Authorize an address for this contract
-   * @param account The registrar to set
-   */
-  function authorize(address account) external override onlyAuthorized {
-    require(account != address(0), "ZNS: Zero address for authorized account");
+    /**
+     * @notice Authorize an address for this contract
+     * @param account The registrar to set
+     */
+    function authorize(address account) external override onlyAuthorized {
+        require(account != address(0), "ZNS: Zero address for authorized account");
 
-    // Modify the access control for the given address
-    authorized[account] = true;
+        // Modify the access control for the given address
+        authorized[account] = true;
 
-    emit SetAccessAuthorization(account);
-  }
+        emit SetAccessAuthorization(account);
+    }
 
-  /**
-   * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
-   * @dev TODO: Add Access Control
-   * @param to The address that will recieve the newly minted domain token
-   * @param tokenId The TokenId that the caller wishes to mint/register
-   */
-  function register(address to, uint256 tokenId) external override {
-    _safeMint(to, tokenId);
-  }
+    /**
+     * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
+     * @dev TODO: Add Access Control
+     * @param to The address that will recieve the newly minted domain token
+     * @param tokenId The TokenId that the caller wishes to mint/register
+     */
+    function register(address to, uint256 tokenId) external override {
+      _safeMint(to, tokenId);
+    }
 
-  /**
-   * @notice Burns the token with the specified tokenId
-   * @dev TODO: Add Access Control, replace require to also other specific contracts to revoke
-   * @param tokenId The tokenId that the caller wishes to burn/revoke
-   */
-  function revoke(uint256 tokenId) external override onlyAuthorized {
-    _burn(tokenId);
-  }
+    /**
+     * @notice Burns the token with the specified tokenId
+     * @dev TODO: Add Access Control, replace require to also other specific contracts to revoke
+     * @param tokenId The tokenId that the caller wishes to burn/revoke
+     */
+    function revoke(uint256 tokenId) external override onlyAuthorized {
+      _burn(tokenId);
+    }
 }
