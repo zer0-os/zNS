@@ -20,13 +20,14 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 
 export const deployRegistry = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  registrar : SignerWithAddress
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
   const registry = await registryFactory.deploy();
 
   // To set the owner of the zero domain to the deployer
-  await registry.connect(deployer).initialize(deployer.address);
+  await registry.connect(deployer).initialize(registrar.address);
 
   return registry;
 };
@@ -119,7 +120,9 @@ export const deployZNS = async (
   priceConfig = priceConfigDefault,
   zeroVaultAddress = deployer.address
 ) : Promise<ZNSContracts> => {
-  const registry = await deployRegistry(deployer);
+  // Can't set to zero, but registrar address must be given.
+  // Due to order of deployment, add deployer as registrar address for now and change after
+  const registry = await deployRegistry(deployer, deployer);
 
   const domainToken = await deployDomainToken(deployer);
 
@@ -165,6 +168,7 @@ export const deployZNS = async (
   await priceOracle.connect(deployer).setZNSRegistrar(registrar.address);
   await domainToken.connect(deployer).authorize(registrar.address);
   await treasury.connect(deployer).setZNSRegistrar(registrar.address);
+  await registry.connect(deployer).setZNSRegistrar(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give 15 ZERO to the deployer and allowance to the treasury

@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 interface IZNSRegistry {
     /**
-     * @dev The `DomainRecord` struct is meant to hold relevant information
+     * @notice The `DomainRecord` struct is meant to hold relevant information
      * about a domain, such as its owner and resolver.
      */
     struct DomainRecord {
@@ -11,45 +11,59 @@ interface IZNSRegistry {
         address resolver;
     }
     /**
-     * @dev Emit when ownership of a domain is modified
+     * @notice Emit when ownership of a domain is modified
      * @param owner The new domain owner
      * @param domainHash the hash of a domain's name
      */
-    event DomainOwnerSet(address indexed owner, bytes32 domainHash);
+    event DomainOwnerSet(
+        bytes32 domainHash,
+        address indexed owner
+    );
 
     /**
-     * @dev Emit when a domain's resolver is modified
+     * @notice Emit when a domain's resolver is modified
      * @param resolver The new resolver
      * @param domainNameHash the hash of a domain's name
      */
-    event DomainResolverSet(address indexed resolver, bytes32 domainNameHash);
+    event DomainResolverSet(
+        bytes32 domainNameHash,
+        address indexed resolver
+    );
 
     /**
-     * @dev Emit when a domain's record is created
+     * @notice Emit when a domain's record is created
      * @param owner The owner of the domain
      * @param resolver The resolver for the domain
      * @param domainNameHash the hash of a domain's name
      */
     event DomainRecordCreated(
+        bytes32 domainNameHash,
         address indexed owner,
-        address indexed resolver,
-        bytes32 domainNameHash
+        address indexed resolver
     );
 
     /**
-     * @dev Emit when a domain's record is set and all properties are modified
+     * @notice Emit when a domain's record is set and all properties are modified
      * @param owner The owner of the domain
      * @param resolver The resolver for the domain
-     * @param domainNameHash the hash of a domain's name
+     * @param domainNameHash The hash of a domain's name
      */
     event DomainRecordSet(
+        bytes32 domainNameHash,
         address indexed owner,
-        address indexed resolver,
-        bytes32 domainNameHash
+        address indexed resolver
     );
 
     /**
-     * @dev Emit when an owner allows/disallows permissions for an operator
+     * @notice Emit when a record is deleted
+     * @param domainNameHash The hash of a domain's name
+     */
+    event DomainRecordDeleted(
+        bytes32 indexed domainNameHash
+    );
+
+    /**
+     * @notice Emit when an owner allows/disallows permissions for an operator
      * @param owner Owner of the domain in question
      * @param operator User that was allowed/disallowed
      * @param allowed Boolean status of their permission
@@ -61,13 +75,21 @@ interface IZNSRegistry {
     );
 
     /**
-     * @dev Check if a given domain exists
+     * @notice Emit when a new ZNSRegistrar address is set
+     * @param znsRegistrar The new address
+     */
+    event ZNSRegistrarSet(
+        address indexed znsRegistrar
+    );
+
+    /**
+     * @notice Check if a given domain exists
      * @param domainNameHash The hash of a domain's name
      */
     function exists(bytes32 domainNameHash) external view returns (bool);
 
     /**
-     * @dev Checks if provided address is an owner or an operator of the provided domain
+     * @notice Checks if provided address is an owner or an operator of the provided domain
      * @param domainNameHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
@@ -77,7 +99,7 @@ interface IZNSRegistry {
     ) external view returns (bool);
 
     /**
-     * @dev Set an `operator` as `allowed` to give or remove permissions for all
+     * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by `msg.sender`
      *
      * @param operator The account to allow/disallow
@@ -86,7 +108,7 @@ interface IZNSRegistry {
     function setOwnerOperator(address operator, bool allowed) external;
 
     /**
-     * @dev Get a record for a domain
+     * @notice Get a record for a domain
      * @param domainNameHash the hash of a domain's name
      */
     function getDomainRecord(
@@ -94,7 +116,7 @@ interface IZNSRegistry {
     ) external view returns (DomainRecord memory);
 
     /**
-     * @dev Get the owner of the given domain
+     * @notice Get the owner of the given domain
      * @param domainNameHash the hash of a domain's name
      */
     function getDomainOwner(
@@ -102,7 +124,7 @@ interface IZNSRegistry {
     ) external view returns (address);
 
     /**
-     * @dev Get the default resolver for the given domain
+     * @notice Get the default resolver for the given domain
      * @param domainNameHash The hash of a domain's name
      */
     function getDomainResolver(

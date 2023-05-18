@@ -32,7 +32,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
         require(
             isOwnerOrOperator(domainNameHash, msg.sender),
-            "ZNSRegistry: Not Authorized"
+            "ZNSRegistry: Not authorized"
         );
         _;
     }
@@ -54,13 +54,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      */
     function initialize(address znsRegistrar_) public initializer {
         require(
-            znsRegistrar != address(0),
+            znsRegistrar_ != address(0),
             "ZNSRegistry: Registrar can not be 0x0 address"
         );
         znsRegistrar = znsRegistrar_;
-        // TODO use the hash constant here ?
-        // Does it benefit us? is it problematic ?
-        // can people manipulate or own it?
     }
 
     /**
@@ -91,16 +88,17 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param znsRegistrar_ The new ZNSRegistrar
      */
+    function setZNSRegistrar(address znsRegistrar_) public {
     // TODO When we have access control, only be callable by admin!!
-    // function setRegistrar(address znsRegistrar_) public {
-    //     require(
-    //         znsRegistrar_ != address(0),
-    //         "ZNSRegistry: Cannot set Registrar to 0x0"
-    //     );
+        require(
+            znsRegistrar_ != address(0),
+            "ZNSRegistry: Cannot set Registrar to 0x0"
+        );
 
-    //     znsRegistrar = znsRegistrar_;
-    //     // TODO emit RegistrarSet() event
-    // }
+        znsRegistrar = znsRegistrar_;
+
+        emit ZNSRegistrarSet(znsRegistrar_);
+    }
 
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
@@ -159,10 +157,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainNameHash,
         address owner,
         address resolver
-    ) external {
+    ) external onlyRegistrar {
         _setDomainOwner(domainNameHash, owner);
         _setDomainResolver(domainNameHash, resolver);
-        // TODO emit
+        
+        emit DomainRecordCreated(domainNameHash, owner, resolver);
     }
 
     /**
@@ -177,11 +176,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         address owner,
         address resolver
     ) external onlyOwnerOrOperator(domainNameHash) {
-        require(_exists(domainNameHash), "ZNSRegistry: Domain does not exist");
+        // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainNameHash, owner);
         _setDomainResolver(domainNameHash, resolver);
 
-        // TODO emit
+        emit DomainRecordSet(domainNameHash, owner, resolver);
     }
 
     // TODO: review and remove all non-essential function when working
@@ -196,11 +195,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainNameHash,
         address owner
     ) external onlyOwnerOrOperator(domainNameHash) {
-        require(_exists(domainNameHash), "ZNSRegistry: Domain does not exist");
+        // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainNameHash, owner);
 
-        // TODO probably don't need any "domain" functions
-        // emit DomainOwnerSet(owner, domainNameHash);
+        emit DomainOwnerSet(domainNameHash, owner);
     }
 
     /**
@@ -213,10 +211,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainNameHash,
         address resolver
     ) external onlyOwnerOrOperator(domainNameHash) {
-        require(_exists(domainNameHash), "ZNSRegistry: Domain does not exist");
+        // `exists` is checked implicitly through the modifier
         _setDomainResolver(domainNameHash, resolver);
 
-        emit DomainResolverSet(resolver, domainNameHash);
+        emit DomainResolverSet(domainNameHash, resolver);
     }
 
     /**
@@ -228,6 +226,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         // TODO Test if after revocation an operator can do anything to verify
         // we don't need to clear them.
         delete records[domainNameHash];
+
+        emit DomainRecordDeleted(domainNameHash);
     }
 
     /**
@@ -249,7 +249,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param owner The owner to set
      */
     function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
-        require(owner != address(0), "ZNS: Owner can NOT be zero address");
+        require(owner != address(0), "ZNSRegistry: Owner cannot be zero address");
         records[domainNameHash].owner = owner;
     }
 
