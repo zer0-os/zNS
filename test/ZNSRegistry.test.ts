@@ -18,20 +18,17 @@ require("@nomicfoundation/hardhat-chai-matchers");
  */
 
 
-// TODO add `false` to this rule for higher level eslint config
-/* eslint-disable @typescript-eslint/type-annotation-spacing */
-
 describe("ZNSRegistry Tests", () => {
-  let deployer: SignerWithAddress;
-  let operator: SignerWithAddress;
-  let randomUser: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let operator : SignerWithAddress;
+  let randomUser : SignerWithAddress;
 
   // An address will be all that's needed to test the Registry
-  let mockResolver: SignerWithAddress;
-  let mockRegistrar: SignerWithAddress;
+  let mockResolver : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
 
-  let registry: ZNSRegistry;
-  let wilderDomainHash: string;
+  let registry : ZNSRegistry;
+  let wilderDomainHash : string;
 
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver, mockRegistrar] = await hre.ethers.getSigners();
