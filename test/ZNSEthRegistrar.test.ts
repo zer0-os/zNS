@@ -15,7 +15,6 @@ import { ZNSEthRegistrar__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
-const { constants: { AddressZero } } = ethers;
 
 describe("ZNSEthRegistrar", () => {
   let deployer : SignerWithAddress;

@@ -88,7 +88,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param znsRegistrar_ The new ZNSRegistrar
      */
-    function setZNSRegistrar(address znsRegistrar_) external {
+    function setZNSRegistrar(address znsRegistrar_) external override {
     // TODO When we have access control, only be callable by admin!!
         require(
             znsRegistrar_ != address(0),
@@ -179,7 +179,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         address owner,
         address resolver
     // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolver);
@@ -195,7 +195,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner
         // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
@@ -219,7 +219,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainHash) external onlyRegistrar {
+    function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);
