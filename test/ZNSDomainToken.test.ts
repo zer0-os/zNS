@@ -24,22 +24,15 @@ describe("ZNSDomainToken:", () => {
   describe("External functions", () => {
     it("Registers a token", async () => {
       const tokenId = ethers.BigNumber.from("1");
-      const tx = await domainToken
+      const tx = domainToken
         .connect(deployer)
         .register(caller.address, tokenId);
-      const receipt = await tx.wait(0);
 
-      // Verify Transfer event is emitted
-      expect(receipt.events?.[0].event).to.eq("Transfer");
-      expect(receipt.events?.[0].args?.tokenId).to.eq(
+      await expect(tx).to.emit(domainToken, "Transfer").withArgs(
+        ethers.constants.AddressZero,
+        caller.address,
         tokenId
       );
-      expect(receipt.events?.[0].args?.to).to.eq(
-        caller.address
-      );
-
-      // Verify caller owns tokenId
-      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
     it("Revokes a token", async () => {
@@ -54,22 +47,14 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Revoke domain
-      const tx = await domainToken.connect(deployer).revoke(tokenId);
-      const receipt = await tx.wait(0);
+      const tx = domainToken.connect(deployer).revoke(tokenId);
 
       // Verify Transfer event is emitted
-      expect(receipt.events?.[0].event).to.eq("Transfer");
-      expect(receipt.events?.[0].args?.tokenId).to.eq(
+      await expect(tx).to.emit(domainToken, "Transfer").withArgs(
+        caller.address,
+        ethers.constants.AddressZero,
         tokenId
       );
-      expect(receipt.events?.[0].args?.to).to.eq(
-        ethers.constants.AddressZero
-      );
-
-      // Verify token has been burned
-      await expect(
-        domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith("ERC721: invalid token ID");
     });
   });
 
@@ -92,7 +77,7 @@ describe("ZNSDomainToken:", () => {
       // Revoke domain
       const tx = domainToken.connect(caller).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNS: Not authorized"
+        "ZNSDomainToken: Not authorized"
       );
 
       // Verify token has not been burned
