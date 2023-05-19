@@ -16,7 +16,7 @@ interface IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     event DomainOwnerSet(
-        bytes32 domainHash,
+        bytes32 indexed domainHash,
         address indexed owner
     );
 
@@ -26,7 +26,7 @@ interface IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     event DomainResolverSet(
-        bytes32 domainHash,
+        bytes32 indexed domainHash,
         address indexed resolver
     );
 
