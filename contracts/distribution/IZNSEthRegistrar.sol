@@ -24,6 +24,7 @@ interface IZNSEthRegistrar {
 
     event DomainReclaimed(bytes32 indexed domainHash, address indexed registrant);
 
+    // TODO AC: remove ZNS from names here and in state vars
     event ZnsRegistrySet(address znsRegistry);
 
     event ZnsTreasurySet(address znsTreasury);
