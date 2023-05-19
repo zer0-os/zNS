@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {ERC1967UpgradeUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IZNSRegistry} from "./IZNSRegistry.sol";
+import { ERC1967UpgradeUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { IZNSRegistry } from "./IZNSRegistry.sol";
 
 contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     /**
@@ -11,10 +11,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      */
     address public znsRegistrar;
     /**
-     * @notice Mapping `domainNameHash` to `DomainRecord` struct to hold information
+     * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
      */
-    mapping(bytes32 domainNameHash => DomainRecord domainRecord)
+    mapping(bytes32 domainHash => DomainRecord domainRecord)
         private records;
 
     /**
@@ -27,11 +27,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      */
-    modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
+    modifier onlyOwnerOrOperator(bytes32 domainHash) {
         require(
-            isOwnerOrOperator(domainNameHash, msg.sender),
+            isOwnerOrOperator(domainHash, msg.sender),
             "ZNSRegistry: Not authorized"
         );
         _;
@@ -63,23 +63,23 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     /**
      * @notice Check if a given domain exists
      *
-     * @param domainNameHash The hash of a domain's name
+     * @param domainHash The hash of a domain's name
      */
-    function exists(bytes32 domainNameHash) external view returns (bool) {
-        return _exists(domainNameHash);
+    function exists(bytes32 domainHash) external view returns (bool) {
+        return _exists(domainHash);
     }
 
     /**
      * @notice Checks if provided address is an owner or an operator of the provided domain
      *
-     * @param domainNameHash The hash of a domain's name
+     * @param domainHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
     function isOwnerOrOperator(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address candidate
     ) public view returns (bool) {
-        address owner = records[domainNameHash].owner;
+        address owner = records[domainHash].owner;
         return candidate == owner || operators[owner][candidate];
     }
 
@@ -116,129 +116,121 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     /**
      * @notice Get a record for a domain
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
-        bytes32 domainNameHash
+        bytes32 domainHash
     ) external view returns (DomainRecord memory) {
-        return records[domainNameHash];
+        return records[domainHash];
     }
 
     /**
      * @notice Get the owner of the given domain
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
-        bytes32 domainNameHash
+        bytes32 domainHash
     ) external view returns (address) {
-        return records[domainNameHash].owner;
+        return records[domainHash].owner;
     }
 
     /**
      * @notice Get the default resolver for the given domain
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
-        bytes32 domainNameHash
+        bytes32 domainHash
     ) external view returns (address) {
-        return records[domainNameHash].resolver;
+        return records[domainHash].resolver;
     }
 
     /**
      * @notice Create a new domain record
      *
-     * @param domainNameHash The hash of the domain name
+     * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
      * @param resolver The resolver of the new domain
      */
     function createDomainRecord(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address owner,
         address resolver
     ) external onlyRegistrar {
-        _setDomainOwner(domainNameHash, owner);
-        
+        _setDomainOwner(domainHash, owner);
+
         // We allow creation of partial domains with no resolver address
         if (resolver != address(0)) {
-            _setDomainResolver(domainNameHash, resolver);
+            _setDomainResolver(domainHash, resolver);
         }
-        
-        emit DomainRecordCreated(domainNameHash, owner, resolver);
     }
 
     /**
      * @notice Update an existing domain record's owner or resolver
      *
-     * @param domainNameHash The hash of the domain
+     * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
      */
     function updateDomainRecord(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address owner,
         address resolver
-    ) external onlyOwnerOrOperator(domainNameHash) {
+    // TODO AC: make this so only owner can change the owner and not the operator!
+    ) external onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
-        _setDomainOwner(domainNameHash, owner);
-        _setDomainResolver(domainNameHash, resolver);
-
-        emit DomainRecordSet(domainNameHash, owner, resolver);
+        _setDomainOwner(domainHash, owner);
+        _setDomainResolver(domainHash, resolver);
     }
 
     /**
      * @notice Update a domain's owner
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
     function updateDomainOwner(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address owner
-    ) external onlyOwnerOrOperator(domainNameHash) {
+        // TODO AC: make this so only owner can change the owner and not the operator!
+    ) external onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
-        _setDomainOwner(domainNameHash, owner);
-
-        emit DomainOwnerSet(domainNameHash, owner);
+        _setDomainOwner(domainHash, owner);
     }
 
     /**
      * @notice Update the domain's default resolver
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      * @param resolver The new default resolver
      */
     function updateDomainResolver(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address resolver
-    ) external onlyOwnerOrOperator(domainNameHash) {
+    ) external onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
-        _setDomainResolver(domainNameHash, resolver);
-
-        emit DomainResolverSet(domainNameHash, resolver);
+        _setDomainResolver(domainHash, resolver);
     }
 
     /**
      * @notice Delete a domain's record
      *
-     * @param domainNameHash The hash of the domain name
+     * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainNameHash) external onlyRegistrar {
-        // TODO Test if after revocation an operator can do anything to verify
-        // we don't need to clear them.
-        delete records[domainNameHash];
+    function deleteRecord(bytes32 domainHash) external onlyRegistrar {
+        delete records[domainHash];
 
-        emit DomainRecordDeleted(domainNameHash);
+        emit DomainRecordDeleted(domainHash);
     }
 
     /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      */
-    function _exists(bytes32 domainNameHash) internal view returns (bool) {
-        return records[domainNameHash].owner != address(0);
+    function _exists(bytes32 domainHash) internal view returns (bool) {
+        return records[domainHash].owner != address(0);
     }
 
     /**
@@ -247,32 +239,26 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * because we are not currently allowing reselling of domains and want
      * to enable burning them instead by transferring ownership to `address(0)`
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      * @param owner The owner to set
      */
-    function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
+    function _setDomainOwner(bytes32 domainHash, address owner) internal {
         require(owner != address(0), "ZNSRegistry: Owner cannot be zero address");
-        records[domainNameHash].owner = owner;
+        records[domainHash].owner = owner;
+        emit DomainOwnerSet(domainHash, owner);
     }
 
     /**
      * @notice Set a domain's resolver
      *
-     * @param domainNameHash the hash of a domain's name
+     * @param domainHash the hash of a domain's name
      * @param resolver The resolver to set
      */
     function _setDomainResolver(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address resolver
     ) internal {
-        // TODO Allow setting resolver to 0?
-        // If owner is 0, it is a burned domain
-        // If resolver is zero, nothing happens
-        require(
-            resolver != address(0),
-            "ZNSRegistry: Resolver cannot be zero address"
-        );
-
-        records[domainNameHash].resolver = resolver;
+        records[domainHash].resolver = resolver;
+        emit DomainResolverSet(domainHash, resolver);
     }
 }

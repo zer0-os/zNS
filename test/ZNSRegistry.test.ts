@@ -241,13 +241,13 @@ describe("ZNSRegistry Tests", () => {
       await expect(tx).to.be.revertedWith("ZNSRegistry: Owner cannot be zero address");
     });
 
-    it("Cannot set a domain record if the resolver is zero address", async () => {
+    it("Can set a domain record if the resolver is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = registry.updateDomainRecord(domainHash, mockResolver.address, ethers.constants.AddressZero);
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Resolver cannot be zero address");
+      await expect(tx).to.be.fulfilled;
     });
 
     it("Cannot set a domain owner if owner is zero address", async () => {
@@ -261,15 +261,17 @@ describe("ZNSRegistry Tests", () => {
       await expect(tx).to.be.revertedWith("ZNSRegistry: Owner cannot be zero address");
     });
 
-    it("Cannot set a domain resolver if resolver is zero address", async () => {
-      const tx = registry
+    it("Can set a domain resolver if resolver is zero address", async () => {
+      await registry
         .connect(deployer)
         .updateDomainResolver(
           wilderDomainHash,
           ethers.constants.AddressZero
         );
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Resolver cannot be zero address");
+      const zeroResolver = await registry.getDomainResolver(wilderDomainHash);
+
+      expect(zeroResolver).to.be.eq(ethers.constants.AddressZero);
     });
 
     it("Fails to set a record when caller is not owner or operator", async () => {
@@ -330,30 +332,48 @@ describe("ZNSRegistry Tests", () => {
       );
     });
 
-    it("Emits an event when a new domain is created", async () => {
+    it("Emits events when a new domain is created", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const tx = registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = await registry
+        .connect(mockRegistrar)
+        .createDomainRecord(
+          domainHash,
+          deployer.address,
+          mockResolver.address
+        );
+      const rec = await tx.wait(0);
+      const [ ownerEvent, resolverEvent ] = rec.events ?? [];
+      expect(ownerEvent.event).to.be.eq("DomainOwnerSet");
+      expect(ownerEvent.args?.[0]).to.be.eq(domainHash);
+      expect(ownerEvent.args?.[1]).to.be.eq(deployer.address);
 
-      await expect(tx).to.emit(registry, "DomainRecordCreated").withArgs(
-        domainHash,
-        deployer.address,
-        mockResolver.address,
-      );
+      expect(resolverEvent.event).to.be.eq("DomainResolverSet");
+      expect(resolverEvent.args?.[0]).to.be.eq(domainHash);
+      expect(resolverEvent.args?.[1]).to.be.eq(mockResolver.address);
     });
 
-    it("Emits an event when an existing domain is set", async () => {
+    it("Emits an event when an existing domain is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(deployer).updateDomainRecord(domainHash, mockResolver.address, deployer.address);
+      const tx = await registry
+        .connect(deployer)
+        .updateDomainRecord(
+          domainHash,
+          mockResolver.address,
+          deployer.address
+        );
 
+      const rec = await tx.wait(0);
+      const [ ownerEvent, resolverEvent ] = rec.events ?? [];
+      expect(ownerEvent.event).to.be.eq("DomainOwnerSet");
+      expect(ownerEvent.args?.[0]).to.be.eq(domainHash);
+      expect(ownerEvent.args?.[1]).to.be.eq(mockResolver.address);
 
-      await expect(tx).to.emit(registry, "DomainRecordSet").withArgs(
-        domainHash,
-        mockResolver.address,
-        deployer.address,
-      );
+      expect(resolverEvent.event).to.be.eq("DomainResolverSet");
+      expect(resolverEvent.args?.[0]).to.be.eq(domainHash);
+      expect(resolverEvent.args?.[1]).to.be.eq(deployer.address);
     });
 
     it("Emits an event when a domain's owner is set", async () => {
@@ -361,7 +381,6 @@ describe("ZNSRegistry Tests", () => {
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = registry.connect(deployer).updateDomainOwner(domainHash, mockResolver.address);
-
 
       await expect(tx).to.emit(registry, "DomainOwnerSet").withArgs(
         domainHash,

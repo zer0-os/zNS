@@ -1,26 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {IZNSEthRegistrar} from "./IZNSEthRegistrar.sol";
-import {IZNSRegistry} from "../registry/IZNSRegistry.sol";
-import {IZNSTreasury} from "./IZNSTreasury.sol";
-import {IZNSDomainToken} from "../token/IZNSDomainToken.sol";
-import {IZNSAddressResolver} from "../resolver/IZNSAddressResolver.sol";
-import {IZNSPriceOracle} from "./IZNSPriceOracle.sol";
-// import {StringUtils} from "../utils/StringUtils.sol";
+import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
+import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+import { IZNSTreasury } from "./IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
+import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 
 contract ZNSEthRegistrar is IZNSEthRegistrar {
+
     IZNSRegistry public znsRegistry;
     IZNSTreasury public znsTreasury;
     IZNSDomainToken public znsDomainToken;
     IZNSAddressResolver public znsAddressResolver;
     IZNSPriceOracle public znsPriceOracle;
 
-    // To account for unicode strings, we need a custom length library
-    // using StringUtils for string;
-
-    mapping(bytes32 parentdomainHash => mapping(address user => bool status))
+    mapping(bytes32 parentDomainHash => mapping(address user => bool status))
         public subdomainApprovals;
+
 
     modifier onlyOwner(bytes32 domainHash) {
         require(
@@ -94,11 +92,9 @@ contract ZNSEthRegistrar is IZNSEthRegistrar {
         znsRegistry.deleteRecord(domainHash);
 
         emit DomainRevoked(domainHash, msg.sender);
-
-        // TODO: what are we missing here?
     }
 
-    //TODO: Access Control
+    // TODO: Access Control
     function reclaimDomain(bytes32 domainHash) external {
         uint256 tokenId = uint256(domainHash);
         require(

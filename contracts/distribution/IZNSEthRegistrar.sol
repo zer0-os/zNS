@@ -10,12 +10,6 @@ interface IZNSEthRegistrar {
         address resolver
     );
 
-    event SubdomainApprovalSet(
-        bytes32 indexed parentHash,
-        address indexed user,
-        bool indexed status
-    );
-
     event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
 
     event DomainReclaimed(
