@@ -92,7 +92,6 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).registerDomain(
         defaultSubdomain,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero,
       );
 
       await expect(tx).to.not.be.reverted;
@@ -476,7 +475,7 @@ describe("ZNSEthRegistrar", () => {
           domainHash,
           operator.address
         );
-      await expect(tx2).to.be.revertedWith("ZNSRegistry: Not Authorized");
+      await expect(tx2).to.be.revertedWith("ZNSRegistry: Not authorized");
 
       const tx3 = zns.registry
         .connect(operator)
@@ -485,7 +484,7 @@ describe("ZNSEthRegistrar", () => {
           user.address,
           operator.address
         );
-      await expect(tx3).to.be.revertedWith("ZNSRegistry: Not Authorized");
+      await expect(tx3).to.be.revertedWith("ZNSRegistry: Not authorized");
 
       const tx4 = zns.registry
         .connect(operator)
@@ -493,7 +492,7 @@ describe("ZNSEthRegistrar", () => {
           domainHash,
           zeroVault.address
         );
-      await expect(tx4).to.be.revertedWith("ZNSRegistry: Not Authorized");
+      await expect(tx4).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
   });
 

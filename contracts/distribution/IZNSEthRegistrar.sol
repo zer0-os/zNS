@@ -27,7 +27,7 @@ interface IZNSEthRegistrar {
 
     event ZnsAddressResolverSet(address znsAddressResolver);
 
-    function registerRootDomain(
+    function registerDomain(
         string calldata name,
         address domainContent
     ) external returns (bytes32);

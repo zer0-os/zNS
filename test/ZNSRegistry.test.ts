@@ -10,7 +10,6 @@ import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-
 describe("ZNSRegistry Tests", () => {
   let deployer : SignerWithAddress;
   let operator : SignerWithAddress;
