@@ -5,7 +5,9 @@
       "files": ["src/**/*.ts", "test/**/*.ts", "./*.ts"],
       "extends": ["@zero-tech/eslint-config-cpt/node-ts/.eslintrc.json"],
       "rules": {
-        "no-unused-expressions": "off"
+        "no-unused-expressions": "off",
+        // "no-console": "off", // For debugging
+        // "@typescript-eslint/no-unused-vars": "off" // For debugging
       }
     }
   ]
