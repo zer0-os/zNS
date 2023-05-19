@@ -5,9 +5,9 @@ interface IZNSAddressResolver {
     /**
      * @dev Emit when ownership of a domain is modified
      * @param newAddress The new domain owner
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      */
-    event AddressSet(bytes32 indexed domainNameHash, address indexed newAddress);
+    event AddressSet(bytes32 indexed domainHash, address indexed newAddress);
 
     /**
      * @dev ERC-165 check for implementation identifier
@@ -18,17 +18,17 @@ interface IZNSAddressResolver {
 
     /**
      * @dev Resolves address given domain name hash
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      */
-    function getAddress(bytes32 domainNameHash) external view returns (address);
+    function getAddress(bytes32 domainHash) external view returns (address);
 
     /**
      * @dev Sets the address of a domain name hash, only registry
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      * @param newAddress The new domain owner
      */
     function setAddress(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address newAddress
     ) external;
 }

@@ -20,6 +20,7 @@ const { expect } = require("chai");
  */
 describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
   let znsAddressResolver : ZNSAddressResolver;
   let znsRegistry : ZNSRegistry;
   let owner : SignerWithAddress;
@@ -29,7 +30,7 @@ describe("ZNSAddressResolver", () => {
 
   beforeEach(async () => {
     [owner, addr1] = await hre.ethers.getSigners();
-    [deployer, operator] = await hre.ethers.getSigners();
+    [deployer, operator, mockRegistrar] = await hre.ethers.getSigners();
 
     const znsAddressResolverFactory = new ZNSAddressResolver__factory(deployer);
     const znsRegistryFactory = new ZNSRegistry__factory(deployer);
@@ -38,16 +39,13 @@ describe("ZNSAddressResolver", () => {
     znsAddressResolver = await znsAddressResolverFactory.deploy(znsRegistry.address);
 
     // Initialize registry and domain
-    await znsRegistry.connect(deployer).initialize(deployer.address);
-
-    const rootHash = await znsRegistry.ROOT_HASH();
+    await znsRegistry.connect(deployer).initialize(mockRegistrar.address);
 
     // Have to get this value for every test, but can be fixed
-    wilderDomainNameHash = hashDomainName(`${rootHash}.wilder`);
+    wilderDomainNameHash = hashDomainName("wilder");
 
-    await znsRegistry.connect(deployer)
-      .setSubdomainRecord(
-        rootHash,
+    await znsRegistry.connect(mockRegistrar)
+      .createDomainRecord(
         wilderDomainNameHash,
         deployer.address,
         znsAddressResolver.address

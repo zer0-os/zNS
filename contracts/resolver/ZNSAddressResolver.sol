@@ -15,7 +15,8 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @notice Mapping of domain hash to address used to bind domains
      *         to Ethereum wallets or contracts registered in ZNS
      */
-    mapping(bytes32 domainNameHash => address resolvedAddress) private addressOf;
+    mapping(bytes32 domainHash => address resolvedAddress)
+        private addressOf;
 
     constructor(IZNSRegistry _registry) {
         registry = _registry;
@@ -23,15 +24,14 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
 
     /**
      * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      */
     // TODO:  Remove this when doing access control.
     //        A function like that can be created in Registry, but think
     //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
-    modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-        address owner = registry.getDomainRecord(domainNameHash).owner;
+    modifier onlyOwnerOrOperator(bytes32 domainHash) {
         require(
-            msg.sender == owner || registry.isAllowedOperator(owner, msg.sender),
+            registry.isOwnerOrOperator(domainHash, msg.sender),
             "ZNSAddressResolver: Not allowed"
         );
         _;
@@ -39,26 +39,28 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
 
     /**
      * @dev Resolves address given domain name hash
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      */
-    function getAddress(bytes32 domainNameHash) external view returns (address) {
-        return addressOf[domainNameHash];
+    function getAddress(
+        bytes32 domainHash
+    ) external view returns (address) {
+        return addressOf[domainHash];
     }
 
     /**
      * @dev Sets the address of a domain name hash, only registry
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash The identifying hash of a domain's name
      * @param newAddress The new domain owner
      */
     function setAddress(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address newAddress
-    ) external onlyOwnerOrOperator(domainNameHash) {
+    ) external onlyOwnerOrOperator(domainHash) {
         require(newAddress != address(0), "ZNS: Cant set address to 0");
 
-        addressOf[domainNameHash] = newAddress;
+        addressOf[domainHash] = newAddress;
 
-        emit AddressSet(domainNameHash, newAddress);
+        emit AddressSet(domainHash, newAddress);
     }
 
     /**
@@ -70,7 +72,8 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
         bytes4 interfaceId
     ) public view virtual override(ERC165, IZNSAddressResolver) returns (bool) {
         return
-        interfaceId == getInterfaceId() || super.supportsInterface(interfaceId);
+            interfaceId == getInterfaceId() ||
+            super.supportsInterface(interfaceId);
     }
 
     /**

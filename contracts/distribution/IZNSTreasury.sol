@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 interface IZNSTreasury {
-
     /**
      * @notice Emitted when the znsRegistrar is updated
      * @param znsRegistrar The address of the new registrar
@@ -39,10 +38,7 @@ interface IZNSTreasury {
      * @notice Emitted when the admin user is set
      * @param user The admin user to set
      */
-    event AdminSet(
-        address user,
-        bool status
-    );
+    event AdminSet(address user, bool status);
 
     event ZeroVaultAddressSet(address zeroVault);
 

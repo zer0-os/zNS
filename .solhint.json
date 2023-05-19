@@ -1,7 +1,10 @@
 {
   "extends": "solhint:recommended",
   "rules": {
-    "compiler-version": ["error","^0.8.18"],
+    "compiler-version": [
+      "error",
+      "^0.8.18"
+    ],
     "not-rely-on-time": "off",
     "no-inline-assembly": "off",
     "avoid-low-level-calls": "off",
@@ -9,7 +12,12 @@
     "no-empty-blocks": "error",
     "no-complex-fallback": "off",
     "reason-string": "off",
-    "func-visibility": ["warn", {"ignoreConstructors": true}],
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ],
     "constructor-syntax": "warn",
     "named-parameters-mapping": "error"
   }
