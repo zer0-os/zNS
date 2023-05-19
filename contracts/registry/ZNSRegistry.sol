@@ -8,12 +8,11 @@ import { IZNSRegistry } from "./IZNSRegistry.sol";
 
 contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     /**
-     * @notice Constant to represent the root domain hash
+     * @notice The address of the registrar we are using
      */
-    bytes32 public constant ROOT_HASH = keccak256(bytes("0://"));
-
+    address public znsRegistrar;
     /**
-     * @notice Mapping `domainNameHash` to `DomainRecord` struct to hold information
+     * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
      */
     mapping(bytes32 domainHash => DomainRecord domainRecord) private records;
@@ -22,14 +21,30 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
      * are or aren't allowed access to domains that `owner` has access to.
      */
-    mapping(address owner => mapping(address operator => bool isOperator)) private operators;
+    mapping(address owner => mapping(address operator => bool isOperator))
+        private operators;
 
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      */
-    modifier onlyOwnerOrOperator(bytes32 domainNameHash) {
-        require(isOwnerOrOperator(domainNameHash, msg.sender), "ZNSRegistry: Not Authorized");
+    modifier onlyOwnerOrOperator(bytes32 domainHash) {
+        require(
+            isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSRegistry: Not authorized"
+        );
+        _;
+    }
+
+    /**
+     * @notice Revert if `msg.sender` is not the registrar
+     */
+    modifier onlyRegistrar() {
+        require(
+            msg.sender == znsRegistrar,
+            "ZNSRegistry: Caller is not the Registrar"
+        );
         _;
     }
 
@@ -37,33 +52,52 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
      * to be the account that deploys this contract
      */
-    function initialize(address owner) public override initializer {
-        require(owner != address(0), "ZNSRegistry: Owner can not be 0x0 address");
-        records[ROOT_HASH].owner = owner;
-        // TODO use the hash constant here ?
-        // Does it benefit us? is it problematic ?
-        // can people manipulate or own it?
+    function initialize(address znsRegistrar_) public override initializer {
+        require(
+            znsRegistrar_ != address(0),
+            "ZNSRegistry: Registrar can not be 0x0 address"
+        );
+        znsRegistrar = znsRegistrar_;
     }
 
     /**
      * @notice Check if a given domain exists
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash The hash of a domain's name
      */
-    function exists(bytes32 domainNameHash) external view override returns (bool) {
-        return _exists(domainNameHash);
+    function exists(bytes32 domainHash) external view override returns (bool) {
+        return _exists(domainHash);
     }
 
     /**
      * @notice Checks if provided address is an owner or an operator of the provided domain
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
     function isOwnerOrOperator(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address candidate
     ) public view override returns (bool) {
-        address owner = records[domainNameHash].owner;
+        address owner = records[domainHash].owner;
         return candidate == owner || operators[owner][candidate];
+    }
+
+    /**
+     * @notice Change the address of the ZNSRegistrar contract we use
+     *
+     * @param znsRegistrar_ The new ZNSRegistrar
+     */
+    function setZNSRegistrar(address znsRegistrar_) external {
+    // TODO When we have access control, only be callable by admin!!
+        require(
+            znsRegistrar_ != address(0),
+            "ZNSRegistry: Cannot set Registrar to 0x0"
+        );
+
+        znsRegistrar = znsRegistrar_;
+
+        emit ZNSRegistrarSet(znsRegistrar_);
     }
 
     /**
@@ -81,74 +115,20 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     }
 
     /**
-     * @notice Verify if an account is an allowed operator on domains owned by `owner`
-     * @param owner Owner of the domains to be operated on
-     * @param operator Operator of modifications to the domains, if allowed
-     */
-     // TODO do we need this function ??
-    function isAllowedOperator(
-        address owner,
-        address operator
-    ) public view override returns (bool) {
-        return operators[owner][operator];
-    }
-
-    /**
      * @notice Get a record for a domain
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
-        bytes32 domainNameHash
+        bytes32 domainHash
     ) external view override returns (DomainRecord memory) {
-        return records[domainNameHash];
-    }
-
-    function deleteRecord(bytes32 domainNameHash) external override {
-        //TODO AC: This doesnt work because the znsRegistrar does not pass this validation.
-        //  make sure this is protected
-        //require(msg.sender == records[domainNameHash].owner;
-        delete records[domainNameHash];
-    }
-
-    /**
-     * @notice Set or create a subdomain record
-     * @param parentDomainHash The parent domain name hash
-     * @param domainHash The label of the subdomain
-     * @param owner The owner to set
-     * @param resolver The resolver to set
-     */
-    function setSubdomainRecord(
-        bytes32 parentDomainHash,
-        bytes32 domainHash,
-        address owner,
-        address resolver
-    ) external override returns (bytes32) {
-        setSubdomainOwner(parentDomainHash, domainHash, owner);
-        setDomainResolver(domainHash, resolver);
-
-        return domainHash;
-    }
-
-    /**
-     * @notice Update the domain's owner
-     * @param parentDomainHash The base domain name hash
-     * @param domainHash The label of the subdomain
-     * @param owner The owner to set
-     * TODO: Add access control to limit function invocation to owner of the subdomain or parent domain
-     */
-    function setSubdomainOwner(
-        bytes32 parentDomainHash,
-        bytes32 domainHash,
-        address owner
-    ) public override onlyOwnerOrOperator(parentDomainHash) {
-        _setDomainOwner(domainHash, owner);
-
-        emit DomainOwnerSet(owner, domainHash);
+        return records[domainHash];
     }
 
     /**
      * @notice Get the owner of the given domain
-     * @param domainHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
         bytes32 domainHash
@@ -156,53 +136,102 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         return records[domainHash].owner;
     }
 
-    // TODO: review and remove all non-essential function when working
-    //  on the deletion of subdomains and/or reworking the Registry API
-    /**
-     * @notice Update a domain's owner
-     * @param domainHash The identifying hash of a domain's name
-     * @param owner The account to transfer ownership to
-     */
-    // function setDomainOwner(
-    //   bytes32 domainHash,
-    //   address owner
-    // ) public onlyOwnerOrOperator(domainHash) {
-    //   _setDomainOwner(domainHash, owner);
-
-    //   // TODO probably don't need any "domain" functions
-    //   // emit DomainOwnerSet(owner, domainNameHash);
-    // }
-
     /**
      * @notice Get the default resolver for the given domain
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
-        bytes32 domainNameHash
+        bytes32 domainHash
     ) external view override returns (address) {
-        return records[domainNameHash].resolver;
+        return records[domainHash].resolver;
     }
 
     /**
-     * Update the domain's default resolver
-     * @param domainNameHash The identifying hash of a domain's name
+     * @notice Create a new domain record
+     *
+     * @param domainHash The hash of the domain name
+     * @param owner The owner of the new domain
+     * @param resolver The resolver of the new domain
+     */
+    function createDomainRecord(
+        bytes32 domainHash,
+        address owner,
+        address resolver
+    ) external override onlyRegistrar {
+        _setDomainOwner(domainHash, owner);
+
+        // We allow creation of partial domains with no resolver address
+        if (resolver != address(0)) {
+            _setDomainResolver(domainHash, resolver);
+        }
+    }
+
+    /**
+     * @notice Update an existing domain record's owner or resolver
+     *
+     * @param domainHash The hash of the domain
+     * @param owner The owner or an allowed operator of that domain
+     * @param resolver The resolver for the domain
+     */
+    function updateDomainRecord(
+        bytes32 domainHash,
+        address owner,
+        address resolver
+    // TODO AC: make this so only owner can change the owner and not the operator!
+    ) external onlyOwnerOrOperator(domainHash) {
+        // `exists` is checked implicitly through the modifier
+        _setDomainOwner(domainHash, owner);
+        _setDomainResolver(domainHash, resolver);
+    }
+
+    /**
+     * @notice Update a domain's owner
+     *
+     * @param domainHash the hash of a domain's name
+     * @param owner The account to transfer ownership to
+     */
+    function updateDomainOwner(
+        bytes32 domainHash,
+        address owner
+        // TODO AC: make this so only owner can change the owner and not the operator!
+    ) external onlyOwnerOrOperator(domainHash) {
+        // `exists` is checked implicitly through the modifier
+        _setDomainOwner(domainHash, owner);
+    }
+
+    /**
+     * @notice Update the domain's default resolver
+     *
+     * @param domainHash the hash of a domain's name
      * @param resolver The new default resolver
      */
-    function setDomainResolver(
-        bytes32 domainNameHash,
+    function updateDomainResolver(
+        bytes32 domainHash,
         address resolver
-    ) public override onlyOwnerOrOperator(domainNameHash) {
-        _setDomainResolver(domainNameHash, resolver);
+    ) external override onlyOwnerOrOperator(domainHash) {
+        // `exists` is checked implicitly through the modifier
+        _setDomainResolver(domainHash, resolver);
+    }
 
-        emit DomainResolverSet(resolver, domainNameHash);
+    /**
+     * @notice Delete a domain's record
+     *
+     * @param domainHash The hash of the domain name
+     */
+    function deleteRecord(bytes32 domainHash) external onlyRegistrar {
+        delete records[domainHash];
+
+        emit DomainRecordDeleted(domainHash);
     }
 
     /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      */
-    function _exists(bytes32 domainNameHash) internal view returns (bool) {
-        return records[domainNameHash].owner != address(0);
+    function _exists(bytes32 domainHash) internal view returns (bool) {
+        return records[domainHash].owner != address(0);
     }
 
     /**
@@ -211,25 +240,26 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * because we are not currently allowing reselling of domains and want
      * to enable burning them instead by transferring ownership to `address(0)`
      *
-     * @param domainNameHash The identifying hash of a domain's name
+     * @param domainHash the hash of a domain's name
      * @param owner The owner to set
      */
-    function _setDomainOwner(bytes32 domainNameHash, address owner) internal {
-        require(owner != address(0), "ZNS: Owner can NOT be zero address");
-        records[domainNameHash].owner = owner;
+    function _setDomainOwner(bytes32 domainHash, address owner) internal {
+        require(owner != address(0), "ZNSRegistry: Owner cannot be zero address");
+        records[domainHash].owner = owner;
+        emit DomainOwnerSet(domainHash, owner);
     }
 
     /**
      * @notice Set a domain's resolver
-     * @param domainNameHash The identifying hash of a domain's name
+     *
+     * @param domainHash the hash of a domain's name
      * @param resolver The resolver to set
      */
     function _setDomainResolver(
-        bytes32 domainNameHash,
+        bytes32 domainHash,
         address resolver
     ) internal {
-        require(resolver != address(0), "ZNSRegistry: Resolver can NOT be zero address");
-
-        records[domainNameHash].resolver = resolver;
+        records[domainHash].resolver = resolver;
+        emit DomainResolverSet(domainHash, resolver);
     }
 }
