@@ -164,4 +164,7 @@ describe("ZNSAccessController", () => {
       expect(has).to.be.true;
     });
   });
+
+  // TODO AC: test setRoleAdmin for someone other than governor
+  //  test initializer
 });
