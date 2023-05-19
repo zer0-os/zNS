@@ -27,7 +27,6 @@ describe("ZNSEthRegistrar", () => {
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   const defaultDomain = "wilder";
-  const defaultSubdomain = "world";
 
   beforeEach(async () => {
     [deployer, zeroVault, user, operator, governor, admin, randomAcc] = await hre.ethers.getSigners();
@@ -89,7 +88,7 @@ describe("ZNSEthRegistrar", () => {
 
     it("Successfully registers a domain without a resolver or resolver content", async () => {
       const tx = zns.registrar.connect(user).registerDomain(
-        defaultSubdomain,
+        defaultDomain,
         ethers.constants.AddressZero,
       );
 
