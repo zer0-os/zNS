@@ -50,6 +50,8 @@ interface IZNSRegistry {
         bool allowed
     );
 
+    function initialize(address owner) external;
+
     /**
      * @notice Emit when a new ZNSRegistrar address is set
      * @param znsRegistrar The new address

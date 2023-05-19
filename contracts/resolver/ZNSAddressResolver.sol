@@ -26,7 +26,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
      * @param domainHash The identifying hash of a domain's name
      */
-    // TODO:  Remove this when doing access control.
+    // TODO AC:  Remove this when doing access control (or adapt to work the best way here).
     //        A function like that can be created in Registry, but think
     //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
@@ -43,7 +43,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      */
     function getAddress(
         bytes32 domainHash
-    ) external view returns (address) {
+    ) external view override returns (address) {
         return addressOf[domainHash];
     }
 
@@ -55,7 +55,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     function setAddress(
         bytes32 domainHash,
         address newAddress
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         require(newAddress != address(0), "ZNS: Cant set address to 0");
 
         addressOf[domainHash] = newAddress;
@@ -79,7 +79,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     /**
      * @dev Exposes IZNSAddressResolver interfaceId
      */
-    function getInterfaceId() public pure returns (bytes4) {
-        return type(IZNSAddressResolver).interfaceId;
+    function getInterfaceId() public pure override returns (bytes4) {
+          return type(IZNSAddressResolver).interfaceId;
     }
 }

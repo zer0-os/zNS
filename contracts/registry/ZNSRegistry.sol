@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { ERC1967UpgradeUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
+import { ERC1967UpgradeUpgradeable }
+from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 
@@ -14,8 +15,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
      */
-    mapping(bytes32 domainHash => DomainRecord domainRecord)
-        private records;
+    mapping(bytes32 domainHash => DomainRecord domainRecord) private records;
 
     /**
      * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
@@ -52,7 +52,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
      * to be the account that deploys this contract
      */
-    function initialize(address znsRegistrar_) public initializer {
+    function initialize(address znsRegistrar_) public override initializer {
         require(
             znsRegistrar_ != address(0),
             "ZNSRegistry: Registrar can not be 0x0 address"
@@ -65,7 +65,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param domainHash The hash of a domain's name
      */
-    function exists(bytes32 domainHash) external view returns (bool) {
+    function exists(bytes32 domainHash) external view override returns (bool) {
         return _exists(domainHash);
     }
 
@@ -78,7 +78,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     function isOwnerOrOperator(
         bytes32 domainHash,
         address candidate
-    ) public view returns (bool) {
+    ) public view override returns (bool) {
         address owner = records[domainHash].owner;
         return candidate == owner || operators[owner][candidate];
     }
@@ -88,7 +88,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param znsRegistrar_ The new ZNSRegistrar
      */
-    function setZNSRegistrar(address znsRegistrar_) external {
+    function setZNSRegistrar(address znsRegistrar_) external override {
     // TODO When we have access control, only be callable by admin!!
         require(
             znsRegistrar_ != address(0),
@@ -107,7 +107,8 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    function setOwnerOperator(address operator, bool allowed) external {
+    // TODO AC: add access control
+    function setOwnerOperator(address operator, bool allowed) external override {
         operators[msg.sender][operator] = allowed;
 
         emit OperatorPermissionSet(msg.sender, operator, allowed);
@@ -120,7 +121,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      */
     function getDomainRecord(
         bytes32 domainHash
-    ) external view returns (DomainRecord memory) {
+    ) external view override returns (DomainRecord memory) {
         return records[domainHash];
     }
 
@@ -131,7 +132,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      */
     function getDomainOwner(
         bytes32 domainHash
-    ) external view returns (address) {
+    ) external view override returns (address) {
         return records[domainHash].owner;
     }
 
@@ -142,7 +143,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      */
     function getDomainResolver(
         bytes32 domainHash
-    ) external view returns (address) {
+    ) external view override returns (address) {
         return records[domainHash].resolver;
     }
 
@@ -157,7 +158,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner,
         address resolver
-    ) external onlyRegistrar {
+    ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domains with no resolver address
@@ -178,7 +179,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         address owner,
         address resolver
     // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolver);
@@ -194,7 +195,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner
         // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
@@ -208,7 +209,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     function updateDomainResolver(
         bytes32 domainHash,
         address resolver
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainResolver(domainHash, resolver);
     }
@@ -218,7 +219,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainHash) external onlyRegistrar {
+    function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);

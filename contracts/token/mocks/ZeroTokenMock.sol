@@ -18,7 +18,7 @@ contract ZeroTokenMock is ERC20, IZeroTokenMock {
         return super.balanceOf(user);
     }
 
-    function burn(address account, uint256 amount) external {
-        _burn(account, amount);
+    function burn(address account, uint256 amount) external override {
+      _burn(account, amount);
     }
 }
