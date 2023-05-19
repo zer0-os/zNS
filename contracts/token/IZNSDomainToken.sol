@@ -9,5 +9,5 @@ interface IZNSDomainToken is IERC721{
 
     function revoke(uint256 tokenId) external;
 
-    function authorize( address account) external;
+    function authorize(address account) external;
 }

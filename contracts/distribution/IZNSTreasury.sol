@@ -34,11 +34,9 @@ interface IZNSTreasury {
         uint256 indexed amount
     );
 
-    /**
-     * @notice Emitted when the admin user is set
-     * @param user The admin user to set
-     */
-    event AdminSet(address user, bool status);
+    event ZnsPriceOracleSet(address znsPriceOracle);
+
+    event ZnsStakingTokenSet(address znsStakingToken);
 
     event ZeroVaultAddressSet(address zeroVault);
 
@@ -51,9 +49,9 @@ interface IZNSTreasury {
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;
 
-    function setZNSRegistrar(address znsRegistrar_) external;
-
     function setZeroVaultAddress(address zeroVaultAddress) external;
 
-    function setAdmin(address user, bool status) external;
+    function setPriceOracle(address znsPriceOracle_) external;
+
+    function setStakingToken(address stakingToken_) external;
 }

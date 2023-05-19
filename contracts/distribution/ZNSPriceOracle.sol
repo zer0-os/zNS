@@ -5,8 +5,9 @@ import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
+contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -21,40 +22,19 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     /**
      * @notice Struct for each configurable price variable
      */
+    // TODO: rework and add more setters for every single var
     PriceParams public priceConfig;
 
-    /**
-     * @notice The address of the ZNS Registrar we are using
-     */
-    address public znsRegistrar;
-
-    /**
-     * @notice Track authorized users or contracts
-     * TODO access control for the entire system
-     */
-    mapping(address user => bool isAuthorized) public authorized;
-
-    /**
-     * @notice Restrict a function to only be callable by authorized users
-     */
-    modifier onlyAuthorized() {
-        require(authorized[msg.sender], "ZNS: Not authorized");
-        _;
-    }
 
     function initialize(
+        address accessController_,
         PriceParams calldata priceConfig_,
-        address znsRegistrar_, // TODO do we need to keep this here if we always set it through the setter?
         uint256 regFeePercentage_
-    ) public initializer {
+    ) public override initializer {
         // Set pricing and length parameters
         priceConfig = priceConfig_;
         feePercentage = regFeePercentage_;
-
-        // Set the user and registrar we allow to modify prices
-        znsRegistrar = znsRegistrar_;
-        authorized[msg.sender] = true;
-        authorized[znsRegistrar_] = true;
+        _setAccessController(accessController_);
     }
 
     /**
@@ -65,7 +45,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     function getPrice(
         string calldata name,
         bool isRootDomain
-    ) external view returns (
+    ) external view override returns (
         uint256 totalPrice,
         uint256 domainPrice,
         uint256 fee
@@ -96,7 +76,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
         totalPrice = domainPrice + fee;
     }
 
-    function getRegistrationFee(uint256 domainPrice) public view returns (uint256) {
+    function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
     }
 
@@ -110,7 +90,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     function setMaxPrice(
         uint256 maxPrice,
         bool isRootDomain
-    ) external onlyAuthorized {
+    ) external override onlyRole(ADMIN_ROLE) {
         if (isRootDomain) {
             priceConfig.maxRootDomainPrice = maxPrice;
         } else {
@@ -133,7 +113,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
      * to make up for this.
      * @param multiplier The new price multiplier to set
      */
-    function setPriceMultiplier(uint256 multiplier) external onlyAuthorized {
+    function setPriceMultiplier(uint256 multiplier) external override onlyRole(ADMIN_ROLE) {
         require(
             multiplier >= 300 && multiplier <= 400,
             "ZNS: Multiplier out of range"
@@ -143,7 +123,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
         emit PriceMultiplierSet(multiplier);
     }
 
-    function setRegistrationFeePercentage(uint256 regFeePercentage) external onlyAuthorized {
+    function setRegistrationFeePercentage(uint256 regFeePercentage) external override onlyRole(ADMIN_ROLE) {
         feePercentage = regFeePercentage;
         emit FeePercentageSet(regFeePercentage);
     }
@@ -158,7 +138,7 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     function setBaseLength(
         uint256 length,
         bool isRootDomain
-    ) external onlyAuthorized {
+    ) external override onlyRole(ADMIN_ROLE) {
         if (isRootDomain) {
             priceConfig.baseRootDomainLength = length;
         } else {
@@ -176,34 +156,15 @@ contract ZNSPriceOracle is IZNSPriceOracle, Initializable {
     function setBaseLengths(
         uint256 rootLength,
         uint256 subdomainLength
-    ) external onlyAuthorized {
+    ) external override onlyRole(ADMIN_ROLE) {
         priceConfig.baseRootDomainLength = rootLength;
         priceConfig.baseSubdomainLength = subdomainLength;
 
         emit BaseLengthsSet(rootLength, subdomainLength);
     }
 
-    /**
-     * @notice Set the ZNSRegistrar for this contract
-     * @param registrar The registrar to set
-     */
-    function setZNSRegistrar(address registrar) external onlyAuthorized {
-        require(registrar != address(0), "ZNS: Zero address for Registrar");
-
-        // Modify the access control for the new registrar
-        authorized[znsRegistrar] = false;
-        authorized[registrar] = true;
-        znsRegistrar = registrar;
-
-        emit ZNSRegistrarSet(registrar);
-    }
-
-    /**
-     * @notice Return true if a user is authorized, otherwise false
-     * @param user The user to check
-     */
-    function isAuthorized(address user) external view returns (bool) {
-        return authorized[user];
+    function setAccessController(address accessController) external override onlyRole(ADMIN_ROLE) {
+        _setAccessController(accessController);
     }
 
     /**

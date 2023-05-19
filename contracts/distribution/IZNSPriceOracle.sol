@@ -6,7 +6,6 @@ interface IZNSPriceOracle {
     event PriceMultiplierSet(uint256 multiplier);
     event BaseLengthSet(uint256 length, bool isRootDomain);
     event BaseLengthsSet(uint256 rootDomainLength, uint256 subdomainLength);
-    event ZNSRegistrarSet(address registrar);
     event FeePercentageSet(uint256 feePercentage);
 
     /**
@@ -60,6 +59,12 @@ interface IZNSPriceOracle {
          */
         uint256 priceMultiplier;
     }
+
+    function initialize(
+        address accessController_,
+        PriceParams calldata priceConfig_,
+        uint256 regFeePercentage_
+    ) external;
 
     /**
      * @notice Get the price of a given domain name length
@@ -115,16 +120,4 @@ interface IZNSPriceOracle {
      * @param subdomainLength The length for subdomains
      */
     function setBaseLengths(uint256 rootLength, uint256 subdomainLength) external;
-
-    /**
-     * @notice Set the ZNSRegistrar for this contract
-     * @param registrar The registrar to set
-     */
-    function setZNSRegistrar(address registrar) external;
-
-    /**
-     * @notice Return true if a user is authorized, otherwise false
-     * @param user The user to check
-     */
-    function isAuthorized(address user) external view returns (bool);
 }
