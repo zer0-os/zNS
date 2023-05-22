@@ -6,7 +6,13 @@ import {
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { ADMIN_ROLE, deployAccessController, deployDomainToken, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers";
+import {
+  ADMIN_ROLE,
+  deployAccessController,
+  deployDomainToken,
+  getAccessRevertMsg,
+  REGISTRAR_ROLE,
+} from "./helpers";
 
 
 describe("ZNSDomainToken:", () => {

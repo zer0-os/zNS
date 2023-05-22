@@ -44,7 +44,7 @@ contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
 
     function setAccessController(address accessController)
     external
-    override(IZNSDomainToken, AccessControlled)
+    override(AccessControlled, IZNSDomainToken)
     onlyAdmin
     {
         _setAccessController(accessController);

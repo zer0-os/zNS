@@ -172,7 +172,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
 
     function setAccessController(address accessController)
     external
-    override(IZNSPriceOracle, AccessControlled)
+    override(AccessControlled, IZNSPriceOracle)
     onlyAdmin
     {
         _setAccessController(accessController);
