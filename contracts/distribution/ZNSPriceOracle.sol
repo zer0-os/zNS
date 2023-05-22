@@ -25,16 +25,18 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
     // TODO: rework and add more setters for every single var
     PriceParams public priceConfig;
 
+    // TODO: rework setters here for a better structure!
+    // TODO: remove subdomain logic
 
     function initialize(
         address accessController_,
         PriceParams calldata priceConfig_,
         uint256 regFeePercentage_
     ) public override initializer {
+        _setAccessController(accessController_);
         // Set pricing and length parameters
         priceConfig = priceConfig_;
         feePercentage = regFeePercentage_;
-        _setAccessController(accessController_);
     }
 
     /**

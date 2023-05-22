@@ -44,7 +44,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         address stakingToken_,
         address zeroVault_
     ) {
-        setAccessController(accessController_);
+        _setAccessController(accessController_);
         setZeroVaultAddress(zeroVault_);
         // TODO change from mock
         setStakingToken(stakingToken_);
