@@ -5,9 +5,11 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
 
 
 abstract contract AccessControlled {
+
     event AccessControllerSet(address accessController);
 
     IZNSAccessController internal accessController;
+
 
     // TODO AC: do we need this?
     modifier onlyRole(bytes32 role) {

@@ -32,6 +32,15 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         _;
     }
 
+    // TODO AC: this might be the safest way
+    modifier onlyAdmin() {
+        require(
+            accessController.isAdmin(msg.sender),
+            "ZNSEthRegistrar: Caller is not an admin"
+        );
+        _;
+    }
+
     /**
      * @notice Create an instance of the ZNSEthRegistrar
      * for registering ZNS domains and subdomains
@@ -121,7 +130,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit DomainReclaimed(domainHash, msg.sender);
     }
 
-    function setZnsRegistry(address znsRegistry_) public override onlyRole(ADMIN_ROLE) {
+    function setZnsRegistry(address znsRegistry_) public override onlyAdmin {
         require(
             znsRegistry_ != address(0),
             "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
@@ -131,7 +140,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit ZnsRegistrySet(znsRegistry_);
     }
 
-    function setZnsTreasury(address znsTreasury_) public override onlyRole(ADMIN_ROLE) {
+    function setZnsTreasury(address znsTreasury_) public override onlyAdmin {
         require(
             znsTreasury_ != address(0),
             "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
@@ -141,7 +150,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit ZnsTreasurySet(znsTreasury_);
     }
 
-    function setZnsDomainToken(address znsDomainToken_) public override onlyRole(ADMIN_ROLE) {
+    function setZnsDomainToken(address znsDomainToken_) public override onlyAdmin {
         require(
             znsDomainToken_ != address(0),
             "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
@@ -151,7 +160,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit ZnsDomainTokenSet(znsDomainToken_);
     }
 
-    function setZnsAddressResolver(address znsAddressResolver_) public override onlyRole(ADMIN_ROLE) {
+    function setZnsAddressResolver(address znsAddressResolver_) public override onlyAdmin {
         require(
             znsAddressResolver_ != address(0),
             "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
@@ -164,7 +173,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSEthRegistrar)
-    onlyRole(ADMIN_ROLE)
+    onlyAdmin
     {
         _setAccessController(accessController_);
     }
