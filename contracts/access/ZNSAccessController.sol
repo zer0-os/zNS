@@ -31,8 +31,22 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _checkRole(role, account);
     }
 
+    // ** Access Validators **
+
+    function checkGovernor(address account) external view override {
+        _checkRole(GOVERNOR_ROLE, account);
+    }
+
     function checkAdmin(address account) external view override {
         _checkRole(ADMIN_ROLE, account);
+    }
+
+    function checkExecutor(address account) external view override {
+        _checkRole(EXECUTOR_ROLE, account);
+    }
+
+    function checkRegistrar(address account) external view override {
+        _checkRole(REGISTRAR_ROLE, account);
     }
 
     // TODO AC: is this function necessary? how often will it be used?
