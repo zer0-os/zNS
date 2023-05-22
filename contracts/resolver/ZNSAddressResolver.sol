@@ -26,13 +26,10 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
      * @param domainHash The identifying hash of a domain's name
      */
-    // TODO AC:  Remove this when doing access control (or adapt to work the best way here).
-    //        A function like that can be created in Registry, but think
-    //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSAddressResolver: Not allowed"
+            "ZNSAddressResolver: Not authorized for this domain"
         );
         _;
     }
@@ -56,8 +53,6 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
         bytes32 domainHash,
         address newAddress
     ) external override onlyOwnerOrOperator(domainHash) {
-        require(newAddress != address(0), "ZNS: Cant set address to 0");
-
         addressOf[domainHash] = newAddress;
 
         emit AddressSet(domainHash, newAddress);
