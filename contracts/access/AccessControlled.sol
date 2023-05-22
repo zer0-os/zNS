@@ -12,10 +12,7 @@ abstract contract AccessControlled {
 
 
     modifier onlyAdmin() {
-        require(
-            accessController.isAdmin(msg.sender),
-            "Caller is not an admin"
-        );
+        accessController.checkAdmin(msg.sender);
         _;
     }
 

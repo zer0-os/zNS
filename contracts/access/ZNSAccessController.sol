@@ -31,9 +31,8 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _checkRole(role, account);
     }
 
-    function isAdmin(address account) external view override returns (bool) {
-        // TODO AC: use _checkRole() here??
-        return hasRole(ADMIN_ROLE, account);
+    function checkAdmin(address account) external view override {
+        _checkRole(ADMIN_ROLE, account);
     }
 
     // TODO AC: is this function necessary? how often will it be used?
