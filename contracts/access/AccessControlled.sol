@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { ZNSRoles } from "./ZNSRoles.sol";
 import { IZNSAccessController } from "./IZNSAccessController.sol";
 
 
-abstract contract AccessControlled is ZNSRoles {
+abstract contract AccessControlled {
     event AccessControllerSet(address accessController);
 
     IZNSAccessController internal accessController;
 
+    // TODO AC: do we need this?
     modifier onlyRole(bytes32 role) {
         accessController.checkRole(role, msg.sender);
         _;
