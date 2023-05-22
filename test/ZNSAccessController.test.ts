@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { deployAccessController } from "./helpers";
 import { expect } from "chai";
-import { ADMIN_ROLE, getAccessRevertMsg, GOVERNOR_ROLE, OPERATOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, getAccessRevertMsg, GOVERNOR_ROLE, EXECUTOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
 
 
 describe("ZNSAccessController", () => {
@@ -142,25 +142,25 @@ describe("ZNSAccessController", () => {
       expect(has).to.be.false;
     });
 
-    it("GOVERNOR_ROLE should be able to assign new OPERATOR_ROLE as admin for REGISTRAR_ROLE", async () => {
+    it("GOVERNOR_ROLE should be able to assign new EXECUTOR_ROLE as admin for REGISTRAR_ROLE", async () => {
       const [ governor ] = governorAccs;
-      await znsAccessController.connect(governor).setRoleAdmin(REGISTRAR_ROLE, OPERATOR_ROLE);
+      await znsAccessController.connect(governor).setRoleAdmin(REGISTRAR_ROLE, EXECUTOR_ROLE);
 
       const registrarAdminRole = await znsAccessController.getRoleAdmin(REGISTRAR_ROLE);
-      expect(registrarAdminRole).to.be.equal(OPERATOR_ROLE);
+      expect(registrarAdminRole).to.be.equal(EXECUTOR_ROLE);
     });
 
     // eslint-disable-next-line max-len
-    it("GOVERNOR_ROLE should be able to make himself a new OPERATOR_ROLE's admin and assign this role to anyone", async () => {
+    it("GOVERNOR_ROLE should be able to make himself a new EXECUTOR_ROLE's admin and assign this role to anyone", async () => {
       const [ governor ] = governorAccs;
       const [ { address: newOperator } ] = randomAccs;
 
-      await znsAccessController.connect(governor).setRoleAdmin(OPERATOR_ROLE, GOVERNOR_ROLE);
-      const roleAdminFrom = await znsAccessController.getRoleAdmin(OPERATOR_ROLE);
+      await znsAccessController.connect(governor).setRoleAdmin(EXECUTOR_ROLE, GOVERNOR_ROLE);
+      const roleAdminFrom = await znsAccessController.getRoleAdmin(EXECUTOR_ROLE);
       expect(roleAdminFrom).to.be.equal(GOVERNOR_ROLE);
 
-      await znsAccessController.connect(governor).grantRole(OPERATOR_ROLE, newOperator);
-      const has = await znsAccessController.hasRole(OPERATOR_ROLE, newOperator);
+      await znsAccessController.connect(governor).grantRole(EXECUTOR_ROLE, newOperator);
+      const has = await znsAccessController.hasRole(EXECUTOR_ROLE, newOperator);
       expect(has).to.be.true;
     });
   });

@@ -17,9 +17,9 @@ export const REGISTRAR_ROLE = ethers.utils.solidityKeccak256(
   ["REGISTRAR_ROLE"]
 );
 
-export const OPERATOR_ROLE = ethers.utils.solidityKeccak256(
+export const EXECUTOR_ROLE = ethers.utils.solidityKeccak256(
   ["string"],
-  ["OPERATOR_ROLE"]
+  ["EXECUTOR_ROLE"]
 );
 
 export const deployAccessController = async ({
