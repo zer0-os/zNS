@@ -5,12 +5,16 @@ import { ERC1967UpgradeUpgradeable }
 from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSRegistry } from "./IZNSRegistry.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
+
+contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistry {
+
     /**
      * @notice The address of the registrar we are using
      */
     address public znsRegistrar;
+
     /**
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
@@ -37,28 +41,19 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         _;
     }
 
-    /**
-     * @notice Revert if `msg.sender` is not the registrar
-     */
-    modifier onlyRegistrar() {
+    modifier onlyOwner(bytes32 domainHash) {
         require(
-            msg.sender == znsRegistrar,
-            "ZNSRegistry: Caller is not the Registrar"
+            records[domainHash].owner == msg.sender,
+            "ZNSRegistry: Not the Name Owner"
         );
         _;
     }
 
-    /**
-     * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
-     * to be the account that deploys this contract
-     */
-    function initialize(address znsRegistrar_) public override initializer {
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Registrar can not be 0x0 address"
-        );
-        znsRegistrar = znsRegistrar_;
+    modifier onlyRegistrar() {
+        accessController.checkRegistrar(msg.sender);
+        _;
     }
+
 
     /**
      * @notice Check if a given domain exists
@@ -84,30 +79,12 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     }
 
     /**
-     * @notice Change the address of the ZNSRegistrar contract we use
-     *
-     * @param znsRegistrar_ The new ZNSRegistrar
-     */
-    function setZNSRegistrar(address znsRegistrar_) external override {
-    // TODO When we have access control, only be callable by admin!!
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Cannot set Registrar to 0x0"
-        );
-
-        znsRegistrar = znsRegistrar_;
-
-        emit ZNSRegistrarSet(znsRegistrar_);
-    }
-
-    /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by the owner `msg.sender`
      *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    // TODO AC: add access control
     function setOwnerOperator(address operator, bool allowed) external override {
         operators[msg.sender][operator] = allowed;
 
@@ -178,8 +155,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner,
         address resolver
-    // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolver);
@@ -194,8 +170,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     function updateDomainOwner(
         bytes32 domainHash,
         address owner
-        // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
