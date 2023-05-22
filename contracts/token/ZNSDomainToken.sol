@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
 
 /**
  * @title A contract for tokenizing domains under the ZNS Architecture
  */
-contract ZNSDomainToken is Initializable, ERC721Upgradeable, IZNSDomainToken {
+contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
     function initialize(
         string memory tokenName,
         string memory tokenSymbol
@@ -66,4 +67,22 @@ contract ZNSDomainToken is Initializable, ERC721Upgradeable, IZNSDomainToken {
     function revoke(uint256 tokenId) external override onlyAuthorized {
         _burn(tokenId);
     }
+
+    /**
+     * @notice Set the address of the access controller contract
+     * @param _accessController The new access controller contract
+     */
+    function setAccessController(address _accessController) external override onlyRole(GOVERNOR_ROLE) {
+        _setAccessController(_accessController);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @dev Using solhint's `no-empty-blocks` will error here, but to be a UUPS Proxy we require it this
+     * and so we simply disable solhint for this function
+     * 
+     * @param newImplementation The new implementation contract to upgrade to.
+     */
+     // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(GOVERNOR_ROLE) {}
 }
