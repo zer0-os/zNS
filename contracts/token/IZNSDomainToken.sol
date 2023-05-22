@@ -5,6 +5,13 @@ import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ER
 
 interface IZNSDomainToken is IERC721Upgradeable {
     event SetAccessAuthorization(address indexed account);
+    
+    /**
+     * @notice Initialize the ERC721 ZNSDomainToken contract with the given values
+     * @param tokenName The ZNS token name
+     * @param tokenSymbol The ZNS token symbol
+     */
+    function initialize(string calldata tokenName, string calldata tokenSymbol) external;
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address

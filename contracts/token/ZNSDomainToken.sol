@@ -12,7 +12,7 @@ contract ZNSDomainToken is Initializable, ERC721Upgradeable, IZNSDomainToken {
     function initialize(
         string memory tokenName,
         string memory tokenSymbol
-    ) public initializer {
+    ) public override initializer {
         __ERC721_init(tokenName, tokenSymbol);
         authorized[msg.sender] = true;
     }
