@@ -7,7 +7,7 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
+contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -90,7 +90,7 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
     function setMaxPrice(
         uint256 maxPrice,
         bool isRootDomain
-    ) external override onlyRole(ADMIN_ROLE) {
+    ) external override onlyAdmin {
         if (isRootDomain) {
             priceConfig.maxRootDomainPrice = maxPrice;
         } else {
@@ -113,7 +113,7 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
      * to make up for this.
      * @param multiplier The new price multiplier to set
      */
-    function setPriceMultiplier(uint256 multiplier) external override onlyRole(ADMIN_ROLE) {
+    function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
         require(
             multiplier >= 300 && multiplier <= 400,
             "ZNS: Multiplier out of range"
@@ -123,7 +123,11 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
         emit PriceMultiplierSet(multiplier);
     }
 
-    function setRegistrationFeePercentage(uint256 regFeePercentage) external override onlyRole(ADMIN_ROLE) {
+    function setRegistrationFeePercentage(uint256 regFeePercentage)
+    external
+    override
+    onlyAdmin
+    {
         feePercentage = regFeePercentage;
         emit FeePercentageSet(regFeePercentage);
     }
@@ -138,7 +142,7 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
     function setBaseLength(
         uint256 length,
         bool isRootDomain
-    ) external override onlyRole(ADMIN_ROLE) {
+    ) external override onlyAdmin {
         if (isRootDomain) {
             priceConfig.baseRootDomainLength = length;
         } else {
@@ -156,14 +160,18 @@ contract ZNSPriceOracle is AccessControlled, IZNSPriceOracle, Initializable {
     function setBaseLengths(
         uint256 rootLength,
         uint256 subdomainLength
-    ) external override onlyRole(ADMIN_ROLE) {
+    ) external override onlyAdmin {
         priceConfig.baseRootDomainLength = rootLength;
         priceConfig.baseSubdomainLength = subdomainLength;
 
         emit BaseLengthsSet(rootLength, subdomainLength);
     }
 
-    function setAccessController(address accessController) external override onlyRole(ADMIN_ROLE) {
+    function setAccessController(address accessController)
+    external
+    override
+    onlyAdmin
+    {
         _setAccessController(accessController);
     }
 
