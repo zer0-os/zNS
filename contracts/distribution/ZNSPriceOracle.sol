@@ -7,6 +7,7 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
+
 contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
     using StringUtils for string;
 
@@ -171,7 +172,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
 
     function setAccessController(address accessController)
     external
-    override
+    override(IZNSPriceOracle, AccessControlled)
     onlyAdmin
     {
         _setAccessController(accessController);

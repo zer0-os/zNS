@@ -115,7 +115,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
 
     function setAccessController(address accessController_)
     public
-    override
+    override(IZNSTreasury, AccessControlled)
     onlyAdmin
     {
         _setAccessController(accessController_);
