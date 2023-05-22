@@ -32,15 +32,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         _;
     }
 
-    // TODO AC: this might be the safest way
-    modifier onlyAdmin() {
-        require(
-            accessController.isAdmin(msg.sender),
-            "ZNSEthRegistrar: Caller is not an admin"
-        );
-        _;
-    }
-
     /**
      * @notice Create an instance of the ZNSEthRegistrar
      * for registering ZNS domains and subdomains

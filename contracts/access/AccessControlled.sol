@@ -11,9 +11,11 @@ abstract contract AccessControlled {
     IZNSAccessController internal accessController;
 
 
-    // TODO AC: do we need this?
-    modifier onlyRole(bytes32 role) {
-        accessController.checkRole(role, msg.sender);
+    modifier onlyAdmin() {
+        require(
+            accessController.isAdmin(msg.sender),
+            "Caller is not an admin"
+        );
         _;
     }
 
