@@ -69,10 +69,15 @@ export const deployPriceOracle = async ({
 };
 
 export const deployDomainToken = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  accessControllerAddress : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy("ZNSDomainToken", "ZDT");
+  return domainTokenFactory.deploy(
+    "ZNSDomainToken",
+    "ZDT",
+    accessControllerAddress
+  );
 };
 
 export const deployZeroTokenMock = async (
