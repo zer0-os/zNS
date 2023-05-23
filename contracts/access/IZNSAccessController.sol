@@ -21,4 +21,8 @@ interface IZNSAccessController is IAccessControlUpgradeable {
     function checkExecutor(address account) external view;
 
     function checkRegistrar(address account) external view;
+
+    function hasAdminRole(address account) external view returns (bool);
+
+    function hasRegistrarRole(address account) external view returns (bool);
 }
