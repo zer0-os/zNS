@@ -72,7 +72,13 @@ export const deployDomainToken = async (
   deployer : SignerWithAddress
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  const contract = await upgrades.deployProxy(domainTokenFactory,["ZNSDomainToken", "ZDT"]);
+  const contract = await upgrades.deployProxy(
+    domainTokenFactory,
+    ["ZNSDomainToken", "ZDT"],
+    {
+      kind: "uups",
+    }
+  );
   await contract.deployed();
   return contract as ZNSDomainToken;
 };

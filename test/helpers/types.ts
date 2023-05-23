@@ -8,6 +8,7 @@ import {
   ZNSTreasury,
   ZeroTokenMock, ZNSAccessController,
 } from "../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
 
@@ -39,4 +40,10 @@ export interface ZNSContracts {
   treasury : ZNSTreasury;
   priceOracle : ZNSPriceOracle;
   registrar : ZNSEthRegistrar;
+}
+
+export interface DeployZNSParams {
+  deployer : SignerWithAddress;
+  governorAddresses : Array<string>;
+  adminAddresses : Array<string>;
 }

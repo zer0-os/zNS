@@ -83,6 +83,9 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
      * 
      * @param newImplementation The new implementation contract to upgrade to.
      */
+    // TODO no access control here, pending PR from kirill, add `onlyRole`
      // solhint-disable-next-line no-empty-blocks
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(GOVERNOR_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override {
+        // accessController.checkRole(GOVERNOR_ROLE, msg.sender);
+    }
 }
