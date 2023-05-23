@@ -46,9 +46,10 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     ) {
         _setAccessController(accessController_);
         // TODO AC: should we call protected functions in the constructor/initialize?
+        //  test this!
         setRegistry(znsRegistry_);
         setTreasury(znsTreasury_);
-        setZnsDomainToken(znsDomainToken_);
+        setDomainToken(znsDomainToken_);
         setAddressResolver(znsAddressResolver_);
     }
 
@@ -142,7 +143,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit TreasurySet(znsTreasury_);
     }
 
-    function setZnsDomainToken(address znsDomainToken_) public override onlyAdmin {
+    function setDomainToken(address znsDomainToken_) public override onlyAdmin {
         require(
             znsDomainToken_ != address(0),
             "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
