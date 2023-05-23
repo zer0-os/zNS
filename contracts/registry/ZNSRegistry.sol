@@ -11,11 +11,6 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistry {
 
     /**
-     * @notice The address of the registrar we are using
-     */
-    address public znsRegistrar;
-
-    /**
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
      */
@@ -54,10 +49,16 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         _;
     }
 
+    /**
+     * @notice Initialize the ZNSRegistry contract
+     * @param _accessController The address of the AccessController contract
+     */
+    function initialize(address _accessController) public override initializer {
+        _setAccessController(_accessController);
+    }
 
     /**
      * @notice Check if a given domain exists
-     *
      * @param domainHash The hash of a domain's name
      */
     function exists(bytes32 domainHash) external view override returns (bool) {
@@ -66,7 +67,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Checks if provided address is an owner or an operator of the provided domain
-     *
      * @param domainHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
@@ -81,7 +81,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by the owner `msg.sender`
-     *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
@@ -93,7 +92,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Get a record for a domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
@@ -104,7 +102,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Get the owner of the given domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
@@ -115,7 +112,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Get the default resolver for the given domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
@@ -126,7 +122,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Create a new domain record
-     *
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
      * @param resolver The resolver of the new domain
@@ -146,7 +141,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Update an existing domain record's owner or resolver
-     *
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
@@ -163,7 +157,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Update a domain's owner
-     *
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -177,7 +170,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Update the domain's default resolver
-     *
      * @param domainHash the hash of a domain's name
      * @param resolver The new default resolver
      */
@@ -191,7 +183,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Delete a domain's record
-     *
      * @param domainHash The hash of the domain name
      */
     function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
@@ -200,9 +191,14 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         emit DomainRecordDeleted(domainHash);
     }
 
+    function setAccessController(
+        address accessController
+    ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
+        _setAccessController(accessController);
+    }
+
     /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
-     *
      * @param domainHash the hash of a domain's name
      */
     function _exists(bytes32 domainHash) internal view returns (bool) {
@@ -214,7 +210,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
      * Note that we don't check for `address(0)` here. This is intentional
      * because we are not currently allowing reselling of domains and want
      * to enable burning them instead by transferring ownership to `address(0)`
-     *
      * @param domainHash the hash of a domain's name
      * @param owner The owner to set
      */
@@ -226,7 +221,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Set a domain's resolver
-     *
      * @param domainHash the hash of a domain's name
      * @param resolver The resolver to set
      */
