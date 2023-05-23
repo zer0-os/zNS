@@ -6,7 +6,8 @@ import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { ADMIN_ROLE, getAccessRevertMsg } from "./helpers/access";
+import { ADMIN_ROLE, GOVERNOR_ROLE, getAccessRevertMsg } from "./helpers/access";
+import { ZNSAccessController__factory, ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -577,6 +578,36 @@ describe("ZNSPriceOracle", () => {
 
       const tx = zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
       await expect(tx).to.emit(zns.priceOracle, "BaseLengthsSet").withArgs(newLength, newLength);
+    });
+  });
+  describe("UUPS", () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
+      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
+
+      const factory = new ZNSPriceOracle__factory(deployer);
+      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault,
+      ]);
+
+      await proxyPriceOracle.deployed();
+
+      // PriceOracle to upgrade to
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      await newPriceOracle.initialize(
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault
+      );
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkRole(GOVERNOR_ROLE, deployer.address)).to.not.be.reverted;
+
+      const tx = proxyPriceOracle.upgradeTo(newPriceOracle.address);
+      await expect(tx).to.not.be.reverted;
     });
   });
 });
