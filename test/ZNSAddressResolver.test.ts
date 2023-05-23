@@ -4,24 +4,21 @@ import {
   ZNSRegistry__factory,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
-  ERC165__factory,
+  ERC165__factory, ZNSAccessController,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { deployAccessController, deployAddressResolver, deployRegistry, REGISTRAR_ROLE } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
 
-/**
- * TODO the registry should have a function for checking isOwnerOrOperator,
- * so that the AddressResolver can implement a single call in its modifier.
- *
- * Consider moving these tests to ZNSRegistry since they deploy a registry.
- */
+
 describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let znsAddressResolver : ZNSAddressResolver;
+  let accessController : ZNSAccessController;
   let znsRegistry : ZNSRegistry;
   let owner : SignerWithAddress;
   let addr1 : SignerWithAddress;
@@ -32,14 +29,15 @@ describe("ZNSAddressResolver", () => {
     [owner, addr1] = await hre.ethers.getSigners();
     [deployer, operator, mockRegistrar] = await hre.ethers.getSigners();
 
-    const znsAddressResolverFactory = new ZNSAddressResolver__factory(deployer);
-    const znsRegistryFactory = new ZNSRegistry__factory(deployer);
+    accessController = await deployAccessController({
+      deployer,
+      governorAddresses: [deployer.address],
+      adminAddresses: [deployer.address],
+    });
+    await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, deployer.address);
 
-    znsRegistry = await znsRegistryFactory.deploy();
-    znsAddressResolver = await znsAddressResolverFactory.deploy(znsRegistry.address);
-
-    // Initialize registry and domain
-    await znsRegistry.connect(deployer).initialize(mockRegistrar.address);
+    znsRegistry = await deployRegistry(deployer, accessController.address);
+    znsAddressResolver = await deployAddressResolver(deployer, znsRegistry.address);
 
     // Have to get this value for every test, but can be fixed
     wilderDomainNameHash = hashDomainName("wilder");
@@ -80,6 +78,9 @@ describe("ZNSAddressResolver", () => {
     )
       .to.emit(znsAddressResolver, "AddressSet")
       .withArgs(wilderDomainNameHash, addr1.address);
+
+    const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
+    expect(resolvedAddress).to.equal(addr1.address);
   });
 
   it("Should allow operator to setAddress and emit event", async () => {
@@ -93,17 +94,20 @@ describe("ZNSAddressResolver", () => {
       .withArgs(wilderDomainNameHash, addr1.address);
   });
 
-  it("Should not allow owner to setAddress(0)", async () => {
-    await expect(
-      znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, hre.ethers.constants.AddressZero)
-    ).to.be.revertedWith("ZNS: Cant set address to 0");
+  it("Should allow owner to setAddress(0)", async () => {
+    await znsAddressResolver
+      .connect(owner)
+      .setAddress(wilderDomainNameHash, hre.ethers.constants.AddressZero);
+
+    const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
+    expect(resolvedAddress).to.equal(addr1.address);
   });
 
   it("Should resolve address correctly", async () => {
     await znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, addr1.address);
 
     const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
-    expect(resolvedAddress).to.equal(addr1.address);
+    expect(resolvedAddress).to.equal(hre.ethers.constants.AddressZero);
   });
 
   it("Should support the IZNSAddressResolver interface ID", async () => {
@@ -122,5 +126,16 @@ describe("ZNSAddressResolver", () => {
   it("Should not support other interface IDs", async () => {
     const notSupported = await znsAddressResolver.supportsInterface("0xffffffff");
     expect(notSupported).to.be.false;
+  });
+
+  it("Should support full discovery flow from ZNSRegistry", async () => {
+    await znsAddressResolver.connect(owner)
+      .setAddress(wilderDomainNameHash, addr1.address);
+
+    const resolverAddress = await znsRegistry.getDomainResolver(wilderDomainNameHash);
+    expect(resolverAddress).to.eq(znsAddressResolver.address);
+
+    const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
+    expect(resolvedAddress).to.eq(addr1.address);
   });
 });
