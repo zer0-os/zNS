@@ -606,8 +606,38 @@ describe("ZNSPriceOracle", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkRole(GOVERNOR_ROLE, deployer.address)).to.not.be.reverted;
 
-      const tx = proxyPriceOracle.upgradeTo(newPriceOracle.address);
+      const tx = proxyPriceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
       await expect(tx).to.not.be.reverted;
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      const factory = new ZNSPriceOracle__factory(deployer);
+      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault,
+      ]);
+
+      await proxyPriceOracle.deployed();
+
+      // PriceOracle to upgrade to
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      await newPriceOracle.initialize(
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault
+      );
+
+      // Confirm the account is not a governor
+      await expect(zns.accessController.checkRole(GOVERNOR_ROLE, randomAcc.address)).to.be.reverted;
+
+      const tx = proxyPriceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
+
+      await expect(tx).to.be.revertedWith(
+        `AccessControl: account ${randomAcc.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      );
     });
   });
 });
