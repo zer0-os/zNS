@@ -3,12 +3,6 @@ pragma solidity ^0.8.18;
 
 interface IZNSTreasury {
     /**
-     * @notice Emitted when the znsRegistrar is updated
-     * @param znsRegistrar The address of the new registrar
-     */
-    event ZNSRegistrarSet(address znsRegistrar);
-
-    /**
      * @notice Emitted when a new stake is deposited
      * @param domainHash The hash of the domain name
      * @param domainName The domain name
@@ -36,7 +30,7 @@ interface IZNSTreasury {
 
     event ZnsPriceOracleSet(address znsPriceOracle);
 
-    event ZnsStakingTokenSet(address znsStakingToken);
+    event StakingTokenSet(address znsStakingToken);
 
     event ZeroVaultAddressSet(address zeroVault);
 

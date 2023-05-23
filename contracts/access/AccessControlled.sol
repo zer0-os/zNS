@@ -19,9 +19,7 @@ abstract contract AccessControlled {
 
     /**
      * @dev This is here to make sure the external function is always implemented in children,
-     * otherwise we will not be able to reset the module (not ideal since it might
-     * not get to the final interface of a child).
-     * TODO AC: how do we make sure this gets to the final interface?
+     * otherwise we will not be able to reset the module.
      */
     function setAccessController(address _accessController) external virtual;
 

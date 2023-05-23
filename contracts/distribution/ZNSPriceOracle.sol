@@ -119,7 +119,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
     function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
         require(
             multiplier >= 300 && multiplier <= 400,
-            "ZNS: Multiplier out of range"
+            "ZNSPriceOracle: Multiplier out of range"
         );
         priceConfig.priceMultiplier = multiplier;
 

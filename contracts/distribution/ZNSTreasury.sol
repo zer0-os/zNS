@@ -11,7 +11,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     /**
      * @notice The price oracle
      */
-    IZNSPriceOracle public znsPriceOracle;
+    IZNSPriceOracle public priceOracle;
 
     /**
      * @notice The payment/staking token
@@ -58,7 +58,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         bool isTopLevelDomain
     ) external override onlyRegistrar {
         // Get price and fee for the domain
-        (, uint256 stakeAmount, uint256 registrationFee) = znsPriceOracle.getPrice(
+        (, uint256 stakeAmount, uint256 registrationFee) = priceOracle.getPrice(
             domainName,
             isTopLevelDomain
         );
@@ -102,7 +102,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
             "ZNSTreasury: znsPriceOracle_ passed as 0x0 address"
         );
 
-        znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
+        priceOracle = IZNSPriceOracle(znsPriceOracle_);
         emit ZnsPriceOracleSet(znsPriceOracle_);
     }
 
@@ -110,7 +110,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         require(stakingToken_ != address(0), "ZNSTreasury: stakingToken_ passed as 0x0 address");
 
         stakingToken = IERC20(stakingToken_);
-        emit ZnsStakingTokenSet(stakingToken_);
+        emit StakingTokenSet(stakingToken_);
     }
 
     function setAccessController(address accessController_)

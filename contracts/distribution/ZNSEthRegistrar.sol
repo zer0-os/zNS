@@ -11,15 +11,15 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 
 contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
 
-    IZNSRegistry public znsRegistry;
-    IZNSTreasury public znsTreasury;
-    IZNSDomainToken public znsDomainToken;
-    IZNSAddressResolver public znsAddressResolver;
+    IZNSRegistry public registry;
+    IZNSTreasury public treasury;
+    IZNSDomainToken public domainToken;
+    IZNSAddressResolver public addressResolver;
 
 
     modifier onlyNameOwner(bytes32 domainHash) {
         require(
-            msg.sender == znsRegistry.getDomainOwner(domainHash),
+            msg.sender == registry.getDomainOwner(domainHash),
             "ZNSEthRegistrar: Not the Owner of the Name"
         );
         _;
@@ -27,7 +27,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
 
     modifier onlyTokenOwner(bytes32 domainHash) {
         require(
-            msg.sender == znsDomainToken.ownerOf(uint256(domainHash)),
+            msg.sender == domainToken.ownerOf(uint256(domainHash)),
             "ZNSEthRegistrar: Not the owner of the Token"
         );
         _;
@@ -46,10 +46,10 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     ) {
         _setAccessController(accessController_);
         // TODO AC: should we call protected functions in the constructor/initialize?
-        setZnsRegistry(znsRegistry_);
-        setZnsTreasury(znsTreasury_);
+        setRegistry(znsRegistry_);
+        setTreasury(znsTreasury_);
         setZnsDomainToken(znsDomainToken_);
-        setZnsAddressResolver(znsAddressResolver_);
+        setAddressResolver(znsAddressResolver_);
     }
 
     /**
@@ -71,16 +71,16 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         bytes32 domainHash = keccak256(bytes(name));
 
         require(
-            !znsRegistry.exists(domainHash),
+            !registry.exists(domainHash),
             "ZNSEthRegistrar: Domain already exists"
         );
 
         // Staking logic
-        znsTreasury.stakeForDomain(domainHash, name, msg.sender, true);
+        treasury.stakeForDomain(domainHash, name, msg.sender, true);
 
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
-        znsDomainToken.register(msg.sender, tokenId);
+        domainToken.register(msg.sender, tokenId);
 
         _setDomainData(domainHash, msg.sender, resolverContent);
 
@@ -89,7 +89,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
             tokenId,
             name,
             msg.sender,
-            address(znsAddressResolver)
+            address(addressResolver)
         );
 
         return domainHash;
@@ -105,9 +105,9 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     onlyTokenOwner(domainHash)
     {
         uint256 tokenId = uint256(domainHash);
-        znsDomainToken.revoke(tokenId);
-        znsTreasury.unstakeForDomain(domainHash, msg.sender);
-        znsRegistry.deleteRecord(domainHash);
+        domainToken.revoke(tokenId);
+        treasury.unstakeForDomain(domainHash, msg.sender);
+        registry.deleteRecord(domainHash);
 
         emit DomainRevoked(domainHash, msg.sender);
     }
@@ -117,29 +117,29 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     override
     onlyTokenOwner(domainHash)
     {
-        znsRegistry.updateDomainOwner(domainHash, msg.sender);
+        registry.updateDomainOwner(domainHash, msg.sender);
 
         emit DomainReclaimed(domainHash, msg.sender);
     }
 
-    function setZnsRegistry(address znsRegistry_) public override onlyAdmin {
+    function setRegistry(address znsRegistry_) public override onlyAdmin {
         require(
             znsRegistry_ != address(0),
             "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
         );
-        znsRegistry = IZNSRegistry(znsRegistry_);
+        registry = IZNSRegistry(znsRegistry_);
 
-        emit ZnsRegistrySet(znsRegistry_);
+        emit RegistrySet(znsRegistry_);
     }
 
-    function setZnsTreasury(address znsTreasury_) public override onlyAdmin {
+    function setTreasury(address znsTreasury_) public override onlyAdmin {
         require(
             znsTreasury_ != address(0),
             "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
         );
-        znsTreasury = IZNSTreasury(znsTreasury_);
+        treasury = IZNSTreasury(znsTreasury_);
 
-        emit ZnsTreasurySet(znsTreasury_);
+        emit TreasurySet(znsTreasury_);
     }
 
     function setZnsDomainToken(address znsDomainToken_) public override onlyAdmin {
@@ -147,19 +147,19 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
             znsDomainToken_ != address(0),
             "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
         );
-        znsDomainToken = IZNSDomainToken(znsDomainToken_);
+        domainToken = IZNSDomainToken(znsDomainToken_);
 
-        emit ZnsDomainTokenSet(znsDomainToken_);
+        emit DomainTokenSet(znsDomainToken_);
     }
 
-    function setZnsAddressResolver(address znsAddressResolver_) public override onlyAdmin {
+    function setAddressResolver(address znsAddressResolver_) public override onlyAdmin {
         require(
             znsAddressResolver_ != address(0),
             "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
         );
-        znsAddressResolver = IZNSAddressResolver(znsAddressResolver_);
+        addressResolver = IZNSAddressResolver(znsAddressResolver_);
 
-        emit ZnsAddressResolverSet(znsAddressResolver_);
+        emit AddressResolverSet(znsAddressResolver_);
     }
 
     function setAccessController(address accessController_)
@@ -184,10 +184,10 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     ) internal {
         // Set only the domain owner if no resolver content is given
         if (resolverContent != address(0)) {
-            znsRegistry.createDomainRecord(domainHash, owner, address(znsAddressResolver));
-            znsAddressResolver.setAddress(domainHash, resolverContent);
+            registry.createDomainRecord(domainHash, owner, address(addressResolver));
+            addressResolver.setAddress(domainHash, resolverContent);
         } else {
-            znsRegistry.createDomainRecord(domainHash, owner, address(0));
+            registry.createDomainRecord(domainHash, owner, address(0));
         }
     }
 }

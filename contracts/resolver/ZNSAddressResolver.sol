@@ -11,6 +11,7 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      *         for every domain in the system
      */
     IZNSRegistry public registry;
+
     /**
      * @notice Mapping of domain hash to address used to bind domains
      *         to Ethereum wallets or contracts registered in ZNS
