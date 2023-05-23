@@ -103,7 +103,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         );
 
         priceOracle = IZNSPriceOracle(znsPriceOracle_);
-        emit ZnsPriceOracleSet(znsPriceOracle_);
+        emit PriceOracleSet(znsPriceOracle_);
     }
 
     function setStakingToken(address stakingToken_) public override onlyAdmin {

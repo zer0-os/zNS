@@ -28,7 +28,7 @@ interface IZNSTreasury {
         uint256 indexed amount
     );
 
-    event ZnsPriceOracleSet(address znsPriceOracle);
+    event PriceOracleSet(address znsPriceOracle);
 
     event StakingTokenSet(address znsStakingToken);
 
