@@ -1,9 +1,7 @@
 import * as hre from "hardhat";
 import {
   ZNSRegistry,
-  ZNSRegistry__factory,
   ZNSAddressResolver,
-  ZNSAddressResolver__factory,
   ERC165__factory, ZNSAccessController,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -34,7 +32,7 @@ describe("ZNSAddressResolver", () => {
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
     });
-    await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, deployer.address);
+    await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     znsRegistry = await deployRegistry(deployer, accessController.address);
     znsAddressResolver = await deployAddressResolver(deployer, znsRegistry.address);
@@ -68,7 +66,9 @@ describe("ZNSAddressResolver", () => {
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
       znsAddressResolver.connect(addr1).setAddress(wilderDomainNameHash, addr1.address)
-    ).to.be.revertedWith("ZNSAddressResolver: Not allowed");
+    ).to.be.revertedWith(
+      "ZNSAddressResolver: Not authorized for this domain"
+    );
   });
 
   it("Should allow owner to setAddress and emit event", async () => {
@@ -94,20 +94,20 @@ describe("ZNSAddressResolver", () => {
       .withArgs(wilderDomainNameHash, addr1.address);
   });
 
-  it("Should allow owner to setAddress(0)", async () => {
+  it("Should allow owner to set address to 0", async () => {
     await znsAddressResolver
       .connect(owner)
       .setAddress(wilderDomainNameHash, hre.ethers.constants.AddressZero);
 
     const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
-    expect(resolvedAddress).to.equal(addr1.address);
+    expect(resolvedAddress).to.equal(hre.ethers.constants.AddressZero);
   });
 
   it("Should resolve address correctly", async () => {
     await znsAddressResolver.connect(owner).setAddress(wilderDomainNameHash, addr1.address);
 
     const resolvedAddress = await znsAddressResolver.getAddress(wilderDomainNameHash);
-    expect(resolvedAddress).to.equal(hre.ethers.constants.AddressZero);
+    expect(resolvedAddress).to.equal(addr1.address);
   });
 
   it("Should support the IZNSAddressResolver interface ID", async () => {
