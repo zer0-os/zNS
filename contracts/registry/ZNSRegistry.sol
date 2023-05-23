@@ -29,6 +29,7 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
+        // TODO: consider using errors instead of requires with string msgs
         require(
             isOwnerOrOperator(domainHash, msg.sender),
             "ZNSRegistry: Not authorized"
@@ -163,7 +164,14 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
     function updateDomainOwner(
         bytes32 domainHash,
         address owner
-    ) external override onlyOwner(domainHash) {
+    ) external override {
+        // this can be called from ZNSRegistrar as part of `reclaim()` flow
+        require(
+            msg.sender == records[domainHash].owner ||
+            accessController.hasRegistrarRole(msg.sender),
+            "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        );
+
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
