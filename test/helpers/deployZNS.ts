@@ -1,6 +1,7 @@
 import {
   ZeroTokenMock,
-  ZeroTokenMock__factory, ZNSAccessController,
+  ZeroTokenMock__factory,
+  ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
   ZNSDomainToken,
@@ -14,8 +15,9 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
+import * as hre from "hardhat";
 import { ethers } from "hardhat";
-import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
@@ -86,16 +88,23 @@ export const deployTreasury = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
   znsPriceOracleAddress : string,
-  zTokenMockMockAddress : string,
+  zTokenMockAddress : string,
   zeroVaultAddress : string
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  const treasury = await treasuryFactory.deploy(
-    accessControllerAddress,
-    znsPriceOracleAddress,
-    zTokenMockMockAddress,
-    zeroVaultAddress
-  );
+  const treasury : ZNSTreasury = await hre.upgrades.deployProxy(treasuryFactory,
+    [
+      accessControllerAddress,
+      znsPriceOracleAddress,
+      zTokenMockAddress,
+      zeroVaultAddress,
+    ],
+    {
+      kind: "uups",
+    }) as ZNSTreasury;
+
+  await treasury.deployed();
+
   return treasury;
 };
 
@@ -125,14 +134,7 @@ export const deployZNS = async ({
   priceConfig = priceConfigDefault,
   registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
-} : {
-  deployer : SignerWithAddress;
-  governorAddresses : Array<string>;
-  adminAddresses : Array<string>;
-  priceConfig ?: PriceParams;
-  registrationFeePerc ?: BigNumber;
-  zeroVaultAddress ?: string;
-}) : Promise<ZNSContracts> => {
+} : DeployZNSParams) : Promise<ZNSContracts> => {
   const accessController = await deployAccessController({
     deployer,
     governorAddresses: [deployer.address, ...governorAddresses],

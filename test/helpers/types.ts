@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber, Signer } from "ethers";
 import {
   ZNSAddressResolver,
   ZNSDomainToken,
@@ -6,8 +6,10 @@ import {
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
-  ZeroTokenMock, ZNSAccessController,
+  ZeroTokenMock,
+  ZNSAccessController,
 } from "../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
 
@@ -39,4 +41,13 @@ export interface ZNSContracts {
   treasury : ZNSTreasury;
   priceOracle : ZNSPriceOracle;
   registrar : ZNSEthRegistrar;
+}
+
+export interface DeployZNSParams {
+  deployer : SignerWithAddress;
+  governorAddresses : Array<string>;
+  adminAddresses : Array<string>;
+  priceConfig ?: PriceParams;
+  registrationFeePerc ?: BigNumber;
+  zeroVaultAddress ?: string;
 }

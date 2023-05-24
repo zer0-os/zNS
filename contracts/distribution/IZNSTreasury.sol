@@ -54,4 +54,11 @@ interface IZNSTreasury {
     function setPriceOracle(address znsPriceOracle_) external;
 
     function setStakingToken(address stakingToken_) external;
+
+    function initialize(
+        address accessController_,
+        address znsPriceOracle_,
+        address stakingToken_,
+        address zeroVault_
+    ) external;
 }
