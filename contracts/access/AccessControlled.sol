@@ -16,16 +16,13 @@ abstract contract AccessControlled {
         _;
     }
 
-
     /**
-     * @dev This is here to make sure the external function is always implemented in children,
-     * otherwise we will not be able to reset the module.
+     * @dev These 2 virtual functions are here to make sure they are always implemented in children,
+     * otherwise we will not be able to reset the module or read the AC address
      */
-    function setAccessController(address _accessController) external virtual;
+    function getAccessController() external view virtual returns (address);
 
-    function getAccessController() external view returns (address) {
-        return address(accessController);
-    }
+    function setAccessController(address _accessController) external virtual;
 
     function _setAccessController(address _accessController) internal {
         require(_accessController != address(0), "AC: _accessController is 0x0 address");

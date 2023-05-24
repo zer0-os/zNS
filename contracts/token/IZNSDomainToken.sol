@@ -10,4 +10,6 @@ interface IZNSDomainToken is IERC721 {
     function revoke(uint256 tokenId) external;
 
     function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }

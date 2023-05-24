@@ -120,4 +120,8 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     {
         _setAccessController(accessController_);
     }
+
+    function getAccessController() external view override(AccessControlled, IZNSTreasury) returns (address) {
+        return address(accessController);
+    }
 }

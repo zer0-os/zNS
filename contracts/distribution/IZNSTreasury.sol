@@ -50,4 +50,6 @@ interface IZNSTreasury {
     function setStakingToken(address stakingToken_) external;
 
     function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }

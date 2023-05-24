@@ -178,6 +178,10 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         _setAccessController(accessController);
     }
 
+    function getAccessController() external view override(AccessControlled, IZNSPriceOracle) returns (address) {
+        return address(accessController);
+    }
+
     /**
      * @notice Internal function to get price abstract of the base price being for
      * a root domain or a subdomain.

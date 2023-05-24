@@ -158,4 +158,6 @@ interface IZNSRegistry {
      * @param accessController The new access controller
      */
     function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }

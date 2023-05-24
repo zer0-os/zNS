@@ -205,6 +205,10 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         _setAccessController(accessController);
     }
 
+    function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
+        return address(accessController);
+    }
+
     /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
      * @param domainHash the hash of a domain's name

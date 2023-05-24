@@ -171,6 +171,10 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         _setAccessController(accessController_);
     }
 
+    function getAccessController() external view override(AccessControlled, IZNSEthRegistrar) returns (address) {
+        return address(accessController);
+    }
+
     /**
      * @notice Set domain data appropriately for a newly registered domain
      *

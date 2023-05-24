@@ -44,4 +44,6 @@ interface IZNSEthRegistrar {
     function setAddressResolver(address znsAddressResolver_) external;
 
     function setAccessController(address accessController_) external;
+
+    function getAccessController() external view returns (address);
 }

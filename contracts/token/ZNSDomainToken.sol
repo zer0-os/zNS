@@ -49,4 +49,8 @@ contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
     {
         _setAccessController(accessController);
     }
+
+    function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {
+        return address(accessController);
+    }
 }

@@ -122,4 +122,6 @@ interface IZNSPriceOracle {
     function setBaseLengths(uint256 rootLength, uint256 subdomainLength) external;
 
     function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }
