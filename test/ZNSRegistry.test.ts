@@ -66,7 +66,7 @@ describe("ZNSRegistry Tests", () => {
     );
   });
 
-  it("Should set access controller correctly with ADMIN_ROLE and revert without", async () => {
+  it("Should set access controller correctly with ADMIN_ROLE", async () => {
     const currentAC = await registry.getAccessController();
 
     await registry.connect(deployer).setAccessController(randomUser.address);
@@ -74,7 +74,9 @@ describe("ZNSRegistry Tests", () => {
 
     expect(currentAC).to.not.equal(newAC);
     expect(newAC).to.equal(randomUser.address);
+  });
 
+  it("Should revert when setting access controller without ADMIN_ROLE", async () => {
     await expect(
       registry.connect(randomUser).setAccessController(deployer.address)
     ).to.be.revertedWith(

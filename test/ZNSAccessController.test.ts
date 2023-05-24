@@ -195,7 +195,7 @@ describe("ZNSAccessController", () => {
 
     it("Should return true for REGISTRAR_ROLE", async () => {
       const [ registrar ] = randomAccs;
-      await znsAccessController.connect(governorAccs[0]).grantRole(REGISTRAR_ROLE, registrar.address);
+      await znsAccessController.connect(adminAccs[0]).grantRole(REGISTRAR_ROLE, registrar.address);
       const isRegistrar = await znsAccessController.isRegistrar(registrar.address);
       expect(isRegistrar).to.be.true;
     });

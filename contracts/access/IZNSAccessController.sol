@@ -10,8 +10,6 @@ interface IZNSAccessController is IAccessControlUpgradeable {
         address[] calldata operatorAddresses
     ) external;
 
-    function checkRole(bytes32 role, address account) external view;
-
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external;
 
     function checkGovernor(address account) external view;
