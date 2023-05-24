@@ -6,7 +6,14 @@ import {
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
-import { deployAccessController, deployAddressResolver, deployRegistry, REGISTRAR_ROLE } from "./helpers";
+import {
+  ADMIN_ROLE,
+  deployAccessController,
+  deployAddressResolver,
+  deployRegistry,
+  getAccessRevertMsg,
+  REGISTRAR_ROLE,
+} from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -35,7 +42,7 @@ describe("ZNSAddressResolver", () => {
     await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     znsRegistry = await deployRegistry(deployer, accessController.address);
-    znsAddressResolver = await deployAddressResolver(deployer, znsRegistry.address);
+    znsAddressResolver = await deployAddressResolver(deployer, accessController.address, znsRegistry.address);
 
     // Have to get this value for every test, but can be fixed
     wilderDomainNameHash = hashDomainName("wilder");
@@ -59,8 +66,44 @@ describe("ZNSAddressResolver", () => {
     expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
   });
 
-  it("Should have registry address correctly set", async () => {
+  it("Should have registry address correctly set when initializing", async () => {
     expect(await znsAddressResolver.registry()).to.equal(znsRegistry.address);
+  });
+
+  it("Should setRegistry() correctly with ADMIN_ROLE", async () => {
+    await expect(
+      znsAddressResolver.connect(deployer).setRegistry(operator.address)
+    )
+      .to.emit(znsAddressResolver, "RegistrySet")
+      .withArgs(operator.address);
+
+    expect(await znsAddressResolver.registry()).to.equal(operator.address);
+  });
+
+  it("Should revert when setRegistry() without ADMIN_ROLE", async () => {
+    await expect(
+      znsAddressResolver.connect(operator).setRegistry(operator.address)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(operator.address, ADMIN_ROLE)
+    );
+  });
+
+  it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
+    await expect(
+      znsAddressResolver.connect(deployer).setAccessController(operator.address)
+    )
+      .to.emit(znsAddressResolver, "AccessControllerSet")
+      .withArgs(operator.address);
+
+    expect(await znsAddressResolver.getAccessController()).to.equal(operator.address);
+  });
+
+  it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
+    await expect(
+      znsAddressResolver.connect(operator).setAccessController(operator.address)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(operator.address, ADMIN_ROLE)
+    );
   });
 
   it("Should not allow non-owner address to setAddress", async () => {
@@ -88,6 +131,17 @@ describe("ZNSAddressResolver", () => {
 
     await expect(
       znsAddressResolver.connect(operator)
+        .setAddress(wilderDomainNameHash, addr1.address)
+    )
+      .to.emit(znsAddressResolver, "AddressSet")
+      .withArgs(wilderDomainNameHash, addr1.address);
+  });
+
+  it("Should allow REGISTRAR_ROLE to setAddress and emit event", async () => {
+    await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+    await expect(
+      znsAddressResolver.connect(mockRegistrar)
         .setAddress(wilderDomainNameHash, addr1.address)
     )
       .to.emit(znsAddressResolver, "AddressSet")
