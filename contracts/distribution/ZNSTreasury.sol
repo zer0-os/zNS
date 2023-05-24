@@ -118,9 +118,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
      * @notice The required override by UUPS
      * @param newImplementation The implementation contract to upgrade to
      */
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override {
+    function _authorizeUpgrade(address newImplementation) internal override {
         accessController.checkRole(GOVERNOR_ROLE, msg.sender);
     }
 }
