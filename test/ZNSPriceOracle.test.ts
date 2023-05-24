@@ -4,9 +4,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice } from "./helpers";
+import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { ADMIN_ROLE, getAccessRevertMsg } from "./helpers/access";
+import { ADMIN_ROLE } from "./helpers/access";
+import { getAccessRevertMsg } from "./helpers/errors";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -345,7 +346,7 @@ describe("ZNSPriceOracle", () => {
       const newMultiplier = BigNumber.from("299");
 
       const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith("ZNSPriceOracle: Multiplier out of range");
+      await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
     });
 
     it("Fails when setting to a value above the specified range", async () => {
@@ -353,7 +354,7 @@ describe("ZNSPriceOracle", () => {
       const newMultiplier = BigNumber.from("401");
 
       const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith("ZNSPriceOracle: Multiplier out of range");
+      await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
     });
 
     it("Succeeds when setting a value within the allowed range", async () => {

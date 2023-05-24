@@ -3,7 +3,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { deployAccessController } from "./helpers";
 import { expect } from "chai";
-import { ADMIN_ROLE, getAccessRevertMsg, GOVERNOR_ROLE, EXECUTOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, GOVERNOR_ROLE, EXECUTOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { getAccessRevertMsg } from "./helpers/errors";
 
 
 describe("ZNSAccessController", () => {

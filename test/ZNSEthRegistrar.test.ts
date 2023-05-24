@@ -1,7 +1,13 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers";
+import {
+  deployZNS, INVALID_TOKENID_ERC_ERR,
+  NOT_AUTHORIZED_REG_ERR,
+  NOT_NAME_OWNER_RAR_ERR, NOT_TOKEN_OWNER_RAR_ERR,
+  ONLY_NAME_OWNER_REG_ERR,
+  ONLY_OWNER_REGISTRAR_REG_ERR,
+} from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRegistration } from "./helpers/registerDomain";
@@ -10,8 +16,9 @@ import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
-import { ADMIN_ROLE, getAccessRevertMsg } from "./helpers/access";
+import { ADMIN_ROLE } from "./helpers/access";
 import { ZNSEthRegistrar__factory } from "../typechain";
+import { getAccessRevertMsg } from "./helpers/errors";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -268,7 +275,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the owner of the Token");
+      await expect(tx).to.be.revertedWith(NOT_TOKEN_OWNER_RAR_ERR);
 
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
@@ -281,7 +288,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith("ERC721: invalid token ID");
+      await expect(tx).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
     });
 
     it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
@@ -370,7 +377,7 @@ describe("ZNSEthRegistrar", () => {
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
       await expect(ownerOfTx).to.be.revertedWith(
-        "ERC721: invalid token ID"
+        INVALID_TOKENID_ERC_ERR
       );
 
       // Verify Domain Record Deleted
@@ -386,7 +393,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Verify transaction is reverted
       const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
+      await expect(tx).to.be.revertedWith(NOT_NAME_OWNER_RAR_ERR);
     });
 
     it("Revoking domain unstakes", async () => {
@@ -433,7 +440,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Try to revoke domain
       const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
+      await expect(tx).to.be.revertedWith(NOT_NAME_OWNER_RAR_ERR);
     });
 
     it("No one can revoke if Token and Name have different owners", async () => {
@@ -449,10 +456,10 @@ describe("ZNSEthRegistrar", () => {
 
       // Try to revoke domain as a new owner of the token
       const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith("ZNSEthRegistrar: Not the Owner of the Name");
+      await expect(tx).to.be.revertedWith(NOT_NAME_OWNER_RAR_ERR);
 
       const tx2 = zns.registrar.connect(deployer).revokeDomain(parentDomainHash);
-      await expect(tx2).to.be.revertedWith("ZNSEthRegistrar: Not the owner of the Token");
+      await expect(tx2).to.be.revertedWith(NOT_TOKEN_OWNER_RAR_ERR);
     });
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
@@ -474,7 +481,7 @@ describe("ZNSEthRegistrar", () => {
           operator.address
         );
       await expect(tx2).to.be.revertedWith(
-        "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        ONLY_OWNER_REGISTRAR_REG_ERR
       );
 
       const tx3 = zns.registry
@@ -485,7 +492,7 @@ describe("ZNSEthRegistrar", () => {
           operator.address
         );
       await expect(tx3).to.be.revertedWith(
-        "ZNSRegistry: Not the Name Owner"
+        ONLY_NAME_OWNER_REG_ERR
       );
 
       const tx4 = zns.registry
@@ -495,7 +502,7 @@ describe("ZNSEthRegistrar", () => {
           zeroVault.address
         );
       await expect(tx4).to.be.revertedWith(
-        "ZNSRegistry: Not authorized"
+        NOT_AUTHORIZED_REG_ERR
       );
     });
   });

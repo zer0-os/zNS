@@ -5,7 +5,8 @@ import { checkBalance, deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel } from "./helpers/hashing";
-import { ADMIN_ROLE, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { getAccessRevertMsg } from "./helpers/errors";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

@@ -28,7 +28,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     modifier onlyTokenOwner(bytes32 domainHash) {
         require(
             msg.sender == domainToken.ownerOf(uint256(domainHash)),
-            "ZNSEthRegistrar: Not the owner of the Token"
+            "ZNSEthRegistrar: Not the Owner of the Token"
         );
         _;
     }

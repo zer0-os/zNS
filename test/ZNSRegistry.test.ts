@@ -5,7 +5,17 @@ import { ZNSAccessController, ZNSRegistry } from "../typechain";
 import { deployRegistry } from "./helpers/deployZNS";
 import { ethers } from "ethers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
-import { deployAccessController, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers";
+import {
+  deployAccessController,
+  getAccessRevertMsg,
+  REGISTRAR_ROLE,
+} from "./helpers";
+import {
+  ONLY_NAME_OWNER_REG_ERR,
+  NOT_AUTHORIZED_REG_ERR,
+  ONLY_OWNER_REGISTRAR_REG_ERR,
+  OWNER_NOT_ZERO_REG_ERR,
+} from "./helpers/errors";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -45,7 +55,6 @@ describe("ZNSRegistry Tests", () => {
     );
   });
 
-  // a valid operator can change the owner of a domain, is this wanted?
   describe("Operator functionality", () => {
     it("Returns false when an operator is not allowed by an owner", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, false);
@@ -73,7 +82,7 @@ describe("ZNSRegistry Tests", () => {
       expect(allowed).to.be.false;
     });
 
-    it("Permits an allowed operator to modify a domain record", async () => {
+    it("Permits an allowed operator to update a domain resolver", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, true);
 
       const tx = registry
@@ -82,16 +91,34 @@ describe("ZNSRegistry Tests", () => {
       await expect(tx).to.not.be.reverted;
     });
 
-    it("Does not permit a disallowed operator to modify a domain record", async () => {
+    it("Does not permit an allowed operator to update a domain owner", async () => {
+      await registry.connect(deployer).setOwnerOperator(operator.address, true);
+
+      const tx = registry
+        .connect(operator)
+        .updateDomainOwner(wilderDomainHash, operator.address);
+      await expect(tx).to.be.revertedWith(ONLY_OWNER_REGISTRAR_REG_ERR);
+    });
+
+    it("Does not permit an allowed operator to update a domain record", async () => {
+      await registry.connect(deployer).setOwnerOperator(operator.address, true);
+
+      const tx = registry
+        .connect(operator)
+        .updateDomainRecord(wilderDomainHash, operator.address, operator.address);
+      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+    });
+
+    it("Does not permit a disallowed operator to update a domain record", async () => {
       await registry.connect(deployer).setOwnerOperator(operator.address, false);
 
       const tx = registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
     });
   });
 
@@ -172,16 +199,16 @@ describe("ZNSRegistry Tests", () => {
 
     // can you get around this by setting operators for zero address?
 
-    it("Cannot set a domain record if the domain doesn't exist", async () => {
+    it("Cannot update a domain record if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
 
       const tx = registry.updateDomainRecord(domainHash, deployer.address, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not the Name Owner");
+      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
-    it("Can set a domain record if the domain exists", async () => {
+    it("Can update a domain record if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -193,18 +220,18 @@ describe("ZNSRegistry Tests", () => {
       expect(record.resolver).to.eq(deployer.address);
     });
 
-    it("Cannot set a domain owner if the domain doesn't exist", async () => {
+    it("Cannot update a domain owner if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
 
       const tx = registry.updateDomainOwner(domainHash, deployer.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
       await expect(tx).to.be.revertedWith(
-        "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        ONLY_OWNER_REGISTRAR_REG_ERR
       );
     });
 
-    it("Can set a domain owner if the domain exists", async () => {
+    it("Can update a domain owner if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -215,15 +242,15 @@ describe("ZNSRegistry Tests", () => {
       expect(record.owner).to.eq(mockRegistrar.address);
     });
 
-    it("Cannot set a domain resolver if the domain doesn't exist", async () => {
+    it("Cannot update a domain resolver if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
       const tx = registry.updateDomainResolver(domainHash, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
     });
 
-    it("Can set a domain resolver if the domain exists", async () => {
+    it("Can update a domain resolver if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -234,16 +261,16 @@ describe("ZNSRegistry Tests", () => {
       expect(record.resolver).to.eq(deployer.address);
     });
 
-    it("Cannot set a domain record if the owner is zero address", async () => {
+    it("Cannot update a domain record if the owner is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = registry.updateDomainRecord(domainHash, ethers.constants.AddressZero, mockResolver.address);
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Owner cannot be zero address");
+      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
     });
 
-    it("Can set a domain record if the resolver is zero address", async () => {
+    it("Can update a domain record if the resolver is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -252,7 +279,7 @@ describe("ZNSRegistry Tests", () => {
       await expect(tx).to.be.fulfilled;
     });
 
-    it("Cannot set a domain owner if owner is zero address", async () => {
+    it("Cannot update a domain owner if owner is zero address", async () => {
       const tx = registry
         .connect(deployer)
         .updateDomainOwner(
@@ -260,10 +287,10 @@ describe("ZNSRegistry Tests", () => {
           ethers.constants.AddressZero
         );
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Owner cannot be zero address");
+      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
     });
 
-    it("Can set a domain resolver if resolver is zero address", async () => {
+    it("Can update a domain resolver if resolver is zero address", async () => {
       await registry
         .connect(deployer)
         .updateDomainResolver(
@@ -276,7 +303,7 @@ describe("ZNSRegistry Tests", () => {
       expect(zeroResolver).to.be.eq(ethers.constants.AddressZero);
     });
 
-    it("Fails to set a record when caller is not owner or operator", async () => {
+    it("Fails to set a record when caller is not owner", async () => {
       const tx = registry
         .connect(operator)
         .updateDomainRecord(
@@ -284,7 +311,7 @@ describe("ZNSRegistry Tests", () => {
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not the Name Owner");
+      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
     it("Cannot set a domain's record if not an owner or operator", async () => {
@@ -293,7 +320,7 @@ describe("ZNSRegistry Tests", () => {
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = registry.connect(randomUser).updateDomainRecord(domainHash, mockResolver.address, deployer.address);
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not the Name Owner");
+      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
     it("Cannot set an domain's owner if not an owner or operator", async () => {
@@ -303,7 +330,7 @@ describe("ZNSRegistry Tests", () => {
       const tx = registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
 
       await expect(tx).to.be.revertedWith(
-        "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        ONLY_OWNER_REGISTRAR_REG_ERR
       );
     });
 
@@ -313,9 +340,32 @@ describe("ZNSRegistry Tests", () => {
       await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+    });
+
+    it("Can delete record with REGISTRAR_ROLE", async () => {
+      const domainHash = hashDomainLabel("world");
+
+      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      await registry.connect(mockRegistrar).deleteRecord(domainHash);
+
+      const record = await registry.getDomainRecord(domainHash);
+
+      expect(record.owner).to.eq(ethers.constants.AddressZero);
+    });
+
+    it("Cannot delete record without REGISTRAR_ROLE", async () => {
+      const domainHash = hashDomainLabel("world");
+
+      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = registry.connect(randomUser).deleteRecord(domainHash);
+
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
+      );
     });
   });
+
   describe("Event emitters", () => {
     it("Emits an event when an operator is set", async () => {
       // TODO currently no AC on this function, make sure it's added
@@ -403,6 +453,4 @@ describe("ZNSRegistry Tests", () => {
       await expect(tx).to.emit(registry, "DomainRecordDeleted").withArgs(wilderDomainHash);
     });
   });
-  // TODO test delete works
-  // TODO event emitter tests
 });

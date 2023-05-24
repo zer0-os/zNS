@@ -10,7 +10,7 @@ import {
   ADMIN_ROLE,
   deployAccessController,
   deployDomainToken,
-  getAccessRevertMsg,
+  getAccessRevertMsg, INVALID_TOKENID_ERC_ERR,
   REGISTRAR_ROLE,
 } from "./helpers";
 
@@ -96,7 +96,7 @@ describe("ZNSDomainToken:", () => {
       // Verify token has been burned
       await expect(
         domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith("ERC721: invalid token ID");
+      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
     });
 
     it("Should revert when revoking (burning) if caller does not have REGISTRAR_ROLE", async () => {
@@ -119,19 +119,19 @@ describe("ZNSDomainToken:", () => {
       // Verify token has not been burned
       expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
-  });
 
-  it("Should set access controller if caller has ADMIN_ROLE", async () => {
-    await domainToken.connect(deployer).setAccessController(caller.address);
-    expect(await domainToken.getAccessController()).to.equal(caller.address);
-  });
+    it("Should set access controller if caller has ADMIN_ROLE", async () => {
+      await domainToken.connect(deployer).setAccessController(caller.address);
+      expect(await domainToken.getAccessController()).to.equal(caller.address);
+    });
 
-  it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
-    await expect(
-      domainToken.connect(caller).setAccessController(caller.address)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(caller.address, ADMIN_ROLE)
-    );
+    it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
+      await expect(
+        domainToken.connect(caller).setAccessController(caller.address)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
+    });
   });
 
   describe("Contract Configuration", () => {
