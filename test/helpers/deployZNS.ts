@@ -15,6 +15,7 @@ import {
   ZNSTreasury__factory,
 } from "../../typechain";
 import { ethers } from "hardhat";
+import * as hre from "hardhat";
 import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
@@ -105,13 +106,22 @@ export const deployRegistrar = async (
   config : RegistrarConfig
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
-  const registrar = await registrarFactory.deploy(
-    accessController.address,
-    config.registryAddress,
-    config.treasury.address,
-    config.domainTokenAddress,
-    config.addressResolverAddress
-  );
+
+  const registrar = await hre.upgrades.deployProxy(
+    registrarFactory,
+    [
+      accessController.address,
+      config.registryAddress,
+      config.treasury.address,
+      config.domainTokenAddress,
+      config.addressResolverAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSEthRegistrar;
+
+  await registrar.deployed();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 

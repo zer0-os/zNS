@@ -18,31 +18,38 @@ interface IZNSEthRegistrar {
         address indexed registrant
     );
 
-    // TODO AC: remove ZNS from names here and in state vars
-    event ZnsRegistrySet(address znsRegistry);
+    event RegistrySet(address znsRegistry);
 
-    event ZnsTreasurySet(address znsTreasury);
+    event TreasurySet(address znsTreasury);
 
-    event ZnsDomainTokenSet(address znsDomainToken);
+    event DomainTokenSet(address znsDomainToken);
 
-    event ZnsAddressResolverSet(address znsAddressResolver);
+    event AddressResolverSet(address znsAddressResolver);
 
     function registerDomain(
         string calldata name,
-        address domainContent
+        address resolverContent
     ) external returns (bytes32);
 
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
 
-    function setZnsRegistry(address znsRegistry_) external;
+    function setRegistry(address registry_) external;
 
-    function setZnsTreasury(address znsTreasury_) external;
+    function setTreasury(address treasury_) external;
 
-    function setZnsDomainToken(address znsDomainToken_) external;
+    function setDomainToken(address domainToken_) external;
 
-    function setZnsAddressResolver(address znsAddressResolver_) external;
+    function setAddressResolver(address addressResolver_) external;
 
     function setAccessController(address accessController_) external;
+
+    function initialize(
+        address accessController_,
+        address znsRegistry_,
+        address znsTreasury_,
+        address znsDomainToken_,
+        address znsAddressResolver_
+    ) external;
 }
