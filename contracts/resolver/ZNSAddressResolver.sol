@@ -4,8 +4,10 @@ pragma solidity ^0.8.18;
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
+
+contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
     /**
      * @notice Address of the ZNSRegistry contract that holds all crucial data
      *         for every domain in the system
@@ -19,20 +21,12 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     mapping(bytes32 domainHash => address resolvedAddress)
         private addressOf;
 
-    constructor(IZNSRegistry _registry) {
-        registry = _registry;
-    }
-
-    /**
-     * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
-     * @param domainHash The identifying hash of a domain's name
-     */
-    modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSAddressResolver: Not authorized for this domain"
-        );
-        _;
+    constructor(
+        address _accessController,
+        address _registry
+    ) {
+        _setAccessController(_accessController);
+        setRegistry(_registry);
     }
 
     /**
@@ -53,7 +47,15 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     function setAddress(
         bytes32 domainHash,
         address newAddress
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override {
+        // only owner or operator of the current domain can set the address
+        // also, ZNSRegistrar can set the address as part of the registration process
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender) ||
+            accessController.isRegistrar(msg.sender),
+            "ZNSAddressResolver: Not authorized for this domain"
+        );
+
         addressOf[domainHash] = newAddress;
 
         emit AddressSet(domainHash, newAddress);
@@ -77,5 +79,25 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      */
     function getInterfaceId() public pure override returns (bytes4) {
           return type(IZNSAddressResolver).interfaceId;
+    }
+
+    function setRegistry(address _registry) public onlyAdmin {
+        require(
+            _registry != address(0),
+            "ZNSAddressResolver: _registry is 0x0 address"
+        );
+        registry = IZNSRegistry(_registry);
+
+        emit RegistrySet(_registry);
+    }
+
+    function setAccessController(
+        address accessController
+    ) external override(AccessControlled, IZNSAddressResolver) onlyAdmin {
+        _setAccessController(accessController);
+    }
+
+    function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
+        return address(accessController);
     }
 }

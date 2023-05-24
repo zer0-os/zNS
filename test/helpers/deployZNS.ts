@@ -37,10 +37,14 @@ export const deployRegistry = async (
 
 export const deployAddressResolver = async (
   deployer : SignerWithAddress,
+  accessControllerAddress : string,
   registryAddress : string
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
-  const addressResolver = await addressResolverFactory.deploy(registryAddress);
+  const addressResolver = await addressResolverFactory.deploy(
+    accessControllerAddress,
+    registryAddress
+  );
 
   return addressResolver;
 };
@@ -150,7 +154,11 @@ export const deployZNS = async ({
 
   const zeroTokenMock = await deployZeroTokenMock(deployer);
 
-  const addressResolver = await deployAddressResolver(deployer, registry.address);
+  const addressResolver = await deployAddressResolver(
+    deployer,
+    accessController.address,
+    registry.address
+  );
 
   const priceOracle = await deployPriceOracle({
     deployer,
