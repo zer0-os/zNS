@@ -81,7 +81,7 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
           return type(IZNSAddressResolver).interfaceId;
     }
 
-    function setRegistry(address _registry) public onlyAdmin {
+    function setRegistry(address _registry) public override onlyAdmin {
         require(
             _registry != address(0),
             "ZNSAddressResolver: _registry is 0x0 address"
