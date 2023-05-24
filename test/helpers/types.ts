@@ -1,4 +1,4 @@
-import { BigNumber, Signer } from "ethers";
+import { BigNumber } from "ethers";
 import {
   ZNSAddressResolver,
   ZNSDomainToken,
