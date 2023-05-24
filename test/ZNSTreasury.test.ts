@@ -248,7 +248,7 @@ describe("ZNSTreasury", () => {
   });
 
   describe("UUPS", () => {
-    it.only("Verifies an authorized user can upgrade the contract", async () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkRole(GOVERNOR_ROLE, deployer.address)).to.not.be.reverted;
 
@@ -281,7 +281,7 @@ describe("ZNSTreasury", () => {
       expect(vaultBefore).to.eq(vaultAfter);
     });
 
-    it.only("Disallows an unauthorized user from upgrade the contract", async () => {
+    it("Disallows an unauthorized user from upgrade the contract", async () => {
       const accessTx = zns.accessController.checkRole(GOVERNOR_ROLE, user.address);
       await expect(accessTx).to.be.revertedWith(
         `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
