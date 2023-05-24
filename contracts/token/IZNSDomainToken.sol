@@ -8,14 +8,14 @@ interface IZNSDomainToken is IERC721Upgradeable {
     
     /**
      * @notice Initialize the ERC721 ZNSDomainToken contract with the given values
+     * @param accessController The access controller contract address
      * @param tokenName The ZNS token name
      * @param tokenSymbol The ZNS token symbol
      */
-    function initialize(string calldata tokenName, string calldata tokenSymbol) external;
+    function initialize(address accessController, string calldata tokenName, string calldata tokenSymbol) external;
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
-     * @dev TODO: Add onlyRole(REGISTRAR_ROLE)
      * @param to The address that will recieve the newly minted domain token
      * @param tokenId The TokenId that the caller wishes to mint/register
      */
@@ -27,10 +27,4 @@ interface IZNSDomainToken is IERC721Upgradeable {
      * @param tokenId The tokenId that the caller wishes to burn/revoke
      */
     function revoke(uint256 tokenId) external;
-
-    /**
-     * @notice Authorize an address for this contract
-     * @param account The registrar to set
-     */
-    function authorize(address account) external;
 }

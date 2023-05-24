@@ -1,11 +1,11 @@
 import * as hre from "hardhat";
 import {
-  ZNSDomainToken, ZNSDomainToken__factory,
+  ZNSDomainToken__factory,
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { GOVERNOR_ROLE, deployZNS } from "./helpers";
+import { GOVERNOR_ROLE, REGISTRAR_ROLE, deployZNS } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
 
@@ -15,12 +15,13 @@ describe("ZNSDomainToken:", () => {
 
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
 
   let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
   beforeEach(async () => {
-    [deployer, caller] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar] = await hre.ethers.getSigners();
     deployParams = {
       deployer,
       governorAddresses: [deployer.address],
@@ -29,13 +30,15 @@ describe("ZNSDomainToken:", () => {
     zns = await deployZNS(
       deployParams
     );
+
+    await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
   });
 
   describe("External functions", () => {
     it("Registers a token", async () => {
       const tokenId = ethers.BigNumber.from("1");
       const tx = zns.domainToken
-        .connect(deployer)
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
 
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
@@ -46,10 +49,10 @@ describe("ZNSDomainToken:", () => {
     });
 
     it("Revokes a token", async () => {
-      const tokenId = ethers.BigNumber.from("1");
       // Mint domain
+      const tokenId = ethers.BigNumber.from("1");
       await zns.domainToken
-        .connect(deployer)
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
       // Verify caller owns tokenId
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(
@@ -57,7 +60,7 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Revoke domain
-      const tx = zns.domainToken.connect(deployer).revoke(tokenId);
+      const tx = zns.domainToken.connect(mockRegistrar).revoke(tokenId);
 
       // Verify Transfer event is emitted
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
@@ -69,11 +72,21 @@ describe("ZNSDomainToken:", () => {
   });
 
   describe("Require Statement Validation", () => {
+    it("Only the registrar can call to register a token", async () => {
+      const tokenId = ethers.BigNumber.from("1");
+      const registerTx = zns.domainToken
+        .connect(caller)
+        .register(caller.address, tokenId);
+
+      await expect(registerTx).to.be.revertedWith(
+        `AccessControl: account ${caller.address.toLowerCase()} is missing role ${REGISTRAR_ROLE}`
+      );
+    });
     it("Only authorized can revoke a token", async () => {
       const tokenId = ethers.BigNumber.from("1");
       // Mint domain
       await zns.domainToken
-        .connect(deployer)
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
 
       // Verify caller owns tokenId
@@ -87,7 +100,7 @@ describe("ZNSDomainToken:", () => {
       // Revoke domain
       const tx = zns.domainToken.connect(caller).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
-        "ZNSDomainToken: Not authorized"
+        `AccessControl: account ${caller.address.toLowerCase()} is missing role ${REGISTRAR_ROLE}`
       );
 
       // Verify token has not been burned
@@ -116,38 +129,49 @@ describe("ZNSDomainToken:", () => {
       const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
 
+      const preUpgradeVars = [
+        zns.domainToken.name(),
+        zns.domainToken.symbol(),
+      ];
+
+      const [nameBefore, symbolBefore] = await Promise.all(preUpgradeVars);
+
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkRole(GOVERNOR_ROLE, deployer.address)).to.not.be.reverted;
 
-      // TODO access control on _authorizedUpgrade function in contract
-      // const tx = await zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
-      // await expect(tx).to.be.revertedWith("???");
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
+
+      await expect(upgradeTx).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.domainToken.name(),
+        zns.domainToken.symbol(),
+      ];
+
+      const [nameAfter, symbolAfter] = await Promise.all(postUpgradeVars);
+
+      expect(nameBefore).to.eq(nameAfter);
+      expect(symbolBefore).to.eq(symbolAfter);
+
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {
+      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
+      // So use a deployed proxy contract
       const factory = new ZNSDomainToken__factory(deployer);
-      const proxyDomainToken = await hre.upgrades.deployProxy(factory, [
-        "Zero Name Service",
-        "ZNS",
-      ]);
 
-      await proxyDomainToken.deployed();
-
-      // PriceOracle to upgrade to
+      // DomainToken to upgrade to
       const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
 
-      await newDomainToken.initialize(
-        "Zero Name Service",
-        "ZNS",
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkRole(GOVERNOR_ROLE, caller.address)).to.be.revertedWith(
+        `AccessControl: account ${caller.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
       );
 
-      // Confirm the account is not a governor
-      await expect(zns.accessController.checkRole(GOVERNOR_ROLE, caller.address)).to.be.reverted;
+      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(newDomainToken.address);
 
-      const tx = proxyDomainToken.connect(caller).upgradeTo(newDomainToken.address);
-
-      await expect(tx).to.be.revertedWith(
+      await expect(upgradeTx).to.be.revertedWith(
         `AccessControl: account ${caller.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
       );
     });

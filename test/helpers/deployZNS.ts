@@ -69,12 +69,17 @@ export const deployPriceOracle = async ({
 };
 
 export const deployDomainToken = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  accessController : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
   const contract = await upgrades.deployProxy(
     domainTokenFactory,
-    ["ZNSDomainToken", "ZDT"],
+    [
+      accessController,
+      "ZNSDomainToken",
+      "ZDT",
+    ],
     {
       kind: "uups",
     }
@@ -147,12 +152,12 @@ export const deployZNS = async ({
     adminAddresses: [deployer.address, ...adminAddresses],
   });
 
-  // TODO AC: fix this!
+  // TODO AC: Make sure contracts are deployed as proxies and authorize the governor role
   // Can't set to zero, but registrar address must be given.
   // Due to order of deployment, add deployer as registrar address for now and change after
   const registry = await deployRegistry(deployer, deployer);
 
-  const domainToken = await deployDomainToken(deployer);
+  const domainToken = await deployDomainToken(deployer, accessController.address);
 
   const zeroTokenMock = await deployZeroTokenMock(deployer);
 
@@ -196,7 +201,6 @@ export const deployZNS = async ({
   // Final configuration steps
   // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
   //  for Registrar to be owner/operator of the root
-  await domainToken.connect(deployer).authorize(registrar.address);
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
   await registry.connect(deployer).setZNSRegistrar(registrar.address);
 
