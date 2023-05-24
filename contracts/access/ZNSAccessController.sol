@@ -16,11 +16,11 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _grantRoleToMany(GOVERNOR_ROLE, governorAddresses);
         _grantRoleToMany(ADMIN_ROLE, adminAddresses);
 
-        // all of the governors control admins TODO AC: ???
+        // all of the governors control admins
         _setRoleAdmin(ADMIN_ROLE, GOVERNOR_ROLE);
-        // all of the governors control governors TODO AC: ???
+        // all of the governors control governors
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
-        // all of the admins control registrar TODO AC: ???
+        // all of the admins control registrar
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
     }
 
@@ -50,14 +50,12 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         return hasRole(REGISTRAR_ROLE, account);
     }
 
-    // TODO AC: is this function necessary? how often will it be used?
     function _grantRoleToMany(bytes32 role, address[] calldata addresses) internal {
         for (uint256 i = 0; i < addresses.length; i++) {
             _grantRole(role, addresses[i]);
         }
     }
 
-    // TODO AC: how safe is this?
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {
         _setRoleAdmin(role, adminRole);
     }

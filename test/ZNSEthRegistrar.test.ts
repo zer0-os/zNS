@@ -59,8 +59,7 @@ describe("ZNSEthRegistrar", () => {
     expect(allowance).to.eq(ethers.constants.MaxUint256);
   });
 
-  // TODO AC: is this a problem it is set up this way?
-  it("Should initialize correctly from an ADMIN account only", async () => {
+  it("Should revert when initialize() without ADMIN_ROLE", async () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 

@@ -45,8 +45,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         address znsAddressResolver_
     ) {
         _setAccessController(accessController_);
-        // TODO AC: should we call protected functions in the constructor/initialize?
-        //  test this!
         setRegistry(znsRegistry_);
         setTreasury(znsTreasury_);
         setDomainToken(znsDomainToken_);

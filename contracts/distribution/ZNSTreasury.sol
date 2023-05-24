@@ -95,7 +95,6 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         emit ZeroVaultAddressSet(zeroVaultAddress);
     }
 
-    // TODO AC: should we call a protected function in the constructor/initialize?
     function setPriceOracle(address znsPriceOracle_) public override onlyAdmin {
         require(
             znsPriceOracle_ != address(0),
