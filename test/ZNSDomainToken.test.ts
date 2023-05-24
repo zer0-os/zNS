@@ -16,12 +16,13 @@ describe("ZNSDomainToken:", () => {
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
+  let mockAccessController : SignerWithAddress;
 
   let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
   beforeEach(async () => {
-    [deployer, caller, mockRegistrar] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar, mockAccessController] = await hre.ethers.getSigners();
     deployParams = {
       deployer,
       governorAddresses: [deployer.address],
@@ -117,6 +118,25 @@ describe("ZNSDomainToken:", () => {
     it("Verify token symbol", async () => {
       const symbol = await zns.domainToken.symbol();
       expect(symbol).to.equal(TokenSymbol);
+    });
+  });
+  describe("AccessController", () =>{
+    it("Allows setting of a new access controller if the caller is a governor", async () => {
+      const accessControllerBefore = await zns.domainToken.getAccessController();
+
+      const tx = zns.domainToken.connect(deployer).setAccessController(mockAccessController.address);
+
+      await expect(tx).to.not.be.reverted;
+
+      const accessControllerAfter = await zns.domainToken.getAccessController();
+      expect(accessControllerBefore).to.not.eq(accessControllerAfter);
+    });
+
+    it("Fails when the caller is not a governor", async () => {
+      const tx = zns.domainToken.connect(caller).setAccessController(mockAccessController.address);
+      await expect(tx).to.be.revertedWith(
+        `AccessControl: account ${caller.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      );
     });
   });
   describe("UUPS", () => {
