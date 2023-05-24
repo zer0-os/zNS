@@ -12,3 +12,4 @@ export const NOT_NAME_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the Owner of the Nam
 export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the Owner of the Token";
 export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSPriceOracle: Multiplier out of range";
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
+export const INITIALIZED_ERR = "Initializable: contract is already initialized";

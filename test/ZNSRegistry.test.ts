@@ -6,8 +6,9 @@ import { deployRegistry } from "./helpers/deployZNS";
 import { ethers } from "ethers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import {
+  ADMIN_ROLE,
   deployAccessController,
-  getAccessRevertMsg,
+  getAccessRevertMsg, INITIALIZED_ERR,
   REGISTRAR_ROLE,
 } from "./helpers";
 import {
@@ -52,6 +53,32 @@ describe("ZNSRegistry Tests", () => {
       wilderDomainHash,
       deployer.address,
       mockResolver.address
+    );
+  });
+
+  it("Cannot be initialized twice", async () => {
+    await expect(
+      registry.initialize(
+        accessController.address
+      )
+    ).to.be.revertedWith(
+      INITIALIZED_ERR
+    );
+  });
+
+  it("Should set access controller correctly with ADMIN_ROLE and revert without", async () => {
+    const currentAC = await registry.getAccessController();
+
+    await registry.connect(deployer).setAccessController(randomUser.address);
+    const newAC = await registry.getAccessController();
+
+    expect(currentAC).to.not.equal(newAC);
+    expect(newAC).to.equal(randomUser.address);
+
+    await expect(
+      registry.connect(randomUser).setAccessController(deployer.address)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
     );
   });
 
@@ -192,13 +219,6 @@ describe("ZNSRegistry Tests", () => {
   });
 
   describe("Setter functions for a domain's record, owner, or resolver", () => {
-    // setters pass if domain exists
-    // updates a domain record
-    // fails to update a domain record if that domain does not exist
-    // deleteRecord works
-
-    // can you get around this by setting operators for zero address?
-
     it("Cannot update a domain record if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
 

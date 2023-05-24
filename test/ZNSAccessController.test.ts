@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
-import { deployAccessController } from "./helpers";
+import { deployAccessController, INITIALIZED_ERR } from "./helpers";
 import { expect } from "chai";
 import { ADMIN_ROLE, GOVERNOR_ROLE, EXECUTOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
@@ -44,6 +44,17 @@ describe("ZNSAccessController", () => {
           const hasRole = await znsAccessController.hasRole(ADMIN_ROLE, address);
           expect(hasRole).to.be.true;
         }, Promise.resolve()
+      );
+    });
+
+    it("Should not allow to initialize twice", async () => {
+      await expect(
+        znsAccessController.initialize(
+          governorAccs.map(acc => acc.address),
+          adminAccs.map(acc => acc.address),
+        )
+      ).to.be.revertedWith(
+        INITIALIZED_ERR
       );
     });
   });
@@ -164,8 +175,65 @@ describe("ZNSAccessController", () => {
       const has = await znsAccessController.hasRole(EXECUTOR_ROLE, newOperator);
       expect(has).to.be.true;
     });
+
+    it("Should revert when setting role admin without GOVERNOR_ROLE", async () => {
+      const [ { address: random } ] = randomAccs;
+      await expect(
+        znsAccessController.connect(random).setRoleAdmin(REGISTRAR_ROLE, EXECUTOR_ROLE)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(random, GOVERNOR_ROLE)
+      );
+    });
   });
 
-  // TODO AC: test setRoleAdmin for someone other than governor
-  //  test initializer
+  describe("Role Validator Functions", () => {
+    it("Should return true for ADMIN_ROLE", async () => {
+      const [ admin ] = adminAccs;
+      const isAdmin = await znsAccessController.isAdmin(admin.address);
+      expect(isAdmin).to.be.true;
+    });
+
+    it("Should return true for REGISTRAR_ROLE", async () => {
+      const [ registrar ] = randomAccs;
+      await znsAccessController.connect(governorAccs[0]).grantRole(REGISTRAR_ROLE, registrar.address);
+      const isRegistrar = await znsAccessController.isRegistrar(registrar.address);
+      expect(isRegistrar).to.be.true;
+    });
+
+    it("Should revert if account does not have GOVERNOR_ROLE", async () => {
+      const [ { address: random } ] = randomAccs;
+      await expect(
+        znsAccessController.connect(random).checkGovernor(random)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(random, GOVERNOR_ROLE)
+      );
+    });
+
+    it("Should revert if account does not have ADMIN_ROLE", async () => {
+      const [ { address: random } ] = randomAccs;
+      await expect(
+        znsAccessController.connect(random).checkAdmin(random)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(random, ADMIN_ROLE)
+      );
+    });
+
+    it("Should revert if account does not have REGISTRAR_ROLE", async () => {
+      const [ { address: random } ] = randomAccs;
+      await expect(
+        znsAccessController.connect(random).checkRegistrar(random)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(random, REGISTRAR_ROLE)
+      );
+    });
+
+    it("Should revert if account does not have EXECUTOR_ROLE", async () => {
+      const [ { address: random } ] = randomAccs;
+      await expect(
+        znsAccessController.connect(random).checkExecutor(random)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(random, EXECUTOR_ROLE)
+      );
+    });
+  });
 });
