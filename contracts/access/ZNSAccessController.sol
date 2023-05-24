@@ -24,13 +24,6 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
     }
 
-    // TODO AC: should we keep this function here so that we can get standardized message?
-    //  test this function for gas usage with a standardized message vs a custom message
-    //  when using the recommended method of `hasRole`
-    function checkRole(bytes32 role, address account) external view override {
-        _checkRole(role, account);
-    }
-
     // ** Access Validators **
 
     function checkGovernor(address account) external view override {
@@ -49,11 +42,11 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _checkRole(REGISTRAR_ROLE, account);
     }
 
-    function hasAdminRole(address account) external view override returns (bool) {
+    function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
     }
 
-    function hasRegistrarRole(address account) external view override returns (bool) {
+    function isRegistrar(address account) external view override returns (bool) {
         return hasRole(REGISTRAR_ROLE, account);
     }
 

@@ -168,7 +168,7 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         // this can be called from ZNSRegistrar as part of `reclaim()` flow
         require(
             msg.sender == records[domainHash].owner ||
-            accessController.hasRegistrarRole(msg.sender),
+            accessController.isRegistrar(msg.sender),
             "ZNSRegistry: Only Name Owner or Registrar allowed to call"
         );
 
