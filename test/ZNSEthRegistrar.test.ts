@@ -46,14 +46,6 @@ describe("ZNSEthRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    // TODO AC: change this when access control implemented
-    // Give the user permission on behalf of the parent domain owner
-    await zns.registry.connect(deployer).setOwnerOperator(user.address, true);
-
-    // TODO AC: change this when access control implemented
-    // Give the registrar permission on behalf of the user
-    await zns.registry.connect(user).setOwnerOperator(zns.registrar.address, true);
-
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
@@ -107,7 +99,7 @@ describe("ZNSEthRegistrar", () => {
       const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
 
       // Deploy "wilder" with default configuration
-      const tx = await defaultRegistration(user, zns, defaultDomain);
+      const tx = await defaultRegistration(user, zns, defaultDomain, user.address);
       const domainHash = await getDomainHashFromEvent(tx);
       const {
         totalPrice,
