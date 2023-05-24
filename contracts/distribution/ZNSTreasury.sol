@@ -118,8 +118,9 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
      * @notice The required override by UUPS
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line no-empty-blocks
     function _authorizeUpgrade(
         address newImplementation
-    ) internal override onlyRole(GOVERNOR_ROLE) {}
+    ) internal override {
+        accessController.checkRole(GOVERNOR_ROLE, msg.sender);
+    }
 }

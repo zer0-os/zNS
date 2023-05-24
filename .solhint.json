@@ -9,7 +9,7 @@
     "no-inline-assembly": "off",
     "avoid-low-level-calls": "off",
     "state-visibility": "error",
-    "no-empty-blocks": "error",
+    "no-empty-blocks": "warn",
     "no-complex-fallback": "off",
     "reason-string": "off",
     "func-visibility": [
