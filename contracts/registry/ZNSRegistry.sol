@@ -240,6 +240,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice The required override by UUPS
      * @param newImplementation The implementation contract to upgrade to
      */
+    // solhint-disable-next-line no-empty-blocks
     function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {
     }
 }

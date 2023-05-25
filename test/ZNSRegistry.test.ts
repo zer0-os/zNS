@@ -16,7 +16,6 @@ import {
   NOT_AUTHORIZED_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
-  DOMAIN_NOT_EXIST,
 } from "./helpers/errors";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
