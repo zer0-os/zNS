@@ -50,15 +50,11 @@ interface IZNSRegistry {
         bool allowed
     );
 
-    function initialize(address owner) external;
-
     /**
-     * @notice Emit when a new ZNSRegistrar address is set
-     * @param znsRegistrar The new address
+     * @notice Create an instance of the ZNSRegistry contract
+     * @param accessController_ The addrss of the access controller
      */
-    event ZNSRegistrarSet(
-        address indexed znsRegistrar
-    );
+    function initialize(address accessController_) external;
 
     /**
      * @notice Check if a given domain exists
@@ -152,13 +148,6 @@ interface IZNSRegistry {
         bytes32 domainHash,
         address resolver
     ) external;
-
-    /**
-     * @notice Change the address of the ZNSRegistrar contract we use
-     *
-     * @param znsRegistrar_ The new ZNSRegistrar
-     */
-    function setZNSRegistrar(address znsRegistrar_) external;
 
     /**
      * @notice Delete a domain's record

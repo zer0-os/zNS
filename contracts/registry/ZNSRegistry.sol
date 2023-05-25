@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { ERC1967UpgradeUpgradeable }
-from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSRegistry } from "./IZNSRegistry.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
-    /**
-     * @notice The address of the registrar we are using
-     */
-    address public znsRegistrar;
+
+contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
@@ -38,26 +34,10 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     }
 
     /**
-     * @notice Revert if `msg.sender` is not the registrar
+     * Initialize the ZNSRegistry contract
      */
-    modifier onlyRegistrar() {
-        require(
-            msg.sender == znsRegistrar,
-            "ZNSRegistry: Caller is not the Registrar"
-        );
-        _;
-    }
-
-    /**
-     * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
-     * to be the account that deploys this contract
-     */
-    function initialize(address znsRegistrar_) public override initializer {
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Registrar can not be 0x0 address"
-        );
-        znsRegistrar = znsRegistrar_;
+    function initialize(address accessController_) public override initializer {
+        _setAccessController(accessController_);
     }
 
     /**
@@ -81,23 +61,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     ) public view override returns (bool) {
         address owner = records[domainHash].owner;
         return candidate == owner || operators[owner][candidate];
-    }
-
-    /**
-     * @notice Change the address of the ZNSRegistrar contract we use
-     *
-     * @param znsRegistrar_ The new ZNSRegistrar
-     */
-    function setZNSRegistrar(address znsRegistrar_) external override {
-    // TODO When we have access control, only be callable by admin!!
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Cannot set Registrar to 0x0"
-        );
-
-        znsRegistrar = znsRegistrar_;
-
-        emit ZNSRegistrarSet(znsRegistrar_);
     }
 
     /**
@@ -158,7 +121,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner,
         address resolver
-    ) external override onlyRegistrar {
+    ) external override onlyRole(REGISTRAR_ROLE) {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domains with no resolver address
@@ -219,10 +182,18 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      *
      * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
+    function deleteRecord(bytes32 domainHash) external override onlyRole(REGISTRAR_ROLE) {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);
+    }
+
+    /**
+     * @notice Set the address of the access controller contract
+     * @param _accessController The new access controller
+     */
+    function setAccessController(address _accessController) external override onlyRole(GOVERNOR_ROLE) {
+        _setAccessController(_accessController);
     }
 
     /**
@@ -261,5 +232,13 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     ) internal {
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);
+    }
+
+    /**
+     * @notice The required override by UUPS
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    function _authorizeUpgrade(address newImplementation) internal override {
+        accessController.checkRole(GOVERNOR_ROLE, msg.sender);
     }
 }

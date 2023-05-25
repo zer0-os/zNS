@@ -1,14 +1,15 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSRegistry } from "../typechain";
-import { deployRegistry } from "./helpers/deployZNS";
+import { deployZNS } from "./helpers/deployZNS";
 import { ethers } from "ethers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { ZNSContracts, DeployZNSParams } from "./helpers/types";
+import { REGISTRAR_ROLE } from "./helpers";
+import { ZNSRegistry__factory } from "../typechain";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
-
 
 describe("ZNSRegistry Tests", () => {
   let deployer : SignerWithAddress;
@@ -19,17 +20,25 @@ describe("ZNSRegistry Tests", () => {
   let mockResolver : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let registry : ZNSRegistry;
+  let zns : ZNSContracts;
   let wilderDomainHash : string;
 
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver, mockRegistrar] = await hre.ethers.getSigners();
 
-    registry = await deployRegistry(deployer, mockRegistrar);
+    const params : DeployZNSParams = {
+      deployer,
+      governorAddresses: [deployer.address],
+      adminAddresses: [deployer.address],
+    };
+
+    zns = await deployZNS(params);
 
     wilderDomainHash = hashDomainName("wilder");
 
-    await registry.connect(mockRegistrar).createDomainRecord(
+    await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+    await zns.registry.connect(mockRegistrar).createDomainRecord(
       wilderDomainHash,
       deployer.address,
       mockResolver.address
@@ -39,9 +48,9 @@ describe("ZNSRegistry Tests", () => {
   // a valid operator can change the owner of a domain, is this wanted?
   describe("Operator functionality", () => {
     it("Returns false when an operator is not allowed by an owner", async () => {
-      await registry.connect(deployer).setOwnerOperator(operator.address, false);
+      await zns.registry.connect(deployer).setOwnerOperator(operator.address, false);
 
-      const allowed = await registry.isOwnerOrOperator(
+      const allowed = await zns.registry.isOwnerOrOperator(
         wilderDomainHash,
         operator.address
       );
@@ -49,9 +58,9 @@ describe("ZNSRegistry Tests", () => {
     });
 
     it("Returns true when an operator is allowed by an owner", async () => {
-      await registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
 
-      const allowed = await registry.isOwnerOrOperator(
+      const allowed = await zns.registry.isOwnerOrOperator(
         wilderDomainHash,
         operator.address
       );
@@ -59,81 +68,81 @@ describe("ZNSRegistry Tests", () => {
     });
 
     it("Returns false when an owner has not specified any operators", async () => {
-      const allowed = await registry.isOwnerOrOperator(wilderDomainHash, operator.address);
+      const allowed = await zns.registry.isOwnerOrOperator(wilderDomainHash, operator.address);
 
       expect(allowed).to.be.false;
     });
 
     it("Permits an allowed operator to modify a domain record", async () => {
-      await registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
 
-      const tx = registry
+      const tx = zns.registry
         .connect(operator)
         .updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.not.be.reverted;
     });
 
     it("Does not permit a disallowed operator to modify a domain record", async () => {
-      await registry.connect(deployer).setOwnerOperator(operator.address, false);
+      await zns.registry.connect(deployer).setOwnerOperator(operator.address, false);
 
-      const tx = registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
+      const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
-      const tx = registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
+      const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
   });
 
   describe("Domain records", async () => {
     it("Verifies existence of a domain correctly", async () => {
-      const exists = await registry.connect(randomUser).exists(wilderDomainHash);
+      const exists = await zns.registry.connect(randomUser).exists(wilderDomainHash);
       expect(exists).to.be.true;
 
       const nonExistentDomainHash = hashDomainName("wild");
 
-      const notExists = await registry.connect(randomUser).exists(nonExistentDomainHash);
+      const notExists = await zns.registry.connect(randomUser).exists(nonExistentDomainHash);
       expect(notExists).to.be.false;
     });
 
     it("Gets a domain record", async () => {
       // Domain exists
-      const wilderRecord = await registry.getDomainRecord(wilderDomainHash);
+      const wilderRecord = await zns.registry.getDomainRecord(wilderDomainHash);
       expect(wilderRecord.owner).to.eq(deployer.address);
 
       // Domain does not exist
       const domainHash = hashDomainLabel("random-record");
-      const record = await registry.getDomainRecord(domainHash);
+      const record = await zns.registry.getDomainRecord(domainHash);
       expect(record.owner).to.eq(ethers.constants.AddressZero);
     });
 
     it("Gets a domain owner", async () => {
       // The domain exists
-      const existOwner = await registry.getDomainOwner(wilderDomainHash);
+      const existOwner = await zns.registry.getDomainOwner(wilderDomainHash);
       expect(existOwner).to.eq(deployer.address);
 
       // The domain does not exist
       const domainHash = hashDomainLabel("random-record");
-      const notExistOwner = await registry.getDomainOwner(domainHash);
+      const notExistOwner = await zns.registry.getDomainOwner(domainHash);
       expect(notExistOwner).to.eq(ethers.constants.AddressZero);
     });
 
     it("Gets a domain resolver", async () => {
       // The domain exists
-      const existResolver = await registry.getDomainResolver(wilderDomainHash);
+      const existResolver = await zns.registry.getDomainResolver(wilderDomainHash);
       expect(existResolver).to.eq(mockResolver.address);
 
       // The domain does not exist
       const domainHash = hashDomainLabel("random-record");
-      const notExistResolver = await registry.getDomainResolver(domainHash);
+      const notExistResolver = await zns.registry.getDomainResolver(domainHash);
       expect(notExistResolver).to.eq(ethers.constants.AddressZero);
     });
 
     it("Creates a new domain record successfully", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(
+      await zns.registry.connect(mockRegistrar).createDomainRecord(
         domainHash,
         deployer.address,
         mockResolver.address
@@ -143,13 +152,15 @@ describe("ZNSRegistry Tests", () => {
     it("Fails to create a new domain record if the caller is not the registrar", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const tx = registry.connect(deployer).createDomainRecord(
+      const tx = zns.registry.connect(deployer).createDomainRecord(
         domainHash,
         deployer.address,
         mockResolver.address
       );
 
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Caller is not the Registrar");
+      await expect(tx).to.be.revertedWith(
+        `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${REGISTRAR_ROLE}`
+      );
     });
   });
 
@@ -164,7 +175,7 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set a domain record if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const tx = registry.updateDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.updateDomainRecord(domainHash, deployer.address, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
@@ -173,10 +184,10 @@ describe("ZNSRegistry Tests", () => {
     it("Can set a domain record if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      await registry.updateDomainRecord(domainHash, mockRegistrar.address, deployer.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      await zns.registry.updateDomainRecord(domainHash, mockRegistrar.address, deployer.address);
 
-      const record = await registry.getDomainRecord(domainHash);
+      const record = await zns.registry.getDomainRecord(domainHash);
 
       expect(record.owner).to.eq(mockRegistrar.address);
       expect(record.resolver).to.eq(deployer.address);
@@ -185,7 +196,7 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set a domain owner if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const tx = registry.updateDomainOwner(domainHash, deployer.address);
+      const tx = zns.registry.updateDomainOwner(domainHash, deployer.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
@@ -194,17 +205,17 @@ describe("ZNSRegistry Tests", () => {
     it("Can set a domain owner if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      await registry.updateDomainOwner(domainHash, mockRegistrar.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      await zns.registry.updateDomainOwner(domainHash, mockRegistrar.address);
 
-      const record = await registry.getDomainRecord(domainHash);
+      const record = await zns.registry.getDomainRecord(domainHash);
 
       expect(record.owner).to.eq(mockRegistrar.address);
     });
 
     it("Cannot set a domain resolver if the domain doesn't exist", async () => {
       const domainHash = hashDomainLabel("world");
-      const tx = registry.updateDomainResolver(domainHash, mockResolver.address);
+      const tx = zns.registry.updateDomainResolver(domainHash, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
@@ -213,10 +224,10 @@ describe("ZNSRegistry Tests", () => {
     it("Can set a domain resolver if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      await registry.updateDomainResolver(domainHash, deployer.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      await zns.registry.updateDomainResolver(domainHash, deployer.address);
 
-      const record = await registry.getDomainRecord(domainHash);
+      const record = await zns.registry.getDomainRecord(domainHash);
 
       expect(record.resolver).to.eq(deployer.address);
     });
@@ -224,8 +235,8 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set a domain record if the owner is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.updateDomainRecord(domainHash, ethers.constants.AddressZero, mockResolver.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.updateDomainRecord(domainHash, ethers.constants.AddressZero, mockResolver.address);
 
       await expect(tx).to.be.revertedWith("ZNSRegistry: Owner cannot be zero address");
     });
@@ -233,14 +244,14 @@ describe("ZNSRegistry Tests", () => {
     it("Can set a domain record if the resolver is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.updateDomainRecord(domainHash, mockResolver.address, ethers.constants.AddressZero);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.updateDomainRecord(domainHash, mockResolver.address, ethers.constants.AddressZero);
 
       await expect(tx).to.be.fulfilled;
     });
 
     it("Cannot set a domain owner if owner is zero address", async () => {
-      const tx = registry
+      const tx = zns.registry
         .connect(deployer)
         .updateDomainOwner(
           wilderDomainHash,
@@ -251,20 +262,20 @@ describe("ZNSRegistry Tests", () => {
     });
 
     it("Can set a domain resolver if resolver is zero address", async () => {
-      await registry
+      await zns.registry
         .connect(deployer)
         .updateDomainResolver(
           wilderDomainHash,
           ethers.constants.AddressZero
         );
 
-      const zeroResolver = await registry.getDomainResolver(wilderDomainHash);
+      const zeroResolver = await zns.registry.getDomainResolver(wilderDomainHash);
 
       expect(zeroResolver).to.be.eq(ethers.constants.AddressZero);
     });
 
     it("Fails to set a record when caller is not owner or operator", async () => {
-      const tx = registry
+      const tx = zns.registry
         .connect(operator)
         .updateDomainRecord(
           wilderDomainHash,
@@ -277,8 +288,12 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set a domain's record if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(randomUser).updateDomainRecord(domainHash, mockResolver.address, deployer.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.connect(randomUser).updateDomainRecord(
+        domainHash,
+        mockResolver.address,
+        deployer.address
+      );
 
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
@@ -286,8 +301,8 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set an domain's owner if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
 
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
@@ -295,25 +310,18 @@ describe("ZNSRegistry Tests", () => {
     it("Cannot set a domain's resolver if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
 
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
   });
   describe("Event emitters", () => {
-    it("Emits an event when the registrar is set", async () => {
-      // TODO currently no AC on this function, make sure it's added
-      const tx = registry.connect(deployer).setZNSRegistrar(mockResolver.address);
-
-      await expect(tx).to.emit(registry, "ZNSRegistrarSet").withArgs(mockResolver.address);
-    });
-
     it("Emits an event when an operator is set", async () => {
       // TODO currently no AC on this function, make sure it's added
-      const tx = registry.connect(deployer).setOwnerOperator(randomUser.address, true);
+      const tx = zns.registry.connect(deployer).setOwnerOperator(randomUser.address, true);
 
-      await expect(tx).to.emit(registry, "OperatorPermissionSet").withArgs(
+      await expect(tx).to.emit(zns.registry, "OperatorPermissionSet").withArgs(
         deployer.address,
         randomUser.address,
         true,
@@ -324,13 +332,14 @@ describe("ZNSRegistry Tests", () => {
     it("Emits events when a new domain is created", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const tx = await registry
+      const tx = await zns.registry
         .connect(mockRegistrar)
         .createDomainRecord(
           domainHash,
           deployer.address,
           mockResolver.address
         );
+
       const rec = await tx.wait(0);
       const [ ownerEvent, resolverEvent ] = rec.events ?? [];
       expect(ownerEvent.event).to.be.eq("DomainOwnerSet");
@@ -345,8 +354,8 @@ describe("ZNSRegistry Tests", () => {
     it("Emits an event when an existing domain is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = await registry
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = await zns.registry
         .connect(deployer)
         .updateDomainRecord(
           domainHash,
@@ -368,10 +377,10 @@ describe("ZNSRegistry Tests", () => {
     it("Emits an event when a domain's owner is set", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(deployer).updateDomainOwner(domainHash, mockResolver.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.connect(deployer).updateDomainOwner(domainHash, mockResolver.address);
 
-      await expect(tx).to.emit(registry, "DomainOwnerSet").withArgs(
+      await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(
         domainHash,
         mockResolver.address,
       );
@@ -380,22 +389,70 @@ describe("ZNSRegistry Tests", () => {
     it("Emits an event when a domain's resolver is set", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
-      const tx = registry.connect(deployer).updateDomainResolver(domainHash, deployer.address);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
+      const tx = zns.registry.connect(deployer).updateDomainResolver(domainHash, deployer.address);
 
 
-      await expect(tx).to.emit(registry, "DomainResolverSet").withArgs(
+      await expect(tx).to.emit(zns.registry, "DomainResolverSet").withArgs(
         domainHash,
         deployer.address
       );
     });
 
     it("Emits an event when a domain record is deleted", async () => {
-      const tx = registry.connect(mockRegistrar).deleteRecord(wilderDomainHash);
+      const tx = zns.registry.connect(mockRegistrar).deleteRecord(wilderDomainHash);
 
-      await expect(tx).to.emit(registry, "DomainRecordDeleted").withArgs(wilderDomainHash);
+      await expect(tx).to.emit(zns.registry, "DomainRecordDeleted").withArgs(wilderDomainHash);
     });
   });
-  // TODO test delete works
-  // TODO event emitter tests
+
+  describe("UUPS", () => {
+    it("Allows an authorized user to upgrade successfully", async () => {
+      const registryFactory = new ZNSRegistry__factory(deployer);
+      const registry = await registryFactory.deploy();
+      await registry.deployed();
+
+      // Add an operator
+      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
+
+      // Create a domain record
+      const domainHash = hashDomainName("world");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(
+        domainHash,
+        deployer.address,
+        mockResolver.address
+      );
+
+      const preUpgradeVars = [
+        zns.registry.isOwnerOrOperator(domainHash, operator.address),
+        zns.registry.exists(domainHash),
+        zns.registry.getAccessController(),
+      ];
+
+      const [operatorStatusBefore, existanceBefore, accessControllerBefore] = await Promise.all(preUpgradeVars);
+
+      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
+      await expect(upgradeTx).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.registry.isOwnerOrOperator(domainHash, operator.address),
+        zns.registry.exists(domainHash),
+        zns.registry.getAccessController(),
+      ];
+
+      const [operatorStatusAfter, existanceAfter, accessControllerAfter] = await Promise.all(postUpgradeVars);
+
+      expect(operatorStatusBefore).to.eq(operatorStatusAfter);
+      expect(existanceBefore).to.eq(existanceAfter);
+      expect(accessControllerBefore).to.eq(accessControllerAfter);
+    });
+    it("Fails when an unauthorized account tries to call to upgrade", async () => {
+      const registryFactory = new ZNSRegistry__factory(deployer);
+      const registry = await registryFactory.deploy();
+      await registry.deployed();
+
+      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
+      await expect(upgradeTx).to.not.be.reverted;
+    });
+  });
 });
