@@ -4,13 +4,16 @@ pragma solidity ^0.8.18;
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
+
+contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
     /**
      * @notice Address of the ZNSRegistry contract that holds all crucial data
      *         for every domain in the system
      */
     IZNSRegistry public registry;
+
     /**
      * @notice Mapping of domain hash to address used to bind domains
      *         to Ethereum wallets or contracts registered in ZNS
@@ -18,23 +21,12 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     mapping(bytes32 domainHash => address resolvedAddress)
         private addressOf;
 
-    constructor(IZNSRegistry _registry) {
-        registry = _registry;
-    }
-
-    /**
-     * @dev Revert if `msg.sender` is not the owner or an operator allowed by the owner
-     * @param domainHash The identifying hash of a domain's name
-     */
-    // TODO AC:  Remove this when doing access control (or adapt to work the best way here).
-    //        A function like that can be created in Registry, but think
-    //        deeper if we want this to be for owner in Registry or owner of the Token in DomainToken!
-    modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSAddressResolver: Not allowed"
-        );
-        _;
+    constructor(
+        address _accessController,
+        address _registry
+    ) {
+        _setAccessController(_accessController);
+        setRegistry(_registry);
     }
 
     /**
@@ -55,8 +47,14 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
     function setAddress(
         bytes32 domainHash,
         address newAddress
-    ) external override onlyOwnerOrOperator(domainHash) {
-        require(newAddress != address(0), "ZNS: Cant set address to 0");
+    ) external override {
+        // only owner or operator of the current domain can set the address
+        // also, ZNSRegistrar can set the address as part of the registration process
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender) ||
+            accessController.isRegistrar(msg.sender),
+            "ZNSAddressResolver: Not authorized for this domain"
+        );
 
         addressOf[domainHash] = newAddress;
 
@@ -81,5 +79,25 @@ contract ZNSAddressResolver is ERC165, IZNSAddressResolver {
      */
     function getInterfaceId() public pure override returns (bytes4) {
           return type(IZNSAddressResolver).interfaceId;
+    }
+
+    function setRegistry(address _registry) public override onlyAdmin {
+        require(
+            _registry != address(0),
+            "ZNSAddressResolver: _registry is 0x0 address"
+        );
+        registry = IZNSRegistry(_registry);
+
+        emit RegistrySet(_registry);
+    }
+
+    function setAccessController(
+        address accessController
+    ) external override(AccessControlled, IZNSAddressResolver) onlyAdmin {
+        _setAccessController(accessController);
+    }
+
+    function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
+        return address(accessController);
     }
 }

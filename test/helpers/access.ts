@@ -17,9 +17,9 @@ export const REGISTRAR_ROLE = ethers.utils.solidityKeccak256(
   ["REGISTRAR_ROLE"]
 );
 
-export const OPERATOR_ROLE = ethers.utils.solidityKeccak256(
+export const EXECUTOR_ROLE = ethers.utils.solidityKeccak256(
   ["string"],
-  ["OPERATOR_ROLE"]
+  ["EXECUTOR_ROLE"]
 );
 
 export const deployAccessController = async ({
@@ -37,6 +37,3 @@ export const deployAccessController = async ({
   await controller.initialize(governorAddresses, adminAddresses);
   return controller;
 };
-
-export const getAccessRevertMsg = (addr : string, role : string) : string =>
-  `AccessControl: account ${addr.toLowerCase()} is missing role ${role}`;

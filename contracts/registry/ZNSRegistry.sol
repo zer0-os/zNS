@@ -5,12 +5,11 @@ import { ERC1967UpgradeUpgradeable }
 from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSRegistry } from "./IZNSRegistry.sol";
+import { AccessControlled } from "../access/AccessControlled.sol";
 
-contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
-    /**
-     * @notice The address of the registrar we are using
-     */
-    address public znsRegistrar;
+
+contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistry {
+
     /**
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
@@ -30,6 +29,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
+        // TODO: consider using errors instead of requires with string msgs
         require(
             isOwnerOrOperator(domainHash, msg.sender),
             "ZNSRegistry: Not authorized"
@@ -37,32 +37,29 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         _;
     }
 
-    /**
-     * @notice Revert if `msg.sender` is not the registrar
-     */
-    modifier onlyRegistrar() {
+    modifier onlyOwner(bytes32 domainHash) {
         require(
-            msg.sender == znsRegistrar,
-            "ZNSRegistry: Caller is not the Registrar"
+            records[domainHash].owner == msg.sender,
+            "ZNSRegistry: Not the Name Owner"
         );
         _;
     }
 
+    modifier onlyRegistrar() {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     /**
-     * Initialize the ZNSRegistry contract, setting the owner of the `0x0` domain
-     * to be the account that deploys this contract
+     * @notice Initialize the ZNSRegistry contract
+     * @param _accessController The address of the AccessController contract
      */
-    function initialize(address znsRegistrar_) public override initializer {
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Registrar can not be 0x0 address"
-        );
-        znsRegistrar = znsRegistrar_;
+    function initialize(address _accessController) public override initializer {
+        _setAccessController(_accessController);
     }
 
     /**
      * @notice Check if a given domain exists
-     *
      * @param domainHash The hash of a domain's name
      */
     function exists(bytes32 domainHash) external view override returns (bool) {
@@ -71,7 +68,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Checks if provided address is an owner or an operator of the provided domain
-     *
      * @param domainHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
@@ -84,30 +80,11 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
     }
 
     /**
-     * @notice Change the address of the ZNSRegistrar contract we use
-     *
-     * @param znsRegistrar_ The new ZNSRegistrar
-     */
-    function setZNSRegistrar(address znsRegistrar_) external override {
-    // TODO When we have access control, only be callable by admin!!
-        require(
-            znsRegistrar_ != address(0),
-            "ZNSRegistry: Cannot set Registrar to 0x0"
-        );
-
-        znsRegistrar = znsRegistrar_;
-
-        emit ZNSRegistrarSet(znsRegistrar_);
-    }
-
-    /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by the owner `msg.sender`
-     *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    // TODO AC: add access control
     function setOwnerOperator(address operator, bool allowed) external override {
         operators[msg.sender][operator] = allowed;
 
@@ -116,7 +93,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Get a record for a domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
@@ -127,7 +103,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Get the owner of the given domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
@@ -138,7 +113,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Get the default resolver for the given domain
-     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
@@ -149,7 +123,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Create a new domain record
-     *
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
      * @param resolver The resolver of the new domain
@@ -169,7 +142,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Update an existing domain record's owner or resolver
-     *
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
@@ -178,8 +150,7 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         bytes32 domainHash,
         address owner,
         address resolver
-    // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolver);
@@ -187,22 +158,26 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Update a domain's owner
-     *
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
     function updateDomainOwner(
         bytes32 domainHash,
         address owner
-        // TODO AC: make this so only owner can change the owner and not the operator!
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override {
+        // this can be called from ZNSRegistrar as part of `reclaim()` flow
+        require(
+            msg.sender == records[domainHash].owner ||
+            accessController.isRegistrar(msg.sender),
+            "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        );
+
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
 
     /**
      * @notice Update the domain's default resolver
-     *
      * @param domainHash the hash of a domain's name
      * @param resolver The new default resolver
      */
@@ -216,7 +191,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Delete a domain's record
-     *
      * @param domainHash The hash of the domain name
      */
     function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
@@ -225,9 +199,18 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
         emit DomainRecordDeleted(domainHash);
     }
 
+    function setAccessController(
+        address accessController
+    ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
+        _setAccessController(accessController);
+    }
+
+    function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
+        return address(accessController);
+    }
+
     /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
-     *
      * @param domainHash the hash of a domain's name
      */
     function _exists(bytes32 domainHash) internal view returns (bool) {
@@ -239,7 +222,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
      * Note that we don't check for `address(0)` here. This is intentional
      * because we are not currently allowing reselling of domains and want
      * to enable burning them instead by transferring ownership to `address(0)`
-     *
      * @param domainHash the hash of a domain's name
      * @param owner The owner to set
      */
@@ -251,7 +233,6 @@ contract ZNSRegistry is IZNSRegistry, ERC1967UpgradeUpgradeable {
 
     /**
      * @notice Set a domain's resolver
-     *
      * @param domainHash the hash of a domain's name
      * @param resolver The resolver to set
      */

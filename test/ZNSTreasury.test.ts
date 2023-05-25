@@ -5,7 +5,8 @@ import { checkBalance, deployZNS } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel } from "./helpers/hashing";
-import { ADMIN_ROLE, getAccessRevertMsg, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { getAccessRevertMsg } from "./helpers/errors";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -46,7 +47,7 @@ describe("ZNSTreasury", () => {
   });
 
   it("Confirms deployment", async () => {
-    const priceOracle = await zns.treasury.znsPriceOracle();
+    const priceOracle = await zns.treasury.priceOracle();
     const token = await zns.treasury.stakingToken();
     const accessController = await zns.treasury.getAccessController();
 
@@ -166,17 +167,17 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("#setPriceOracle() and ZnsPriceOracleSet event", () => {
+  describe("#setPriceOracle() and PriceOracleSet event", () => {
     it("Should set the correct address of ZNS Price Oracle", async () => {
-      const currentPriceOracle = await zns.treasury.znsPriceOracle();
+      const currentPriceOracle = await zns.treasury.priceOracle();
       expect(currentPriceOracle).to.not.eq(randomAcc.address);
 
       const tx = await zns.treasury.setPriceOracle(randomAcc.address);
 
-      const newPriceOracle = await zns.treasury.znsPriceOracle();
+      const newPriceOracle = await zns.treasury.priceOracle();
       expect(newPriceOracle).to.eq(randomAcc.address);
 
-      await expect(tx).to.emit(zns.treasury, "ZnsPriceOracleSet").withArgs(randomAcc.address);
+      await expect(tx).to.emit(zns.treasury, "PriceOracleSet").withArgs(randomAcc.address);
     });
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
@@ -202,7 +203,7 @@ describe("ZNSTreasury", () => {
       const newStakingToken = await zns.treasury.stakingToken();
       expect(newStakingToken).to.eq(randomAcc.address);
 
-      await expect(tx).to.emit(zns.treasury, "ZnsStakingTokenSet").withArgs(randomAcc.address);
+      await expect(tx).to.emit(zns.treasury, "StakingTokenSet").withArgs(randomAcc.address);
     });
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {

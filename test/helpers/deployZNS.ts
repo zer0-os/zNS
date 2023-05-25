@@ -24,23 +24,27 @@ import { BigNumber } from "ethers";
 
 export const deployRegistry = async (
   deployer : SignerWithAddress,
-  registrar : SignerWithAddress
+  accessControllerAddress : string
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
   const registry = await registryFactory.deploy();
 
   // To set the owner of the zero domain to the deployer
-  await registry.connect(deployer).initialize(registrar.address);
+  await registry.connect(deployer).initialize(accessControllerAddress);
 
   return registry;
 };
 
 export const deployAddressResolver = async (
   deployer : SignerWithAddress,
+  accessControllerAddress : string,
   registryAddress : string
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
-  const addressResolver = await addressResolverFactory.deploy(registryAddress);
+  const addressResolver = await addressResolverFactory.deploy(
+    accessControllerAddress,
+    registryAddress
+  );
 
   return addressResolver;
 };
@@ -69,10 +73,15 @@ export const deployPriceOracle = async ({
 };
 
 export const deployDomainToken = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  accessControllerAddress : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy("ZNSDomainToken", "ZDT");
+  return domainTokenFactory.deploy(
+    "ZNSDomainToken",
+    "ZDT",
+    accessControllerAddress
+  );
 };
 
 export const deployZeroTokenMock = async (
@@ -139,16 +148,17 @@ export const deployZNS = async ({
     adminAddresses: [deployer.address, ...adminAddresses],
   });
 
-  // TODO AC: fix this!
-  // Can't set to zero, but registrar address must be given.
-  // Due to order of deployment, add deployer as registrar address for now and change after
-  const registry = await deployRegistry(deployer, deployer);
+  const registry = await deployRegistry(deployer, accessController.address);
 
-  const domainToken = await deployDomainToken(deployer);
+  const domainToken = await deployDomainToken(deployer, accessController.address);
 
   const zeroTokenMock = await deployZeroTokenMock(deployer);
 
-  const addressResolver = await deployAddressResolver(deployer, registry.address);
+  const addressResolver = await deployAddressResolver(
+    deployer,
+    accessController.address,
+    registry.address
+  );
 
   const priceOracle = await deployPriceOracle({
     deployer,
@@ -184,13 +194,6 @@ export const deployZNS = async ({
     priceOracle,
     registrar,
   };
-
-  // Final configuration steps
-  // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
-  //  for Registrar to be owner/operator of the root
-  await domainToken.connect(deployer).authorize(registrar.address);
-  await registry.connect(deployer).setOwnerOperator(registrar.address, true);
-  await registry.connect(deployer).setZNSRegistrar(registrar.address);
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);

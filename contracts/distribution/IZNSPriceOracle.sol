@@ -120,4 +120,8 @@ interface IZNSPriceOracle {
      * @param subdomainLength The length for subdomains
      */
     function setBaseLengths(uint256 rootLength, uint256 subdomainLength) external;
+
+    function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }

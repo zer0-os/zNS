@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 interface IZNSRegistry {
+
     /**
      * @notice The `DomainRecord` struct is meant to hold relevant information
      * about a domain, such as its owner and resolver.
@@ -10,6 +11,7 @@ interface IZNSRegistry {
         address owner;
         address resolver;
     }
+
     /**
      * @notice Emit when ownership of a domain is modified
      * @param owner The new domain owner
@@ -50,15 +52,11 @@ interface IZNSRegistry {
         bool allowed
     );
 
-    function initialize(address owner) external;
-
     /**
-     * @notice Emit when a new ZNSRegistrar address is set
-     * @param znsRegistrar The new address
+     * @notice Initialize the ZNSRegistry contract
+     * @param _accessController The address of the AccessController contract
      */
-    event ZNSRegistrarSet(
-        address indexed znsRegistrar
-    );
+    function initialize(address _accessController) external;
 
     /**
      * @notice Check if a given domain exists
@@ -79,7 +77,6 @@ interface IZNSRegistry {
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by `msg.sender`
-     *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
@@ -111,7 +108,6 @@ interface IZNSRegistry {
 
     /**
      * @notice Create a new domain record
-     *
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
      * @param resolver The resolver of the new domain
@@ -124,7 +120,6 @@ interface IZNSRegistry {
 
     /**
      * @notice Update an existing domain record's owner or resolver
-     *
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
@@ -144,7 +139,6 @@ interface IZNSRegistry {
 
     /**
      * @notice Update the domain's default resolver
-     *
      * @param domainHash the hash of a domain's name
      * @param resolver The new default resolver
      */
@@ -154,16 +148,16 @@ interface IZNSRegistry {
     ) external;
 
     /**
-     * @notice Change the address of the ZNSRegistrar contract we use
-     *
-     * @param znsRegistrar_ The new ZNSRegistrar
-     */
-    function setZNSRegistrar(address znsRegistrar_) external;
-
-    /**
      * @notice Delete a domain's record
-     *
      * @param domainHash The hash of the domain name
      */
     function deleteRecord(bytes32 domainHash) external;
+
+    /**
+     * @notice Set the access controller contract
+     * @param accessController The new access controller
+     */
+    function setAccessController(address accessController) external;
+
+    function getAccessController() external view returns (address);
 }
