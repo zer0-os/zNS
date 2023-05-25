@@ -123,7 +123,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner,
         address resolver
-    ) external override onlyRole(REGISTRAR_ROLE) {
+    ) external override onlyRegistrar() {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domains with no resolver address
@@ -150,6 +150,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Update a domain's owner
+     * @dev This could be called from the registrar as part of the `reclaim()` flow
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -157,8 +158,6 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner
     ) external override {
-        // this can be called from ZNSRegistrar as part of `reclaim()` flow
-        require(_exists(domainHash), "ZNSRegistry: Domain does not exist");
         require(
             msg.sender == records[domainHash].owner ||
             accessController.isRegistrar(msg.sender),
@@ -186,7 +185,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Delete a domain's record
      * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainHash) external override onlyRole(REGISTRAR_ROLE) {
+    function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);
@@ -194,20 +193,12 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     function setAccessController(
         address accessController
-    ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
+    ) external override onlyAdmin {
         _setAccessController(accessController);
     }
 
-    function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
+    function getAccessController() external view override returns (address) {
         return address(accessController);
-    }
-
-    /**
-     * @notice Set the address of the access controller contract
-     * @param _accessController The new access controller
-     */
-    function setAccessController(address _accessController) external override onlyRole(GOVERNOR_ROLE) {
-        _setAccessController(_accessController);
     }
 
     /**
@@ -249,7 +240,6 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice The required override by UUPS
      * @param newImplementation The implementation contract to upgrade to
      */
-    function _authorizeUpgrade(address newImplementation) internal override {
-        accessController.checkRole(GOVERNOR_ROLE, msg.sender);
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {
     }
 }

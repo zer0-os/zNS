@@ -16,7 +16,6 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
 
-
     modifier onlyNameOwner(bytes32 domainHash) {
         require(
             msg.sender == registry.getDomainOwner(domainHash),
@@ -94,14 +93,10 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         return domainHash;
     }
 
-    function revokeDomain(bytes32 domainHash)
-    external
-    override
     // TODO: figure out how to guard this so people can stake tokens
     //  without the risk of staking contract or wallet to call reclaim+revoke
     //  from underneath them
-    onlyNameOwner(domainHash)
-    onlyTokenOwner(domainHash)
+    function revokeDomain(bytes32 domainHash) external override onlyNameOwner(domainHash) onlyTokenOwner(domainHash)
     {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
@@ -111,10 +106,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit DomainRevoked(domainHash, msg.sender);
     }
 
-    function reclaimDomain(bytes32 domainHash)
-    external
-    override
-    onlyTokenOwner(domainHash)
+    function reclaimDomain(bytes32 domainHash) external override onlyTokenOwner(domainHash)
     {
         registry.updateDomainOwner(domainHash, msg.sender);
 
@@ -161,10 +153,8 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit AddressResolverSet(znsAddressResolver_);
     }
 
-    function setAccessController(address accessController_)
-    external
-    override(AccessControlled, IZNSEthRegistrar)
-    onlyAdmin
+    function setAccessController(address accessController_) external override(AccessControlled, IZNSEthRegistrar) 
+        onlyAdmin
     {
         _setAccessController(accessController_);
     }

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-
+import { ZNSRoles } from "./ZNSRoles.sol";
 
 abstract contract AccessControlled {
 
@@ -10,9 +10,23 @@ abstract contract AccessControlled {
 
     IZNSAccessController internal accessController;
 
-
     modifier onlyAdmin() {
         accessController.checkAdmin(msg.sender);
+        _;
+    }
+
+    modifier onlyGovernor() {
+        accessController.checkGovernor(msg.sender);
+        _;
+    }
+
+    modifier onlyExecutor() {
+        accessController.checkExecutor(msg.sender);
+        _;
+    }
+
+    modifier onlyRegistrar() {
+        accessController.checkRegistrar(msg.sender);
         _;
     }
 

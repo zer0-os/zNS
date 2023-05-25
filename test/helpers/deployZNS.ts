@@ -27,7 +27,6 @@ export const deployRegistry = async (
   accessControllerAddress : string
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
-<<<<<<< HEAD
   const registry = await hre.upgrades.deployProxy(
     registryFactory,
     [
@@ -36,12 +35,6 @@ export const deployRegistry = async (
     {
       kind: "uups",
     }) as ZNSRegistry;
-=======
-  const registry = await registryFactory.deploy();
-
-  // To set the owner of the zero domain to the deployer
-  await registry.connect(deployer).initialize(accessControllerAddress);
->>>>>>> development
 
   return registry;
 };

@@ -5,12 +5,9 @@ import { deployZNS } from "./helpers/deployZNS";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistry__factory } from "../typechain";
-import { ZNSAccessController, ZNSRegistry } from "../typechain";
-import { deployRegistry } from "./helpers/deployZNS";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
-  deployAccessController,
   getAccessRevertMsg, INITIALIZED_ERR,
   REGISTRAR_ROLE,
 } from "./helpers";
@@ -19,6 +16,7 @@ import {
   NOT_AUTHORIZED_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
+  DOMAIN_NOT_EXIST,
 } from "./helpers/errors";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -60,8 +58,8 @@ describe("ZNSRegistry Tests", () => {
 
   it("Cannot be initialized twice", async () => {
     await expect(
-      registry.initialize(
-        accessController.address
+      zns.registry.initialize(
+        zns.accessController.address
       )
     ).to.be.revertedWith(
       INITIALIZED_ERR
@@ -69,10 +67,10 @@ describe("ZNSRegistry Tests", () => {
   });
 
   it("Should set access controller correctly with ADMIN_ROLE", async () => {
-    const currentAC = await registry.getAccessController();
+    const currentAC = await zns.registry.getAccessController();
 
-    await registry.connect(deployer).setAccessController(randomUser.address);
-    const newAC = await registry.getAccessController();
+    await zns.registry.connect(deployer).setAccessController(randomUser.address);
+    const newAC = await zns.registry.getAccessController();
 
     expect(currentAC).to.not.equal(newAC);
     expect(newAC).to.equal(randomUser.address);
@@ -80,7 +78,7 @@ describe("ZNSRegistry Tests", () => {
 
   it("Should revert when setting access controller without ADMIN_ROLE", async () => {
     await expect(
-      registry.connect(randomUser).setAccessController(deployer.address)
+      zns.registry.connect(randomUser).setAccessController(deployer.address)
     ).to.be.revertedWith(
       getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
     );
@@ -232,9 +230,7 @@ describe("ZNSRegistry Tests", () => {
       const tx = zns.registry.updateDomainOwner(domainHash, deployer.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(
-        ONLY_OWNER_REGISTRAR_REG_ERR
-      );
+      await expect(tx).to.be.revertedWith(ONLY_OWNER_REGISTRAR_REG_ERR);
     });
 
     it("Can update a domain owner if the domain exists", async () => {
@@ -450,7 +446,6 @@ describe("ZNSRegistry Tests", () => {
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
       const tx = zns.registry.connect(deployer).updateDomainResolver(domainHash, deployer.address);
-
 
       await expect(tx).to.emit(zns.registry, "DomainResolverSet").withArgs(
         domainHash,

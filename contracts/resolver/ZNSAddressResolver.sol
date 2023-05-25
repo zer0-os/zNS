@@ -78,7 +78,7 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
      * @dev Exposes IZNSAddressResolver interfaceId
      */
     function getInterfaceId() public pure override returns (bytes4) {
-          return type(IZNSAddressResolver).interfaceId;
+        return type(IZNSAddressResolver).interfaceId;
     }
 
     function setRegistry(address _registry) public override onlyAdmin {
