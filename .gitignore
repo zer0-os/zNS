@@ -10,3 +10,4 @@ typechain-types
 cache
 artifacts
 
+*.env
