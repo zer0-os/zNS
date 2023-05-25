@@ -16,29 +16,46 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
         _grantRoleToMany(GOVERNOR_ROLE, governorAddresses);
         _grantRoleToMany(ADMIN_ROLE, adminAddresses);
 
-        // all of the governors control admins TODO AC: ???
+        // all of the governors control admins
         _setRoleAdmin(ADMIN_ROLE, GOVERNOR_ROLE);
-        // all of the governors control governors TODO AC: ???
+        // all of the governors control governors
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
-        // all of the admins control registrar TODO AC: ???
+        // all of the admins control registrar
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
     }
 
-    // TODO AC: should we keep this function here so that we can get standardized message?
-    //  test this function for gas usage with a standardized message vs a custom message
-    //  when using the recommended method of `hasRole`
-    function checkRole(bytes32 role, address account) external view override {
-        _checkRole(role, account);
+    // ** Access Validators **
+
+    function checkGovernor(address account) external view override {
+        _checkRole(GOVERNOR_ROLE, account);
     }
 
-    // TODO AC: is this function necessary? how often will it be used?
+    function checkAdmin(address account) external view override {
+        _checkRole(ADMIN_ROLE, account);
+    }
+
+    function checkExecutor(address account) external view override {
+        _checkRole(EXECUTOR_ROLE, account);
+    }
+
+    function checkRegistrar(address account) external view override {
+        _checkRole(REGISTRAR_ROLE, account);
+    }
+
+    function isAdmin(address account) external view override returns (bool) {
+        return hasRole(ADMIN_ROLE, account);
+    }
+
+    function isRegistrar(address account) external view override returns (bool) {
+        return hasRole(REGISTRAR_ROLE, account);
+    }
+
     function _grantRoleToMany(bytes32 role, address[] calldata addresses) internal {
         for (uint256 i = 0; i < addresses.length; i++) {
             _grantRole(role, addresses[i]);
         }
     }
 
-    // TODO AC: how safe is this?
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {
         _setRoleAdmin(role, adminRole);
     }

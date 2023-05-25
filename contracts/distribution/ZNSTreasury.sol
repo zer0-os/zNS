@@ -11,7 +11,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     /**
      * @notice The price oracle
      */
-    IZNSPriceOracle public znsPriceOracle;
+    IZNSPriceOracle public priceOracle;
 
     /**
      * @notice The payment/staking token
@@ -32,6 +32,12 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
 
+    modifier onlyRegistrar() {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
+
     constructor(
         address accessController_,
         address znsPriceOracle_,
@@ -39,7 +45,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         address zeroVault_
     ) {
         _setAccessController(accessController_);
-        _setZeroVaultAddress(zeroVault_);
+        setZeroVaultAddress(zeroVault_);
         // TODO change from mock
         setStakingToken(stakingToken_);
         setPriceOracle(znsPriceOracle_);
@@ -50,9 +56,9 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         string calldata domainName,
         address depositor,
         bool isTopLevelDomain
-    ) external override onlyRole(REGISTRAR_ROLE) {
+    ) external override onlyRegistrar {
         // Get price and fee for the domain
-        (, uint256 stakeAmount, uint256 registrationFee) = znsPriceOracle.getPrice(
+        (, uint256 stakeAmount, uint256 registrationFee) = priceOracle.getPrice(
             domainName,
             isTopLevelDomain
         );
@@ -72,7 +78,7 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     function unstakeForDomain(
         bytes32 domainHash,
         address owner
-    ) external override onlyRole(REGISTRAR_ROLE) {
+    ) external override onlyRegistrar {
         uint256 stakeAmount = stakedForDomain[domainHash];
         require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
         delete stakedForDomain[domainHash];
@@ -82,36 +88,39 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
-    function setZeroVaultAddress(address zeroVaultAddress) external override onlyRole(ADMIN_ROLE) {
-        _setZeroVaultAddress(zeroVaultAddress);
+    function setZeroVaultAddress(address zeroVaultAddress) public override onlyAdmin {
+        require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
+
+        zeroVault = zeroVaultAddress;
+        emit ZeroVaultAddressSet(zeroVaultAddress);
     }
 
-    // TODO AC: should we call a protected function in the constructor/initialize?
-    function setPriceOracle(address znsPriceOracle_) public override onlyRole(ADMIN_ROLE) {
+    function setPriceOracle(address znsPriceOracle_) public override onlyAdmin {
         require(
             znsPriceOracle_ != address(0),
             "ZNSTreasury: znsPriceOracle_ passed as 0x0 address"
         );
 
-          znsPriceOracle = IZNSPriceOracle(znsPriceOracle_);
-          emit ZnsPriceOracleSet(znsPriceOracle_);
+        priceOracle = IZNSPriceOracle(znsPriceOracle_);
+        emit PriceOracleSet(znsPriceOracle_);
     }
 
-    function setStakingToken(address stakingToken_) public override onlyRole(ADMIN_ROLE) {
+    function setStakingToken(address stakingToken_) public override onlyAdmin {
         require(stakingToken_ != address(0), "ZNSTreasury: stakingToken_ passed as 0x0 address");
 
         stakingToken = IERC20(stakingToken_);
-        emit ZnsStakingTokenSet(stakingToken_);
+        emit StakingTokenSet(stakingToken_);
     }
 
-    function setAccessController(address accessController_) external override onlyRole(ADMIN_ROLE) {
+    function setAccessController(address accessController_)
+    public
+    override(AccessControlled, IZNSTreasury)
+    onlyAdmin
+    {
         _setAccessController(accessController_);
     }
 
-    function _setZeroVaultAddress(address zeroVaultAddress) internal {
-        require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
-
-        zeroVault = zeroVaultAddress;
-        emit ZeroVaultAddressSet(zeroVaultAddress);
+    function getAccessController() external view override(AccessControlled, IZNSTreasury) returns (address) {
+        return address(accessController);
     }
 }

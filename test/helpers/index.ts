@@ -5,3 +5,4 @@ export * from "./hashing";
 export * from "./constants";
 export * from "./balances";
 export * from "./access";
+export * from "./errors";

@@ -1,24 +1,19 @@
 import * as hre from "hardhat";
-import {
-  ZNSRegistry,
-  ZNSAddressResolver,
-  ERC165__factory,
-} from "../typechain";
+import { ERC165__factory } from "../typechain";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
-import { DeployZNSParams, ZNSContracts } from "./helpers/types";
-import { REGISTRAR_ROLE, deployZNS } from "./helpers";
+import {
+  ADMIN_ROLE,
+  REGISTRAR_ROLE,
+  deployZNS,
+  getAccessRevertMsg,
+} from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
 
-/**
- * TODO the registry should have a function for checking isOwnerOrOperator,
- * so that the AddressResolver can implement a single call in its modifier.
- *
- * Consider moving these tests to ZNSRegistry since they deploy a registry.
- */
-describe("ZNSAddressResolver", () => {
+describe("zns.addressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let owner : SignerWithAddress;
@@ -43,15 +38,6 @@ describe("ZNSAddressResolver", () => {
       adminAddresses: [deployer.address],
     };
     zns = await deployZNS(params);
-
-    // const znsAddressResolverFactory = new ZNSAddressResolver__factory(deployer);
-    // const znsRegistryFactory = new ZNSRegistry__factory(deployer);
-
-    // znsRegistry = await znsRegistryFactory.deploy();
-    // znsAddressResolver = await znsAddressResolverFactory.deploy(zns.registry.address);
-
-    // Initialize registry and domain
-    // await zns.registry.connect(deployer).initialize();
 
     // Have to get this value for every test, but can be fixed
     wilderDomainNameHash = hashDomainName("wilder");
@@ -81,10 +67,46 @@ describe("ZNSAddressResolver", () => {
     expect(await zns.addressResolver.registry()).to.equal(zns.registry.address);
   });
 
+  it("Should setRegistry() correctly with ADMIN_ROLE", async () => {
+    await expect(
+      zns.addressResolver.connect(deployer).setRegistry(operator.address)
+    )
+      .to.emit(zns.addressResolver, "RegistrySet")
+      .withArgs(operator.address);
+
+    expect(await zns.addressResolver.registry()).to.equal(operator.address);
+  });
+
+  it("Should revert when setRegistry() without ADMIN_ROLE", async () => {
+    await expect(
+      zns.addressResolver.connect(operator).setRegistry(operator.address)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(operator.address, ADMIN_ROLE)
+    );
+  });
+
+  it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
+    await expect(
+      zns.addressResolver.connect(deployer).setAccessController(operator.address)
+    )
+      .to.emit(zns.addressResolver, "AccessControllerSet")
+      .withArgs(operator.address);
+
+    expect(await zns.addressResolver.getAccessController()).to.equal(operator.address);
+  });
+
+  it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
+    await expect(
+      zns.addressResolver.connect(operator).setAccessController(operator.address)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(operator.address, ADMIN_ROLE)
+    );
+  });
+
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
       zns.addressResolver.connect(addr1).setAddress(wilderDomainNameHash, addr1.address)
-    ).to.be.revertedWith("ZNSAddressResolver: Not allowed");
+    ).to.be.revertedWith("zns.addressResolver: Not allowed");
   });
 
   it("Should allow owner to setAddress and emit event", async () => {
@@ -94,6 +116,9 @@ describe("ZNSAddressResolver", () => {
     )
       .to.emit(zns.addressResolver, "AddressSet")
       .withArgs(wilderDomainNameHash, addr1.address);
+
+    const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainNameHash);
+    expect(resolvedAddress).to.equal(addr1.address);
   });
 
   it("Should allow operator to setAddress and emit event", async () => {
@@ -107,7 +132,9 @@ describe("ZNSAddressResolver", () => {
       .withArgs(wilderDomainNameHash, addr1.address);
   });
 
-  it("Should not allow owner to setAddress(0)", async () => {
+  it("Should allow REGISTRAR_ROLE to setAddress and emit event", async () => {
+    await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
     await expect(
       zns.addressResolver.connect(deployer).setAddress(wilderDomainNameHash, hre.ethers.constants.AddressZero)
     ).to.be.revertedWith("ZNS: Cant set address to 0");
@@ -136,5 +163,16 @@ describe("ZNSAddressResolver", () => {
   it("Should not support other interface IDs", async () => {
     const notSupported = await zns.addressResolver.supportsInterface("0xffffffff");
     expect(notSupported).to.be.false;
+  });
+
+  it("Should support full discovery flow from zns.registry", async () => {
+    await zns.addressResolver.connect(owner)
+      .setAddress(wilderDomainNameHash, addr1.address);
+
+    const resolverAddress = await zns.registry.getDomainResolver(wilderDomainNameHash);
+    expect(resolverAddress).to.eq(zns.addressResolver.address);
+
+    const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainNameHash);
+    expect(resolvedAddress).to.eq(addr1.address);
   });
 });
