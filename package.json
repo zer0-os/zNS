@@ -20,12 +20,14 @@
     "test": "hardhat test",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
-    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
+    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
+    "devnet-op": "node ./tenderly/devnet-execute.ts"
   },
   "pre-commit": [
     "lint"
   ],
   "devDependencies": {
+    "@ensdomains/ensjs": "2.1.0",
     "@ethersproject/providers": "5.7.2",
     "@nomicfoundation/hardhat-chai-matchers": "1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
@@ -52,10 +54,10 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
-    "typescript": "^5.0.2",
-    "@ensdomains/ensjs": "2.1.0"
+    "typescript": "^5.0.2"
   },
   "dependencies": {
+    "@tenderly/hardhat-tenderly": "^1.7.4",
     "dotenv": "16.0.3"
   },
   "resolutions": {
