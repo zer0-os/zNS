@@ -2,7 +2,7 @@
   "root": true,
   "overrides": [
     {
-      "files": ["src/**/*.ts", "test/**/*.ts", "./*.ts"],
+      "files": ["src/**/*.ts", "test/**/*.ts", "./*.ts", "tenderly/**/*.ts"],
       "extends": ["@zero-tech/eslint-config-cpt/node-ts/.eslintrc.json"],
       "rules": {
         "no-unused-expressions": "off",
