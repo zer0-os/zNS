@@ -6,7 +6,8 @@ import {
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
-  ZeroTokenMock, ZNSAccessController,
+  ZeroTokenMock,
+  ZNSAccessController,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 

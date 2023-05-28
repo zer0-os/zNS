@@ -52,4 +52,11 @@ interface IZNSTreasury {
     function setAccessController(address accessController) external;
 
     function getAccessController() external view returns (address);
+
+    function initialize(
+        address accessController_,
+        address znsPriceOracle_,
+        address stakingToken_,
+        address zeroVault_
+    ) external;
 }

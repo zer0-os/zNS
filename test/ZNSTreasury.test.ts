@@ -2,11 +2,12 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkBalance, deployZNS } from "./helpers";
-import { ZNSContracts } from "./helpers/types";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel } from "./helpers/hashing";
-import { ADMIN_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
+import { ZNSTreasury__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -31,12 +32,14 @@ describe("ZNSTreasury", () => {
       randomAcc,
     ] = await hre.ethers.getSigners();
 
-    zns = await deployZNS({
+    const params : DeployZNSParams = {
       deployer,
       governorAddresses: [governor.address],
       adminAddresses: [admin.address],
       zeroVaultAddress: zeroVault.address,
-    });
+    };
+
+    zns = await deployZNS(params);
 
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
@@ -242,6 +245,57 @@ describe("ZNSTreasury", () => {
     it("Should revert when accessController is address 0", async () => {
       const tx = zns.treasury.setAccessController(ethers.constants.AddressZero);
       await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+    });
+  });
+
+  describe("UUPS", () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const treasuryFactory = new ZNSTreasury__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      const preUpgradeVars = [
+        zns.treasury.priceOracle(),
+        zns.treasury.stakingToken(),
+        zns.treasury.zeroVault(),
+      ];
+
+      const [priceOracleBefore, stakingTokenBefore, vaultBefore] = await Promise.all(preUpgradeVars);
+
+      // the upgrade was successful
+      await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.treasury.priceOracle(),
+        zns.treasury.stakingToken(),
+        zns.treasury.zeroVault(),
+      ];
+
+      const [priceOracleAfter, stakingTokenAfter, vaultAfter] = await Promise.all(postUpgradeVars);
+
+      // The state variables weren't changed in the process
+      expect(priceOracleBefore).to.eq(priceOracleAfter);
+      expect(stakingTokenBefore).to.eq(stakingTokenAfter);
+      expect(vaultBefore).to.eq(vaultAfter);
+    });
+
+    it("Disallows an unauthorized user from upgrade the contract", async () => {
+      const accessTx = zns.accessController.checkGovernor(user.address);
+      await expect(accessTx).to.be.revertedWith(
+        `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      );
+
+      const treasuryFactory = new ZNSTreasury__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      const deployTx = zns.treasury.connect(user).upgradeTo(treasury.address);
+      await expect(deployTx).to.be.revertedWith(
+        `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      );
     });
   });
 });

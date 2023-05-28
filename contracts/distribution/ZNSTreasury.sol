@@ -5,9 +5,10 @@ import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSTreasury is AccessControlled, IZNSTreasury {
+contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     /**
      * @notice The price oracle
      */
@@ -31,12 +32,12 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
 
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
-    constructor(
+    function initialize(
         address accessController_,
         address znsPriceOracle_,
         address stakingToken_,
         address zeroVault_
-    ) {
+    ) external override initializer {
         _setAccessController(accessController_);
         setZeroVaultAddress(zeroVault_);
         // TODO change from mock
@@ -56,11 +57,11 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
             isTopLevelDomain
         );
 
-      // Transfer stake amount and fee
-      stakingToken.transferFrom(depositor, address(this), stakeAmount);
-      // TODO make sure we show the approval process to the user here to avoid failed transfer
-      // TODO can we make it so it needs a single approval only?!
-      stakingToken.transferFrom(depositor, zeroVault, registrationFee);
+        // Transfer stake amount and fee
+        stakingToken.transferFrom(depositor, address(this), stakeAmount);
+        // TODO make sure we show the approval process to the user here to avoid failed transfer
+        // TODO can we make it so it needs a single approval only?!
+        stakingToken.transferFrom(depositor, zeroVault, registrationFee);     
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
@@ -88,14 +89,14 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
         emit ZeroVaultAddressSet(zeroVaultAddress);
     }
 
-    function setPriceOracle(address znsPriceOracle_) public override onlyAdmin {
+    function setPriceOracle(address priceOracle_) public override onlyAdmin {
         require(
-            znsPriceOracle_ != address(0),
+            priceOracle_ != address(0),
             "ZNSTreasury: znsPriceOracle_ passed as 0x0 address"
         );
 
-        priceOracle = IZNSPriceOracle(znsPriceOracle_);
-        emit PriceOracleSet(znsPriceOracle_);
+        priceOracle = IZNSPriceOracle(priceOracle_);
+        emit PriceOracleSet(priceOracle_);
     }
 
     function setStakingToken(address stakingToken_) public override onlyAdmin {
@@ -116,4 +117,11 @@ contract ZNSTreasury is AccessControlled, IZNSTreasury {
     function getAccessController() external view override(AccessControlled, IZNSTreasury) returns (address) {
         return address(accessController);
     }
+
+    /**
+     * @notice The required override by UUPS
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
 }
