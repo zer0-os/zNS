@@ -45,4 +45,11 @@ interface IZNSAddressResolver {
     function setAccessController(address accessController) external;
 
     function getAccessController() external view returns (address);
+
+    /**
+     * @notice Initialize an instance of the ZNSAddressResolver
+     * @param _accessController The access controller
+     * @param _registry The registry address
+     */
+    function initialize(address _accessController, address _registry) external;
 }

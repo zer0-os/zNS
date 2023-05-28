@@ -2,12 +2,13 @@
 pragma solidity ^0.8.18;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
-contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
+contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
     /**
      * @notice Address of the ZNSRegistry contract that holds all crucial data
      *         for every domain in the system
@@ -21,10 +22,12 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
     mapping(bytes32 domainHash => address resolvedAddress)
         private addressOf;
 
-    constructor(
-        address _accessController,
-        address _registry
-    ) {
+    /**
+     * @notice Initialize an instance of the ZNSAddressResolver
+     * @param _accessController The access controller
+     * @param _registry The registry address
+     */
+    function initialize(address _accessController, address _registry) public initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
     }
@@ -100,4 +103,11 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
     function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);
     }
+
+    /**
+     * @notice The required override by UUPS
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
 }

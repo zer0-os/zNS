@@ -46,13 +46,18 @@ export const deployAddressResolver = async (
   registryAddress : string
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
-  // TODO hre upgrades proxy
-  const addressResolver = await addressResolverFactory.deploy(
-    accessControllerAddress,
-    registryAddress
-  );
 
-  return addressResolver;
+  const resolver = await upgrades.deployProxy(addressResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSAddressResolver;
+
+  return resolver;
 };
 
 export const deployPriceOracle = async ({
@@ -67,14 +72,18 @@ export const deployPriceOracle = async ({
   registrationFee : BigNumber;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
-  // TODO hre upgrades proxy
-  const priceOracle = await priceOracleFactory.deploy();
 
-  await priceOracle.initialize(
-    accessControllerAddress,
-    priceConfig,
-    registrationFee
-  );
+  const priceOracle = await upgrades.deployProxy(
+    priceOracleFactory,
+    [
+      accessControllerAddress,
+      priceConfig,
+      registrationFee,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSPriceOracle;
 
   return priceOracle;
 };
@@ -84,7 +93,7 @@ export const deployDomainToken = async (
   accessController : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  const contract = await upgrades.deployProxy(
+  const domainToken = await upgrades.deployProxy(
     domainTokenFactory,
     [
       accessController,
@@ -94,9 +103,9 @@ export const deployDomainToken = async (
     {
       kind: "uups",
     }
-  );
-  await contract.deployed();
-  return contract as ZNSDomainToken;
+  ) as ZNSDomainToken;
+
+  return domainToken;
 };
 
 export const deployZeroTokenMock = async (
@@ -114,7 +123,7 @@ export const deployTreasury = async (
   zeroVaultAddress : string
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  const treasury : ZNSTreasury = await hre.upgrades.deployProxy(treasuryFactory,
+  const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
     [
       accessControllerAddress,
       znsPriceOracleAddress,
@@ -123,9 +132,8 @@ export const deployTreasury = async (
     ],
     {
       kind: "uups",
-    }) as ZNSTreasury;
-
-  await treasury.deployed();
+    }
+  ) as ZNSTreasury;
 
   return treasury;
 };
@@ -137,7 +145,7 @@ export const deployRegistrar = async (
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
 
-  const registrar = await hre.upgrades.deployProxy(
+  const registrar = await upgrades.deployProxy(
     registrarFactory,
     [
       accessController.address,
@@ -150,8 +158,6 @@ export const deployRegistrar = async (
       kind: "uups",
     }
   ) as ZNSEthRegistrar;
-
-  await registrar.deployed();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
