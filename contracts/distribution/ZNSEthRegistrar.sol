@@ -7,10 +7,10 @@ import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
-
+contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar {
     IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -19,7 +19,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     modifier onlyNameOwner(bytes32 domainHash) {
         require(
             msg.sender == registry.getDomainOwner(domainHash),
-            "ZNSEthRegistrar: Not the Owner of the Name"
+            "ZNSEthRegistrar: Not the owner of the Name"
         );
         _;
     }
@@ -27,7 +27,7 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     modifier onlyTokenOwner(bytes32 domainHash) {
         require(
             msg.sender == domainToken.ownerOf(uint256(domainHash)),
-            "ZNSEthRegistrar: Not the Owner of the Token"
+            "ZNSEthRegistrar: Not the owner of the Token"
         );
         _;
     }
@@ -36,18 +36,18 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
      * @notice Create an instance of the ZNSEthRegistrar
      * for registering ZNS domains and subdomains
      */
-    constructor(
+    function initialize(
         address accessController_,
-        address znsRegistry_,
-        address znsTreasury_,
-        address znsDomainToken_,
-        address znsAddressResolver_
-    ) {
+        address registry_,
+        address treasury_,
+        address domainToken_,
+        address addressResolver_
+    ) public override initializer {
         _setAccessController(accessController_);
-        setRegistry(znsRegistry_);
-        setTreasury(znsTreasury_);
-        setDomainToken(znsDomainToken_);
-        setAddressResolver(znsAddressResolver_);
+        setRegistry(registry_);
+        setTreasury(treasury_);
+        setDomainToken(domainToken_);
+        setAddressResolver(addressResolver_);
     }
 
     /**
@@ -96,7 +96,9 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
     // TODO: figure out how to guard this so people can stake tokens
     //  without the risk of staking contract or wallet to call reclaim+revoke
     //  from underneath them
-    function revokeDomain(bytes32 domainHash) external override onlyNameOwner(domainHash) onlyTokenOwner(domainHash)
+    function revokeDomain(bytes32 domainHash) external override 
+    onlyNameOwner(domainHash)
+    onlyTokenOwner(domainHash) 
     {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
@@ -106,51 +108,52 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
         emit DomainRevoked(domainHash, msg.sender);
     }
 
-    function reclaimDomain(bytes32 domainHash) external override onlyTokenOwner(domainHash)
+    function reclaimDomain(bytes32 domainHash) external override
+    onlyTokenOwner(domainHash)
     {
         registry.updateDomainOwner(domainHash, msg.sender);
 
         emit DomainReclaimed(domainHash, msg.sender);
     }
 
-    function setRegistry(address znsRegistry_) public override onlyAdmin {
+    function setRegistry(address registry_) public override onlyAdmin {
         require(
-            znsRegistry_ != address(0),
-            "ZNSEthRegistrar: znsRegistry_ is 0x0 address"
+            registry_ != address(0),
+            "ZNSEthRegistrar: registry_ is 0x0 address"
         );
-        registry = IZNSRegistry(znsRegistry_);
+        registry = IZNSRegistry(registry_);
 
-        emit RegistrySet(znsRegistry_);
+        emit RegistrySet(registry_);
     }
 
-    function setTreasury(address znsTreasury_) public override onlyAdmin {
+    function setTreasury(address treasury_) public override onlyAdmin {
         require(
-            znsTreasury_ != address(0),
-            "ZNSEthRegistrar: znsTreasury_ is 0x0 address"
+            treasury_ != address(0),
+            "ZNSEthRegistrar: treasury_ is 0x0 address"
         );
-        treasury = IZNSTreasury(znsTreasury_);
+        treasury = IZNSTreasury(treasury_);
 
-        emit TreasurySet(znsTreasury_);
+        emit TreasurySet(treasury_);
     }
 
-    function setDomainToken(address znsDomainToken_) public override onlyAdmin {
+    function setDomainToken(address domainToken_) public override onlyAdmin {
         require(
-            znsDomainToken_ != address(0),
-            "ZNSEthRegistrar: znsDomainToken_ is 0x0 address"
+            domainToken_ != address(0),
+            "ZNSEthRegistrar: domainToken_ is 0x0 address"
         );
-        domainToken = IZNSDomainToken(znsDomainToken_);
+        domainToken = IZNSDomainToken(domainToken_);
 
-        emit DomainTokenSet(znsDomainToken_);
+        emit DomainTokenSet(domainToken_);
     }
 
-    function setAddressResolver(address znsAddressResolver_) public override onlyAdmin {
+    function setAddressResolver(address addressResolver_) public override onlyAdmin {
         require(
-            znsAddressResolver_ != address(0),
-            "ZNSEthRegistrar: znsAddressResolver_ is 0x0 address"
+            addressResolver_ != address(0),
+            "ZNSEthRegistrar: addressResolver_ is 0x0 address"
         );
-        addressResolver = IZNSAddressResolver(znsAddressResolver_);
+        addressResolver = IZNSAddressResolver(addressResolver_);
 
-        emit AddressResolverSet(znsAddressResolver_);
+        emit AddressResolverSet(addressResolver_);
     }
 
     function setAccessController(address accessController_) external override(AccessControlled, IZNSEthRegistrar) 
@@ -183,4 +186,11 @@ contract ZNSEthRegistrar is AccessControlled, IZNSEthRegistrar {
             registry.createDomainRecord(domainHash, owner, address(0));
         }
     }
+
+    /**
+     * @notice The required override by UUPS
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
 }

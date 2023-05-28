@@ -28,22 +28,30 @@ interface IZNSEthRegistrar {
 
     function registerDomain(
         string calldata name,
-        address domainContent
+        address resolverContent
     ) external returns (bytes32);
 
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
 
-    function setRegistry(address znsRegistry_) external;
+    function setRegistry(address registry_) external;
 
-    function setTreasury(address znsTreasury_) external;
+    function setTreasury(address treasury_) external;
 
-    function setDomainToken(address znsDomainToken_) external;
+    function setDomainToken(address domainToken_) external;
 
-    function setAddressResolver(address znsAddressResolver_) external;
+    function setAddressResolver(address addressResolver_) external;
 
     function setAccessController(address accessController_) external;
 
     function getAccessController() external view returns (address);
+
+    function initialize(
+        address accessController_,
+        address znsRegistry_,
+        address znsTreasury_,
+        address znsDomainToken_,
+        address znsAddressResolver_
+    ) external;
 }

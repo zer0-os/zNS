@@ -15,10 +15,9 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import * as hre from "hardhat";
-// import { ethers } from "hardhat";
 import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { ethers, upgrades } from "hardhat";
+import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
@@ -47,6 +46,7 @@ export const deployAddressResolver = async (
   registryAddress : string
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
+  // TODO hre upgrades proxy
   const addressResolver = await addressResolverFactory.deploy(
     accessControllerAddress,
     registryAddress
@@ -67,6 +67,7 @@ export const deployPriceOracle = async ({
   registrationFee : BigNumber;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
+  // TODO hre upgrades proxy
   const priceOracle = await priceOracleFactory.deploy();
 
   await priceOracle.initialize(
@@ -135,13 +136,22 @@ export const deployRegistrar = async (
   config : RegistrarConfig
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
-  const registrar = await registrarFactory.deploy(
-    accessController.address,
-    config.registryAddress,
-    config.treasury.address,
-    config.domainTokenAddress,
-    config.addressResolverAddress
-  );
+
+  const registrar = await hre.upgrades.deployProxy(
+    registrarFactory,
+    [
+      accessController.address,
+      config.registryAddress,
+      config.treasury.address,
+      config.domainTokenAddress,
+      config.addressResolverAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSEthRegistrar;
+
+  await registrar.deployed();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
