@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
-
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
@@ -9,12 +9,13 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 /**
  * @title A contract for tokenizing domains under ZNS
  */
-contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
-    constructor(
+contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
+    function initialize(
+        address accessController,
         string memory tokenName,
-        string memory tokenSymbol,
-        address accessController
-    ) ERC721(tokenName, tokenSymbol) {
+        string memory tokenSymbol
+    ) public override initializer {
+        __ERC721_init(tokenName, tokenSymbol);
         _setAccessController(accessController);
     }
 
@@ -31,11 +32,11 @@ contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
      * @notice Burns the token with the specified tokenId
      * @param tokenId The tokenId that the caller wishes to burn/revoke
      */
-    function revoke(uint256 tokenId) external override onlyRegistrar {
+    function revoke(uint256 tokenId) external override onlyRegistrar  {
         _burn(tokenId);
     }
 
-    function setAccessController(address accessController)
+    function setAccessController(address accessController) 
     external
     override(AccessControlled, IZNSDomainToken)
     onlyAdmin
@@ -46,4 +47,11 @@ contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
     function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {
         return address(accessController);
     }
+
+    /**
+     * @notice The required override by UUPS
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
 }

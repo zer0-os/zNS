@@ -2,17 +2,22 @@ import * as hre from "hardhat";
 import {
   ZNSAccessController,
   ZNSDomainToken,
+  ZNSDomainToken__factory,
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
+  REGISTRAR_ROLE,
+  GOVERNOR_ROLE,
   deployAccessController,
   deployDomainToken,
-  getAccessRevertMsg, INVALID_TOKENID_ERC_ERR,
-  REGISTRAR_ROLE,
+  getAccessRevertMsg, 
+  INVALID_TOKENID_ERC_ERR,
+  deployZNS
 } from "./helpers";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
 
 describe("ZNSDomainToken:", () => {
@@ -22,46 +27,44 @@ describe("ZNSDomainToken:", () => {
   let deployer : SignerWithAddress;
   let accessController : ZNSAccessController;
   let caller : SignerWithAddress;
-  let domainToken : ZNSDomainToken;
+  let mockRegistrar : SignerWithAddress;
+  let mockAccessController : SignerWithAddress;
+
+  let zns : ZNSContracts;
+  let deployParams : DeployZNSParams;
 
   beforeEach(async () => {
-    [deployer, caller] = await hre.ethers.getSigners();
-
-    accessController = await deployAccessController({
+    [deployer, caller, mockRegistrar, mockAccessController] = await hre.ethers.getSigners();
+    deployParams = {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
-    });
+    };
+    zns = await deployZNS(
+      deployParams
+    );
 
-    domainToken = await deployDomainToken(deployer, accessController.address);
-    await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, deployer.address);
+    await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
   });
 
   describe("External functions", () => {
     it("Should register (mint) the token if caller has REGISTRAR_ROLE", async () => {
       const tokenId = ethers.BigNumber.from("1");
-      const tx = await domainToken
-        .connect(deployer)
+      const tx = zns.domainToken
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
-      const receipt = await tx.wait(0);
 
-      // Verify Transfer event is emitted
-      expect(receipt.events?.[0].event).to.eq("Transfer");
-      expect(receipt.events?.[0].args?.tokenId).to.eq(
+      await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
+        ethers.constants.AddressZero,
+        caller.address,
         tokenId
       );
-      expect(receipt.events?.[0].args?.to).to.eq(
-        caller.address
-      );
-
-      // Verify caller owns tokenId
-      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
     it("Should revert when registering (minting) if caller does not have REGISTRAR_ROLE", async () => {
       const tokenId = ethers.BigNumber.from("1");
       await expect(
-        domainToken
+        zns.domainToken
           .connect(caller)
           .register(caller.address, tokenId)
       ).to.be.revertedWith(
@@ -69,65 +72,78 @@ describe("ZNSDomainToken:", () => {
       );
     });
 
-    it("Should revoke (burn) the token if caller has REGISTRAR_ROLE", async () => {
-      const tokenId = ethers.BigNumber.from("1");
+    it("Revokes a token", async () => {
       // Mint domain
-      await domainToken
-        .connect(deployer)
+      const tokenId = ethers.BigNumber.from("1");
+      await zns.domainToken
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
       // Verify caller owns tokenId
-      expect(await domainToken.ownerOf(tokenId)).to.equal(
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(
         caller.address
       );
 
       // Revoke domain
-      const tx = await domainToken.connect(deployer).revoke(tokenId);
-      const receipt = await tx.wait(0);
+      const tx = zns.domainToken.connect(mockRegistrar).revoke(tokenId);
 
       // Verify Transfer event is emitted
-      expect(receipt.events?.[0].event).to.eq("Transfer");
-      expect(receipt.events?.[0].args?.tokenId).to.eq(
+      await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
+        caller.address,
+        ethers.constants.AddressZero,
         tokenId
-      );
-      expect(receipt.events?.[0].args?.to).to.eq(
-        ethers.constants.AddressZero
       );
 
       // Verify token has been burned
       await expect(
-        domainToken.ownerOf(tokenId)
+        zns.domainToken.ownerOf(tokenId)
       ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
     });
+  });
 
-    it("Should revert when revoking (burning) if caller does not have REGISTRAR_ROLE", async () => {
+  describe("Require Statement Validation", () => {
+    it("Only the registrar can call to register a token", async () => {
+      const tokenId = ethers.BigNumber.from("1");
+      const registerTx = zns.domainToken
+        .connect(caller)
+        .register(caller.address, tokenId);
+
+      await expect(registerTx).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
+      );
+    });
+
+    it("Only authorized can revoke a token", async () => {
       const tokenId = ethers.BigNumber.from("1");
       // Mint domain
-      await domainToken
-        .connect(deployer)
+      await zns.domainToken
+        .connect(mockRegistrar)
         .register(caller.address, tokenId);
       // Verify caller owns tokenId
-      expect(await domainToken.ownerOf(tokenId)).to.equal(
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(
         caller.address
       );
 
+      // Verify caller owns tokenId
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+
       // Revoke domain
-      const tx = domainToken.connect(caller).revoke(tokenId);
+      const tx = zns.domainToken.connect(caller).revoke(tokenId);
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
       );
 
       // Verify token has not been burned
-      expect(await domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
     it("Should set access controller if caller has ADMIN_ROLE", async () => {
-      await domainToken.connect(deployer).setAccessController(caller.address);
-      expect(await domainToken.getAccessController()).to.equal(caller.address);
+      await zns.domainToken.connect(deployer).setAccessController(caller.address);
+      expect(await zns.domainToken.getAccessController()).to.equal(caller.address);
     });
 
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
       await expect(
-        domainToken.connect(caller).setAccessController(caller.address)
+        zns.domainToken.connect(caller).setAccessController(caller.address)
       ).to.be.revertedWith(
         getAccessRevertMsg(caller.address, ADMIN_ROLE)
       );
@@ -136,13 +152,89 @@ describe("ZNSDomainToken:", () => {
 
   describe("Contract Configuration", () => {
     it("Verify token name", async () => {
-      const name = await domainToken.name();
+      const name = await zns.domainToken.name();
       expect(name).to.equal(TokenName);
     });
 
     it("Verify token symbol", async () => {
-      const symbol = await domainToken.symbol();
+      const symbol = await zns.domainToken.symbol();
       expect(symbol).to.equal(TokenSymbol);
+    });
+  });
+  describe("AccessController", () =>{
+    it("Allows setting of a new access controller if the caller is a governor", async () => {
+      const accessControllerBefore = await zns.domainToken.getAccessController();
+
+      const tx = zns.domainToken.connect(deployer).setAccessController(mockAccessController.address);
+
+      await expect(tx).to.not.be.reverted;
+
+      const accessControllerAfter = await zns.domainToken.getAccessController();
+      expect(accessControllerBefore).to.not.eq(accessControllerAfter);
+    });
+
+    it("Fails when the caller is not an admin", async () => {
+      const tx = zns.domainToken.connect(caller).setAccessController(mockAccessController.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
+    });
+  });
+  describe("UUPS", () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
+      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
+      // So use a deployed proxy contract
+      const factory = new ZNSDomainToken__factory(deployer);
+
+      // DomainToken to upgrade to
+      const newDomainToken = await factory.deploy();
+      await newDomainToken.deployed();
+
+      const preUpgradeVars = [
+        zns.domainToken.name(),
+        zns.domainToken.symbol(),
+      ];
+
+      const [nameBefore, symbolBefore] = await Promise.all(preUpgradeVars);
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
+
+      await expect(upgradeTx).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.domainToken.name(),
+        zns.domainToken.symbol(),
+      ];
+
+      const [nameAfter, symbolAfter] = await Promise.all(postUpgradeVars);
+
+      expect(nameBefore).to.eq(nameAfter);
+      expect(symbolBefore).to.eq(symbolAfter);
+
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
+      // So use a deployed proxy contract
+      const factory = new ZNSDomainToken__factory(deployer);
+
+      // DomainToken to upgrade to
+      const newDomainToken = await factory.deploy();
+      await newDomainToken.deployed();
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(caller.address)).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
+      );
+
+      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(newDomainToken.address);
+
+      await expect(upgradeTx).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
+      );
     });
   });
 });

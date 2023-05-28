@@ -16,8 +16,9 @@ import {
   ZNSTreasury__factory,
 } from "../../typechain";
 import * as hre from "hardhat";
-import { ethers } from "hardhat";
+// import { ethers } from "hardhat";
 import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { priceConfigDefault, registrationFeePercDefault } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
@@ -79,14 +80,22 @@ export const deployPriceOracle = async ({
 
 export const deployDomainToken = async (
   deployer : SignerWithAddress,
-  accessControllerAddress : string
+  accessController : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy(
-    "ZNSDomainToken",
-    "ZDT",
-    accessControllerAddress
+  const contract = await upgrades.deployProxy(
+    domainTokenFactory,
+    [
+      accessController,
+      "ZNSDomainToken",
+      "ZDT",
+    ],
+    {
+      kind: "uups",
+    }
   );
+  await contract.deployed();
+  return contract as ZNSDomainToken;
 };
 
 export const deployZeroTokenMock = async (
@@ -153,6 +162,9 @@ export const deployZNS = async ({
     adminAddresses: [deployer.address, ...adminAddresses],
   });
 
+  // TODO AC: Make sure contracts are deployed as proxies and authorize the governor role
+  // Can't set to zero, but registrar address must be given.
+  // Due to order of deployment, add deployer as registrar address for now and change after
   const registry = await deployRegistry(deployer, accessController.address);
 
   const domainToken = await deployDomainToken(deployer, accessController.address);
@@ -201,6 +213,8 @@ export const deployZNS = async ({
   };
 
   // Final configuration steps
+  // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
+  // for Registrar to be owner/operator of the root
   await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give 15 ZERO to the deployer and allowance to the treasury
