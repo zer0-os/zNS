@@ -1,7 +1,5 @@
 import * as hre from "hardhat";
 import {
-  ZNSAccessController,
-  ZNSDomainToken,
   ZNSDomainToken__factory,
 } from "../typechain";
 import { expect } from "chai";
@@ -11,11 +9,9 @@ import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
   GOVERNOR_ROLE,
-  deployAccessController,
-  deployDomainToken,
-  getAccessRevertMsg, 
+  getAccessRevertMsg,
   INVALID_TOKENID_ERC_ERR,
-  deployZNS
+  deployZNS,
 } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
@@ -25,7 +21,6 @@ describe("ZNSDomainToken:", () => {
   const TokenSymbol = "ZDT";
 
   let deployer : SignerWithAddress;
-  let accessController : ZNSAccessController;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let mockAccessController : SignerWithAddress;

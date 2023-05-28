@@ -18,7 +18,7 @@ import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSEthRegistrar__factory, ZNSRegistry__factory } from "../typechain";
+import { ZNSEthRegistrar__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

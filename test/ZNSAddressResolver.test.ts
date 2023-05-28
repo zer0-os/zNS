@@ -133,14 +133,12 @@ describe("ZNSAddressResolver", () => {
   it("Should allow REGISTRAR_ROLE to setAddress and emit event", async () => {
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    const addressBefore = await zns.addressResolver.getAddress(wilderDomainHash);
-
     await expect(
       zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, hre.ethers.constants.AddressZero)
     ).to.emit(zns.addressResolver, "AddressSet").withArgs(wilderDomainHash, hre.ethers.constants.AddressZero);
 
-    const addressAfter = await zns.addressResolver.getAddress(wilderDomainHash);
-    expect(addressAfter).to.eq(hre.ethers.constants.AddressZero);
+    const address = await zns.addressResolver.getAddress(wilderDomainHash);
+    expect(address).to.eq(hre.ethers.constants.AddressZero);
 
   });
 

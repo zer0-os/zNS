@@ -8,7 +8,7 @@ import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR } from "./helpers"
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSAccessController__factory, ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
+import { ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
