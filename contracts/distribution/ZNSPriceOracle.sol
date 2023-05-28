@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
-
-contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
+contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -217,4 +217,14 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         (length + (3 * multiplier)) /
         100;
     }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @dev Using solhint's `no-empty-blocks` will error here, but to be a UUPS Proxy we require it this
+     * and so we simply disable solhint for this function
+     * 
+     * @param newImplementation The new implementation contract to upgrade to.
+     */
+     // solhint-disable-next-line no-empty-blocks
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
 }

@@ -6,8 +6,9 @@ import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { ADMIN_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
+import { ZNSAccessController__factory, ZNSPriceOracle, ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -578,6 +579,66 @@ describe("ZNSPriceOracle", () => {
 
       const tx = zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
       await expect(tx).to.emit(zns.priceOracle, "BaseLengthsSet").withArgs(newLength, newLength);
+    });
+  });
+  describe("UUPS", () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
+      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
+      // So use a deployed proxy contract
+      const factory = new ZNSPriceOracle__factory(deployer);
+      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault,
+      ]);
+
+      await proxyPriceOracle.deployed();
+
+      // PriceOracle to upgrade to
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      await newPriceOracle.initialize(
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault
+      );
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const tx = proxyPriceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
+      await expect(tx).to.not.be.reverted;
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      const factory = new ZNSPriceOracle__factory(deployer);
+      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault,
+      ]);
+
+      await proxyPriceOracle.deployed();
+
+      // PriceOracle to upgrade to
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      await newPriceOracle.initialize(
+        zns.accessController.address,
+        priceConfigDefault,
+        registrationFeePercDefault
+      );
+
+      // Confirm the account is not a governor
+      await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
+
+      const tx = proxyPriceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
+
+      await expect(tx).to.be.revertedWith(
+        `AccessControl: account ${randomAcc.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      );
     });
   });
 });
