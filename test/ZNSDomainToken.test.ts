@@ -158,7 +158,7 @@ describe("ZNSDomainToken:", () => {
   });
 
   describe("UUPS", () => {
-    it.only("Verifies an authorized user can upgrade the contract", async () => {
+    it("Verifies an authorized user can upgrade the contract", async () => {
       // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
       // So use a deployed proxy contract
       const factory = new ZNSDomainToken__factory(deployer);
