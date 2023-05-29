@@ -87,7 +87,7 @@ describe("ZNSAddressResolver", () => {
     await expect(
       zns.addressResolver.connect(deployer).setAccessController(operator.address)
     )
-      .to.emit(zns.addressResolver, "   ControllerSet")
+      .to.emit(zns.addressResolver, "AccessControllerSet")
       .withArgs(operator.address);
 
     expect(await zns.addressResolver.getAccessController()).to.equal(operator.address);
