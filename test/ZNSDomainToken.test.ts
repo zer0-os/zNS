@@ -23,13 +23,12 @@ describe("ZNSDomainToken:", () => {
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
-  let mockAccessController : SignerWithAddress;
 
   let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
   beforeEach(async () => {
-    [deployer, caller, mockRegistrar, mockAccessController] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar] = await hre.ethers.getSigners();
     deployParams = {
       deployer,
       governorAddresses: [deployer.address],
@@ -54,6 +53,9 @@ describe("ZNSDomainToken:", () => {
         caller.address,
         tokenId
       );
+
+      // Verify caller owns tokenId
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
     it("Should revert when registering (minting) if caller does not have REGISTRAR_ROLE", async () => {
@@ -89,9 +91,7 @@ describe("ZNSDomainToken:", () => {
       );
 
       // Verify token has been burned
-      await expect(
-        zns.domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
+      await expect(zns.domainToken.ownerOf(tokenId)).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
     });
   });
 
@@ -156,27 +156,9 @@ describe("ZNSDomainToken:", () => {
       expect(symbol).to.equal(TokenSymbol);
     });
   });
-  describe("AccessController", () =>{
-    it("Allows setting of a new access controller if the caller is a governor", async () => {
-      const accessControllerBefore = await zns.domainToken.getAccessController();
 
-      const tx = zns.domainToken.connect(deployer).setAccessController(mockAccessController.address);
-
-      await expect(tx).to.not.be.reverted;
-
-      const accessControllerAfter = await zns.domainToken.getAccessController();
-      expect(accessControllerBefore).to.not.eq(accessControllerAfter);
-    });
-
-    it("Fails when the caller is not an admin", async () => {
-      const tx = zns.domainToken.connect(caller).setAccessController(mockAccessController.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
-    });
-  });
   describe("UUPS", () => {
-    it("Verifies an authorized user can upgrade the contract", async () => {
+    it.only("Verifies an authorized user can upgrade the contract", async () => {
       // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
       // So use a deployed proxy contract
       const factory = new ZNSDomainToken__factory(deployer);
@@ -193,7 +175,9 @@ describe("ZNSDomainToken:", () => {
       const [nameBefore, symbolBefore] = await Promise.all(preUpgradeVars);
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
-      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
 
       const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
 

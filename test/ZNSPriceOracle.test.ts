@@ -637,7 +637,7 @@ describe("ZNSPriceOracle", () => {
       const tx = proxyPriceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
 
       await expect(tx).to.be.revertedWith(
-        `AccessControl: account ${randomAcc.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        getAccessRevertMsg(randomAcc.address, GOVERNOR_ROLE)
       );
     });
   });
