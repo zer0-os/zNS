@@ -2,7 +2,7 @@
 require("dotenv").config();
 
 import { HardhatUserConfig } from "hardhat/config";
-import * as tenderly from "@tenderly/hardhat-tenderly";
+// import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
