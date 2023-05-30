@@ -119,9 +119,10 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice The required override by UUPS
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line no-empty-blocks
-    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
+    function _authorizeUpgrade(address newImplementation) internal override {
+        accessController.checkGovernor(msg.sender);
+    }
 }

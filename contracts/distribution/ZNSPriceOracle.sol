@@ -220,11 +220,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-     * @dev Using solhint's `no-empty-blocks` will error here, but to be a UUPS Proxy we require it this
-     * and so we simply disable solhint for this function
-     * 
      * @param newImplementation The new implementation contract to upgrade to.
      */
-     // solhint-disable-next-line no-empty-blocks
-    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {
+        accessController.checkGovernor(msg.sender);
+    }
 }

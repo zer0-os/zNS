@@ -84,9 +84,7 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
-    await expect(
-      zns.addressResolver.connect(deployer).setAccessController(operator.address)
-    )
+    expect(await zns.addressResolver.connect(deployer).setAccessController(operator.address))
       .to.emit(zns.addressResolver, "AccessControllerSet")
       .withArgs(operator.address);
 
