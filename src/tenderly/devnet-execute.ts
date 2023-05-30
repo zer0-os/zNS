@@ -3,12 +3,11 @@ import { promisify } from "util";
 import { exec } from "child_process";
 
 const execAsync = promisify(exec);
-const opName = process.argv[2];
 
-const spawnCommand = "ts-node src/tenderly/helpers/spawn-devnet.ts";
+const spawnCommand = "ts-node src/tenderly/spawn-devnet.ts";
 const opCommandBase = "yarn hardhat run";
 const networkArg = "--network devnet";
-const opsPath = "src/tenderly/ops/";
+const opsPath = "src/tenderly/run-all-flows.ts";
 
 /**
  * Top level function to execute everything on the DevNet.
@@ -19,17 +18,14 @@ const opsPath = "src/tenderly/ops/";
  * 2. Launch deploy and operation flow with contracts using Hardhat
  * */
 const execute = async () => {
-  // spawn DevNet on Tenderly
+  // spawn DevNet on Tenderly woth ts-node directly
   const spawnRes = await execAsync(spawnCommand);
 
-  // for `opName` to work every file containing a separate operation
-  // should be named one word of that operation (register, revoke, etc.),
-  // so that same string can be used as a parameter to the CLI script
-  const opCommand = `${opCommandBase} ${opsPath}all.ts ${networkArg}`;
-  console.log(`OP COMMAND: ${opCommand}`);
+  const opCommand = `${opCommandBase} ${opsPath} ${networkArg}`;
 
-  // performing an operation picked by the argument
+  // deploy all contracts, run flows using Hardhat
   const { stdout } = await execAsync(opCommand);
+  // pass Tenderly logger through
   console.log(stdout);
 
   return spawnRes;
