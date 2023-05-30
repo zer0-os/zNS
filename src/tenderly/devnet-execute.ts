@@ -13,6 +13,7 @@ const util = require("util");
 // @ts-ignore
 const execAsync = util.promisify(require("child_process").exec);
 
+// TODO tend: move this all to "./src"
 
 const execute = async () => {
   const spawnRes = await execAsync(spawnCommand);

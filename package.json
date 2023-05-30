@@ -21,7 +21,7 @@
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
-    "devnet-op": "node ./tenderly/devnet-execute.ts"
+    "devnet-op": "node src/tenderly/devnet-execute.ts"
   },
   "pre-commit": [
     "lint"
