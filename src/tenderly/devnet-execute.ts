@@ -16,6 +16,9 @@ const opsPath = "src/tenderly/run-all-flows.ts";
  * this will also set all the required env vars, so that Hardhat can correctly
  * work with contracts and auth in Tenderly
  * 2. Launch deploy and operation flow with contracts using Hardhat
+ *
+ * To execute this, uncomment `tenderly.setup()` line in the hardhat.config.ts
+ * then run `yarn devnet` in the terminal.
  * */
 const execute = async () => {
   // spawn DevNet on Tenderly woth ts-node directly
