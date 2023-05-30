@@ -1,4 +1,4 @@
-import { deployZNS } from "../../../test/helpers";
+import { deployZNS } from "../../test/helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires, no-console */
-const util = require("util");
-const fs = require("fs");
-const dotenv = require("dotenv");
+import fs from "fs";
+import dotenv from "dotenv";
+import util from "util";
+import proc from "child_process";
 
-const execAsync = util.promisify(require("child_process").exec);
+const asyncExec = util.promisify(proc.exec);
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ const command = `tenderly devnet spawn-rpc --project ${TENDERLY_PROJECT_SLUG} --
 
 
 const spawnDevNet = async () => {
-  const { stderr } = await execAsync(command);
+  const { stderr } = await asyncExec(command);
   const devNetUrl = stderr.trim().toString();
 
   console.log(`DEVNET_RPC_URL=${ devNetUrl }`);
