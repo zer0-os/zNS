@@ -1,8 +1,8 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
 require("dotenv").config();
 
 import { HardhatUserConfig } from "hardhat/config";
-// import * as tenderly from "@tenderly/hardhat-tenderly";
+import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
