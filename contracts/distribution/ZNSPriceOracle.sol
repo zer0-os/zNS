@@ -222,7 +222,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyGovernor {
+    function _authorizeUpgrade(address newImplementation) internal override {
         accessController.checkGovernor(msg.sender);
     }
 }
