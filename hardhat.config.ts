@@ -60,7 +60,8 @@ const config : HardhatUserConfig = {
   },
 };
 
-// TODO: do we even need this?
-tenderly.setup();
+// These are needed for tenderly verification to be automatic
+// they don't seem to work with DevNet for some reason
+tenderly.setup({ automaticVerifications: true });
 
 export default config;
