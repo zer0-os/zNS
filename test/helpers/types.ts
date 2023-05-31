@@ -8,10 +8,24 @@ import {
   ZNSTreasury,
   ZeroTokenMock,
   ZNSAccessController,
+  ZNSEthRegistrarMock,
+  ZNSPriceOracleMock,
+  ZNSAddressResolverMock,
+  ZNSDomainTokenMock,
+  ZNSRegistryMock,
+  ZNSTreasuryMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
+
+export type ContractMock =
+  ZNSEthRegistrarMock |
+  ZNSPriceOracleMock |
+  ZNSTreasuryMock |
+  ZNSRegistryMock |
+  ZNSAddressResolverMock |
+  ZNSDomainTokenMock;
 
 export interface PriceParams {
   maxRootDomainPrice : BigNumber;

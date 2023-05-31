@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deployZNS";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
-import { ZNSRegistryMock__factory, ZNSRegistry__factory } from "../typechain";
+import { ZNSRegistryMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
@@ -18,11 +18,11 @@ import {
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";
 import {
+  upgradedActions,
+  upgradedPromises,
   registryActions,
   registryPromises,
-  upgradedRegistryActions,
-  upgradedRegistryPromises,
-} from "./helpers/checkUpgrades";
+} from "./helpers/";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -465,9 +465,9 @@ describe("ZNSRegistry", () => {
     });
   });
 
-  describe("UUPS", () => {
+  describe.only("UUPS", () => {
     it("Allows an authorized user to upgrade successfully", async () => {
-      const registryFactory = new ZNSRegistry__factory(deployer);
+      const registryFactory = new ZNSRegistryMock__factory(deployer);
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
@@ -476,8 +476,19 @@ describe("ZNSRegistry", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
+      // To control the signer we call manually here instead of through hardhat
       const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
-      await expect(upgradeTx).to.not.be.reverted;
+      await expect(upgradeTx).to.be.not.be.reverted;
+    });
+
+    it("Fails when an unauthorized account tries to call to upgrade", async () => {
+      const registryFactory = new ZNSRegistryMock__factory(deployer);
+      const registry = await registryFactory.deploy();
+      await registry.deployed();
+
+      // To control the signer we call manually here instead of through hardhat
+      const upgradeTx = zns.registry.connect(randomUser).upgradeTo(registry.address);
+      await expect(upgradeTx).to.be.revertedWith(getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE));
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
@@ -485,11 +496,15 @@ describe("ZNSRegistry", () => {
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
-      // TODO maybe script these function calls, they are used more than once
-      // make contract specific helpers to check all vars in each upgrade?
       const domainHash = hashDomainName("world");
 
-      await registryActions(
+      // Perform actions that use storage then save those values
+      const [
+        ownerStatusBefore,
+        operatorStatusBefore,
+        existanceBefore,
+        accessControllerBefore,
+      ] = await registryActions(
         zns.registry,
         domainHash,
         [
@@ -500,15 +515,13 @@ describe("ZNSRegistry", () => {
         ]
       );
 
-      const [
-        ownerStatusBefore,
-        operatorStatusBefore,
-        existanceBefore,
-        accessControllerBefore,
-      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
-
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
-      await expect(upgradeTx).to.not.be.reverted;
+      await hre.upgrades.upgradeProxy(
+        zns.registry.address,
+        registryFactory,
+        {
+          kind: "uups",
+        }
+      );
 
       const [
         ownerStatusAfter,
@@ -525,17 +538,7 @@ describe("ZNSRegistry", () => {
 
     it("Validates new logic after upgrade", async () => {
       const registryFactory = new ZNSRegistryMock__factory(deployer);
-
-      // Add an operator
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
-
-      // Create a domain record
       const domainHash = hashDomainName("world");
-      await zns.registry.connect(mockRegistrar).createDomainRecord(
-        domainHash,
-        deployer.address,
-        mockResolver.address
-      );
 
       // Get original values to ensure they're not modified or overwritten
       const [
@@ -543,9 +546,17 @@ describe("ZNSRegistry", () => {
         operatorStatusBefore,
         existanceBefore,
         accessControllerBefore,
-      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
+      ] = await registryActions(
+        zns.registry,
+        domainHash,
+        [
+          deployer,
+          operator,
+          mockRegistrar,
+          mockResolver,
+        ]
+      );
 
-      // TODO upgrade this way for all the contracts
       await hre.upgrades.upgradeProxy(
         zns.registry.address,
         registryFactory,
@@ -559,14 +570,14 @@ describe("ZNSRegistry", () => {
       const upgradedRegistry = registryFactory.attach(zns.registry.address);
 
       const newNumber = ethers.BigNumber.from("123");
-      await upgradedRegistryActions(upgradedRegistry, newNumber, randomUser);
+      await upgradedActions(upgradedRegistry, newNumber, randomUser);
 
       const [
         newMappingCall,
         newMappingSpecificCall,
         newNumberCall,
         newAddressCall,
-      ] = await upgradedRegistryPromises(upgradedRegistry, newNumber);
+      ] = await upgradedPromises(upgradedRegistry, newNumber);
 
       expect(newMappingCall).to.eq(randomUser.address);
       expect(newMappingSpecificCall).to.eq(randomUser.address);
@@ -585,15 +596,6 @@ describe("ZNSRegistry", () => {
       expect(operatorStatusBefore).to.eq(operatorStatusAfter);
       expect(existanceBefore).to.eq(existanceAfter);
       expect(accessControllerBefore).to.eq(accessControllerAfter);
-    });
-
-    it("Fails when an unauthorized account tries to call to upgrade", async () => {
-      const registryFactory = new ZNSRegistryMock__factory(deployer);
-      const registry = await registryFactory.deploy();
-      await registry.deployed();
-
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
-      await expect(upgradeTx).to.not.be.reverted;
     });
   });
 });
