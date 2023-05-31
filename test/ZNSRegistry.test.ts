@@ -523,7 +523,7 @@ describe("ZNSRegistry", () => {
       expect(accessControllerBefore).to.eq(accessControllerAfter);
     });
 
-    it.only("Validates new logic after upgrade", async () => {
+    it("Validates new logic after upgrade", async () => {
       const registryFactory = new ZNSRegistryMock__factory(deployer);
 
       // Add an operator
