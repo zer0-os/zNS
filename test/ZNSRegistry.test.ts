@@ -4,11 +4,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deployZNS";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
-import { ZNSRegistry__factory } from "../typechain";
+import { ZNSRegistryMock__factory, ZNSRegistry__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
-  getAccessRevertMsg, INITIALIZED_ERR,
+  getAccessRevertMsg, GOVERNOR_ROLE, INITIALIZED_ERR,
   REGISTRAR_ROLE,
 } from "./helpers";
 import {
@@ -17,11 +17,17 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";
+import {
+  registryActions,
+  registryPromises,
+  upgradedRegistryActions,
+  upgradedRegistryPromises,
+} from "./helpers/checkUpgrades";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
 
-describe("ZNSRegistry Tests", () => {
+describe("ZNSRegistry", () => {
   let deployer : SignerWithAddress;
   let operator : SignerWithAddress;
   let randomUser : SignerWithAddress;
@@ -465,6 +471,61 @@ describe("ZNSRegistry Tests", () => {
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
+      // Confirm the deployer is a governor
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
+      await expect(upgradeTx).to.not.be.reverted;
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      const registryFactory = new ZNSRegistryMock__factory(deployer);
+      const registry = await registryFactory.deploy();
+      await registry.deployed();
+
+      // TODO maybe script these function calls, they are used more than once
+      // make contract specific helpers to check all vars in each upgrade?
+      const domainHash = hashDomainName("world");
+
+      await registryActions(
+        zns.registry,
+        domainHash,
+        [
+          deployer,
+          operator,
+          mockRegistrar,
+          mockResolver,
+        ]
+      );
+
+      const [
+        ownerStatusBefore,
+        operatorStatusBefore,
+        existanceBefore,
+        accessControllerBefore,
+      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
+
+      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
+      await expect(upgradeTx).to.not.be.reverted;
+
+      const [
+        ownerStatusAfter,
+        operatorStatusAfter,
+        existanceAfter,
+        accessControllerAfter,
+      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
+
+      expect(ownerStatusBefore).to.eq(ownerStatusAfter);
+      expect(operatorStatusBefore).to.eq(operatorStatusAfter);
+      expect(existanceBefore).to.eq(existanceAfter);
+      expect(accessControllerBefore).to.eq(accessControllerAfter);
+    });
+
+    it.only("Validates new logic after upgrade", async () => {
+      const registryFactory = new ZNSRegistryMock__factory(deployer);
+
       // Add an operator
       await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
 
@@ -476,31 +537,58 @@ describe("ZNSRegistry Tests", () => {
         mockResolver.address
       );
 
-      const preUpgradeVars = [
-        zns.registry.isOwnerOrOperator(domainHash, operator.address),
-        zns.registry.exists(domainHash),
-        zns.registry.getAccessController(),
-      ];
+      // Get original values to ensure they're not modified or overwritten
+      const [
+        ownerStatusBefore,
+        operatorStatusBefore,
+        existanceBefore,
+        accessControllerBefore,
+      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
 
-      const [operatorStatusBefore, existanceBefore, accessControllerBefore] = await Promise.all(preUpgradeVars);
+      // TODO upgrade this way for all the contracts
+      await hre.upgrades.upgradeProxy(
+        zns.registry.address,
+        registryFactory,
+        {
+          kind: "uups",
+        }
+      );
 
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
-      await expect(upgradeTx).to.not.be.reverted;
+      // Accessing directly through `zns.registry` won't provide the updated type
+      // Instead, we attach the new factory to that address after upgrading
+      const upgradedRegistry = registryFactory.attach(zns.registry.address);
 
-      const postUpgradeVars = [
-        zns.registry.isOwnerOrOperator(domainHash, operator.address),
-        zns.registry.exists(domainHash),
-        zns.registry.getAccessController(),
-      ];
+      const newNumber = ethers.BigNumber.from("123");
+      await upgradedRegistryActions(upgradedRegistry, newNumber, randomUser);
 
-      const [operatorStatusAfter, existanceAfter, accessControllerAfter] = await Promise.all(postUpgradeVars);
+      const [
+        newMappingCall,
+        newMappingSpecificCall,
+        newNumberCall,
+        newAddressCall,
+      ] = await upgradedRegistryPromises(upgradedRegistry, newNumber);
 
+      expect(newMappingCall).to.eq(randomUser.address);
+      expect(newMappingSpecificCall).to.eq(randomUser.address);
+      expect(newNumberCall).to.eq(newNumber);
+      expect(newAddressCall).to.eq(randomUser.address);
+
+      // Verify original values are still the same
+      const [
+        ownerStatusAfter,
+        operatorStatusAfter,
+        existanceAfter,
+        accessControllerAfter,
+      ] = await registryPromises(zns.registry, domainHash, [deployer, operator]);
+
+      expect(ownerStatusBefore).to.eq(ownerStatusAfter);
       expect(operatorStatusBefore).to.eq(operatorStatusAfter);
       expect(existanceBefore).to.eq(existanceAfter);
       expect(accessControllerBefore).to.eq(accessControllerAfter);
     });
+
     it("Fails when an unauthorized account tries to call to upgrade", async () => {
-      const registryFactory = new ZNSRegistry__factory(deployer);
+      const registryFactory = new ZNSRegistryMock__factory(deployer);
       const registry = await registryFactory.deploy();
       await registry.deployed();
 

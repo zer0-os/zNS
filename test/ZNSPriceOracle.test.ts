@@ -8,7 +8,7 @@ import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR } from "./helpers"
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSPriceOracle__factory } from "../typechain";
+import { ZNSPriceOracleMock__factory, ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -582,59 +582,62 @@ describe("ZNSPriceOracle", () => {
     });
   });
   describe("UUPS", () => {
-    it("Verifies an authorized user can upgrade the contract", async () => {
-      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
-      // So use a deployed proxy contract
-      const factory = new ZNSPriceOracle__factory(deployer);
-      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
-        zns.accessController.address,
-        priceConfigDefault,
-        registrationFeePercDefault,
-      ]);
-
-      await proxyPriceOracle.deployed();
-
+    it("Allows an authorized user to upgrade the contract", async () => {
       // PriceOracle to upgrade to
+      const factory = new ZNSPriceOracle__factory(deployer);
       const newPriceOracle = await factory.deploy();
       await newPriceOracle.deployed();
-
-      await newPriceOracle.initialize(
-        zns.accessController.address,
-        priceConfigDefault,
-        registrationFeePercDefault
-      );
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = proxyPriceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
+      const tx = zns.priceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
       await expect(tx).to.not.be.reverted;
     });
 
-    it("Fails to upgrade if the caller is not authorized", async () => {
-      const factory = new ZNSPriceOracle__factory(deployer);
-      const proxyPriceOracle = await hre.upgrades.deployProxy(factory, [
-        zns.accessController.address,
-        priceConfigDefault,
-        registrationFeePercDefault,
-      ]);
-
-      await proxyPriceOracle.deployed();
-
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
       // PriceOracle to upgrade to
+      const factory = new ZNSPriceOracleMock__factory(deployer);
       const newPriceOracle = await factory.deploy();
       await newPriceOracle.deployed();
 
-      await newPriceOracle.initialize(
-        zns.accessController.address,
-        priceConfigDefault,
-        registrationFeePercDefault
-      );
+      const preUpgradeVars = [
+        zns.priceOracle.priceConfig(),
+        zns.priceOracle.feePercentage(),
+        zns.priceOracle.getPrice("wilder", true),
+      ];
+
+      const [preConfig, preFeePercent, prePrice] = await Promise.all(preUpgradeVars);
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const tx = zns.priceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
+      await expect(tx).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.priceOracle.priceConfig(),
+        zns.priceOracle.feePercentage(),
+        zns.priceOracle.getPrice("wilder", true),
+      ];
+
+      const [postConfig, postFeePercent, postPrice] = await Promise.all(postUpgradeVars);
+
+      expect(preConfig).to.deep.eq(postConfig);
+      expect(preFeePercent).to.eq(postFeePercent);
+      expect(prePrice).to.deep.eq(postPrice);
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      // PriceOracle to upgrade to
+      const factory = new ZNSPriceOracleMock__factory(deployer);
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
 
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
 
-      const tx = proxyPriceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
+      const tx = zns.priceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomAcc.address, GOVERNOR_ROLE)

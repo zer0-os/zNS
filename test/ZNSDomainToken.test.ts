@@ -1,5 +1,6 @@
 import * as hre from "hardhat";
 import {
+  ZNSDomainTokenMock__factory,
   ZNSDomainToken__factory,
 } from "../typechain";
 import { expect } from "chai";
@@ -158,21 +159,48 @@ describe("ZNSDomainToken:", () => {
   });
 
   describe("UUPS", () => {
-    it("Verifies an authorized user can upgrade the contract", async () => {
-      // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
-      // So use a deployed proxy contract
-      const factory = new ZNSDomainToken__factory(deployer);
-
+    it("Allows an authorized user to upgrade the contract", async () => {
       // DomainToken to upgrade to
+      const factory = new ZNSDomainToken__factory(deployer);
       const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
+
+      // Confirm the deployer is a governor
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
+
+      await expect(upgradeTx).to.not.be.reverted;
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      // DomainToken to upgrade to
+      const newFactory = new ZNSDomainTokenMock__factory(deployer);
+      const newDomainToken = await newFactory.deploy();
+      await newDomainToken.deployed();
+
+      // Call to register a token
+      const tokenId = ethers.BigNumber.from("1");
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer).approve(caller.address, tokenId);
 
       const preUpgradeVars = [
         zns.domainToken.name(),
         zns.domainToken.symbol(),
+        zns.domainToken.ownerOf(tokenId),
+        zns.domainToken.balanceOf(deployer.address),
+        zns.domainToken.getApproved(tokenId),
       ];
 
-      const [nameBefore, symbolBefore] = await Promise.all(preUpgradeVars);
+      const [
+        preName,
+        preSymbol,
+        preOwnerOf,
+        preBalanceOf,
+        preApproved,
+      ] = await Promise.all(preUpgradeVars);
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       expect(
@@ -186,19 +214,30 @@ describe("ZNSDomainToken:", () => {
       const postUpgradeVars = [
         zns.domainToken.name(),
         zns.domainToken.symbol(),
+        zns.domainToken.ownerOf(tokenId),
+        zns.domainToken.balanceOf(deployer.address),
+        zns.domainToken.getApproved(tokenId),
       ];
 
-      const [nameAfter, symbolAfter] = await Promise.all(postUpgradeVars);
+      const [
+        postName,
+        postSymbol,
+        postOwnerOf,
+        postBalanceOf,
+        postApproved,
+      ] = await Promise.all(postUpgradeVars);
 
-      expect(nameBefore).to.eq(nameAfter);
-      expect(symbolBefore).to.eq(symbolAfter);
-
+      expect(preName).to.eq(postName);
+      expect(preSymbol).to.eq(postSymbol);
+      expect(preOwnerOf).to.eq(postOwnerOf);
+      expect(preBalanceOf).to.eq(postBalanceOf);
+      expect(preApproved).to.eq(postApproved);
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {
       // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
       // So use a deployed proxy contract
-      const factory = new ZNSDomainToken__factory(deployer);
+      const factory = new ZNSDomainTokenMock__factory(deployer);
 
       // DomainToken to upgrade to
       const newDomainToken = await factory.deploy();

@@ -7,7 +7,7 @@ import * as ethers from "ethers";
 import { hashDomainLabel } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ZNSTreasury__factory } from "../typechain";
+import { ZNSTreasuryMock__factory, ZNSTreasury__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -249,11 +249,22 @@ describe("ZNSTreasury", () => {
   });
 
   describe("UUPS", () => {
-    it("Verifies an authorized user can upgrade the contract", async () => {
+    it("Allows an authorized user can upgrade the contract", async () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const treasuryFactory = new ZNSTreasury__factory(deployer);
+      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 
@@ -288,7 +299,7 @@ describe("ZNSTreasury", () => {
         `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
       );
 
-      const treasuryFactory = new ZNSTreasury__factory(deployer);
+      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 

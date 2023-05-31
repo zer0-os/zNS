@@ -1,10 +1,11 @@
 import * as hre from "hardhat";
-import { ERC165__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolverMock__factory, ZNSAddressResolver__factory } from "../typechain";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,
+  GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
@@ -16,7 +17,7 @@ const { expect } = require("chai");
 describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
-  let addr1 : SignerWithAddress;
+  let user : SignerWithAddress;
   let operator : SignerWithAddress;
   let wilderDomainHash : string;
 
@@ -26,7 +27,7 @@ describe("ZNSAddressResolver", () => {
     [
       deployer,
       operator,
-      addr1,
+      user,
       mockRegistrar,
     ] = await hre.ethers.getSigners();
 
@@ -101,20 +102,20 @@ describe("ZNSAddressResolver", () => {
 
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
-      zns.addressResolver.connect(addr1).setAddress(wilderDomainHash, addr1.address)
+      zns.addressResolver.connect(user).setAddress(wilderDomainHash, user.address)
     ).to.be.revertedWith("ZNSAddressResolver: Not authorized for this domain");
   });
 
   it("Should allow owner to setAddress and emit event", async () => {
     await expect(
       zns.addressResolver.connect(deployer)
-        .setAddress(wilderDomainHash, addr1.address)
+        .setAddress(wilderDomainHash, user.address)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, addr1.address);
+      .withArgs(wilderDomainHash, user.address);
 
     const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
-    expect(resolvedAddress).to.equal(addr1.address);
+    expect(resolvedAddress).to.equal(user.address);
   });
 
   it("Should allow operator to setAddress and emit event", async () => {
@@ -122,10 +123,10 @@ describe("ZNSAddressResolver", () => {
 
     await expect(
       zns.addressResolver.connect(operator)
-        .setAddress(wilderDomainHash, addr1.address)
+        .setAddress(wilderDomainHash, user.address)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, addr1.address);
+      .withArgs(wilderDomainHash, user.address);
   });
 
   it("Should allow REGISTRAR_ROLE to setAddress and emit event", async () => {
@@ -141,10 +142,10 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should resolve address correctly", async () => {
-    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, addr1.address);
+    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
 
     const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
-    expect(resolvedAddress).to.equal(addr1.address);
+    expect(resolvedAddress).to.equal(user.address);
   });
 
   it("Should support the IZNSAddressResolver interface ID", async () => {
@@ -166,12 +167,91 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should support full discovery flow from zns.registry", async () => {
-    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, addr1.address);
+    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
 
     const resolverAddress = await zns.registry.getDomainResolver(wilderDomainHash);
     expect(resolverAddress).to.eq(zns.addressResolver.address);
 
     const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
-    expect(resolvedAddress).to.eq(addr1.address);
+    expect(resolvedAddress).to.eq(user.address);
+  });
+
+  describe("UUPS", () => {
+    it("Allows an authorized user to upgrade the contract", async () => {
+      // AddressResolver to upgrade to
+      const factory = new ZNSAddressResolverMock__factory(deployer);
+      const newAddressResolver = await factory.deploy();
+      await newAddressResolver.deployed();
+
+      // Confirm the deployer is a governor
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newAddressResolver.address);
+
+      await expect(upgradeTx).to.not.be.reverted;
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      // AddressResolver to upgrade to
+      const newFactory = new ZNSAddressResolverMock__factory(deployer);
+      const newAddressResolver = await newFactory.deploy();
+      await newAddressResolver.deployed();
+
+      await zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, user.address);
+
+      const preUpgradeVars = [
+        zns.addressResolver.registry(),
+        zns.addressResolver.getAddress(wilderDomainHash),
+      ];
+
+      const [
+        preRegistry,
+        preAddress,
+      ] = await Promise.all(preUpgradeVars);
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newAddressResolver.address);
+
+      await expect(upgradeTx).to.not.be.reverted;
+
+      const postUpgradeVars = [
+        zns.addressResolver.registry(),
+        zns.addressResolver.getAddress(wilderDomainHash),
+      ];
+
+      const [
+        postRegistry,
+        postAddress,
+      ] = await Promise.all(postUpgradeVars);
+
+      expect(preRegistry).to.eq(postRegistry);
+      expect(preAddress).to.eq(postAddress);
+      expect(postAddress).to.eq(user.address);
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      const factory = new ZNSAddressResolverMock__factory(deployer);
+
+      // DomainToken to upgrade to
+      const newAddressResolver = await factory.deploy();
+      await newAddressResolver.deployed();
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(operator.address)).to.be.revertedWith(
+        getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
+      );
+
+      const upgradeTx = zns.domainToken.connect(operator).upgradeTo(newAddressResolver.address);
+
+      await expect(upgradeTx).to.be.revertedWith(
+        getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
+      );
+    });
   });
 });

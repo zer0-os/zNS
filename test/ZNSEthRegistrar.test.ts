@@ -628,7 +628,19 @@ describe("ZNSEthRegistrar", () => {
   });
 
   describe("UUPS", () => {
-    it("Verifies an authorized user can upgrade the contract", async () => {
+    it("Allows an authorized user to upgrade the contract", async () => {
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+      const registrar = await registrarFactory.deploy();
+      await registrar.deployed();
+
+      const upgradeTx = zns.registrar.connect(deployer).upgradeTo(registrar.address);
+      await expect(upgradeTx).to.not.be.reverted;
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
