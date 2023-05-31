@@ -18,7 +18,7 @@ export const runAllFlows = async () => {
 
   const zns = await deployVerifyZNS({ governor });
 
-  // perform ops
+  // get some funds for the user
   await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
   await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
 

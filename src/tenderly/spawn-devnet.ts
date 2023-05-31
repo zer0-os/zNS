@@ -25,7 +25,7 @@ const spawnDevNet = async () => {
 
   console.log(`DEVNET_RPC_URL=${ devNetUrl }`);
 
-  // if file not exists, create it
+  // if file doesn't exist, create it
   if (!fs.existsSync(".env")) {
     fs.writeFileSync(".env", "");
   }
@@ -39,7 +39,6 @@ const spawnDevNet = async () => {
 spawnDevNet()
   .then(() => process.exit(0))
   .catch(error => {
-    // eslint-disable-next-line no-console
     console.error(error);
     process.exit(1);
   });
