@@ -275,7 +275,7 @@ describe("ZNSTreasury", () => {
       await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
     });
 
-    it.only("Verifies that variable values are not changed in the upgrade process", async () => {
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
       const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
