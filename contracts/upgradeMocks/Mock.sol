@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+ /* solhint-disable */
 contract Mock {
     uint256 public newNumber;
 

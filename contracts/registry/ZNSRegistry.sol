@@ -240,6 +240,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
+    // solhint-disable-next-line
     function _authorizeUpgrade(address newImplementation) internal override {
         accessController.checkGovernor(msg.sender);
     }

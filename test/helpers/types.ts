@@ -25,7 +25,13 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction = (Promise<string> | Promise<boolean> | Promise<BigNumber>);
+export type GetterFunction =
+  (
+    Promise<string> |
+    Promise<boolean> |
+    Promise<BigNumber> |
+    Promise<Array<BigNumber>>
+  );
 
 export type ZNSContractMockFactory =
   ZNSEthRegistrarMock__factory |
@@ -35,14 +41,6 @@ export type ZNSContractMockFactory =
   ZNSAddressResolverMock__factory |
   ZNSDomainTokenMock__factory;
 
-export type ZNSContract =
-  ZNSEthRegistrar |
-  ZNSPriceOracle |
-  ZNSTreasury |
-  ZNSRegistry |
-  ZNSAddressResolver |
-  ZNSDomainToken;
-
 export type ZNSContractMock =
   ZNSEthRegistrarMock |
   ZNSPriceOracleMock |
@@ -50,6 +48,14 @@ export type ZNSContractMock =
   ZNSRegistryMock |
   ZNSAddressResolverMock |
   ZNSDomainTokenMock;
+
+export type ZNSContract =
+  ZNSEthRegistrar |
+  ZNSPriceOracle |
+  ZNSTreasury |
+  ZNSRegistry |
+  ZNSAddressResolver |
+  ZNSDomainToken;
 
 export interface PriceParams {
   maxRootDomainPrice : BigNumber;

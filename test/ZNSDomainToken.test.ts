@@ -13,6 +13,7 @@ import {
   getAccessRevertMsg,
   INVALID_TOKENID_ERC_ERR,
   deployZNS,
+  validateUpgrade,
 } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
@@ -177,8 +178,8 @@ describe("ZNSDomainToken:", () => {
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       // DomainToken to upgrade to
-      const newFactory = new ZNSDomainTokenMock__factory(deployer);
-      const newDomainToken = await newFactory.deploy();
+      const factory = new ZNSDomainTokenMock__factory(deployer);
+      const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
 
       // Call to register a token
@@ -186,7 +187,7 @@ describe("ZNSDomainToken:", () => {
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
       await zns.domainToken.connect(deployer).approve(caller.address, tokenId);
 
-      const preUpgradeVars = [
+      const contractCalls = [
         zns.domainToken.name(),
         zns.domainToken.symbol(),
         zns.domainToken.ownerOf(tokenId),
@@ -194,44 +195,7 @@ describe("ZNSDomainToken:", () => {
         zns.domainToken.getApproved(tokenId),
       ];
 
-      const [
-        preName,
-        preSymbol,
-        preOwnerOf,
-        preBalanceOf,
-        preApproved,
-      ] = await Promise.all(preUpgradeVars);
-
-      // Confirm the deployer is a governor, as set in `deployZNS` helper
-      expect(
-        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
-      ).to.be.true;
-
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
-
-      await expect(upgradeTx).to.not.be.reverted;
-
-      const postUpgradeVars = [
-        zns.domainToken.name(),
-        zns.domainToken.symbol(),
-        zns.domainToken.ownerOf(tokenId),
-        zns.domainToken.balanceOf(deployer.address),
-        zns.domainToken.getApproved(tokenId),
-      ];
-
-      const [
-        postName,
-        postSymbol,
-        postOwnerOf,
-        postBalanceOf,
-        postApproved,
-      ] = await Promise.all(postUpgradeVars);
-
-      expect(preName).to.eq(postName);
-      expect(preSymbol).to.eq(postSymbol);
-      expect(preOwnerOf).to.eq(postOwnerOf);
-      expect(preBalanceOf).to.eq(postBalanceOf);
-      expect(preApproved).to.eq(postApproved);
+      await validateUpgrade(deployer, zns.domainToken, newDomainToken, factory, contractCalls);
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {

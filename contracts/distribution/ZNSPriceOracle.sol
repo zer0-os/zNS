@@ -77,6 +77,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
 
         fee = getRegistrationFee(domainPrice);
         totalPrice = domainPrice + fee;
+
+        return (totalPrice, domainPrice, fee);
     }
 
     function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
@@ -222,6 +224,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.
      */
+    // solhint-disable-next-line
     function _authorizeUpgrade(address newImplementation) internal override {
         accessController.checkGovernor(msg.sender);
     }

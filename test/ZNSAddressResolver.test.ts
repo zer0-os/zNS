@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolverMock__factory, ZNSAddressResolver__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolverMock__factory } from "../typechain";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
@@ -9,6 +9,7 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
+  validateUpgrade,
 } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -193,48 +194,6 @@ describe("ZNSAddressResolver", () => {
       await expect(upgradeTx).to.not.be.reverted;
     });
 
-    it("Verifies that variable values are not changed in the upgrade process", async () => {
-      // AddressResolver to upgrade to
-      const newFactory = new ZNSAddressResolverMock__factory(deployer);
-      const newAddressResolver = await newFactory.deploy();
-      await newAddressResolver.deployed();
-
-      await zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, user.address);
-
-      const preUpgradeVars = [
-        zns.addressResolver.registry(),
-        zns.addressResolver.getAddress(wilderDomainHash),
-      ];
-
-      const [
-        preRegistry,
-        preAddress,
-      ] = await Promise.all(preUpgradeVars);
-
-      // Confirm the deployer is a governor, as set in `deployZNS` helper
-      expect(
-        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
-      ).to.be.true;
-
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newAddressResolver.address);
-
-      await expect(upgradeTx).to.not.be.reverted;
-
-      const postUpgradeVars = [
-        zns.addressResolver.registry(),
-        zns.addressResolver.getAddress(wilderDomainHash),
-      ];
-
-      const [
-        postRegistry,
-        postAddress,
-      ] = await Promise.all(postUpgradeVars);
-
-      expect(preRegistry).to.eq(postRegistry);
-      expect(preAddress).to.eq(postAddress);
-      expect(postAddress).to.eq(user.address);
-    });
-
     it("Fails to upgrade if the caller is not authorized", async () => {
       const factory = new ZNSAddressResolverMock__factory(deployer);
 
@@ -252,6 +211,22 @@ describe("ZNSAddressResolver", () => {
       await expect(upgradeTx).to.be.revertedWith(
         getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
       );
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      // AddressResolver to upgrade to
+      const factory = new ZNSAddressResolverMock__factory(deployer);
+      const newResolver = await factory.deploy();
+      await newResolver.deployed();
+
+      await zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, user.address);
+
+      const contractCalls = [
+        zns.addressResolver.registry(),
+        zns.addressResolver.getAddress(wilderDomainHash),
+      ];
+
+      await validateUpgrade(deployer, zns.addressResolver, newResolver, factory, contractCalls);
     });
   });
 });
