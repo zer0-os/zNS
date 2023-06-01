@@ -6,5 +6,4 @@ export * from "./constants";
 export * from "./balances";
 export * from "./access";
 export * from "./errors";
-export * from "./actions/upgradeActions";
-export * from "./actions";
+export * from "./validateUpgrade";

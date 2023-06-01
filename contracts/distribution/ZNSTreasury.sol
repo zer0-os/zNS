@@ -40,7 +40,6 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     ) external override initializer {
         _setAccessController(accessController_);
         setZeroVaultAddress(zeroVault_);
-        // TODO change from mock
         setStakingToken(stakingToken_);
         setPriceOracle(znsPriceOracle_);
     }

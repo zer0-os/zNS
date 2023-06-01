@@ -14,12 +14,36 @@ import {
   ZNSDomainTokenMock,
   ZNSRegistryMock,
   ZNSTreasuryMock,
+  ZNSAddressResolverMock__factory,
+  ZNSDomainTokenMock__factory,
+  ZNSEthRegistrarMock__factory,
+  ZNSPriceOracleMock__factory,
+  ZNSRegistryMock__factory,
+  ZNSTreasuryMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
 
-export type ContractMock =
+export type GetterFunction = (Promise<string> | Promise<boolean> | Promise<BigNumber>);
+
+export type ZNSContractMockFactory =
+  ZNSEthRegistrarMock__factory |
+  ZNSPriceOracleMock__factory |
+  ZNSTreasuryMock__factory |
+  ZNSRegistryMock__factory |
+  ZNSAddressResolverMock__factory |
+  ZNSDomainTokenMock__factory;
+
+export type ZNSContract =
+  ZNSEthRegistrar |
+  ZNSPriceOracle |
+  ZNSTreasury |
+  ZNSRegistry |
+  ZNSAddressResolver |
+  ZNSDomainToken;
+
+export type ZNSContractMock =
   ZNSEthRegistrarMock |
   ZNSPriceOracleMock |
   ZNSTreasuryMock |

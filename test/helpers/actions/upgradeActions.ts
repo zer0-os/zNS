@@ -15,7 +15,7 @@ export const upgradedActions = async (
   await contractMock.setNewAddress(randomUser.address);
 };
 
-export const upgradedPromises = async (
+export const upgradedContractPromises = async (
   contractMock : ContractMock,
   newNumber : BigNumber
 ) : Promise<Array<string | BigNumber>> => {
@@ -28,16 +28,3 @@ export const upgradedPromises = async (
 
   return Promise.all(checkUpgradedGetters);
 };
-
-// array of promises in
-// how can this be done without having to give it each promise independently in the test itself?
-// array of results out
-// type ArgTypes = string | number | BigNumber;
-
-// export const genericActions = async (
-//   contractMock : ContractMock,
-//   args : Array<ArgTypes>,
-//   accounts : Array<SignerWithAddress>
-// ) => {
-
-// };

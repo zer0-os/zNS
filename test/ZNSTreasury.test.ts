@@ -1,13 +1,13 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkBalance, deployZNS } from "./helpers";
+import { checkBalance, deployZNS, validateUpgrade } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { hashDomainLabel } from "./helpers/hashing";
+import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ZNSTreasuryMock__factory, ZNSTreasury__factory } from "../typechain";
+import { ZNSTreasuryMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -251,7 +251,9 @@ describe("ZNSTreasury", () => {
   describe("UUPS", () => {
     it("Allows an authorized user can upgrade the contract", async () => {
       // Confirm deployer has the correct role first
-      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
 
       const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
@@ -260,53 +262,45 @@ describe("ZNSTreasury", () => {
       await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
     });
 
-    it("Verifies that variable values are not changed in the upgrade process", async () => {
-      // Confirm deployer has the correct role first
-      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
-
-      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
-      const treasury = await treasuryFactory.deploy();
-      await treasury.deployed();
-
-      const preUpgradeVars = [
-        zns.treasury.priceOracle(),
-        zns.treasury.stakingToken(),
-        zns.treasury.zeroVault(),
-      ];
-
-      const [priceOracleBefore, stakingTokenBefore, vaultBefore] = await Promise.all(preUpgradeVars);
-
-      // the upgrade was successful
-      await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
-
-      const postUpgradeVars = [
-        zns.treasury.priceOracle(),
-        zns.treasury.stakingToken(),
-        zns.treasury.zeroVault(),
-      ];
-
-      const [priceOracleAfter, stakingTokenAfter, vaultAfter] = await Promise.all(postUpgradeVars);
-
-      // The state variables weren't changed in the process
-      expect(priceOracleBefore).to.eq(priceOracleAfter);
-      expect(stakingTokenBefore).to.eq(stakingTokenAfter);
-      expect(vaultBefore).to.eq(vaultAfter);
-    });
-
-    it("Disallows an unauthorized user from upgrade the contract", async () => {
-      const accessTx = zns.accessController.checkGovernor(user.address);
-      await expect(accessTx).to.be.revertedWith(
-        `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
-      );
+    it("Fails when an unauthorized user tries to upgrade the contract", async () => {
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
 
       const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 
       const deployTx = zns.treasury.connect(user).upgradeTo(treasury.address);
-      await expect(deployTx).to.be.revertedWith(
-        `AccessControl: account ${user.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+      await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
+    });
+
+    it.only("Verifies that variable values are not changed in the upgrade process", async () => {
+      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const domainName = "world";
+      const domainHash = hashDomainName(domainName);
+
+      await zns.treasury.connect(mockRegistrar).stakeForDomain(
+        domainHash,
+        domainName,
+        deployer.address,
+        true
       );
+
+      const calls = [
+        treasury.priceOracle(),
+        treasury.stakingToken(),
+        treasury.zeroVault(),
+        treasury.stakedForDomain(domainHash),
+      ];
+
+      await validateUpgrade(deployer, zns.treasury, treasury, treasuryFactory, calls);
     });
   });
 });
