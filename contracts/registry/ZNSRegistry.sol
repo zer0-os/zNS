@@ -34,6 +34,11 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     modifier onlyOwner(bytes32 domainHash) {
         require(
             records[domainHash].owner == msg.sender,

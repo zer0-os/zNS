@@ -15,21 +15,6 @@ abstract contract AccessControlled {
         _;
     }
 
-    modifier onlyGovernor() {
-        accessController.checkGovernor(msg.sender);
-        _;
-    }
-
-    modifier onlyExecutor() {
-        accessController.checkExecutor(msg.sender);
-        _;
-    }
-
-    modifier onlyRegistrar() {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
     /**
      * @dev These 2 virtual functions are here to make sure they are always implemented in children,
      * otherwise we will not be able to reset the module or read the AC address

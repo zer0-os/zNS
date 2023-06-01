@@ -283,7 +283,7 @@ describe("ZNSRegistry", () => {
       await expect(tx).to.be.fulfilled;
     });
 
-    it("Cannot set a domain owner if owner is zero address", async () => {
+    it("cannot update a domain owner if owner is zero address", async () => {
       const tx = zns.registry
         .connect(deployer)
         .updateDomainOwner(
@@ -318,7 +318,7 @@ describe("ZNSRegistry", () => {
       await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
-    it("Cannot set a domain's record if not an owner or operator", async () => {
+    it("cannot update a domain's record if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -331,7 +331,7 @@ describe("ZNSRegistry", () => {
       await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
-    it("Cannot set an domain's owner if not an owner or operator", async () => {
+    it("cannot update an domain's owner if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -342,7 +342,7 @@ describe("ZNSRegistry", () => {
       );
     });
 
-    it("Cannot set a domain's resolver if not an owner or operator", async () => {
+    it("cannot update a domain's resolver if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);

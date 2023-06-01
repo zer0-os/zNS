@@ -32,6 +32,11 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
 
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     function initialize(
         address accessController_,
         address znsPriceOracle_,

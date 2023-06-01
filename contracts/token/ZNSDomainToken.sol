@@ -10,6 +10,12 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  * @title A contract for tokenizing domains under ZNS
  */
 contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
+
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     function initialize(
         address accessController,
         string memory tokenName,

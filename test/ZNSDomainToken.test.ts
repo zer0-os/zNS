@@ -14,14 +14,13 @@ import {
   INVALID_TOKENID_ERC_ERR,
   deployZNS,
   validateUpgrade,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
 
 describe("ZNSDomainToken:", () => {
-  const TokenName = "ZNSDomainToken";
-  const TokenSymbol = "ZDT";
-
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
@@ -150,12 +149,12 @@ describe("ZNSDomainToken:", () => {
   describe("Contract Configuration", () => {
     it("Verify token name", async () => {
       const name = await zns.domainToken.name();
-      expect(name).to.equal(TokenName);
+      expect(name).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     });
 
     it("Verify token symbol", async () => {
       const symbol = await zns.domainToken.symbol();
-      expect(symbol).to.equal(TokenSymbol);
+      expect(symbol).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
     });
   });
 
