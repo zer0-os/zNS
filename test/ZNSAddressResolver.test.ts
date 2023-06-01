@@ -201,8 +201,10 @@ describe("ZNSAddressResolver", () => {
       const newAddressResolver = await factory.deploy();
       await newAddressResolver.deployed();
 
-      // Confirm the deployer is a governor, as set in `deployZNS` helper
-      await expect(zns.accessController.checkGovernor(operator.address)).to.be.revertedWith(
+      // Confirm the operator is not a governor
+      await expect(
+        zns.accessController.checkGovernor(operator.address)
+      ).to.be.revertedWith(
         getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
       );
 

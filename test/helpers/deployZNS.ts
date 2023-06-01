@@ -47,7 +47,8 @@ export const deployAddressResolver = async (
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
 
-  const resolver = await upgrades.deployProxy(addressResolverFactory,
+  const resolver = await upgrades.deployProxy(
+    addressResolverFactory,
     [
       accessControllerAddress,
       registryAddress,
@@ -179,8 +180,6 @@ export const deployZNS = async ({
   });
 
   // TODO AC: Make sure contracts are deployed as proxies and authorize the governor role
-  // Can't set to zero, but registrar address must be given.
-  // Due to order of deployment, add deployer as registrar address for now and change after
   const registry = await deployRegistry(deployer, accessController.address);
 
   const domainToken = await deployDomainToken(deployer, accessController.address);
