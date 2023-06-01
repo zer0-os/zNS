@@ -21,7 +21,7 @@ export const validateUpgrade = async (
     expect(value).to.eq(postVals[index]);
   });
 
-  // Typechain doesn't upDATE the generated interface for the contract after upgrading
+  // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead
   const upgradedContract = contractFactory.attach(contract.address);
 
