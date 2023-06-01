@@ -8,22 +8,16 @@ export const validateUpgrade = async (
   deployer : SignerWithAddress,
   contract : ZNSContract,
   upgradeContract : ZNSContractMock,
-  contractFactory : ZNSContractMockFactory,
+  upgradeContractFactory : ZNSContractMockFactory,
   getters : Array<GetterFunction>
 ) => {
   const preVals = await Promise.all(getters);
 
   await contract.connect(deployer).upgradeTo(upgradeContract.address);
 
-  const postVals = await Promise.all(getters);
-
-  preVals.forEach((value, index) => {
-    expect(value).to.eq(postVals[index]);
-  });
-
   // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead
-  const upgradedContract = contractFactory.attach(contract.address);
+  const upgradedContract = upgradeContractFactory.attach(contract.address);
 
   // Because every upgraded contract will have the same additions to it,
   // we can be sure these functions exist
@@ -33,7 +27,7 @@ export const validateUpgrade = async (
   await upgradedContract.setNewNumber(newNumber);
   await upgradedContract.setNewAddress(deployer.address);
 
-  const upgradeCalls = [
+  const postUpgradeCalls = [
     upgradedContract.connect(deployer).newMapping(newNumber),
     upgradedContract.newMapping(newNumber.add(1)),
     upgradedContract.newNumber(),
@@ -45,7 +39,16 @@ export const validateUpgrade = async (
     mappingCallSpecific,
     numberCall,
     addressCall,
-  ] = await Promise.all(upgradeCalls);
+  ] = await Promise.all(postUpgradeCalls);
+
+  // we're checking previous value after post upgrade calls
+  // to make sure that writing into new storage slots
+  // doesn't overwrite or corrupt the old ones
+  const postVals = await Promise.all(getters);
+
+  preVals.forEach((value, index) => {
+    expect(value).to.eq(postVals[index]);
+  });
 
   expect(mappingCall).to.eq(deployer.address);
   expect(mappingCallSpecific).to.eq(deployer.address);
