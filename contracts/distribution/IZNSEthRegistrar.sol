@@ -18,13 +18,13 @@ interface IZNSEthRegistrar {
         address indexed registrant
     );
 
-    event RegistrySet(address znsRegistry);
+    event RegistrySet(address registry);
 
-    event TreasurySet(address znsTreasury);
+    event TreasurySet(address treasury);
 
-    event DomainTokenSet(address znsDomainToken);
+    event DomainTokenSet(address domainToken);
 
-    event AddressResolverSet(address znsAddressResolver);
+    event AddressResolverSet(address addressResolver);
 
     function registerDomain(
         string calldata name,
@@ -49,9 +49,9 @@ interface IZNSEthRegistrar {
 
     function initialize(
         address accessController_,
-        address znsRegistry_,
-        address znsTreasury_,
-        address znsDomainToken_,
-        address znsAddressResolver_
+        address registry_,
+        address treasury_,
+        address domainToken_,
+        address addressResolver_
     ) external;
 }

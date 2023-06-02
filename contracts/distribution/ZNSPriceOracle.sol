@@ -77,8 +77,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
 
         fee = getRegistrationFee(domainPrice);
         totalPrice = domainPrice + fee;
-
-        return (totalPrice, domainPrice, fee);
     }
 
     function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {

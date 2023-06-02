@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZNSRoles } from "./ZNSRoles.sol";
 
 abstract contract AccessControlled {
 
