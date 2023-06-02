@@ -29,9 +29,9 @@ interface IZNSTreasury {
         uint256 indexed amount
     );
 
-    event PriceOracleSet(address znsPriceOracle);
+    event PriceOracleSet(address priceOracle);
 
-    event StakingTokenSet(address znsStakingToken);
+    event StakingTokenSet(address stakingToken);
 
     event ZeroVaultAddressSet(address zeroVault);
 
@@ -46,7 +46,7 @@ interface IZNSTreasury {
 
     function setZeroVaultAddress(address zeroVaultAddress) external;
 
-    function setPriceOracle(address znsPriceOracle_) external;
+    function setPriceOracle(address priceOracle_) external;
 
     function setStakingToken(address stakingToken_) external;
 
@@ -56,7 +56,7 @@ interface IZNSTreasury {
 
     function initialize(
         address accessController_,
-        address znsPriceOracle_,
+        address priceOracle_,
         address stakingToken_,
         address zeroVault_
     ) external;

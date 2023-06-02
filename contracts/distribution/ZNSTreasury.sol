@@ -39,14 +39,14 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
 
     function initialize(
         address accessController_,
-        address znsPriceOracle_,
+        address priceOracle_,
         address stakingToken_,
         address zeroVault_
     ) external override initializer {
         _setAccessController(accessController_);
         setZeroVaultAddress(zeroVault_);
         setStakingToken(stakingToken_);
-        setPriceOracle(znsPriceOracle_);
+        setPriceOracle(priceOracle_);
     }
 
     function stakeForDomain(
@@ -96,7 +96,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     function setPriceOracle(address priceOracle_) public override onlyAdmin {
         require(
             priceOracle_ != address(0),
-            "ZNSTreasury: znsPriceOracle_ passed as 0x0 address"
+            "ZNSTreasury: priceOracle_ passed as 0x0 address"
         );
 
         priceOracle = IZNSPriceOracle(priceOracle_);

@@ -119,7 +119,7 @@ export const deployZeroTokenMock = async (
 export const deployTreasury = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  znsPriceOracleAddress : string,
+  priceOracleAddress : string,
   zTokenMockAddress : string,
   zeroVaultAddress : string
 ) : Promise<ZNSTreasury> => {
@@ -127,7 +127,7 @@ export const deployTreasury = async (
   const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
     [
       accessControllerAddress,
-      znsPriceOracleAddress,
+      priceOracleAddress,
       zTokenMockAddress,
       zeroVaultAddress,
     ],

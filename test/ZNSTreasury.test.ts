@@ -190,9 +190,9 @@ describe("ZNSTreasury", () => {
       );
     });
 
-    it("Should revert when znsPriceOracle is address 0", async () => {
+    it("Should revert when priceOracle is address 0", async () => {
       const tx = zns.treasury.setPriceOracle(ethers.constants.AddressZero);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: znsPriceOracle_ passed as 0x0 address");
+      await expect(tx).to.be.revertedWith("ZNSTreasury: priceOracle_ passed as 0x0 address");
     });
   });
 
