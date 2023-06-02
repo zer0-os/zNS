@@ -11,7 +11,7 @@ interface IZNSPriceOracle {
     /**
      * @notice Struct for each configurable price variable
      */
-    // TODO: split this into 2 structs. one for domains, one for subdomains
+    // TODO ora: split this into 2 structs. one for domains, one for subdomains
     //   we can remove the subdomain one for the MVP and then add later.
     struct PriceParams {
         /**
@@ -58,6 +58,16 @@ interface IZNSPriceOracle {
          * it here because it creates a reasonable decline in pricing visually when graphed.
          */
         uint256 priceMultiplier;
+    }
+
+    struct DomainPriceConfig {
+        uint256 maxPrice;
+        uint256 minPrice;
+        uint256 maxLength;
+        uint256 baseLength;
+        uint256 multiplier;
+        // TODO ora: make this work properly
+        uint256 precision;
     }
 
     function initialize(

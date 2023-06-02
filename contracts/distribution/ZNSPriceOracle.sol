@@ -24,7 +24,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
      * @notice Struct for each configurable price variable
      */
     // TODO: rework and add more setters for every single var
-    PriceParams public priceConfig;
+    DomainPriceConfig public rootDomainPriceConfig;
 
     // TODO: rework setters here for a better structure!
     // TODO: remove subdomain logic
@@ -36,7 +36,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
     ) public override initializer {
         _setAccessController(accessController_);
         // Set pricing and length parameters
-        priceConfig = priceConfig_;
+        rootDomainPriceConfig = priceConfig_;
         feePercentage = regFeePercentage_;
     }
 
@@ -60,18 +60,18 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         if (isRootDomain) {
             domainPrice = _getPrice(
                 length,
-                priceConfig.baseRootDomainLength,
-                priceConfig.maxRootDomainPrice,
-                priceConfig.maxRootDomainLength,
-                priceConfig.minRootDomainPrice
+                rootDomainPriceConfig.baseRootDomainLength,
+                rootDomainPriceConfig.maxRootDomainPrice,
+                rootDomainPriceConfig.maxRootDomainLength,
+                rootDomainPriceConfig.minRootDomainPrice
             );
         } else {
             domainPrice = _getPrice(
                 length,
-                priceConfig.baseSubdomainLength,
-                priceConfig.maxSubdomainPrice,
-                priceConfig.maxSubdomainLength,
-                priceConfig.minSubdomainPrice
+                rootDomainPriceConfig.baseSubdomainLength,
+                rootDomainPriceConfig.maxSubdomainPrice,
+                rootDomainPriceConfig.maxSubdomainLength,
+                rootDomainPriceConfig.minSubdomainPrice
             );
         }
 
@@ -81,6 +81,10 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
 
     function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
+    }
+
+    function setPriceConfig(DomainPriceConfig calldata priceConfig_) external override onlyAdmin {
+        rootDomainPriceConfig = priceConfig_;
     }
 
     /**
@@ -95,9 +99,9 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         bool isRootDomain
     ) external override onlyAdmin {
         if (isRootDomain) {
-            priceConfig.maxRootDomainPrice = maxPrice;
+            rootDomainPriceConfig.maxRootDomainPrice = maxPrice;
         } else {
-            priceConfig.maxSubdomainPrice = maxPrice;
+            rootDomainPriceConfig.maxSubdomainPrice = maxPrice;
         }
 
         emit BasePriceSet(maxPrice, isRootDomain);
@@ -121,7 +125,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
             multiplier >= 300 && multiplier <= 400,
             "ZNSPriceOracle: Multiplier out of range"
         );
-        priceConfig.priceMultiplier = multiplier;
+        rootDomainPriceConfig.priceMultiplier = multiplier;
 
         emit PriceMultiplierSet(multiplier);
     }
@@ -147,27 +151,12 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         bool isRootDomain
     ) external override onlyAdmin {
         if (isRootDomain) {
-            priceConfig.baseRootDomainLength = length;
+            rootDomainPriceConfig.baseRootDomainLength = length;
         } else {
-            priceConfig.baseSubdomainLength = length;
+            rootDomainPriceConfig.baseSubdomainLength = length;
         }
 
         emit BaseLengthSet(length, isRootDomain);
-    }
-
-    /**
-     * @notice Set the value of both base lengt variables
-     * @param rootLength The length for root domains
-     * @param subdomainLength The length for subdomains
-     */
-    function setBaseLengths(
-        uint256 rootLength,
-        uint256 subdomainLength
-    ) external override onlyAdmin {
-        priceConfig.baseRootDomainLength = rootLength;
-        priceConfig.baseSubdomainLength = subdomainLength;
-
-        emit BaseLengthsSet(rootLength, subdomainLength);
     }
 
     function setAccessController(address accessController)
@@ -203,7 +192,7 @@ contract ZNSPriceOracle is AccessControlled, Initializable, IZNSPriceOracle {
         if (length > maxLength) return minPrice;
 
         // Pull into memory to save external calls to storage
-        uint256 multiplier = priceConfig.priceMultiplier;
+        uint256 multiplier = rootDomainPriceConfig.priceMultiplier;
 
         // TODO truncate to everything after the decimal, we don't want fractional prices
         // Should this be here vs. in the dApp?
