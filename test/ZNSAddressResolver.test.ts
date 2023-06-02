@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolverMock__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
@@ -134,8 +134,11 @@ describe("ZNSAddressResolver", () => {
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     await expect(
-      zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, hre.ethers.constants.AddressZero)
-    ).to.emit(zns.addressResolver, "AddressSet").withArgs(wilderDomainHash, hre.ethers.constants.AddressZero);
+      zns.addressResolver.connect(mockRegistrar)
+        .setAddress(wilderDomainHash, hre.ethers.constants.AddressZero)
+    )
+      .to.emit(zns.addressResolver, "AddressSet")
+      .withArgs(wilderDomainHash, hre.ethers.constants.AddressZero);
 
     const address = await zns.addressResolver.getAddress(wilderDomainHash);
     expect(address).to.eq(hre.ethers.constants.AddressZero);
@@ -180,7 +183,7 @@ describe("ZNSAddressResolver", () => {
   describe("UUPS", () => {
     it("Allows an authorized user to upgrade the contract", async () => {
       // AddressResolver to upgrade to
-      const factory = new ZNSAddressResolverMock__factory(deployer);
+      const factory = new ZNSAddressResolverUpgradeMock__factory(deployer);
       const newAddressResolver = await factory.deploy();
       await newAddressResolver.deployed();
 
@@ -195,7 +198,7 @@ describe("ZNSAddressResolver", () => {
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {
-      const factory = new ZNSAddressResolverMock__factory(deployer);
+      const factory = new ZNSAddressResolverUpgradeMock__factory(deployer);
 
       // DomainToken to upgrade to
       const newAddressResolver = await factory.deploy();
@@ -217,7 +220,7 @@ describe("ZNSAddressResolver", () => {
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       // AddressResolver to upgrade to
-      const factory = new ZNSAddressResolverMock__factory(deployer);
+      const factory = new ZNSAddressResolverUpgradeMock__factory(deployer);
       const newResolver = await factory.deploy();
       await newResolver.deployed();
 

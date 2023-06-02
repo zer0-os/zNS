@@ -128,7 +128,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner,
         address resolver
-    ) external override onlyRegistrar() {
+    ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domains with no resolver address
@@ -196,13 +196,20 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         emit DomainRecordDeleted(domainHash);
     }
 
+    /**
+     * @notice Set the access controller contract
+     * @param accessController The new access controller
+     */
     function setAccessController(
         address accessController
-    ) external override onlyAdmin {
+    ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
         _setAccessController(accessController);
     }
 
-    function getAccessController() external view override returns (address) {
+    /**
+     * @notice Get the access controller
+     */
+    function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
         return address(accessController);
     }
 
@@ -246,7 +253,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal override {
+    function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

@@ -19,7 +19,12 @@ import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./t
 import { ethers, upgrades } from "hardhat";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { priceConfigDefault, registrationFeePercDefault } from "./constants";
+import {
+  priceConfigDefault,
+  registrationFeePercDefault,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+} from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
 
@@ -91,15 +96,15 @@ export const deployPriceOracle = async ({
 
 export const deployDomainToken = async (
   deployer : SignerWithAddress,
-  accessController : string
+  accessControllerAddress : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
   const domainToken = await upgrades.deployProxy(
     domainTokenFactory,
     [
-      accessController,
-      "ZNSDomainToken",
-      "ZDT",
+      accessControllerAddress,
+      ZNS_DOMAIN_TOKEN_NAME,
+      ZNS_DOMAIN_TOKEN_SYMBOL,
     ],
     {
       kind: "uups",
@@ -179,7 +184,6 @@ export const deployZNS = async ({
     adminAddresses: [deployer.address, ...adminAddresses],
   });
 
-  // TODO AC: Make sure contracts are deployed as proxies and authorize the governor role
   const registry = await deployRegistry(deployer, accessController.address);
 
   const domainToken = await deployDomainToken(deployer, accessController.address);
@@ -230,7 +234,9 @@ export const deployZNS = async ({
   // Final configuration steps
   // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
   // for Registrar to be owner/operator of the root
-  await registry.connect(deployer).setOwnerOperator(registrar.address, true);
+
+  // TODO verify tests are fine without this line
+  // await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);

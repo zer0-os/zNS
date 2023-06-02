@@ -20,7 +20,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
         address accessController,
         string memory tokenName,
         string memory tokenSymbol
-    ) public override initializer {
+    ) external override initializer {
         __ERC721_init(tokenName, tokenSymbol);
         _setAccessController(accessController);
     }
@@ -38,11 +38,11 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
      * @notice Burns the token with the specified tokenId
      * @param tokenId The tokenId that the caller wishes to burn/revoke
      */
-    function revoke(uint256 tokenId) external override onlyRegistrar  {
+    function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
     }
 
-    function setAccessController(address accessController) 
+    function setAccessController(address accessController)
     external
     override(AccessControlled, IZNSDomainToken)
     onlyAdmin
@@ -59,7 +59,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal override {
+    function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

@@ -8,7 +8,7 @@ import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR, validateUpgrade }
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSPriceOracleMock__factory, ZNSPriceOracle__factory } from "../typechain";
+import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -597,7 +597,7 @@ describe("ZNSPriceOracle", () => {
 
     it("Fails to upgrade if the caller is not authorized", async () => {
       // PriceOracle to upgrade to
-      const factory = new ZNSPriceOracleMock__factory(deployer);
+      const factory = new ZNSPriceOracleUpgradeMock__factory(deployer);
       const newPriceOracle = await factory.deploy();
       await newPriceOracle.deployed();
 
@@ -612,7 +612,7 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
-      const factory = new ZNSPriceOracleMock__factory(deployer);
+      const factory = new ZNSPriceOracleUpgradeMock__factory(deployer);
       const newPriceOracle = await factory.deploy();
       await newPriceOracle.deployed();
 

@@ -19,7 +19,7 @@ import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSEthRegistrar__factory, ZNSEthRegistrarMock__factory } from "../typechain";
+import { ZNSEthRegistrar__factory, ZNSEthRegistrarUpgradeMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -649,7 +649,7 @@ describe("ZNSEthRegistrar", () => {
       const tx = zns.registrar.connect(randomUser).upgradeTo(registrar.address);
 
       await expect(tx).to.be.revertedWith(
-        `AccessControl: account ${randomUser.address.toLowerCase()} is missing role ${GOVERNOR_ROLE}`
+        getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE)
       );
     });
 
@@ -657,7 +657,7 @@ describe("ZNSEthRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSEthRegistrarMock__factory(deployer);
+      const registrarFactory = new ZNSEthRegistrarUpgradeMock__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 

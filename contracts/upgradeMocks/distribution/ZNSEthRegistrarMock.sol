@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { ZNSEthRegistrar } from "../../distribution/ZNSEthRegistrar.sol";
-import { Mock } from "../Mock.sol";
+import { UpgradeMock } from "../UpgradeMock.sol";
 
  /* solhint-disable */
-contract ZNSEthRegistrarMock is ZNSEthRegistrar, Mock {}
+contract ZNSEthRegistrarUpgradeMock is ZNSEthRegistrar, UpgradeMock {}

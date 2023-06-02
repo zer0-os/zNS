@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { ZNSPriceOracle } from "../../distribution/ZNSPriceOracle.sol";
-import { Mock } from "../Mock.sol";
+import { UpgradeMock } from "../UpgradeMock.sol";
 
  /* solhint-disable */
-contract ZNSPriceOracleMock is ZNSPriceOracle, Mock {}
+contract ZNSPriceOracleUpgradeMock is ZNSPriceOracle, UpgradeMock {}

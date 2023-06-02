@@ -19,8 +19,8 @@
     "typechain": "hardhat typechain",
     "test": "hardhat test",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
-    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
-    "coverage": "hardhat coverage && yarn check-coverage"
+    "coverage": "hardhat coverage",
+    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
   },
   "pre-commit": [
     "lint"

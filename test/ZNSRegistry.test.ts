@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deployZNS";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
-import { ZNSRegistryMock__factory } from "../typechain";
+import { ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
@@ -113,7 +113,7 @@ describe("ZNSRegistry", () => {
       expect(allowed).to.be.false;
     });
 
-    it("Permits an allowed operator to modify a domain record", async () => {
+    it("Permits an allowed operator to update a domain record", async () => {
       await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
 
       const tx = zns.registry
@@ -122,7 +122,7 @@ describe("ZNSRegistry", () => {
       await expect(tx).to.not.be.reverted;
     });
 
-    it("Does not permit a disallowed operator to modify a domain record", async () => {
+    it("Does not permit a disallowed operator to update a domain record", async () => {
       await zns.registry.connect(deployer).setOwnerOperator(operator.address, false);
 
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
@@ -294,7 +294,7 @@ describe("ZNSRegistry", () => {
       await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
     });
 
-    it("Can set a domain resolver if resolver is zero address", async () => {
+    it("Can update a domain resolver if resolver is zero address", async () => {
       await zns.registry
         .connect(deployer)
         .updateDomainResolver(
@@ -307,7 +307,7 @@ describe("ZNSRegistry", () => {
       expect(zeroResolver).to.be.eq(ethers.constants.AddressZero);
     });
 
-    it("Fails to set a record when caller is not owner or operator", async () => {
+    it("Fails to update a record when caller is not owner or operator", async () => {
       const tx = zns.registry
         .connect(operator)
         .updateDomainRecord(
@@ -431,7 +431,7 @@ describe("ZNSRegistry", () => {
       expect(resolverEvent.args?.[1]).to.be.eq(deployer.address);
     });
 
-    it("Emits an event when a domain's owner is set", async () => {
+    it("Emits an event when a domain's owner is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -443,7 +443,7 @@ describe("ZNSRegistry", () => {
       );
     });
 
-    it("Emits an event when a domain's resolver is set", async () => {
+    it("Emits an event when a domain's resolver is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, mockResolver.address);
@@ -469,7 +469,7 @@ describe("ZNSRegistry", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const registryFactory = new ZNSRegistryMock__factory(deployer);
+      const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
@@ -479,7 +479,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Fails when an unauthorized account tries to call to upgrade", async () => {
-      const registryFactory = new ZNSRegistryMock__factory(deployer);
+      const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
@@ -489,7 +489,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
-      const registryFactory = new ZNSRegistryMock__factory(deployer);
+      const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
       await registry.deployed();
 

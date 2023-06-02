@@ -198,7 +198,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal override {
+    function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

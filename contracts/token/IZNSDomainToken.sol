@@ -24,7 +24,6 @@ interface IZNSDomainToken is IERC721Upgradeable {
 
     /**
      * @notice Burns the token with the specified tokenId
-     * @dev TODO: Add onlyRole(REGISTRAR_ROLE)
      * @param tokenId The tokenId that the caller wishes to burn/revoke
      */
     function revoke(uint256 tokenId) external;

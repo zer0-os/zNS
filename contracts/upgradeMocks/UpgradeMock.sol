@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
  /* solhint-disable */
-contract Mock {
+contract UpgradeMock {
     uint256 public newNumber;
 
     address public newAddress;

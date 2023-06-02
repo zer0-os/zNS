@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import {
-  ZNSDomainTokenMock__factory,
+  ZNSDomainTokenUpgradeMock__factory,
   ZNSDomainToken__factory,
 } from "../typechain";
 import { expect } from "chai";
@@ -177,7 +177,7 @@ describe("ZNSDomainToken:", () => {
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       // DomainToken to upgrade to
-      const factory = new ZNSDomainTokenMock__factory(deployer);
+      const factory = new ZNSDomainTokenUpgradeMock__factory(deployer);
       const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
 
@@ -200,13 +200,13 @@ describe("ZNSDomainToken:", () => {
     it("Fails to upgrade if the caller is not authorized", async () => {
       // UUPS specifies that a call to upgrade must be made through an address that is upgradecall
       // So use a deployed proxy contract
-      const factory = new ZNSDomainTokenMock__factory(deployer);
+      const factory = new ZNSDomainTokenUpgradeMock__factory(deployer);
 
       // DomainToken to upgrade to
       const newDomainToken = await factory.deploy();
       await newDomainToken.deployed();
 
-      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      // Confirm the caller is not a governor
       await expect(zns.accessController.checkGovernor(caller.address)).to.be.revertedWith(
         getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
       );

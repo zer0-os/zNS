@@ -7,7 +7,7 @@ import * as ethers from "ethers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ZNSTreasuryMock__factory } from "../typechain";
+import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -255,7 +255,7 @@ describe("ZNSTreasury", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 
@@ -267,7 +267,7 @@ describe("ZNSTreasury", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 
@@ -276,7 +276,7 @@ describe("ZNSTreasury", () => {
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
-      const treasuryFactory = new ZNSTreasuryMock__factory(deployer);
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
       await treasury.deployed();
 

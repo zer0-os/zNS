@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { ZNSDomainToken } from "../../token/ZNSDomainToken.sol";
-import { Mock } from "../Mock.sol";
+import { UpgradeMock } from "../UpgradeMock.sol";
 
  /* solhint-disable */
-contract ZNSDomainTokenMock is ZNSDomainToken, Mock {}
+contract ZNSDomainTokenUpgradeMock is ZNSDomainToken, UpgradeMock {}

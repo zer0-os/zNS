@@ -65,7 +65,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
         stakingToken.transferFrom(depositor, address(this), stakeAmount);
         // TODO make sure we show the approval process to the user here to avoid failed transfer
         // TODO can we make it so it needs a single approval only?!
-        stakingToken.transferFrom(depositor, zeroVault, registrationFee);     
+        stakingToken.transferFrom(depositor, zeroVault, registrationFee);
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
@@ -127,7 +127,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal override {
+    function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

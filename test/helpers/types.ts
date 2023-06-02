@@ -8,46 +8,40 @@ import {
   ZNSTreasury,
   ZeroTokenMock,
   ZNSAccessController,
-  ZNSEthRegistrarMock,
-  ZNSPriceOracleMock,
-  ZNSAddressResolverMock,
-  ZNSDomainTokenMock,
-  ZNSRegistryMock,
-  ZNSTreasuryMock,
-  ZNSAddressResolverMock__factory,
-  ZNSDomainTokenMock__factory,
-  ZNSEthRegistrarMock__factory,
-  ZNSPriceOracleMock__factory,
-  ZNSRegistryMock__factory,
-  ZNSTreasuryMock__factory,
+  ZNSEthRegistrarUpgradeMock,
+  ZNSPriceOracleUpgradeMock,
+  ZNSAddressResolverUpgradeMock,
+  ZNSDomainTokenUpgradeMock,
+  ZNSRegistryUpgradeMock,
+  ZNSTreasuryUpgradeMock,
+  ZNSAddressResolverUpgradeMock__factory,
+  ZNSDomainTokenUpgradeMock__factory,
+  ZNSEthRegistrarUpgradeMock__factory,
+  ZNSPriceOracleUpgradeMock__factory,
+  ZNSRegistryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction =
-  (
-    Promise<string> |
-    Promise<boolean> |
-    Promise<BigNumber> |
-    Promise<Array<BigNumber>>
-  );
+export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
 
 export type ZNSContractMockFactory =
-  ZNSEthRegistrarMock__factory |
-  ZNSPriceOracleMock__factory |
-  ZNSTreasuryMock__factory |
-  ZNSRegistryMock__factory |
-  ZNSAddressResolverMock__factory |
-  ZNSDomainTokenMock__factory;
+  ZNSEthRegistrarUpgradeMock__factory |
+  ZNSPriceOracleUpgradeMock__factory |
+  ZNSTreasuryUpgradeMock__factory |
+  ZNSRegistryUpgradeMock__factory |
+  ZNSAddressResolverUpgradeMock__factory |
+  ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
-  ZNSEthRegistrarMock |
-  ZNSPriceOracleMock |
-  ZNSTreasuryMock |
-  ZNSRegistryMock |
-  ZNSAddressResolverMock |
-  ZNSDomainTokenMock;
+  ZNSEthRegistrarUpgradeMock |
+  ZNSPriceOracleUpgradeMock |
+  ZNSTreasuryUpgradeMock |
+  ZNSRegistryUpgradeMock |
+  ZNSAddressResolverUpgradeMock |
+  ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
   ZNSEthRegistrar |
