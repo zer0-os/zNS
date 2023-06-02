@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+
 interface IZNSAddressResolver {
     /**
      * @dev Emit when ownership of a domain is modified
