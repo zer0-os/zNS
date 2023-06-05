@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { ERC1967UpgradeUpgradeable }
-from "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistry {
-
+contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
      * about each domain
@@ -37,6 +34,11 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         _;
     }
 
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     modifier onlyOwner(bytes32 domainHash) {
         require(
             records[domainHash].owner == msg.sender,
@@ -45,17 +47,12 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         _;
     }
 
-    modifier onlyRegistrar() {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
     /**
      * @notice Initialize the ZNSRegistry contract
-     * @param _accessController The address of the AccessController contract
+     * @param accessController The address of the AccessController contract
      */
-    function initialize(address _accessController) public override initializer {
-        _setAccessController(_accessController);
+    function initialize(address accessController) public override initializer {
+        _setAccessController(accessController);
     }
 
     /**
@@ -158,6 +155,7 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
 
     /**
      * @notice Update a domain's owner
+     * @dev This could be called from the registrar as part of the `reclaim()` flow
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -165,7 +163,6 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         bytes32 domainHash,
         address owner
     ) external override {
-        // this can be called from ZNSRegistrar as part of `reclaim()` flow
         require(
             msg.sender == records[domainHash].owner ||
             accessController.isRegistrar(msg.sender),
@@ -199,12 +196,19 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
         emit DomainRecordDeleted(domainHash);
     }
 
+    /**
+     * @notice Set the access controller contract
+     * @param accessController The new access controller
+     */
     function setAccessController(
         address accessController
     ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
         _setAccessController(accessController);
     }
 
+    /**
+     * @notice Get the access controller
+     */
     function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
         return address(accessController);
     }
@@ -242,5 +246,14 @@ contract ZNSRegistry is AccessControlled, ERC1967UpgradeUpgradeable, IZNSRegistr
     ) internal {
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }

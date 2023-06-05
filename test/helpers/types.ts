@@ -6,10 +6,50 @@ import {
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
-  ZeroTokenMock, ZNSAccessController,
+  ZeroTokenMock,
+  ZNSAccessController,
+  ZNSEthRegistrarUpgradeMock,
+  ZNSPriceOracleUpgradeMock,
+  ZNSAddressResolverUpgradeMock,
+  ZNSDomainTokenUpgradeMock,
+  ZNSRegistryUpgradeMock,
+  ZNSTreasuryUpgradeMock,
+  ZNSAddressResolverUpgradeMock__factory,
+  ZNSDomainTokenUpgradeMock__factory,
+  ZNSEthRegistrarUpgradeMock__factory,
+  ZNSPriceOracleUpgradeMock__factory,
+  ZNSRegistryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type Maybe<T> = T | undefined;
+
+export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
+
+export type ZNSContractMockFactory =
+  ZNSEthRegistrarUpgradeMock__factory |
+  ZNSPriceOracleUpgradeMock__factory |
+  ZNSTreasuryUpgradeMock__factory |
+  ZNSRegistryUpgradeMock__factory |
+  ZNSAddressResolverUpgradeMock__factory |
+  ZNSDomainTokenUpgradeMock__factory;
+
+export type ZNSContractMock =
+  ZNSEthRegistrarUpgradeMock |
+  ZNSPriceOracleUpgradeMock |
+  ZNSTreasuryUpgradeMock |
+  ZNSRegistryUpgradeMock |
+  ZNSAddressResolverUpgradeMock |
+  ZNSDomainTokenUpgradeMock;
+
+export type ZNSContract =
+  ZNSEthRegistrar |
+  ZNSPriceOracle |
+  ZNSTreasury |
+  ZNSRegistry |
+  ZNSAddressResolver |
+  ZNSDomainToken;
 
 export interface PriceParams {
   maxRootDomainPrice : BigNumber;
@@ -39,4 +79,13 @@ export interface ZNSContracts {
   treasury : ZNSTreasury;
   priceOracle : ZNSPriceOracle;
   registrar : ZNSEthRegistrar;
+}
+
+export interface DeployZNSParams {
+  deployer : SignerWithAddress;
+  governorAddresses : Array<string>;
+  adminAddresses : Array<string>;
+  priceConfig ?: PriceParams;
+  registrationFeePerc ?: BigNumber;
+  zeroVaultAddress ?: string;
 }

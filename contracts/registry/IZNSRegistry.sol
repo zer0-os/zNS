@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+
 interface IZNSRegistry {
 
     /**
@@ -53,10 +54,10 @@ interface IZNSRegistry {
     );
 
     /**
-     * @notice Initialize the ZNSRegistry contract
-     * @param _accessController The address of the AccessController contract
+     * @notice Create an instance of the ZNSRegistry contract
+     * @param accessController The addrss of the access controller
      */
-    function initialize(address _accessController) external;
+    function initialize(address accessController) external;
 
     /**
      * @notice Check if a given domain exists
@@ -159,5 +160,8 @@ interface IZNSRegistry {
      */
     function setAccessController(address accessController) external;
 
-    function getAccessController() external view returns (address);
+    /**
+     * @notice Get the access controller contract
+     */
+    function getAccessController() view external returns(address);
 }

@@ -1,12 +1,13 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkBalance, deployZNS } from "./helpers";
-import { ZNSContracts } from "./helpers/types";
+import { checkBalance, deployZNS, validateUpgrade } from "./helpers";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { hashDomainLabel } from "./helpers/hashing";
-import { ADMIN_ROLE, REGISTRAR_ROLE } from "./helpers/access";
+import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
+import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -31,12 +32,14 @@ describe("ZNSTreasury", () => {
       randomAcc,
     ] = await hre.ethers.getSigners();
 
-    zns = await deployZNS({
+    const params : DeployZNSParams = {
       deployer,
       governorAddresses: [governor.address],
       adminAddresses: [admin.address],
       zeroVaultAddress: zeroVault.address,
-    });
+    };
+
+    zns = await deployZNS(params);
 
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
@@ -187,9 +190,9 @@ describe("ZNSTreasury", () => {
       );
     });
 
-    it("Should revert when znsPriceOracle is address 0", async () => {
+    it("Should revert when priceOracle is address 0", async () => {
       const tx = zns.treasury.setPriceOracle(ethers.constants.AddressZero);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: znsPriceOracle_ passed as 0x0 address");
+      await expect(tx).to.be.revertedWith("ZNSTreasury: priceOracle_ passed as 0x0 address");
     });
   });
 
@@ -242,6 +245,62 @@ describe("ZNSTreasury", () => {
     it("Should revert when accessController is address 0", async () => {
       const tx = zns.treasury.setAccessController(ethers.constants.AddressZero);
       await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+    });
+  });
+
+  describe("UUPS", () => {
+    it("Allows an authorized user can upgrade the contract", async () => {
+      // Confirm deployer has the correct role first
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
+    });
+
+    it("Fails when an unauthorized user tries to upgrade the contract", async () => {
+      expect(
+        await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
+      ).to.be.true;
+
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      const deployTx = zns.treasury.connect(user).upgradeTo(treasury.address);
+      await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
+      const treasury = await treasuryFactory.deploy();
+      await treasury.deployed();
+
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const domainName = "world";
+      const domainHash = hashDomainName(domainName);
+
+      await zns.treasury.connect(mockRegistrar).stakeForDomain(
+        domainHash,
+        domainName,
+        deployer.address,
+        true
+      );
+
+      const calls = [
+        treasury.priceOracle(),
+        treasury.stakingToken(),
+        treasury.zeroVault(),
+        treasury.stakedForDomain(domainHash),
+      ];
+
+      await validateUpgrade(deployer, zns.treasury, treasury, treasuryFactory, calls);
     });
   });
 });

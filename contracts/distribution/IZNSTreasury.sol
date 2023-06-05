@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+
 interface IZNSTreasury {
     /**
      * @notice Emitted when a new stake is deposited
@@ -28,9 +29,9 @@ interface IZNSTreasury {
         uint256 indexed amount
     );
 
-    event PriceOracleSet(address znsPriceOracle);
+    event PriceOracleSet(address priceOracle);
 
-    event StakingTokenSet(address znsStakingToken);
+    event StakingTokenSet(address stakingToken);
 
     event ZeroVaultAddressSet(address zeroVault);
 
@@ -45,11 +46,18 @@ interface IZNSTreasury {
 
     function setZeroVaultAddress(address zeroVaultAddress) external;
 
-    function setPriceOracle(address znsPriceOracle_) external;
+    function setPriceOracle(address priceOracle_) external;
 
     function setStakingToken(address stakingToken_) external;
 
     function setAccessController(address accessController) external;
 
     function getAccessController() external view returns (address);
+
+    function initialize(
+        address accessController_,
+        address priceOracle_,
+        address stakingToken_,
+        address zeroVault_
+    ) external;
 }
