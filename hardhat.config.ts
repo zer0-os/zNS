@@ -7,6 +7,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 
 
@@ -60,11 +61,16 @@ const config : HardhatUserConfig = {
   },
 };
 
-// These are needed for tenderly verification to be automatic,
-// they don't seem to work with DevNet for some reason,
-// however Tenderly operations do not work if we don't call
-// this here, it is required for integration with Hardhat.
-// !!! This should be uncommented when using Tenderly DevNet !!!
+// This call is needed to initialize Tenderly with Hardhat,
+// the automatic verifications, though, don't seem to work,
+// needing us to verify explicitly in code, however,
+// for Tenderly to work properly with Hardhat this method
+// needs to be called. The call below is commented out
+// because if we leave it here, solidity-coverage
+// does not work properly locally or in CI, so we
+// keep it commented out and uncomment when using DevNet
+// locally.
+// !!! Uncomment this when using Tenderly DevNet !!!
 // tenderly.setup({ automaticVerifications: true });
 
 export default config;

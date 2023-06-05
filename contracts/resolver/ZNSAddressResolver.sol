@@ -2,12 +2,13 @@
 pragma solidity ^0.8.18;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
-contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
+contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
     /**
      * @notice Address of the ZNSRegistry contract that holds all crucial data
      *         for every domain in the system
@@ -21,10 +22,12 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
     mapping(bytes32 domainHash => address resolvedAddress)
         private addressOf;
 
-    constructor(
-        address _accessController,
-        address _registry
-    ) {
+    /**
+     * @notice Initialize an instance of the ZNSAddressResolver
+     * @param _accessController The access controller
+     * @param _registry The registry address
+     */
+    function initialize(address _accessController, address _registry) public override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
     }
@@ -78,7 +81,7 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
      * @dev Exposes IZNSAddressResolver interfaceId
      */
     function getInterfaceId() public pure override returns (bytes4) {
-          return type(IZNSAddressResolver).interfaceId;
+        return type(IZNSAddressResolver).interfaceId;
     }
 
     function setRegistry(address _registry) public override onlyAdmin {
@@ -99,5 +102,14 @@ contract ZNSAddressResolver is AccessControlled, ERC165, IZNSAddressResolver {
 
     function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }

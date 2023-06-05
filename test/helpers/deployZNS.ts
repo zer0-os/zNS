@@ -1,6 +1,7 @@
 import {
   ZeroTokenMock,
-  ZeroTokenMock__factory, ZNSAccessController,
+  ZeroTokenMock__factory,
+  ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
   ZNSDomainToken,
@@ -14,23 +15,32 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import { ethers } from "hardhat";
-import { PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { ethers, upgrades } from "hardhat";
+import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { priceConfigDefault, registrationFeePercDefault } from "./constants";
+import {
+  priceConfigDefault,
+  registrationFeePercDefault,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+} from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
-
 
 export const deployRegistry = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
-  const registry = await registryFactory.deploy();
-
-  // To set the owner of the zero domain to the deployer
-  await registry.connect(deployer).initialize(accessControllerAddress);
+  const registry = await hre.upgrades.deployProxy(
+    registryFactory,
+    [
+      accessControllerAddress,
+    ],
+    {
+      kind: "uups",
+    }) as ZNSRegistry;
 
   return registry;
 };
@@ -41,12 +51,19 @@ export const deployAddressResolver = async (
   registryAddress : string
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
-  const addressResolver = await addressResolverFactory.deploy(
-    accessControllerAddress,
-    registryAddress
-  );
 
-  return addressResolver;
+  const resolver = await upgrades.deployProxy(
+    addressResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSAddressResolver;
+
+  return resolver;
 };
 
 export const deployPriceOracle = async ({
@@ -61,13 +78,18 @@ export const deployPriceOracle = async ({
   registrationFee : BigNumber;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
-  const priceOracle = await priceOracleFactory.deploy();
 
-  await priceOracle.initialize(
-    accessControllerAddress,
-    priceConfig,
-    registrationFee
-  );
+  const priceOracle = await upgrades.deployProxy(
+    priceOracleFactory,
+    [
+      accessControllerAddress,
+      priceConfig,
+      registrationFee,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSPriceOracle;
 
   return priceOracle;
 };
@@ -77,11 +99,19 @@ export const deployDomainToken = async (
   accessControllerAddress : string
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
-  return domainTokenFactory.deploy(
-    "ZNSDomainToken",
-    "ZDT",
-    accessControllerAddress
-  );
+  const domainToken = await upgrades.deployProxy(
+    domainTokenFactory,
+    [
+      accessControllerAddress,
+      ZNS_DOMAIN_TOKEN_NAME,
+      ZNS_DOMAIN_TOKEN_SYMBOL,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSDomainToken;
+
+  return domainToken;
 };
 
 export const deployZeroTokenMock = async (
@@ -94,17 +124,23 @@ export const deployZeroTokenMock = async (
 export const deployTreasury = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  znsPriceOracleAddress : string,
-  zTokenMockMockAddress : string,
+  priceOracleAddress : string,
+  zTokenMockAddress : string,
   zeroVaultAddress : string
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  const treasury = await treasuryFactory.deploy(
-    accessControllerAddress,
-    znsPriceOracleAddress,
-    zTokenMockMockAddress,
-    zeroVaultAddress
-  );
+  const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
+    [
+      accessControllerAddress,
+      priceOracleAddress,
+      zTokenMockAddress,
+      zeroVaultAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSTreasury;
+
   return treasury;
 };
 
@@ -114,13 +150,20 @@ export const deployRegistrar = async (
   config : RegistrarConfig
 ) : Promise<ZNSEthRegistrar> => {
   const registrarFactory = new ZNSEthRegistrar__factory(deployer);
-  const registrar = await registrarFactory.deploy(
-    accessController.address,
-    config.registryAddress,
-    config.treasury.address,
-    config.domainTokenAddress,
-    config.addressResolverAddress
-  );
+
+  const registrar = await upgrades.deployProxy(
+    registrarFactory,
+    [
+      accessController.address,
+      config.registryAddress,
+      config.treasury.address,
+      config.domainTokenAddress,
+      config.addressResolverAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSEthRegistrar;
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
@@ -134,14 +177,7 @@ export const deployZNS = async ({
   priceConfig = priceConfigDefault,
   registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
-} : {
-  deployer : SignerWithAddress;
-  governorAddresses : Array<string>;
-  adminAddresses : Array<string>;
-  priceConfig ?: PriceParams;
-  registrationFeePerc ?: BigNumber;
-  zeroVaultAddress ?: string;
-}) : Promise<ZNSContracts> => {
+} : DeployZNSParams) : Promise<ZNSContracts> => {
   const accessController = await deployAccessController({
     deployer,
     governorAddresses: [deployer.address, ...governorAddresses],
@@ -194,6 +230,13 @@ export const deployZNS = async ({
     priceOracle,
     registrar,
   };
+
+  // Final configuration steps
+  // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
+  // for Registrar to be owner/operator of the root
+
+  // TODO verify tests are fine without this line
+  // await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);

@@ -10,7 +10,6 @@ abstract contract AccessControlled {
 
     IZNSAccessController internal accessController;
 
-
     modifier onlyAdmin() {
         accessController.checkAdmin(msg.sender);
         _;
