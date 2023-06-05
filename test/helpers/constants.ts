@@ -2,7 +2,7 @@ import { BigNumber } from "ethers";
 import { PriceParams } from "./types";
 import { ethers } from "hardhat";
 
-export const ZNS_DOMAIN_TOKEN_NAME = "ZNSDomainToken";
+export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
 export const registrationFeePercDefault = BigNumber.from("222");
