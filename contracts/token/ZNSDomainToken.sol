@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
-
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
@@ -9,19 +9,19 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 /**
  * @title A contract for tokenizing domains under ZNS
  */
-contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
+contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
 
-    modifier onlyRegistrar() {
+    modifier onlyRegistrar {
         accessController.checkRegistrar(msg.sender);
         _;
     }
 
-
-    constructor(
+    function initialize(
+        address accessController,
         string memory tokenName,
-        string memory tokenSymbol,
-        address accessController
-    ) ERC721(tokenName, tokenSymbol) {
+        string memory tokenSymbol
+    ) external override initializer {
+        __ERC721_init(tokenName, tokenSymbol);
         _setAccessController(accessController);
     }
 
@@ -52,5 +52,14 @@ contract ZNSDomainToken is AccessControlled, ERC721, IZNSDomainToken {
 
     function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {
         return address(accessController);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }

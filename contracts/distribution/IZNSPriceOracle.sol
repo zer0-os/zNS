@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+
 interface IZNSPriceOracle {
     event BasePriceSet(uint256 price, bool isSubdomain);
     event PriceMultiplierSet(uint256 multiplier);

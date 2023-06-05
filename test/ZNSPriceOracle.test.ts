@@ -4,10 +4,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR } from "./helpers";
+import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR, validateUpgrade } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { ADMIN_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
+import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -578,6 +579,54 @@ describe("ZNSPriceOracle", () => {
 
       const tx = zns.priceOracle.connect(deployer).setBaseLengths(newLength, newLength);
       await expect(tx).to.emit(zns.priceOracle, "BaseLengthsSet").withArgs(newLength, newLength);
+    });
+  });
+  describe("UUPS", () => {
+    it("Allows an authorized user to upgrade the contract", async () => {
+      // PriceOracle to upgrade to
+      const factory = new ZNSPriceOracle__factory(deployer);
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const tx = zns.priceOracle.connect(deployer).upgradeTo(newPriceOracle.address);
+      await expect(tx).to.not.be.reverted;
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      // PriceOracle to upgrade to
+      const factory = new ZNSPriceOracleUpgradeMock__factory(deployer);
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      // Confirm the account is not a governor
+      await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
+
+      const tx = zns.priceOracle.connect(randomAcc).upgradeTo(newPriceOracle.address);
+
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(randomAcc.address, GOVERNOR_ROLE)
+      );
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      const factory = new ZNSPriceOracleUpgradeMock__factory(deployer);
+      const newPriceOracle = await factory.deploy();
+      await newPriceOracle.deployed();
+
+      await zns.priceOracle.connect(deployer).setBaseLength("7", true);
+      await zns.priceOracle.connect(deployer).setPriceMultiplier("310");
+      await zns.priceOracle.connect(deployer).setMaxPrice(ethers.utils.parseEther("0.7124"), true);
+
+      const contractCalls = [
+        zns.priceOracle.priceConfig(),
+        zns.priceOracle.feePercentage(),
+        zns.priceOracle.getPrice("wilder", true),
+      ];
+
+      await validateUpgrade(deployer, zns.priceOracle, newPriceOracle, factory, contractCalls);
     });
   });
 });
