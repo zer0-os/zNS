@@ -3,54 +3,44 @@ pragma solidity ^0.8.18;
 
 
 interface IZNSPriceOracle {
-    event BasePriceSet(uint256 price, bool isSubdomain);
+    event MaxPriceSet(uint256 price);
+    event MinPriceSet(uint256 price);
     event PriceMultiplierSet(uint256 multiplier);
-    event BaseLengthSet(uint256 length, bool isRootDomain);
-    event BaseLengthsSet(uint256 rootDomainLength, uint256 subdomainLength);
+    event BaseLengthSet(uint256 length);
+    event MaxLengthSet(uint256 length);
+    event PrecisionMultiplierSet(uint256 precision);
     event FeePercentageSet(uint256 feePercentage);
+    event PriceConfigSet(
+        uint256 maxPrice,
+        uint256 minPrice,
+        uint256 maxLength,
+        uint256 baseLength,
+        uint256 priceMultiplier,
+        uint256 precisionMultiplier
+    );
 
     /**
      * @notice Struct for each configurable price variable
      */
-    // TODO ora: split this into 2 structs. one for domains, one for subdomains
-    //   we can remove the subdomain one for the MVP and then add later.
-    struct PriceParams {
+    struct DomainPriceConfig {
         /**
-         * @notice Maximum price for root domains
-         */
-        uint256 maxRootDomainPrice;
+         * @notice Maximum price for a domain
+        */
+        uint256 maxPrice;
         /**
-         * @notice Minimum price for root domains
+         * @notice Minimum price for a domain
          */
-        uint256 minRootDomainPrice;
-        /**
-         * @notice Maximum price for subdomains
-         */
-        uint256 maxSubdomainPrice;
-        /**
-         * @notice Minimum price for subdomains
-         */
-        uint256 minSubdomainPrice;
+        uint256 minPrice;
         /**
          * @notice Maximum length of a domain name. If the name is longer than this
-         * value we return the `minRootDomainPrice`
+         * value we return the `minPrice`
          */
-        uint256 maxRootDomainLength;
+        uint256 maxLength;
         /**
          * @notice Base length of a domain name. If the name is less than or equal to
-         * this value we return the `maxRootDomainPrice`
+         * this value we return the `maxPrice`
          */
-        uint256 baseRootDomainLength;
-        /**
-         * @notice Maximum length of a domain name. If the name is longer than this
-         * value, we return the `minSubdomainPrice`
-         */
-        uint256 maxSubdomainLength;
-        /*
-         * @notice The base domain name length for subdomains. If the name is less than
-         * or equal to this value we return the `maxRootDomainPrice`
-         */
-        uint256 baseSubdomainLength;
+        uint256 baseLength;
         /**
          * @notice The price multiplier used in calculation for a given domain name's length
          * We store this value with two decimals of precision for division later in calculation
@@ -59,21 +49,19 @@ interface IZNSPriceOracle {
          * it here because it creates a reasonable decline in pricing visually when graphed.
          */
         uint256 priceMultiplier;
-    }
-
-    struct DomainPriceConfig {
-        uint256 maxPrice;
-        uint256 minPrice;
-        uint256 maxLength;
-        uint256 baseLength;
-        uint256 multiplier;
+        /**
+         * @notice The precision multiplier of the price. This multiplier
+         * should be picked based on the number of token decimals to calculate properly.
+         * e.g. if we use a token with 18 decimals, and want precision of 2,
+         * our precision multiplier will be equal 10^18 - 10^2 = 10^16
+         */
         // TODO ora: make this work properly
-        uint256 precision;
+        uint256 precisionMultiplier;
     }
 
     function initialize(
         address accessController_,
-        PriceParams calldata priceConfig_,
+        DomainPriceConfig calldata priceConfig_,
         uint256 regFeePercentage_
     ) external;
 

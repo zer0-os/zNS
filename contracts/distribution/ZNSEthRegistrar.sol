@@ -11,6 +11,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 
 
 contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar {
+
     IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -96,9 +97,9 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     // TODO: figure out how to guard this so people can stake tokens
     //  without the risk of staking contract or wallet to call reclaim+revoke
     //  from underneath them
-    function revokeDomain(bytes32 domainHash) 
+    function revokeDomain(bytes32 domainHash)
     external
-    override 
+    override
     onlyNameOwner(domainHash)
     onlyTokenOwner(domainHash)
     {
@@ -162,7 +163,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
 
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSEthRegistrar) 
+    override(AccessControlled, IZNSEthRegistrar)
     onlyAdmin
     {
         _setAccessController(accessController_);

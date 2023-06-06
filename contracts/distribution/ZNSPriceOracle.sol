@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
@@ -15,24 +15,21 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     /**
+     * @notice Struct for each configurable price variable
+     */
+    // TODO ora: rework and add more setters for every single var
+    DomainPriceConfig public rootDomainPriceConfig;
+
+    /**
      * @notice The registration fee value in percentage as basis points (parts per 10,000)
      *  so the 2% value would be represented as 200.
      *  See {getRegistrationFee} for the actual fee calc process.
      */
     uint256 public feePercentage;
 
-    /**
-     * @notice Struct for each configurable price variable
-     */
-    // TODO: rework and add more setters for every single var
-    DomainPriceConfig public rootDomainPriceConfig;
-
-    // TODO: rework setters here for a better structure!
-    // TODO: remove subdomain logic
-
     function initialize(
         address accessController_,
-        PriceParams calldata priceConfig_,
+        DomainPriceConfig calldata priceConfig_,
         uint256 regFeePercentage_
     ) public override initializer {
         _setAccessController(accessController_);
@@ -44,11 +41,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     /**
      * @notice Get the price of a given domain name
      * @param name The name of the domain to check
-     * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
      */
     function getPrice(
-        string calldata name,
-        bool isRootDomain
+        string calldata name
     ) external view override returns (
         uint256 totalPrice,
         uint256 domainPrice,
@@ -58,25 +53,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         // No pricing is set for 0 length domains
         if (length == 0) return (0, 0, 0);
 
-        if (isRootDomain) {
-            domainPrice = _getPrice(
-                length,
-                rootDomainPriceConfig.baseRootDomainLength,
-                rootDomainPriceConfig.maxRootDomainPrice,
-                rootDomainPriceConfig.maxRootDomainLength,
-                rootDomainPriceConfig.minRootDomainPrice
-            );
-        } else {
-            domainPrice = _getPrice(
-                length,
-                rootDomainPriceConfig.baseSubdomainLength,
-                rootDomainPriceConfig.maxSubdomainPrice,
-                rootDomainPriceConfig.maxSubdomainLength,
-                rootDomainPriceConfig.minSubdomainPrice
-            );
-        }
-
+        domainPrice = _getPrice(length);
         fee = getRegistrationFee(domainPrice);
+
         totalPrice = domainPrice + fee;
     }
 
@@ -84,8 +63,19 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
     }
 
-    function setPriceConfig(DomainPriceConfig calldata priceConfig_) external override onlyAdmin {
-        rootDomainPriceConfig = priceConfig_;
+    function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
+        require(priceConfig.multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+
+        rootDomainPriceConfig = priceConfig;
+
+        emit PriceConfigSet(
+            priceConfig.maxPrice,
+            priceConfig.minPrice,
+            priceConfig.maxLength,
+            priceConfig.baseLength,
+            priceConfig.priceMultiplier,
+            priceConfig.precisionMultiplier
+        );
     }
 
     /**
@@ -96,19 +86,41 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param isRootDomain Flag for if the price is to be set for a root or subdomain
      */
     function setMaxPrice(
-        uint256 maxPrice,
-        bool isRootDomain
+        uint256 maxPrice
     ) external override onlyAdmin {
-        if (isRootDomain) {
-            rootDomainPriceConfig.maxRootDomainPrice = maxPrice;
-        } else {
-            rootDomainPriceConfig.maxSubdomainPrice = maxPrice;
-        }
+        rootDomainPriceConfig.maxPrice = maxPrice;
 
-        emit BasePriceSet(maxPrice, isRootDomain);
+        emit MaxPriceSet(maxPrice);
     }
 
-    // TODO reg: function setMaxPrices(root, subdomains)
+    function setMinPrice(
+        uint256 minPrice
+    ) external override onlyAdmin {
+        rootDomainPriceConfig.minPrice = minPrice;
+
+        emit MinPriceSet(minPrice);
+    }
+
+    /**
+     * @notice Set the value of the domain name length boundary where the default price applies
+     * e.g. A value of '5' means all domains <= 5 in length cost the default price
+     * @param length Boundary to set
+     */
+    function setBaseLength(
+        uint256 length
+    ) external override onlyAdmin {
+        rootDomainPriceConfig.baseLength = length;
+
+        emit BaseLengthSet(length);
+    }
+
+    function setMaxLength(
+        uint256 length
+    ) external override onlyAdmin {
+        rootDomainPriceConfig.maxLength = length;
+
+        emit MaxLengthSet(length);
+    }
 
     /**
      * @notice In price calculation we use a `multiplier` to adjust how steep the
@@ -131,40 +143,34 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit PriceMultiplierSet(multiplier);
     }
 
+    /**
+     * @notice Set the precision multiplier for the price calculation.
+     * @param multiplier This should be picked based on the number of token decimals
+     * to calculate properly.
+     * e.g. if we use a token with 18 decimals, and want precision of 2,
+     * our precision multiplier will be equal to 10^18 - 10^2 = 10^16
+     */
+    function setPrecisionMultiplier(
+        uint256 multiplier
+    ) external override onlyAdmin {
+        require(multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        rootDomainPriceConfig.precisionMultiplier = multiplier;
+
+        emit PrecisionMultiplierSet(multiplier);
+    }
+
     function setRegistrationFeePercentage(uint256 regFeePercentage)
     external
     override
-    onlyAdmin
-    {
+    onlyAdmin {
         feePercentage = regFeePercentage;
         emit FeePercentageSet(regFeePercentage);
-    }
-
-    /**
-     * @notice Set the value of the domain name length boundary where the default price applies
-     * e.g. A value of '5' means all domains <= 5 in length cost the default price
-     * @param length Boundary to set
-     * @param isRootDomain Flag for if the price is to be set for a root or subdomain
-     */
-    // TODO reg: make these 2 functions better when removing subdomain logic
-    function setBaseLength(
-        uint256 length,
-        bool isRootDomain
-    ) external override onlyAdmin {
-        if (isRootDomain) {
-            rootDomainPriceConfig.baseRootDomainLength = length;
-        } else {
-            rootDomainPriceConfig.baseSubdomainLength = length;
-        }
-
-        emit BaseLengthSet(length, isRootDomain);
     }
 
     function setAccessController(address accessController)
     external
     override(AccessControlled, IZNSPriceOracle)
-    onlyAdmin
-    {
+    onlyAdmin {
         _setAccessController(accessController);
     }
 
@@ -183,29 +189,25 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param minPrice The minimum price for that domain category
      */
     function _getPrice(
-        uint256 length,
-        uint256 baseLength,
-        uint256 maxPrice,
-        uint256 maxLength,
-        uint256 minPrice
+        uint256 length
     ) internal view returns (uint256) {
-        if (length <= baseLength) return maxPrice;
-        if (length > maxLength) return minPrice;
+        DomainPriceConfig memory config = rootDomainPriceConfig;
 
-        // Pull into memory to save external calls to storage
-        uint256 multiplier = rootDomainPriceConfig.priceMultiplier;
+        if (length <= config.baseLength) return config.maxPrice;
+        if (length > config.maxLength) return config.minPrice;
 
         // TODO truncate to everything after the decimal, we don't want fractional prices
         // Should this be here vs. in the dApp?
 
         // This creates an asymptotic curve that decreases in pricing based on domain name length
-        // Because there are no decimals in ETH we set the muliplier as 100x higher
+        // Because there are no decimal fractions in Solidity we set the muliplier as 100x higher
         // than it is meant to be, so we divide by 100 to reverse that action here.
         // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
         return
-        (baseLength * multiplier * maxPrice) /
-        (length + (3 * multiplier)) /
-        100;
+        (config.baseLength * config.priceMultiplier * config.maxPrice) /
+        (length + (3 * config.priceMultiplier)) /
+        (100 * config.precisionMultiplier)
+        * config.precisionMultiplier;
     }
 
     /**
