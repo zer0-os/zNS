@@ -68,11 +68,9 @@ interface IZNSPriceOracle {
     /**
      * @notice Get the price of a given domain name length
      * @param name The name of the domain to check
-     * @param isRootDomain Flag for which base price to use. True for root, false for subdomains
      */
     function getPrice(
-        string calldata name,
-        bool isRootDomain
+        string calldata name
     ) external view returns (
         uint256 totalPrice,
         uint256 domainPrice,
@@ -85,14 +83,26 @@ interface IZNSPriceOracle {
      */
     function getRegistrationFee(uint256 domainPrice) external view returns (uint256);
 
+    function setPriceConfig(DomainPriceConfig calldata priceConfig) external;
+
     /**
      * @notice Set the base price for root domains
      * If this value or the `priceMultiplier` value is `0` the price of any domain will also be `0`
      *
-     * @param basePrice The price to set in $ZERO
-     * @param isRootDomain Flag for if the price is to be set for a root or subdomain
+     * @param maxPrice The price to set in $ZERO
      */
-    function setMaxPrice(uint256 basePrice, bool isRootDomain) external;
+    function setMaxPrice(uint256 maxPrice) external;
+
+    function setMinPrice(uint256 minPrice) external;
+
+    /**
+     * @notice Set the value of the domain name length boundary where the default price applies
+     * e.g. A value of '5' means all domains <= 5 in length cost the default price
+     * @param length Boundary to set
+     */
+    function setBaseLength(uint256 length) external;
+
+    function setMaxLength(uint256 length) external;
 
     /**
      * @notice In price calculation we use a `multiplier` to adjust how steep the
@@ -103,22 +113,9 @@ interface IZNSPriceOracle {
      */
     function setPriceMultiplier(uint256 multiplier) external;
 
+    function setPrecisionMultiplier(uint256 multiplier) external;
+
     function setRegistrationFeePercentage(uint256 regFeePercentage) external;
-
-    /**
-     * @notice Set the value of the domain name length boundary where the default price applies
-     * e.g. A value of '5' means all domains <= 5 in length cost the default price
-     * @param length Boundary to set
-     * @param isRootDomain Flag for if the price is to be set for a root or subdomain
-     */
-    function setBaseLength(uint256 length, bool isRootDomain) external;
-
-    /**
-     * @notice Set the value of both base lengt variables
-     * @param rootLength The length for root domains
-     * @param subdomainLength The length for subdomains
-     */
-    function setBaseLengths(uint256 rootLength, uint256 subdomainLength) external;
 
     function setAccessController(address accessController) external;
 

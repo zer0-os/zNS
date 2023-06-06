@@ -64,7 +64,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     }
 
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
-        require(priceConfig.multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        require(priceConfig.precisionMultiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
 
         rootDomainPriceConfig = priceConfig;
 
@@ -83,7 +83,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * `priceMultiplier` value is `0` the price of any domain will also be `0`
      *
      * @param maxPrice The price to set in $ZERO
-     * @param isRootDomain Flag for if the price is to be set for a root or subdomain
      */
     function setMaxPrice(
         uint256 maxPrice
@@ -183,10 +182,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * a root domain or a subdomain.
      *
      * @param length The length of the domain name
-     * @param baseLength The base length to reach before we actually do the calculation
-     * @param maxPrice The base price to calculate with
-     * @param maxLength The maximum length of a name before turning the minimum price
-     * @param minPrice The minimum price for that domain category
      */
     function _getPrice(
         uint256 length
