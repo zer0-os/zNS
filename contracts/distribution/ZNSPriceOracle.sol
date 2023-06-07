@@ -191,18 +191,20 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        // TODO truncate to everything after the decimal, we don't want fractional prices
-        // Should this be here vs. in the dApp?
-
         // This creates an asymptotic curve that decreases in pricing based on domain name length
         // Because there are no decimal fractions in Solidity we set the muliplier as 100x higher
         // than it is meant to be, so we divide by 100 to reverse that action here.
         // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
+        // we then divide it by the precision multiplier to remove numbers
+        // past chose precision we don't care about
+        // we then multiply by the same precision multiplier to get the actual value
+        // with truncated values past precision
+        // so having a value of 15.235234324234512365 * 10^18 with precision 2
+        // would give us 15.230000000000000000 * 10^18
         return
-        (config.baseLength * config.priceMultiplier * config.maxPrice) /
-        (length + (3 * config.priceMultiplier)) /
-        (100 * config.precisionMultiplier)
-        * config.precisionMultiplier;
+        (config.baseLength * config.priceMultiplier * config.maxPrice)
+        / (length + (3 * config.priceMultiplier)) / 100
+        / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
