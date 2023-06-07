@@ -163,7 +163,7 @@ describe("ZNSEthRegistrar", () => {
       const domainHash = await getDomainHashFromEvent(tx);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, true);
+      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });
@@ -678,7 +678,7 @@ describe("ZNSEthRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.priceOracle.getPrice(domainName, true),
+        zns.priceOracle.getPrice(domainName),
       ];
 
       await validateUpgrade(deployer, zns.registrar, registrar, registrarFactory, contractCalls);
