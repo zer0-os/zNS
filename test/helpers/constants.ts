@@ -6,16 +6,16 @@ export const ZNS_DOMAIN_TOKEN_NAME = "ZNSDomainToken";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
 export const registrationFeePercDefault = BigNumber.from("222");
-export const decimalsDefault = BigNumber.from(10).pow(BigNumber.from(18));
-export const precisionDefault = BigNumber.from(10).pow(BigNumber.from(2));
-export const precisionMultiDefault = decimalsDefault.sub(precisionDefault);
+export const decimalsDefault = BigNumber.from(18);
+export const precisionDefault = BigNumber.from(2);
+export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
 export const percentageMulti = BigNumber.from(100);
 
 export const priceConfigDefault : PriceParams = {
-  maxPrice: ethers.utils.parseEther("1"),
-  minPrice: ethers.utils.parseEther("0.001"),
+  maxPrice: ethers.utils.parseEther("1000"),
+  minPrice: ethers.utils.parseEther("50"),
   maxLength: BigNumber.from(100),
-  baseLength: BigNumber.from(3),
+  baseLength: BigNumber.from(4),
   priceMultiplier: ethers.BigNumber.from("390"),
   precisionMultiplier: precisionMultiDefault,
 };

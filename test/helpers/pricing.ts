@@ -38,7 +38,8 @@ export const getPrice = async (
 
   // TODO ora: test that the calcs here and on contract are correct!!!
   const expectedPrice = numerator.div(denominator)
-    .div(percentageMulti.mul(precisionMultiplier))
+    .div(percentageMulti)
+    .div(precisionMultiplier)
     .mul(precisionMultiplier);
 
   return expectedPrice;
