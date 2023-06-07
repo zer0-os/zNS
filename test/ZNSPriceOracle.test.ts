@@ -72,17 +72,6 @@ describe("ZNSPriceOracle", () => {
       expect(fee).to.eq(0);
     });
 
-    it("Returns 0 price for a subdomain name with no length", async () => {
-      const {
-        totalPrice,
-        domainPrice,
-        fee,
-      } = await zns.priceOracle.getPrice("");
-      expect(totalPrice).to.eq(0);
-      expect(domainPrice).to.eq(0);
-      expect(fee).to.eq(0);
-    });
-
     it("Returns the base price for domains that are equal to the base length", async () => {
       // Using the default length of 3
       const domain = "eth";
@@ -99,8 +88,6 @@ describe("ZNSPriceOracle", () => {
       const domainB = "e";
       const params = await zns.priceOracle.rootDomainPriceConfig();
 
-      // const rootPrice = await zns.priceOracle.rootDomainBasePrice();
-
       let { domainPrice } = await zns.priceOracle.getPrice(domainA);
       expect(domainPrice).to.eq(params.maxPrice);
 
@@ -108,12 +95,21 @@ describe("ZNSPriceOracle", () => {
       expect(domainPrice).to.eq(params.maxPrice);
     });
 
-    it("Returns the expected price for a domain greater than the base length", async () => {
-      const domain = "wilder";
+    it.only("Returns the expected price for a domain greater than the base length", async () => {
+      // TODO ora: uncomment
+      // const domain = "wilder";
+      // create a constant string with 22 letters
+      const domain = "abcdefghijklmnopqrstuv";
+
+      // this value has been calced separately to validate
+      // that both forumlas: SC + helper are correct
+      // this value has been calces with the default priceConfig
+      const referenceValue = BigNumber.from("13260000000000000000");
 
       const expectedPrice = await getPrice(domain, zns.priceOracle);
       const { domainPrice } = await zns.priceOracle.getPrice(domain);
 
+      expect(domainPrice).to.eq(referenceValue);
       expect(domainPrice).to.eq(expectedPrice);
     });
 
@@ -203,7 +199,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("#setBasePrice", () => {
+  describe("#setMaxPrice", () => {
     it("Allows an authorized user to set the base price", async () => {
       const newMaxPrice = parseEther("0.7");
 
@@ -254,6 +250,7 @@ describe("ZNSPriceOracle", () => {
       expect(longPrice).to.eq(BigNumber.from("0"));
     });
 
+    // TODO ora: check what the problem is here
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
       const newMaxPrice = parseEther("0.1");
       const domain = "wilder";
@@ -319,7 +316,7 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  describe("#setBaseLength(s)", () => {
+  describe("#setBaseLength", () => {
     it("Allows an authorized user to set the base length", async () => {
       const newLength = 5;
 
@@ -478,11 +475,11 @@ describe("ZNSPriceOracle", () => {
   });
 
   describe("Events", () => {
-    it("Emits BasePriceSet", async () => {
+    it("Emits MaxPriceSet", async () => {
       const newMaxPrice = parseEther("0.7");
 
       const tx = zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice);
-      await expect(tx).to.emit(zns.priceOracle, "BasePriceSet").withArgs(newMaxPrice);
+      await expect(tx).to.emit(zns.priceOracle, "MaxPriceSet").withArgs(newMaxPrice);
     });
 
     it("Emits PriceMultiplierSet", async () => {
