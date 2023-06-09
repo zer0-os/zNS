@@ -26,8 +26,9 @@ const spawnDevNet = async () => {
   console.log(`DEVNET_RPC_URL=${ devNetUrl }`);
 
   // if file doesn't exist, create it
-  fs.writeFileSync(".env", "", { flag : "w" });
-
+  if (!fs.existsSync(".env")) {
+    fs.writeFileSync(".env", "");
+  }
   const fileContent = fs.readFileSync(".env", "utf8");
 
   const newFileContent = fileContent.replace(/DEVNET_RPC_URL=.*/g, "");
