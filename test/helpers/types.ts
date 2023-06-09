@@ -72,12 +72,12 @@ export interface RegistrarConfig {
 
 export interface ZNSContracts {
   accessController : ZNSAccessController;
-  addressResolver : ZNSAddressResolver;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
   zeroToken : ZeroTokenMock; // TODO fix when real token
-  treasury : ZNSTreasury;
+  addressResolver : ZNSAddressResolver;
   priceOracle : ZNSPriceOracle;
+  treasury : ZNSTreasury;
   registrar : ZNSEthRegistrar;
 }
 

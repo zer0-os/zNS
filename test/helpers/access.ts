@@ -35,5 +35,6 @@ export const deployAccessController = async ({
   const controller = await accessControllerFactory.deploy();
 
   await controller.initialize(governorAddresses, adminAddresses);
+
   return controller;
 };

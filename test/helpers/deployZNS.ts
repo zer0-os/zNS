@@ -222,12 +222,12 @@ export const deployZNS = async ({
 
   const znsContracts : ZNSContracts = {
     accessController,
-    addressResolver,
     registry,
     domainToken,
     zeroToken: zeroTokenMock,
-    treasury,
+    addressResolver,
     priceOracle,
+    treasury,
     registrar,
   };
 
