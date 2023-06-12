@@ -14,6 +14,8 @@ import {
   ZNSRegistry__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
+  ZeroToken,
+  ZeroToken__factory,
 } from "../../typechain";
 import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
 import { ethers, upgrades } from "hardhat";
@@ -27,6 +29,33 @@ import {
 } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
+
+export const deployZeroToken = async (
+  deployer : SignerWithAddress
+) => {
+  const factory = new ZeroToken__factory(deployer);
+
+  const zeroToken = await hre.upgrades.deployProxy(
+    factory,
+    [
+      "ZERO",
+      "ZERO",
+    ],
+    {
+      kind: "transparent",
+    }
+  ) as ZeroToken;
+
+  const mintAmount = ethers.utils.parseEther("10000");
+
+  // Mint 10,000 ZERO for self
+  await zeroToken.mint(zeroToken.address, mintAmount);
+
+  // Mint 100 ZERO for deployer
+  await zeroToken.mint(deployer.address, mintAmount.div("100"));
+
+  return zeroToken;
+};
 
 export const deployRegistry = async (
   deployer : SignerWithAddress,
@@ -184,11 +213,18 @@ export const deployZNS = async ({
     adminAddresses: [deployer.address, ...adminAddresses],
   });
 
+  // We deploy every contract as a UUPS proxy, but ZERO is already
+  // deployed as a transparent proxy. This means that there is already
+  // a proxy admin deployed to the network. Because future deployments
+  // warn when this is the case, we silence the warning from hardhat here
+  // to not clog the test output.
+  await hre.upgrades.silenceWarnings();
+
   const registry = await deployRegistry(deployer, accessController.address);
 
   const domainToken = await deployDomainToken(deployer, accessController.address);
 
-  const zeroTokenMock = await deployZeroTokenMock(deployer);
+  const zeroToken = await deployZeroToken(deployer);
 
   const addressResolver = await deployAddressResolver(
     deployer,
@@ -207,7 +243,7 @@ export const deployZNS = async ({
     deployer,
     accessController.address,
     priceOracle.address,
-    zeroTokenMock.address,
+    zeroToken.address,
     zeroVaultAddress
   );
 
@@ -225,22 +261,18 @@ export const deployZNS = async ({
     addressResolver,
     registry,
     domainToken,
-    zeroToken: zeroTokenMock,
+    zeroToken,
     treasury,
     priceOracle,
     registrar,
   };
 
-  // Final configuration steps
-  // TODO AC: remove all redundant calls here! and delete hashing of the root and the need
-  // for Registrar to be owner/operator of the root
 
   // TODO verify tests are fine without this line
   // await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
-  // Give 15 ZERO to the deployer and allowance to the treasury
-  await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
-  await zeroTokenMock.transfer(deployer.address, ethers.utils.parseEther("15"));
+  // Give allowance to the treasury from the deployer
+  await zeroToken.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
 
   return znsContracts;
 };
