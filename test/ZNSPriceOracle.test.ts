@@ -4,9 +4,9 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice, MULTIPLIER_OUT_OF_RANGE_ORA_ERR, validateUpgrade } from "./helpers";
+import { deployZNS, getPrice, validateUpgrade } from "./helpers";
 import { priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { getAccessRevertMsg } from "./helpers/errors";
+import { MULTIPLIER_BELOW_MIN_ERR, NO_ZERO_MULTIPLIER_ERR, getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../typechain";
 
@@ -95,7 +95,7 @@ describe("ZNSPriceOracle", () => {
       expect(domainPrice).to.eq(params.maxPrice);
     });
 
-    it.only("Returns the expected price for a domain greater than the base length", async () => {
+    it("Returns the expected price for a domain greater than the base length", async () => {
       // TODO ora: uncomment
       // const domain = "wilder";
       // create a constant string with 22 letters
@@ -104,7 +104,7 @@ describe("ZNSPriceOracle", () => {
       // this value has been calced separately to validate
       // that both forumlas: SC + helper are correct
       // this value has been calces with the default priceConfig
-      const referenceValue = BigNumber.from("13260000000000000000");
+      const referenceValue = BigNumber.from("381810000000000000000");
 
       const expectedPrice = await getPrice(domain, zns.priceOracle);
       const { domainPrice } = await zns.priceOracle.getPrice(domain);
@@ -272,6 +272,85 @@ describe("ZNSPriceOracle", () => {
   });
 
   describe("#setPriceMultiplier", () => {
+    it("Allows setting of a priceMultiplier that is >= baseLength + 1", async () => {
+      const config = await zns.priceOracle.rootDomainPriceConfig();
+      const newMultiplier = config.baseLength.add(1);
+
+      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
+      await expect(tx).to.emit(zns.priceOracle, "PriceMultiplierSet").withArgs(newMultiplier);
+    });
+
+    it("Fails when setting priceMultiplier that is < baseLength + 1", async () => {
+      const config = await zns.priceOracle.rootDomainPriceConfig();
+      const newMultiplier = config.baseLength.sub(1);
+
+      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
+      await expect(tx).to.be.revertedWith(MULTIPLIER_BELOW_MIN_ERR);
+    });
+
+    it("Fails when setting priceMultiplier that is 0", async () => {
+      const newMultiplier = BigNumber.from(0);
+
+      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
+      await expect(tx).to.be.revertedWith(NO_ZERO_MULTIPLIER_ERR);
+    });
+
+    it("Updates the multiplier automatically if setting a baseLength that would make it invalid", async () => {
+      const oldMultiplier = (await zns.priceOracle.rootDomainPriceConfig()).priceMultiplier;
+
+      // Setting the baseLength to the same value as the multiplier would invalidate the function,
+      // because the multiplier must always be at least baseLength + 1, so the guard for this
+      // should automatically update the multiplier as well
+      await zns.priceOracle.connect(deployer).setBaseLength(oldMultiplier);
+
+      const newMultiplier = (await zns.priceOracle.rootDomainPriceConfig()).priceMultiplier;
+
+      expect(newMultiplier).to.eq(oldMultiplier.add(1));
+    });
+
+    it("Doesn't create price spikes with any valid combination of values", async () => {
+      // Start by expanding the search space to allow for domains that are up to 1000 characters
+      await zns.priceOracle.connect(deployer).setMaxLength(BigNumber.from("1000"));
+
+      const promises = [];
+      let config = await zns.priceOracle.rootDomainPriceConfig();
+      let domain = "a";
+
+      // baseLength = 0 is a special case
+      await zns.priceOracle.connect(deployer).setBaseLength(0);
+      const zeroPriceTuple = await zns.priceOracle.getPrice(domain);
+      expect(zeroPriceTuple.domainPrice).to.eq(config.maxPrice);
+
+      let outer = 1;
+      let inner = outer;
+      // Long running loops here to iterate all the variations for baseLength and
+      while(config.maxLength.gt(outer)) {
+        // Reset "domain" to a single character each outer loop
+        domain = "a";
+
+        await zns.priceOracle.connect(deployer).setBaseLength(outer);
+        config = await zns.priceOracle.rootDomainPriceConfig();
+
+        while (config.maxLength.gt(inner)) {
+          const priceTx = zns.priceOracle.getPrice(domain);
+          promises.push(priceTx);
+
+          domain += "a";
+          inner++;
+        }
+        outer++;
+      }
+
+      const priceTuples = await Promise.all(promises);
+      let k = 0;
+      while (k < priceTuples.length) {
+        const price = priceTuples[k].domainPrice;
+        // console.log(price.toString());
+        expect(priceTuples[k].domainPrice).to.be.lte(config.maxPrice);
+        k++;
+      }
+    });
+
     it("Allows an authorized user to set the price multiplier", async () => {
       const newMultiplier = BigNumber.from("300");
 
@@ -289,21 +368,21 @@ describe("ZNSPriceOracle", () => {
       );
     });
 
-    it("Fails when setting to a value below the specified range", async () => {
-      // Valid range is 300 - 400
-      const newMultiplier = BigNumber.from("299");
+    // it("Fails when setting to a value below the specified range", async () => {
+    //   // Valid range is 300 - 400
+    //   const newMultiplier = BigNumber.from("299");
 
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
-    });
+    //   const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
+    //   await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
+    // });
 
-    it("Fails when setting to a value above the specified range", async () => {
-      // Valid range is 300 - 400
-      const newMultiplier = BigNumber.from("401");
+    // it("Fails when setting to a value above the specified range", async () => {
+    //   // Valid range is 300 - 400
+    //   const newMultiplier = BigNumber.from("401");
 
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
-    });
+    //   const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
+    //   await expect(tx).to.be.revertedWith(MULTIPLIER_OUT_OF_RANGE_ORA_ERR);
+    // });
 
     it("Succeeds when setting a value within the allowed range", async () => {
       // Valid range is 300 - 400

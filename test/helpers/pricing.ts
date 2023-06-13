@@ -33,14 +33,15 @@ export const getPrice = async (
     return minPrice;
   }
 
-  const numerator = maxPrice.mul(baseLength).mul(priceMultiplier);
-  const denominator = (priceMultiplier.mul(3).add(name.length));
+  const left = baseLength.mul(maxPrice).div(name.length);
+  const right = maxPrice.div(priceMultiplier);
 
   // TODO ora: test that the calcs here and on contract are correct!!!
-  const expectedPrice = numerator.div(denominator)
-    .div(percentageMulti)
+  const expectedPrice = left.add(right) // TODO bedmas break this up?
+    // .div(percentageMulti) // This isn't used in creating `domainPrice`, just fee to create `totalPrice`
     .div(precisionMultiplier)
     .mul(precisionMultiplier);
+
 
   return expectedPrice;
 };
