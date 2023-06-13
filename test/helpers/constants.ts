@@ -18,3 +18,14 @@ export const priceConfigDefault : PriceParams = {
   baseSubdomainLength: BigNumber.from(3),
   priceMultiplier: ethers.BigNumber.from("390"),
 };
+
+// Contract names
+export const accessControllerName = "ZNSAccessController";
+export const registryName = "ZNSRegistry";
+export const domainTokenName = "ZNSDomainToken";
+export const zeroTokenMockName = "ZeroTokenMock";
+export const addressResolverName = "ZNSAddressResolver";
+export const priceOracleName = "ZNSPriceOracle";
+export const treasuryName = "ZNSTreasury";
+export const registrarName = "ZNSEthRegistrar";
+

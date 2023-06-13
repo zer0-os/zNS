@@ -20,8 +20,8 @@ const command = `tenderly devnet spawn-rpc --project ${TENDERLY_PROJECT_SLUG} --
 
 
 const spawnDevNet = async () => {
-  const { stderr } = await asyncExec(command);
-  const devNetUrl = stderr.trim().toString();
+  const res = await asyncExec(command);
+  const devNetUrl = res.stderr.trim().toString();
 
   console.log(`DEVNET_RPC_URL=${ devNetUrl }`);
 

@@ -42,6 +42,8 @@ export const deployRegistry = async (
       kind: "uups",
     }) as ZNSRegistry;
 
+  await registry.deployed();
+
   return registry;
 };
 
@@ -62,6 +64,8 @@ export const deployAddressResolver = async (
       kind: "uups",
     }
   ) as ZNSAddressResolver;
+
+  await resolver.deployed();
 
   return resolver;
 };
@@ -91,6 +95,8 @@ export const deployPriceOracle = async ({
     }
   ) as ZNSPriceOracle;
 
+  await priceOracle.deployed();
+
   return priceOracle;
 };
 
@@ -111,6 +117,8 @@ export const deployDomainToken = async (
     }
   ) as ZNSDomainToken;
 
+  await domainToken.deployed();
+
   return domainToken;
 };
 
@@ -118,7 +126,11 @@ export const deployZeroTokenMock = async (
   deployer : SignerWithAddress
 ) : Promise<ZeroTokenMock> => {
   const zTokenMockMockFactory = new ZeroTokenMock__factory(deployer);
-  return zTokenMockMockFactory.deploy(deployer.address);
+  const token = await zTokenMockMockFactory.deploy(deployer.address);
+
+  await token.deployed();
+
+  return token;
 };
 
 export const deployTreasury = async (
@@ -140,6 +152,8 @@ export const deployTreasury = async (
       kind: "uups",
     }
   ) as ZNSTreasury;
+
+  await treasury.deployed();
 
   return treasury;
 };
@@ -164,6 +178,8 @@ export const deployRegistrar = async (
       kind: "uups",
     }
   ) as ZNSEthRegistrar;
+
+  await registrar.deployed();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 

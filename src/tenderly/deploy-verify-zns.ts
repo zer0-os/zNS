@@ -1,4 +1,7 @@
-import { deployZNS } from "../../test/helpers";
+import {
+  accessControllerName, addressResolverName,
+  deployZNS, domainTokenName, priceOracleName, registrarName, registryName, treasuryName, zeroTokenMockName,
+} from "../../test/helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -18,31 +21,38 @@ export const deployVerifyZNS = async ({
     adminAddresses,
   });
 
-  // TODO: find a way to get these names from the object
+
   const names = [
-    "ZNSAccessController",
-    "ZNSRegistry",
-    "ZNSDomainToken",
-    "ZeroTokenMock",
-    "ZNSAddressResolver",
-    "ZNSPriceOracle",
-    "ZNSTreasury",
-    "ZNSEthRegistrar",
+    accessControllerName,
+    registryName,
+    domainTokenName,
+    zeroTokenMockName,
+    addressResolverName,
+    priceOracleName,
+    treasuryName,
+    registrarName,
   ];
 
-  // Verify and add source code to Tenderly
-  // for easy debugging
-  await Object.values(zns).reduce(
-    async (acc, contract, idx) => {
+  // // Verify and add source code to Tenderly
+  // // for easy debugging
+  await Object.entries(zns).reduce(
+    async (acc, [key, contract]) : Promise<object> => {
+      const name = names.find(
+        el => el.toLowerCase()
+          .includes(key.toLowerCase())
+      ) as string;
+
       await hre.tenderly.verify({
-        name: names[idx],
+        name,
         address: contract.address,
       });
 
       await hre.tenderly.persistArtifacts({
-        name: names[idx],
+        name,
         address: contract.address,
       });
+
+      return acc;
     }, Promise.resolve({})
   );
 

@@ -34,6 +34,8 @@ export const deployAccessController = async ({
   const accessControllerFactory = new ZNSAccessController__factory(deployer);
   const controller = await accessControllerFactory.deploy();
 
+  await controller.deployed();
+
   await controller.initialize(governorAddresses, adminAddresses);
 
   return controller;

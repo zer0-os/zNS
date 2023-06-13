@@ -5,7 +5,7 @@ import { exec } from "child_process";
 const execAsync = promisify(exec);
 
 const spawnCommand = "ts-node src/tenderly/spawn-devnet.ts";
-const opCommandBase = "yarn hardhat run";
+const opCommandBase = "npx hardhat run";
 const networkArg = "--network devnet";
 const opsPath = "src/tenderly/run-all-flows.ts";
 
@@ -23,13 +23,16 @@ const opsPath = "src/tenderly/run-all-flows.ts";
 const execute = async () => {
   // spawn DevNet on Tenderly with ts-node directly
   const spawnRes = await execAsync(spawnCommand);
+  process.stdout.write(spawnRes.stdout);
+  process.stderr.write(spawnRes.stderr);
 
   const opCommand = `${opCommandBase} ${opsPath} ${networkArg}`;
 
   // deploy all contracts, run flows using Hardhat
-  const { stdout } = await execAsync(opCommand);
+  const opRes = await execAsync(opCommand);
   // pass Tenderly logger through
-  console.log(stdout);
+  process.stdout.write(opRes.stdout);
+  process.stderr.write(opRes.stderr);
 
   return spawnRes;
 };
