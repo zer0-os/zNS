@@ -27,5 +27,5 @@ export const zeroTokenMockName = "ZeroTokenMock";
 export const addressResolverName = "ZNSAddressResolver";
 export const priceOracleName = "ZNSPriceOracle";
 export const treasuryName = "ZNSTreasury";
-export const registrarName = "ZNSEthRegistrar";
+export const registrarName = "ZNSRegistrar";
 

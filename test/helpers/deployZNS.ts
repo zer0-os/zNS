@@ -6,8 +6,8 @@ import {
   ZNSAddressResolver__factory,
   ZNSDomainToken,
   ZNSDomainToken__factory,
-  ZNSEthRegistrar,
-  ZNSEthRegistrar__factory,
+  ZNSRegistrar,
+  ZNSRegistrar__factory,
   ZNSPriceOracle,
   ZNSPriceOracle__factory,
   ZNSRegistry,
@@ -162,8 +162,8 @@ export const deployRegistrar = async (
   deployer : SignerWithAddress,
   accessController : ZNSAccessController,
   config : RegistrarConfig
-) : Promise<ZNSEthRegistrar> => {
-  const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+) : Promise<ZNSRegistrar> => {
+  const registrarFactory = new ZNSRegistrar__factory(deployer);
 
   const registrar = await upgrades.deployProxy(
     registrarFactory,
@@ -177,7 +177,7 @@ export const deployRegistrar = async (
     {
       kind: "uups",
     }
-  ) as ZNSEthRegistrar;
+  ) as ZNSRegistrar;
 
   await registrar.deployed();
 

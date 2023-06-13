@@ -2,13 +2,13 @@ import { BigNumber } from "ethers";
 import {
   ZNSAddressResolver,
   ZNSDomainToken,
-  ZNSEthRegistrar,
+  ZNSRegistrar,
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
   ZeroTokenMock,
   ZNSAccessController,
-  ZNSEthRegistrarUpgradeMock,
+  ZNSRegistrarUpgradeMock,
   ZNSPriceOracleUpgradeMock,
   ZNSAddressResolverUpgradeMock,
   ZNSDomainTokenUpgradeMock,
@@ -16,7 +16,7 @@ import {
   ZNSTreasuryUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSEthRegistrarUpgradeMock__factory,
+  ZNSRegistrarUpgradeMock__factory,
   ZNSPriceOracleUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
   ZNSTreasuryUpgradeMock__factory,
@@ -28,7 +28,7 @@ export type Maybe<T> = T | undefined;
 export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
 
 export type ZNSContractMockFactory =
-  ZNSEthRegistrarUpgradeMock__factory |
+  ZNSRegistrarUpgradeMock__factory |
   ZNSPriceOracleUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
@@ -36,7 +36,7 @@ export type ZNSContractMockFactory =
   ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
-  ZNSEthRegistrarUpgradeMock |
+  ZNSRegistrarUpgradeMock |
   ZNSPriceOracleUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
@@ -44,7 +44,7 @@ export type ZNSContractMock =
   ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
-  ZNSEthRegistrar |
+  ZNSRegistrar |
   ZNSPriceOracle |
   ZNSTreasury |
   ZNSRegistry |
@@ -70,6 +70,36 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
+export interface ZNSRegistryProxy {
+  proxy : ZNSRegistry;
+  impl : ZNSRegistry;
+}
+
+export interface ZNSDomainTokenProxy {
+  proxy : ZNSDomainToken;
+  impl : ZNSDomainToken;
+}
+
+export interface ZNSAddressResolverProxy {
+  proxy : ZNSAddressResolver;
+  impl : ZNSAddressResolver;
+}
+
+export interface ZNSPriceOracleProxy {
+  proxy : ZNSPriceOracle;
+  impl : ZNSPriceOracle;
+}
+
+export interface ZNSTreasuryProxy {
+  proxy : ZNSTreasury;
+  impl : ZNSTreasury;
+}
+
+export interface ZNSRegistrarProxy {
+  proxy : ZNSRegistrar;
+  impl : ZNSRegistrar;
+}
+
 export interface ZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
@@ -78,7 +108,24 @@ export interface ZNSContracts {
   addressResolver : ZNSAddressResolver;
   priceOracle : ZNSPriceOracle;
   treasury : ZNSTreasury;
-  registrar : ZNSEthRegistrar;
+  registrar : ZNSRegistrar;
+}
+
+export interface ZNSContractsProxy {
+  accessController : {
+    proxy : null;
+    impl : ZNSAccessController;
+  };
+  registry : ZNSRegistryProxy;
+  domainToken : ZNSDomainTokenProxy;
+  zeroToken : {
+    proxy : null;
+    impl : ZeroTokenMock;
+  }; // TODO fix when real token
+  addressResolver : ZNSAddressResolverProxy;
+  priceOracle : ZNSPriceOracleProxy;
+  treasury : ZNSTreasuryProxy;
+  registrar : ZNSRegistrarProxy;
 }
 
 export interface DeployZNSParams {

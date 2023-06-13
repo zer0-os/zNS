@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSEthRegistrar } from "./IZNSEthRegistrar.sol";
+import { IZNSRegistrar } from "./IZNSRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
@@ -10,7 +10,7 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar {
+contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -19,7 +19,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     modifier onlyNameOwner(bytes32 domainHash) {
         require(
             msg.sender == registry.getDomainOwner(domainHash),
-            "ZNSEthRegistrar: Not the owner of the Name"
+            "ZNSRegistrar: Not the owner of the Name"
         );
         _;
     }
@@ -27,13 +27,13 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     modifier onlyTokenOwner(bytes32 domainHash) {
         require(
             msg.sender == domainToken.ownerOf(uint256(domainHash)),
-            "ZNSEthRegistrar: Not the owner of the Token"
+            "ZNSRegistrar: Not the owner of the Token"
         );
         _;
     }
 
     /**
-     * @notice Create an instance of the ZNSEthRegistrar
+     * @notice Create an instance of the ZNSRegistrar
      * for registering ZNS domains and subdomains
      */
     function initialize(
@@ -62,7 +62,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     ) external override returns (bytes32) {
         require(
             bytes(name).length != 0,
-            "ZNSEthRegistrar: Domain Name not provided"
+            "ZNSRegistrar: Domain Name not provided"
         );
 
         // Create hash for given domain name
@@ -70,7 +70,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
 
         require(
             !registry.exists(domainHash),
-            "ZNSEthRegistrar: Domain already exists"
+            "ZNSRegistrar: Domain already exists"
         );
 
         // Staking logic
@@ -96,9 +96,9 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     // TODO: figure out how to guard this so people can stake tokens
     //  without the risk of staking contract or wallet to call reclaim+revoke
     //  from underneath them
-    function revokeDomain(bytes32 domainHash) 
+    function revokeDomain(bytes32 domainHash)
     external
-    override 
+    override
     onlyNameOwner(domainHash)
     onlyTokenOwner(domainHash)
     {
@@ -123,7 +123,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     function setRegistry(address registry_) public override onlyAdmin {
         require(
             registry_ != address(0),
-            "ZNSEthRegistrar: registry_ is 0x0 address"
+            "ZNSRegistrar: registry_ is 0x0 address"
         );
         registry = IZNSRegistry(registry_);
 
@@ -133,7 +133,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     function setTreasury(address treasury_) public override onlyAdmin {
         require(
             treasury_ != address(0),
-            "ZNSEthRegistrar: treasury_ is 0x0 address"
+            "ZNSRegistrar: treasury_ is 0x0 address"
         );
         treasury = IZNSTreasury(treasury_);
 
@@ -143,7 +143,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     function setDomainToken(address domainToken_) public override onlyAdmin {
         require(
             domainToken_ != address(0),
-            "ZNSEthRegistrar: domainToken_ is 0x0 address"
+            "ZNSRegistrar: domainToken_ is 0x0 address"
         );
         domainToken = IZNSDomainToken(domainToken_);
 
@@ -153,7 +153,7 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
     function setAddressResolver(address addressResolver_) public override onlyAdmin {
         require(
             addressResolver_ != address(0),
-            "ZNSEthRegistrar: addressResolver_ is 0x0 address"
+            "ZNSRegistrar: addressResolver_ is 0x0 address"
         );
         addressResolver = IZNSAddressResolver(addressResolver_);
 
@@ -162,13 +162,13 @@ contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar 
 
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSEthRegistrar) 
+    override(AccessControlled, IZNSRegistrar)
     onlyAdmin
     {
         _setAccessController(accessController_);
     }
 
-    function getAccessController() external view override(AccessControlled, IZNSEthRegistrar) returns (address) {
+    function getAccessController() external view override(AccessControlled, IZNSRegistrar) returns (address) {
         return address(accessController);
     }
 
