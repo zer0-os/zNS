@@ -21,7 +21,8 @@ const command = `tenderly devnet spawn-rpc --project ${TENDERLY_PROJECT_SLUG} --
 
 const spawnDevNet = async () => {
   const res = await asyncExec(command);
-  const devNetUrl = res.stderr.trim().toString();
+  const upperStr = res.stderr.trim().toString();
+  const devNetUrl = upperStr.substring(upperStr.indexOf("https"));
 
   console.log(`DEVNET_RPC_URL=${ devNetUrl }`);
 
