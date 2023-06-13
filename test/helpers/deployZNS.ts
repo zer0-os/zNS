@@ -199,6 +199,12 @@ export const deployRegistrar = async (
   return registrar;
 };
 
+/**
+ * We use this script to aid in testing, NOT for anything more
+ * such as deploying to live testnets or mainnet. Do not use any
+ * of the code present for tasks other than testing behavior on a
+ * local hardhat build
+ */
 export const deployZNS = async ({
   deployer,
   governorAddresses,
@@ -224,7 +230,10 @@ export const deployZNS = async ({
 
   const domainToken = await deployDomainToken(deployer, accessController.address);
 
-  const zeroToken = await deployZeroToken(deployer);
+  // While we do use the real ZeroToken contract, it is only deployed as a mock here
+  // for testing purposes that verify expected behavior of other contracts.
+  // This should not be used in any other context than deploying to a local hardhat testnet.
+  const zeroTokenMock = await deployZeroToken(deployer);
 
   const addressResolver = await deployAddressResolver(
     deployer,
@@ -243,7 +252,7 @@ export const deployZNS = async ({
     deployer,
     accessController.address,
     priceOracle.address,
-    zeroToken.address,
+    zeroTokenMock.address,
     zeroVaultAddress
   );
 
@@ -261,7 +270,7 @@ export const deployZNS = async ({
     addressResolver,
     registry,
     domainToken,
-    zeroToken,
+    zeroToken: zeroTokenMock,
     treasury,
     priceOracle,
     registrar,
@@ -272,7 +281,7 @@ export const deployZNS = async ({
   // await registry.connect(deployer).setOwnerOperator(registrar.address, true);
 
   // Give allowance to the treasury from the deployer
-  await zeroToken.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
+  await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
 
   return znsContracts;
 };
