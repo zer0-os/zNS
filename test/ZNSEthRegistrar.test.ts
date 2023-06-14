@@ -48,7 +48,7 @@ describe("ZNSEthRegistrar", () => {
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("1500"));
+    await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
