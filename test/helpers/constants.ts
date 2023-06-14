@@ -9,7 +9,6 @@ export const registrationFeePercDefault = BigNumber.from("222");
 export const decimalsDefault = BigNumber.from(18);
 export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
-export const percentageMulti = BigNumber.from(100);
 
 export const priceConfigDefault : PriceParams = {
   maxPrice: ethers.utils.parseEther("1000"),

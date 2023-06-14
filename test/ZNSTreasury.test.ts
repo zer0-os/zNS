@@ -46,7 +46,7 @@ describe("ZNSTreasury", () => {
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("1000"));
+    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("1500"));
   });
 
   it("Confirms deployment", async () => {

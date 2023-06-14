@@ -343,8 +343,6 @@ describe("ZNSPriceOracle", () => {
       const priceTuples = await Promise.all(promises);
       let k = 0;
       while (k < priceTuples.length) {
-        const price = priceTuples[k].domainPrice;
-        // console.log(price.toString());
         expect(priceTuples[k].domainPrice).to.be.lte(config.maxPrice);
         k++;
       }

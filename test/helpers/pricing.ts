@@ -1,6 +1,5 @@
 import { ZNSPriceOracle } from "../../typechain";
 import { BigNumber } from "ethers";
-import { percentageMulti } from "./constants";
 
 /**
  * Get the domain name price base on its length when given
@@ -39,8 +38,7 @@ export const getPrice = async (
   const right = maxPrice.div(priceMultiplier);
 
   // TODO ora: test that the calcs here and on contract are correct!!!
-  const expectedPrice = left.add(right) // TODO bedmas break this up?
-    // .div(percentageMulti) // This isn't used in creating `domainPrice`, just fee to create `totalPrice`
+  const expectedPrice = left.add(right)
     .div(precisionMultiplier)
     .mul(precisionMultiplier);
 

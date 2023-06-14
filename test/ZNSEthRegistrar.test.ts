@@ -48,7 +48,7 @@ describe("ZNSEthRegistrar", () => {
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.transfer(user.address, priceConfigDefault.maxPrice);
+    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("1500"));
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
@@ -664,7 +664,10 @@ describe("ZNSEthRegistrar", () => {
       const domainName = "world";
       const domainHash = hashDomainName(domainName);
 
-      await zns.registrar.registerDomain(domainName, randomUser.address);
+      await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(randomUser.address, ethers.utils.parseEther("1500"));
+
+      await zns.registrar.connect(randomUser).registerDomain(domainName, randomUser.address);
 
       await zns.registrar.setAddressResolver(randomUser.address);
 
