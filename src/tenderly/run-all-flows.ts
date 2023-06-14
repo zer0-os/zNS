@@ -1,5 +1,4 @@
 import * as hre from "hardhat";
-import { deployVerifyZNS } from "./deploy-verify-zns";
 import * as ethers from "ethers";
 import { deployZNS, hashDomainLabel } from "../../test/helpers";
 import { BigNumber } from "ethers";

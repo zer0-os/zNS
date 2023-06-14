@@ -88,4 +88,5 @@ export interface DeployZNSParams {
   priceConfig ?: PriceParams;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
+  logAddresses ?: boolean;
 }
