@@ -31,7 +31,8 @@ import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
 
 export const deployZeroToken = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  logAddress : boolean
 ) => {
   const factory = new ZeroToken__factory(deployer);
 
@@ -45,6 +46,16 @@ export const deployZeroToken = async (
       kind: "transparent",
     }
   ) as ZeroToken;
+
+  await zeroToken.deployed();
+
+  if (logAddress) {
+    const impl = await hre.upgrades.erc1967.getImplementationAddress(zeroToken.address);
+
+    console.log(`ZeroToken deployed at:
+                proxy: ${zeroToken.address}
+                implementation: ${impl}`);
+  }
 
   const mintAmount = ethers.utils.parseEther("10000");
 
@@ -311,7 +322,7 @@ export const deployZNS = async ({
   // While we do use the real ZeroToken contract, it is only deployed as a mock here
   // for testing purposes that verify expected behavior of other contracts.
   // This should not be used in any other context than deploying to a local hardhat testnet.
-  const zeroTokenMock = await deployZeroToken(deployer);
+  const zeroTokenMock = await deployZeroToken(deployer, logAddresses);
 
   const addressResolver = await deployAddressResolver(
     deployer,
