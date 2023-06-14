@@ -70,36 +70,6 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
-export interface ZNSRegistryProxy {
-  proxy : ZNSRegistry;
-  impl : ZNSRegistry;
-}
-
-export interface ZNSDomainTokenProxy {
-  proxy : ZNSDomainToken;
-  impl : ZNSDomainToken;
-}
-
-export interface ZNSAddressResolverProxy {
-  proxy : ZNSAddressResolver;
-  impl : ZNSAddressResolver;
-}
-
-export interface ZNSPriceOracleProxy {
-  proxy : ZNSPriceOracle;
-  impl : ZNSPriceOracle;
-}
-
-export interface ZNSTreasuryProxy {
-  proxy : ZNSTreasury;
-  impl : ZNSTreasury;
-}
-
-export interface ZNSRegistrarProxy {
-  proxy : ZNSRegistrar;
-  impl : ZNSRegistrar;
-}
-
 export interface ZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
@@ -109,23 +79,6 @@ export interface ZNSContracts {
   priceOracle : ZNSPriceOracle;
   treasury : ZNSTreasury;
   registrar : ZNSRegistrar;
-}
-
-export interface ZNSContractsProxy {
-  accessController : {
-    proxy : null;
-    impl : ZNSAccessController;
-  };
-  registry : ZNSRegistryProxy;
-  domainToken : ZNSDomainTokenProxy;
-  zeroToken : {
-    proxy : null;
-    impl : ZeroTokenMock;
-  }; // TODO fix when real token
-  addressResolver : ZNSAddressResolverProxy;
-  priceOracle : ZNSPriceOracleProxy;
-  treasury : ZNSTreasuryProxy;
-  registrar : ZNSRegistrarProxy;
 }
 
 export interface DeployZNSParams {
