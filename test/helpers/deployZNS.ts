@@ -29,6 +29,7 @@ import {
 } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
+import { getProxyImplAddress } from "./utils";
 
 export const deployZeroToken = async (
   deployer : SignerWithAddress,
@@ -50,7 +51,7 @@ export const deployZeroToken = async (
   await zeroToken.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(zeroToken.address);
+    const impl = await getProxyImplAddress(zeroToken.address);
 
     console.log(`ZeroToken deployed at:
                 proxy: ${zeroToken.address}
@@ -86,7 +87,7 @@ export const deployRegistry = async (
   await registry.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(registry.address);
+    const impl = await getProxyImplAddress(registry.address);
 
     console.log(`ZNSRegistry deployed at:
                 proxy: ${registry.address}
@@ -118,7 +119,7 @@ export const deployAddressResolver = async (
   await resolver.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(resolver.address);
+    const impl = await getProxyImplAddress(resolver.address);
 
     console.log(`ZNSAddressResolver deployed at:
                 proxy: ${resolver.address}
@@ -158,7 +159,7 @@ export const deployPriceOracle = async ({
   await priceOracle.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(priceOracle.address);
+    const impl = await getProxyImplAddress(priceOracle.address);
 
     console.log(`ZNSPriceOracle deployed at:
                 proxy: ${priceOracle.address}
@@ -189,7 +190,7 @@ export const deployDomainToken = async (
   await domainToken.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(domainToken.address);
+    const impl = await getProxyImplAddress(domainToken.address);
 
     console.log(`ZNSDomainToken deployed at:
                 proxy: ${domainToken.address}
@@ -239,7 +240,7 @@ export const deployTreasury = async (
   await treasury.deployed();
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(treasury.address);
+    const impl = await getProxyImplAddress(treasury.address);
 
     console.log(`ZNSTreasury deployed at:
                 proxy: ${treasury.address}
@@ -276,7 +277,7 @@ export const deployRegistrar = async (
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
   if (logAddress) {
-    const impl = await hre.upgrades.erc1967.getImplementationAddress(registrar.address);
+    const impl = await getProxyImplAddress(registrar.address);
 
     console.log(`ZNSRegistrar deployed at:
                 proxy: ${registrar.address}
