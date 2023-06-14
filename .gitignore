@@ -10,3 +10,7 @@ typechain-types
 cache
 artifacts
 
+# hardhat-tenderly plugin
+deployments
+
+*.env

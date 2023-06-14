@@ -11,9 +11,9 @@ export const ONLY_OWNER_REGISTRAR_REG_ERR = "ZNSRegistry: Only Name Owner or Reg
 export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
 export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
 
-// ZNSEthRegistrar
-export const NOT_NAME_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the owner of the Name";
-export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the owner of the Token";
+// ZNSRegistrar
+export const NOT_NAME_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Name";
+export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token";
 export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSPriceOracle: Multiplier out of range";
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";

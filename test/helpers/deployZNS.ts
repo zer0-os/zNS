@@ -6,8 +6,8 @@ import {
   ZNSAddressResolver__factory,
   ZNSDomainToken,
   ZNSDomainToken__factory,
-  ZNSEthRegistrar,
-  ZNSEthRegistrar__factory,
+  ZNSRegistrar,
+  ZNSRegistrar__factory,
   ZNSPriceOracle,
   ZNSPriceOracle__factory,
   ZNSRegistry,
@@ -29,9 +29,11 @@ import {
 } from "./constants";
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
+import { getProxyImplAddress } from "./utils";
 
 export const deployZeroToken = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  logAddress : boolean
 ) => {
   const factory = new ZeroToken__factory(deployer);
 
@@ -46,6 +48,16 @@ export const deployZeroToken = async (
     }
   ) as ZeroToken;
 
+  await zeroToken.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(zeroToken.address);
+
+    console.log(`ZeroToken deployed at:
+                proxy: ${zeroToken.address}
+                implementation: ${impl}`);
+  }
+
   const mintAmount = ethers.utils.parseEther("10000");
 
   // Mint 10,000 ZERO for self
@@ -59,7 +71,8 @@ export const deployZeroToken = async (
 
 export const deployRegistry = async (
   deployer : SignerWithAddress,
-  accessControllerAddress : string
+  accessControllerAddress : string,
+  logAddress : boolean
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
   const registry = await hre.upgrades.deployProxy(
@@ -71,13 +84,24 @@ export const deployRegistry = async (
       kind: "uups",
     }) as ZNSRegistry;
 
+  await registry.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(registry.address);
+
+    console.log(`ZNSRegistry deployed at:
+                proxy: ${registry.address}
+                implementation: ${impl}`);
+  }
+
   return registry;
 };
 
 export const deployAddressResolver = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  registryAddress : string
+  registryAddress : string,
+  logAddress : boolean
 ) : Promise<ZNSAddressResolver> => {
   const addressResolverFactory = new ZNSAddressResolver__factory(deployer);
 
@@ -92,6 +116,16 @@ export const deployAddressResolver = async (
     }
   ) as ZNSAddressResolver;
 
+  await resolver.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(resolver.address);
+
+    console.log(`ZNSAddressResolver deployed at:
+                proxy: ${resolver.address}
+                implementation: ${impl}`);
+  }
+
   return resolver;
 };
 
@@ -100,11 +134,13 @@ export const deployPriceOracle = async ({
   accessControllerAddress,
   priceConfig,
   registrationFee,
+  logAddress,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
   priceConfig : PriceParams;
   registrationFee : BigNumber;
+  logAddress : boolean;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
 
@@ -120,12 +156,23 @@ export const deployPriceOracle = async ({
     }
   ) as ZNSPriceOracle;
 
+  await priceOracle.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(priceOracle.address);
+
+    console.log(`ZNSPriceOracle deployed at:
+                proxy: ${priceOracle.address}
+                implementation: ${impl}`);
+  }
+
   return priceOracle;
 };
 
 export const deployDomainToken = async (
   deployer : SignerWithAddress,
-  accessControllerAddress : string
+  accessControllerAddress : string,
+  logAddress : boolean
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
   const domainToken = await upgrades.deployProxy(
@@ -140,14 +187,33 @@ export const deployDomainToken = async (
     }
   ) as ZNSDomainToken;
 
+  await domainToken.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(domainToken.address);
+
+    console.log(`ZNSDomainToken deployed at:
+                proxy: ${domainToken.address}
+                implementation: ${impl}`);
+  }
+
   return domainToken;
 };
 
 export const deployZeroTokenMock = async (
-  deployer : SignerWithAddress
+  deployer : SignerWithAddress,
+  logAddress : boolean
 ) : Promise<ZeroTokenMock> => {
   const zTokenMockMockFactory = new ZeroTokenMock__factory(deployer);
-  return zTokenMockMockFactory.deploy(deployer.address);
+  const token = await zTokenMockMockFactory.deploy(deployer.address);
+
+  await token.deployed();
+
+  if (logAddress) {
+    console.log(`ZeroTokenMock deployed at: ${token.address}`);
+  }
+
+  return token;
 };
 
 export const deployTreasury = async (
@@ -155,7 +221,8 @@ export const deployTreasury = async (
   accessControllerAddress : string,
   priceOracleAddress : string,
   zTokenMockAddress : string,
-  zeroVaultAddress : string
+  zeroVaultAddress : string,
+  logAddress : boolean
 ) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
   const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
@@ -170,15 +237,26 @@ export const deployTreasury = async (
     }
   ) as ZNSTreasury;
 
+  await treasury.deployed();
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(treasury.address);
+
+    console.log(`ZNSTreasury deployed at:
+                proxy: ${treasury.address}
+                implementation: ${impl}`);
+  }
+
   return treasury;
 };
 
 export const deployRegistrar = async (
   deployer : SignerWithAddress,
   accessController : ZNSAccessController,
-  config : RegistrarConfig
-) : Promise<ZNSEthRegistrar> => {
-  const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+  config : RegistrarConfig,
+  logAddress : boolean
+) : Promise<ZNSRegistrar> => {
+  const registrarFactory = new ZNSRegistrar__factory(deployer);
 
   const registrar = await upgrades.deployProxy(
     registrarFactory,
@@ -192,9 +270,19 @@ export const deployRegistrar = async (
     {
       kind: "uups",
     }
-  ) as ZNSEthRegistrar;
+  ) as ZNSRegistrar;
+
+  await registrar.deployed();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
+
+  if (logAddress) {
+    const impl = await getProxyImplAddress(registrar.address);
+
+    console.log(`ZNSRegistrar deployed at:
+                proxy: ${registrar.address}
+                implementation: ${impl}`);
+  }
 
   return registrar;
 };
@@ -212,13 +300,8 @@ export const deployZNS = async ({
   priceConfig = priceConfigDefault,
   registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
+  logAddresses = false,
 } : DeployZNSParams) : Promise<ZNSContracts> => {
-  const accessController = await deployAccessController({
-    deployer,
-    governorAddresses: [deployer.address, ...governorAddresses],
-    adminAddresses: [deployer.address, ...adminAddresses],
-  });
-
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -226,19 +309,27 @@ export const deployZNS = async ({
   // to not clog the test output.
   await hre.upgrades.silenceWarnings();
 
-  const registry = await deployRegistry(deployer, accessController.address);
+  const accessController = await deployAccessController({
+    deployer,
+    governorAddresses: [deployer.address, ...governorAddresses],
+    adminAddresses: [deployer.address, ...adminAddresses],
+    logAddress: logAddresses,
+  });
 
-  const domainToken = await deployDomainToken(deployer, accessController.address);
+  const registry = await deployRegistry(deployer, accessController.address, logAddresses);
+
+  const domainToken = await deployDomainToken(deployer, accessController.address, logAddresses);
 
   // While we do use the real ZeroToken contract, it is only deployed as a mock here
   // for testing purposes that verify expected behavior of other contracts.
   // This should not be used in any other context than deploying to a local hardhat testnet.
-  const zeroTokenMock = await deployZeroToken(deployer);
+  const zeroTokenMock = await deployZeroToken(deployer, logAddresses);
 
   const addressResolver = await deployAddressResolver(
     deployer,
     accessController.address,
-    registry.address
+    registry.address,
+    logAddresses
   );
 
   const priceOracle = await deployPriceOracle({
@@ -246,6 +337,7 @@ export const deployZNS = async ({
     accessControllerAddress: accessController.address,
     priceConfig,
     registrationFee: registrationFeePerc,
+    logAddress: logAddresses,
   });
 
   const treasury = await deployTreasury(
@@ -253,7 +345,8 @@ export const deployZNS = async ({
     accessController.address,
     priceOracle.address,
     zeroTokenMock.address,
-    zeroVaultAddress
+    zeroVaultAddress,
+    logAddresses
   );
 
   const config : RegistrarConfig = {
@@ -263,24 +356,20 @@ export const deployZNS = async ({
     addressResolverAddress: addressResolver.address,
   };
 
-  const registrar = await deployRegistrar(deployer, accessController, config);
+  const registrar = await deployRegistrar(deployer, accessController, config, logAddresses);
 
   const znsContracts : ZNSContracts = {
     accessController,
-    addressResolver,
     registry,
     domainToken,
     zeroToken: zeroTokenMock,
-    treasury,
+    addressResolver,
     priceOracle,
+    treasury,
     registrar,
   };
 
-
-  // TODO verify tests are fine without this line
-  // await registry.connect(deployer).setOwnerOperator(registrar.address, true);
-
-  // Give allowance to the treasury from the deployer
+  // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
 
   return znsContracts;

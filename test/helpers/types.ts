@@ -2,13 +2,13 @@ import { BigNumber } from "ethers";
 import {
   ZNSAddressResolver,
   ZNSDomainToken,
-  ZNSEthRegistrar,
+  ZNSRegistrar,
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
   ZeroTokenMock,
   ZNSAccessController,
-  ZNSEthRegistrarUpgradeMock,
+  ZNSRegistrarUpgradeMock,
   ZNSPriceOracleUpgradeMock,
   ZNSAddressResolverUpgradeMock,
   ZNSDomainTokenUpgradeMock,
@@ -16,7 +16,7 @@ import {
   ZNSTreasuryUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSEthRegistrarUpgradeMock__factory,
+  ZNSRegistrarUpgradeMock__factory,
   ZNSPriceOracleUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
   ZNSTreasuryUpgradeMock__factory,
@@ -28,7 +28,7 @@ export type Maybe<T> = T | undefined;
 export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
 
 export type ZNSContractMockFactory =
-  ZNSEthRegistrarUpgradeMock__factory |
+  ZNSRegistrarUpgradeMock__factory |
   ZNSPriceOracleUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
@@ -36,7 +36,7 @@ export type ZNSContractMockFactory =
   ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
-  ZNSEthRegistrarUpgradeMock |
+  ZNSRegistrarUpgradeMock |
   ZNSPriceOracleUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
@@ -44,7 +44,7 @@ export type ZNSContractMock =
   ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
-  ZNSEthRegistrar |
+  ZNSRegistrar |
   ZNSPriceOracle |
   ZNSTreasury |
   ZNSRegistry |
@@ -72,13 +72,13 @@ export interface RegistrarConfig {
 
 export interface ZNSContracts {
   accessController : ZNSAccessController;
-  addressResolver : ZNSAddressResolver;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
   zeroToken : ZeroTokenMock; // TODO fix when real token
-  treasury : ZNSTreasury;
+  addressResolver : ZNSAddressResolver;
   priceOracle : ZNSPriceOracle;
-  registrar : ZNSEthRegistrar;
+  treasury : ZNSTreasury;
+  registrar : ZNSRegistrar;
 }
 
 export interface DeployZNSParams {
@@ -88,4 +88,5 @@ export interface DeployZNSParams {
   priceConfig ?: PriceParams;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
+  logAddresses ?: boolean;
 }
