@@ -25,6 +25,8 @@ export const getPrice = async (
     precisionMultiplier,
   } = await contract.rootDomainPriceConfig();
 
+  if (baseLength.eq(0)) return maxPrice;
+
   if (BigNumber.from(name.length).lte(baseLength)) {
     return maxPrice;
   }

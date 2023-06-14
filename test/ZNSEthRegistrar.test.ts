@@ -48,12 +48,12 @@ describe("ZNSEthRegistrar", () => {
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
+    await zns.zeroToken.transfer(user.address, priceConfigDefault.maxPrice);
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
     const balance = await zns.zeroToken.balanceOf(user.address);
-    expect(balance).to.eq(ethers.utils.parseEther("15"));
+    expect(balance).to.eq(priceConfigDefault.maxPrice);
 
     const allowance = await zns.zeroToken.allowance(user.address, zns.treasury.address);
     expect(allowance).to.eq(ethers.constants.MaxUint256);
@@ -107,7 +107,7 @@ describe("ZNSEthRegistrar", () => {
         totalPrice,
         expectedPrice,
         fee,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
 
       await checkBalance({
         token: zns.zeroToken,
@@ -147,7 +147,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Fails when the user does not have enough funds", async () => {
-      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
+      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, priceConfigDefault.maxPrice);
 
       const tx = defaultRegistration(user, zns, defaultDomain);
       await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
@@ -324,7 +324,7 @@ describe("ZNSEthRegistrar", () => {
 
       // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
-      expect(balance).to.eq(ethers.utils.parseEther("15"));
+      expect(balance).to.eq(priceConfigDefault.maxPrice);
 
       // Register Top level
       const topLevelTx = await defaultRegistration(deployer, zns, defaultDomain);
@@ -334,7 +334,7 @@ describe("ZNSEthRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
 
@@ -393,7 +393,7 @@ describe("ZNSEthRegistrar", () => {
     it("Revoking domain unstakes", async () => {
     // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
-      expect(balance).to.eq(ethers.utils.parseEther("15"));
+      expect(balance).to.eq(priceConfigDefault.maxPrice);
 
       // Register Top level
       const tx = await defaultRegistration(user, zns, defaultDomain);
@@ -403,7 +403,7 @@ describe("ZNSEthRegistrar", () => {
       const {
         expectedPrice: expectedStaked,
         fee: expectedStakeFee,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
 
