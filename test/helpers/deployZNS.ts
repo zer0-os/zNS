@@ -301,19 +301,19 @@ export const deployZNS = async ({
   zeroVaultAddress = deployer.address,
   logAddresses = false,
 } : DeployZNSParams) : Promise<ZNSContracts> => {
-  const accessController = await deployAccessController({
-    deployer,
-    governorAddresses: [deployer.address, ...governorAddresses],
-    adminAddresses: [deployer.address, ...adminAddresses],
-    logAddress: logAddresses,
-  });
-
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
   // warn when this is the case, we silence the warning from hardhat here
   // to not clog the test output.
   await hre.upgrades.silenceWarnings();
+
+  const accessController = await deployAccessController({
+    deployer,
+    governorAddresses: [deployer.address, ...governorAddresses],
+    adminAddresses: [deployer.address, ...adminAddresses],
+    logAddress: logAddresses,
+  });
 
   const registry = await deployRegistry(deployer, accessController.address, logAddresses);
 

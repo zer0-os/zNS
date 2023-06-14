@@ -19,6 +19,7 @@ export const runAllFlows = async () => {
     deployer: governor,
     governorAddresses: [governor.address],
     adminAddresses: [governor.address],
+    logAddresses: true,
   });
 
   // get some funds for the user
