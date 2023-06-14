@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { deployVerifyZNS } from "./deploy-verify-zns";
 import * as ethers from "ethers";
-import { hashDomainLabel } from "../../test/helpers";
+import { deployZNS, hashDomainLabel } from "../../test/helpers";
 import { BigNumber } from "ethers";
 
 
@@ -16,7 +16,11 @@ export const runAllFlows = async () => {
     user,
   ] = await hre.ethers.getSigners();
 
-  const zns = await deployVerifyZNS({ governor });
+  const zns = await deployZNS({
+    deployer: governor,
+    governorAddresses: [governor.address],
+    adminAddresses: [governor.address],
+  });
 
   // get some funds for the user
   await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
