@@ -376,7 +376,6 @@ describe("ZNSRegistry", () => {
 
   describe("Event emitters", () => {
     it("Emits an event when an operator is set", async () => {
-      // TODO currently no AC on this function, make sure it's added
       const tx = zns.registry.connect(deployer).setOwnerOperator(randomUser.address, true);
 
       await expect(tx).to.emit(zns.registry, "OperatorPermissionSet").withArgs(

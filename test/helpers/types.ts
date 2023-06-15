@@ -6,7 +6,6 @@ import {
   ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
-  ZeroTokenMock,
   ZNSAccessController,
   ZNSRegistrarUpgradeMock,
   ZNSPriceOracleUpgradeMock,
@@ -19,7 +18,7 @@ import {
   ZNSRegistrarUpgradeMock__factory,
   ZNSPriceOracleUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock__factory, ZeroToken,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -74,7 +73,7 @@ export interface ZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : ZeroTokenMock; // TODO fix when real token
+  zeroToken : ZeroToken;
   addressResolver : ZNSAddressResolver;
   priceOracle : ZNSPriceOracle;
   treasury : ZNSTreasury;

@@ -93,9 +93,6 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         return domainHash;
     }
 
-    // TODO: figure out how to guard this so people can stake tokens
-    //  without the risk of staking contract or wallet to call reclaim+revoke
-    //  from underneath them
     function revokeDomain(bytes32 domainHash)
     external
     override

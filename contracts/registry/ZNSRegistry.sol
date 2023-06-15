@@ -26,7 +26,6 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        // TODO: consider using errors instead of requires with string msgs
         require(
             isOwnerOrOperator(domainHash, msg.sender),
             "ZNSRegistry: Not authorized"
