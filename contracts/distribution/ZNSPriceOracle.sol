@@ -33,8 +33,19 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) public override initializer {
         _setAccessController(accessController_);
         // Set pricing and length parameters
-        // TODO how to make sure we set the multiplier >= baseLength + 1?
-        rootDomainPriceConfig = priceConfig_;
+        rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
+
+        // Internal function will revert if the multiplier is not baseLength + 1
+        _setPriceMultiplier(priceConfig_.priceMultiplier);
+
+        // Set the rest of the priceConfig struct, without setting multiplier or baseLength twice
+        // TODO how does this compare to just doing `rootDomainPriceConfig = priceConfig_`
+        // even if it sets `baseLength` and `priceMultiplier` again?
+        rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
+        rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
+        rootDomainPriceConfig.maxLength = priceConfig_.maxLength;
+        rootDomainPriceConfig.precisionMultiplier = priceConfig_.precisionMultiplier;
+
         feePercentage = regFeePercentage_;
     }
 
@@ -138,20 +149,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param multiplier The new price multiplier to set
      */
     function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
-        // Avoid unnecessary jumps to external storage
-        // this probably doesn't work for changes to the config
-        DomainPriceConfig memory config = rootDomainPriceConfig;
-
-        // The multiplier being 0 will cause a division error in the pricing function
-        require(multiplier > 0, "ZNSPriceOracle: Multiplier cannot be 0");
-
-        // The multiplier being larger than the base length will cause spikes in the pricing function
-        require(
-            multiplier >= config.baseLength + 1,
-            "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
-        );
-        rootDomainPriceConfig.priceMultiplier = multiplier;
-
+        _setPriceMultiplier(multiplier);
         emit PriceMultiplierSet(multiplier);
     }
 
@@ -217,6 +215,21 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         (config.baseLength * config.maxPrice / length 
         + (config.maxPrice / config.priceMultiplier))
         / config.precisionMultiplier * config.precisionMultiplier;
+    }
+
+    function _setPriceMultiplier(uint256 multiplier) internal {
+        // Avoid unnecessary jumps to external storage
+        DomainPriceConfig memory config = rootDomainPriceConfig;
+
+        // The multiplier being 0 will cause a division error in the pricing function
+        require(multiplier > 0, "ZNSPriceOracle: Multiplier cannot be 0");
+
+        // The multiplier being larger than the base length will cause spikes in the pricing function
+        require(
+            multiplier >= config.baseLength + 1,
+            "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
+        );
+        rootDomainPriceConfig.priceMultiplier = multiplier;
     }
 
     /**
