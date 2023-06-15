@@ -10,12 +10,7 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-<<<<<<< HEAD:contracts/distribution/ZNSEthRegistrar.sol
-contract ZNSEthRegistrar is AccessControlled, UUPSUpgradeable, IZNSEthRegistrar {
-
-=======
 contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
->>>>>>> development:contracts/distribution/ZNSRegistrar.sol
     IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -167,11 +162,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     function setAccessController(address accessController_)
     external
-<<<<<<< HEAD:contracts/distribution/ZNSEthRegistrar.sol
-    override(AccessControlled, IZNSEthRegistrar)
-=======
     override(AccessControlled, IZNSRegistrar)
->>>>>>> development:contracts/distribution/ZNSRegistrar.sol
     onlyAdmin
     {
         _setAccessController(accessController_);
