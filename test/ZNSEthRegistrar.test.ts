@@ -135,7 +135,10 @@ describe("ZNSRegistrar", () => {
         zns,
         defaultDomain
       );
+
+      const namehashRef = hashDomainName(defaultDomain);
       const domainHash = await getDomainHashFromEvent(tx);
+      expect(domainHash).to.eq(namehashRef);
 
       const {
         owner: ownerFromReg,
@@ -153,14 +156,15 @@ describe("ZNSRegistrar", () => {
       await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
-    // TODO this needs to be checked also with ENS namehash lib
-    //  to make sure that hashing process allows for these characters as well
     it("Allows unicode characters in domain names", async () => {
       const unicodeDomain = "œ柸þ€§ﾪ";
+      const namehashRef = hashDomainName(unicodeDomain);
 
       const tx = await defaultRegistration(user, zns, unicodeDomain);
 
       const domainHash = await getDomainHashFromEvent(tx);
+      // validate that namehash lib works the same way as our contract hashing
+      expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
       const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, true);
