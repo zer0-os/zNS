@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 
-interface IZNSEthRegistrar {
+interface IZNSRegistrar {
     event DomainRegistered(
         bytes32 indexed domainHash,
         uint256 indexed tokenId,

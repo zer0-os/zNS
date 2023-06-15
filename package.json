@@ -1,5 +1,5 @@
 {
-  "name": "zns-contracts",
+  "name": "@zero-tech/zns-contracts",
   "version": "0.0.0",
   "description": "Zero Name Service Smart Contracts",
   "author": "Zero CPT",
@@ -20,7 +20,8 @@
     "test": "hardhat test",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
-    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90"
+    "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
+    "devnet": "ts-node src/tenderly/devnet-execute.ts"
   },
   "pre-commit": [
     "lint"
@@ -32,10 +33,11 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "2.0.2",
     "@nomiclabs/hardhat-ethers": "2.2.2",
-    "@nomiclabs/hardhat-etherscan": "^3.0.0",
-    "@openzeppelin/contracts": "4.8.2",
-    "@openzeppelin/contracts-upgradeable": "4.8.2",
-    "@openzeppelin/hardhat-upgrades": "^1.26.0",
+    "@nomiclabs/hardhat-etherscan": "3.0.0",
+    "@openzeppelin/contracts": "4.8.3",
+    "@openzeppelin/contracts-upgradeable": "4.8.3",
+    "@openzeppelin/hardhat-upgrades": "1.26.0",
+    "@tenderly/hardhat-tenderly": "^1.7.4",
     "@semantic-release/git": "^10.0.1",
     "@typechain/ethers-v5": "10.1.0",
     "@typechain/hardhat": "6.1.2",

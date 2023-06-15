@@ -12,6 +12,6 @@ abstract contract ZNSRoles {
     // so we don't have to upgrade all contracts
     // TODO AC: possibly remove executor role?
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
-    // this role is here specifically for the ZNSEthRegistrar contract
+    // this role is here specifically for the ZNSRegistrar contract
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
 }

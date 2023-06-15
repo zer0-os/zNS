@@ -55,7 +55,6 @@ interface IZNSPriceOracle {
          * e.g. if we use a token with 18 decimals, and want precision of 2,
          * our precision multiplier will be equal 10^18 - 10^2 = 10^16
          */
-        // TODO ora: make this work properly
         uint256 precisionMultiplier;
     }
 

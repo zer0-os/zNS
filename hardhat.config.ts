@@ -1,13 +1,15 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
 require("dotenv").config();
 
 import { HardhatUserConfig } from "hardhat/config";
+import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
+
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -44,10 +46,31 @@ const config : HardhatUserConfig = {
       url: "https://goerli.infura.io/v3/77c3d733140f4c12a77699e24cb30c27",
       timeout: 10000000,
     },
+    devnet: {
+      // Add current URL that you spawned if not using automated spawning
+      url: `${process.env.DEVNET_RPC_URL}`,
+      chainId: 1,
+    },
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   },
+  tenderly: {
+    project: `${process.env.TENDERLY_PROJECT_SLUG}`,
+    username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+  },
 };
+
+// This call is needed to initialize Tenderly with Hardhat,
+// the automatic verifications, though, don't seem to work,
+// needing us to verify explicitly in code, however,
+// for Tenderly to work properly with Hardhat this method
+// needs to be called. The call below is commented out
+// because if we leave it here, solidity-coverage
+// does not work properly locally or in CI, so we
+// keep it commented out and uncomment when using DevNet
+// locally.
+// !!! Uncomment this when using Tenderly DevNet !!!
+// tenderly.setup({ automaticVerifications: true });
 
 export default config;

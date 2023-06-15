@@ -17,7 +17,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     /**
      * @notice Struct for each configurable price variable
      */
-    // TODO ora: rework and add more setters for every single var
     DomainPriceConfig public rootDomainPriceConfig;
 
     /**
@@ -140,7 +139,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
         // Avoid unnecessary jumps to external storage
-        // TODO confirm scope with this works fine? if we edit here it adjusts at higher scope
         // this probably doesn't work for changes to the config
         DomainPriceConfig memory config = rootDomainPriceConfig;
 
@@ -152,10 +150,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
             multiplier >= config.baseLength + 1,
             "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
         );
-        // require( // doesn't apply anymore
-        //     multiplier >= 300 && multiplier <= 400,
-        //     "ZNSPriceOracle: Multiplier out of range"
-        // );
         rootDomainPriceConfig.priceMultiplier = multiplier;
 
         emit PriceMultiplierSet(multiplier);
@@ -215,24 +209,14 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         if (length > config.maxLength) return config.minPrice;
 
         // This creates an asymptotic curve that decreases in pricing based on domain name length
-        // Because there are no decimal fractions in Solidity we set the muliplier as 100x higher
-        // than it is meant to be, so we divide by 100 to reverse that action here.
-        // = (baseLength * maxPrice * multiplier)/(length + (3 * multiplier)
-        // we then divide it by the precision multiplier to remove numbers
-        // past chose precision we don't care about
-        // we then multiply by the same precision multiplier to get the actual value
-        // with truncated values past precision
-        // so having a value of 15.235234324234512365 * 10^18 with precision 2
-        // would give us 15.230000000000000000 * 10^18
+        // then divide it by the precision multiplier to remove numbers beyond what we care about
+        // Then multiply by the same precision multiplier to get the actual value
+        // with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
+        // with precision 2 would give us 15.230000000000000000 * 10^18
         return 
         (config.baseLength * config.maxPrice / length 
         + (config.maxPrice / config.priceMultiplier))
         / config.precisionMultiplier * config.precisionMultiplier;
-        
-        // return
-        // (config.baseLength * config.priceMultiplier * config.maxPrice)
-        // / (length + (3 * config.priceMultiplier)) / 100
-        // / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**

@@ -19,11 +19,11 @@ import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSEthRegistrar__factory, ZNSEthRegistrarUpgradeMock__factory } from "../typechain";
+import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
-describe("ZNSEthRegistrar", () => {
+describe("ZNSRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -63,7 +63,7 @@ describe("ZNSEthRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+    const registrarFactory = new ZNSRegistrar__factory(deployer);
     const registrar = await registrarFactory.connect(user).deploy();
     await registrar.deployed();
 
@@ -84,7 +84,7 @@ describe("ZNSEthRegistrar", () => {
 
       await expect(
         defaultRegistration(deployer, zns, emptyName)
-      ).to.be.revertedWith("ZNSEthRegistrar: Domain Name not provided");
+      ).to.be.revertedWith("ZNSRegistrar: Domain Name not provided");
     });
 
     it("Successfully registers a domain without a resolver or resolver content", async () => {
@@ -172,7 +172,7 @@ describe("ZNSEthRegistrar", () => {
       await defaultRegistration(user, zns, defaultDomain);
       const failTx = defaultRegistration(deployer, zns, defaultDomain);
 
-      await expect(failTx).to.be.revertedWith("ZNSEthRegistrar: Domain already exists");
+      await expect(failTx).to.be.revertedWith("ZNSRegistrar: Domain already exists");
     });
 
     it("Successfully registers a domain without resolver content", async () => {
@@ -548,7 +548,7 @@ describe("ZNSEthRegistrar", () => {
 
       it("Should revert if ZNSRegistry is address zero", async () => {
         const tx = zns.registrar.connect(deployer).setRegistry(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: registry_ is 0x0 address");
+        await expect(tx).to.be.revertedWith("ZNSRegistrar: registry_ is 0x0 address");
       });
     });
 
@@ -573,7 +573,7 @@ describe("ZNSEthRegistrar", () => {
 
       it("Should revert if Treasury is address zero", async () => {
         const tx = zns.registrar.connect(deployer).setTreasury(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: treasury_ is 0x0 address");
+        await expect(tx).to.be.revertedWith("ZNSRegistrar: treasury_ is 0x0 address");
       });
     });
 
@@ -598,7 +598,7 @@ describe("ZNSEthRegistrar", () => {
 
       it("Should revert if DomainToken is address zero", async () => {
         const tx = zns.registrar.connect(deployer).setDomainToken(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: domainToken_ is 0x0 address");
+        await expect(tx).to.be.revertedWith("ZNSRegistrar: domainToken_ is 0x0 address");
       });
     });
 
@@ -623,7 +623,7 @@ describe("ZNSEthRegistrar", () => {
 
       it("Should revert if AddressResolver is address zero", async () => {
         const tx = zns.registrar.connect(deployer).setAddressResolver(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSEthRegistrar: addressResolver_ is 0x0 address");
+        await expect(tx).to.be.revertedWith("ZNSRegistrar: addressResolver_ is 0x0 address");
       });
     });
   });
@@ -633,7 +633,7 @@ describe("ZNSEthRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 
@@ -642,7 +642,7 @@ describe("ZNSEthRegistrar", () => {
     });
 
     it("Fails to upgrade when an unauthorized users calls", async () => {
-      const registrarFactory = new ZNSEthRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 
@@ -657,7 +657,7 @@ describe("ZNSEthRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSEthRegistrarUpgradeMock__factory(deployer);
+      const registrarFactory = new ZNSRegistrarUpgradeMock__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 

@@ -8,7 +8,7 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 // ZNSPriceOracle
 export const MULTIPLIER_BELOW_MIN_ERR = "ZNSPriceOracle: Multiplier must be >= baseLength + 1";
 export const NO_ZERO_MULTIPLIER_ERR = "ZNSPriceOracle: Multiplier cannot be 0";
-
+export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSPriceOracle: Multiplier out of range";
 
 // ZNSRegistry
 export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
@@ -16,10 +16,10 @@ export const ONLY_OWNER_REGISTRAR_REG_ERR = "ZNSRegistry: Only Name Owner or Reg
 export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
 export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
 
-// ZNSEthRegistrar
-export const NOT_NAME_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the owner of the Name";
-export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSEthRegistrar: Not the owner of the Token";
+// ZNSRegistrar
+export const NOT_NAME_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Name";
+export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token";
 
-// Other
+// OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";
