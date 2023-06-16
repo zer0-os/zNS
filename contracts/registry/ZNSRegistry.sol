@@ -33,16 +33,16 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
     modifier onlyOwner(bytes32 domainHash) {
         require(
             records[domainHash].owner == msg.sender,
             "ZNSRegistry: Not the Name Owner"
         );
+        _;
+    }
+
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
         _;
     }
 
@@ -137,7 +137,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Update an existing domain record's owner or resolver
+     * @notice Update an existing domain record's owner and resolver
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain

@@ -53,19 +53,29 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
         bool isTopLevelDomain
     ) external override onlyRegistrar {
         // Get price and fee for the domain
-        (, uint256 stakeAmount, uint256 registrationFee) = priceOracle.getPrice(
+        (
+            uint256 totalPrice,
+            uint256 stakeAmount,
+            uint256 registrationFee
+        ) = priceOracle.getPrice(
             domainName,
             isTopLevelDomain
         );
 
         // Transfer stake amount and fee
-        stakingToken.safeTransferFrom(depositor, address(this), stakeAmount + registrationFee);
+        stakingToken.safeTransferFrom(depositor, address(this), totalPrice);
         stakingToken.safeTransfer(zeroVault, registrationFee);
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
 
-        emit StakeDeposited(domainHash, domainName, depositor, stakeAmount);
+        emit StakeDeposited(
+            domainHash,
+            domainName,
+            depositor,
+            stakeAmount,
+            registrationFee
+        );
     }
 
     function unstakeForDomain(
