@@ -6,9 +6,12 @@ import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
+    using SafeERC20 for IERC20;
+
     /**
      * @notice The price oracle
      */
@@ -17,12 +20,6 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     /**
      * @notice The payment/staking token
      */
-    // TODO: this should be changed to be more general
-    //  we might not use ZERO, but any other token here
-    //  so change the naming and change the interface for IERC20,
-    //  instead of a specific ZERO token interface!
-    //  Make sure it is general on all contracts where it's present!
-    // TODO: change all transfer calls to safeTransfer!
     IERC20 public stakingToken;
 
     /**
@@ -62,10 +59,8 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
         );
 
         // Transfer stake amount and fee
-        stakingToken.transferFrom(depositor, address(this), stakeAmount);
-        // TODO make sure we show the approval process to the user here to avoid failed transfer
-        // TODO can we make it so it needs a single approval only?!
-        stakingToken.transferFrom(depositor, zeroVault, registrationFee);
+        stakingToken.safeTransferFrom(depositor, address(this), stakeAmount + registrationFee);
+        stakingToken.safeTransfer(zeroVault, registrationFee);
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
@@ -81,7 +76,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
         require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
         delete stakedForDomain[domainHash];
 
-        stakingToken.transfer(owner, stakeAmount);
+        stakingToken.safeTransfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
