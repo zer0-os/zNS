@@ -65,6 +65,7 @@ describe("ZNSTreasury", () => {
       const domainHash = hashDomainLabel(domain);
 
       const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
+      const zeroVaultBalanceBeforeStake = await zns.zeroToken.balanceOf(zeroVault.address);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
@@ -84,6 +85,9 @@ describe("ZNSTreasury", () => {
         target: stake.add(fee),
         shouldDecrease: true,
       });
+
+      const zeroVaultBalanceAfterStake = await zns.zeroToken.balanceOf(zeroVault.address);
+      expect(zeroVaultBalanceAfterStake).to.eq(zeroVaultBalanceBeforeStake.add(fee));
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
