@@ -171,7 +171,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit BaseLengthsSet(rootLength, subdomainLength);
     }
 
-    function setAccessController(address accessController)
+    function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSPriceOracle)
     onlyAdmin

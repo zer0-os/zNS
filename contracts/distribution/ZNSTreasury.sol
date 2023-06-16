@@ -91,11 +91,11 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
-    function setZeroVaultAddress(address zeroVaultAddress) public override onlyAdmin {
-        require(zeroVaultAddress != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
+    function setZeroVaultAddress(address zeroVault_) public override onlyAdmin {
+        require(zeroVault_ != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
 
-        zeroVault = zeroVaultAddress;
-        emit ZeroVaultAddressSet(zeroVaultAddress);
+        zeroVault = zeroVault_;
+        emit ZeroVaultAddressSet(zeroVault_);
     }
 
     function setPriceOracle(address priceOracle_) public override onlyAdmin {

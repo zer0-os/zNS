@@ -17,12 +17,12 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
     }
 
     function initialize(
-        address accessController,
-        string memory tokenName,
-        string memory tokenSymbol
+        address accessController_,
+        string memory name_,
+        string memory symbol_
     ) external override initializer {
-        __ERC721_init(tokenName, tokenSymbol);
-        _setAccessController(accessController);
+        __ERC721_init(name_, symbol_);
+        _setAccessController(accessController_);
     }
 
     /**
@@ -42,7 +42,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
         _burn(tokenId);
     }
 
-    function setAccessController(address accessController)
+    function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSDomainToken)
     onlyAdmin
