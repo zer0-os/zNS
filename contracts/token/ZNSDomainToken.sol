@@ -47,7 +47,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
     override(AccessControlled, IZNSDomainToken)
     onlyAdmin
     {
-        _setAccessController(accessController);
+        _setAccessController(accessController_);
     }
 
     function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {

@@ -176,7 +176,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     override(AccessControlled, IZNSPriceOracle)
     onlyAdmin
     {
-        _setAccessController(accessController);
+        _setAccessController(accessController_);
     }
 
     function getAccessController() external view override(AccessControlled, IZNSPriceOracle) returns (address) {

@@ -54,7 +54,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      * @notice Register a new domain such as `0://wilder`
      *
      * @param name Name of the domain to register
-     * @param resolverContent Address for the resolver to return when requested (optional, send 0x0 if not needed)
+     * @param domainAddress Address for the resolver to return when requested (optional, send 0x0 if not needed)
      */
     function registerDomain(
         string calldata name,

@@ -24,8 +24,8 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
 
     /**
      * @notice Initialize an instance of the ZNSAddressResolver
-     * @param _accessController The access controller
-     * @param _registry The registry address
+     * @param accessController_ The access controller
+     * @param registry_ The registry address
      */
     function initialize(address accessController_, address registry_) public override initializer {
         _setAccessController(accessController_);
@@ -108,7 +108,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line
+    // solhint-disable-next-line unused-vars
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
