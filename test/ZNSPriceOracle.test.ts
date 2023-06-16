@@ -35,8 +35,6 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
-  // TODO reg: add tests for proper fee calcs!
-
   it("Confirms values were initially set correctly", async () => {
     const valueCalls = [
       zns.priceOracle.feePercentage(),

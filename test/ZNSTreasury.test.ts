@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkBalance, deployZNS, validateUpgrade } from "./helpers";
+import { checkBalance, deployZNS, getPriceObject, validateUpgrade } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
@@ -104,6 +104,37 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
       );
+    });
+
+    it("Should fire StakeDeposited event with correct params", async () => {
+      const domain = "wilder";
+      const domainHash = hashDomainLabel(domain);
+
+      const {
+        expectedPrice,
+        fee,
+      } = await getPriceObject(
+        domain,
+        zns.priceOracle,
+        true,
+      );
+
+      const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
+        domainHash,
+        domain,
+        user.address,
+        true
+      );
+
+      await expect(tx)
+        .to.emit(zns.treasury, "StakeDeposited")
+        .withArgs(
+          domainHash,
+          domain,
+          user.address,
+          expectedPrice,
+          fee
+        );
     });
   });
 
