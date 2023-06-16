@@ -8,25 +8,26 @@ interface IZNSTreasury {
      * @param domainHash The hash of the domain name
      * @param domainName The domain name
      * @param depositor The address of the depositing user
-     * @param amount The amount they are depositing
+     * @param stakeAmount The amount they are depositing
      */
     event StakeDeposited(
         bytes32 indexed domainHash,
         string domainName,
         address indexed depositor,
-        uint256 indexed amount
+        uint256 indexed stakeAmount,
+        uint256 registrationFee
     );
 
     /**
      * @notice Emitted when a stake is withdrawn
      * @param domainHash The hash of the domain name
      * @param owner The owner of the domain
-     * @param amount The amount withdrawn
+     * @param stakeAmount The staked amount withdrawn
      */
     event StakeWithdrawn(
         bytes32 indexed domainHash,
         address indexed owner,
-        uint256 indexed amount
+        uint256 indexed stakeAmount
     );
 
     event PriceOracleSet(address priceOracle);
