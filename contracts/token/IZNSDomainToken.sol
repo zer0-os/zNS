@@ -17,7 +17,7 @@ interface IZNSDomainToken is IERC721Upgradeable {
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
-     * @param to The address that will recieve the newly minted domain token
+     * @param to The address that will receive the newly minted domain token
      * @param tokenId The TokenId that the caller wishes to mint/register
      */
     function register(address to, uint256 tokenId) external;
