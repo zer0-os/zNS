@@ -21,7 +21,7 @@
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
-    "devnet": "ts-node src/tenderly/devnet-execute.ts"
+    "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts"
   },
   "pre-commit": [
     "lint"
@@ -37,8 +37,8 @@
     "@openzeppelin/contracts": "4.8.3",
     "@openzeppelin/contracts-upgradeable": "4.8.3",
     "@openzeppelin/hardhat-upgrades": "1.26.0",
-    "@tenderly/hardhat-tenderly": "^1.7.4",
     "@semantic-release/git": "^10.0.1",
+    "@tenderly/hardhat-tenderly": "^1.7.4",
     "@typechain/ethers-v5": "10.1.0",
     "@typechain/hardhat": "6.1.2",
     "@types/chai": "4.2.0",
@@ -60,6 +60,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
+    "axios": "^1.4.0",
     "dotenv": "16.0.3"
   },
   "resolutions": {

@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import * as ethers from "ethers";
-import { deployZNS, hashDomainLabel } from "../../test/helpers";
+import { deployZNS, hashDomainLabel } from "../../../test/helpers";
 import { BigNumber } from "ethers";
 
 
