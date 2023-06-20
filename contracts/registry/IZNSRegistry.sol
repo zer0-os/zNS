@@ -163,5 +163,5 @@ interface IZNSRegistry {
     /**
      * @notice Get the access controller contract
      */
-    function getAccessController() view external returns(address);
+    function getAccessController() external view returns(address);
 }
