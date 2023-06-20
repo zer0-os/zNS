@@ -16,7 +16,7 @@ export const reverseInputName = (name : string) => {
 /**
  * Hashes full domain path.
  */
-export const hashDomainName = (name : string) => {
+export const hashSubdomainName = (name : string) => {
   // ens namehash lib expects child.parent for hashing algorithm as opposed to our format: parent.child
   const reversedInputName = reverseInputName(name);
   const hashedName = ensjs.namehash(reversedInputName);

@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkBalance, deployZNS, getPriceObject, validateUpgrade } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
@@ -319,7 +319,7 @@ describe("ZNSTreasury", () => {
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
       const domainName = "world";
-      const domainHash = hashDomainName(domainName);
+      const domainHash = hashSubdomainName(domainName);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
