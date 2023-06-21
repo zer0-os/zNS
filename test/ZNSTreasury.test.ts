@@ -113,8 +113,7 @@ describe("ZNSTreasury", () => {
         fee,
       } = await getPriceObject(
         domain,
-        zns.priceOracle,
-        true,
+        zns.priceOracle
       );
 
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
