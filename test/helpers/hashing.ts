@@ -1,5 +1,9 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
 const ensjs = require("@ensdomains/ensjs");
+const namehash = require("eth-ens-namehash");
+
+
+export const normalizeName = (name : string) => namehash.normalize(name);
 
 /**
  * The ens lib takes the inverse of our domain name format to
@@ -19,9 +23,7 @@ export const reverseInputName = (name : string) => {
 export const hashSubdomainName = (name : string) => {
   // ens namehash lib expects child.parent for hashing algorithm as opposed to our format: parent.child
   const reversedInputName = reverseInputName(name);
-  const hashedName = ensjs.namehash(reversedInputName);
-
-  return hashedName;
+  return ensjs.namehash(reversedInputName);
 };
 
 /**
