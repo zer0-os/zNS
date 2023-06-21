@@ -50,12 +50,12 @@ describe("ZNSRegistrar", () => {
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
+    await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
     const balance = await zns.zeroToken.balanceOf(user.address);
-    expect(balance).to.eq(ethers.utils.parseEther("15"));
+    expect(balance).to.eq(priceConfigDefault.maxPrice);
 
     const allowance = await zns.zeroToken.allowance(user.address, zns.treasury.address);
     expect(allowance).to.eq(ethers.constants.MaxUint256);
@@ -109,7 +109,7 @@ describe("ZNSRegistrar", () => {
         totalPrice,
         expectedPrice,
         fee,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
 
       await checkBalance({
         token: zns.zeroToken,
@@ -152,7 +152,7 @@ describe("ZNSRegistrar", () => {
     });
 
     it("Fails when the user does not have enough funds", async () => {
-      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, ethers.utils.parseEther("15"));
+      await zns.zeroToken.connect(user).transfer(zns.zeroToken.address, priceConfigDefault.maxPrice);
 
       const tx = defaultRegistration(user, zns, defaultDomain);
       await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
@@ -171,7 +171,7 @@ describe("ZNSRegistrar", () => {
       // expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle, true);
+      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });
@@ -332,7 +332,7 @@ describe("ZNSRegistrar", () => {
 
       // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
-      expect(balance).to.eq(ethers.utils.parseEther("15"));
+      expect(balance).to.eq(priceConfigDefault.maxPrice);
 
       // Register Top level
       const topLevelTx = await defaultRegistration(deployer, zns, defaultDomain);
@@ -342,7 +342,7 @@ describe("ZNSRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
 
@@ -401,7 +401,7 @@ describe("ZNSRegistrar", () => {
     it("Revoking domain unstakes", async () => {
     // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
-      expect(balance).to.eq(ethers.utils.parseEther("15"));
+      expect(balance).to.eq(priceConfigDefault.maxPrice);
 
       // Register Top level
       const tx = await defaultRegistration(user, zns, defaultDomain);
@@ -411,7 +411,7 @@ describe("ZNSRegistrar", () => {
       const {
         expectedPrice: expectedStaked,
         fee: expectedStakeFee,
-      } = await getPriceObject(defaultDomain, zns.priceOracle, true);
+      } = await getPriceObject(defaultDomain, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
 
@@ -672,7 +672,10 @@ describe("ZNSRegistrar", () => {
       const domainName = "world";
       const domainHash = hashDomainLabel(domainName);
 
-      await zns.registrar.registerDomain(domainName, randomUser.address);
+      await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(randomUser.address, ethers.utils.parseEther("1500"));
+
+      await zns.registrar.connect(randomUser).registerDomain(domainName, randomUser.address);
 
       await zns.registrar.setAddressResolver(randomUser.address);
 
@@ -686,7 +689,7 @@ describe("ZNSRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.priceOracle.getPrice(domainName, true),
+        zns.priceOracle.getPrice(domainName),
       ];
 
       await validateUpgrade(deployer, zns.registrar, registrar, registrarFactory, contractCalls);

@@ -49,8 +49,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     function stakeForDomain(
         bytes32 domainHash,
         string calldata domainName,
-        address depositor,
-        bool isTopLevelDomain
+        address depositor
     ) external override onlyRegistrar {
         // Get price and fee for the domain
         (
@@ -58,8 +57,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
             uint256 stakeAmount,
             uint256 registrationFee
         ) = priceOracle.getPrice(
-            domainName,
-            isTopLevelDomain
+            domainName
         );
 
         // Transfer stake amount and fee

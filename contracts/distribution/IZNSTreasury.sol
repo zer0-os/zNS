@@ -39,8 +39,7 @@ interface IZNSTreasury {
     function stakeForDomain(
         bytes32 domainHash,
         string calldata domainName,
-        address depositor,
-        bool isTopLevelDomain
+        address depositor
     ) external;
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;
