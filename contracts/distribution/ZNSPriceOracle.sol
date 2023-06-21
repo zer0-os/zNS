@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-// TODO polish: check where this is used
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
