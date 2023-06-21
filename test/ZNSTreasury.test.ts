@@ -120,8 +120,7 @@ describe("ZNSTreasury", () => {
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domain,
-        user.address,
-        true
+        user.address
       );
 
       await expect(tx)
