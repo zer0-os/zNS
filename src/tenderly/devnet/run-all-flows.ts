@@ -22,6 +22,11 @@ export const runAllFlows = async () => {
     logAddresses: true,
   });
 
+  await hre.tenderly.verify({
+    name: "ZNSRegistry",
+    address: zns.registry.address,
+  });
+
   // get some funds for the user
   await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
   await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));

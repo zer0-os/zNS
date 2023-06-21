@@ -71,6 +71,6 @@ const config : HardhatUserConfig = {
 // keep it commented out and uncomment when using DevNet
 // locally.
 // !!! Uncomment this when using Tenderly DevNet !!!
-// tenderly.setup({ automaticVerifications: true });
+tenderly.setup({ automaticVerifications: true });
 
 export default config;

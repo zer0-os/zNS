@@ -4,10 +4,10 @@ import { exec } from "child_process";
 
 const execAsync = promisify(exec);
 
-const spawnCommand = "ts-node src/tenderly/spawn-devnet.ts";
+const spawnCommand = "ts-node src/tenderly/devnet/spawn-devnet.ts";
 const opCommandBase = "npx hardhat run";
 const networkArg = "--network devnet";
-const opsPath = "src/tenderly/run-all-flows.ts";
+const opsPath = "src/tenderly/devnet/run-all-flows.ts";
 
 /**
  * Top level function to execute everything on the DevNet.
