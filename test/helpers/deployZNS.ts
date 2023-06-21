@@ -58,13 +58,8 @@ export const deployZeroToken = async (
                 implementation: ${impl}`);
   }
 
-  const mintAmount = ethers.utils.parseEther("10000");
-
   // Mint 10,000 ZERO for self
-  await zeroToken.mint(zeroToken.address, mintAmount);
-
-  // Mint 100 ZERO for deployer
-  await zeroToken.mint(deployer.address, mintAmount.div("100"));
+  await zeroToken.mint(zeroToken.address, ethers.utils.parseEther("10000"));
 
   return zeroToken;
 };
@@ -371,6 +366,7 @@ export const deployZNS = async ({
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
+  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("1500"));
 
   return znsContracts;
 };

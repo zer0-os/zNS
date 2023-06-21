@@ -52,15 +52,12 @@ export type ZNSContract =
   ZNSDomainToken;
 
 export interface PriceParams {
-  maxRootDomainPrice : BigNumber;
-  minRootDomainPrice : BigNumber;
-  maxSubdomainPrice : BigNumber;
-  minSubdomainPrice : BigNumber;
-  maxRootDomainLength : BigNumber;
-  baseRootDomainLength : BigNumber;
-  maxSubdomainLength : BigNumber;
-  baseSubdomainLength : BigNumber;
+  maxPrice : BigNumber;
+  minPrice : BigNumber;
+  maxLength : BigNumber;
+  baseLength : BigNumber;
   priceMultiplier : BigNumber;
+  precisionMultiplier : BigNumber;
 }
 
 export interface RegistrarConfig {
