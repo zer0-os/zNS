@@ -54,11 +54,11 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      * @notice Register a new domain such as `0://wilder`
      *
      * @param name Name of the domain to register
-     * @param resolverContent Address for the resolver to return when requested (optional, send 0x0 if not needed)
+     * @param domainAddress Address for the resolver to return when requested (optional, send 0x0 if not needed)
      */
     function registerDomain(
         string calldata name,
-        address resolverContent
+        address domainAddress
     ) external override returns (bytes32) {
         require(
             bytes(name).length != 0,
@@ -80,22 +80,20 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         uint256 tokenId = uint256(domainHash);
         domainToken.register(msg.sender, tokenId);
 
-        _setDomainData(domainHash, msg.sender, resolverContent);
+        _setDomainData(domainHash, msg.sender, domainAddress);
 
         emit DomainRegistered(
             domainHash,
             tokenId,
             name,
             msg.sender,
-            address(addressResolver)
+            address(addressResolver),
+            domainAddress
         );
 
         return domainHash;
     }
 
-    // TODO: figure out how to guard this so people can stake tokens
-    //  without the risk of staking contract or wallet to call reclaim+revoke
-    //  from underneath them
     function revokeDomain(bytes32 domainHash)
     external
     override
@@ -104,8 +102,8 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
-        treasury.unstakeForDomain(domainHash, msg.sender);
         registry.deleteRecord(domainHash);
+        treasury.unstakeForDomain(domainHash, msg.sender);
 
         emit DomainRevoked(domainHash, msg.sender);
     }
@@ -177,17 +175,17 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      *
      * @param domainHash The domain name hash
      * @param owner The owner of that domain
-     * @param resolverContent The content it resolves to
+     * @param domainAddress The content it resolves to
      */
     function _setDomainData(
         bytes32 domainHash,
         address owner,
-        address resolverContent
+        address domainAddress
     ) internal {
         // Set only the domain owner if no resolver content is given
-        if (resolverContent != address(0)) {
+        if (domainAddress != address(0)) {
             registry.createDomainRecord(domainHash, owner, address(addressResolver));
-            addressResolver.setAddress(domainHash, resolverContent);
+            addressResolver.setAddress(domainHash, domainAddress);
         } else {
             registry.createDomainRecord(domainHash, owner, address(0));
         }

@@ -26,16 +26,10 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        // TODO: consider using errors instead of requires with string msgs
         require(
             isOwnerOrOperator(domainHash, msg.sender),
             "ZNSRegistry: Not authorized"
         );
-        _;
-    }
-
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
         _;
     }
 
@@ -47,12 +41,17 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
     /**
      * @notice Initialize the ZNSRegistry contract
-     * @param accessController The address of the AccessController contract
+     * @param accessController_ The address of the AccessController contract
      */
-    function initialize(address accessController) public override initializer {
-        _setAccessController(accessController);
+    function initialize(address accessController_) public override initializer {
+        _setAccessController(accessController_);
     }
 
     /**
@@ -138,7 +137,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Update an existing domain record's owner or resolver
+     * @notice Update an existing domain record's owner and resolver
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain

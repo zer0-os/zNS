@@ -1,10 +1,10 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkBalance, deployZNS, validateUpgrade } from "./helpers";
+import { checkBalance, deployZNS, getPriceObject, validateUpgrade } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
@@ -65,6 +65,7 @@ describe("ZNSTreasury", () => {
       const domainHash = hashDomainLabel(domain);
 
       const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
+      const zeroVaultBalanceBeforeStake = await zns.zeroToken.balanceOf(zeroVault.address);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
@@ -83,6 +84,9 @@ describe("ZNSTreasury", () => {
         target: stake.add(fee),
         shouldDecrease: true,
       });
+
+      const zeroVaultBalanceAfterStake = await zns.zeroToken.balanceOf(zeroVault.address);
+      expect(zeroVaultBalanceAfterStake).to.eq(zeroVaultBalanceBeforeStake.add(fee));
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
@@ -98,6 +102,35 @@ describe("ZNSTreasury", () => {
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
       );
+    });
+
+    it("Should fire StakeDeposited event with correct params", async () => {
+      const domain = "wilder";
+      const domainHash = hashDomainLabel(domain);
+
+      const {
+        expectedPrice,
+        fee,
+      } = await getPriceObject(
+        domain,
+        zns.priceOracle
+      );
+
+      const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
+        domainHash,
+        domain,
+        user.address
+      );
+
+      await expect(tx)
+        .to.emit(zns.treasury, "StakeDeposited")
+        .withArgs(
+          domainHash,
+          domain,
+          user.address,
+          expectedPrice,
+          fee
+        );
     });
   });
 
@@ -281,7 +314,7 @@ describe("ZNSTreasury", () => {
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
       const domainName = "world";
-      const domainHash = hashDomainName(domainName);
+      const domainHash = hashSubdomainName(domainName);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
