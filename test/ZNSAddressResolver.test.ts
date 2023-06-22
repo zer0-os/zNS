@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,
   GOVERNOR_ROLE,
@@ -40,7 +40,7 @@ describe("ZNSAddressResolver", () => {
     zns = await deployZNS(params);
 
     // Have to get this value for every test, but can be fixed
-    wilderDomainHash = hashDomainName("wilder");
+    wilderDomainHash = hashSubdomainName("wilder");
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
