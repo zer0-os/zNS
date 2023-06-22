@@ -1,49 +1,57 @@
 import { toCampaignProxy } from "./campaign-proxy";
-import { MissionInstance } from "./types";
+import { ICampaignArgs, ICampaignState } from "./types";
+import { Deployer } from "../deployer/deployer";
+import { DeployMissionCtor } from "../missions/types";
+import { BaseDeployMission } from "../missions/base-deploy-mission";
+import { Contract } from "ethers";
 
 
 export class DeployCampaign {
-  state : any;
-  dbAdapter : any;
-  logger : any;
-  opts : any;
+  state : ICampaignState;
+  deployer : Deployer;
+  // TODO dep: fix typing
+  dbAdapter : object;
+  logger : Console;
+  opts : object;
 
   constructor ({
     missions,
+    deployer,
     dbAdapter,
     logger,
     opts,
-  }) {
+  } : ICampaignArgs) {
     this.state = {
       missions,
-      instances: {},
+      instances: [],
+      contracts: {},
     };
+    this.deployer = deployer;
     this.dbAdapter = dbAdapter;
     this.logger = logger;
+    this.opts = opts;
 
-    // instantiate all missions and write into the campaign state
-    this.state.instances = missions.reduce(
-      (acc, mission) => {
-        const newInstance = new mission();
-        const name = newInstance.instanceName;
-        newInstance.campaign = this;
-        acc[name] = newInstance;
-        return acc;
-      }, {}
+    // instantiate all missions
+    this.state.instances = missions.map(
+      (mission : DeployMissionCtor) => new mission({
+        campaign: this,
+        logger,
+        opts,
+      })
     );
 
-    const campaignAccessor = toCampaignProxy(this);
+    // const campaignProxy = toCampaignProxy(this);
 
     this.logger.debug("DeployCampaign initialized.");
 
-    return campaignAccessor;
+    // return campaignProxy;
   }
 
-  execute () {
+  async execute () {
     return this.state.instances.reduce(
       async (
         acc : Promise<void>,
-        mission : MissionInstance,
+        mission : BaseDeployMission,
       ) : Promise<void> => {
         await acc;
         return mission.execute();
@@ -52,8 +60,8 @@ export class DeployCampaign {
     );
   }
 
-  updateStateInstance (instanceName : string, instance : MissionInstance) {
-    this.state.instances[instanceName] = instance;
-    this.logger.debug(`Updated instance ${instanceName} in Campaign State to ${instance}.`);
+  updateStateContract (instanceName : string, contract : Contract) {
+    this.state.contracts[instanceName] = contract;
+    this.logger.debug(`Updated instance ${instanceName} in Campaign State to ${contract}.`);
   }
 }

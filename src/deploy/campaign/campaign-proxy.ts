@@ -1,13 +1,16 @@
 import { DeployCampaign } from "./deploy-campaign";
 
-export const toCampaignProxy = object => new Proxy(
+
+// TODO dep: make better proxy handler, possibly in the class itself
+export const toCampaignProxy = (object : DeployCampaign) => new Proxy(
   object,
   {
-    get: (target : any, p : string) : keyof DeployCampaign => {
-      if (target.state.instances[p]) {
-        return target.state.instances[p];
+    // TODO dep: make better typing for this
+    get: (target : DeployCampaign, p : string) : unknown => {
+      if (target.state.contracts[p]) {
+        return target.state.contracts[p];
       }
-      return target[p];
+      // return target[p];
     },
   }
 );
