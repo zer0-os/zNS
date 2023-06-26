@@ -10,6 +10,17 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 
+// This call is needed to initialize Tenderly with Hardhat,
+// the automatic verifications, though, don't seem to work,
+// needing us to verify explicitly in code, however,
+// for Tenderly to work properly with Hardhat this method
+// needs to be called. The call below is commented out
+// because if we leave it here, solidity-coverage
+// does not work properly locally or in CI, so we
+// keep it commented out and uncomment when using DevNet
+// locally.
+// !!! Uncomment this when using Tenderly DevNet !!!
+tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -24,6 +35,26 @@ const config : HardhatUserConfig = {
         },
       },
     ],
+    overrides: {
+      "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      "contracts/proxy.sol": {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    },
   },
   paths: {
     sources: "./contracts",
@@ -60,17 +91,5 @@ const config : HardhatUserConfig = {
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
   },
 };
-
-// This call is needed to initialize Tenderly with Hardhat,
-// the automatic verifications, though, don't seem to work,
-// needing us to verify explicitly in code, however,
-// for Tenderly to work properly with Hardhat this method
-// needs to be called. The call below is commented out
-// because if we leave it here, solidity-coverage
-// does not work properly locally or in CI, so we
-// keep it commented out and uncomment when using DevNet
-// locally.
-// !!! Uncomment this when using Tenderly DevNet !!!
-tenderly.setup({ automaticVerifications: true });
 
 export default config;
