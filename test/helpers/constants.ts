@@ -30,5 +30,5 @@ export const addressResolverName = "ZNSAddressResolver";
 export const priceOracleName = "ZNSPriceOracle";
 export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRegistrar";
-
 export const erc1967ProxyName = "ERC1967Proxy";
+export const transparentProxyName = "TransparentUpgradeableProxy";

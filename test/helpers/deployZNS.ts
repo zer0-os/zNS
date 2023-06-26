@@ -31,7 +31,7 @@ import {
   priceOracleName,
   registrarName,
   registrationFeePercDefault,
-  registryName,
+  registryName, transparentProxyName,
   treasuryName,
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -172,7 +172,7 @@ export const deployZeroToken = async (
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: erc1967ProxyName,
+      name: transparentProxyName,
       address: zeroToken.address,
     });
 
