@@ -1,8 +1,10 @@
 import * as hre from "hardhat";
 import * as ethers from "ethers";
-import { deployZNS, hashDomainLabel } from "../../../test/helpers";
 import { BigNumber } from "ethers";
-import { getProxyImplAddress } from "../../../test/helpers/utils";
+import {
+  deployZNS,
+  hashDomainLabel,
+} from "../../../test/helpers";
 
 
 const domainName = "wilder";
@@ -20,22 +22,7 @@ export const runAllFlows = async () => {
     deployer: governor,
     governorAddresses: [governor.address],
     adminAddresses: [governor.address],
-    logAddresses: true,
-  });
-
-  // VERIFICATION
-  await hre.tenderly.verify({
-    name: "ERC1967Proxy",
-    address: zns.registry.address,
-  });
-
-  // READ IMPL ADDRESS TO VERIFY IMPL
-  const impl = await getProxyImplAddress(zns.registry.address);
-
-  // VERIFY IMPL
-  await hre.tenderly.verify({
-    name: "ZNSRegistry",
-    address: impl,
+    isTenderlyRun: true,
   });
 
   // get some funds for the user
