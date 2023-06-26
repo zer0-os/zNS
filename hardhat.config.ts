@@ -45,7 +45,7 @@ const config : HardhatUserConfig = {
           },
         },
       },
-      "contracts/proxy.sol": {
+      "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
         version: "0.8.9",
         settings: {
           optimizer: {
