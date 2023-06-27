@@ -1,5 +1,5 @@
 import { toCampaignProxy } from "./campaign-proxy";
-import { ICampaignArgs, ICampaignState } from "./types";
+import { ICampaignArgs, ICampaignState, IDeployCampaignConfig } from "./types";
 import { Deployer } from "../deployer/deployer";
 import { DeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
@@ -12,14 +12,14 @@ export class DeployCampaign {
   // TODO dep: fix typing
   dbAdapter : object;
   logger : Console;
-  opts : object;
+  config : IDeployCampaignConfig;
 
   constructor ({
     missions,
     deployer,
     dbAdapter,
     logger,
-    opts,
+    config,
   } : ICampaignArgs) {
     this.state = {
       missions,
@@ -29,14 +29,14 @@ export class DeployCampaign {
     this.deployer = deployer;
     this.dbAdapter = dbAdapter;
     this.logger = logger;
-    this.opts = opts;
+    this.config = config;
 
     // instantiate all missions
     this.state.instances = missions.map(
       (mission : DeployMissionCtor) => new mission({
         campaign: this,
         logger,
-        opts,
+        config,
       })
     );
 
@@ -62,6 +62,6 @@ export class DeployCampaign {
 
   updateStateContract (instanceName : string, contract : Contract) {
     this.state.contracts[instanceName] = contract;
-    this.logger.debug(`Updated instance ${instanceName} in Campaign State to ${contract}.`);
+    this.logger.debug(`Instance of deployed contract ${instanceName} is added to Campaign state.`);
   }
 }

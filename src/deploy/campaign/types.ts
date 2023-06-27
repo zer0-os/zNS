@@ -4,8 +4,10 @@ import { DeployMissionCtor } from "../missions/types";
 import { Deployer } from "../deployer/deployer";
 
 
-export interface IDeployCampaign {
-  [p : string] : unknown | ((p : string) => unknown);
+export interface IDeployCampaignConfig {
+  governorAddresses : Array<string>;
+  adminAddresses : Array<string>;
+  // TODO dep: add more props when opts expanded
 }
 
 export interface IContractState {
@@ -23,5 +25,5 @@ export interface ICampaignArgs {
   deployer : Deployer;
   dbAdapter : object;
   logger : Console;
-  opts : object;
+  config : IDeployCampaignConfig;
 }

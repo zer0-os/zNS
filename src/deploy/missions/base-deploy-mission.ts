@@ -1,6 +1,7 @@
 import { Contract } from "ethers";
-import { IContractDbObject, IProxyData } from "./types";
+import { DeployArgs, IContractDbObject, IProxyData } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
+import { IDeployCampaignConfig } from "../campaign/types";
 
 
 // TODO dep:
@@ -13,21 +14,21 @@ export class BaseDeployMission {
   proxyData! : IProxyData;
   campaign : DeployCampaign;
   logger : Console;
-  opts : object;
+  config : IDeployCampaignConfig;
 
   constructor ({
     campaign,
     logger,
-    opts,
+    config,
     // TODO dep: refine typing
   } : {
     campaign : DeployCampaign;
     logger : Console;
-    opts : object;
+    config : IDeployCampaignConfig;
   }) {
     this.campaign = campaign;
     this.logger = logger;
-    this.opts = opts;
+    this.config = config;
   }
 
   async getFromDB () {
@@ -45,13 +46,12 @@ export class BaseDeployMission {
     return Promise.resolve();
   }
 
-  async shouldDeploy () {
+  async needsDeploy () {
     const dbContract = await this.getFromDB();
     return !dbContract;
   }
 
-  deployArgs () {
-    this.logger.info(`Deploying ${this.contractName} with args: []`);
+  deployArgs () : DeployArgs {
     return [];
   }
 
@@ -68,42 +68,36 @@ export class BaseDeployMission {
   }
 
   async deploy () {
-    const shouldDeploy = await this.shouldDeploy();
-    if (shouldDeploy) {
-      this.logger.info(`Deploying ${this.contractName}...`);
+    // TODO dep: is this in the right spot?
+    await this.preDeploy();
 
-      // TODO dep: is this in the right spot?
-      await this.preDeploy();
+    const deployArgs = this.deployArgs();
+    this.logger.info(`Deploying ${this.contractName} with arguments: ${JSON.stringify(deployArgs)}`);
 
-      const deployArgs = this.deployArgs();
-
-      let contract;
-      if (this.proxyData.isProxy) {
-        contract = await this.campaign.deployer.deployProxy({
-          contractName: this.contractName,
-          args: deployArgs,
-          kind: this.proxyData.proxyKind,
-        });
-      } else if (!this.proxyData.isProxy) {
-        contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
-      } else {
-        // TODO dep: can this even hit? verify!
-        throw new Error("Invalid proxy data specified in the contract's mission");
-      }
-
-      const dbObj = this.buildDbObject(contract);
-
-      await this.pushToDB(dbObj);
-
-      await this.campaign.updateStateContract(this.instanceName, contract);
-
-      this.logger.info(`Deployed ${this.contractName} at ${contract.address}`);
-
-      await this.postDeploy();
+    let contract;
+    if (this.proxyData.isProxy) {
+      contract = await this.campaign.deployer.deployProxy({
+        contractName: this.contractName,
+        args: deployArgs,
+        kind: this.proxyData.proxyKind,
+      });
+    } else if (!this.proxyData.isProxy) {
+      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+    } else {
+      // TODO dep: can this even hit? verify!
+      throw new Error("Invalid proxy data specified in the contract's mission");
     }
+
+    const dbObj = this.buildDbObject(contract);
+
+    await this.pushToDB(dbObj);
+
+    await this.campaign.updateStateContract(this.instanceName, contract);
+
+    this.logger.info(`Deploy success for ${this.contractName} at ${contract.address}`);
   }
 
-  async shouldPostDeploy () {
+  async needsPostDeploy () {
     return Promise.resolve(true);
   }
 
@@ -112,13 +106,13 @@ export class BaseDeployMission {
   }
 
   async execute () {
-    if (await this.shouldDeploy()) {
+    if (await this.needsDeploy()) {
       await this.deploy();
     } else {
       this.logger.info(`Skipping ${this.contractName} deployment...`);
     }
 
-    if (await this.shouldPostDeploy()) {
+    if (await this.needsPostDeploy()) {
       await this.postDeploy();
     }
   }
