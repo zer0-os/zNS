@@ -33,14 +33,12 @@ export class BaseDeployMission {
 
   async getFromDB () {
     // TODO dep: implement
-    // return this.campaign.dbAdapter.getContractInstance(this.nameInDb);
-    // TODO dep: change this from undefined
-    return Promise.resolve(undefined);
+    return this.campaign.dbAdapter.getContract(this.nameInDb);
   }
 
   async pushToDB (dbContractObj : IContractDbObject) {
     // TODO dep: implement
-    // return this.campaign.dbAdapter.writeContract(this.nameInDb, dbContractObj);
+    return this.campaign.dbAdapter.writeContract(this.nameInDb, dbContractObj);
   }
 
   async preDeploy () {

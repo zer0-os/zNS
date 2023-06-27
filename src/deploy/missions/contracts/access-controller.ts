@@ -1,6 +1,7 @@
 import { BaseDeployMission } from "../base-deploy-mission";
 
-export class ZNSAccessControllerDM extends BaseDeployMission {
+
+class ZNSAccessControllerDM extends BaseDeployMission {
   proxyData = {
     isProxy: false,
   };
@@ -8,6 +9,7 @@ export class ZNSAccessControllerDM extends BaseDeployMission {
   //  possibly use ones from the helpers
   contractName = "ZNSAccessController";
   instanceName = "accessController";
+  nameInDb = this.contractName;
 
   async postDeploy () {
     const {
@@ -20,3 +22,5 @@ export class ZNSAccessControllerDM extends BaseDeployMission {
     await accessController.initialize(governorAddresses, adminAddresses);
   }
 }
+
+export default ZNSAccessControllerDM;
