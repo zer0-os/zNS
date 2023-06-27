@@ -1,9 +1,11 @@
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
-import { AccessControllerDM } from "../src/deploy/missions/contracts/access-controller";
+import { ZNSAccessControllerDM } from "../src/deploy/missions/contracts/access-controller";
 import { Deployer } from "../src/deploy/deployer/deployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GOVERNOR_ROLE, REGISTRAR_ROLE } from "./helpers";
+import { ZNSRegistryDM } from "../src/deploy/missions/contracts/registry";
+import { expect } from "chai";
 
 
 describe.only("Deploy Campaign Smoke Test", () => {
@@ -22,7 +24,10 @@ describe.only("Deploy Campaign Smoke Test", () => {
     };
 
     const campaign = new DeployCampaign({
-      missions: [ AccessControllerDM ],
+      missions: [
+        ZNSAccessControllerDM,
+        ZNSRegistryDM,
+      ],
       deployer,
       dbAdapter: dbAdapterMock,
       logger: console,
@@ -31,8 +36,11 @@ describe.only("Deploy Campaign Smoke Test", () => {
 
     await campaign.execute();
 
-    const { accessController } = campaign.state.contracts;
+    const { accessController, registry } = campaign.state.contracts;
     const isGovernor = await accessController.hasRole(GOVERNOR_ROLE, governor.address);
-    console.log("isGovernor", isGovernor);
+    expect(isGovernor).to.be.true;
+
+    const acFromRegistry = await registry.getAccessController();
+    expect(acFromRegistry).to.equal(accessController.address);
   });
 });
