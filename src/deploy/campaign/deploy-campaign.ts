@@ -1,16 +1,16 @@
-import { toCampaignProxy } from "./campaign-proxy";
 import { ICampaignArgs, ICampaignState, IDeployCampaignConfig } from "./types";
 import { Deployer } from "../deployer/deployer";
 import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
+import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 
 
 export class DeployCampaign {
   state : ICampaignState;
   deployer : Deployer;
   // TODO dep: fix typing
-  dbAdapter : object;
+  dbAdapter : BaseStorageAdapter;
   logger : Console;
   config : IDeployCampaignConfig;
 
@@ -40,10 +40,9 @@ export class DeployCampaign {
       })
     );
 
-    // const campaignProxy = toCampaignProxy(this);
-
     this.logger.debug("DeployCampaign initialized.");
 
+    // TODO dep: add a good proxy to pull contracts easily
     // return campaignProxy;
   }
 

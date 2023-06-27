@@ -2,6 +2,7 @@ import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
 import { TDeployMissionCtor } from "../missions/types";
 import { Deployer } from "../deployer/deployer";
+import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 
 
 export interface IDeployCampaignConfig {
@@ -23,7 +24,7 @@ export interface ICampaignState {
 export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
   deployer : Deployer;
-  dbAdapter : object;
+  dbAdapter : BaseStorageAdapter;
   logger : Console;
   config : IDeployCampaignConfig;
 }
