@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployArgs, ProxyKind } from "../missions/types";
+import { TDeployArgs, TProxyKind } from "../missions/types";
 
 export class Deployer {
   hre : HardhatRuntimeEnvironment;
@@ -15,8 +15,8 @@ export class Deployer {
     kind,
   } : {
     contractName : string;
-    args : DeployArgs;
-    kind : ProxyKind;
+    args : TDeployArgs;
+    kind : TProxyKind;
   }) {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName);
     const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {
@@ -28,17 +28,17 @@ export class Deployer {
     return contract;
   }
 
-  async getProxyImplAddress (proxyContract : string) {
-    return this.hre.upgrades.erc1967.getImplementationAddress(proxyContract);
-  }
-
-  async deployContract (contractName : string, args : DeployArgs) {
+  async deployContract (contractName : string, args : TDeployArgs) {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName);
     const contract = await contractFactory.deploy(...args);
 
     await contract.deployed();
 
     return contract;
+  }
+
+  async getProxyImplAddress (proxyContract : string) {
+    return this.hre.upgrades.erc1967.getImplementationAddress(proxyContract);
   }
 }
 

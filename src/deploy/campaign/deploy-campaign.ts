@@ -1,7 +1,7 @@
 import { toCampaignProxy } from "./campaign-proxy";
 import { ICampaignArgs, ICampaignState, IDeployCampaignConfig } from "./types";
 import { Deployer } from "../deployer/deployer";
-import { DeployMissionCtor } from "../missions/types";
+import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
 
@@ -33,7 +33,7 @@ export class DeployCampaign {
 
     // instantiate all missions
     this.state.instances = missions.map(
-      (mission : DeployMissionCtor) => new mission({
+      (mission : TDeployMissionCtor) => new mission({
         campaign: this,
         logger,
         config,
@@ -62,6 +62,6 @@ export class DeployCampaign {
 
   updateStateContract (instanceName : string, contract : Contract) {
     this.state.contracts[instanceName] = contract;
-    this.logger.debug(`Instance of deployed contract ${instanceName} is added to Campaign state.`);
+    this.logger.debug(`Instance of deployed contract '${instanceName}' is added to Campaign state.`);
   }
 }

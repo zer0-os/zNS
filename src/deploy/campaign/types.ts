@@ -1,6 +1,6 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
-import { DeployMissionCtor } from "../missions/types";
+import { TDeployMissionCtor } from "../missions/types";
 import { Deployer } from "../deployer/deployer";
 
 
@@ -15,13 +15,13 @@ export interface IContractState {
 }
 
 export interface ICampaignState {
-  missions : Array<DeployMissionCtor>;
+  missions : Array<TDeployMissionCtor>;
   instances : Array<BaseDeployMission>;
   contracts : IContractState;
 }
 
 export interface ICampaignArgs {
-  missions : Array<DeployMissionCtor>;
+  missions : Array<TDeployMissionCtor>;
   deployer : Deployer;
   dbAdapter : object;
   logger : Console;

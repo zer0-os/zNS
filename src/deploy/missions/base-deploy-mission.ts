@@ -1,5 +1,5 @@
 import { Contract } from "ethers";
-import { DeployArgs, IContractDbObject, IProxyData } from "./types";
+import { TDeployArgs, IContractDbObject, IProxyData } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig } from "../campaign/types";
 
@@ -34,7 +34,8 @@ export class BaseDeployMission {
   async getFromDB () {
     // TODO dep: implement
     // return this.campaign.dbAdapter.getContractInstance(this.nameInDb);
-    return Promise.resolve({});
+    // TODO dep: change this from undefined
+    return Promise.resolve(undefined);
   }
 
   async pushToDB (dbContractObj : IContractDbObject) {
@@ -51,7 +52,7 @@ export class BaseDeployMission {
     return !dbContract;
   }
 
-  deployArgs () : DeployArgs {
+  deployArgs () : TDeployArgs {
     return [];
   }
 

@@ -1,6 +1,6 @@
 import { BaseDeployMission } from "../base-deploy-mission";
 
-export class AccessControllerDM extends BaseDeployMission {
+export class ZNSAccessControllerDM extends BaseDeployMission {
   proxyData = {
     isProxy: false,
   };
@@ -18,11 +18,5 @@ export class AccessControllerDM extends BaseDeployMission {
     const accessController = this.campaign.state.contracts[this.instanceName];
 
     await accessController.initialize(governorAddresses, adminAddresses);
-  }
-
-  async needsDeploy () {
-    // TODO dep: fix this when DB adapter is implemented
-    //  this is temporary!
-    return Promise.resolve(true);
   }
 }
