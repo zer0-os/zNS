@@ -12,11 +12,11 @@ export class Deployer {
   async deployProxy ({
     contractName,
     args,
-    kind = "uups",
+    kind,
   } : {
     contractName : string;
     args : DeployArgs;
-    kind ?: ProxyKind;
+    kind : ProxyKind;
   }) {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName);
     const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {

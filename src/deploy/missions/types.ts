@@ -14,3 +14,8 @@ export interface IContractDbObject {
 export type DeployArgs = Array<unknown>;
 
 export type ProxyKind = "uups" | "transparent" | "beacon" | undefined;
+
+export interface IProxyData {
+  isProxy : boolean;
+  proxyKind ?: ProxyKind;
+}

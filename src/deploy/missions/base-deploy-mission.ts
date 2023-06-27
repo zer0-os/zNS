@@ -1,5 +1,5 @@
 import { Contract } from "ethers";
-import { IContractDbObject } from "./types";
+import { IContractDbObject, IProxyData } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 
 
@@ -10,7 +10,7 @@ export class BaseDeployMission {
   nameInDb! : string;
   contractName! : string;
   instanceName! : string;
-  isProxy! : boolean;
+  proxyData! : IProxyData;
   campaign : DeployCampaign;
   logger : Console;
   opts : object;
@@ -76,10 +76,20 @@ export class BaseDeployMission {
       await this.preDeploy();
 
       const deployArgs = this.deployArgs();
-      const contract = await this.campaign.deployer.deployProxy({
-        contractName: this.contractName,
-        args: deployArgs,
-      });
+
+      let contract;
+      if (this.proxyData.isProxy) {
+        contract = await this.campaign.deployer.deployProxy({
+          contractName: this.contractName,
+          args: deployArgs,
+          kind: this.proxyData.proxyKind,
+        });
+      } else if (!this.proxyData.isProxy) {
+        contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+      } else {
+        // TODO dep: can this even hit? verify!
+        throw new Error("Invalid proxy data specified in the contract's mission");
+      }
 
       const dbObj = this.buildDbObject(contract);
 
