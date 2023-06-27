@@ -1,11 +1,12 @@
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
-import { ZNSAccessControllerDM } from "../src/deploy/missions/contracts/access-controller";
+import ZNSAccessControllerDM from "../src/deploy/missions/contracts/access-controller";
 import { Deployer } from "../src/deploy/deployer/deployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { GOVERNOR_ROLE, REGISTRAR_ROLE } from "./helpers";
-import { ZNSRegistryDM } from "../src/deploy/missions/contracts/registry";
+import { GOVERNOR_ROLE } from "./helpers";
+import ZNSRegistryDM from "../src/deploy/missions/contracts/registry";
 import { expect } from "chai";
+import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
 
 
 describe.only("Deploy Campaign Smoke Test", () => {
@@ -17,7 +18,7 @@ describe.only("Deploy Campaign Smoke Test", () => {
     [governor, admin, user] = await hre.ethers.getSigners();
 
     const deployer = new Deployer();
-    const dbAdapterMock = {};
+    const dbAdapter = new FileStorageAdapter(console);
     const config = {
       governorAddresses: [ governor.address ],
       adminAddresses: [ governor.address, admin.address ],
@@ -29,7 +30,7 @@ describe.only("Deploy Campaign Smoke Test", () => {
         ZNSRegistryDM,
       ],
       deployer,
-      dbAdapter: dbAdapterMock,
+      dbAdapter,
       logger: console,
       config,
     });
