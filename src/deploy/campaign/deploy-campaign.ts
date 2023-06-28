@@ -21,7 +21,7 @@ export class DeployCampaign {
     get: (target, prop) => {
       if (typeof prop === "string" && !!target.state.contracts[prop]) {
         return target.state.contracts[prop];
-      } else if (typeof prop === "string") {
+      } else if (typeof prop === "string" && !!target[prop]) {
         return target[prop];
       }
 
