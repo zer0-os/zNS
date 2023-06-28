@@ -12,8 +12,8 @@ import {
   NO_ZERO_PRECISION_MULTIPLIER_ERR,
   getAccessRevertMsg,
 } from "./helpers/errors";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../typechain";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

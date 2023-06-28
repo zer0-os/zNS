@@ -5,9 +5,9 @@ import { checkBalance, deployZNS, getPriceObject, validateUpgrade } from "./help
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
-import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
+import { ADMIN_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

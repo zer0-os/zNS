@@ -20,8 +20,8 @@ import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent, getTokenIdFromEvent } from "./helpers/events";
 import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

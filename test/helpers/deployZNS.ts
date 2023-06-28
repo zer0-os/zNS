@@ -27,10 +27,11 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./constants";
-import { deployAccessController, REGISTRAR_ROLE } from "./access";
+import { deployAccessController } from "./access";
 import { BigNumber } from "ethers";
 import { getProxyImplAddress } from "./utils";
 import { IPriceParams } from "../../src/deploy/missions/types";
+import { REGISTRAR_ROLE } from "../../src/deploy/constants";
 
 export const deployZeroToken = async (
   deployer : SignerWithAddress,
