@@ -37,6 +37,10 @@ export class Deployer {
     return contract;
   }
 
+  getContractArtifact (contractName : string) {
+    return this.hre.artifacts.readArtifactSync(contractName);
+  }
+
   async getProxyImplAddress (proxyContract : string) {
     return this.hre.upgrades.erc1967.getImplementationAddress(proxyContract);
   }

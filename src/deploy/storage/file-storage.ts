@@ -3,7 +3,8 @@ import path from "path";
 import { IContractDbObject } from "../missions/types";
 import { BaseStorageAdapter } from "./base-storage-adapter";
 
-
+// TODO dep: remove temp db folder and possibly add to .gitignore
+//  when testing is done
 export const tempDbPath = path.join(__dirname, "../../../db");
 
 
