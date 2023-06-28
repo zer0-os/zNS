@@ -3,9 +3,11 @@ import { BigNumber, Contract } from "ethers";
 import { IPriceParams, TDeployMissionCtor } from "../missions/types";
 import { Deployer } from "../deployer/deployer";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 
 export interface IDeployCampaignConfig {
+  deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
