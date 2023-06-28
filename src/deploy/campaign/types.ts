@@ -8,6 +8,10 @@ import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 export interface IDeployCampaignConfig {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
+  domainToken : {
+    name : string;
+    symbol : string;
+  };
   // TODO dep: add more props when opts expanded
 }
 
