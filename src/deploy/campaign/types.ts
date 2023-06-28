@@ -14,6 +14,8 @@ export interface IDeployCampaignConfig {
   };
   priceConfig : IPriceParams;
   registrationFee : BigNumber;
+  stakingTokenAddress : string;
+  zeroVaultAddress : string;
   // TODO dep: add more props when opts expanded
 }
 
