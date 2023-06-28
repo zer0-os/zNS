@@ -1,6 +1,6 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { Contract } from "ethers";
-import { TDeployMissionCtor } from "../missions/types";
+import { BigNumber, Contract } from "ethers";
+import { IPriceParams, TDeployMissionCtor } from "../missions/types";
 import { Deployer } from "../deployer/deployer";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 
@@ -12,6 +12,8 @@ export interface IDeployCampaignConfig {
     name : string;
     symbol : string;
   };
+  priceConfig : IPriceParams;
+  registrationFee : BigNumber;
   // TODO dep: add more props when opts expanded
 }
 

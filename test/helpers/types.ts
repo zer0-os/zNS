@@ -1,26 +1,28 @@
 import { BigNumber } from "ethers";
 import {
-  ZNSAddressResolver,
-  ZNSDomainToken,
-  ZNSRegistrar,
-  ZNSPriceOracle,
-  ZNSRegistry,
-  ZNSTreasury,
+  ZeroToken,
   ZNSAccessController,
-  ZNSRegistrarUpgradeMock,
-  ZNSPriceOracleUpgradeMock,
+  ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
-  ZNSDomainTokenUpgradeMock,
-  ZNSRegistryUpgradeMock,
-  ZNSTreasuryUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
+  ZNSDomainToken,
+  ZNSDomainTokenUpgradeMock,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSRegistrarUpgradeMock__factory,
+  ZNSPriceOracle,
+  ZNSPriceOracleUpgradeMock,
   ZNSPriceOracleUpgradeMock__factory,
+  ZNSRegistrar,
+  ZNSRegistrarUpgradeMock,
+  ZNSRegistrarUpgradeMock__factory,
+  ZNSRegistry,
+  ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory, ZeroToken,
+  ZNSTreasury,
+  ZNSTreasuryUpgradeMock,
+  ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { IPriceParams } from "../../src/deploy/missions/types";
 
 export type Maybe<T> = T | undefined;
 
@@ -50,15 +52,6 @@ export type ZNSContract =
   ZNSAddressResolver |
   ZNSDomainToken;
 
-export interface PriceParams {
-  maxPrice : BigNumber;
-  minPrice : BigNumber;
-  maxLength : BigNumber;
-  baseLength : BigNumber;
-  priceMultiplier : BigNumber;
-  precisionMultiplier : BigNumber;
-}
-
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
@@ -81,7 +74,7 @@ export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: PriceParams;
+  priceConfig ?: IPriceParams;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
   logAddresses ?: boolean;

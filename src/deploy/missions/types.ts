@@ -1,6 +1,7 @@
 import { BaseDeployMission } from "./base-deploy-mission";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig } from "../campaign/types";
+import { BigNumber } from "ethers";
 
 
 export interface IDeployMissionArgs {
@@ -27,4 +28,13 @@ export type TProxyKind = "uups" | "transparent" | "beacon" | undefined;
 export interface IProxyData {
   isProxy : boolean;
   proxyKind ?: TProxyKind;
+}
+
+export interface IPriceParams {
+  maxPrice : BigNumber;
+  minPrice : BigNumber;
+  maxLength : BigNumber;
+  baseLength : BigNumber;
+  priceMultiplier : BigNumber;
+  precisionMultiplier : BigNumber;
 }

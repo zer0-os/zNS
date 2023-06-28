@@ -17,7 +17,7 @@ import {
   ZeroToken,
   ZeroToken__factory,
 } from "../../typechain";
-import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { DeployZNSParams, RegistrarConfig, ZNSContracts } from "./types";
 import { ethers, upgrades } from "hardhat";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -30,6 +30,7 @@ import {
 import { deployAccessController, REGISTRAR_ROLE } from "./access";
 import { BigNumber } from "ethers";
 import { getProxyImplAddress } from "./utils";
+import { IPriceParams } from "../../src/deploy/missions/types";
 
 export const deployZeroToken = async (
   deployer : SignerWithAddress,
@@ -133,7 +134,7 @@ export const deployPriceOracle = async ({
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
-  priceConfig : PriceParams;
+  priceConfig : IPriceParams;
   registrationFee : BigNumber;
   logAddress : boolean;
 }) : Promise<ZNSPriceOracle> => {
