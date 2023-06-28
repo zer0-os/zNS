@@ -1,4 +1,5 @@
 import { BaseDeployMission } from "../base-deploy-mission";
+import { znsNames } from "../../constants";
 
 
 class ZNSAccessControllerDM extends BaseDeployMission {
@@ -7,9 +8,8 @@ class ZNSAccessControllerDM extends BaseDeployMission {
   };
   // TODO dep: make constants available for both this and tests.
   //  possibly use ones from the helpers
-  contractName = "ZNSAccessController";
-  instanceName = "accessController";
-  nameInDb = this.contractName;
+  contractName = znsNames.accessController.contract;
+  instanceName = znsNames.accessController.instance;
 
   async postDeploy () {
     const {

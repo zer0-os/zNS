@@ -1,5 +1,5 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds } from "../../constants";
+import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
@@ -9,10 +9,8 @@ class ZNSRegistryDM extends BaseDeployMission {
     kind: ProxyKinds.uups,
   };
 
-  contractName = "ZNSRegistry";
-  instanceName = "registry";
-  // TODO dep: figure out the naming here
-  nameInDb = this.contractName;
+  contractName = znsNames.registry.contract;
+  instanceName = znsNames.registry.instance;
 
   deployArgs () : TDeployArgs {
     const { accessController: { address: acAddress } } = this.campaign;

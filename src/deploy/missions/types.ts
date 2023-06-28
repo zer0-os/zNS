@@ -16,6 +16,7 @@ export interface IContractDbObject {
   abi : string;
   bytecode : string;
   args : string;
+  implementation : string | null;
   version : string;
 }
 
