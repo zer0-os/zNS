@@ -9,7 +9,6 @@ import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 export class DeployCampaign {
   state : ICampaignState;
   deployer : Deployer;
-  // TODO dep: fix typing
   dbAdapter : BaseStorageAdapter;
   logger : Console;
   config : IDeployCampaignConfig;
@@ -62,7 +61,7 @@ export class DeployCampaign {
       })
     );
 
-    this.logger.debug("DeployCampaign initialized.");
+    this.logger.debug("Deploy Campaign initialized.");
 
     return campaignProxy;
   }
