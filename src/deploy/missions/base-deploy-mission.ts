@@ -67,10 +67,7 @@ export class BaseDeployMission {
       abi: JSON.stringify(abi),
       bytecode,
       args: JSON.stringify(this.deployArgs()),
-      // TODO dep: which time to use here?
-      //  maybe read it at init time and use across as a version
-      //  in unix format?
-      date: new Date().toString(),
+      version: this.campaign.version,
     };
   }
 

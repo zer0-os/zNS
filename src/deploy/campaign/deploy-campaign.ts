@@ -13,6 +13,7 @@ export class DeployCampaign {
   dbAdapter : BaseStorageAdapter;
   logger : Console;
   config : IDeployCampaignConfig;
+  version : string;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [name : string | symbol] : any;
@@ -48,6 +49,7 @@ export class DeployCampaign {
     this.dbAdapter = dbAdapter;
     this.logger = logger;
     this.config = config;
+    this.version = Date.now().toString();
 
     const campaignProxy = new Proxy(this, DeployCampaign.indexedHandler);
 

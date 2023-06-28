@@ -16,7 +16,7 @@ export interface IContractDbObject {
   abi : string;
   bytecode : string;
   args : string;
-  date : string;
+  version : string;
 }
 
 export type TDeployArgs = Array<string | Array<string>>;
