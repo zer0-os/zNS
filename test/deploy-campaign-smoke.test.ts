@@ -20,7 +20,7 @@ describe.only("Deploy Campaign Smoke Test", () => {
     [governor, admin, user] = await hre.ethers.getSigners();
 
     const deployer = new Deployer();
-    const dbAdapter = new FileStorageAdapter(console);
+    const dbAdapterIn = new FileStorageAdapter(console);
     const config = {
       governorAddresses: [ governor.address ],
       adminAddresses: [ governor.address, admin.address ],
@@ -32,21 +32,25 @@ describe.only("Deploy Campaign Smoke Test", () => {
         ZNSRegistryDM,
       ],
       deployer,
-      dbAdapter,
+      dbAdapter: dbAdapterIn,
       logger: console,
       config,
     });
 
     await campaign.execute();
 
-    const { accessController, registry } = campaign.state.contracts;
+    const {
+      accessController,
+      registry,
+      dbAdapter,
+    } = campaign;
     const isGovernor = await accessController.hasRole(GOVERNOR_ROLE, governor.address);
     expect(isGovernor).to.be.true;
 
     const acFromRegistry = await registry.getAccessController();
     expect(acFromRegistry).to.equal(accessController.address);
 
-    const contractDbDoc = await campaign.dbAdapter.getContract("ZNSAccessController");
+    const contractDbDoc = await dbAdapter.getContract("ZNSAccessController");
     const contract = new hre.ethers.Contract(
       contractDbDoc!.address,
       contractDbDoc!.abi,

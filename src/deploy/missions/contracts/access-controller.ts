@@ -16,8 +16,7 @@ class ZNSAccessControllerDM extends BaseDeployMission {
       governorAddresses,
       adminAddresses,
     } = this.config;
-    // TODO dep: make indexable proxy to pull these easily
-    const accessController = this.campaign.state.contracts[this.instanceName];
+    const { accessController } = this.campaign;
 
     await accessController.initialize(governorAddresses, adminAddresses);
   }

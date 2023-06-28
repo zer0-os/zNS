@@ -15,8 +15,8 @@ class ZNSRegistryDM extends BaseDeployMission {
   nameInDb = this.contractName;
 
   deployArgs () : TDeployArgs {
-    const accessController = this.campaign.state.contracts.accessController.address;
-    return [ accessController ];
+    const { accessController: { address: acAddress } } = this.campaign;
+    return [ acAddress ];
   }
 }
 

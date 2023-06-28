@@ -14,6 +14,24 @@ export class DeployCampaign {
   logger : Console;
   config : IDeployCampaignConfig;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [name : string | symbol] : any;
+
+  private static indexedHandler : ProxyHandler<DeployCampaign> = {
+    get: (target, prop) => {
+      if (typeof prop === "string" && !!target.state.contracts[prop]) {
+        return target.state.contracts[prop];
+      } else if (typeof prop === "string") {
+        return target[prop];
+      }
+
+      throw new Error(`
+      Accessing deployed contract data that is not in Campaign State or
+      property '${prop.toString()}' does not exist on DeployCampaign.
+      `);
+    },
+  };
+
   constructor ({
     missions,
     deployer,
@@ -31,10 +49,12 @@ export class DeployCampaign {
     this.logger = logger;
     this.config = config;
 
+    const campaignProxy = new Proxy(this, DeployCampaign.indexedHandler);
+
     // instantiate all missions
     this.state.instances = missions.map(
       (mission : TDeployMissionCtor) => new mission({
-        campaign: this,
+        campaign: campaignProxy,
         logger,
         config,
       })
@@ -42,8 +62,7 @@ export class DeployCampaign {
 
     this.logger.debug("DeployCampaign initialized.");
 
-    // TODO dep: add a good proxy to pull contracts easily
-    // return campaignProxy;
+    return campaignProxy;
   }
 
   async execute () {
