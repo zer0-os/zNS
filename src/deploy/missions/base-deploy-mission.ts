@@ -8,7 +8,6 @@ import { IDeployCampaignConfig } from "../campaign/types";
 //    1. add better logging for each step
 //    2. add proper error handling
 export class BaseDeployMission {
-  nameInDb! : string;
   contractName! : string;
   instanceName! : string;
   proxyData! : IProxyData;
@@ -31,12 +30,17 @@ export class BaseDeployMission {
   }
 
   async getFromDB () {
-    return this.campaign.dbAdapter.getContract(this.nameInDb);
+    return this.campaign.dbAdapter.getContract(this.contractName);
   }
 
   async pushToDB (contract : Contract) {
-    const contractDbDoc = this.buildDbObject(contract);
-    return this.campaign.dbAdapter.writeContract(this.nameInDb, contractDbDoc);
+    const implAddress = this.proxyData.isProxy
+      ? await this.campaign.deployer.getProxyImplAddress(contract.address)
+      : null;
+
+    const contractDbDoc = this.buildDbObject(contract, implAddress);
+
+    return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
 
   async preDeploy () {
@@ -56,13 +60,14 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  buildDbObject (hhContract : Contract) : IContractDbObject {
+  buildDbObject (hhContract : Contract, implAddress : string | null) : IContractDbObject {
     const { abi, bytecode } = this.getArtifact();
     return {
       address: hhContract.address,
       abi: JSON.stringify(abi),
       bytecode,
       args: JSON.stringify(this.deployArgs()),
+      implementation: implAddress,
       version: this.campaign.version,
     };
   }
