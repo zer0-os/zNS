@@ -20,7 +20,6 @@ export class BaseDeployMission {
     campaign,
     logger,
     config,
-    // TODO dep: refine typing
   } : {
     campaign : DeployCampaign;
     logger : Console;
@@ -32,13 +31,12 @@ export class BaseDeployMission {
   }
 
   async getFromDB () {
-    // TODO dep: implement
     return this.campaign.dbAdapter.getContract(this.nameInDb);
   }
 
-  async pushToDB (dbContractObj : IContractDbObject) {
-    // TODO dep: implement
-    return this.campaign.dbAdapter.writeContract(this.nameInDb, dbContractObj);
+  async pushToDB (contract : Contract) {
+    const contractDbDoc = this.buildDbObject(contract);
+    return this.campaign.dbAdapter.writeContract(this.nameInDb, contractDbDoc);
   }
 
   async preDeploy () {
@@ -60,8 +58,6 @@ export class BaseDeployMission {
 
   buildDbObject (hhContract : Contract) : IContractDbObject {
     const { abi, bytecode } = this.getArtifact();
-    // TODO dep: refine this
-    //  - add versioning for each contract (based on date in unix or pkg?)
     return {
       address: hhContract.address,
       abi: JSON.stringify(abi),
@@ -72,9 +68,6 @@ export class BaseDeployMission {
   }
 
   async deploy () {
-    // TODO dep: is this in the right spot?
-    await this.preDeploy();
-
     const deployArgs = this.deployArgs();
     this.logger.info(`Deploying ${this.contractName} with arguments: ${JSON.stringify(deployArgs)}`);
 
@@ -85,17 +78,11 @@ export class BaseDeployMission {
         args: deployArgs,
         kind: this.proxyData.proxyKind,
       });
-    } else if (!this.proxyData.isProxy) {
-      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     } else {
-      // TODO dep: can this even hit? verify!
-      throw new Error("Invalid proxy data specified in the contract's mission");
+      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
 
-    // TODO dep: figure out what do we want to save exactly
-    const dbObj = this.buildDbObject(contract);
-
-    await this.pushToDB(dbObj);
+    await this.pushToDB(contract);
 
     await this.campaign.updateStateContract(this.instanceName, contract);
 
@@ -112,6 +99,7 @@ export class BaseDeployMission {
 
   async execute () {
     if (await this.needsDeploy()) {
+      await this.preDeploy();
       await this.deploy();
     } else {
       this.logger.info(`Skipping ${this.contractName} deployment...`);

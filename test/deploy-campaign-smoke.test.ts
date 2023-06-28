@@ -8,7 +8,6 @@ import ZNSRegistryDM from "../src/deploy/missions/contracts/registry";
 import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
 import { ZNSAccessController } from "../typechain";
-import { Contract } from "ethers";
 
 
 describe.only("Deploy Campaign Smoke Test", () => {
