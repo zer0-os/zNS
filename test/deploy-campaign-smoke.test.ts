@@ -7,6 +7,8 @@ import { GOVERNOR_ROLE } from "./helpers";
 import ZNSRegistryDM from "../src/deploy/missions/contracts/registry";
 import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
+import { ZNSAccessController } from "../typechain";
+import { Contract } from "ethers";
 
 
 describe.only("Deploy Campaign Smoke Test", () => {
@@ -43,5 +45,14 @@ describe.only("Deploy Campaign Smoke Test", () => {
 
     const acFromRegistry = await registry.getAccessController();
     expect(acFromRegistry).to.equal(accessController.address);
+
+    const contractDbDoc = await campaign.dbAdapter.getContract("ZNSAccessController");
+    const contract = new hre.ethers.Contract(
+      contractDbDoc!.address,
+      contractDbDoc!.abi,
+      governor
+    );
+    const isGovernor2 = await contract.hasRole(GOVERNOR_ROLE, governor.address);
+    console.log("isGovernor2", isGovernor2);
   });
 });
