@@ -72,12 +72,12 @@ class ZNSTreasuryDM extends BaseDeployMission {
       zeroToken,
       treasury,
       config: {
-        deployer,
+        deployAdmin,
       },
     } = this.campaign;
 
     // Give allowance to the treasury
-    await zeroToken.connect(deployer).approve(
+    await zeroToken.connect(deployAdmin).approve(
       treasury.address,
       ethers.constants.MaxUint256
     );

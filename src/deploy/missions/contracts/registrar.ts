@@ -34,11 +34,11 @@ class ZNSRegistrarDM extends BaseDeployMission {
     const {
       accessController,
       registrar,
-      config: { deployer },
+      config: { deployAdmin },
     } = this.campaign;
 
     const isRegistrar = await accessController
-      .connect(deployer)
+      .connect(deployAdmin)
       .isRegistrar(registrar.address);
 
     return !isRegistrar;
@@ -49,12 +49,12 @@ class ZNSRegistrarDM extends BaseDeployMission {
       accessController,
       registrar,
       config: {
-        deployer,
+        deployAdmin,
       },
     } = this.campaign;
 
     await accessController
-      .connect(deployer)
+      .connect(deployAdmin)
       .grantRole(REGISTRAR_ROLE, registrar.address);
   }
 }

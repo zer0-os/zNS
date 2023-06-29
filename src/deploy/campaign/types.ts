@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 
 export interface IDeployCampaignConfig {
-  deployer : SignerWithAddress;
+  deployAdmin : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {

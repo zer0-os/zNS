@@ -22,7 +22,7 @@ import ZNSTreasuryDM from "../src/deploy/missions/contracts/treasury";
 import ZNSRegistrarDM from "../src/deploy/missions/contracts/registrar";
 
 
-describe.only("Deploy Campaign Smoke Test", () => {
+describe("Deploy Campaign Smoke Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
@@ -34,7 +34,7 @@ describe.only("Deploy Campaign Smoke Test", () => {
     const deployer = new Deployer();
     const dbAdapterIn = new FileStorageAdapter(console);
     const config = {
-      deployer: deployAdmin,
+      deployAdmin,
       governorAddresses: [ deployAdmin.address ],
       adminAddresses: [ deployAdmin.address, admin.address ],
       domainToken: {

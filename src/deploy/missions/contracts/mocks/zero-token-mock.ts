@@ -25,13 +25,13 @@ class ZeroTokenMockDM extends BaseDeployMission {
     const {
       zeroToken,
       config: {
-        deployer,
+        deployAdmin,
       },
     } = this.campaign;
 
     // Mint 10,000 ZERO to the deployer
-    await zeroToken.connect(deployer).mint(
-      deployer.address,
+    await zeroToken.connect(deployAdmin).mint(
+      deployAdmin.address,
       ethers.utils.parseEther("100000")
     );
   }
