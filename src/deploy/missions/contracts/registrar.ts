@@ -31,9 +31,13 @@ class ZNSRegistrarDM extends BaseDeployMission {
   }
 
   async needsPostDeploy () {
-    const { registrar, config: { deployer } } = this.campaign;
+    const {
+      accessController,
+      registrar,
+      config: { deployer },
+    } = this.campaign;
 
-    const isRegistrar = await registrar
+    const isRegistrar = await accessController
       .connect(deployer)
       .isRegistrar(registrar.address);
 
