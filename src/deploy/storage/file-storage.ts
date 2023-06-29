@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import { IContractDbObject } from "../missions/types";
 import { BaseStorageAdapter } from "./base-storage-adapter";
+import { Logger } from "../campaign/types";
+
 
 // TODO dep: remove temp db folder and possibly add to .gitignore
 //  when testing is done
@@ -9,7 +11,7 @@ export const fileStoragePath = path.join(process.cwd(), "./db");
 
 
 export class FileStorageAdapter extends BaseStorageAdapter {
-  constructor (logger : Console) {
+  constructor (logger : Logger) {
     super(logger);
 
     if (!fs.existsSync(fileStoragePath)) {

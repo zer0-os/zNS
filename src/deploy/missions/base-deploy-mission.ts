@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { TDeployArgs, IContractDbObject, IProxyData, IDeployMissionArgs } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig } from "../campaign/types";
+import { IDeployCampaignConfig, Logger } from "../campaign/types";
 
 
 // TODO dep:
@@ -12,7 +12,7 @@ export class BaseDeployMission {
   instanceName! : string;
   proxyData! : IProxyData;
   campaign : DeployCampaign;
-  logger : Console;
+  logger : Logger;
   config : IDeployCampaignConfig;
 
   constructor ({

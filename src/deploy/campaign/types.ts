@@ -1,7 +1,7 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { BigNumber, Contract } from "ethers";
 import { IPriceParams, TDeployMissionCtor } from "../missions/types";
-import { Deployer } from "../deployer/deployer";
+import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -21,9 +21,11 @@ export interface IDeployCampaignConfig {
   // TODO dep: add more props when opts expanded
 }
 
+export type Logger = Console;
+
 export interface IContractState {
   [key : string] : Contract;
-}
+} | ZNSContracts;
 
 export interface ICampaignState {
   missions : Array<TDeployMissionCtor>;
@@ -33,8 +35,8 @@ export interface ICampaignState {
 
 export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
-  deployer : Deployer;
+  deployer : HardhatDeployer;
   dbAdapter : BaseStorageAdapter;
-  logger : Console;
+  logger : Logger;
   config : IDeployCampaignConfig;
 }

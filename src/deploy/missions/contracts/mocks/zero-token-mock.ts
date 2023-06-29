@@ -8,6 +8,9 @@ const zeroTokenName = "Zero Token";
 const zeroTokenSymbol = "ZERO";
 
 
+// TODO dep: refine this to create an object if using
+//  the actual deployed ZERO, so that we have it's full object present
+//  here for easy access and to make sure we get it's ABI and bytecode for the DB
 export class ZeroTokenMockDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,

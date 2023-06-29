@@ -6,7 +6,7 @@ import { BigNumber } from "ethers";
 
 export interface IDeployMissionArgs {
   campaign : DeployCampaign;
-  logger : Console;
+  logger : Logger;
   config : IDeployCampaignConfig;
 }
 

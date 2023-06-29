@@ -1,6 +1,6 @@
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import ZNSAccessControllerDM from "../src/deploy/missions/contracts/access-controller";
-import { Deployer } from "../src/deploy/deployer/deployer";
+import { HardhatDeployer } from "../src/deploy/deployer/hardhatDeployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -31,7 +31,7 @@ describe("Deploy Campaign Smoke Test", () => {
   it("Deploy", async () => {
     [deployAdmin, admin, zeroVault, user] = await hre.ethers.getSigners();
 
-    const deployer = new Deployer();
+    const deployer = new HardhatDeployer();
     const dbAdapterIn = new FileStorageAdapter(console);
     const config = {
       deployAdmin,

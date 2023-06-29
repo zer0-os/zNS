@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 
-export class Deployer {
+export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
 
   constructor () {
