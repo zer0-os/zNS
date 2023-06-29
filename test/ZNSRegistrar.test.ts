@@ -2,7 +2,6 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  deployZNS,
   hashDomainLabel,
   INVALID_TOKENID_ERC_ERR, normalizeName,
   NOT_AUTHORIZED_REG_ERR,
@@ -21,23 +20,10 @@ import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
-import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
-import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import { wipeFileStorage } from "../src/deploy/storage/utils";
-import {
-  ZNSAccessControllerDM,
-  ZNSAddressResolverDM,
-  ZNSDomainTokenDM,
-  ZNSPriceOracleDM,
-  ZNSRegistrarDM,
-  ZNSRegistryDM,
-  ZNSTreasuryDM,
-  ZeroTokenMockDM,
-} from "../src/deploy/missions/contracts";
-import { runZnsCampaign } from "../src/deploy/deploy-zns";
-import { IZNSContracts } from "../src/deploy/missions/types";
-import { IContractStateZNS } from "../src/deploy/campaign/types";
+import { runZnsCampaign } from "../src/deploy/zns-campaign";
+import { TZNSContractState } from "./helpers/types";
+import { loggerMock } from "./helpers/utils";
 
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -49,7 +35,7 @@ describe.only("ZNSRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IContractStateZNS;
+  let zns : TZNSContractState;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   const defaultDomain = normalizeName("wilder");
@@ -66,13 +52,6 @@ describe.only("ZNSRegistrar", () => {
     await hre.upgrades.silenceWarnings();
 
     // Deploy Campaign Setup
-    const consoleWrapper = {
-      ...console,
-      log: () => {},
-      info: () => {},
-      debug: () => {},
-    };
-
     const config = {
       deployAdmin,
       governorAddresses: [ deployAdmin.address ],
@@ -88,33 +67,10 @@ describe.only("ZNSRegistrar", () => {
 
     const campaign = await runZnsCampaign({
       config,
-      logger: consoleWrapper,
+      logger: loggerMock,
     });
 
-    // TODO dep: make this better
-    const {
-      accessController,
-      registry,
-      domainToken,
-      zeroToken,
-      addressResolver,
-      priceOracle,
-      treasury,
-      registrar,
-    } = campaign;
-
-    zns = campaign.state.contracts;
-
-    // zns = {
-    //   accessController,
-    //   registry,
-    //   domainToken,
-    //   zeroToken,
-    //   addressResolver,
-    //   priceOracle,
-    //   treasury,
-    //   registrar,
-    // };
+    zns = campaign.state.contracts as TZNSContractState;
 
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
