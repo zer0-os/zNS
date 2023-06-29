@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import ZeroTokenMockDM from "./mocks/zero-token-mock";
 
 
-class ZNSTreasuryDM extends BaseDeployMission {
+export class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -83,5 +83,3 @@ class ZNSTreasuryDM extends BaseDeployMission {
     );
   }
 }
-
-export default ZNSTreasuryDM;

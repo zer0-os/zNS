@@ -2,7 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { znsNames } from "../../constants";
 
 
-class ZNSAccessControllerDM extends BaseDeployMission {
+export class ZNSAccessControllerDM extends BaseDeployMission {
   proxyData = {
     isProxy: false,
   };
@@ -22,5 +22,3 @@ class ZNSAccessControllerDM extends BaseDeployMission {
     await accessController.initialize(governorAddresses, adminAddresses);
   }
 }
-
-export default ZNSAccessControllerDM;

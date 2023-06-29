@@ -2,7 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
-class ZNSDomainTokenDM extends BaseDeployMission {
+export class ZNSDomainTokenDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -18,5 +18,3 @@ class ZNSDomainTokenDM extends BaseDeployMission {
     return [ acAddress, name, symbol ];
   }
 }
-
-export default ZNSDomainTokenDM;

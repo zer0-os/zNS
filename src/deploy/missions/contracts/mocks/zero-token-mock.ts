@@ -8,7 +8,7 @@ const zeroTokenName = "Zero Token";
 const zeroTokenSymbol = "ZERO";
 
 
-class ZeroTokenMockDM extends BaseDeployMission {
+export class ZeroTokenMockDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.transparent,
@@ -36,5 +36,3 @@ class ZeroTokenMockDM extends BaseDeployMission {
     );
   }
 }
-
-export default ZeroTokenMockDM;
