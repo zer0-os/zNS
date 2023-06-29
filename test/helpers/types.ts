@@ -23,6 +23,7 @@ import {
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IPriceParams } from "../../src/deploy/missions/types";
+import { IContractState } from "../../src/deploy/campaign/types";
 
 export type Maybe<T> = T | undefined;
 
@@ -79,3 +80,5 @@ export interface DeployZNSParams {
   zeroVaultAddress ?: string;
   logAddresses ?: boolean;
 }
+
+export type TZNSContractState = IContractState & ZNSContracts;

@@ -25,7 +25,7 @@ export type Logger = Console;
 
 export interface IContractState {
   [key : string] : Contract;
-} | ZNSContracts;
+}
 
 export interface ICampaignState {
   missions : Array<TDeployMissionCtor>;

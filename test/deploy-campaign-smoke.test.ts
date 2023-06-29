@@ -1,25 +1,23 @@
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
-import ZNSAccessControllerDM from "../src/deploy/missions/contracts/access-controller";
-import { HardhatDeployer } from "../src/deploy/deployer/hardhatDeployer";
+import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  domainTokenName,
   GOVERNOR_ROLE,
   priceConfigDefault, registrationFeePercDefault,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
-import ZNSRegistryDM from "../src/deploy/missions/contracts/registry";
 import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
 import { znsNames } from "../src/deploy/constants";
-import ZNSDomainTokenDM from "../src/deploy/missions/contracts/domain-token";
-import ZeroTokenMockDM from "../src/deploy/missions/contracts/mocks/zero-token-mock";
-import ZNSAddressResolverDM from "../src/deploy/missions/contracts/address-resolver";
-import ZNSPriceOracleDM from "../src/deploy/missions/contracts/price-oracle";
-import ZNSTreasuryDM from "../src/deploy/missions/contracts/treasury";
-import ZNSRegistrarDM from "../src/deploy/missions/contracts/registrar";
+import {
+  ZeroTokenMockDM,
+  ZNSAccessControllerDM,
+  ZNSAddressResolverDM,
+  ZNSDomainTokenDM, ZNSPriceOracleDM, ZNSRegistrarDM,
+  ZNSRegistryDM, ZNSTreasuryDM,
+} from "../src/deploy/missions/contracts";
 
 
 describe("Deploy Campaign Smoke Test", () => {
