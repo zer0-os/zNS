@@ -3,7 +3,7 @@ import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-class TreasuryDM extends BaseDeployMission {
+class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -42,4 +42,4 @@ class TreasuryDM extends BaseDeployMission {
   }
 }
 
-export default TreasuryDM;
+export default ZNSTreasuryDM;

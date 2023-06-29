@@ -3,7 +3,7 @@ import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-class AddressResolverDM extends BaseDeployMission {
+class ZNSAddressResolverDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -19,4 +19,4 @@ class AddressResolverDM extends BaseDeployMission {
   }
 }
 
-export default AddressResolverDM;
+export default ZNSAddressResolverDM;

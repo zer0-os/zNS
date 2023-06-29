@@ -7,7 +7,7 @@ import { GOVERNOR_ROLE } from "./helpers";
 import ZNSRegistryDM from "../src/deploy/missions/contracts/registry";
 import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
-import { ZNSAccessController } from "../typechain";
+import { znsNames } from "../src/deploy/constants";
 
 
 describe.only("Deploy Campaign Smoke Test", () => {
@@ -29,6 +29,7 @@ describe.only("Deploy Campaign Smoke Test", () => {
       missions: [
         ZNSAccessControllerDM,
         ZNSRegistryDM,
+        ZNSDomainTokenDM,
       ],
       deployer,
       dbAdapter: dbAdapterIn,
@@ -49,7 +50,9 @@ describe.only("Deploy Campaign Smoke Test", () => {
     const acFromRegistry = await registry.getAccessController();
     expect(acFromRegistry).to.equal(accessController.address);
 
-    const contractDbDoc = await dbAdapter.getContract("ZNSAccessController");
+    const contractDbDoc = await dbAdapter.getContract(
+      znsNames.accessController.contract
+    );
     const contract = new hre.ethers.Contract(
       contractDbDoc!.address,
       contractDbDoc!.abi,

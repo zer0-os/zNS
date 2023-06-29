@@ -3,7 +3,7 @@ import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-class PriceOracleDM extends BaseDeployMission {
+class ZNSPriceOracleDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -25,4 +25,4 @@ class PriceOracleDM extends BaseDeployMission {
   }
 }
 
-export default PriceOracleDM;
+export default ZNSPriceOracleDM;

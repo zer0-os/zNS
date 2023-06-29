@@ -3,7 +3,7 @@ import { ProxyKinds, REGISTRAR_ROLE, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-class RegistrarDM extends BaseDeployMission {
+class ZNSRegistrarDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -55,4 +55,4 @@ class RegistrarDM extends BaseDeployMission {
   }
 }
 
-export default RegistrarDM;
+export default ZNSRegistrarDM;
