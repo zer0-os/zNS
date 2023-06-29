@@ -2,6 +2,16 @@ import { BaseDeployMission } from "./base-deploy-mission";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig } from "../campaign/types";
 import { BigNumber } from "ethers";
+import {
+  ZeroToken,
+  ZNSAccessController,
+  ZNSAddressResolver,
+  ZNSDomainToken,
+  ZNSPriceOracle,
+  ZNSRegistrar,
+  ZNSRegistry,
+  ZNSTreasury,
+} from "../../../typechain";
 
 
 export interface IDeployMissionArgs {
@@ -37,4 +47,15 @@ export interface IPriceParams {
   baseLength : BigNumber;
   priceMultiplier : BigNumber;
   precisionMultiplier : BigNumber;
+}
+
+export interface IZNSContracts {
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  domainToken : ZNSDomainToken;
+  zeroToken : ZeroToken;
+  addressResolver : ZNSAddressResolver;
+  priceOracle : ZNSPriceOracle;
+  treasury : ZNSTreasury;
+  registrar : ZNSRegistrar;
 }

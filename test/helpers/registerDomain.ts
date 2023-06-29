@@ -1,10 +1,10 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContracts } from "./types";
 import { ContractReceipt } from "ethers";
+import { IZNSContracts } from "../../src/deploy/missions/types";
 
 export const defaultRegistration = async (
   user : SignerWithAddress,
-  zns : ZNSContracts,
+  zns : IZNSContracts,
   domainName : string,
   domainContent = zns.registrar.address,
 ) : Promise<ContractReceipt> => {

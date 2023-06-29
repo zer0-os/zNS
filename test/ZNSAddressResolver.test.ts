@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
-import { DeployZNSParams, ZNSContracts } from "./helpers/types";
+import { DeployZNSParams } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
@@ -11,6 +11,7 @@ import {
   getAccessRevertMsg,
   validateUpgrade,
 } from "./helpers";
+import { IZNSContracts } from "../src/deploy/missions/types";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -22,7 +23,7 @@ describe("ZNSAddressResolver", () => {
   let operator : SignerWithAddress;
   let wilderDomainHash : string;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
 
   beforeEach(async () => {
     [
