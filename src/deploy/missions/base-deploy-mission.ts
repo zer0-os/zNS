@@ -1,5 +1,5 @@
 import { Contract } from "ethers";
-import { TDeployArgs, IContractDbObject, IProxyData } from "./types";
+import { TDeployArgs, IContractDbObject, IProxyData, IDeployMissionArgs } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig } from "../campaign/types";
 
@@ -19,11 +19,7 @@ export class BaseDeployMission {
     campaign,
     logger,
     config,
-  } : {
-    campaign : DeployCampaign;
-    logger : Console;
-    config : IDeployCampaignConfig;
-  }) {
+  } : IDeployMissionArgs) {
     this.campaign = campaign;
     this.logger = logger;
     this.config = config;

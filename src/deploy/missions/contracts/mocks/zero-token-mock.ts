@@ -24,17 +24,10 @@ class ZeroTokenMockDM extends BaseDeployMission {
   async postDeploy () {
     const {
       zeroToken,
-      treasury,
       config: {
         deployer,
       },
     } = this.campaign;
-
-    // Give allowance to the treasury
-    await zeroToken.connect(deployer).approve(
-      treasury.address,
-      ethers.constants.MaxUint256
-    );
 
     // Mint 10,000 ZERO to the deployer
     await zeroToken.connect(deployer).mint(

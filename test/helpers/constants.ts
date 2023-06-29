@@ -2,6 +2,7 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { IPriceParams } from "../../src/deploy/missions/types";
 
+// TODO: what is our official Domain Token name?
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
