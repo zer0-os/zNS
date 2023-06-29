@@ -5,23 +5,23 @@ import { BaseStorageAdapter } from "./base-storage-adapter";
 
 // TODO dep: remove temp db folder and possibly add to .gitignore
 //  when testing is done
-export const tempDbPath = path.join(__dirname, "../../../db");
+export const fileStoragePath = path.join(process.cwd(), "./db");
 
 
 export class FileStorageAdapter extends BaseStorageAdapter {
   constructor (logger : Console) {
     super(logger);
 
-    if (!fs.existsSync(tempDbPath)) {
+    if (!fs.existsSync(fileStoragePath)) {
       this.logger.log("Creating temp db directory.");
-      fs.mkdirSync(tempDbPath);
+      fs.mkdirSync(fileStoragePath);
     } else {
-      this.logger.log(`Temp db directory exists and will be used at: ${tempDbPath}.`);
+      this.logger.log(`Temp db directory exists and will be used at: ${fileStoragePath}.`);
     }
   }
 
   async writeContract (contractDbName : string, data : IContractDbObject) {
-    const filePath = path.join(__dirname, `../../../db/${contractDbName}.json`);
+    const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
     const fileData = JSON.stringify(data, null,  "\t");
 
     fs.writeFileSync(filePath, fileData);
@@ -30,7 +30,7 @@ export class FileStorageAdapter extends BaseStorageAdapter {
   }
 
   async getContract (contractDbName : string) : Promise<IContractDbObject | null> {
-    const filePath = path.join(__dirname, `../../../db/${contractDbName}.json`);
+    const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
 
     if (!fs.existsSync(filePath)) {
       this.logger.log(`Contract data for ${contractDbName} not found at: ${filePath}.`);

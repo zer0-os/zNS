@@ -81,6 +81,7 @@ export class DeployCampaign {
 
   updateStateContract (instanceName : string, contract : Contract) {
     this.state.contracts[instanceName] = contract;
+    // TODO dep: make better logger and decide which levels to call where
     this.logger.debug(`Data of deployed contract '${instanceName}' is added to Campaign state.`);
   }
 }
