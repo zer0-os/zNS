@@ -19,16 +19,15 @@ export class DeployCampaign {
 
   private static indexedHandler : ProxyHandler<DeployCampaign> = {
     get: (target, prop) => {
-      if (typeof prop === "string" && !!target.state.contracts[prop]) {
-        return target.state.contracts[prop];
-      } else if (typeof prop === "string" && !!target[prop]) {
-        return target[prop];
-      }
+      if (typeof prop === "string") {
+        if (!!target.state.contracts[prop]) {
+          return target.state.contracts[prop];
+        }
 
-      throw new Error(`
-      Accessing deployed contract data that is not in Campaign State or
-      property '${prop.toString()}' does not exist on DeployCampaign.
-      `);
+        if (!!target[prop]) {
+          return target[prop];
+        }
+      }
     },
   };
 
