@@ -17,7 +17,7 @@ import {
   ZeroToken,
   ZeroToken__factory,
 } from "../../typechain";
-import { DeployZNSParams, RegistrarConfig } from "./types";
+import { DeployZNSParams, RegistrarConfig, ZNSContracts } from "./types";
 import { ethers, upgrades } from "hardhat";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -30,7 +30,7 @@ import {
 import { deployAccessController } from "./access";
 import { BigNumber } from "ethers";
 import { getProxyImplAddress } from "./utils";
-import { IPriceParams, IZNSContracts } from "../../src/deploy/missions/types";
+import { IPriceParams } from "../../src/deploy/missions/types";
 import { REGISTRAR_ROLE } from "../../src/deploy/constants";
 
 export const deployZeroToken = async (
@@ -298,7 +298,7 @@ export const deployZNS = async ({
   registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
   logAddresses = false,
-} : DeployZNSParams) : Promise<IZNSContracts> => {
+} : DeployZNSParams) : Promise<ZNSContracts> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -355,7 +355,7 @@ export const deployZNS = async ({
 
   const registrar = await deployRegistrar(deployer, accessController, config, logAddresses);
 
-  const znsContracts : IZNSContracts = {
+  const znsContracts : ZNSContracts = {
     accessController,
     registry,
     domainToken,

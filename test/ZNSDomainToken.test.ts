@@ -17,8 +17,7 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
-import { DeployZNSParams } from "./helpers/types";
-import { IZNSContracts } from "../src/deploy/missions/types";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
 
 describe("ZNSDomainToken:", () => {
@@ -26,7 +25,7 @@ describe("ZNSDomainToken:", () => {
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
   beforeEach(async () => {

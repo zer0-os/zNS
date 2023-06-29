@@ -1,5 +1,7 @@
 import { BigNumber } from "ethers";
 import {
+  ZeroToken,
+  ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
@@ -55,6 +57,17 @@ export interface RegistrarConfig {
   registryAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
+}
+
+export interface ZNSContracts {
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  domainToken : ZNSDomainToken;
+  zeroToken : ZeroToken;
+  addressResolver : ZNSAddressResolver;
+  priceOracle : ZNSPriceOracle;
+  treasury : ZNSTreasury;
+  registrar : ZNSRegistrar;
 }
 
 export interface DeployZNSParams {

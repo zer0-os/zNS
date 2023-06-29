@@ -2,13 +2,12 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { checkBalance, deployZNS, getPriceObject, validateUpgrade } from "./helpers";
-import { DeployZNSParams } from "./helpers/types";
+import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { ADMIN_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
-import { IZNSContracts } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -20,7 +19,7 @@ describe("ZNSTreasury", () => {
   let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let randomAcc : SignerWithAddress;
-  let zns : IZNSContracts;
+  let zns : ZNSContracts;
 
   beforeEach(async () => {
     [

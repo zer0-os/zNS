@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
+import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice, validateUpgrade } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
@@ -13,7 +14,6 @@ import {
 } from "./helpers/errors";
 import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../typechain";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { IZNSContracts } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -24,7 +24,7 @@ describe("ZNSPriceOracle", () => {
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : ZNSContracts;
 
   const defaultDomain = "wilder";
 
