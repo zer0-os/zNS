@@ -32,7 +32,7 @@ import { burnAndMintDomains, extendDomain } from "./helper";
  */
 
 
-describe.only("ZNS WW NFTs Migration Tests", async () => {
+describe("ZNS WW NFTs Migration Tests", async () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
