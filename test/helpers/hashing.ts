@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const ensjs = require("@ensdomains/ensjs");
+import { ethers } from "ethers";
 
 /**
  * The ens lib takes the inverse of our domain name format to
@@ -28,3 +29,12 @@ export const hashDomainName = (name : string) => {
  * Hashes last name label only.
  */
 export const hashDomainLabel = (label : string) => ensjs.labelhash(label);
+
+/**
+ * Hashes a domain and parent without normalization like ENS above
+ */
+export const legacyHashWithParent = (label : string, parentId : string) => {
+  const labelHash = ethers.utils.solidityKeccak256(["string"], [label]);
+  const hash = ethers.utils.solidityKeccak256(["uint256", "uint256"],[parentId,labelHash]);
+  return hash;
+};
