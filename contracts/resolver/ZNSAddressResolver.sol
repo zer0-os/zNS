@@ -20,16 +20,16 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      *         to Ethereum wallets or contracts registered in ZNS
      */
     mapping(bytes32 domainHash => address resolvedAddress)
-        private addressOf;
+        private domainAddresses;
 
     /**
      * @notice Initialize an instance of the ZNSAddressResolver
-     * @param _accessController The access controller
-     * @param _registry The registry address
+     * @param accessController_ The access controller
+     * @param registry_ The registry address
      */
-    function initialize(address _accessController, address _registry) public override initializer {
-        _setAccessController(_accessController);
-        setRegistry(_registry);
+    function initialize(address accessController_, address registry_) public override initializer {
+        _setAccessController(accessController_);
+        setRegistry(registry_);
     }
 
     /**
@@ -39,7 +39,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     function getAddress(
         bytes32 domainHash
     ) external view override returns (address) {
-        return addressOf[domainHash];
+        return domainAddresses[domainHash];
     }
 
     /**
@@ -59,7 +59,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
             "ZNSAddressResolver: Not authorized for this domain"
         );
 
-        addressOf[domainHash] = newAddress;
+        domainAddresses[domainHash] = newAddress;
 
         emit AddressSet(domainHash, newAddress);
     }
@@ -108,7 +108,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line
+    // solhint-disable-next-line unused-vars
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }

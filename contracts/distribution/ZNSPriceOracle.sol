@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
@@ -123,7 +121,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         if (length >= rootDomainPriceConfig.priceMultiplier) {
             rootDomainPriceConfig.priceMultiplier = length + 1;
         }
-        
+
         rootDomainPriceConfig.baseLength = length;
 
         emit BaseLengthSet(length);
@@ -177,11 +175,11 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit FeePercentageSet(regFeePercentage);
     }
 
-    function setAccessController(address accessController)
+    function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSPriceOracle)
     onlyAdmin {
-        _setAccessController(accessController);
+        _setAccessController(accessController_);
     }
 
     function getAccessController() external view override(AccessControlled, IZNSPriceOracle) returns (address) {
@@ -199,7 +197,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) internal view returns (uint256) {
         DomainPriceConfig memory config = rootDomainPriceConfig;
 
-        // Setting baseLength to 0 indicates to the system that we are 
+        // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
         // e.g. promotions or sales
         if (config.baseLength == 0) return config.maxPrice;
@@ -211,22 +209,19 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         // Then multiply by the same precision multiplier to get the actual value
         // with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
         // with precision 2 would give us 15.230000000000000000 * 10^18
-        return 
-        (config.baseLength * config.maxPrice / length 
+        return
+        (config.baseLength * config.maxPrice / length
         + (config.maxPrice / config.priceMultiplier))
         / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     function _setPriceMultiplier(uint256 multiplier) internal {
-        // Avoid unnecessary jumps to external storage
-        DomainPriceConfig memory config = rootDomainPriceConfig;
-
         // The multiplier being 0 will cause a division error in the pricing function
         require(multiplier > 0, "ZNSPriceOracle: Multiplier cannot be 0");
 
         // The multiplier being larger than the base length will cause spikes in the pricing function
         require(
-            multiplier >= config.baseLength + 1,
+            multiplier >= rootDomainPriceConfig.baseLength + 1,
             "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
         );
         rootDomainPriceConfig.priceMultiplier = multiplier;

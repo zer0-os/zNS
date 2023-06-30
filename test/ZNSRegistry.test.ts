@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deployZNS";
-import { hashDomainLabel, hashDomainName } from "./helpers/hashing";
+import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
@@ -47,7 +47,7 @@ describe("ZNSRegistry", () => {
 
     zns = await deployZNS(params);
 
-    wilderDomainHash = hashDomainName("wilder");
+    wilderDomainHash = hashSubdomainName("wilder");
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
@@ -140,7 +140,7 @@ describe("ZNSRegistry", () => {
       const exists = await zns.registry.connect(randomUser).exists(wilderDomainHash);
       expect(exists).to.be.true;
 
-      const nonExistentDomainHash = hashDomainName("wild");
+      const nonExistentDomainHash = hashSubdomainName("wild");
 
       const notExists = await zns.registry.connect(randomUser).exists(nonExistentDomainHash);
       expect(notExists).to.be.false;
@@ -376,7 +376,6 @@ describe("ZNSRegistry", () => {
 
   describe("Event emitters", () => {
     it("Emits an event when an operator is set", async () => {
-      // TODO currently no AC on this function, make sure it's added
       const tx = zns.registry.connect(deployer).setOwnerOperator(randomUser.address, true);
 
       await expect(tx).to.emit(zns.registry, "OperatorPermissionSet").withArgs(
@@ -493,7 +492,7 @@ describe("ZNSRegistry", () => {
       const registry = await registryFactory.deploy();
       await registry.deployed();
 
-      const domainHash = hashDomainName("world");
+      const domainHash = hashSubdomainName("world");
 
       // Add an operator
       await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
