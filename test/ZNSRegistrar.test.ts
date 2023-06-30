@@ -2,7 +2,9 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  deployZNS, hashDomainName, INVALID_TOKENID_ERC_ERR,
+  deployZNS,
+  hashDomainLabel,
+  INVALID_TOKENID_ERC_ERR, normalizeName,
   NOT_AUTHORIZED_REG_ERR,
   NOT_NAME_OWNER_RAR_ERR, NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
@@ -33,7 +35,7 @@ describe("ZNSRegistrar", () => {
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
-  const defaultDomain = "wilder";
+  const defaultDomain = normalizeName("wilder");
 
   beforeEach(async () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
@@ -135,7 +137,10 @@ describe("ZNSRegistrar", () => {
         zns,
         defaultDomain
       );
+
+      const namehashRef = hashDomainLabel(defaultDomain);
       const domainHash = await getDomainHashFromEvent(tx);
+      expect(domainHash).to.eq(namehashRef);
 
       const {
         owner: ownerFromReg,
@@ -153,17 +158,23 @@ describe("ZNSRegistrar", () => {
       await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
-    // TODO this needs to be checked also with ENS namehash lib
-    //  to make sure that hashing process allows for these characters as well
-    it("Allows unicode characters in domain names", async () => {
-      const unicodeDomain = "œ柸þ€§ﾪ";
+    // eslint-disable-next-line max-len
+    it("Allows unicode characters in domain names and matches the hash of normalized string acquired from namehash library", async () => {
+      const unicodeDomainLabel = "œ柸þ€§ﾪ";
 
-      const tx = await defaultRegistration(user, zns, unicodeDomain);
+      const normalizedDomainLabel = normalizeName(unicodeDomainLabel);
+
+      const tx = await defaultRegistration(user, zns, normalizedDomainLabel);
 
       const domainHash = await getDomainHashFromEvent(tx);
+      // validate that namehash lib works the same way as our contract hashing
+      // TODO: a security issue with namehash lib is the usage of non-ASCII characters
+      //  this should be handled at the SDK/dApp level!
+      const namehashRef = hashDomainLabel(unicodeDomainLabel);
+      expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await getPrice(unicodeDomain, zns.priceOracle);
+      const expectedStaked = await getPrice(normalizedDomainLabel, zns.priceOracle);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });
@@ -662,7 +673,7 @@ describe("ZNSRegistrar", () => {
       await registrar.deployed();
 
       const domainName = "world";
-      const domainHash = hashDomainName(domainName);
+      const domainHash = hashDomainLabel(domainName);
 
       await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(randomUser.address, ethers.utils.parseEther("1500"));

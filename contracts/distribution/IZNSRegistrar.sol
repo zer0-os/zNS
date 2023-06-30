@@ -8,7 +8,8 @@ interface IZNSRegistrar {
         uint256 indexed tokenId,
         string name,
         address indexed registrant,
-        address resolver
+        address resolver,
+        address domainAddress
     );
 
     event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);

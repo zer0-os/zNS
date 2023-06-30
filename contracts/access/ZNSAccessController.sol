@@ -25,7 +25,6 @@ contract ZNSAccessController is AccessControlUpgradeable, ZNSRoles, IZNSAccessCo
     }
 
     // ** Access Validators **
-
     function checkGovernor(address account) external view override {
         _checkRole(GOVERNOR_ROLE, account);
     }

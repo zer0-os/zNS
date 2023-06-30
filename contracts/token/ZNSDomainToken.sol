@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
+
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
@@ -17,12 +18,12 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
     }
 
     function initialize(
-        address accessController,
-        string memory tokenName,
-        string memory tokenSymbol
+        address accessController_,
+        string memory name_,
+        string memory symbol_
     ) external override initializer {
-        __ERC721_init(tokenName, tokenSymbol);
-        _setAccessController(accessController);
+        __ERC721_init(name_, symbol_);
+        _setAccessController(accessController_);
     }
 
     /**
@@ -42,12 +43,12 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
         _burn(tokenId);
     }
 
-    function setAccessController(address accessController)
+    function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSDomainToken)
     onlyAdmin
     {
-        _setAccessController(accessController);
+        _setAccessController(accessController_);
     }
 
     function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {
