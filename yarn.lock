@@ -2019,6 +2019,11 @@
     eslint-plugin-prefer-arrow "^1.2.3"
     typescript "^5.0.2"
 
+"@zero-tech/zero-contracts@0.0.14":
+  version "0.0.14"
+  resolved "https://registry.yarnpkg.com/@zero-tech/zero-contracts/-/zero-contracts-0.0.14.tgz#b3f8436c72301502629a9e3c5e503476f5e52633"
+  integrity sha512-E62AACAggWt1y8IcpEFNqWY4rOg4JoobhiQ0qQ7VN7mgDeyDgKIzkgE6zWZHJEAy/Ic3uf2aqU413BD9OGA0hg==
+
 "@zero-tech/ztoken@1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@zero-tech/ztoken/-/ztoken-1.0.1.tgz#2513daf09f1d873a3afed8a70d6e974583b14783"

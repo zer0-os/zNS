@@ -2,8 +2,10 @@
 const ensjs = require("@ensdomains/ensjs");
 const namehash = require("eth-ens-namehash");
 
+import { ethers } from "ethers";
 
 export const normalizeName = (name : string) => namehash.normalize(name);
+
 
 /**
  * The ens lib takes the inverse of our domain name format to
@@ -30,3 +32,12 @@ export const hashSubdomainName = (name : string) => {
  * Hashes last name label only.
  */
 export const hashDomainLabel = (label : string) => ensjs.labelhash(label);
+
+/**
+ * Hashes a domain and parent without normalization like ENS above
+ */
+export const legacyHashWithParent = (label : string, parentId : string) => {
+  const labelHash = ethers.utils.solidityKeccak256(["string"], [label]);
+  const hash = ethers.utils.solidityKeccak256(["uint256", "uint256"],[parentId,labelHash]);
+  return hash;
+};

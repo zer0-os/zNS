@@ -38,6 +38,11 @@ const config : HardhatUserConfig = {
     timeout: 5000000,
   },
   networks: {
+    hardhat: {
+      forking: {
+        url: "https://mainnet.infura.io/v3/97e75e0bbc6a4419a5dd7fe4a518b917",
+      },
+    },
     mainnet: {
       url: "https://mainnet.infura.io/v3/97e75e0bbc6a4419a5dd7fe4a518b917",
       gasPrice: 80000000000,
