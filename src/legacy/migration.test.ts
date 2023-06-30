@@ -1,13 +1,13 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContracts } from "../test/helpers/types";
+import { ZNSContracts } from "../../test/helpers/types";
 import { expect } from "chai";
-import { deployZNS, hashDomainLabel, hashDomainName, priceConfigDefault } from "../test/helpers";
+import { deployZNS, hashDomainLabel, hashSubdomainName, priceConfigDefault } from "../../test/helpers";
 import { contracts, defaultRegistrar } from "@zero-tech/zero-contracts";
 import {
   LegacyRegistrar,
   LegacyRegistrar__factory,
-} from "../typechain";
+} from "../../typechain";
 import { burnAndMintDomains, extendDomain } from "./helper";
 
 /**
@@ -113,7 +113,7 @@ describe.only("ZNS WW NFTs Migration Tests", async () => {
 
     const parentDomain = "wilder.moto";
     const newDomainLabel = "friends";
-    const legacyDomainHash = hashDomainName(parentDomain);
+    const legacyDomainHash = hashSubdomainName(parentDomain);
 
     // Because `wilder.moto` has a subdomain contract, it cannot be extended
     const failTx = legacyRegistrar.connect(controller).registerDomain(
@@ -140,7 +140,7 @@ describe.only("ZNS WW NFTs Migration Tests", async () => {
 
     const parentDomain = "wilder.moto.genesis";
     const newDomainLabel = "friends";
-    const legacyDomainHash = hashDomainName(parentDomain);
+    const legacyDomainHash = hashSubdomainName(parentDomain);
 
     // Note we are using the *NFT* contract, not the domain contract here
     const motoRegistrar = LegacyRegistrar__factory.connect(genesis.domainContract, owner);
@@ -183,7 +183,7 @@ describe.only("ZNS WW NFTs Migration Tests", async () => {
 
     const parentDomain = "wilder.moto.genesis";
     const newDomainLabel = "friends";
-    const legacyDomainHash = hashDomainName(parentDomain);
+    const legacyDomainHash = hashSubdomainName(parentDomain);
 
     // Note we are using the *NFT* contract, not the domain contract here
     const motoRegistrar = LegacyRegistrar__factory.connect(genesis.nftContract, owner);

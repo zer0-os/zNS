@@ -1,10 +1,10 @@
 
-import { ZNSContracts } from "../test/helpers/types";
+import { ZNSContracts } from "../../test/helpers/types";
 import { defaultRegistrar, Collection } from "@zero-tech/zero-contracts";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { LegacyRegistrar, LegacyRegistrar__factory } from "../typechain";
-import { hashDomainLabel, hashDomainName, legacyHashWithParent } from "../test/helpers";
+import { LegacyRegistrar, LegacyRegistrar__factory } from "../../typechain";
+import { hashDomainLabel, hashSubdomainName, legacyHashWithParent } from "../../test/helpers";
 import { expect } from "chai";
 
 const burnAndMint = async (
@@ -40,14 +40,14 @@ const burnAndMint = async (
     /* eslint-disable-next-line */
     // https://github.com/zer0-os/zNS-lgc/blob/0547392cdabb73cac9c11dfc6fc5a8aba93b7cc4/contracts/Registrar.sol#L110C23-L110C23
 
-    const wowHash = legacyHashWithParent("WoW", hashDomainName("wilder"));
+    const wowHash = legacyHashWithParent("WoW", hashSubdomainName("wilder"));
     const posterHash = legacyHashWithParent("poster", wowHash);
     await legacyRegistrar.connect(owner).adminBurnToken(posterHash);
 
     // Verify burn
     expect(await legacyRegistrar.domainExists(posterHash)).to.be.false;
   } else {
-    const legacyDomainHash = hashDomainName(domainName);
+    const legacyDomainHash = hashSubdomainName(domainName);
     await legacyRegistrar.connect(owner).adminBurnToken(legacyDomainHash);
 
     // Verify burn
@@ -114,7 +114,7 @@ export const burnAndMintDomains = async (
   if (domainName === "wilder.WoW") {
     domainHash = ethers.utils.solidityKeccak256(["string"], [registeredSaleName]);
 
-    const wowHash = legacyHashWithParent("WoW", hashDomainName("wilder"));
+    const wowHash = legacyHashWithParent("WoW", hashSubdomainName("wilder"));
     await legacyRegistrar.connect(owner).adminBurnToken(wowHash);
 
     // Verify burn
@@ -122,7 +122,7 @@ export const burnAndMintDomains = async (
   } else {
     domainHash = hashDomainLabel(registeredSaleName);
 
-    const legacyDomainHash = hashDomainName(domainName);
+    const legacyDomainHash = hashSubdomainName(domainName);
     await legacyRegistrar.connect(owner).adminBurnToken(legacyDomainHash);
 
     // Verify burn
@@ -164,10 +164,10 @@ export const extendDomain = async (
       // WoW is a special case because it wasn't used with standard ENS normalization
       // so we have to respect the upper case characters and do custom
       if (sale.name === "WoW") {
-        const wowHash = legacyHashWithParent("WoW", hashDomainName("wilder"));
+        const wowHash = legacyHashWithParent("WoW", hashSubdomainName("wilder"));
         subdomainHash = legacyHashWithParent(collection.name, wowHash);
       } else {
-        subdomainHash = hashDomainName(subdomainName);
+        subdomainHash = hashSubdomainName(subdomainName);
       }
 
       const passTx = legacyRegistrar.connect(controller).registerDomain(
@@ -186,7 +186,7 @@ export const extendDomain = async (
       if (sale.name === "WoW") {
         newDomainHash = legacyHashWithParent(label, subdomainHash);
       } else {
-        newDomainHash = hashDomainName(`${subdomainName}.${label}`);
+        newDomainHash = hashSubdomainName(`${subdomainName}.${label}`);
       }
 
       expect(await legacyRegistrar.domainExists(newDomainHash)).to.be.true;
