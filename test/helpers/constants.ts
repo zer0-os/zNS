@@ -25,9 +25,10 @@ export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735
 export const accessControllerName = "ZNSAccessController";
 export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
-export const zeroTokenMockName = "ZeroTokenMock";
+export const zeroTokenMockName = "ZeroToken";
 export const addressResolverName = "ZNSAddressResolver";
 export const priceOracleName = "ZNSPriceOracle";
 export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRegistrar";
-
+export const erc1967ProxyName = "ERC1967Proxy";
+export const transparentProxyName = "TransparentUpgradeableProxy";

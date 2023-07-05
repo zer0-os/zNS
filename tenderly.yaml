@@ -1,7 +1,7 @@
 account_id: e750f9f2-65bc-4765-84a8-7f8dbddd73ee
 exports:
   hardhat:
-    project_slug: zer0-os/zns
+    project_slug: zer0-os/zns-1
     rpc_address: 127.0.0.1:8545
     protocol: ""
     forked_network: Mainnet
@@ -17,5 +17,5 @@ exports:
       istanbul_block: 0
       berlin_block: 0
       london_block: 0
-project_slug: zns
+project_slug: zer0-os/zns-1
 provider: ""

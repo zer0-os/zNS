@@ -12,4 +12,3 @@ export const getProxyImplAddress = async (proxyAddress : string) => {
 
   return impl;
 };
-

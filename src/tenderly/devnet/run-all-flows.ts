@@ -1,7 +1,10 @@
 import * as hre from "hardhat";
 import * as ethers from "ethers";
-import { deployZNS, hashDomainLabel } from "../../test/helpers";
 import { BigNumber } from "ethers";
+import {
+  deployZNS,
+  hashDomainLabel,
+} from "../../../test/helpers";
 
 
 const domainName = "wilder";
@@ -19,7 +22,7 @@ export const runAllFlows = async () => {
     deployer: governor,
     governorAddresses: [governor.address],
     adminAddresses: [governor.address],
-    logAddresses: true,
+    isTenderlyRun: true,
   });
 
   // get some funds for the user
