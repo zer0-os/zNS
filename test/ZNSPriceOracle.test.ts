@@ -100,20 +100,28 @@ describe("ZNSPriceOracle", () => {
       expect(domainPrice).to.eq(params.maxPrice);
     });
 
-    it("Returns the expected price for a domain greater than the base length", async () => {
+    it("Returns expected prices for a domain greater than the base length", async () => {
       // create a constant string with 22 letters
-      const domain = "abcdefghijklmnopqrstuv";
+      const domainOne = "abcdefghijklmnopqrstuv";
+      const domainTwo = "akkasddaasdas";
 
-      // this value has been calced separately to validate
+      // these values have been calced separately to validate
       // that both forumlas: SC + helper are correct
       // this value has been calces with the default priceConfig
-      const referenceValue = BigNumber.from("381810000000000000000");
+      const domainOneRefValue = BigNumber.from("181810000000000000000");
+      const domainTwoRefValue = BigNumber.from("307690000000000000000");
 
-      const expectedPrice = await getPrice(domain, zns.priceOracle);
-      const { domainPrice } = await zns.priceOracle.getPrice(domain);
+      const domainOneExpPrice = await getPrice(domainOne, zns.priceOracle);
+      const domainTwoExpPrice = await getPrice(domainTwo, zns.priceOracle);
 
-      expect(domainPrice).to.eq(referenceValue);
-      expect(domainPrice).to.eq(expectedPrice);
+      const { domainPrice: domainOnePriceSC } = await zns.priceOracle.getPrice(domainOne);
+      const { domainPrice: domainTwoPriceSC } = await zns.priceOracle.getPrice(domainTwo);
+
+      expect(domainOnePriceSC).to.eq(domainOneRefValue);
+      expect(domainOnePriceSC).to.eq(domainOneExpPrice);
+
+      expect(domainTwoPriceSC).to.eq(domainTwoRefValue);
+      expect(domainTwoPriceSC).to.eq(domainTwoExpPrice);
     });
 
     it("Returns a price even if the domain name is very long", async () => {
@@ -379,6 +387,7 @@ describe("ZNSPriceOracle", () => {
       expect(newMultiplier).to.eq(oldMultiplier.add(1));
     });
 
+    // TODO ora: decide what to do with this one. unblock if needed
     it("Doesn't create price spikes with any valid combination of values", async () => {
       // Start by expanding the search space to allow for domains that are up to 1000 characters
       await zns.priceOracle.connect(deployer).setMaxLength(BigNumber.from("1000"));
@@ -631,6 +640,7 @@ describe("ZNSPriceOracle", () => {
 
       expect(config.maxPrice).to.eq(price.domainPrice);
     });
+
     it("Adjusts prices correctly when setting base lengths to different values", async () => {
       const newRootLength = 0;
       await zns.priceOracle.connect(deployer).setBaseLength(newRootLength);
