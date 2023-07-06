@@ -7,6 +7,7 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
+// TODO ora: remove priceMultiplier if not needed
 contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
@@ -210,8 +211,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         // with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
         // with precision 2 would give us 15.230000000000000000 * 10^18
         return
-        (config.baseLength * config.maxPrice / length
-        + (config.maxPrice / config.priceMultiplier))
+        (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
     }
 

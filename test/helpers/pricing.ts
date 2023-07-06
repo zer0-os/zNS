@@ -20,7 +20,6 @@ export const getPrice = async (
     minPrice,
     baseLength,
     maxLength,
-    priceMultiplier,
     precisionMultiplier,
   } = await contract.rootDomainPriceConfig();
 
@@ -34,16 +33,10 @@ export const getPrice = async (
     return minPrice;
   }
 
-  const left = baseLength.mul(maxPrice).div(name.length);
-  const right = maxPrice.div(priceMultiplier);
+  const base = baseLength.mul(maxPrice).div(name.length);
 
   // TODO ora: test that the calcs here and on contract are correct!!!
-  const expectedPrice = left.add(right)
-    .div(precisionMultiplier)
-    .mul(precisionMultiplier);
-
-
-  return expectedPrice;
+  return base.div(precisionMultiplier).mul(precisionMultiplier);
 };
 
 /**
