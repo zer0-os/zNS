@@ -67,6 +67,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
     }
 
+    // TODO: add docs on how to properly set maxLength vs other values
+    //  so that we do not have minPrice higher than the price of the previous
+    //  value
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
         require(priceConfig.precisionMultiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
 
