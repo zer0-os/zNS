@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice, validateUpgrade } from "./helpers";
+import { deployZNS, getPrice, precisionMultiDefault, PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
   MULTIPLIER_BELOW_MIN_ERR,
@@ -227,6 +227,22 @@ describe("ZNSPriceOracle", () => {
     });
   });
 
+  describe("#setPriceConfig", () => {
+    it("Should revert if setting a price config where spike is created at maxLength", async () => {
+      const newConfig = {
+        baseLength: BigNumber.from("6"),
+        maxLength: BigNumber.from("20"),
+        maxPrice: parseEther("10"),
+        minPrice: parseEther("6"),
+        precisionMultiplier: precisionMultiDefault,
+      };
+
+      await expect(
+        zns.priceOracle.connect(admin).setPriceConfig(newConfig)
+      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+    });
+  });
+
   describe("#setMaxPrice", () => {
     it("Allows an authorized user to set the max price", async () => {
       const newMaxPrice = parseEther("0.7");
@@ -255,12 +271,19 @@ describe("ZNSPriceOracle", () => {
       expect(params.maxPrice).to.eq(newMaxPrice);
     });
 
-    it("Correctly sets the root max price", async () => {
-      const newMaxPrice = parseEther("0.5");
+    it("Correctly sets max price", async () => {
+      const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("553"));
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice);
 
       const params = await zns.priceOracle.rootDomainPriceConfig();
       expect(params.maxPrice).to.eq(newMaxPrice);
+    });
+
+    it("Should revert when setting maxPrice that causes a spike at maxLength", async () => {
+      const newMaxPrice = parseEther("500");
+      await expect(
+        zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice)
+      ).to.be.revertedWith(PRICE_CONFIG_ERR);
     });
 
     it("Causes any length domain to have a price of 0 if the maxPrice is 0", async () => {
@@ -363,6 +386,13 @@ describe("ZNSPriceOracle", () => {
       expect(mediumPrice.domainPrice).to.eq(minPrice);
       expect(longPrice.domainPrice).to.eq(minPrice);
     });
+
+    it("Should revert when setting minPrice that causes a spike at maxLength", async () => {
+      const newMinPrice = priceConfigDefault.minPrice.add(parseEther("231"));
+      await expect(
+        zns.priceOracle.connect(deployer).setMinPrice(newMinPrice)
+      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+    });
   });
 
   describe("#setPrecisionMultiplier", () => {
@@ -420,6 +450,15 @@ describe("ZNSPriceOracle", () => {
 
       expect(afterPriceString.charAt(atIndex)).to.not.eq("0");
 
+    });
+
+    it("Should revert when setting precisionMultiplier higher than 10^18", async () => {
+      const newMultiplier = parseEther("100");
+      await expect(
+        zns.priceOracle.connect(deployer).setPrecisionMultiplier(newMultiplier)
+      ).to.be.revertedWith(
+        "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18"
+      );
     });
   });
 
@@ -558,6 +597,13 @@ describe("ZNSPriceOracle", () => {
 
       expect(rootPrice).to.eq(expectedRootPrice);
     });
+
+    it("Should revert when setting baseLength that causes a spike at maxLength", async () => {
+      const newBaseLength = priceConfigDefault.baseLength.sub(1);
+      await expect(
+        zns.priceOracle.connect(deployer).setBaseLength(newBaseLength)
+      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+    });
   });
 
   describe("#setMaxLength", () => {
@@ -609,6 +655,13 @@ describe("ZNSPriceOracle", () => {
       expect(shortPrice.domainPrice).to.eq(priceConfigDefault.maxPrice);
       expect(longPrice.domainPrice).to.eq(priceConfigDefault.maxPrice);
       expect(beyondPrice.domainPrice).to.eq(priceConfigDefault.minPrice);
+    });
+
+    it("Should revert when setting maxLength that causes a spike at maxLength", async () => {
+      const newMaxLength = priceConfigDefault.maxLength.add(10);
+      await expect(
+        zns.priceOracle.connect(deployer).setMaxLength(newMaxLength)
+      ).to.be.revertedWith(PRICE_CONFIG_ERR);
     });
   });
 

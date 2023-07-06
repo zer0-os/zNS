@@ -11,9 +11,9 @@ export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
 
 export const priceConfigDefault : PriceParams = {
-  maxPrice: ethers.utils.parseEther("1000"),
-  minPrice: ethers.utils.parseEther("50"),
-  maxLength: BigNumber.from(80),
+  maxPrice: ethers.utils.parseEther("25000"),
+  minPrice: ethers.utils.parseEther("2000"),
+  maxLength: BigNumber.from(50),
   baseLength: BigNumber.from(4),
   precisionMultiplier: precisionMultiDefault,
 };
