@@ -15,7 +15,6 @@ export const priceConfigDefault : PriceParams = {
   minPrice: ethers.utils.parseEther("50"),
   maxLength: BigNumber.from(100),
   baseLength: BigNumber.from(4),
-  priceMultiplier: BigNumber.from(5),
   precisionMultiplier: precisionMultiDefault,
 };
 

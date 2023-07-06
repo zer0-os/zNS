@@ -138,35 +138,7 @@ describe("ZNSPriceOracle", () => {
       expect(domainPrice).to.eq(expectedPrice);
     });
 
-    it("Returns a price for multiple lengths when the multiplier is min value", async () => {
-      const { baseLength } = await zns.priceOracle.rootDomainPriceConfig();
-
-      const minMultiplier = baseLength.add(1);
-      await zns.priceOracle.setPriceMultiplier(minMultiplier);
-
-      // Any value less than base length is always base price, so we only check
-      // domains that are greater than base length + 1
-      const short = "wild";
-      const medium = "wilderworld";
-      const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
-
-      const expectedShortPrice = await getPrice(short, zns.priceOracle);
-      const { domainPrice: shortPrice } = await zns.priceOracle.getPrice(short);
-      expect(expectedShortPrice).to.eq(shortPrice);
-
-      const expectedMediumPrice = await getPrice(medium, zns.priceOracle);
-      const { domainPrice: mediumPrice } = await zns.priceOracle.getPrice(medium);
-      expect(expectedMediumPrice).to.eq(mediumPrice);
-
-      const expectedLongPrice = await getPrice(long, zns.priceOracle);
-      const { domainPrice: longPrice } = await zns.priceOracle.getPrice(long);
-      expect(expectedLongPrice).to.eq(longPrice);
-    });
-
-    it("Returns a price for multiple lengths when the multiplier is a very large value", async () => {
-      const newMultiplier = BigNumber.from("10000000");
-      await zns.priceOracle.setPriceMultiplier(newMultiplier);
-
+    it("Returns a price for multiple lengths", async () => {
       // Any value less than base length is always base price, so we only check
       // domains that are greater than base length + 1
       const short = "wild";
@@ -209,6 +181,48 @@ describe("ZNSPriceOracle", () => {
       const expectedPrice = await getPrice(domain, zns.priceOracle);
       const { domainPrice } = await zns.priceOracle.getPrice(domain);
       expect(domainPrice).to.eq(expectedPrice);
+    });
+
+    // TODO ora: decide what to do with this one. unblock if needed
+    it("Doesn't create price spikes with any valid combination of values", async () => {
+      // Start by expanding the search space to allow for domains that are up to 1000 characters
+      await zns.priceOracle.connect(deployer).setMaxLength(BigNumber.from("1000"));
+
+      const promises = [];
+      let config = await zns.priceOracle.rootDomainPriceConfig();
+      let domain = "a";
+
+      // baseLength = 0 is a special case
+      await zns.priceOracle.connect(deployer).setBaseLength(0);
+      const zeroPriceTuple = await zns.priceOracle.getPrice(domain);
+      expect(zeroPriceTuple.domainPrice).to.eq(config.maxPrice);
+
+      let outer = 1;
+      let inner = outer;
+      // Long running loops here to iterate all the variations for baseLength and
+      while(config.maxLength.gt(outer)) {
+        // Reset "domain" to a single character each outer loop
+        domain = "a";
+
+        await zns.priceOracle.connect(deployer).setBaseLength(outer);
+        config = await zns.priceOracle.rootDomainPriceConfig();
+
+        while (config.maxLength.gt(inner)) {
+          const priceTx = zns.priceOracle.getPrice(domain);
+          promises.push(priceTx);
+
+          domain += "a";
+          inner++;
+        }
+        outer++;
+      }
+
+      const priceTuples = await Promise.all(promises);
+      let k = 0;
+      while (k < priceTuples.length) {
+        expect(priceTuples[k].domainPrice).to.be.lte(config.maxPrice);
+        k++;
+      }
     });
   });
 
@@ -347,113 +361,6 @@ describe("ZNSPriceOracle", () => {
       expect(shortPrice.domainPrice).to.eq(minPrice);
       expect(mediumPrice.domainPrice).to.eq(minPrice);
       expect(longPrice.domainPrice).to.eq(minPrice);
-    });
-  });
-
-  describe("#setPriceMultiplier", () => {
-    it("Allows setting of a priceMultiplier that is >= baseLength + 1", async () => {
-      const config = await zns.priceOracle.rootDomainPriceConfig();
-      const newMultiplier = config.baseLength.add(1);
-
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.emit(zns.priceOracle, "PriceMultiplierSet").withArgs(newMultiplier);
-    });
-
-    it("Fails when setting priceMultiplier that is < baseLength + 1", async () => {
-      const config = await zns.priceOracle.rootDomainPriceConfig();
-      const newMultiplier = config.baseLength.sub(1);
-
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith(MULTIPLIER_BELOW_MIN_ERR);
-    });
-
-    it("Fails when setting priceMultiplier that is 0", async () => {
-      const newMultiplier = BigNumber.from(0);
-
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith(NO_ZERO_MULTIPLIER_ERR);
-    });
-
-    it("Updates the multiplier automatically if setting a baseLength that would make it invalid", async () => {
-      const oldMultiplier = (await zns.priceOracle.rootDomainPriceConfig()).priceMultiplier;
-
-      // Setting the baseLength to the same value as the multiplier would invalidate the function,
-      // because the multiplier must always be at least baseLength + 1, so the guard for this
-      // should automatically update the multiplier as well
-      await zns.priceOracle.connect(deployer).setBaseLength(oldMultiplier);
-
-      const newMultiplier = (await zns.priceOracle.rootDomainPriceConfig()).priceMultiplier;
-
-      expect(newMultiplier).to.eq(oldMultiplier.add(1));
-    });
-
-    // TODO ora: decide what to do with this one. unblock if needed
-    it("Doesn't create price spikes with any valid combination of values", async () => {
-      // Start by expanding the search space to allow for domains that are up to 1000 characters
-      await zns.priceOracle.connect(deployer).setMaxLength(BigNumber.from("1000"));
-
-      const promises = [];
-      let config = await zns.priceOracle.rootDomainPriceConfig();
-      let domain = "a";
-
-      // baseLength = 0 is a special case
-      await zns.priceOracle.connect(deployer).setBaseLength(0);
-      const zeroPriceTuple = await zns.priceOracle.getPrice(domain);
-      expect(zeroPriceTuple.domainPrice).to.eq(config.maxPrice);
-
-      let outer = 1;
-      let inner = outer;
-      // Long running loops here to iterate all the variations for baseLength and
-      while(config.maxLength.gt(outer)) {
-        // Reset "domain" to a single character each outer loop
-        domain = "a";
-
-        await zns.priceOracle.connect(deployer).setBaseLength(outer);
-        config = await zns.priceOracle.rootDomainPriceConfig();
-
-        while (config.maxLength.gt(inner)) {
-          const priceTx = zns.priceOracle.getPrice(domain);
-          promises.push(priceTx);
-
-          domain += "a";
-          inner++;
-        }
-        outer++;
-      }
-
-      const priceTuples = await Promise.all(promises);
-      let k = 0;
-      while (k < priceTuples.length) {
-        expect(priceTuples[k].domainPrice).to.be.lte(config.maxPrice);
-        k++;
-      }
-    });
-
-    it("Allows an authorized user to set the price multiplier", async () => {
-      const newMultiplier = BigNumber.from("300");
-
-      await zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      const params = await zns.priceOracle.rootDomainPriceConfig();
-      expect(params.priceMultiplier).to.eq(newMultiplier);
-    });
-
-    it("Disallows an unauthorized user to set the price multiplier", async () => {
-      const newMultiplier = BigNumber.from("300");
-
-      const tx = zns.priceOracle.connect(user).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
-    });
-
-    it("Succeeds when setting a value within the allowed range", async () => {
-      // Valid range is 300 - 400
-      const newMultiplier = BigNumber.from("350");
-
-      await zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-
-      const params = await zns.priceOracle.rootDomainPriceConfig();
-      expect(params.priceMultiplier).to.eq(newMultiplier);
     });
   });
 
@@ -769,13 +676,6 @@ describe("ZNSPriceOracle", () => {
       await expect(tx).to.emit(zns.priceOracle, "MaxPriceSet").withArgs(newMaxPrice);
     });
 
-    it("Emits PriceMultiplierSet", async () => {
-      const newMultiplier = BigNumber.from("350");
-
-      const tx = zns.priceOracle.connect(deployer).setPriceMultiplier(newMultiplier);
-      await expect(tx).to.emit(zns.priceOracle, "PriceMultiplierSet").withArgs(newMultiplier);
-    });
-
     it("Emits BaseLengthSet", async () => {
       const newLength = 5;
 
@@ -820,7 +720,6 @@ describe("ZNSPriceOracle", () => {
       await newPriceOracle.deployed();
 
       await zns.priceOracle.connect(deployer).setBaseLength("7");
-      await zns.priceOracle.connect(deployer).setPriceMultiplier("310");
       await zns.priceOracle.connect(deployer).setMaxPrice(ethers.utils.parseEther("0.7124"));
 
       const contractCalls = [

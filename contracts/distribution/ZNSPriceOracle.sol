@@ -7,7 +7,6 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
-// TODO ora: remove priceMultiplier if not needed
 contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
@@ -34,12 +33,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         // Set pricing and length parameters
         rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
 
-        // Internal function will revert if the multiplier is not baseLength + 1
-        _setPriceMultiplier(priceConfig_.priceMultiplier);
-
-        // Set the rest of the priceConfig struct, without setting multiplier or baseLength twice
-        // TODO how does this compare to just doing `rootDomainPriceConfig = priceConfig_`
-        // even if it sets `baseLength` and `priceMultiplier` again?
+        // Set the values of the priceConfig struct
         rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
         rootDomainPriceConfig.maxLength = priceConfig_.maxLength;
@@ -83,14 +77,12 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
             priceConfig.minPrice,
             priceConfig.maxLength,
             priceConfig.baseLength,
-            priceConfig.priceMultiplier,
             priceConfig.precisionMultiplier
         );
     }
 
     /**
-     * @notice Set the max price for root domains or subdomains. If this value or the
-     * `priceMultiplier` value is `0` the price of any domain will also be `0`
+     * @notice Set the max price for root domains or subdomains.
      *
      * @param maxPrice The price to set in $ZERO
      */
@@ -118,11 +110,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     function setBaseLength(
         uint256 length
     ) external override onlyAdmin {
-        // The price multiplier must always be at least baseLength + 1
-        if (length >= rootDomainPriceConfig.priceMultiplier) {
-            rootDomainPriceConfig.priceMultiplier = length + 1;
-        }
-
         rootDomainPriceConfig.baseLength = length;
 
         emit BaseLengthSet(length);
@@ -134,22 +121,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         rootDomainPriceConfig.maxLength = length;
 
         emit MaxLengthSet(length);
-    }
-
-    /**
-     * @notice In price calculation we use a `multiplier` to adjust how steep the
-     * price curve is after the base price. This allows that value to be changed.
-     * If this value or the `maxPrice` is `0` the price of any domain will also be `0`
-     *
-     * Valid values for the multiplier range are between 300 - 400 inclusively.
-     * These are decimal values with two points of precision, meaning they are really 3.00 - 4.00
-     * but we can't store them this way. We divide by 100 in the below internal price function
-     * to make up for this.
-     * @param multiplier The new price multiplier to set
-     */
-    function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
-        _setPriceMultiplier(multiplier);
-        emit PriceMultiplierSet(multiplier);
     }
 
     /**
@@ -213,18 +184,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         return
         (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
-    }
-
-    function _setPriceMultiplier(uint256 multiplier) internal {
-        // The multiplier being 0 will cause a division error in the pricing function
-        require(multiplier > 0, "ZNSPriceOracle: Multiplier cannot be 0");
-
-        // The multiplier being larger than the base length will cause spikes in the pricing function
-        require(
-            multiplier >= rootDomainPriceConfig.baseLength + 1,
-            "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
-        );
-        rootDomainPriceConfig.priceMultiplier = multiplier;
     }
 
     /**
