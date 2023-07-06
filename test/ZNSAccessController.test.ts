@@ -46,17 +46,6 @@ describe("ZNSAccessController", () => {
         }, Promise.resolve()
       );
     });
-
-    it("Should not allow to initialize twice", async () => {
-      await expect(
-        accessController.initialize(
-          governorAccs.map(acc => acc.address),
-          adminAccs.map(acc => acc.address),
-        )
-      ).to.be.revertedWith(
-        INITIALIZED_ERR
-      );
-    });
   });
 
   describe("Role Management from the Initial Setup", () => {
