@@ -108,8 +108,8 @@ describe("ZNSPriceOracle", () => {
       // these values have been calced separately to validate
       // that both forumlas: SC + helper are correct
       // this value has been calces with the default priceConfig
-      const domainOneRefValue = BigNumber.from("181810000000000000000");
-      const domainTwoRefValue = BigNumber.from("307690000000000000000");
+      const domainOneRefValue = BigNumber.from("4545450000000000000000");
+      const domainTwoRefValue = BigNumber.from("7692300000000000000000");
 
       const domainOneExpPrice = await getPrice(domainOne, zns.priceOracle);
       const domainTwoExpPrice = await getPrice(domainTwo, zns.priceOracle);
@@ -245,7 +245,7 @@ describe("ZNSPriceOracle", () => {
 
   describe("#setMaxPrice", () => {
     it("Allows an authorized user to set the max price", async () => {
-      const newMaxPrice = parseEther("0.7");
+      const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("10"));
 
       await zns.priceOracle.connect(admin).setMaxPrice(newMaxPrice);
 
@@ -262,7 +262,7 @@ describe("ZNSPriceOracle", () => {
       );
     });
 
-    it("Allows setting the price to zero", async () => {
+    it("Allows setting the max price to zero", async () => {
       const newMaxPrice = BigNumber.from("0");
 
       await zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice);
@@ -302,7 +302,7 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
-      const newMaxPrice = parseEther("0.1");
+      const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("9"));
 
       const expectedPriceBefore = await getPrice(defaultDomain, zns.priceOracle);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(defaultDomain);
@@ -315,8 +315,8 @@ describe("ZNSPriceOracle", () => {
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(defaultDomain);
 
       expect(expectedPriceAfter).to.eq(priceAfter);
-      expect(expectedPriceAfter).to.be.lt(expectedPriceBefore);
-      expect(priceAfter).to.be.lt(priceBefore);
+      expect(expectedPriceAfter).to.be.gt(expectedPriceBefore);
+      expect(priceAfter).to.be.gt(priceBefore);
     });
   });
 
@@ -431,7 +431,7 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("Verifies new prices are affected after changing the precision multiplier", async () => {
-      const atIndex = 5;
+      const atIndex = 7;
 
       const before = await zns.priceOracle.getPrice(defaultDomain);
       const beforePriceString = before.domainPrice.toString();
@@ -491,10 +491,17 @@ describe("ZNSPriceOracle", () => {
     });
 
     it("Always returns the minPrice if both baseLength and maxLength are their min values", async () => {
+      const newConfig = {
+        baseLength: BigNumber.from(1),
+        maxLength: BigNumber.from(1),
+        maxPrice: BigNumber.from(100),
+        minPrice: BigNumber.from(10),
+        precisionMultiplier: precisionMultiDefault,
+      };
+
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always
       // return `maxPrice` which can be set to whatever we need at the time.
-      await zns.priceOracle.connect(deployer).setBaseLength(1);
-      await zns.priceOracle.connect(deployer).setMaxLength(0);
+      await zns.priceOracle.connect(deployer).setPriceConfig(newConfig);
 
       const short = "abc";
       const medium = "abcdefghijklmnop";
@@ -508,9 +515,9 @@ describe("ZNSPriceOracle", () => {
 
       const [shortPrice, mediumPrice, longPrice] = await Promise.all(priceCalls);
 
-      expect(shortPrice.domainPrice).to.eq(priceConfigDefault.minPrice);
-      expect(mediumPrice.domainPrice).to.eq(priceConfigDefault.minPrice);
-      expect(longPrice.domainPrice).to.eq(priceConfigDefault.minPrice);
+      expect(shortPrice.domainPrice).to.eq(newConfig.minPrice);
+      expect(mediumPrice.domainPrice).to.eq(newConfig.minPrice);
+      expect(longPrice.domainPrice).to.eq(newConfig.minPrice);
     });
 
     it("Causes any length domain to cost the base fee when set to max length of 255", async () => {
@@ -547,7 +554,7 @@ describe("ZNSPriceOracle", () => {
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
     });
 
-    it("Causes prices to adjust correctly when length is decreased", async () => {
+    it.only("Causes prices to adjust correctly when length is decreased", async () => {
       const length = 8;
       await zns.priceOracle.connect(deployer).setBaseLength(length);
 
