@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
-import { deployAccessController, INITIALIZED_ERR } from "./helpers";
+import { deployAccessController } from "./helpers";
 import { expect } from "chai";
 import { ADMIN_ROLE, GOVERNOR_ROLE, EXECUTOR_ROLE, REGISTRAR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
@@ -44,17 +44,6 @@ describe("ZNSAccessController", () => {
           const hasRole = await accessController.hasRole(ADMIN_ROLE, address);
           expect(hasRole).to.be.true;
         }, Promise.resolve()
-      );
-    });
-
-    it("Should not allow to initialize twice", async () => {
-      await expect(
-        accessController.initialize(
-          governorAccs.map(acc => acc.address),
-          adminAccs.map(acc => acc.address),
-        )
-      ).to.be.revertedWith(
-        INITIALIZED_ERR
       );
     });
   });

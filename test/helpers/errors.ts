@@ -24,3 +24,4 @@ export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";
+export const PRICE_CONFIG_ERR = "ZNSPriceOracle: incorrect value set causes the price spike at maxLength.";

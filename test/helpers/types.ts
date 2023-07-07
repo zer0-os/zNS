@@ -55,7 +55,6 @@ export interface PriceParams {
   minPrice : BigNumber;
   maxLength : BigNumber;
   baseLength : BigNumber;
-  priceMultiplier : BigNumber;
   precisionMultiplier : BigNumber;
 }
 

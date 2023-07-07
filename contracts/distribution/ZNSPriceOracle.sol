@@ -30,19 +30,15 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         uint256 regFeePercentage_
     ) public override initializer {
         _setAccessController(accessController_);
-        // Set pricing and length parameters
+
+        // Set the values of the priceConfig struct
         rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
-
-        // Internal function will revert if the multiplier is not baseLength + 1
-        _setPriceMultiplier(priceConfig_.priceMultiplier);
-
-        // Set the rest of the priceConfig struct, without setting multiplier or baseLength twice
-        // TODO how does this compare to just doing `rootDomainPriceConfig = priceConfig_`
-        // even if it sets `baseLength` and `priceMultiplier` again?
         rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
         rootDomainPriceConfig.maxLength = priceConfig_.maxLength;
-        rootDomainPriceConfig.precisionMultiplier = priceConfig_.precisionMultiplier;
+        setPrecisionMultiplier(priceConfig_.precisionMultiplier);
+
+        _validateConfig();
 
         feePercentage = regFeePercentage_;
     }
@@ -72,24 +68,29 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
     }
 
+    // TODO: add docs on how to properly set maxLength vs other values
+    //  so that we do not have minPrice higher than the price of the previous
+    //  value
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
-        require(priceConfig.precisionMultiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        rootDomainPriceConfig.baseLength = priceConfig.baseLength;
+        rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
+        rootDomainPriceConfig.minPrice = priceConfig.minPrice;
+        rootDomainPriceConfig.maxLength = priceConfig.maxLength;
+        setPrecisionMultiplier(priceConfig.precisionMultiplier);
 
-        rootDomainPriceConfig = priceConfig;
+        _validateConfig();
 
         emit PriceConfigSet(
             priceConfig.maxPrice,
             priceConfig.minPrice,
             priceConfig.maxLength,
             priceConfig.baseLength,
-            priceConfig.priceMultiplier,
             priceConfig.precisionMultiplier
         );
     }
 
     /**
-     * @notice Set the max price for root domains or subdomains. If this value or the
-     * `priceMultiplier` value is `0` the price of any domain will also be `0`
+     * @notice Set the max price for root domains or subdomains.
      *
      * @param maxPrice The price to set in $ZERO
      */
@@ -98,6 +99,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxPrice = maxPrice;
 
+        if (maxPrice != 0) _validateConfig();
+
         emit MaxPriceSet(maxPrice);
     }
 
@@ -105,6 +108,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         uint256 minPrice
     ) external override onlyAdmin {
         rootDomainPriceConfig.minPrice = minPrice;
+
+        _validateConfig();
 
         emit MinPriceSet(minPrice);
     }
@@ -117,12 +122,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     function setBaseLength(
         uint256 length
     ) external override onlyAdmin {
-        // The price multiplier must always be at least baseLength + 1
-        if (length >= rootDomainPriceConfig.priceMultiplier) {
-            rootDomainPriceConfig.priceMultiplier = length + 1;
-        }
-
         rootDomainPriceConfig.baseLength = length;
+
+        _validateConfig();
 
         emit BaseLengthSet(length);
     }
@@ -132,23 +134,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxLength = length;
 
-        emit MaxLengthSet(length);
-    }
+        if (length != 0) _validateConfig();
 
-    /**
-     * @notice In price calculation we use a `multiplier` to adjust how steep the
-     * price curve is after the base price. This allows that value to be changed.
-     * If this value or the `maxPrice` is `0` the price of any domain will also be `0`
-     *
-     * Valid values for the multiplier range are between 300 - 400 inclusively.
-     * These are decimal values with two points of precision, meaning they are really 3.00 - 4.00
-     * but we can't store them this way. We divide by 100 in the below internal price function
-     * to make up for this.
-     * @param multiplier The new price multiplier to set
-     */
-    function setPriceMultiplier(uint256 multiplier) external override onlyAdmin {
-        _setPriceMultiplier(multiplier);
-        emit PriceMultiplierSet(multiplier);
+        emit MaxLengthSet(length);
     }
 
     /**
@@ -160,8 +148,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function setPrecisionMultiplier(
         uint256 multiplier
-    ) external override onlyAdmin {
+    ) public override onlyAdmin {
         require(multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        require(multiplier < 10**18, "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18");
         rootDomainPriceConfig.precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(multiplier);
@@ -210,21 +199,16 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         // with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
         // with precision 2 would give us 15.230000000000000000 * 10^18
         return
-        (config.baseLength * config.maxPrice / length
-        + (config.maxPrice / config.priceMultiplier))
+        (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
     }
 
-    function _setPriceMultiplier(uint256 multiplier) internal {
-        // The multiplier being 0 will cause a division error in the pricing function
-        require(multiplier > 0, "ZNSPriceOracle: Multiplier cannot be 0");
-
-        // The multiplier being larger than the base length will cause spikes in the pricing function
+    function _validateConfig() internal view {
+        uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
         require(
-            multiplier >= rootDomainPriceConfig.baseLength + 1,
-            "ZNSPriceOracle: Multiplier must be >= baseLength + 1"
+            rootDomainPriceConfig.minPrice < prevToMinPrice,
+            "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."
         );
-        rootDomainPriceConfig.priceMultiplier = multiplier;
     }
 
     /**
