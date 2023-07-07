@@ -676,7 +676,7 @@ describe("ZNSRegistrar", () => {
       const domainHash = hashDomainLabel(domainName);
 
       await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(randomUser.address, ethers.utils.parseEther("1500"));
+      await zns.zeroToken.mint(randomUser.address, priceConfigDefault.maxPrice);
 
       await zns.registrar.connect(randomUser).registerDomain(domainName, randomUser.address);
 
