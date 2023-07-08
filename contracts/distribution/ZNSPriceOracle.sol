@@ -30,14 +30,15 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         uint256 regFeePercentage_
     ) public override initializer {
         _setAccessController(accessController_);
-        // Set pricing and length parameters
-        rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
 
         // Set the values of the priceConfig struct
+        rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
         rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
         rootDomainPriceConfig.maxLength = priceConfig_.maxLength;
-        rootDomainPriceConfig.precisionMultiplier = priceConfig_.precisionMultiplier;
+        setPrecisionMultiplier(priceConfig_.precisionMultiplier);
+
+        _validateConfig();
 
         feePercentage = regFeePercentage_;
     }
@@ -71,9 +72,13 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     //  so that we do not have minPrice higher than the price of the previous
     //  value
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
-        require(priceConfig.precisionMultiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        rootDomainPriceConfig.baseLength = priceConfig.baseLength;
+        rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
+        rootDomainPriceConfig.minPrice = priceConfig.minPrice;
+        rootDomainPriceConfig.maxLength = priceConfig.maxLength;
+        setPrecisionMultiplier(priceConfig.precisionMultiplier);
 
-        rootDomainPriceConfig = priceConfig;
+        _validateConfig();
 
         emit PriceConfigSet(
             priceConfig.maxPrice,
@@ -94,6 +99,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxPrice = maxPrice;
 
+        if (maxPrice != 0) _validateConfig();
+
         emit MaxPriceSet(maxPrice);
     }
 
@@ -101,6 +108,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         uint256 minPrice
     ) external override onlyAdmin {
         rootDomainPriceConfig.minPrice = minPrice;
+
+        _validateConfig();
 
         emit MinPriceSet(minPrice);
     }
@@ -115,6 +124,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.baseLength = length;
 
+        _validateConfig();
+
         emit BaseLengthSet(length);
     }
 
@@ -122,6 +133,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         uint256 length
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxLength = length;
+
+        if (length != 0) _validateConfig();
 
         emit MaxLengthSet(length);
     }
@@ -135,8 +148,9 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function setPrecisionMultiplier(
         uint256 multiplier
-    ) external override onlyAdmin {
+    ) public override onlyAdmin {
         require(multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
+        require(multiplier < 10**18, "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18");
         rootDomainPriceConfig.precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(multiplier);
@@ -187,6 +201,14 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         return
         (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
+    }
+
+    function _validateConfig() internal view {
+        uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
+        require(
+            rootDomainPriceConfig.minPrice < prevToMinPrice,
+            "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."
+        );
     }
 
     /**

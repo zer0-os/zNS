@@ -133,7 +133,7 @@ describe("ZNSRegistrar", () => {
 
     it("Sets the correct data in Registry", async () => {
       const tx = await defaultRegistration(
-        deployer,
+        user,
         zns,
         defaultDomain
       );
@@ -147,7 +147,7 @@ describe("ZNSRegistrar", () => {
         resolver: resolverFromReg,
       } = await zns.registry.getDomainRecord(domainHash);
 
-      expect(ownerFromReg).to.eq(deployer.address);
+      expect(ownerFromReg).to.eq(user.address);
       expect(resolverFromReg).to.eq(zns.addressResolver.address);
     });
 
@@ -196,7 +196,7 @@ describe("ZNSRegistrar", () => {
     });
 
     it("Records the correct domain hash", async () => {
-      const tx = await defaultRegistration(deployer, zns, defaultDomain);
+      const tx = await defaultRegistration(user, zns, defaultDomain);
 
       const domainHash = await getDomainHashFromEvent(tx);
 
@@ -205,15 +205,15 @@ describe("ZNSRegistrar", () => {
     });
 
     it("Creates and finds the correct tokenId", async () => {
-      const tx = await defaultRegistration(deployer, zns, defaultDomain);
+      const tx = await defaultRegistration(user, zns, defaultDomain);
 
       const tokenId = await getTokenIdFromEvent(tx);
       const owner = await zns.domainToken.ownerOf(tokenId);
-      expect(owner).to.eq(deployer.address);
+      expect(owner).to.eq(user.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
-      const tx = await defaultRegistration(deployer, zns, defaultDomain);
+      const tx = await defaultRegistration(user, zns, defaultDomain);
       const domainHash = await getDomainHashFromEvent(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
