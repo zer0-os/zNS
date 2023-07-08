@@ -495,7 +495,7 @@ export const deployZNS = async ({
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
-  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("1500"));
+  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("50000"));
 
   return znsContracts;
 };

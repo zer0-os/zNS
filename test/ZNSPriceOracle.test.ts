@@ -554,11 +554,10 @@ describe("ZNSPriceOracle", () => {
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
     });
 
-    it.only("Causes prices to adjust correctly when length is decreased", async () => {
+    it("Causes prices to adjust correctly when length is decreased", async () => {
       const length = 8;
       await zns.priceOracle.connect(deployer).setBaseLength(length);
 
-      // const basePrice = await zns.priceOracle.rootDomainBasePrice();
       const paramsBefore = await zns.priceOracle.rootDomainPriceConfig();
 
       const expectedPriceBefore = await getPrice(defaultDomain, zns.priceOracle);
@@ -566,7 +565,7 @@ describe("ZNSPriceOracle", () => {
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.eq(paramsBefore.maxPrice);
 
-      const newLength = 3;
+      const newLength = 5;
       await zns.priceOracle.connect(deployer).setBaseLength(newLength);
 
       const paramsAfter = await zns.priceOracle.rootDomainPriceConfig();
@@ -587,7 +586,9 @@ describe("ZNSPriceOracle", () => {
       expect(config.maxPrice).to.eq(price.domainPrice);
 
       // Modify the max price
-      await zns.priceOracle.connect(deployer).setMaxPrice(ethers.utils.parseEther("800"));
+      await zns.priceOracle.connect(deployer).setMaxPrice(
+        priceConfigDefault.maxPrice.add(15)
+      );
 
       config = await zns.priceOracle.rootDomainPriceConfig();
       price = await zns.priceOracle.getPrice(defaultDomain);
@@ -731,7 +732,7 @@ describe("ZNSPriceOracle", () => {
 
   describe("Events", () => {
     it("Emits MaxPriceSet", async () => {
-      const newMaxPrice = parseEther("0.7");
+      const newMaxPrice = priceConfigDefault.maxPrice.add(1);
 
       const tx = zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice);
       await expect(tx).to.emit(zns.priceOracle, "MaxPriceSet").withArgs(newMaxPrice);
@@ -781,7 +782,9 @@ describe("ZNSPriceOracle", () => {
       await newPriceOracle.deployed();
 
       await zns.priceOracle.connect(deployer).setBaseLength("7");
-      await zns.priceOracle.connect(deployer).setMaxPrice(ethers.utils.parseEther("0.7124"));
+      await zns.priceOracle.connect(deployer).setMaxPrice(
+        priceConfigDefault.maxPrice.add(15)
+      );
 
       const contractCalls = [
         zns.priceOracle.rootDomainPriceConfig(),
