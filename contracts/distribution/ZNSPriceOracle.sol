@@ -99,9 +99,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxPrice = maxPrice;
 
-        if (maxPrice != 0) {
-            _validateConfig();
-        }
+        if (maxPrice != 0) _validateConfig();
 
         emit MaxPriceSet(maxPrice);
     }
@@ -136,7 +134,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) external override onlyAdmin {
         rootDomainPriceConfig.maxLength = length;
 
-        _validateConfig();
+        if (length != 0) _validateConfig();
 
         emit MaxLengthSet(length);
     }
