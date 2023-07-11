@@ -7,6 +7,10 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
+/**
+ * @title Implementation of the Price Oracle, module that calculates the price of a domain
+ * based on its length and the rules set by Zero ADMIN.
+ */
 contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
@@ -14,6 +18,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
 
     /**
      * @notice Struct for each configurable price variable
+     * that participates in the price calculation.
      */
     DomainPriceConfig public rootDomainPriceConfig;
 
@@ -24,6 +29,16 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     uint256 public feePercentage;
 
+    /**
+     * @notice Proxy initializer to set the initial state of the contract after deployment.
+     * @dev Note the for DomainPriceConfig we set each value individually and calling
+     * 2 important functions that validate all of the config's values against the formula:
+     * - {setPrecisionMultiplier()} to validate precision multiplier
+     * - {_validateConfig()} to validate the whole config in order to avoid price spikes
+     * @param accessController_ the address of the ZNSAccessController contract.
+     * @param priceConfig_ a number of variables that participate in the price calculation.
+     * @param regFeePercentage_ the registration fee value in percentage as basis points (parts per 10,000)
+     */
     function initialize(
         address accessController_,
         DomainPriceConfig calldata priceConfig_,
@@ -31,7 +46,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) public override initializer {
         _setAccessController(accessController_);
 
-        // Set the values of the priceConfig struct
         rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
         rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
@@ -64,13 +78,20 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         totalPrice = domainPrice + fee;
     }
 
+    /**
+     * @notice Get the registration fee amount in `stakingToken` for a specific domain price
+     * @param domainPrice The price of the domain
+     */
     function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
         return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
     }
 
-    // TODO: add docs on how to properly set maxLength vs other values
-    //  so that we do not have minPrice higher than the price of the previous
-    //  value
+    /**
+     * @notice Setter for {`rootDomainPriceConfig`}. Only ADMIN can call this function.
+     * @dev Validates the value of the {`precisionMultiplier`} and the whole config in order to avoid price spikes,
+     * fires {`PriceConfigSet`} event.
+     * @param priceConfig The new price config to set
+     */
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
         rootDomainPriceConfig.baseLength = priceConfig.baseLength;
         rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
@@ -90,9 +111,10 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     }
 
     /**
-     * @notice Set the max price for root domains or subdomains.
-     *
-     * @param maxPrice The price to set in $ZERO
+     * @notice Sets the max price for domains. Validates the config with the new price.
+     * Fires {`MaxPriceSet`} event.
+     * > !!! `maxPrice` can be set to 0 to make all domains free!
+     * @param maxPrice The maximum price to set in $ZERO
      */
     function setMaxPrice(
         uint256 maxPrice
@@ -104,6 +126,11 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit MaxPriceSet(maxPrice);
     }
 
+    /**
+     * @notice Sets the minimum price for domains. Validates the config with the new price.
+     * Fires {`MinPriceSet`} event.
+     * @param minPrice The minimum price to set in $ZERO
+     */
     function setMinPrice(
         uint256 minPrice
     ) external override onlyAdmin {
@@ -115,8 +142,13 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     }
 
     /**
-     * @notice Set the value of the domain name length boundary where the default price applies
-     * e.g. A value of '5' means all domains <= 5 in length cost the default price
+     * @notice Set the value of the domain name length boundary where the `maxPrice` applies
+     * e.g. A value of '5' means all domains <= 5 in length cost the `maxPrice` price
+     * Validates the config with the new length. Fires {`BaseLengthSet`} event.
+     * > !!! `baseLength` can be set to 0 to make all domains cost `maxPrice`!
+     * > This indicates to the system that we are
+     * > currently in a special phase where we define an exact price for all domains
+     * > e.g. promotions or sales
      * @param length Boundary to set
      */
     function setBaseLength(
@@ -129,6 +161,15 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit BaseLengthSet(length);
     }
 
+    /**
+     * @notice Set the maximum length of a domain name to which price formula applies.
+     * All domain names (labels) that are longer than this value will cost the fixed price of `minPrice`,
+     * and the pricing formula will not apply to them.
+     * Validates the config with the new length.
+     * Fires {`MaxLengthSet`} event.
+     * > !!! `maxLength` can be set to 0 to make all domains cost `minPrice`!
+     * @param length The maximum length to set
+     */
     function setMaxLength(
         uint256 length
     ) external override onlyAdmin {
@@ -140,22 +181,30 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     }
 
     /**
-     * @notice Set the precision multiplier for the price calculation.
+     * @notice Sets the precision multiplier for the price calculation.
      * @param multiplier This should be picked based on the number of token decimals
      * to calculate properly.
      * e.g. if we use a token with 18 decimals, and want precision of 2,
-     * our precision multiplier will be equal to 10^18 - 10^2 = 10^16
+     * our precision multiplier will be equal to 10^(18 - 2) = 10^16
+     * @dev Multiplier should be less or equal to 10^18 and greater than 0!
+     * Fires {`PrecisionMultiplierSet`} event.
      */
     function setPrecisionMultiplier(
         uint256 multiplier
     ) public override onlyAdmin {
         require(multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
-        require(multiplier < 10**18, "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18");
+        require(multiplier <= 10**18, "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18");
         rootDomainPriceConfig.precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(multiplier);
     }
 
+    /**
+     * @notice Sets the fee percentage for domain registration.
+     * @dev Fee percentage is set according to the basis of 10000, outlined in {`PERCENTAGE_BASIS`}.
+     * Fires {`FeePercentageSet`} event.
+     * @param regFeePercentage The fee percentage to set
+     */
     function setRegistrationFeePercentage(uint256 regFeePercentage)
     external
     override
@@ -164,6 +213,12 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         emit FeePercentageSet(regFeePercentage);
     }
 
+    /**
+     * @notice Sets the access controller for the contract.
+     * Only ADMIN can call this function.
+     * Fires {`AccessControllerSet`} event.
+     * @param accessController_ The address of the new access controller
+     */
     function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSPriceOracle)
@@ -171,14 +226,26 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         _setAccessController(accessController_);
     }
 
+    /**
+     * @notice Getter for ZNSAccessController address stored on this contract.
+     */
     function getAccessController() external view override(AccessControlled, IZNSPriceOracle) returns (address) {
         return address(accessController);
     }
 
     /**
-     * @notice Internal function to get price abstract of the base price being for
-     * a root domain or a subdomain.
+     * @notice Internal function to cakculate price based on the config set,
+     * and the length of the domain label.
+     * @dev Before we calculate the price, 3 different cases are possible:
+     * 1. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
+     * 2. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
+     * 3. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
      *
+     * The formula itself creates an asymptotic curve that decreases in pricing based on domain name length,
+     * base length and max price, the result is divided by the precision multiplier to remove numbers beyond
+     * what we care about, then multiplied by the same precision multiplier to get the actual value
+     * with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
+     * with precision 2 would give us 15.230000000000000000 * 10^18
      * @param length The length of the domain name
      */
     function _getPrice(
@@ -193,11 +260,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        // This creates an asymptotic curve that decreases in pricing based on domain name length
-        // then divide it by the precision multiplier to remove numbers beyond what we care about
-        // Then multiply by the same precision multiplier to get the actual value
-        // with truncated values past precision. So having a value of 15.235234324234512365 * 10^18
-        // with precision 2 would give us 15.230000000000000000 * 10^18
         return
         (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
