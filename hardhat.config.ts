@@ -92,11 +92,14 @@ const config : HardhatUserConfig = {
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
   },
   docgen: {
+    pages: "files",
+    templates: "docs/docgen-templates",
+    outputDir: "docs/contracts",
     exclude: [
-      "contracts/upgrade-test-mocks/**/*",
-      "contracts/token/mocks/**/*",
-      "contracts/utils/**/*",
-      "contracts/oz-proxies/**/*",
+      "upgrade-test-mocks/",
+      "token/mocks/",
+      "utils/",
+      "oz-proxies/",
     ],
   },
 };
