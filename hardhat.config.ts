@@ -97,6 +97,7 @@ const config : HardhatUserConfig = {
     outputDir: "docs/contracts",
     exclude: [
       "upgrade-test-mocks/",
+      "upgradeMocks/",
       "token/mocks/",
       "utils/",
       "oz-proxies/",
