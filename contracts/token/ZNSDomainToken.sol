@@ -63,7 +63,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
     /**
      * @dev Sets the address of the {ZNSAccessController} contract.
      * Can only be called by the ADMIN. Emits an {AccessControllerSet} event.
-     * @param accessController The address of the {ZNSAccessController} contract
+     * @param accessController_ The address of the {ZNSAccessController} contract
      */
     function setAccessController(address accessController_)
     external
