@@ -175,6 +175,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     /**
      * @notice Setter function for the {ZNSRegistry} address in state.
+     * Only ADMIN in {ZNSAccessController} can call this function.
      * @param registry_ Address of the {ZNSRegistry} contract
      */
     function setRegistry(address registry_) public override onlyAdmin {
@@ -189,6 +190,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     /**
      * @notice Setter function for the {ZNSTreasury} address in state.
+     * Only ADMIN in {ZNSAccessController} can call this function.
      * @param treasury_ Address of the {ZNSTreasury} contract
      */
     function setTreasury(address treasury_) public override onlyAdmin {
@@ -203,6 +205,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     /**
      * @notice Setter function for the {ZNSDomainToken} address in state.
+     * Only ADMIN in {ZNSAccessController} can call this function.
      * @param domainToken_ Address of the {ZNSDomainToken} contract
      */
     function setDomainToken(address domainToken_) public override onlyAdmin {
@@ -217,6 +220,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     /**
      * @notice Setter function for the {ZNSAddressResolver} address in state.
+     * Only ADMIN in {ZNSAccessController} can call this function.
      * @param addressResolver_ Address of the {ZNSAddressResolver} contract
      */
     function setAddressResolver(address addressResolver_) public override onlyAdmin {
@@ -231,6 +235,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
 
     /**
      * @notice Setter function for the {ZNSAccessController} address in state.
+     * Only ADMIN in {ZNSAccessController} can call this function.
      * @param accessController_ Address of the {ZNSAccessController} contract
      */
     function setAccessController(address accessController_)
