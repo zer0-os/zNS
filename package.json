@@ -22,7 +22,8 @@
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
     "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts",
-    "gas-cost": "ts-node src/utils/gas-costs.ts"
+    "gas-cost": "ts-node src/utils/gas-costs.ts",
+    "docgen": "hardhat docgen"
   },
   "pre-commit": [
     "lint"
@@ -56,6 +57,7 @@
     "semantic-release": "^21.0.1",
     "solhint": "^3.4.1",
     "solidity-coverage": "^0.8.2",
+    "solidity-docgen": "^0.6.0-beta.35",
     "ts-node": "10.9.1",
     "typechain": "8.1.0",
     "typescript": "^5.0.2"
