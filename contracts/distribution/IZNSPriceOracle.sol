@@ -3,12 +3,51 @@ pragma solidity ^0.8.18;
 
 
 interface IZNSPriceOracle {
+
+    /**
+     * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`
+     * @param price The new maxPrice value
+     */
     event MaxPriceSet(uint256 price);
+
+    /**
+     * @notice Emitted when the `minPrice` is set in `rootDomainPriceConfig`
+     * @param price The new minPrice value
+     */
     event MinPriceSet(uint256 price);
+
+    /**
+     * @notice Emitted when the `baseLength` is set in `rootDomainPriceConfig`
+     * @param length The new baseLength value
+     */
     event BaseLengthSet(uint256 length);
+
+    /**
+     * @notice Emitted when the `maxLength` is set in `rootDomainPriceConfig`
+     * @param length The new maxLength value
+     */
     event MaxLengthSet(uint256 length);
+
+    /**
+     * @notice Emitted when the `precisionMultiplier` is set in `rootDomainPriceConfig`
+     * @param precision The new precisionMultiplier value
+     */
     event PrecisionMultiplierSet(uint256 precision);
+
+    /**
+     * @notice Emitted when the `feePercentage` is set in state
+     * @param feePercentage The new feePercentage value
+     */
     event FeePercentageSet(uint256 feePercentage);
+
+    /**
+     * @notice Emitted when the full `rootDomainPriceConfig` is set in state
+     * @param maxPrice The new `maxPrice` value
+     * @param minPrice The new `minPrice` value
+     * @param maxLength The new `maxLength` value
+     * @param baseLength The new `baseLength` value
+     * @param precisionMultiplier The new `precisionMultiplier` value
+     */
     event PriceConfigSet(
         uint256 maxPrice,
         uint256 minPrice,
@@ -18,15 +57,16 @@ interface IZNSPriceOracle {
     );
 
     /**
-     * @notice Struct for each configurable price variable
+     * @notice Struct for each configurable variable for price calculations.
+     * Does NOT include variables for calcs of registration fees.
      */
     struct DomainPriceConfig {
         /**
-         * @notice Maximum price for a domain
+         * @notice Maximum price for a domain returned at <= `baseLength`
         */
         uint256 maxPrice;
         /**
-         * @notice Minimum price for a domain
+         * @notice Minimum price for a domain returned at > `maxLength`
          */
         uint256 minPrice;
         /**

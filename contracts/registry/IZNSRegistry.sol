@@ -7,6 +7,10 @@ interface IZNSRegistry {
     /**
      * @notice The `DomainRecord` struct is meant to hold relevant information
      * about a domain, such as its owner and resolver.
+     * @param owner The owner of the domain (also called the owner of the Name).
+     * @param resolver The address of the Rsolver contract where this domain's source records are stored.
+     * In the future, there will be multiple Resolver contracts that support different types of sources.
+     * Currently, only the {ZNSAddressResolver} is implemented.
      */
     struct DomainRecord {
         address owner;
@@ -14,9 +18,9 @@ interface IZNSRegistry {
     }
 
     /**
-     * @notice Emit when ownership of a domain is modified
-     * @param owner The new domain owner
+     * @notice Emits when ownership of a domain is modified in {`records`}
      * @param domainHash the hash of a domain's name
+     * @param owner The new domain owner
      */
     event DomainOwnerSet(
         bytes32 indexed domainHash,
@@ -24,9 +28,9 @@ interface IZNSRegistry {
     );
 
     /**
-     * @notice Emit when a domain's resolver is modified
-     * @param resolver The new resolver
+     * @notice Emit when a domain's resolver is modified in {`records`}
      * @param domainHash the hash of a domain's name
+     * @param resolver The new resolver address
      */
     event DomainResolverSet(
         bytes32 indexed domainHash,
@@ -34,7 +38,7 @@ interface IZNSRegistry {
     );
 
     /**
-     * @notice Emit when a record is deleted
+     * @notice Emits when a domain record is deleted
      * @param domainHash The hash of a domain's name
      */
     event DomainRecordDeleted(
@@ -44,7 +48,7 @@ interface IZNSRegistry {
     /**
      * @notice Emit when an owner allows/disallows permissions for an operator
      * @param owner Owner of the domain in question
-     * @param operator User that was allowed/disallowed
+     * @param operator Address that was allowed/disallowed
      * @param allowed Boolean status of their permission
      */
     event OperatorPermissionSet(
