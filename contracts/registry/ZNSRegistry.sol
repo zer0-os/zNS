@@ -6,19 +6,26 @@ import { AccessControlled } from "../access/AccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
+/**
+ * @title The main reference data contract in ZNS. Also, often, the last contract
+ * in the call chain of many operations where the most crucial Name owner data settles.
+ * Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.
+ */
 contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
-     * @notice Mapping `domainHash` to `DomainRecord` struct to hold information
+     * @notice Mapping of `domainHash` to [DomainRecord](./IZNSRegistry.md#iznsregistry) struct to hold information
      * about each domain
      */
-    mapping(bytes32 domainHash => DomainRecord domainRecord) private records;
+    mapping(bytes32 domainHash => DomainRecord domainRecord) internal records;
 
     /**
      * @notice Mapping of `owner` => `operator` => `bool` to show accounts that
      * are or aren't allowed access to domains that `owner` has access to.
+     * Note that operators can NOT change the owner of the domain, but can change
+     * the resolver or resolver records.
      */
     mapping(address owner => mapping(address operator => bool isOperator))
-        private operators;
+        internal operators;
 
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
@@ -33,6 +40,9 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    /**
+     * @notice Revert if `msg.sender` is not the owner. Used for owner restricted functions.
+     */
     modifier onlyOwner(bytes32 domainHash) {
         require(
             records[domainHash].owner == msg.sender,
@@ -41,21 +51,25 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    /**
+     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
+     * or an address holding REGISTRAR_ROLE.
+     */
     modifier onlyRegistrar {
         accessController.checkRegistrar(msg.sender);
         _;
     }
 
     /**
-     * @notice Initialize the ZNSRegistry contract
-     * @param accessController_ The address of the AccessController contract
+     * @notice Initializer for the `ZNSRegistry` proxy.
+     * @param accessController_ The address of the `ZNSAccessController` contract
      */
     function initialize(address accessController_) public override initializer {
         _setAccessController(accessController_);
     }
 
     /**
-     * @notice Check if a given domain exists
+     * @notice Checks if a given domain exists
      * @param domainHash The hash of a domain's name
      */
     function exists(bytes32 domainHash) external view override returns (bool) {
@@ -76,8 +90,9 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Set an `operator` as `allowed` to give or remove permissions for all
-     * domains owned by the owner `msg.sender`
+     * @notice Set an `operator` as `allowed` to give or remove permissions for ALL
+     * domains owned by the owner `msg.sender`.
+     * Emits an `OperatorPermissionSet` event.
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
@@ -88,7 +103,9 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Get a record for a domain
+     * @notice Gets a record for a domain (owner, resolver) from the internal mapping
+     * `records`. `records` maps a domain hash to a
+     * [DomainRecord](./IZNSRegistry.md#iznsregistry) struct.
      * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
@@ -98,7 +115,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Get the owner of the given domain
+     * @notice Gets the owner of the given domain
      * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
@@ -108,7 +125,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Get the default resolver for the given domain
+     * @notice Gets the resolver set for the given domain.
      * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
@@ -118,10 +135,15 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Create a new domain record
+     * @notice Creates a new domain record. Only callable by the `ZNSRegistrar`
+     * or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
+     * flow that starts from `ZNSRegistrar.registerDomain()`. Calls 2 internal functions to set
+     * the owner and resolver of the domain separately.
+     * Can be called with `resolver` param as 0, which will exclude the call to set resolver.
+     * Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
-     * @param resolver The resolver of the new domain
+     * @param resolver The resolver of the new domain, can be 0
      */
     function createDomainRecord(
         bytes32 domainHash,
@@ -130,14 +152,19 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
-        // We allow creation of partial domains with no resolver address
+        // We allow creation of partial domain data with no resolver address
         if (resolver != address(0)) {
             _setDomainResolver(domainHash, resolver);
         }
     }
 
     /**
-     * @notice Update an existing domain record's owner and resolver
+     * @notice Updates an existing domain record's owner and resolver.
+     * Note that this function can ONLY be called by the Name owner of the domain.
+     * This is NOT used by the `ZNSRegistrar` contract and serves as a user facing function
+     * for the owners of existing domains to change their data on this contract. A domain
+     * `operator` can NOT call this, since he is not allowed to change the owner.
+     * Emits `DomainOwnerSet` and `DomainResolverSet` events.
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolver The resolver for the domain
@@ -153,8 +180,9 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Update a domain's owner
-     * @dev This could be called from the registrar as part of the `reclaim()` flow
+     * @notice Updates the owner of an existing domain. Can be called by either the Name owner
+     * on this contract OR the `ZNSRegistrar` contract as part of the Reclaim flow
+     * that starts at `ZNSRegistrar.reclaim()`. Emits an `DomainOwnerSet` event.
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -173,9 +201,10 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Update the domain's default resolver
+     * @notice Updates the resolver of an existing domain in `records`.
+     * Can be called by eithe the owner of the Name or an allowed operator.
      * @param domainHash the hash of a domain's name
-     * @param resolver The new default resolver
+     * @param resolver The new Resolver contract address
      */
     function updateDomainResolver(
         bytes32 domainHash,
@@ -186,7 +215,9 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Delete a domain's record
+     * @notice Deletes a domain's record from this contract's state.
+     * This can ONLY be called by the `ZNSRegistrar` contract as part of the Revoke flow
+     * or any address holding the `REGISTRAR_ROLE`. Emits a `DomainRecordDeleted` event.
      * @param domainHash The hash of the domain name
      */
     function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
@@ -196,7 +227,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Set the access controller contract
+     * @notice Sets the `accessController` contract
      * @param accessController The new access controller
      */
     function setAccessController(
@@ -206,7 +237,7 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Get the access controller
+     * @notice Gets the `accessController` from state.
      */
     function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
         return address(accessController);
@@ -221,10 +252,10 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Set a domain's owner
-     * Note that we don't check for `address(0)` here. This is intentional
-     * because we are not currently allowing reselling of domains and want
-     * to enable burning them instead by transferring ownership to `address(0)`
+     * @notice Internal function to set a domain's owner in state `records`.
+     * Owner can NOT be set to 0, since we use delete operation as part of the
+     * ``deleteRecord()`` function.
+     * Emits a `DomainOwnerSet` event.
      * @param domainHash the hash of a domain's name
      * @param owner The owner to set
      */
@@ -235,7 +266,8 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Set a domain's resolver
+     * @notice Internal function to set a domain's resolver in state `records`.
+     * Resolver can be set to 0, since we allow partial domain data. Emits a `DomainResolverSet` event.
      * @param domainHash the hash of a domain's name
      * @param resolver The resolver to set
      */

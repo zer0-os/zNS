@@ -8,24 +8,31 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 
 
+/**
+ * @title The specific Resolver for ZNS that maps domain hashes to Ethereum addresses these domains were made for.
+ * @notice This Resolver supports ONLY the address type. Every domain in ZNS made for a contract or wallet address
+ * will have a corresponding record in this Resolver.
+ */
 contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
     /**
-     * @notice Address of the ZNSRegistry contract that holds all crucial data
-     *         for every domain in the system
+     * @notice Address of the `ZNSRegistry` contract that holds all crucial data
+     * for every domain in the system
      */
     IZNSRegistry public registry;
 
     /**
      * @notice Mapping of domain hash to address used to bind domains
-     *         to Ethereum wallets or contracts registered in ZNS
+     * to Ethereum wallets or contracts registered in ZNS.
      */
     mapping(bytes32 domainHash => address resolvedAddress)
-        private domainAddresses;
+        internal domainAddresses;
 
     /**
-     * @notice Initialize an instance of the ZNSAddressResolver
-     * @param accessController_ The access controller
-     * @param registry_ The registry address
+     * @notice Initializer for the `ZNSAddressResolver` proxy.
+     * Note that setter functions are used instead of direct state variable assignments
+     * to use access control at deploy time. Only ADMIN can call this function.
+     * @param accessController_ The address of the `ZNSAccessController` contract
+     * @param registry_ The address of the `ZNSRegistry` contract
      */
     function initialize(address accessController_, address registry_) public override initializer {
         _setAccessController(accessController_);
@@ -33,7 +40,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     }
 
     /**
-     * @dev Resolves address given domain name hash
+     * @dev Returns address associated with a given domain name hash.
      * @param domainHash The identifying hash of a domain's name
      */
     function getAddress(
@@ -43,9 +50,12 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     }
 
     /**
-     * @dev Sets the address of a domain name hash, only registry
+     * @dev Sets the address for a domain name hash. This function can only
+     * be called by the owner, operator of the domain OR by the `ZNSRegistrar`
+     * as a part of the Register flow.
+     * Emits an `AddressSet` event.
      * @param domainHash The identifying hash of a domain's name
-     * @param newAddress The new domain owner
+     * @param newAddress The new address to map the domain to
      */
     function setAddress(
         bytes32 domainHash,
@@ -84,6 +94,12 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
         return type(IZNSAddressResolver).interfaceId;
     }
 
+    /**
+     * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
+     * for every domain in the system. This function can only be called by the ADMIN.
+     * Emits a `RegistrySet` event.
+     * @param _registry The address of the `ZNSRegistry` contract
+     */
     function setRegistry(address _registry) public override onlyAdmin {
         require(
             _registry != address(0),
@@ -94,12 +110,20 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
         emit RegistrySet(_registry);
     }
 
+    /**
+     * @dev Sets the address of the `ZNSAccessController` contract.
+     * Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
+     * @param accessController The address of the `ZNSAccessController` contract
+     */
     function setAccessController(
         address accessController
     ) external override(AccessControlled, IZNSAddressResolver) onlyAdmin {
         _setAccessController(accessController);
     }
 
+    /**
+     * @dev Returns the address of the `ZNSAccessController` contract saved in state.
+     */
     function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);
     }

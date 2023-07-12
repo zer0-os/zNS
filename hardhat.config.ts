@@ -9,6 +9,7 @@ import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
+import "solidity-docgen";
 
 // This call is needed to initialize Tenderly with Hardhat,
 // the automatic verifications, though, don't seem to work,
@@ -89,6 +90,18 @@ const config : HardhatUserConfig = {
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+  },
+  docgen: {
+    pages: "files",
+    templates: "docs/docgen-templates",
+    outputDir: "docs/contracts",
+    exclude: [
+      "upgrade-test-mocks/",
+      "upgradeMocks/",
+      "token/mocks/",
+      "utils/",
+      "oz-proxies/",
+    ],
   },
 };
 
