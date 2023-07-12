@@ -79,11 +79,11 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      * Registers a new domain such as `0://wilder`.
      * Gets domain hash as a keccak256 hash of the domain label string casted to bytes32,
      * checks existence of the domain in the registry and reverts if it exists.
-     * Calls ZNSTreasury to do the staking part, gets `tokenId` for the new token to be minted
-     * as domain hash casted to uint256, mints the token and sets the domain data in the {ZNSRegistry}
-     * and, possibly, {ZNSAddressResolver}. Emits a {DomainRegistered} event.
+     * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
+     * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
+     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
      * @param name Name (label) of the domain to register
-     * @param domainAddress Address for the {ZNSAddressResolver} to return when requested (optional, send 0x0 if not needed)
+     * @param domainAddress Address for the `ZNSAddressResolver` to return when requested (optional, send 0x0 if not needed)
      */
     function registerDomain(
         string calldata name,
@@ -126,18 +126,18 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     /**
      * @notice This function is the main entry point for the Revoke flow.
      * Revokes a domain such as `0://wilder`.
-     * Gets `tokenId` from casted domain hash to uint256, calls {ZNSDomainToken} to burn the token,
-     * deletes the domain data from the {ZNSRegistry} and calls {ZNSTreasury} to unstake and withdraw funds
-     * user staked for the domain. Emits a {DomainRevoked} event.
-     * @dev Note that we are not clearing the data in {ZNSAddressResolver} as it is considered not necessary
+     * Gets `tokenId` from casted domain hash to uint256, calls `ZNSDomainToken` to burn the token,
+     * deletes the domain data from the `ZNSRegistry` and calls `ZNSTreasury` to unstake and withdraw funds
+     * user staked for the domain. Emits a `DomainRevoked` event.
+     * @dev > Note that we are not clearing the data in `ZNSAddressResolver` as it is considered not necessary
      * since none other contracts will have the domain data on them.
-     * If we are not clearing {ZNSAddressResolver} state slots, we are making the next Register transaction
+     * If we are not clearing `ZNSAddressResolver` state slots, we are making the next Register transaction
      * for the same name cheaper, since SSTORE on a non-zero slot costs 5k gas, while SSTORE on a zero slot costs 20k gas.
-     * If a user wants to clear his data from {ZNSAddressResolver}, he can call {ZNSAddressResolver} directly himself
-     * BEFORE he calls to revoke, otherwise, {ZNSRegistry} owner check will fail, since the owner there
+     * If a user wants to clear his data from `ZNSAddressResolver`, he can call `ZNSAddressResolver` directly himself
+     * BEFORE he calls to revoke, otherwise, `ZNSRegistry` owner check will fail, since the owner there
      * will be 0x0 address.
      * Also note that in order to Revoke, a caller has to be the owner of both:
-     * Name (in {ZNSRegistry}) and Token (in {ZNSDomainToken}).
+     * Name (in `ZNSRegistry`) and Token (in `ZNSDomainToken`).
      * @param domainHash Hash of the domain to revoke
      */
     function revokeDomain(bytes32 domainHash)
@@ -160,8 +160,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      * This is used for different types of ownership transfers, such as:
      * - domain sale - a user will sell the Token, then the new owner has to call this function to reclaim the Name
      * - domain transfer - a user will transfer the Token, then the new owner has to call this function to reclaim the Name
+     *
      * A user needs to only be the owner of the Token to be able to Reclaim.
-     * Updates the domain owner in the {ZNSRegistry} to the owner of the token and emits a {DomainReclaimed} event.
+     * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
     function reclaimDomain(bytes32 domainHash)
     external
@@ -174,9 +175,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Setter function for the {ZNSRegistry} address in state.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param registry_ Address of the {ZNSRegistry} contract
+     * @notice Setter function for the `ZNSRegistry` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override onlyAdmin {
         require(
@@ -189,9 +190,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Setter function for the {ZNSTreasury} address in state.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param treasury_ Address of the {ZNSTreasury} contract
+     * @notice Setter function for the `ZNSTreasury` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param treasury_ Address of the `ZNSTreasury` contract
      */
     function setTreasury(address treasury_) public override onlyAdmin {
         require(
@@ -204,9 +205,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Setter function for the {ZNSDomainToken} address in state.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param domainToken_ Address of the {ZNSDomainToken} contract
+     * @notice Setter function for the `ZNSDomainToken` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param domainToken_ Address of the `ZNSDomainToken` contract
      */
     function setDomainToken(address domainToken_) public override onlyAdmin {
         require(
@@ -219,9 +220,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Setter function for the {ZNSAddressResolver} address in state.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param addressResolver_ Address of the {ZNSAddressResolver} contract
+     * @notice Setter function for the `ZNSAddressResolver` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param addressResolver_ Address of the `ZNSAddressResolver` contract
      */
     function setAddressResolver(address addressResolver_) public override onlyAdmin {
         require(
@@ -234,9 +235,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Setter function for the {ZNSAccessController} address in state.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param accessController_ Address of the {ZNSAccessController} contract
+     * @notice Setter function for the `ZNSAccessController` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param accessController_ Address of the `ZNSAccessController` contract
      */
     function setAccessController(address accessController_)
     external
@@ -247,7 +248,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     /**
-     * @notice Getter function for the {ZNSAccessController} address in state.
+     * @notice Getter function for the `ZNSAccessController` address in state.
      */
     function getAccessController() external view override(AccessControlled, IZNSRegistrar) returns (address) {
         return address(accessController);
@@ -256,8 +257,8 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     /**
      * @notice Set domain data appropriately for a newly registered domain
      * If no domain address is given, only the domain owner is set, otherwise
-     * {ZNSAddressResolver} is called to assign an address to the newly registered domain.
-     * If the `domainAddress` is not provided upon registration, a user can call {ZNSAddressResolver.setAddress}
+     * `ZNSAddressResolver` is called to assign an address to the newly registered domain.
+     * If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
      * to set the address themselves.
      * @param domainHash The domain name hash
      * @param owner The owner of the domain

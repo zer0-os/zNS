@@ -6,8 +6,8 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
 
 /**
  * @title This abstract contract outlines basic functionality, declares functions
- * that need to be implemented to provide a deterministic connection to ZNSAccessController module.
- * @dev In order to connect an arbitrary module to ZNSAccessController and it's functionality,
+ * that need to be implemented to provide a deterministic connection to `ZNSAccessController` module.
+ * @dev In order to connect an arbitrary module to `ZNSAccessController` and it's functionality,
  * this contract needs to be inherited by the module.
  */
 abstract contract AccessControlled {

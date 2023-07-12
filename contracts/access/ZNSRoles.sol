@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 
 /**
  * @title Outlines the roles used in the ZNS system
- * @dev Inherited ONLY by {ZNSAccessController}
+ * @dev > Inherited ONLY by `ZNSAccessController`
  */
 abstract contract ZNSRoles {
     /**

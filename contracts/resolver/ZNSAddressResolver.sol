@@ -15,7 +15,7 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  */
 contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
     /**
-     * @notice Address of the {ZNSRegistry} contract that holds all crucial data
+     * @notice Address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system
      */
     IZNSRegistry public registry;
@@ -25,14 +25,14 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      * to Ethereum wallets or contracts registered in ZNS.
      */
     mapping(bytes32 domainHash => address resolvedAddress)
-        private domainAddresses;
+        internal domainAddresses;
 
     /**
-     * @notice Initializer for the {ZNSAddressResolver} proxy.
+     * @notice Initializer for the `ZNSAddressResolver` proxy.
      * Note that setter functions are used instead of direct state variable assignments
      * to use access control at deploy time. Only ADMIN can call this function.
-     * @param accessController_ The address of the {ZNSAccessController} contract
-     * @param registry_ The address of the {ZNSRegistry} contract
+     * @param accessController_ The address of the `ZNSAccessController` contract
+     * @param registry_ The address of the `ZNSRegistry` contract
      */
     function initialize(address accessController_, address registry_) public override initializer {
         _setAccessController(accessController_);
@@ -51,9 +51,9 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
 
     /**
      * @dev Sets the address for a domain name hash. This function can only
-     * be called by the owner, operator of the domain OR by the {ZNSRegistrar}
+     * be called by the owner, operator of the domain OR by the `ZNSRegistrar`
      * as a part of the Register flow.
-     * Emits an {AddressSet} event.
+     * Emits an `AddressSet` event.
      * @param domainHash The identifying hash of a domain's name
      * @param newAddress The new address to map the domain to
      */
@@ -95,10 +95,10 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     }
 
     /**
-     * @dev Sets the address of the {ZNSRegistry} contract that holds all crucial data
+     * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system. This function can only be called by the ADMIN.
-     * Emits a {RegistrySet} event.
-     * @param _registry The address of the {ZNSRegistry} contract
+     * Emits a `RegistrySet` event.
+     * @param _registry The address of the `ZNSRegistry` contract
      */
     function setRegistry(address _registry) public override onlyAdmin {
         require(
@@ -111,9 +111,9 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     }
 
     /**
-     * @dev Sets the address of the {ZNSAccessController} contract.
-     * Can only be called by the ADMIN. Emits an {AccessControllerSet} event.
-     * @param accessController The address of the {ZNSAccessController} contract
+     * @dev Sets the address of the `ZNSAccessController` contract.
+     * Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
+     * @param accessController The address of the `ZNSAccessController` contract
      */
     function setAccessController(
         address accessController
@@ -122,7 +122,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
     }
 
     /**
-     * @dev Returns the address of the {ZNSAccessController} contract saved in state.
+     * @dev Returns the address of the `ZNSAccessController` contract saved in state.
      */
     function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);

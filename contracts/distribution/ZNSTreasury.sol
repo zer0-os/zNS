@@ -10,16 +10,16 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 
 /**
- * @title Contract responsible for all staking operations in ZNS.
- * @notice This contract it called by {ZNSRegistrar} every time a staking operation is needed.
+ * @title Contract responsible for all staking operations in ZNS and communication with `ZNSPriceOracle`.
+ * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
  * It stores all data regarding user stakes for domains, and it's also the only contract
- * that is aware of the {ZNSPriceOracle} which it uses to get pricing data for domains.
+ * that is aware of the `ZNSPriceOracle` which it uses to get pricing data for domains.
  */
 contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
     /**
-     * @notice The address of the {ZNSPriceOracle} contract.
+     * @notice The address of the `ZNSPriceOracle` contract.
      */
     IZNSPriceOracle public priceOracle;
 
@@ -36,16 +36,16 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     /**
      * @notice The main mapping of the contract. It stores the amount staked for each domain
      * which is mapped to the domain hash.
-     * Note that there is no address to which the stake is tied to. Instead, the owner data from {ZNSRegistry}
+     * Note that there is no address to which the stake is tied to. Instead, the owner data from `ZNSRegistry`
      * is used to identify a user who owns the stake. So the staking data is tied to the owner of the Name.
      * This should be taken into account, since any transfer of the Token to another address,
      * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
-     * > Stake is owned by the owner of the Name in {ZNSRegistry}!
+     * > Stake is owned by the owner of the Name in `ZNSRegistry`!
      */
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
     /**
-     * @notice Modifier used for functions that are only allowed to be called by the {ZNSRegistrar}
+     * @notice Modifier used for functions that are only allowed to be called by the `ZNSRegistrar`
      * or any other address that has REGISTRAR_ROLE.
      */
     modifier onlyRegistrar {
@@ -54,13 +54,13 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice {ZNSTreasury} proxy state initializer. Note that setter functions are used
+     * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
      * instead of direct state variable assignments in order to use proper Access Control
-     * at initialization. Only ADMIN in {ZNSAccessController} can call this function.
-     * For this also, it is important that {ZNSAccessController} is deployed and initialized with role data
+     * at initialization. Only ADMIN in `ZNSAccessController` can call this function.
+     * For this also, it is important that `ZNSAccessController` is deployed and initialized with role data
      * before this contract is deployed.
-     * @param accessController_ The address of the {ZNSAccessController} contract.
-     * @param priceOracle_ The address of the {ZNSPriceOracle} contract.
+     * @param accessController_ The address of the `ZNSAccessController` contract.
+     * @param priceOracle_ The address of the `ZNSPriceOracle` contract.
      * @param stakingToken_ The address of the staking token (currently $ZERO).
      * @param zeroVault_ The address of the Zero Vault - the wallet or contract to collect all the registration fees.
      */
@@ -77,16 +77,17 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Deposits the stake for a domain. This function is called by {ZNSRegistrar}
+     * @notice Deposits the stake for a domain. This function is called by `ZNSRegistrar`
      * when a user wants to Register a domain. It transfers the stake amount and the registration fee
      * to the contract from the user, and records the staked amount for the domain.
      * Note that a user has to approve the correct amount of `domainPrice + registrationFee`
      * for this function to not revert.
-     * Calls {ZNSPriceOracle} to get the price for the domain name based on it's length,
+     *
+     * Calls `ZNSPriceOracle` to get the price for the domain name based on it's length,
      * and to get a proper `registrationFee` as a percentage of the price.
      * In order to avoid needing 2 different approvals, it withdraws `domainPrice + registrationFee`
      * to this contract and then transfers the `registrationFee` to the Zero Vault.
-     * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a {StakeDeposited} event.
+     * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a `StakeDeposited` event.
      * @param domainHash The hash of the domain for which the stake is being deposited.
      * @param domainName The name of the domain for which the stake is being deposited.
      * @param depositor The address of the user who is depositing the stake.
@@ -123,10 +124,10 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Withdraws the stake for a domain. This function is called by {ZNSRegistrar}
+     * @notice Withdraws the stake for a domain. This function is called by `ZNSRegistrar`
      * when a user wants to Revoke a domain. It transfers the stake amount from the contract back to the user,
      * and deletes the staked amount for the domain in state.
-     * Emits a {StakeWithdrawn} event.
+     * Emits a `StakeWithdrawn` event.
      * Since we are clearing a slot in storage, gas refund from this operation makes Revoke transactions cheaper.
      * @param domainHash The hash of the domain for which the stake is being withdrawn.
      * @param owner The address of the user who is withdrawing the stake.
@@ -145,10 +146,9 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Setter function for the {zeroVault} state variable.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param zeroVault_ The address of the new Zero Vault -
-     * - the wallet or contract to collect all the registration fees.
+     * @notice Setter function for the `zeroVault` state variable.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param zeroVault_ The address of the new Zero Vault - the wallet or contract to collect all the fees.
      */
     function setZeroVaultAddress(address zeroVault_) public override onlyAdmin {
         require(zeroVault_ != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
@@ -158,9 +158,9 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Setter function for the {priceOracle} state variable.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param priceOracle_ The address of the new {ZNSPriceOracle} contract.
+     * @notice Setter function for the `priceOracle` state variable.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param priceOracle_ The address of the new `ZNSPriceOracle` contract.
      */
     function setPriceOracle(address priceOracle_) public override onlyAdmin {
         require(
@@ -173,8 +173,8 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Setter function for the {stakingToken} state variable.
-     * Only ADMIN in {ZNSAccessController} can call this function.
+     * @notice Setter function for the `stakingToken` state variable.
+     * Only ADMIN in `ZNSAccessController` can call this function.
      * @param stakingToken_ The address of the new staking token (currently $ZERO).
      */
     function setStakingToken(address stakingToken_) public override onlyAdmin {
@@ -185,9 +185,9 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Setter function for the {accessController} state variable.
-     * Only ADMIN in {ZNSAccessController} can call this function.
-     * @param accessController_ The address of the new {ZNSAccessController} contract.
+     * @notice Setter function for the `accessController` state variable.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param accessController_ The address of the new `ZNSAccessController` contract.
      */
     function setAccessController(address accessController_)
     public
@@ -198,7 +198,7 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     }
 
     /**
-     * @notice Getter function for the {accessController} state variable inherited from {AccessControlled}.
+     * @notice Getter function for the `accessController` state variable inherited from `AccessControlled`.
      */
     function getAccessController() external view override(AccessControlled, IZNSTreasury) returns (address) {
         return address(accessController);

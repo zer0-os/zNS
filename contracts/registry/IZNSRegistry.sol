@@ -2,23 +2,24 @@
 pragma solidity 0.8.18;
 
 
+/**
+ * @notice The `DomainRecord` struct is meant to hold relevant information
+ * about a domain, such as its owner and resolver.
+ * - `owner` (address): The owner of the domain (also called the owner of the Name).
+ * - `resolver` (address): The address of the Resolver contract where this domain's source records are stored.
+ *
+ * In the future, there will be multiple Resolver contracts that support different types of sources.
+ * Currently, only the `ZNSAddressResolver` is implemented.
+ */
 interface IZNSRegistry {
 
-    /**
-     * @notice The `DomainRecord` struct is meant to hold relevant information
-     * about a domain, such as its owner and resolver.
-     * @param owner The owner of the domain (also called the owner of the Name).
-     * @param resolver The address of the Rsolver contract where this domain's source records are stored.
-     * In the future, there will be multiple Resolver contracts that support different types of sources.
-     * Currently, only the {ZNSAddressResolver} is implemented.
-     */
     struct DomainRecord {
         address owner;
         address resolver;
     }
 
     /**
-     * @notice Emits when ownership of a domain is modified in {`records`}
+     * @notice Emits when ownership of a domain is modified in ``records``
      * @param domainHash the hash of a domain's name
      * @param owner The new domain owner
      */
@@ -28,7 +29,7 @@ interface IZNSRegistry {
     );
 
     /**
-     * @notice Emit when a domain's resolver is modified in {`records`}
+     * @notice Emit when a domain's resolver is modified in ``records``
      * @param domainHash the hash of a domain's name
      * @param resolver The new resolver address
      */
