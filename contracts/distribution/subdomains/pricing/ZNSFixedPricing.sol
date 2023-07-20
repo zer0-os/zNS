@@ -6,22 +6,19 @@ import { AZNSPricing } from "../interfaces/AZNSPricing.sol";
 
 contract ZNSFixedPricing is AZNSPricing {
 
-    event PriceChanged(uint256 newPrice);
+    event PriceChanged(bytes32 indexed parentHash, uint256 newPrice);
 
-    uint256 public price;
+    mapping(bytes32 parentHash => uint256 price) internal prices;
 
-    constructor(uint256 _price) {
-        price = _price;
-    }
 
     // TODO sub: access control
-    function setPrice(uint256 _price) external {
-        price = _price;
+    function setPrice(bytes32 parentHash, uint256 _price) external {
+        prices[parentHash] = _price;
 
-        emit PriceChanged(_price);
+        emit PriceChanged(parentHash, _price);
     }
 
-    function getPrice(string calldata name) external override view returns (uint256) {
-        return price;
+    function getPrice(bytes32 parentHash, string calldata name) external override view returns (uint256) {
+        return prices[parentHash];
     }
 }
