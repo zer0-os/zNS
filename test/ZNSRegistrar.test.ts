@@ -25,6 +25,7 @@ import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../type
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+
 describe("ZNSRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;

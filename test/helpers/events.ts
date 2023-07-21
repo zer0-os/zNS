@@ -28,9 +28,13 @@ export const getDomainHashFromEvent = async (
 
   if (!customEvent) throw Error("Event not found");
 
-  const domainHash = customEvent.args?.domainHash;
+  let domainHash = customEvent.args?.domainHash;
 
-  if (!domainHash) throw Error("No domainHash on event");
+  if (!domainHash) {
+    domainHash = customEvent.args?.subdomainHash;
+  }
+
+  if (!domainHash) throw Error("Domain hash not found");
 
   return domainHash;
 };
