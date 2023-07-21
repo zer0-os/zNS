@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPayment } from "../interfaces/AZNSPayment.sol";
+import { AZNSPayment } from "../abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
@@ -17,16 +17,20 @@ contract ZNSDirectPayment is AZNSPayment {
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
-    function processPayment(bytes32 domainHash, address depositor) external override view override {
-        PaymentConfig memory config = paymentConfigs[domainHash];
+    function processPayment(
+        bytes32 parentHash,
+        address depositor,
+        uint256 amount
+    ) external override {
+        PaymentConfig memory config = paymentConfigs[parentHash];
 
         // setting paymentToken to 0x0 address means free domains
         // to save on tx costs, we avoid transfering 0
-        if (config.paymentToken != address(0)) {
+        if (address(config.paymentToken) != address(0)) {
             config.paymentToken.transferFrom(
                 depositor,
                 config.beneficiary,
-                config.paymentToken.balanceOf(depositor)
+                amount
             );
         }
     }
@@ -42,10 +46,11 @@ contract ZNSDirectPayment is AZNSPayment {
         setPaymentBeneficiary(domainHash, configToSet.beneficiary);
     }
 
-    function setPaymentToken(bytes32 domainHash, address paymentToken) public {
-        paymentConfigs[domainHash].paymentToken = IERC20(paymentToken);
+    // TODO sub: what about types here? should we do address instead?
+    function setPaymentToken(bytes32 domainHash, IERC20 paymentToken) public {
+        paymentConfigs[domainHash].paymentToken = paymentToken;
 
-        emit PaymentTokenChanged(domainHash, paymentToken);
+        emit PaymentTokenChanged(domainHash, address(paymentToken));
     }
 
     function setPaymentBeneficiary(bytes32 domainHash, address beneficiary) public {

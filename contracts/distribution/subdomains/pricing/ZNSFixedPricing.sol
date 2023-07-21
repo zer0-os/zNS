@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPricing } from "../interfaces/AZNSPricing.sol";
+import { AZNSPricing } from "../abstractions/AZNSPricing.sol";
 
 
 contract ZNSFixedPricing is AZNSPricing {

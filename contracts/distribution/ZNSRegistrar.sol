@@ -105,6 +105,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         // Staking logic
         treasury.stakeForDomain(domainHash, name, msg.sender);
 
+        // TODO sub: possibly extract into a separate settle function
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
         domainToken.register(msg.sender, tokenId);

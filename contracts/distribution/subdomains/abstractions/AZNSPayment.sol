@@ -9,5 +9,9 @@ abstract contract AZNSPayment {
 
     // TODO sub: how do we override payable with nonpayable? should we implement both?
     //  do we need 2 interfaces for ETH and ERC?
-    function processPayment(bytes32 domainHash, address depositor) external virtual;
+    function processPayment(
+        bytes32 parentHash,
+        address depositor,
+        uint256 amount
+    ) external virtual;
 }
