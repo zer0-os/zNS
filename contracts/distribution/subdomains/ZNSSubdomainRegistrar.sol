@@ -10,6 +10,17 @@ import "../../token/IZNSDomainToken.sol";
 
 contract ZNSSubdomainRegistrar {
 
+    event SubdomainRegistered(
+        bytes32 indexed parentHash,
+        bytes32 indexed subdomainHash,
+        string label,
+        uint256 tokenId,
+        address registrant,
+        // TODO sub: do we need this?
+        address resolver,
+        address subdomainAddress
+    );
+
     IZNSRegistry public registry;
     // TODO sub: do we need a token here?
     IZNSDomainToken public domainToken;
@@ -22,7 +33,7 @@ contract ZNSSubdomainRegistrar {
 
     struct DistributionConfig {
         AZNSPricing pricingContract;
-        AZNSPayment paymentsContract;
+        AZNSPayment paymentContract;
         AccessType accessType;
     }
 
@@ -49,16 +60,16 @@ contract ZNSSubdomainRegistrar {
 
     function registerSubdomain(
         bytes32 parentHash,
-        string calldata name,
+        string calldata label
         // TODO sub: add logic for this
-        DistributionConfig calldata configForSubdomain
+//        DistributionConfig calldata configForSubdomain
     ) external {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = parentRules[parentHash];
         require(
             parentConfig.accessType != AccessType.LOCKED
                 || registry.isOwnerOrOperator(parentHash, msg.sender),
-            "ZNSSubdomainRegistrar: Parent domain is locked"
+            "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
         );
 
         if (parentConfig.accessType == AccessType.WHITELIST) {
@@ -68,7 +79,7 @@ contract ZNSSubdomainRegistrar {
             );
         }
 
-        bytes32 subdomainHash = hashWithParent(parentHash, name);
+        bytes32 subdomainHash = hashWithParent(parentHash, label);
 
         require(
             !registry.exists(subdomainHash),
@@ -76,9 +87,9 @@ contract ZNSSubdomainRegistrar {
         );
 
         uint256 price = AZNSPricing(parentConfig.pricingContract)
-            .getPrice(parentHash, name);
+            .getPrice(parentHash, label);
 
-        AZNSPayment(parentConfig.paymentsContract).processPayment(
+        AZNSPayment(parentConfig.paymentContract).processPayment(
             parentHash,
             msg.sender,
             price
@@ -92,7 +103,15 @@ contract ZNSSubdomainRegistrar {
 
         // TODO sub: include setting the config for the subdomain
 
-        // TODO sub: emit SubdomainRegistered();
+        emit SubdomainRegistered(
+            parentHash,
+            subdomainHash,
+            label,
+            tokenId,
+            msg.sender,
+            address(0),
+            address(0)
+        );
     }
 
     function hashWithParent(
