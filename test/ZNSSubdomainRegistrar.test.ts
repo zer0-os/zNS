@@ -66,7 +66,7 @@ describe.only("ZNSSubdomainRegistrar", () => {
     const subRegistrarFactory = new ZNSSubdomainRegistrar__factory(deployer);
     subRegistrar = await subRegistrarFactory.deploy(
       zns.registry.address,
-      zns.domainToken.address,
+      zns.registrar.address,
     );
     await subRegistrar.deployed();
 
@@ -91,6 +91,9 @@ describe.only("ZNSSubdomainRegistrar", () => {
     const subdomainPrice = ethers.utils.parseEther("27");
 
     // TODO sub: create helpers for setting this up! and for enum `accessType`
+    //  do we want to set these up upon registration or make a user call these separately?
+    //  optimize for the best UX!
+    //  maybe add API to SubReg to set these up in one tx?
     await pricing.connect(parentOwner).setPrice(rootDomainHash, subdomainPrice);
 
     await payment.connect(parentOwner).setPaymentConfig(
@@ -115,13 +118,22 @@ describe.only("ZNSSubdomainRegistrar", () => {
 
     await zns.zeroToken.connect(subOwner).approve(payment.address, subdomainPrice);
 
-    const tx2 = await subRegistrar.connect(subOwner).registerSubdomain(
+    await subRegistrar.connect(subOwner).registerSubdomain(
       rootDomainHash,
-      subdomainLabel
+      subdomainLabel,
+      subOwner.address
     );
-    const receipt2 = await tx2.wait(0);
 
-    const subHashFromSC = await getDomainHashFromEvent(receipt2, "SubdomainRegistered");
+    // TODO sub: add this to the event helper
+    const filter = zns.registrar.filters.DomainRegistered(
+      null,
+      null,
+      null,
+      null,
+      subOwner.address
+    );
+    const event = await zns.registrar.queryFilter(filter);
+    const subHashFromSC = event[0].args.domainHash;
 
     // TODO sub: figure this out!
     // expect(parentHashFromSC).to.eq(rootDomainHash);
@@ -136,9 +148,13 @@ describe.only("ZNSSubdomainRegistrar", () => {
 
     const dataFromReg = await zns.registry.getDomainRecord(subHashFromSC);
     expect(dataFromReg.owner).to.eq(subOwner.address);
-    expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+    expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
     const subTokenOwner = await zns.domainToken.ownerOf(subHashFromSC);
     expect(subTokenOwner).to.eq(subOwner.address);
+
+    // resolution check
+    const domainAddress = await zns.addressResolver.getAddress(subHashFromSC);
+    expect(domainAddress).to.eq(subOwner.address);
   });
 });
