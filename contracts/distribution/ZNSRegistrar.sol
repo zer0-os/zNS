@@ -86,6 +86,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      * @param domainAddress Address for the `ZNSAddressResolver` to return when requested (optional, send 0x0 if not needed)
      */
     function registerDomain(
+        // TODO sub: change "name" to "label" everywhere in this and other contracts ??
         string calldata name,
         address domainAddress
     ) external override returns (bytes32) {
@@ -105,23 +106,43 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         // Staking logic
         treasury.stakeForDomain(domainHash, name, msg.sender);
 
-        // TODO sub: possibly extract into a separate settle function
-        // Get tokenId for the new token to be minted for the new domain
-        uint256 tokenId = uint256(domainHash);
-        domainToken.register(msg.sender, tokenId);
-
-        _setDomainData(domainHash, msg.sender, domainAddress);
-
-        emit DomainRegistered(
+        settleRegistration(
+            bytes32(0),
             domainHash,
-            tokenId,
             name,
             msg.sender,
-            address(addressResolver),
             domainAddress
         );
 
         return domainHash;
+    }
+
+    function settleRegistration(
+        bytes32 parentHash,
+        bytes32 domainHash,
+        string memory name,
+        address owner,
+        address domainAddress
+    // TODO sub: onlyRegistrar !!!
+    ) public override {
+        // Get tokenId for the new token to be minted for the new domain
+        uint256 tokenId = uint256(domainHash);
+
+        // mint token
+        domainToken.register(owner, tokenId);
+
+        // set data on Registry (for all) + Resolver (optional)
+        _setDomainData(domainHash, owner, domainAddress);
+
+        emit DomainRegistered(
+            parentHash,
+            domainHash,
+            tokenId,
+            name,
+            owner,
+            address(addressResolver),
+            domainAddress
+        );
     }
 
     /**

@@ -10,6 +10,7 @@ interface IZNSRegistrar {
      * E.g. if a user made a domain for his wallet, the address of the wallet will be the `domainAddress`.
      * This can be 0 as this variable is not required to perform registration process
      * and can be set at a later time by the domain owner.
+     * @param parentHash The hash of the parent domain (0x0 for root domains)
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
@@ -18,6 +19,7 @@ interface IZNSRegistrar {
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
+        bytes32 parentHash,
         bytes32 indexed domainHash,
         uint256 indexed tokenId,
         string name,
@@ -71,6 +73,14 @@ interface IZNSRegistrar {
         string calldata name,
         address resolverContent
     ) external returns (bytes32);
+
+    function settleRegistration(
+        bytes32 parentHash,
+        bytes32 domainHash,
+        string memory name,
+        address owner,
+        address domainAddress
+    ) external;
 
     function revokeDomain(bytes32 domainHash) external;
 
