@@ -4,8 +4,7 @@ pragma solidity ^0.8.18;
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
-// TODO sub:
-import "../../token/IZNSDomainToken.sol";
+import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 
 
 contract ZNSSubdomainRegistrar {
@@ -22,8 +21,8 @@ contract ZNSSubdomainRegistrar {
     );
 
     IZNSRegistry public registry;
-    // TODO sub: do we need a token here?
-    IZNSDomainToken public domainToken;
+    // TOSO sub: change name of Registrar var and the contract also
+    IZNSRegistrar public mainRegistrar;
 
     enum AccessType {
         LOCKED,
@@ -45,24 +44,26 @@ contract ZNSSubdomainRegistrar {
     ) public distributionWhitelist;
 
     // TODO sub: proxy ??
-    constructor(address _registry, address _domainToken) {
+    constructor(address _registry, address _registrar) {
         require(
             _registry != address(0),
             "ZNSSubdomainRegistrar: _registry can not be 0x0 address"
         );
+        // TODO sub: remove when refactored !
         require(
-            _domainToken != address(0),
-            "ZNSSubdomainRegistrar: _domainToken can not be 0x0 address"
+            _registrar != address(0),
+            "ZNSSubdomainRegistrar: _registrar can not be 0x0 address"
         );
         registry = IZNSRegistry(_registry);
-        domainToken = IZNSDomainToken(_domainToken);
+        mainRegistrar = IZNSRegistrar(_registrar);
     }
 
     function registerSubdomain(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        address domainAddress
         // TODO sub: add logic for this
-//        DistributionConfig calldata configForSubdomain
+//        DistributionConfig calldata configForSubdomains
     ) external {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = parentRules[parentHash];
@@ -95,22 +96,21 @@ contract ZNSSubdomainRegistrar {
             price
         );
 
-        uint256 tokenId = uint256(subdomainHash);
-        domainToken.register(msg.sender, tokenId);
-
-        // TODO sub: possibly refactor to use another Registrar
-        registry.createDomainRecord(subdomainHash, msg.sender, address(0));
+//        TODO sub: remove when refactored ->
+//        uint256 tokenId = uint256(subdomainHash);
+//        domainToken.register(msg.sender, tokenId);
+//
+//        // TODO sub: possibly refactor to use another Registrar
+//        registry.createDomainRecord(subdomainHash, msg.sender, address(0));
 
         // TODO sub: include setting the config for the subdomain
 
-        emit SubdomainRegistered(
+        mainRegistrar.settleRegistration(
             parentHash,
             subdomainHash,
             label,
-            tokenId,
             msg.sender,
-            address(0),
-            address(0)
+            domainAddress
         );
     }
 
