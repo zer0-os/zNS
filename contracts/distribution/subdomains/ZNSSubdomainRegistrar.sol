@@ -7,6 +7,7 @@ import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 
 
+// TODO sub: create an interface for this contract !!
 contract ZNSSubdomainRegistrar {
 
     event SubdomainRegistered(
@@ -61,9 +62,8 @@ contract ZNSSubdomainRegistrar {
     function registerSubdomain(
         bytes32 parentHash,
         string calldata label,
-        address domainAddress
-        // TODO sub: add logic for this
-//        DistributionConfig calldata configForSubdomains
+        address domainAddress,
+        DistributionConfig calldata configForSubdomains
     ) external {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = parentRules[parentHash];
@@ -96,14 +96,9 @@ contract ZNSSubdomainRegistrar {
             price
         );
 
-//        TODO sub: remove when refactored ->
-//        uint256 tokenId = uint256(subdomainHash);
-//        domainToken.register(msg.sender, tokenId);
-//
-//        // TODO sub: possibly refactor to use another Registrar
-//        registry.createDomainRecord(subdomainHash, msg.sender, address(0));
-
-        // TODO sub: include setting the config for the subdomain
+        // TODO sub: what is the best way to do this ??
+        //      so that it can be done for root domain also
+        setParentRules(subdomainHash, configForSubdomains);
 
         mainRegistrar.settleRegistration(
             parentHash,
@@ -130,7 +125,7 @@ contract ZNSSubdomainRegistrar {
     function setParentRules(
         bytes32 parentHash,
         DistributionConfig calldata config
-    ) external {
+    ) public {
         // TODO sub: expand!
         parentRules[parentHash] = config;
     }

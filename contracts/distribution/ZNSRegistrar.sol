@@ -114,6 +114,9 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
             domainAddress
         );
 
+        // TODO sub: add setting the distribution config in the best way possible !
+        //  calling back the subRegistrar might not be the best idea
+
         return domainHash;
     }
 
