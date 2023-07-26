@@ -5,37 +5,14 @@ import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
+import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 
 
-// TODO sub: create an interface for this contract !!
-contract ZNSSubdomainRegistrar {
-
-    event SubdomainRegistered(
-        bytes32 indexed parentHash,
-        bytes32 indexed subdomainHash,
-        string label,
-        uint256 tokenId,
-        address registrant,
-        // TODO sub: do we need this?
-        address resolver,
-        address subdomainAddress
-    );
+contract ZNSSubdomainRegistrar is IZNSSubdomainRegistrar {
 
     IZNSRegistry public registry;
     // TODO sub: change name of Registrar var and the contract also
     IZNSRegistrar public mainRegistrar;
-
-    enum AccessType {
-        LOCKED,
-        OPEN,
-        WHITELIST
-    }
-
-    struct DistributionConfig {
-        AZNSPricing pricingContract;
-        AZNSPayment paymentContract;
-        AccessType accessType;
-    }
 
     // TODO sub: make better name AND for the setter function !
     mapping(bytes32 domainHash => DistributionConfig) public parentRules;
@@ -50,11 +27,11 @@ contract ZNSSubdomainRegistrar {
             _registry != address(0),
             "ZNSSubdomainRegistrar: _registry can not be 0x0 address"
         );
-        // TODO sub: remove when refactored !
         require(
             _registrar != address(0),
             "ZNSSubdomainRegistrar: _registrar can not be 0x0 address"
         );
+
         registry = IZNSRegistry(_registry);
         mainRegistrar = IZNSRegistrar(_registrar);
     }
@@ -64,7 +41,7 @@ contract ZNSSubdomainRegistrar {
         string calldata label,
         address domainAddress,
         DistributionConfig calldata configForSubdomains
-    ) external {
+    ) external override {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = parentRules[parentHash];
         require(
@@ -112,7 +89,7 @@ contract ZNSSubdomainRegistrar {
     function hashWithParent(
         bytes32 parentHash,
         string calldata name
-    ) public pure returns (bytes32) {
+    ) public pure override returns (bytes32) {
         return keccak256(
             abi.encodePacked(
                 parentHash,
@@ -125,8 +102,9 @@ contract ZNSSubdomainRegistrar {
     function setParentRules(
         bytes32 parentHash,
         DistributionConfig calldata config
-    ) public {
+    ) public override {
         // TODO sub: expand!
         parentRules[parentHash] = config;
+        // TODO sub: emit event
     }
 }
