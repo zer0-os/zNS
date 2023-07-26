@@ -8,6 +8,7 @@ import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { AccessControlled } from "../access/AccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 
 
 /**
@@ -21,11 +22,17 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * but the relationship is one-sided, where other modules do not need to know about the ZNSRegistrar,
  * they only check REGISTRAR_ROLE that can, in theory, be assigned to any other address.
  */
-contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
+// TODO sub: change name to ZNSRootRegistrar possibly !
+contract ZNSRegistrar is
+    AccessControlled,
+    UUPSUpgradeable,
+    IZNSRegistrar {
+
     IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
+    IZNSSubdomainRegistrar public subdomainRegistrar;
 
     /**
      * @notice Ensures only the owner of the Name in ZNSRegistry can call.
@@ -88,7 +95,8 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     function registerDomain(
         // TODO sub: change "name" to "label" everywhere in this and other contracts ??
         string calldata name,
-        address domainAddress
+        address domainAddress,
+        DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
         require(
             bytes(name).length != 0,
@@ -114,6 +122,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
             domainAddress
         );
 
+        subdomainRegistrar.setParentRules(domainHash, distributionConfig);
         // TODO sub: add setting the distribution config in the best way possible !
         //  calling back the subRegistrar might not be the best idea
 
@@ -126,7 +135,6 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         string memory name,
         address owner,
         address domainAddress
-    // TODO sub: onlyRegistrar !!!
     ) external override onlyRegistrar {
         _settleRegistration(
             parentHash,
@@ -138,6 +146,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     }
 
     function _settleRegistration(
+        // 0x0 when registering a root domain
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
@@ -146,7 +155,6 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
     ) internal {
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
-
         // mint token
         domainToken.register(owner, tokenId);
 
@@ -267,6 +275,13 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         domainToken = IZNSDomainToken(domainToken_);
 
         emit DomainTokenSet(domainToken_);
+    }
+
+    function setSubdomainRegistrar(address subdomainRegistrar_) external override onlyAdmin {
+        require(subdomainRegistrar_ != address(0), "ZNSRegistrar: subdomainRegistrar_ is 0x0 address");
+
+        subdomainRegistrar = IZNSSubdomainRegistrar(subdomainRegistrar_);
+        emit SubdomainRegistrarSet(subdomainRegistrar_);
     }
 
     /**

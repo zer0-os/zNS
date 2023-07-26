@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 
-interface IZNSRegistrar {
+
+interface IZNSRegistrar is IDistributionConfig {
 
     /**
      * @notice Emitted when a NEW domain is registered.
@@ -64,6 +66,12 @@ interface IZNSRegistrar {
     event DomainTokenSet(address domainToken);
 
     /**
+     * @notice Emitted when the `subdomainRegistrar` address is set in state.
+     * @param subdomainRegistrar The new address of the subdomainRegistrar contract
+     */
+    event SubdomainRegistrarSet(address subdomainRegistrar);
+
+    /**
      * @notice Emitted when the `addressResolver` address is set in state.
      * @param addressResolver The new address of the addressResolver contract
      */
@@ -71,7 +79,8 @@ interface IZNSRegistrar {
 
     function registerDomain(
         string calldata name,
-        address resolverContent
+        address domainAddress,
+        DistributionConfig calldata distributionConfig
     ) external returns (bytes32);
 
     function settleRegistration(
@@ -91,6 +100,8 @@ interface IZNSRegistrar {
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
+
+    function setSubdomainRegistrar(address subdomainRegistrar_) external;
 
     function setAddressResolver(address addressResolver_) external;
 
