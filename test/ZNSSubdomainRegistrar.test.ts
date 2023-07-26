@@ -30,9 +30,6 @@ describe.only("ZNSSubdomainRegistrar", () => {
   let subSubOwner : SignerWithAddress;
 
   let zns : ZNSContracts;
-  let pricing : ZNSFixedPricing;
-  let payment : ZNSDirectPayment;
-  let subRegistrar : ZNSSubdomainRegistrar;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
 
@@ -77,24 +74,6 @@ describe.only("ZNSSubdomainRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    // TODO sub: add to deployZNS()
-    const pricingFactory = new ZNSFixedPricing__factory(deployer);
-    pricing = await pricingFactory.deploy();
-    await pricing.deployed();
-    const paymentFactory = new ZNSDirectPayment__factory(deployer);
-    payment = await paymentFactory.deploy();
-    await payment.deployed();
-
-    const subRegistrarFactory = new ZNSSubdomainRegistrar__factory(deployer);
-    subRegistrar = await subRegistrarFactory.deploy(
-      zns.registry.address,
-      zns.registrar.address,
-    );
-    await subRegistrar.deployed();
-
-    // give SubRegistrar REGISTRAR_ROLE
-    await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, subRegistrar.address);
-
     // Give funds to user
     await zns.zeroToken.connect(parentOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.mint(parentOwner.address, priceConfigDefault.maxPrice);
@@ -102,8 +81,8 @@ describe.only("ZNSSubdomainRegistrar", () => {
     await zns.zeroToken.mint(subSubOwner.address, ethers.utils.parseEther("10000"));
 
     defaultDistConfig = {
-      pricingContract: pricing.address,
-      paymentContract: payment.address,
+      pricingContract: zns.fixedPricing.address,
+      paymentContract: zns.directPayment.address,
       accessType: 1,
     };
   });
@@ -112,6 +91,7 @@ describe.only("ZNSSubdomainRegistrar", () => {
     const tx = await zns.registrar.connect(parentOwner).registerDomain(
       rootDomainName,
       ethers.constants.AddressZero,
+      defaultDistConfig
     );
     const receipt = await tx.wait(0);
 
@@ -123,9 +103,9 @@ describe.only("ZNSSubdomainRegistrar", () => {
     //  do we want to set these up upon registration or make a user call these separately?
     //  optimize for the best UX!
     //  maybe add API to SubReg to set these up in one tx?
-    await pricing.connect(parentOwner).setPrice(rootDomainHash, subdomainPrice);
+    await zns.fixedPricing.connect(parentOwner).setPrice(rootDomainHash, subdomainPrice);
 
-    await payment.connect(parentOwner).setPaymentConfig(
+    await zns.directPayment.connect(parentOwner).setPaymentConfig(
       rootDomainHash,
       {
         paymentToken: zns.zeroToken.address,
@@ -134,17 +114,17 @@ describe.only("ZNSSubdomainRegistrar", () => {
     );
 
     // TODO sub: add this at the root reg tx level
-    await subRegistrar.connect(parentOwner).setParentRules(
-      rootDomainHash,
-      defaultDistConfig
-    );
+    // await subRegistrar.connect(parentOwner).setParentRules(
+    //   rootDomainHash,
+    //   defaultDistConfig
+    // );
 
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
 
-    await zns.zeroToken.connect(subOwner).approve(payment.address, subdomainPrice);
+    await zns.zeroToken.connect(subOwner).approve(zns.directPayment.address, subdomainPrice);
 
-    await subRegistrar.connect(subOwner).registerSubdomain(
+    await zns.subdomainRegistrar.connect(subOwner).registerSubdomain(
       rootDomainHash,
       subdomainLabel,
       subOwner.address,
@@ -185,9 +165,9 @@ describe.only("ZNSSubdomainRegistrar", () => {
     expect(domainAddress).to.eq(subOwner.address);
 
     // set dist data for the newly registered subdomain
-    await pricing.connect(subOwner).setPrice(subdomainHash, subdomainPrice);
+    await zns.fixedPricing.connect(subOwner).setPrice(subdomainHash, subdomainPrice);
 
-    await payment.connect(subOwner).setPaymentConfig(
+    await zns.directPayment.connect(subOwner).setPaymentConfig(
       subdomainHash,
       {
         paymentToken: zns.zeroToken.address,
@@ -200,9 +180,9 @@ describe.only("ZNSSubdomainRegistrar", () => {
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const subSubOwnerBalBefore = await zns.zeroToken.balanceOf(subSubOwner.address);
 
-    await zns.zeroToken.connect(subSubOwner).approve(payment.address, subdomainPrice);
+    await zns.zeroToken.connect(subSubOwner).approve(zns.directPayment.address, subdomainPrice);
 
-    await subRegistrar.connect(subSubOwner).registerSubdomain(
+    await zns.subdomainRegistrar.connect(subSubOwner).registerSubdomain(
       subdomainHash,
       subSubdomainLabel,
       subSubOwner.address,
