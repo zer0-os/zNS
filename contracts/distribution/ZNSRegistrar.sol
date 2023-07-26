@@ -106,7 +106,7 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         // Staking logic
         treasury.stakeForDomain(domainHash, name, msg.sender);
 
-        settleRegistration(
+        _settleRegistration(
             bytes32(0),
             domainHash,
             name,
@@ -127,7 +127,23 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         address owner,
         address domainAddress
     // TODO sub: onlyRegistrar !!!
-    ) public override {
+    ) external override onlyRegistrar {
+        _settleRegistration(
+            parentHash,
+            domainHash,
+            name,
+            owner,
+            domainAddress
+        );
+    }
+
+    function _settleRegistration(
+        bytes32 parentHash,
+        bytes32 domainHash,
+        string memory name,
+        address owner,
+        address domainAddress
+    ) internal {
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
 
@@ -135,7 +151,16 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
         domainToken.register(owner, tokenId);
 
         // set data on Registry (for all) + Resolver (optional)
-        _setDomainData(domainHash, owner, domainAddress);
+        // If no domain address is given, only the domain owner is set, otherwise
+        // `ZNSAddressResolver` is called to assign an address to the newly registered domain.
+        // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
+        // to set the address themselves.
+        if (domainAddress != address(0)) {
+            registry.createDomainRecord(domainHash, owner, address(addressResolver));
+            addressResolver.setAddress(domainHash, domainAddress);
+        } else {
+            registry.createDomainRecord(domainHash, owner, address(0));
+        }
 
         emit DomainRegistered(
             parentHash,
@@ -277,29 +302,6 @@ contract ZNSRegistrar is AccessControlled, UUPSUpgradeable, IZNSRegistrar {
      */
     function getAccessController() external view override(AccessControlled, IZNSRegistrar) returns (address) {
         return address(accessController);
-    }
-
-    /**
-     * @notice Set domain data appropriately for a newly registered domain
-     * If no domain address is given, only the domain owner is set, otherwise
-     * `ZNSAddressResolver` is called to assign an address to the newly registered domain.
-     * If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
-     * to set the address themselves.
-     * @param domainHash The domain name hash
-     * @param owner The owner of the domain
-     * @param domainAddress The content (source) it resolves to
-     */
-    function _setDomainData(
-        bytes32 domainHash,
-        address owner,
-        address domainAddress
-    ) internal {
-        if (domainAddress != address(0)) {
-            registry.createDomainRecord(domainHash, owner, address(addressResolver));
-            addressResolver.setAddress(domainHash, domainAddress);
-        } else {
-            registry.createDomainRecord(domainHash, owner, address(0));
-        }
     }
 
     /**
