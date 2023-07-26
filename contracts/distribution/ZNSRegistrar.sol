@@ -122,8 +122,11 @@ contract ZNSRegistrar is
             domainAddress
         );
 
-        // TODO sub: this adds 52k gas !
-        subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+        if (address(distributionConfig.pricingContract) != address(0)
+            && address(distributionConfig.paymentContract) != address(0)) {
+            // TODO sub: this adds 52k gas !
+            subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+        }
         // TODO sub: add setting the distribution config in the best way possible !
         //  calling back the subRegistrar might not be the best idea
 

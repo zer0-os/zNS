@@ -56,7 +56,7 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         bytes32 parentHash,
         string calldata label,
         address domainAddress,
-        DistributionConfig calldata configForSubdomains
+        DistributionConfig calldata distrConfig
     ) external override {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
@@ -97,9 +97,12 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
             domainAddress
         );
 
-        // TODO sub: what is the best way to do this ??
-        //      so that it can be done for root domain also
-        setDistributionConfigForDomain(subdomainHash, configForSubdomains);
+        if (address(distrConfig.pricingContract) != address(0)
+            && address(distrConfig.paymentContract) != address(0)) {
+            // TODO sub: what is the best way to do this ??
+            //      so that it can be done for root domain also
+            setDistributionConfigForDomain(subdomainHash, distrConfig);
+        }
     }
 
     function hashWithParent(
