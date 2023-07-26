@@ -31,3 +31,7 @@ export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
+
+export const fixedPricingName = "ZNSFixedPricing";
+export const directPaymentName = "ZNSDirectPayment";
+export const subdomainRegistrarName = "ZNSSubdomainRegistrar";
