@@ -22,7 +22,7 @@ contract ZNSSubdomainRegistrar {
     );
 
     IZNSRegistry public registry;
-    // TOSO sub: change name of Registrar var and the contract also
+    // TODO sub: change name of Registrar var and the contract also
     IZNSRegistrar public mainRegistrar;
 
     enum AccessType {

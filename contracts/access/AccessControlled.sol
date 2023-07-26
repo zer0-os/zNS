@@ -32,6 +32,15 @@ abstract contract AccessControlled {
     }
 
     /**
+     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
+     * or an address holding REGISTRAR_ROLE.
+     */
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
+    /**
      * @notice Virtual function to make sure the getter is always implemented in children,
      * otherwise we will not be able to read the AC address in children
      */

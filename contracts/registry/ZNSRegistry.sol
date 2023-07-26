@@ -52,15 +52,6 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
-     * or an address holding REGISTRAR_ROLE.
-     */
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
-    /**
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
      */

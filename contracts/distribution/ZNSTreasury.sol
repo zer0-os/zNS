@@ -45,15 +45,6 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
     /**
-     * @notice Modifier used for functions that are only allowed to be called by the `ZNSRegistrar`
-     * or any other address that has REGISTRAR_ROLE.
-     */
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
-    /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
      * instead of direct state variable assignments in order to use proper Access Control
      * at initialization. Only ADMIN in `ZNSAccessController` can call this function.

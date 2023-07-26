@@ -14,16 +14,6 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  * the `ZNSRegistrar` contract or any address holding a REGISTRAR_ROLE.
  */
 contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
-
-    /**
-     * @notice Modifier used in functions to be called only by the `ZNSRegistrar` contract
-     * or address with REGISTRAR_ROLE.
-     */
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
-        _;
-    }
-
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
      * Note that this function does NOT have role protection enforced!
