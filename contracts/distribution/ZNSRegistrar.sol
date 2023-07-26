@@ -122,7 +122,8 @@ contract ZNSRegistrar is
             domainAddress
         );
 
-        subdomainRegistrar.setParentRules(domainHash, distributionConfig);
+        // TODO sub: this adds 52k gas !
+        subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         // TODO sub: add setting the distribution config in the best way possible !
         //  calling back the subRegistrar might not be the best idea
 
@@ -307,8 +308,7 @@ contract ZNSRegistrar is
     function setAccessController(address accessController_)
     external
     override(AccessControlled, IZNSRegistrar)
-    onlyAdmin
-    {
+    onlyAdmin {
         _setAccessController(accessController_);
     }
 

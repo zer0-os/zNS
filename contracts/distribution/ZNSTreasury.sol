@@ -8,7 +8,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-
+// TODO sub: should we convert this to AZNSPayment ??
 /**
  * @title Contract responsible for all staking operations in ZNS and communication with `ZNSPriceOracle`.
  * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
