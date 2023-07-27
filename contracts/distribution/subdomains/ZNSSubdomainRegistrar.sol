@@ -3,10 +3,11 @@ pragma solidity ^0.8.18;
 
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
+import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
-import "../../access/AccessControlled.sol";
+import { AccessControlled } from "../../access/AccessControlled.sol";
 
 
 contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
@@ -80,10 +81,9 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
             "ZNSSubdomainRegistrar: Domain already exists"
         );
 
-        uint256 price = AZNSPricing(parentConfig.pricingContract)
-            .getPrice(parentHash, label);
+        uint256 price = parentConfig.pricingContract.getPrice(parentHash, label);
 
-        AZNSPayment(parentConfig.paymentContract).processPayment(
+        parentConfig.paymentContract.processPayment(
             parentHash,
             msg.sender,
             price
@@ -105,6 +105,26 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         }
     }
 
+    function revokeSubdomain(bytes32 domainHash) external override {
+        // TODO sub: optimize casting domainHash to uint256 !!!
+        //  that is being done so many times here and in the main Registrar
+        //  for a single operation
+
+        require(
+            mainRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
+            "ZNSSubdomainRegistrar: Not the owner of both Token and Name"
+        );
+
+        mainRegistrar.settleRevocation(domainHash);
+
+        // TODO sub: do we store these as addresses or interfaces in the struct ??
+        address paymentContract = address(distrConfigs[domainHash].paymentContract);
+        if (AZNSPayment(paymentContract).refundsOnRevoke()) {
+            // TODO sub: add solution with refund !!
+//            AZNSRefundablePayment(paymentContract).refund();
+        }
+    }
+
     function hashWithParent(
         bytes32 parentHash,
         string calldata name
@@ -117,7 +137,6 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         );
     }
 
-    // TODO sub: access control
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
