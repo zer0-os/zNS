@@ -46,7 +46,7 @@ contract ZNSRegistrar is
     }
 
     /**
-     * @notice Ensures only the owner of the Tame in ZNSDomainToken can call.
+     * @notice Ensures only the owner of the Name in ZNSDomainToken can call.
      */
     modifier onlyTokenOwner(bytes32 domainHash) {
         require(
@@ -208,10 +208,18 @@ contract ZNSRegistrar is
     onlyNameOwner(domainHash)
     onlyTokenOwner(domainHash)
     {
+        _settleRevocation(domainHash);
+        treasury.unstakeForDomain(domainHash, msg.sender);
+    }
+
+    function settleRevocation(bytes32 domainHash) external override onlyRegistrar {
+        _settleRevocation(domainHash);
+    }
+
+    function _settleRevocation(bytes32 domainHash) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);
-        treasury.unstakeForDomain(domainHash, msg.sender);
 
         emit DomainRevoked(domainHash, msg.sender);
     }
@@ -226,6 +234,8 @@ contract ZNSRegistrar is
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
+    // TODO: should this function be on the DomainToken ??
+    //  what are the benefits of having it there + adding Registry as a state var just for this call ??
     function reclaimDomain(bytes32 domainHash)
     external
     override

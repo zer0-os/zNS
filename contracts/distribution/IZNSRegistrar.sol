@@ -91,6 +91,8 @@ interface IZNSRegistrar is IDistributionConfig {
         address domainAddress
     ) external;
 
+    function settleRevocation(bytes32 domainHash) external;
+
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
