@@ -3,7 +3,7 @@ import { ZNSContracts } from "./helpers/types";
 import {
   deployZNS,
   hashDomainLabel,
-  hashSubdomainName,
+  hashSubdomainName, INVALID_TOKENID_ERC_ERR,
   normalizeName,
   priceConfigDefault,
   REGISTRAR_ROLE,
@@ -42,6 +42,8 @@ describe.only("ZNSSubdomainRegistrar", () => {
 
   let subdomainPrice : BigNumber;
   let subdomainHash : string;
+  let subTokenId : string;
+  let subSubTokenId : string;
 
   const rootDomainName = normalizeName("wilder");
   const rootDomainHash = hashDomainLabel(rootDomainName);
@@ -113,12 +115,6 @@ describe.only("ZNSSubdomainRegistrar", () => {
       }
     );
 
-    // TODO sub: add this at the root reg tx level
-    // await subRegistrar.connect(parentOwner).setParentRules(
-    //   rootDomainHash,
-    //   defaultDistConfig
-    // );
-
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
 
@@ -157,7 +153,8 @@ describe.only("ZNSSubdomainRegistrar", () => {
     expect(dataFromReg.owner).to.eq(subOwner.address);
     expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
-    const subTokenOwner = await zns.domainToken.ownerOf(subdomainHash);
+    subTokenId = BigNumber.from(subdomainHash).toString();
+    const subTokenOwner = await zns.domainToken.ownerOf(subTokenId);
     expect(subTokenOwner).to.eq(subOwner.address);
 
     // resolution check
@@ -215,11 +212,26 @@ describe.only("ZNSSubdomainRegistrar", () => {
     expect(dataFromReg.owner).to.eq(subSubOwner.address);
     expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
-    const subTokenOwner = await zns.domainToken.ownerOf(subSubdomainHash);
+    subSubTokenId = BigNumber.from(subSubdomainHash).toString();
+    const subTokenOwner = await zns.domainToken.ownerOf(subSubTokenId);
     expect(subTokenOwner).to.eq(subSubOwner.address);
 
     // resolution check
     const domainAddress = await zns.addressResolver.getAddress(subSubdomainHash);
     expect(domainAddress).to.eq(subSubOwner.address);
+  });
+
+  it("can revoke a subdomain", async () => {
+    await zns.subdomainRegistrar.connect(subOwner).revokeSubdomain(subdomainHash);
+
+    const dataFromReg = await zns.registry.getDomainRecord(subdomainHash);
+    expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
+    expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+
+    await expect(
+      zns.domainToken.ownerOf(subTokenId)
+    ).to.be.revertedWith(
+      INVALID_TOKENID_ERC_ERR
+    );
   });
 });
