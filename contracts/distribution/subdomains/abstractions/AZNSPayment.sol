@@ -14,4 +14,8 @@ abstract contract AZNSPayment {
         address depositor,
         uint256 amount
     ) external virtual;
+
+    function refundsOnRevoke() external view virtual returns (bool) {
+        return false;
+    }
 }
