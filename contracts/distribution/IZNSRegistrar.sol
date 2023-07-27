@@ -6,6 +6,12 @@ import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 
 interface IZNSRegistrar is IDistributionConfig {
 
+    enum OwnerOf {
+        NAME,
+        TOKEN,
+        BOTH
+    }
+
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.
@@ -96,6 +102,8 @@ interface IZNSRegistrar is IDistributionConfig {
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
+
+    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
     function setRegistry(address registry_) external;
 

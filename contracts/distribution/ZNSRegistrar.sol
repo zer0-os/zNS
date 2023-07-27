@@ -35,28 +35,6 @@ contract ZNSRegistrar is
     IZNSSubdomainRegistrar public subdomainRegistrar;
 
     /**
-     * @notice Ensures only the owner of the Name in ZNSRegistry can call.
-     */
-    modifier onlyNameOwner(bytes32 domainHash) {
-        require(
-            msg.sender == registry.getDomainOwner(domainHash),
-            "ZNSRegistrar: Not the owner of the Name"
-        );
-        _;
-    }
-
-    /**
-     * @notice Ensures only the owner of the Name in ZNSDomainToken can call.
-     */
-    modifier onlyTokenOwner(bytes32 domainHash) {
-        require(
-            msg.sender == domainToken.ownerOf(uint256(domainHash)),
-            "ZNSRegistrar: Not the owner of the Token"
-        );
-        _;
-    }
-
-    /**
      * @notice Create an instance of the ZNSRegistrar
      * for registering, reclaiming and revoking ZNS domains
      * @dev Instead of direct assignments, we are calling the setter functions
@@ -205,9 +183,11 @@ contract ZNSRegistrar is
     function revokeDomain(bytes32 domainHash)
     external
     override
-    onlyNameOwner(domainHash)
-    onlyTokenOwner(domainHash)
     {
+        require(
+            isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
+            "ZNSRegistrar: Not the owner of both Name and Token"
+        );
         _settleRevocation(domainHash);
         treasury.unstakeForDomain(domainHash, msg.sender);
     }
@@ -239,11 +219,27 @@ contract ZNSRegistrar is
     function reclaimDomain(bytes32 domainHash)
     external
     override
-    onlyTokenOwner(domainHash)
     {
+        require(
+            isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN),
+            "ZNSRegistrar: Not the owner of the Token"
+        );
         registry.updateDomainOwner(domainHash, msg.sender);
 
         emit DomainReclaimed(domainHash, msg.sender);
+    }
+
+    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) public view override returns (bool) {
+        if (ownerOf == OwnerOf.NAME) {
+            return candidate == registry.getDomainOwner(domainHash);
+        } else if (ownerOf == OwnerOf.TOKEN) {
+            return candidate == domainToken.ownerOf(uint256(domainHash));
+        } else if (ownerOf == OwnerOf.BOTH) {
+            return candidate == registry.getDomainOwner(domainHash)
+                && candidate == domainToken.ownerOf(uint256(domainHash));
+        }
+
+        revert("Wrong enum value for `ownerOf`");
     }
 
     /**
