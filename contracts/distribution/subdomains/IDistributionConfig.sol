@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
+import {AZNSPayment} from "./abstractions/AZNSPayment.sol";
 
 
 // TODO sub: do we need this as a separate interface ??
