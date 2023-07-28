@@ -92,7 +92,7 @@ contract ZNSRegistrar is
         // Staking logic
         treasury.stakeForDomain(domainHash, name, msg.sender);
 
-        _settleRegistration(
+        _coreRegister(
             bytes32(0),
             domainHash,
             name,
@@ -111,14 +111,14 @@ contract ZNSRegistrar is
         return domainHash;
     }
 
-    function settleRegistration(
+    function coreRegister(
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
         address owner,
         address domainAddress
     ) external override onlyRegistrar {
-        _settleRegistration(
+        _coreRegister(
             parentHash,
             domainHash,
             name,
@@ -127,7 +127,7 @@ contract ZNSRegistrar is
         );
     }
 
-    function _settleRegistration(
+    function _coreRegister(
         // 0x0 when registering a root domain
         bytes32 parentHash,
         bytes32 domainHash,
@@ -188,15 +188,15 @@ contract ZNSRegistrar is
             isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
             "ZNSRegistrar: Not the owner of both Name and Token"
         );
-        _settleRevocation(domainHash);
+        _coreRevoke(domainHash);
         treasury.unstakeForDomain(domainHash, msg.sender);
     }
 
-    function settleRevocation(bytes32 domainHash) external override onlyRegistrar {
-        _settleRevocation(domainHash);
+    function coreRevoke(bytes32 domainHash) external override onlyRegistrar {
+        _coreRevoke(domainHash);
     }
 
-    function _settleRevocation(bytes32 domainHash) internal {
+    function _coreRevoke(bytes32 domainHash) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);

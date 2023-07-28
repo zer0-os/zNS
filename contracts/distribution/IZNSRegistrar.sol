@@ -89,7 +89,7 @@ interface IZNSRegistrar is IDistributionConfig {
         DistributionConfig calldata distributionConfig
     ) external returns (bytes32);
 
-    function settleRegistration(
+    function coreRegister(
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
@@ -97,7 +97,7 @@ interface IZNSRegistrar is IDistributionConfig {
         address domainAddress
     ) external;
 
-    function settleRevocation(bytes32 domainHash) external;
+    function coreRevoke(bytes32 domainHash) external;
 
     function revokeDomain(bytes32 domainHash) external;
 
