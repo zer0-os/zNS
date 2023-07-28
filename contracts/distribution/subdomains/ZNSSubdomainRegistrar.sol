@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
@@ -85,11 +86,12 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
 
         parentConfig.paymentContract.processPayment(
             parentHash,
+            subdomainHash,
             msg.sender,
             price
         );
 
-        mainRegistrar.settleRegistration(
+        mainRegistrar.coreRegister(
             parentHash,
             subdomainHash,
             label,
@@ -105,24 +107,33 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         }
     }
 
-    function revokeSubdomain(bytes32 domainHash) external override {
+    function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external override {
         // TODO sub: optimize casting domainHash to uint256 !!!
         //  that is being done so many times here and in the main Registrar
         //  for a single operation
 
+        // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
             mainRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
             "ZNSSubdomainRegistrar: Not the owner of both Token and Name"
         );
 
-        mainRegistrar.settleRevocation(domainHash);
+        mainRegistrar.coreRevoke(domainHash);
 
         // TODO sub: do we store these as addresses or interfaces in the struct ??
-        address paymentContract = address(distrConfigs[domainHash].paymentContract);
-        if (AZNSPayment(paymentContract).refundsOnRevoke()) {
+        address paymentContract = address(distrConfigs[parentHash].paymentContract);
+
+        if (AZNSPayment(paymentContract).refundsOnRevoke() == true) {
             // TODO sub: add solution with refund !!
-//            AZNSRefundablePayment(paymentContract).refund();
+            AZNSRefundablePayment(paymentContract).refund(
+                parentHash,
+                domainHash,
+                msg.sender
+            );
         }
+
+        // TODO sub: should we clear the data from all other contracts (configs, etc.) ??
+        //  can we even do this?
     }
 
     function hashWithParent(
