@@ -3,9 +3,11 @@ pragma solidity ^0.8.18;
 
 import { AZNSPayment } from "../abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 contract ZNSDirectPayment is AZNSPayment {
+    using SafeERC20 for IERC20;
 
     event PaymentTokenChanged(bytes32 indexed domainHash, address newPaymentToken);
     event PaymentBeneficiaryChanged(bytes32 indexed domainHash, address newBeneficiary);
@@ -17,8 +19,10 @@ contract ZNSDirectPayment is AZNSPayment {
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
+    // TODO sub: add events !!
     function processPayment(
         bytes32 parentHash,
+        bytes32 domainHash,
         address depositor,
         uint256 amount
     ) external override {
@@ -27,7 +31,7 @@ contract ZNSDirectPayment is AZNSPayment {
         // setting paymentToken to 0x0 address means free domains
         // to save on tx costs, we avoid transfering 0
         if (address(config.paymentToken) != address(0)) {
-            config.paymentToken.transferFrom(
+            config.paymentToken.safeTransferFrom(
                 depositor,
                 config.beneficiary,
                 amount
