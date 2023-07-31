@@ -3,12 +3,15 @@ pragma solidity ^0.8.18;
 
 import { AZNSPricingWithFee } from "../abstractions/AZNSPricingWithFee.sol";
 import { StringUtils } from "../../../utils/StringUtils.sol";
+import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 // TODO sub: possibly remove if moved to an interface
 import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
+// TODO sub: do we need this ??
+import { AccessControlled } from "../../../access/AccessControlled.sol";
 
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
-contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
+contract ZNSAsymptoticPricing is AccessControlled, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
 
     // TODO sub: possibly move to an interface
@@ -27,10 +30,26 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
         uint256 precisionMultiplier,
         uint256 feePercentage
     );
+    event RegistrySet(address registry);
+
+    IZNSRegistry public registry;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     mapping(bytes32 => DomainPriceConfig) public priceConfigs;
+
+    modifier onlyOwnerOrOperator(bytes32 domainHash) {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSAsymptoticPricing: Not authorized"
+        );
+        _;
+    }
+
+    constructor(address _accessController, address _registry) {
+        _setAccessController(_accessController);
+        setRegistry(_registry);
+    }
 
     function getPrice(
         bytes32 parentHash,
@@ -63,7 +82,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig
-    ) external {
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
@@ -87,7 +106,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setMaxPrice(
         bytes32 domainHash,
         uint256 maxPrice
-    ) external {
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxPrice = maxPrice;
 
         if (maxPrice != 0) _validateConfig(domainHash);
@@ -98,7 +117,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setMinPrice(
         bytes32 domainHash,
         uint256 minPrice
-    ) external {
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].minPrice = minPrice;
 
         _validateConfig(domainHash);
@@ -109,7 +128,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setBaseLength(
         bytes32 domainHash,
         uint256 length
-    ) external {
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].baseLength = length;
 
         _validateConfig(domainHash);
@@ -120,7 +139,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setMaxLength(
         bytes32 domainHash,
         uint256 length
-    ) external {
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxLength = length;
 
         if (length != 0) _validateConfig(domainHash);
@@ -131,7 +150,7 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function setPrecisionMultiplier(
         bytes32 domainHash,
         uint256 multiplier
-    ) public {
+    ) public onlyOwnerOrOperator(domainHash) {
         require(multiplier != 0, "ZNSAsymptoticPricing: precisionMultiplier cannot be 0");
         require(multiplier <= 10**18, "ZNSAsymptoticPricing: precisionMultiplier cannot be greater than 10^18");
         priceConfigs[domainHash].precisionMultiplier = multiplier;
@@ -139,10 +158,30 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
         emit PrecisionMultiplierSet(domainHash, multiplier);
     }
 
-    function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
-    external {
+    function setFeePercentage(
+        bytes32 domainHash,
+        uint256 feePercentage
+    ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
+    }
+
+    function setRegistry(address registry_) public onlyAdmin {
+        require(registry_ != address(0), "ZNSAsymptoticPricing: _registry can not be 0x0 address");
+        registry = IZNSRegistry(registry_);
+
+        emit RegistrySet(registry_);
+    }
+
+    function setAccessController(address accessController_)
+    external
+    override
+    onlyAdmin {
+        _setAccessController(accessController_);
+    }
+
+    function getAccessController() external view override returns (address) {
+        return address(accessController);
     }
 
     function _getPrice(
