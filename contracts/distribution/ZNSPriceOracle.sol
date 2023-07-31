@@ -104,7 +104,8 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
             priceConfig.minPrice,
             priceConfig.maxLength,
             priceConfig.baseLength,
-            priceConfig.precisionMultiplier
+            priceConfig.precisionMultiplier,
+            priceConfig.feePercentage
         );
     }
 

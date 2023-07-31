@@ -55,7 +55,8 @@ interface IZNSPriceOracle is IDomainPriceConfig {
         uint256 minPrice,
         uint256 maxLength,
         uint256 baseLength,
-        uint256 precisionMultiplier
+        uint256 precisionMultiplier,
+        uint256 feePercentage
     );
 
     function initialize(
