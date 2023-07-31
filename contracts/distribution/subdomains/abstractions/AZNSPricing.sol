@@ -8,6 +8,6 @@ abstract contract AZNSPricing {
     //  or do we leave fee values here as well?
     function getPrice(
         bytes32 parentHash,
-        string calldata name
+        string calldata label
     ) external virtual view returns (uint256);
 }
