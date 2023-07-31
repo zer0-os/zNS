@@ -229,6 +229,7 @@ describe("ZNSPriceOracle", () => {
         maxPrice: parseEther("10"),
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
       };
 
       await expect(
@@ -491,6 +492,7 @@ describe("ZNSPriceOracle", () => {
         maxPrice: BigNumber.from(100),
         minPrice: BigNumber.from(10),
         precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
       };
 
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always
