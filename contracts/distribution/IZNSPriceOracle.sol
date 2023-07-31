@@ -98,12 +98,17 @@ interface IZNSPriceOracle {
          * our precision multiplier will be equal 10^18 - 10^2 = 10^16
          */
         uint256 precisionMultiplier;
+        /**
+         * @notice The registration fee value in percentage as basis points (parts per 10,000)
+         *  so the 2% value would be represented as 200.
+         *  See [getRegistrationFee](#getregistrationfee) for the actual fee calc process.
+         */
+        uint256 feePercentage;
     }
 
     function initialize(
         address accessController_,
-        DomainPriceConfig calldata priceConfig_,
-        uint256 regFeePercentage_
+        DomainPriceConfig calldata priceConfig_
     ) external;
 
     function getPrice(

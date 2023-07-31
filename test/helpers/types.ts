@@ -18,7 +18,7 @@ import {
   ZNSRegistrarUpgradeMock__factory,
   ZNSPriceOracleUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory, ZeroToken, ZNSFixedPricing, ZNSDirectPayment, ZNSSubdomainRegistrar,
+  ZNSTreasuryUpgradeMock__factory, ZeroToken, ZNSFixedPricing, ZNSDirectPayment, ZNSSubdomainRegistrar, ZNSStakePayment,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -56,6 +56,7 @@ export interface PriceParams {
   maxLength : BigNumber;
   baseLength : BigNumber;
   precisionMultiplier : BigNumber;
+  feePercentage : BigNumber;
 }
 
 export interface RegistrarConfig {
@@ -76,6 +77,7 @@ export interface ZNSContracts {
   registrar : ZNSRegistrar;
   fixedPricing : ZNSFixedPricing;
   directPayment : ZNSDirectPayment;
+  stakePayment : ZNSStakePayment;
   subdomainRegistrar : ZNSSubdomainRegistrar;
 }
 

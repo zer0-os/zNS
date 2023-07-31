@@ -14,7 +14,7 @@ import {
   ZNSRegistrar,
   ZNSRegistrar__factory,
   ZNSRegistry,
-  ZNSRegistry__factory, ZNSSubdomainRegistrar__factory,
+  ZNSRegistry__factory, ZNSStakePayment__factory, ZNSSubdomainRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
@@ -238,13 +238,11 @@ export const deployPriceOracle = async ({
   deployer,
   accessControllerAddress,
   priceConfig,
-  registrationFee,
   isTenderlyRun,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
   priceConfig : PriceParams;
-  registrationFee : BigNumber;
   isTenderlyRun : boolean;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
@@ -254,7 +252,6 @@ export const deployPriceOracle = async ({
     [
       accessControllerAddress,
       priceConfig,
-      registrationFee,
     ],
     {
       kind: "uups",
@@ -454,6 +451,14 @@ export const deployDirectPayment = async (
   return directPayment;
 };
 
+export const deployStakePayment = async (deployer : SignerWithAddress) => {
+  const factory = new ZNSStakePayment__factory(deployer);
+  const stakePayment = await factory.deploy();
+  await stakePayment.deployed();
+
+  return stakePayment;
+};
+
 export const deploySubdomainRegistrar = async ({
   deployer,
   accessController,
@@ -561,7 +566,6 @@ export const deployZNS = async ({
     deployer,
     accessControllerAddress: accessController.address,
     priceConfig,
-    registrationFee: registrationFeePerc,
     isTenderlyRun,
   });
 
@@ -590,6 +594,7 @@ export const deployZNS = async ({
 
   const fixedPricing = await deployFixedPricing(deployer, isTenderlyRun);
   const directPayment = await deployDirectPayment(deployer, isTenderlyRun);
+  const stakePayment = await deployStakePayment(deployer);
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
     accessController,
@@ -609,6 +614,7 @@ export const deployZNS = async ({
     registrar,
     fixedPricing,
     directPayment,
+    stakePayment,
     subdomainRegistrar,
   };
 

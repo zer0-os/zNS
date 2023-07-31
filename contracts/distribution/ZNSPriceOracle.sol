@@ -28,13 +28,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     DomainPriceConfig public rootDomainPriceConfig;
 
     /**
-     * @notice The registration fee value in percentage as basis points (parts per 10,000)
-     *  so the 2% value would be represented as 200.
-     *  See [getRegistrationFee](#getregistrationfee) for the actual fee calc process.
-     */
-    uint256 public feePercentage;
-
-    /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
      * Only ADMIN can call this function.
      * @dev > Note the for DomainPriceConfig we set each value individually and calling
@@ -43,12 +36,10 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * - `_validateConfig()` to validate the whole config in order to avoid price spikes
      * @param accessController_ the address of the ZNSAccessController contract.
      * @param priceConfig_ a number of variables that participate in the price calculation.
-     * @param regFeePercentage_ the registration fee value in percentage as basis points (parts per 10,000)
      */
     function initialize(
         address accessController_,
-        DomainPriceConfig calldata priceConfig_,
-        uint256 regFeePercentage_
+        DomainPriceConfig calldata priceConfig_
     ) public override initializer {
         _setAccessController(accessController_);
 
@@ -59,8 +50,6 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         setPrecisionMultiplier(priceConfig_.precisionMultiplier);
 
         _validateConfig();
-
-        feePercentage = regFeePercentage_;
     }
 
     /**
@@ -86,11 +75,11 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
 
     /**
      * @notice Get the registration fee amount in `stakingToken` for a specific domain price
-     * as `domainPrice * feePercentage / PERCENTAGE_BASIS`.
+     * as `domainPrice * rootDomainPriceConfig.feePercentage / PERCENTAGE_BASIS`.
      * @param domainPrice The price of the domain
      */
     function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
-        return (domainPrice * feePercentage) / PERCENTAGE_BASIS;
+        return (domainPrice * rootDomainPriceConfig.feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**
@@ -105,6 +94,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig.minPrice;
         rootDomainPriceConfig.maxLength = priceConfig.maxLength;
+        rootDomainPriceConfig.feePercentage = priceConfig.feePercentage;
         setPrecisionMultiplier(priceConfig.precisionMultiplier);
 
         _validateConfig();
@@ -224,7 +214,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     external
     override
     onlyAdmin {
-        feePercentage = regFeePercentage;
+        rootDomainPriceConfig.feePercentage = regFeePercentage;
         emit FeePercentageSet(regFeePercentage);
     }
 

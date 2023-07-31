@@ -7,8 +7,6 @@ import { ZNSContracts } from "./helpers/types";
 import { deployZNS, getPrice, precisionMultiDefault, PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
-  MULTIPLIER_BELOW_MIN_ERR,
-  NO_ZERO_MULTIPLIER_ERR,
   NO_ZERO_PRECISION_MULTIPLIER_ERR,
   getAccessRevertMsg,
 } from "./helpers/errors";
@@ -45,12 +43,10 @@ describe("ZNSPriceOracle", () => {
 
   it("Confirms values were initially set correctly", async () => {
     const valueCalls = [
-      zns.priceOracle.feePercentage(),
       zns.priceOracle.rootDomainPriceConfig(),
     ];
 
     const [
-      feePercentageFromSC,
       priceConfigFromSC,
     ] = await Promise.all(valueCalls);
 
@@ -61,8 +57,6 @@ describe("ZNSPriceOracle", () => {
       // @ts-ignore
       (val, idx) => expect(val).to.eq(priceConfigFromSC[idx])
     );
-
-    expect(feePercentageFromSC).to.eq(registrationFeePercDefault);
   });
 
   describe("#getPrice", async () => {
@@ -677,7 +671,7 @@ describe("ZNSPriceOracle", () => {
     it("Successfully sets the fee percentage", async () => {
       const newFeePerc = BigNumber.from(222);
       await zns.priceOracle.setRegistrationFeePercentage(newFeePerc);
-      const feeFromSC = await zns.priceOracle.feePercentage();
+      const { feePercentage: feeFromSC } = await zns.priceOracle.rootDomainPriceConfig();
 
       expect(feeFromSC).to.eq(newFeePerc);
     });
@@ -788,7 +782,6 @@ describe("ZNSPriceOracle", () => {
 
       const contractCalls = [
         zns.priceOracle.rootDomainPriceConfig(),
-        zns.priceOracle.feePercentage(),
         zns.priceOracle.getPrice("wilder"),
       ];
 
