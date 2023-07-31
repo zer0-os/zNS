@@ -424,10 +424,15 @@ export const deployFixedPricing = async (
 
 export const deployAsymptoticPricing = async (
   deployer : SignerWithAddress,
+  accessControllerAddress : string,
+  registryAddress : string,
   isTenderlyRun = false
 ) => {
   const factory = new ZNSAsymptoticPricing__factory(deployer);
-  const asPricing = await factory.deploy();
+  const asPricing = await factory.deploy(
+    accessControllerAddress,
+    registryAddress
+  );
   await asPricing.deployed();
 
   if (isTenderlyRun) {
@@ -623,7 +628,12 @@ export const deployZNS = async ({
   const fixedPricing = await deployFixedPricing(deployer, isTenderlyRun);
   const directPayment = await deployDirectPayment(deployer, isTenderlyRun);
   const stakePayment = await deployStakePayment(deployer);
-  const asPricing = await deployAsymptoticPricing(deployer, isTenderlyRun);
+  const asPricing = await deployAsymptoticPricing(
+    deployer,
+    accessController.address,
+    registry.address,
+    isTenderlyRun
+  );
 
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
