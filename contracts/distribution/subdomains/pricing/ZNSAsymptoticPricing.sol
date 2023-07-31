@@ -55,12 +55,15 @@ contract ZNSAsymptoticPricing is AZNSPricingWithFee, IDomainPriceConfig {
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
-    ) public view returns (uint256) {
+    ) public view override returns (uint256) {
         return price * priceConfigs[parentHash].feePercentage / PERCENTAGE_BASIS;
     }
 
     // TODO sub: add AC !!!
-    function setPriceConfig(bytes32 domainHash, DomainPriceConfig calldata priceConfig) external {
+    function setPriceConfig(
+        bytes32 domainHash,
+        DomainPriceConfig calldata priceConfig
+    ) external {
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;

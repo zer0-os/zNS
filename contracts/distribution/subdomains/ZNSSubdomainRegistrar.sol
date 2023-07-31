@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
+import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
 import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
@@ -82,13 +82,24 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
             "ZNSSubdomainRegistrar: Domain already exists"
         );
 
-        uint256 price = parentConfig.pricingContract.getPrice(parentHash, label);
+        uint256 price;
+        uint256 fee;
+        // TODO sub: can we make these abstract switching better ??
+        if (parentConfig.pricingContract.feeEnforced()) {
+            (price, fee) = AZNSPricingWithFee(address(parentConfig.pricingContract)).getPriceAndFee(
+                parentHash,
+                label
+            );
+        } else {
+            price = parentConfig.pricingContract.getPrice(parentHash, label);
+        }
 
         parentConfig.paymentContract.processPayment(
             parentHash,
             subdomainHash,
             msg.sender,
-            price
+            price,
+            fee
         );
 
         mainRegistrar.coreRegister(
@@ -123,7 +134,7 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         // TODO sub: do we store these as addresses or interfaces in the struct ??
         address paymentContract = address(distrConfigs[parentHash].paymentContract);
 
-        if (AZNSPayment(paymentContract).refundsOnRevoke() == true) {
+        if (AZNSPayment(paymentContract).refundsOnRevoke()) {
             // TODO sub: add solution with refund !!
             AZNSRefundablePayment(paymentContract).refund(
                 parentHash,
