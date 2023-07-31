@@ -6,6 +6,7 @@ export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
 export const registrationFeePercDefault = BigNumber.from("222");
+export const PERCENTAGE_BASIS = BigNumber.from("10000");
 export const decimalsDefault = BigNumber.from(18);
 export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
@@ -34,5 +35,6 @@ export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
 
 export const fixedPricingName = "ZNSFixedPricing";
+export const asymptoticPricingName = "ZNSAsymptoticPricing";
 export const directPaymentName = "ZNSDirectPayment";
 export const subdomainRegistrarName = "ZNSSubdomainRegistrar";

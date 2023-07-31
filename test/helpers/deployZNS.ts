@@ -6,7 +6,7 @@ import {
   ZNSAccessController,
   ZNSAccessController__factory,
   ZNSAddressResolver,
-  ZNSAddressResolver__factory, ZNSDirectPayment__factory,
+  ZNSAddressResolver__factory, ZNSAsymptoticPricing__factory, ZNSDirectPayment__factory,
   ZNSDomainToken,
   ZNSDomainToken__factory, ZNSFixedPricing__factory,
   ZNSPriceOracle,
@@ -24,7 +24,7 @@ import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   accessControllerName,
-  addressResolverName, directPaymentName,
+  addressResolverName, asymptoticPricingName, directPaymentName,
   domainTokenName,
   erc1967ProxyName, fixedPricingName,
   priceConfigDefault,
@@ -422,6 +422,35 @@ export const deployFixedPricing = async (
   return fixedPricing;
 };
 
+export const deployAsymptoticPricing = async (
+  deployer : SignerWithAddress,
+  isTenderlyRun = false
+) => {
+  const factory = new ZNSAsymptoticPricing__factory(deployer);
+  const asPricing = await factory.deploy();
+  await asPricing.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: asymptoticPricingName,
+      address: asPricing.address,
+    });
+
+    const impl = await getProxyImplAddress(asPricing.address);
+
+    await hre.tenderly.verify({
+      name: asymptoticPricingName,
+      address: impl,
+    });
+
+    console.log(`${asymptoticPricingName} deployed at:
+                proxy: ${asPricing.address}
+                implementation: ${impl}`);
+  }
+
+  return asPricing;
+};
+
 export const deployDirectPayment = async (
   deployer : SignerWithAddress,
   isTenderlyRun = false
@@ -520,7 +549,6 @@ export const deployZNS = async ({
   governorAddresses,
   adminAddresses,
   priceConfig = priceConfigDefault,
-  registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<ZNSContracts> => {
@@ -595,6 +623,8 @@ export const deployZNS = async ({
   const fixedPricing = await deployFixedPricing(deployer, isTenderlyRun);
   const directPayment = await deployDirectPayment(deployer, isTenderlyRun);
   const stakePayment = await deployStakePayment(deployer);
+  const asPricing = await deployAsymptoticPricing(deployer, isTenderlyRun);
+
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
     accessController,
@@ -613,6 +643,7 @@ export const deployZNS = async ({
     treasury,
     registrar,
     fixedPricing,
+    asPricing,
     directPayment,
     stakePayment,
     subdomainRegistrar,
