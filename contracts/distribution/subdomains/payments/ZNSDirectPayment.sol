@@ -24,7 +24,9 @@ contract ZNSDirectPayment is AZNSPayment {
         bytes32 parentHash,
         bytes32 domainHash,
         address depositor,
-        uint256 amount
+        uint256 amount,
+        // TODO sub: how do we handle fees ??
+        uint256 fee
     ) external override {
         PaymentConfig memory config = paymentConfigs[parentHash];
 

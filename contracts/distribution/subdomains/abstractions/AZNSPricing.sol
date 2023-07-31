@@ -10,4 +10,8 @@ abstract contract AZNSPricing {
         bytes32 parentHash,
         string calldata label
     ) external virtual view returns (uint256);
+
+    function feeEnforced() external pure virtual returns (bool) {
+        return false;
+    }
 }

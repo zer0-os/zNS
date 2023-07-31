@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import {AZNSRefundablePayment} from "../abstractions/AZNSRefundablePayment.sol";
+import { AZNSRefundablePayment } from "../abstractions/AZNSRefundablePayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -31,8 +31,6 @@ contract ZNSStakePayment is AZNSRefundablePayment {
     struct PaymentConfig {
         IERC20 stakingToken;
         address feeBeneficiary;
-        // in the basis of PERCENTAGE_BASIS (10,000)
-        uint256 feePercentage;
     }
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -47,9 +45,12 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         bytes32 parentHash,
         bytes32 domainHash,
         address depositor,
-        uint256 amount
+        uint256 amount,
+        // optional, can be 0
+        // TODO sub: figure out the best system to standardize fees and make them work for any abstract
+        uint256 fee
     ) external override {
-        // TODO sub: can this be a single read with not memory var ??
+        // TODO sub: can this be a single read with no memory var ??
         PaymentConfig memory config = paymentConfigs[parentHash];
 
         // setting paymentToken to 0x0 address means free domains
@@ -59,9 +60,6 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         //  will having a default of AccessType.LOCKED prevent this ?? (TEST!)
         if (address(config.stakingToken) == address(0)) return;
 
-        // TODO sub: can we move this to the pricing contract ??
-        uint256 fee = amount * config.feePercentage / PERCENTAGE_BASIS;
-
         // Transfer stake amount and fee to this contract
         config.stakingToken.safeTransferFrom(
             depositor,
@@ -69,11 +67,13 @@ contract ZNSStakePayment is AZNSRefundablePayment {
             amount + fee
         );
 
-        // Transfer the fee to the `feeBeneficiary` from this contract
-        config.stakingToken.safeTransfer(
-            config.feeBeneficiary,
-            fee
-        );
+        if (fee != 0) {
+            // Transfer the fee to the `feeBeneficiary` from this contract
+            config.stakingToken.safeTransfer(
+                config.feeBeneficiary,
+                fee
+            );
+        }
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = amount;

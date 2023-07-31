@@ -12,10 +12,14 @@ abstract contract AZNSPayment {
         bytes32 parentHash,
         bytes32 domainHash,
         address depositor,
-        uint256 amount
+        uint256 amount,
+        uint256 fee
     ) external virtual;
 
     function refundsOnRevoke() external pure virtual returns (bool) {
         return false;
     }
+
+    // TODO sub: should we add checks for msg.value so people don't lose ETH
+    //  if they made a mistake and sent it instead of ERC20?
 }
