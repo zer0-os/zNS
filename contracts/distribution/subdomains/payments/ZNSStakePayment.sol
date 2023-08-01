@@ -56,7 +56,6 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         setRegistry(_registry);
     }
 
-    // TODO sub: add events !!
     function processPayment(
         bytes32 parentHash,
         bytes32 domainHash,
@@ -111,7 +110,13 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         address domainOwner
     ) external override onlyRegistrar {
         uint256 stakedAmount = stakedForDomain[domainHash];
-        require(stakedAmount > 0, "ZNSStakePayment: No stake for domain");
+
+        // this signifies that the domain was registered
+        // during a promo without a stake
+        // see `processPayment()` to see that setting stakingToken to 0x0 address
+        // means free domains
+        if (stakedAmount == 0) return;
+
         delete stakedForDomain[domainHash];
 
         paymentConfigs[parentHash].stakingToken.safeTransfer(
@@ -126,14 +131,16 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         return paymentConfigs[domainHash];
     }
 
-    function setStakingToken(bytes32 domainHash, address stakingToken) public onlyOwnerOrOperator(domainHash) {
-        require(stakingToken != address(0), "ZNSStakePayment: stakingToken can not be 0x0 address");
+    function setStakingToken(bytes32 domainHash, IERC20 stakingToken) public onlyOwnerOrOperator(domainHash) {
         paymentConfigs[domainHash].stakingToken = IERC20(stakingToken);
 
-        emit StakingTokenChanged(domainHash, stakingToken);
+        emit StakingTokenChanged(domainHash, address(stakingToken));
     }
 
-    function setFeeBeneficiary(bytes32 domainHash, address feeBeneficiary) public onlyOwnerOrOperator(domainHash) {
+    function setFeeBeneficiary(
+        bytes32 domainHash,
+        address feeBeneficiary
+    ) public onlyOwnerOrOperator(domainHash) {
         require(feeBeneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
         paymentConfigs[domainHash].feeBeneficiary = feeBeneficiary;
 
@@ -141,7 +148,7 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
     }
 
     function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
-        setStakingToken(domainHash, address(config.stakingToken));
+        setStakingToken(domainHash, config.stakingToken);
         setFeeBeneficiary(domainHash, config.feeBeneficiary);
     }
 
