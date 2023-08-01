@@ -304,5 +304,15 @@ describe.only("ZNSSubdomainRegistrar", () => {
     );
   });
 
+  it("can set registry on ZNSDirectPayment", async () => {
+    await zns.directPayment.connect(admin).setRegistry(subOwner.address);
+    let registryFromSC = await zns.directPayment.registry();
+    expect(registryFromSC).to.eq(subOwner.address);
+
+    // set back
+    await zns.directPayment.connect(admin).setRegistry(zns.registry.address);
+    registryFromSC = await zns.directPayment.registry();
+    expect(registryFromSC).to.eq(zns.registry.address);
+  });
   // TODO sub: test what happens if subOwner revokes before subSubOwner
 });
