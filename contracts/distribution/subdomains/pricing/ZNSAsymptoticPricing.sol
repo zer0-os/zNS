@@ -71,6 +71,7 @@ contract ZNSAsymptoticPricing is AccessControlled, AZNSPricingWithFee, IDomainPr
         return (price, fee);
     }
 
+    // TODO sub: is this function needed ??
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
@@ -82,6 +83,7 @@ contract ZNSAsymptoticPricing is AccessControlled, AZNSPricingWithFee, IDomainPr
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig
+    // TODO sub: do we need a modifier here since it checks in the function inside ??
     ) external onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;

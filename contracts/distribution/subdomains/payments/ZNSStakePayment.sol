@@ -4,10 +4,12 @@ pragma solidity ^0.8.18;
 import { AZNSRefundablePayment } from "../abstractions/AZNSRefundablePayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { AccessControlled } from "../../../access/AccessControlled.sol";
+import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 
 
 // TODO sub: do big refactoring to reuse common parts properly for all payment contracts !!
-contract ZNSStakePayment is AZNSRefundablePayment {
+contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
     using SafeERC20 for IERC20;
 
     event StakingTokenChanged(bytes32 indexed domainHash, address newStakingToken);
@@ -26,6 +28,7 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         address indexed domainOwner,
         uint256 stakedAmount
     );
+    event RegistrySet(address registry);
 
     // TODO sub: refactor this and other payments to use the same types !!
     struct PaymentConfig {
@@ -33,11 +36,26 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         address feeBeneficiary;
     }
 
+    IZNSRegistry public registry;
+
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
+
+    modifier onlyOwnerOrOperator(bytes32 domainHash) {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSStakePayment: Not authorized"
+        );
+        _;
+    }
+
+    constructor(address _accessController, address _registry) {
+        _setAccessController(_accessController);
+        setRegistry(_registry);
+    }
 
     // TODO sub: do we add a fee here ??
     // TODO sub: add events !!
@@ -49,7 +67,7 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         // optional, can be 0
         // TODO sub: figure out the best system to standardize fees and make them work for any abstract
         uint256 fee
-    ) external override {
+    ) external override onlyRegistrar {
         // TODO sub: can this be a single read with no memory var ??
         PaymentConfig memory config = paymentConfigs[parentHash];
 
@@ -91,7 +109,7 @@ contract ZNSStakePayment is AZNSRefundablePayment {
         bytes32 parentHash,
         bytes32 domainHash,
         address domainOwner
-    ) external override {
+    ) external override onlyRegistrar {
         uint256 stakedAmount = stakedForDomain[domainHash];
         require(stakedAmount > 0, "ZNSStakePayment: No stake for domain");
         delete stakedForDomain[domainHash];
@@ -110,8 +128,26 @@ contract ZNSStakePayment is AZNSRefundablePayment {
     }
 
     // TODO sub: add AC !! and expand to set all config params !!
-    function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
+    function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external onlyOwnerOrOperator(domainHash) {
         paymentConfigs[domainHash] = config;
         // TODO sub: emit event !! add checks !!
+    }
+
+    function setRegistry(address registry_) public onlyAdmin {
+        require(registry_ != address(0), "ZNSStakePayment: _registry can not be 0x0 address");
+        registry = IZNSRegistry(registry_);
+
+        emit RegistrySet(registry_);
+    }
+
+    function setAccessController(address accessController_)
+    external
+    override
+    onlyAdmin {
+        _setAccessController(accessController_);
+    }
+
+    function getAccessController() external view override returns (address) {
+        return address(accessController);
     }
 }

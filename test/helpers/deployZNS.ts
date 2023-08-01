@@ -31,7 +31,7 @@ import {
   priceOracleName,
   registrarName,
   registrationFeePercDefault,
-  registryName, subdomainRegistrarName, transparentProxyName,
+  registryName, stakePaymentName, subdomainRegistrarName, transparentProxyName,
   treasuryName,
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -393,12 +393,19 @@ export const deployZeroTokenMock = async (
   return token;
 };
 
-export const deployFixedPricing = async (
-  deployer : SignerWithAddress,
-  isTenderlyRun = false
-) => {
+export const deployFixedPricing = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
   const pricingFactory = new ZNSFixedPricing__factory(deployer);
-  const fixedPricing = await pricingFactory.deploy();
+  const fixedPricing = await pricingFactory.deploy(acAddress, regAddress);
   await fixedPricing.deployed();
 
   if (isTenderlyRun) {
@@ -422,16 +429,21 @@ export const deployFixedPricing = async (
   return fixedPricing;
 };
 
-export const deployAsymptoticPricing = async (
-  deployer : SignerWithAddress,
-  accessControllerAddress : string,
-  registryAddress : string,
-  isTenderlyRun = false
-) => {
+export const deployAsymptoticPricing = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
   const factory = new ZNSAsymptoticPricing__factory(deployer);
   const asPricing = await factory.deploy(
-    accessControllerAddress,
-    registryAddress
+    acAddress,
+    regAddress
   );
   await asPricing.deployed();
 
@@ -456,12 +468,19 @@ export const deployAsymptoticPricing = async (
   return asPricing;
 };
 
-export const deployDirectPayment = async (
-  deployer : SignerWithAddress,
-  isTenderlyRun = false
-) => {
+export const deployDirectPayment = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
   const paymentFactory = new ZNSDirectPayment__factory(deployer);
-  const directPayment = await paymentFactory.deploy();
+  const directPayment = await paymentFactory.deploy(acAddress, regAddress);
   await directPayment.deployed();
 
   if (isTenderlyRun) {
@@ -485,10 +504,38 @@ export const deployDirectPayment = async (
   return directPayment;
 };
 
-export const deployStakePayment = async (deployer : SignerWithAddress) => {
+export const deployStakePayment = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
   const factory = new ZNSStakePayment__factory(deployer);
-  const stakePayment = await factory.deploy();
+  const stakePayment = await factory.deploy(acAddress, regAddress);
   await stakePayment.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: stakePaymentName,
+      address: stakePayment.address,
+    });
+
+    const impl = await getProxyImplAddress(stakePayment.address);
+
+    await hre.tenderly.verify({
+      name: stakePaymentName,
+      address: impl,
+    });
+
+    console.log(`${stakePaymentName} deployed at:
+                proxy: ${stakePayment.address}
+                implementation: ${impl}`);
+  }
 
   return stakePayment;
 };
@@ -625,15 +672,17 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
-  const fixedPricing = await deployFixedPricing(deployer, isTenderlyRun);
-  const directPayment = await deployDirectPayment(deployer, isTenderlyRun);
-  const stakePayment = await deployStakePayment(deployer);
-  const asPricing = await deployAsymptoticPricing(
+  const subModuleDeployArgs = {
     deployer,
-    accessController.address,
-    registry.address,
-    isTenderlyRun
-  );
+    acAddress: accessController.address,
+    regAddress: registry.address,
+    isTenderlyRun,
+  };
+
+  const fixedPricing = await deployFixedPricing(subModuleDeployArgs);
+  const directPayment = await deployDirectPayment(subModuleDeployArgs);
+  const stakePayment = await deployStakePayment(subModuleDeployArgs);
+  const asPricing = await deployAsymptoticPricing(subModuleDeployArgs);
 
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
