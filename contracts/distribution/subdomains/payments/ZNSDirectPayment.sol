@@ -81,7 +81,7 @@ contract ZNSDirectPayment is AccessControlled, AZNSPayment {
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory configToSet
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external {
         setPaymentToken(domainHash, configToSet.paymentToken);
         setPaymentBeneficiary(domainHash, configToSet.beneficiary);
     }
