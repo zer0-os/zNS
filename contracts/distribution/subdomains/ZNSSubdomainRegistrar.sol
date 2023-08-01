@@ -145,12 +145,12 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
 
     function hashWithParent(
         bytes32 parentHash,
-        string calldata name
+        string calldata label
     ) public pure override returns (bytes32) {
         return keccak256(
             abi.encodePacked(
                 parentHash,
-                keccak256(bytes(name))
+                keccak256(bytes(label))
             )
         );
     }
@@ -217,14 +217,14 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         emit WhitelistUpdated(domainHash, registrant, allowed);
     }
 
-    function setRegistry(address registry_) public onlyAdmin {
+    function setRegistry(address registry_) public override onlyAdmin {
         require(registry_ != address(0), "ZNSSubdomainRegistrar: _registry can not be 0x0 address");
         registry = IZNSRegistry(registry_);
 
         emit RegistrySet(registry_);
     }
 
-    function setMainRegistrar(address registrar_) public onlyAdmin {
+    function setMainRegistrar(address registrar_) public override onlyAdmin {
         require(registrar_ != address(0), "ZNSSubdomainRegistrar: _registrar can not be 0x0 address");
         mainRegistrar = IZNSRegistrar(registrar_);
 

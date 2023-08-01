@@ -18,7 +18,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 
     function hashWithParent(
         bytes32 parentHash,
-        string calldata name
+        string calldata label
     ) external pure returns (bytes32);
 
     function setDistributionConfigForDomain(
@@ -46,6 +46,10 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         address registrant,
         bool allowed
     ) external;
+
+    function setRegistry(address registry_) external;
+
+    function setMainRegistrar(address registrar_) external;
 
     function getAccessController() external view returns (address);
 
