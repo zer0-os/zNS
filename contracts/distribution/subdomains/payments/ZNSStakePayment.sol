@@ -6,10 +6,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
+import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 
 // TODO sub: do big refactoring to reuse common parts properly for all payment contracts !!
-contract ZNSStakePayment is AAccessControlled, AZNSRefundablePayment {
+contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePayment {
     using SafeERC20 for IERC20;
 
     event StakingTokenChanged(bytes32 indexed domainHash, address newStakingToken);
@@ -27,7 +28,6 @@ contract ZNSStakePayment is AAccessControlled, AZNSRefundablePayment {
         address indexed domainOwner,
         uint256 stakedAmount
     );
-    event RegistrySet(address registry);
 
     // TODO sub: refactor this and other payments to use the same types !!
     struct PaymentConfig {
@@ -35,21 +35,11 @@ contract ZNSStakePayment is AAccessControlled, AZNSRefundablePayment {
         address feeBeneficiary;
     }
 
-    IZNSRegistry public registry;
-
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
-
-    modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSStakePayment: Not authorized"
-        );
-        _;
-    }
 
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
@@ -152,11 +142,8 @@ contract ZNSStakePayment is AAccessControlled, AZNSRefundablePayment {
         setFeeBeneficiary(domainHash, config.feeBeneficiary);
     }
 
-    function setRegistry(address registry_) public onlyAdmin {
-        require(registry_ != address(0), "ZNSStakePayment: _registry can not be 0x0 address");
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)

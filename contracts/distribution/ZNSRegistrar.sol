@@ -9,6 +9,7 @@ import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
+import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
 
 /**
@@ -24,11 +25,11 @@ import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol"
  */
 // TODO sub: change name to ZNSRootRegistrar possibly !
 contract ZNSRegistrar is
-    AAccessControlled,
     UUPSUpgradeable,
+    AAccessControlled,
+    ARegistryWired,
     IZNSRegistrar {
 
-    IZNSRegistry public registry;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -247,14 +248,8 @@ contract ZNSRegistrar is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param registry_ Address of the `ZNSRegistry` contract
      */
-    function setRegistry(address registry_) public override onlyAdmin {
-        require(
-            registry_ != address(0),
-            "ZNSRegistrar: registry_ is 0x0 address"
-        );
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSRegistrar) onlyAdmin {
+        _setRegistry(registry_);
     }
 
     /**

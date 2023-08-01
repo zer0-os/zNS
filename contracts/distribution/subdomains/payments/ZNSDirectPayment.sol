@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 import { AZNSPayment } from "../abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AAccessControlled } from "../../../access/AAccessControlled.sol";
-import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 
 
-contract ZNSDirectPayment is AAccessControlled, AZNSPayment {
+contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
     using SafeERC20 for IERC20;
 
     // TODO sub: possibly extract all these methods and maybe a struct
@@ -22,27 +22,13 @@ contract ZNSDirectPayment is AAccessControlled, AZNSPayment {
         uint256 amount,
         uint256 fee
     );
-    event RegistrySet(address registry);
 
     struct PaymentConfig {
         IERC20 paymentToken;
         address beneficiary;
     }
 
-    // TODO sub: possibly extract all Registry related logic into ZNSWired akin to AAccessControlled.sol
-    //  so that it's easy to add a contract that uses Registry with setters and modifiers for
-    //  owner based access control
-    IZNSRegistry public registry;
-
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
-
-    modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSDirectPayment: Not authorized"
-        );
-        _;
-    }
 
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
@@ -100,11 +86,8 @@ contract ZNSDirectPayment is AAccessControlled, AZNSPayment {
         emit PaymentBeneficiaryChanged(domainHash, beneficiary);
     }
 
-    function setRegistry(address registry_) public onlyAdmin {
-        require(registry_ != address(0), "ZNSDirectPayment: _registry can not be 0x0 address");
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)

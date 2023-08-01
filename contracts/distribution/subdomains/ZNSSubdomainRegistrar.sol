@@ -9,18 +9,17 @@ import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
 
 
-contract ZNSSubdomainRegistrar is AAccessControlled, IZNSSubdomainRegistrar {
+contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
 
     event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
     event PaymentContractSet(bytes32 indexed domainHash, address indexed paymentContract);
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
     event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
-    event RegistrySet(address registry);
     event MainRegistrarSet(address registrar);
 
-    IZNSRegistry public registry;
     // TODO sub: change name of Registrar var and the contract also
     IZNSRegistrar public mainRegistrar;
 
@@ -217,11 +216,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, IZNSSubdomainRegistrar {
         emit WhitelistUpdated(domainHash, registrant, allowed);
     }
 
-    function setRegistry(address registry_) public override onlyAdmin {
-        require(registry_ != address(0), "ZNSSubdomainRegistrar: _registry can not be 0x0 address");
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubdomainRegistrar) onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function setMainRegistrar(address registrar_) public override onlyAdmin {

@@ -54,12 +54,6 @@ interface IZNSRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `registry` address is set in state.
-     * @param registry The new address of the registry contract
-     */
-    event RegistrySet(address registry);
-
-    /**
      * @notice Emitted when the `treasury` address is set in state.
      * @param treasury The new address of the treasury contract
      */

@@ -8,10 +8,10 @@ import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 import { IDomainPriceConfig } from "../../../abstractions/IDomainPriceConfig.sol";
 // TODO sub: do we need this ??
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
-
+import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
-contract ZNSAsymptoticPricing is AAccessControlled, AZNSPricingWithFee, IDomainPriceConfig {
+contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
 
     // TODO sub: possibly move to an interface
@@ -30,21 +30,11 @@ contract ZNSAsymptoticPricing is AAccessControlled, AZNSPricingWithFee, IDomainP
         uint256 precisionMultiplier,
         uint256 feePercentage
     );
-    event RegistrySet(address registry);
-
-    IZNSRegistry public registry;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     mapping(bytes32 => DomainPriceConfig) public priceConfigs;
 
-    modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSAsymptoticPricing: Not authorized"
-        );
-        _;
-    }
 
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
@@ -168,11 +158,8 @@ contract ZNSAsymptoticPricing is AAccessControlled, AZNSPricingWithFee, IDomainP
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
-    function setRegistry(address registry_) public onlyAdmin {
-        require(registry_ != address(0), "ZNSAsymptoticPricing: _registry can not be 0x0 address");
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)

@@ -4,14 +4,12 @@ pragma solidity ^0.8.18;
 import { AZNSPricing } from "../abstractions/AZNSPricing.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 
-contract ZNSFixedPricing is AAccessControlled, AZNSPricing {
+contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricing {
 
     event PriceChanged(bytes32 indexed parentHash, uint256 newPrice);
-    event RegistrySet(address registry);
-
-    IZNSRegistry public registry;
 
     mapping(bytes32 domainHash => uint256 price) internal prices;
 
@@ -20,12 +18,7 @@ contract ZNSFixedPricing is AAccessControlled, AZNSPricing {
         setRegistry(_registry);
     }
 
-    function setPrice(bytes32 domainHash, uint256 _price) external {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSFixedPricing: Not authorized"
-        );
-
+    function setPrice(bytes32 domainHash, uint256 _price) external onlyOwnerOrOperator {
         prices[domainHash] = _price;
 
         emit PriceChanged(domainHash, _price);
@@ -35,11 +28,8 @@ contract ZNSFixedPricing is AAccessControlled, AZNSPricing {
         return prices[parentHash];
     }
 
-    function setRegistry(address registry_) public onlyAdmin {
-        require(registry_ != address(0), "ZNSFixedPricing: _registry can not be 0x0 address");
-        registry = IZNSRegistry(registry_);
-
-        emit RegistrySet(registry_);
+    function setRegistry(address registry_) public override onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)
