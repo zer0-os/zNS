@@ -11,8 +11,17 @@ import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 contract ZNSDirectPayment is AccessControlled, AZNSPayment {
     using SafeERC20 for IERC20;
 
+    // TODO sub: possibly extract all these methods and maybe a struct
+    //  into an interface so that all contracts use the same events and types
     event PaymentTokenChanged(bytes32 indexed domainHash, address newPaymentToken);
     event PaymentBeneficiaryChanged(bytes32 indexed domainHash, address newBeneficiary);
+    event PaymentProcessed(
+        bytes32 indexed parentHash,
+        bytes32 indexed domainHash,
+        address indexed payer,
+        uint256 amount,
+        uint256 fee
+    );
     event RegistrySet(address registry);
 
     struct PaymentConfig {
@@ -20,6 +29,9 @@ contract ZNSDirectPayment is AccessControlled, AZNSPayment {
         address beneficiary;
     }
 
+    // TODO sub: possibly extract all Registry related logic into ZNSWired akin to AccessControlled
+    //  so that it's easy to add a contract that uses Registry with setters and modifiers for
+    //  owner based access control
     IZNSRegistry public registry;
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
@@ -41,9 +53,9 @@ contract ZNSDirectPayment is AccessControlled, AZNSPayment {
     function processPayment(
         bytes32 parentHash,
         bytes32 domainHash,
-        address depositor,
+        address payer,
         uint256 amount,
-        // TODO sub: how do we handle fees ??
+        // can be 0 if no fees
         uint256 fee
     ) external override onlyRegistrar {
         PaymentConfig memory config = paymentConfigs[parentHash];
@@ -52,11 +64,13 @@ contract ZNSDirectPayment is AccessControlled, AZNSPayment {
         // to save on tx costs, we avoid transfering 0
         if (address(config.paymentToken) != address(0)) {
             config.paymentToken.safeTransferFrom(
-                depositor,
+                payer,
                 config.beneficiary,
-                amount
+                amount + fee
             );
         }
+
+        emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
     }
 
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
