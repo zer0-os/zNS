@@ -14,7 +14,6 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
 
     event StakingTokenChanged(bytes32 indexed domainHash, address newStakingToken);
     event FeeBeneficiaryChanged(bytes32 indexed domainHash, address newBeneficiary);
-    event FeePercentageChanged(bytes32 indexed domainHash, address newFeePercentage);
     event StakeDeposited(
         bytes32 indexed parentHash,
         bytes32 indexed domainHash,
@@ -57,7 +56,6 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         setRegistry(_registry);
     }
 
-    // TODO sub: do we add a fee here ??
     // TODO sub: add events !!
     function processPayment(
         bytes32 parentHash,
@@ -66,9 +64,10 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         uint256 amount,
         // optional, can be 0
         // TODO sub: figure out the best system to standardize fees and make them work for any abstract
+        //  how do we handle fees on payment contracts?
+        //  what if we choose fee pricing, but payment contract does not allow fees ??
         uint256 fee
     ) external override onlyRegistrar {
-        // TODO sub: can this be a single read with no memory var ??
         PaymentConfig memory config = paymentConfigs[parentHash];
 
         // setting paymentToken to 0x0 address means free domains
@@ -96,6 +95,7 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         // Record staked amount for this domain
         stakedForDomain[domainHash] = amount;
 
+        // TODO sub: or PaymentProcessed ??
         emit StakeDeposited(
             parentHash,
             domainHash,
@@ -122,15 +122,27 @@ contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
         emit StakeWithdrawn(parentHash, domainHash, domainOwner, stakedAmount);
     }
 
-    // TODO sub: add other config setters with AC !!
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
         return paymentConfigs[domainHash];
     }
 
-    // TODO sub: add AC !! and expand to set all config params !!
-    function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external onlyOwnerOrOperator(domainHash) {
-        paymentConfigs[domainHash] = config;
-        // TODO sub: emit event !! add checks !!
+    function setStakingToken(bytes32 domainHash, address stakingToken) public onlyOwnerOrOperator(domainHash) {
+        require(stakingToken != address(0), "ZNSStakePayment: stakingToken can not be 0x0 address");
+        paymentConfigs[domainHash].stakingToken = IERC20(stakingToken);
+
+        emit StakingTokenChanged(domainHash, stakingToken);
+    }
+
+    function setFeeBeneficiary(bytes32 domainHash, address feeBeneficiary) public onlyOwnerOrOperator(domainHash) {
+        require(feeBeneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
+        paymentConfigs[domainHash].feeBeneficiary = feeBeneficiary;
+
+        emit FeeBeneficiaryChanged(domainHash, feeBeneficiary);
+    }
+
+    function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
+        setStakingToken(domainHash, address(config.stakingToken));
+        setFeeBeneficiary(domainHash, config.feeBeneficiary);
     }
 
     function setRegistry(address registry_) public onlyAdmin {
