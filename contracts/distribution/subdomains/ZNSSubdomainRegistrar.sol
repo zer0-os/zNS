@@ -13,6 +13,13 @@ import { AccessControlled } from "../../access/AccessControlled.sol";
 
 contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
 
+    event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
+    event PaymentContractSet(bytes32 indexed domainHash, address indexed paymentContract);
+    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+    event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
+    event RegistrySet(address registry);
+    event MainRegistrarSet(address registrar);
+
     IZNSRegistry public registry;
     // TODO sub: change name of Registrar var and the contract also
     IZNSRegistrar public mainRegistrar;
@@ -37,21 +44,11 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
     constructor(
         address _accessController,
         address _registry,
-        address _registrar
+        address _mainRegistrar
     ) {
         _setAccessController(_accessController);
-        // TODO sub: switch below to functions ??
-        require(
-            _registry != address(0),
-            "ZNSSubdomainRegistrar: _registry can not be 0x0 address"
-        );
-        require(
-            _registrar != address(0),
-            "ZNSSubdomainRegistrar: _registrar can not be 0x0 address"
-        );
-
-        registry = IZNSRegistry(_registry);
-        mainRegistrar = IZNSRegistrar(_registrar);
+        setRegistry(_registry);
+        setMainRegistrar(_mainRegistrar);
     }
 
     function registerSubdomain(
@@ -135,7 +132,6 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         address paymentContract = address(distrConfigs[parentHash].paymentContract);
 
         if (AZNSPayment(paymentContract).refundsOnRevoke()) {
-            // TODO sub: add solution with refund !!
             AZNSRefundablePayment(paymentContract).refund(
                 parentHash,
                 domainHash,
@@ -170,6 +166,8 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
 
     function setPricingContractForDomain(
         bytes32 domainHash,
+        // TODO sub: is this a problem that we expect the simplest interface
+        //  but can set any of the derived ones ??
         AZNSPricing pricingContract
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(
@@ -178,7 +176,8 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         );
 
         distrConfigs[domainHash].pricingContract = pricingContract;
-        // TODO sub: emit event
+
+        emit PricingContractSet(domainHash, address(pricingContract));
     }
 
     function setPaymentContractForDomain(
@@ -191,15 +190,17 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         );
 
         distrConfigs[domainHash].paymentContract = AZNSPayment(paymentContract);
-        // TODO sub: emit event
+        emit PaymentContractSet(domainHash, address(paymentContract));
     }
 
     function setAccessTypeForDomain(
         bytes32 domainHash,
+        // TODO sub: test that we can not set the value larger
+        //  than possible values for the enum
         AccessType accessType
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         distrConfigs[domainHash].accessType = accessType;
-        // TODO sub: emit event
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     // TODO sub: iron this out !!
@@ -207,9 +208,27 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         bytes32 domainHash,
         address registrant,
         bool allowed
+        // TODO sub: should we allow Registrar role to call this ??
+        //  if so - why ?? what can we call from there ??
+        //  should we cut Registrar out of this ??
     ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
         distributionWhitelist[domainHash][registrant] = allowed;
-        // TODO sub: emit event ??
+
+        emit WhitelistUpdated(domainHash, registrant, allowed);
+    }
+
+    function setRegistry(address registry_) public onlyAdmin {
+        require(registry_ != address(0), "ZNSSubdomainRegistrar: _registry can not be 0x0 address");
+        registry = IZNSRegistry(registry_);
+
+        emit RegistrySet(registry_);
+    }
+
+    function setMainRegistrar(address registrar_) public onlyAdmin {
+        require(registrar_ != address(0), "ZNSSubdomainRegistrar: _registrar can not be 0x0 address");
+        mainRegistrar = IZNSRegistrar(registrar_);
+
+        emit MainRegistrarSet(registrar_);
     }
 
     function getAccessController() external view override(AccessControlled, IZNSSubdomainRegistrar) returns (address) {
