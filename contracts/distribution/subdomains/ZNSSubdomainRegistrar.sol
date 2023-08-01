@@ -8,10 +8,10 @@ import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol"
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
-import { AccessControlled } from "../../access/AccessControlled.sol";
+import { AAccessControlled } from "../../access/AAccessControlled.sol";
 
 
-contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
+contract ZNSSubdomainRegistrar is AAccessControlled, IZNSSubdomainRegistrar {
 
     event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
     event PaymentContractSet(bytes32 indexed domainHash, address indexed paymentContract);
@@ -231,13 +231,13 @@ contract ZNSSubdomainRegistrar is AccessControlled, IZNSSubdomainRegistrar {
         emit MainRegistrarSet(registrar_);
     }
 
-    function getAccessController() external view override(AccessControlled, IZNSSubdomainRegistrar) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {
         return address(accessController);
     }
 
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSSubdomainRegistrar)
+    override(AAccessControlled, IZNSSubdomainRegistrar)
     onlyAdmin {
         _setAccessController(accessController_);
     }

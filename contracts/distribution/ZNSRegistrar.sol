@@ -6,7 +6,7 @@ import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 
@@ -24,7 +24,7 @@ import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol"
  */
 // TODO sub: change name to ZNSRootRegistrar possibly !
 contract ZNSRegistrar is
-    AccessControlled,
+    AAccessControlled,
     UUPSUpgradeable,
     IZNSRegistrar {
 
@@ -316,7 +316,7 @@ contract ZNSRegistrar is
      */
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSRegistrar)
+    override(AAccessControlled, IZNSRegistrar)
     onlyAdmin {
         _setAccessController(accessController_);
     }
@@ -324,7 +324,7 @@ contract ZNSRegistrar is
     /**
      * @notice Getter function for the `ZNSAccessController` address in state.
      */
-    function getAccessController() external view override(AccessControlled, IZNSRegistrar) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSRegistrar) returns (address) {
         return address(accessController);
     }
 

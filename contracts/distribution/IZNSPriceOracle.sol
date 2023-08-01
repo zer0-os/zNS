@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDomainPriceConfig } from "./subdomains/abstractions/IDomainPriceConfig.sol";
+import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
 
 
 interface IZNSPriceOracle is IDomainPriceConfig {

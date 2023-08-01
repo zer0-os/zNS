@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 
 /**
@@ -13,7 +13,7 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  * @dev Note that all ZNS related functions on this contract can ONLY be called by either
  * the `ZNSRegistrar` contract or any address holding a REGISTRAR_ROLE.
  */
-contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
+contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
      * Note that this function does NOT have role protection enforced!
@@ -57,7 +57,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
      */
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSDomainToken)
+    override(AAccessControlled, IZNSDomainToken)
     onlyAdmin
     {
         _setAccessController(accessController_);
@@ -66,7 +66,7 @@ contract ZNSDomainToken is AccessControlled, UUPSUpgradeable, ERC721Upgradeable,
     /**
      * @dev Returns the address of the `ZNSAccessController` contract saved in state.
      */
-    function getAccessController() external view override(AccessControlled, IZNSDomainToken) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSDomainToken) returns (address) {
         return address(accessController);
     }
 

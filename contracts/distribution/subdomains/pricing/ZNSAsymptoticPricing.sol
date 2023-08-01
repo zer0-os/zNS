@@ -5,13 +5,13 @@ import { AZNSPricingWithFee } from "../abstractions/AZNSPricingWithFee.sol";
 import { StringUtils } from "../../../utils/StringUtils.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 // TODO sub: possibly remove if moved to an interface
-import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
+import { IDomainPriceConfig } from "../../../abstractions/IDomainPriceConfig.sol";
 // TODO sub: do we need this ??
-import { AccessControlled } from "../../../access/AccessControlled.sol";
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
-contract ZNSAsymptoticPricing is AccessControlled, AZNSPricingWithFee, IDomainPriceConfig {
+contract ZNSAsymptoticPricing is AAccessControlled, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
 
     // TODO sub: possibly move to an interface

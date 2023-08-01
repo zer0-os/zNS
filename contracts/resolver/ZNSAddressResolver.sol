@@ -5,7 +5,7 @@ import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 
 /**
@@ -13,7 +13,7 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  * @notice This Resolver supports ONLY the address type. Every domain in ZNS made for a contract or wallet address
  * will have a corresponding record in this Resolver.
  */
-contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
+contract ZNSAddressResolver is AAccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
     /**
      * @notice Address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system
@@ -117,14 +117,14 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      */
     function setAccessController(
         address accessController
-    ) external override(AccessControlled, IZNSAddressResolver) onlyAdmin {
+    ) external override(AAccessControlled, IZNSAddressResolver) onlyAdmin {
         _setAccessController(accessController);
     }
 
     /**
      * @dev Returns the address of the `ZNSAccessController` contract saved in state.
      */
-    function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);
     }
 

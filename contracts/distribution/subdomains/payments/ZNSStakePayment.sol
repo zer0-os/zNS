@@ -4,12 +4,12 @@ pragma solidity ^0.8.18;
 import { AZNSRefundablePayment } from "../abstractions/AZNSRefundablePayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccessControlled } from "../../../access/AccessControlled.sol";
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 
 
 // TODO sub: do big refactoring to reuse common parts properly for all payment contracts !!
-contract ZNSStakePayment is AccessControlled, AZNSRefundablePayment {
+contract ZNSStakePayment is AAccessControlled, AZNSRefundablePayment {
     using SafeERC20 for IERC20;
 
     event StakingTokenChanged(bytes32 indexed domainHash, address newStakingToken);

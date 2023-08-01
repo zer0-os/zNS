@@ -3,10 +3,10 @@ pragma solidity ^0.8.18;
 
 import { AZNSPricing } from "../abstractions/AZNSPricing.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
-import { AccessControlled } from "../../../access/AccessControlled.sol";
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 
 
-contract ZNSFixedPricing is AccessControlled, AZNSPricing {
+contract ZNSFixedPricing is AAccessControlled, AZNSPricing {
 
     event PriceChanged(bytes32 indexed parentHash, uint256 newPrice);
     event RegistrySet(address registry);

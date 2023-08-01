@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -15,7 +15,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  * It stores all data regarding user stakes for domains, and it's also the only contract
  * that is aware of the `ZNSPriceOracle` which it uses to get pricing data for domains.
  */
-contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
+contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
     /**
@@ -182,16 +182,16 @@ contract ZNSTreasury is AccessControlled, UUPSUpgradeable, IZNSTreasury {
      */
     function setAccessController(address accessController_)
     public
-    override(AccessControlled, IZNSTreasury)
+    override(AAccessControlled, IZNSTreasury)
     onlyAdmin
     {
         _setAccessController(accessController_);
     }
 
     /**
-     * @notice Getter function for the `accessController` state variable inherited from `AccessControlled`.
+     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
      */
-    function getAccessController() external view override(AccessControlled, IZNSTreasury) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
         return address(accessController);
     }
 

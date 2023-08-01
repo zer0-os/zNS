@@ -4,14 +4,14 @@ pragma solidity ^0.8.18;
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 
 /**
  * @title Implementation of the Price Oracle, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
  */
-contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
+contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
     /**
@@ -227,7 +227,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function setAccessController(address accessController_)
     external
-    override(AccessControlled, IZNSPriceOracle)
+    override(AAccessControlled, IZNSPriceOracle)
     onlyAdmin {
         _setAccessController(accessController_);
     }
@@ -235,7 +235,7 @@ contract ZNSPriceOracle is AccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     /**
      * @notice Getter for ZNSAccessController address stored on this contract.
      */
-    function getAccessController() external view override(AccessControlled, IZNSPriceOracle) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSPriceOracle) returns (address) {
         return address(accessController);
     }
 
