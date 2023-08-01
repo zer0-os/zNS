@@ -13,22 +13,22 @@ contract ZNSFixedPricing is AccessControlled, AZNSPricing {
 
     IZNSRegistry public registry;
 
-    mapping(bytes32 parentHash => uint256 price) internal prices;
+    mapping(bytes32 domainHash => uint256 price) internal prices;
 
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
         setRegistry(_registry);
     }
 
-    function setPrice(bytes32 parentHash, uint256 _price) external {
+    function setPrice(bytes32 domainHash, uint256 _price) external {
         require(
-            registry.isOwnerOrOperator(parentHash, msg.sender),
+            registry.isOwnerOrOperator(domainHash, msg.sender),
             "ZNSFixedPricing: Not authorized"
         );
 
-        prices[parentHash] = _price;
+        prices[domainHash] = _price;
 
-        emit PriceChanged(parentHash, _price);
+        emit PriceChanged(domainHash, _price);
     }
 
     function getPrice(bytes32 parentHash, string calldata name) external override view returns (uint256) {
