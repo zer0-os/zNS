@@ -18,7 +18,7 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricing {
         setRegistry(_registry);
     }
 
-    function setPrice(bytes32 domainHash, uint256 _price) external onlyOwnerOrOperator {
+    function setPrice(bytes32 domainHash, uint256 _price) external onlyOwnerOrOperator(domainHash) {
         prices[domainHash] = _price;
 
         emit PriceChanged(domainHash, _price);

@@ -7,8 +7,8 @@ pragma solidity ^0.8.18;
  *
  * - `maxPrice` (uint256): Maximum price for a domain returned at <= `baseLength`
  * - `minPrice` (uint256): Minimum price for a domain returned at > `maxLength`
- * - `maxLength` (uint256): Maximum length of a domain name. If the name is longer than this value we return the `minPrice`
- * - `baseLength` (uint256): Base length of a domain name. If the name is less than or equal to this value we return the `maxPrice`
+ * - `maxLength` (uint256): Maximum length of a domain name. If the name is longer - we return the `minPrice`
+ * - `baseLength` (uint256): Base length of a domain name. If the name is shorter or equal - we return the `maxPrice`
  * - `precisionMultiplier` (uint256): The precision multiplier of the price. This multiplier
  * should be picked based on the number of token decimals to calculate properly.
  * e.g. if we use a token with 18 decimals, and want precision of 2,

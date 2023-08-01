@@ -69,7 +69,7 @@ contract ZNSRegistrar is
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
      * @param name Name (label) of the domain to register
-     * @param domainAddress Address for the `ZNSAddressResolver` to return when requested (optional, send 0x0 if not needed)
+     * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      */
     function registerDomain(
         // TODO sub: change "name" to "label" everywhere in this and other contracts ??
@@ -173,7 +173,8 @@ contract ZNSRegistrar is
      * @dev > Note that we are not clearing the data in `ZNSAddressResolver` as it is considered not necessary
      * since none other contracts will have the domain data on them.
      * If we are not clearing `ZNSAddressResolver` state slots, we are making the next Register transaction
-     * for the same name cheaper, since SSTORE on a non-zero slot costs 5k gas, while SSTORE on a zero slot costs 20k gas.
+     * for the same name cheaper, since SSTORE on a non-zero slot costs 5k gas,
+     * while SSTORE on a zero slot costs 20k gas.
      * If a user wants to clear his data from `ZNSAddressResolver`, he can call `ZNSAddressResolver` directly himself
      * BEFORE he calls to revoke, otherwise, `ZNSRegistry` owner check will fail, since the owner there
      * will be 0x0 address.
@@ -210,7 +211,8 @@ contract ZNSRegistrar is
      * reclaim full ownership of a domain (through becoming the owner of the Name) from the ownership of the Token.
      * This is used for different types of ownership transfers, such as:
      * - domain sale - a user will sell the Token, then the new owner has to call this function to reclaim the Name
-     * - domain transfer - a user will transfer the Token, then the new owner has to call this function to reclaim the Name
+     * - domain transfer - a user will transfer the Token, then the new owner
+     * has to call this function to reclaim the Name
      *
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
