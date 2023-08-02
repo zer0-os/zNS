@@ -31,8 +31,8 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
 
     // TODO sub: refactor this and other payments to use the same types !!
     struct PaymentConfig {
-        IERC20 stakingToken;
-        address feeBeneficiary;
+        IERC20 paymentToken;
+        address beneficiary;
     }
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -64,10 +64,10 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         // TODO sub: is this a good way to do option for free domains ??
         //  what about a point in time where an owner hasn't yet set the rules ??
         //  will having a default of AccessType.LOCKED prevent this ?? (TEST!)
-        if (address(config.stakingToken) == address(0)) return;
+        if (address(config.paymentToken) == address(0)) return;
 
         // Transfer stake amount and fee to this contract
-        config.stakingToken.safeTransferFrom(
+        config.paymentToken.safeTransferFrom(
             depositor,
             address(this),
             amount + fee
@@ -75,8 +75,8 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
 
         if (fee != 0) {
             // Transfer the fee to the `feeBeneficiary` from this contract
-            config.stakingToken.safeTransfer(
-                config.feeBeneficiary,
+            config.paymentToken.safeTransfer(
+                config.beneficiary,
                 fee
             );
         }
@@ -109,7 +109,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
 
         delete stakedForDomain[domainHash];
 
-        paymentConfigs[parentHash].stakingToken.safeTransfer(
+        paymentConfigs[parentHash].paymentToken.safeTransfer(
             domainOwner,
             stakedAmount
         );
@@ -122,7 +122,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     }
 
     function setStakingToken(bytes32 domainHash, IERC20 stakingToken) public onlyOwnerOrOperator(domainHash) {
-        paymentConfigs[domainHash].stakingToken = IERC20(stakingToken);
+        paymentConfigs[domainHash].paymentToken = IERC20(stakingToken);
 
         emit StakingTokenChanged(domainHash, address(stakingToken));
     }
@@ -132,14 +132,14 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         address feeBeneficiary
     ) public onlyOwnerOrOperator(domainHash) {
         require(feeBeneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
-        paymentConfigs[domainHash].feeBeneficiary = feeBeneficiary;
+        paymentConfigs[domainHash].beneficiary = feeBeneficiary;
 
         emit FeeBeneficiaryChanged(domainHash, feeBeneficiary);
     }
 
     function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
-        setStakingToken(domainHash, config.stakingToken);
-        setFeeBeneficiary(domainHash, config.feeBeneficiary);
+        setStakingToken(domainHash, config.paymentToken);
+        setFeeBeneficiary(domainHash, config.beneficiary);
     }
 
     function setRegistry(address registry_) public override onlyAdmin {
