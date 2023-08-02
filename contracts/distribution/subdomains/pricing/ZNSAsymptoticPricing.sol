@@ -69,7 +69,6 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
         return price * priceConfigs[parentHash].feePercentage / PERCENTAGE_BASIS;
     }
 
-    // TODO sub: add AC !!!
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig

@@ -1,4 +1,6 @@
 import { BigNumber, ContractReceipt, Event } from "ethers";
+import { ZNSContracts } from "./types";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 /**
  * Get a specific named event from a transaction log
@@ -18,7 +20,7 @@ export const getEvent = async (
   return customEvent;
 };
 
-export const getDomainHashFromEvent = async (
+export const getDomainHashFromReceipt = async (
   txReceipt : ContractReceipt,
   eventName = "DomainRegistered",
 ) : Promise<string> => {
@@ -39,10 +41,35 @@ export const getDomainHashFromEvent = async (
   return domainHash;
 };
 
-export const getTokenIdFromEvent = async (
+export const getTokenIdFromReceipt = async (
   txReceipt : ContractReceipt,
   eventName = "DomainRegistered",
 ) : Promise<BigNumber> => {
-  const tokenId = await getDomainHashFromEvent(txReceipt, eventName);
+  const tokenId = await getDomainHashFromReceipt(txReceipt, eventName);
   return BigNumber.from(tokenId);
 };
+
+export const getDomainHashFromEvent = async ({
+  zns,
+  user,
+} : {
+  zns : ZNSContracts;
+  user : SignerWithAddress;
+}) : Promise<string> => {
+  const filter = zns.registrar.filters.DomainRegistered(
+    null,
+    null,
+    null,
+    null,
+    user.address
+  );
+
+  const [
+    {
+      args: { domainHash },
+    },
+  ] = await zns.registrar.queryFilter(filter);
+
+  return domainHash;
+};
+
