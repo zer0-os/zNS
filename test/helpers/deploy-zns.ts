@@ -18,7 +18,7 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -242,7 +242,7 @@ export const deployPriceOracle = async ({
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
-  priceConfig : PriceParams;
+  priceConfig : IASPriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);

@@ -24,9 +24,10 @@ import {
   ZNSDirectPayment,
   ZNSSubdomainRegistrar,
   ZNSStakePayment,
-  ZNSAsymptoticPricing,
+  ZNSAsymptoticPricing, AZNSPricing, AZNSPayment,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { AccessType } from "./constants";
 
 export type Maybe<T> = T | undefined;
 
@@ -56,7 +57,7 @@ export type ZNSContract =
   ZNSAddressResolver |
   ZNSDomainToken;
 
-export interface PriceParams {
+export interface IASPriceConfig {
   maxPrice : BigNumber;
   minPrice : BigNumber;
   maxLength : BigNumber;
@@ -92,8 +93,25 @@ export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: PriceParams;
+  priceConfig ?: IASPriceConfig;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
+}
+
+export interface IDistributionConfig {
+  pricingContract : string;
+  paymentContract : string;
+  accessType : AccessType;
+}
+
+export interface IPaymentConfig {
+  paymentToken : string;
+  beneficiary : string;
+}
+
+export interface IFullDistributionConfig {
+  distrConfig : IDistributionConfig;
+  priceConfig : IASPriceConfig | BigNumber;
+  paymentConfig : IPaymentConfig;
 }
