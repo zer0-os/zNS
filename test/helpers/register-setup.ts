@@ -2,6 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFullDistributionConfig, ZNSContracts } from "./types";
 import { BigNumber, ContractReceipt } from "ethers";
 import { getDomainHashFromEvent } from "./events";
+import assert from "assert";
 
 export const defaultRootRegistration = async ({
   user,
@@ -83,6 +84,8 @@ export const registrationWithSetup = async ({
       distrConfig: fullConfig.distrConfig,
     });
   } else {
+    assert.ok(parentHash, "Parent hash must be provided for subdomain registration");
+
     await defaultSubdomainRegistration({
       user,
       zns,
