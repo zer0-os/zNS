@@ -3,8 +3,10 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import {
   deployZNS,
-  hashDomainLabel,
+  hashDomainLabel, priceConfigDefault,
 } from "../../../test/helpers";
+import { ZNSSubdomainRegistrar__factory } from "../../../typechain";
+import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
 
 const domainName = "wilder";
@@ -25,15 +27,61 @@ export const runAllFlows = async () => {
     isTenderlyRun: true,
   });
 
-  // get some funds for the user
-  await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-  await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
+  const rootPrice = BigNumber.from(ethers.utils.parseEther("200"));
 
-  // Register Domain
-  await zns.registrar.connect(governor).registerDomain(
-    domainName,
-    user.address,
-  );
+  const fullRootConfig = {
+    distrConfig: {
+      pricingContract: zns.fixedPricing.address,
+      paymentContract: zns.directPayment.address,
+      accessType: 1,
+    },
+    priceConfig: rootPrice,
+    paymentConfig: {
+      paymentToken: zns.zeroToken.address,
+      beneficiary: governor.address,
+    },
+  };
+
+  // get some funds and approve funds for treasury
+  await zns.zeroToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+  const rootHash = await registrationWithSetup({
+    zns,
+    user: governor,
+    domainLabel: domainName,
+    fullConfig: fullRootConfig,
+    isRootDomain: true,
+  });
+
+  const subdomainLabel = "subdomain";
+  const fullSubConfig = {
+    distrConfig: {
+      pricingContract: zns.asPricing.address,
+      paymentContract: zns.stakePayment.address,
+      accessType: 1,
+    },
+    priceConfig: priceConfigDefault,
+    paymentConfig: {
+      paymentToken: zns.zeroToken.address,
+      beneficiary: user.address,
+    },
+  };
+
+  await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("10000"));
+  await zns.zeroToken.connect(user).approve(fullRootConfig.distrConfig.paymentContract, ethers.constants.MaxUint256);
+
+  await registrationWithSetup({
+    zns,
+    user,
+    parentHash: rootHash,
+    domainLabel: subdomainLabel,
+    fullConfig: fullSubConfig,
+    isRootDomain: false,
+  });
+
+  // TODO sub:
+  // - original root reg: 339,104 gas
+  // - current root reg: 409,429 gas
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
