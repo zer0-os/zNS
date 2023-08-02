@@ -17,8 +17,9 @@ import {
   ZNSFixedPricing__factory, ZNSSubdomainRegistrar, ZNSSubdomainRegistrar__factory,
 } from "../typechain";
 import { expect } from "chai";
-import { getDomainHashFromEvent } from "./helpers/events";
+import { getDomainHashFromEvent, getDomainHashFromReceipt } from "./helpers/events";
 import { BigNumber, Contract } from "ethers";
+import { registrationWithSetup } from "./helpers/register-setup";
 
 
 describe.only("ZNSSubdomainRegistrar", () => {
@@ -92,34 +93,28 @@ describe.only("ZNSSubdomainRegistrar", () => {
   });
 
   it("reg first subdomain (asPricing + stakePayment)", async () => {
-    const subConfig = {
+    const distrConfig = {
       ...defaultDistConfig,
       pricingContract: zns.asPricing.address,
       paymentContract: zns.stakePayment.address,
     };
 
-    await zns.registrar.connect(parentOwner).registerDomain(
-      rootDomainName,
-      ethers.constants.AddressZero,
-      subConfig
-    );
+    const fullRootConfig = {
+      distrConfig,
+      priceConfig: priceConfigDefault,
+      paymentConfig: {
+        paymentToken: zns.zeroToken.address,
+        beneficiary: parentOwner.address,
+      },
+    };
 
-    // TODO sub: create helpers for setting this up! and for enum `accessType`
-    //  do we want to set these up upon registration or make a user call these separately?
-    //  optimize for the best UX!
-    //  maybe add API to SubReg to set these up in one tx?
-    await zns.asPricing.connect(parentOwner).setPriceConfig(
-      rootDomainHash,
-      priceConfigDefault
-    );
-
-    await zns.stakePayment.connect(parentOwner).setPaymentConfig(
-      rootDomainHash,
-      {
-        stakingToken: zns.zeroToken.address,
-        feeBeneficiary: parentOwner.address,
-      }
-    );
+    await registrationWithSetup({
+      zns,
+      user: parentOwner,
+      domainLabel: rootDomainName,
+      fullConfig: fullRootConfig,
+      isRootDomain: true,
+    });
 
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
@@ -137,23 +132,23 @@ describe.only("ZNSSubdomainRegistrar", () => {
       subdomainPrice.add(subdomainFee)
     );
 
-    await zns.subdomainRegistrar.connect(subOwner).registerSubdomain(
-      rootDomainHash,
-      subdomainLabel,
-      subOwner.address,
-      defaultDistConfig
-    );
+    const fullSubConfig = {
+      distrConfig: defaultDistConfig,
+      priceConfig: subdomainPrice,
+      paymentConfig: {
+        paymentToken: zns.zeroToken.address,
+        beneficiary: subOwner.address,
+      },
+    };
 
-    // TODO sub: add this to the event helper
-    const filter = zns.registrar.filters.DomainRegistered(
-      null,
-      null,
-      null,
-      null,
-      subOwner.address
-    );
-    const event = await zns.registrar.queryFilter(filter);
-    subdomainHash = event[0].args.domainHash;
+    subdomainHash = await registrationWithSetup({
+      zns,
+      user: subOwner,
+      parentHash: rootDomainHash,
+      domainLabel: subdomainLabel,
+      fullConfig: fullSubConfig,
+      isRootDomain: false,
+    });
 
     // TODO sub: figure this out!
     // expect(parentHashFromSC).to.eq(rootDomainHash);
@@ -185,17 +180,6 @@ describe.only("ZNSSubdomainRegistrar", () => {
     // resolution check
     const domainAddress = await zns.addressResolver.getAddress(subdomainHash);
     expect(domainAddress).to.eq(subOwner.address);
-
-    // set dist data for the newly registered subdomain
-    await zns.fixedPricing.connect(subOwner).setPrice(subdomainHash, subdomainPrice);
-
-    await zns.directPayment.connect(subOwner).setPaymentConfig(
-      subdomainHash,
-      {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: subOwner.address,
-      }
-    );
   });
 
   it("reg sub of sub", async () => {
@@ -214,16 +198,10 @@ describe.only("ZNSSubdomainRegistrar", () => {
       defaultDistConfig
     );
 
-    // TODO sub: add this to the event helper
-    const filter = zns.registrar.filters.DomainRegistered(
-      null,
-      null,
-      null,
-      null,
-      subSubOwner.address
-    );
-    const event = await zns.registrar.queryFilter(filter);
-    subSubdomainHash = event[0].args.domainHash;
+    subSubdomainHash = await getDomainHashFromEvent({
+      zns,
+      user: subSubOwner,
+    });
 
     // TODO sub: figure this out!
     // expect(parentHashFromSC).to.eq(rootDomainHash);
