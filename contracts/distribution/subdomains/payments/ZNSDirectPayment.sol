@@ -46,8 +46,6 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
     ) external override onlyRegistrar {
         PaymentConfig memory config = paymentConfigs[parentHash];
 
-        require(msg.value == 0, "ZNSDirectPayment: cannot accept ETH payments");
-
         // setting paymentToken to 0x0 address means free domains
         // to save on tx costs, we avoid transfering 0
         if (address(config.paymentToken) != address(0)) {

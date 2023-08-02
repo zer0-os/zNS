@@ -59,8 +59,6 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     ) external override onlyRegistrar {
         PaymentConfig memory config = paymentConfigs[parentHash];
 
-        require(msg.value == 0, "ZNSStakePayment: cannot accept ETH payments");
-
         // setting paymentToken to 0x0 address means free domains
         // to save on tx costs, we avoid transfering 0
         // TODO sub: is this a good way to do option for free domains ??
