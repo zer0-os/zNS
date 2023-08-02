@@ -11,31 +11,12 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
     using SafeERC20 for IERC20;
 
-    // TODO sub: possibly extract all these methods and maybe a struct
-    //  into an interface so that all contracts use the same events and types
-    event PaymentTokenChanged(bytes32 indexed domainHash, address newPaymentToken);
-    event PaymentBeneficiaryChanged(bytes32 indexed domainHash, address newBeneficiary);
-    event PaymentProcessed(
-        bytes32 indexed parentHash,
-        bytes32 indexed domainHash,
-        address indexed payer,
-        uint256 amount,
-        uint256 fee
-    );
-
-    struct PaymentConfig {
-        IERC20 paymentToken;
-        address beneficiary;
-    }
-
-    mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
         setRegistry(_registry);
     }
 
-    // TODO sub: add events !!
     function processPayment(
         bytes32 parentHash,
         bytes32 domainHash,

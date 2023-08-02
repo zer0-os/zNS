@@ -9,35 +9,9 @@ import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 
-// TODO sub: do big refactoring to reuse common parts properly for all payment contracts !!
 contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePayment {
     using SafeERC20 for IERC20;
 
-    event StakingTokenChanged(bytes32 indexed domainHash, address newStakingToken);
-    event FeeBeneficiaryChanged(bytes32 indexed domainHash, address newBeneficiary);
-    event StakeDeposited(
-        bytes32 indexed parentHash,
-        bytes32 indexed domainHash,
-        address indexed staker,
-        uint256 stakedAmount,
-        uint256 fee
-    );
-    event StakeWithdrawn(
-        bytes32 indexed parentHash,
-        bytes32 indexed domainHash,
-        address indexed domainOwner,
-        uint256 stakedAmount
-    );
-
-    // TODO sub: refactor this and other payments to use the same types !!
-    struct PaymentConfig {
-        IERC20 paymentToken;
-        address beneficiary;
-    }
-
-    uint256 public constant PERCENTAGE_BASIS = 10000;
-
-    mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
     mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
 
@@ -49,7 +23,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     function processPayment(
         bytes32 parentHash,
         bytes32 domainHash,
-        address depositor,
+        address payer,
         uint256 amount,
         // optional, can be 0
         // TODO sub: figure out the best system to standardize fees and make them work for any abstract
@@ -68,7 +42,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
 
         // Transfer stake amount and fee to this contract
         config.paymentToken.safeTransferFrom(
-            depositor,
+            payer,
             address(this),
             amount + fee
         );
@@ -84,11 +58,10 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         // Record staked amount for this domain
         stakedForDomain[domainHash] = amount;
 
-        // TODO sub: or PaymentProcessed ??
-        emit StakeDeposited(
+        emit PaymentProcessed(
             parentHash,
             domainHash,
-            depositor,
+            payer,
             amount,
             fee
         );
@@ -114,7 +87,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
             stakedAmount
         );
 
-        emit StakeWithdrawn(parentHash, domainHash, domainOwner, stakedAmount);
+        emit RefundProcessed(parentHash, domainHash, domainOwner, stakedAmount);
     }
 
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
@@ -124,7 +97,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     function setStakingToken(bytes32 domainHash, IERC20 stakingToken) public onlyOwnerOrOperator(domainHash) {
         paymentConfigs[domainHash].paymentToken = IERC20(stakingToken);
 
-        emit StakingTokenChanged(domainHash, address(stakingToken));
+        emit PaymentTokenChanged(domainHash, address(stakingToken));
     }
 
     function setFeeBeneficiary(
@@ -134,7 +107,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         require(feeBeneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
         paymentConfigs[domainHash].beneficiary = feeBeneficiary;
 
-        emit FeeBeneficiaryChanged(domainHash, feeBeneficiary);
+        emit PaymentBeneficiaryChanged(domainHash, feeBeneficiary);
     }
 
     function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
