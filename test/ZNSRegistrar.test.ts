@@ -13,7 +13,7 @@ import {
 } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { defaultRegistration } from "./helpers/registerDomain";
+import { defaultRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
