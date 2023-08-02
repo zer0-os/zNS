@@ -1,6 +1,7 @@
 import { BigNumber, ContractReceipt, Event } from "ethers";
 import { ZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 /**
  * Get a specific named event from a transaction log
@@ -56,6 +57,7 @@ export const getDomainHashFromEvent = async ({
   zns : ZNSContracts;
   user : SignerWithAddress;
 }) : Promise<string> => {
+  const latestBlock = await time.latestBlock();
   const filter = zns.registrar.filters.DomainRegistered(
     null,
     null,
@@ -68,8 +70,7 @@ export const getDomainHashFromEvent = async ({
     {
       args: { domainHash },
     },
-  ] = await zns.registrar.queryFilter(filter);
+  ] = await zns.registrar.queryFilter(filter, latestBlock - 2, latestBlock);
 
   return domainHash;
 };
-
