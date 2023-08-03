@@ -1,8 +1,9 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFullDistributionConfig, ZNSContracts } from "./types";
-import { BigNumber, ContractReceipt } from "ethers";
+import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
+import { emptyDistributionConfig } from "./constants";
 
 export const defaultRootRegistration = async ({
   user,
@@ -71,9 +72,14 @@ export const registrationWithSetup = async ({
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;
-  fullConfig : IFullDistributionConfig;
+  fullConfig ?: IFullDistributionConfig;
   isRootDomain ?: boolean;
 }) => {
+  const hasConfig = !!fullConfig;
+  const distrConfig = hasConfig
+    ? fullConfig.distrConfig
+    : emptyDistributionConfig;
+
   // register domain
   if (isRootDomain) {
     await defaultRootRegistration({
@@ -81,7 +87,7 @@ export const registrationWithSetup = async ({
       zns,
       domainName: domainLabel,
       domainContent,
-      distrConfig: fullConfig.distrConfig,
+      distrConfig,
     });
   } else {
     assert.ok(parentHash, "Parent hash must be provided for subdomain registration");
@@ -92,7 +98,7 @@ export const registrationWithSetup = async ({
       parentHash,
       subdomainLabel: domainLabel,
       domainContent,
-      distrConfig: fullConfig.distrConfig,
+      distrConfig,
     });
   }
 
@@ -101,6 +107,8 @@ export const registrationWithSetup = async ({
     zns,
     user,
   });
+
+  if (!hasConfig) return domainHash;
 
   // TODO sub: do we want to set these up upon registration or make a user call these separately?
   //  optimize for the best UX!
