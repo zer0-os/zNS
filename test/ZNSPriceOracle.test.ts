@@ -4,10 +4,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice, precisionMultiDefault, PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
+import { deployZNS, getPrice, precisionMultiDefault, ORACLE_PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
-  NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  ORACLE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   getAccessRevertMsg,
 } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
@@ -234,7 +234,7 @@ describe("ZNSPriceOracle", () => {
 
       await expect(
         zns.priceOracle.connect(admin).setPriceConfig(newConfig)
-      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+      ).to.be.revertedWith(ORACLE_PRICE_CONFIG_ERR);
     });
   });
 
@@ -278,7 +278,7 @@ describe("ZNSPriceOracle", () => {
       const newMaxPrice = parseEther("500");
       await expect(
         zns.priceOracle.connect(deployer).setMaxPrice(newMaxPrice)
-      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+      ).to.be.revertedWith(ORACLE_PRICE_CONFIG_ERR);
     });
 
     it("Causes any length domain to have a price of 0 if the maxPrice is 0", async () => {
@@ -391,7 +391,7 @@ describe("ZNSPriceOracle", () => {
       const newMinPrice = priceConfigDefault.minPrice.add(parseEther("231"));
       await expect(
         zns.priceOracle.connect(deployer).setMinPrice(newMinPrice)
-      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+      ).to.be.revertedWith(ORACLE_PRICE_CONFIG_ERR);
     });
   });
 
@@ -419,7 +419,7 @@ describe("ZNSPriceOracle", () => {
       const zeroMultiplier = BigNumber.from("0");
 
       const tx = zns.priceOracle.connect(deployer).setPrecisionMultiplier(zeroMultiplier);
-      await expect(tx).to.be.revertedWith(NO_ZERO_PRECISION_MULTIPLIER_ERR);
+      await expect(tx).to.be.revertedWith(ORACLE_NO_ZERO_PRECISION_MULTIPLIER_ERR);
     });
 
     it("Successfuly sets the precision multiplier when above 0", async () => {
@@ -630,7 +630,7 @@ describe("ZNSPriceOracle", () => {
       const newBaseLength = priceConfigDefault.baseLength.sub(1);
       await expect(
         zns.priceOracle.connect(deployer).setBaseLength(newBaseLength)
-      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+      ).to.be.revertedWith(ORACLE_PRICE_CONFIG_ERR);
     });
   });
 
@@ -689,7 +689,7 @@ describe("ZNSPriceOracle", () => {
       const newMaxLength = priceConfigDefault.maxLength.add(10);
       await expect(
         zns.priceOracle.connect(deployer).setMaxLength(newMaxLength)
-      ).to.be.revertedWith(PRICE_CONFIG_ERR);
+      ).to.be.revertedWith(ORACLE_PRICE_CONFIG_ERR);
     });
   });
 

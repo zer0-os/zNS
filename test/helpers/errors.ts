@@ -9,7 +9,8 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 export const MULTIPLIER_BELOW_MIN_ERR = "ZNSPriceOracle: Multiplier must be >= baseLength + 1";
 export const NO_ZERO_MULTIPLIER_ERR = "ZNSPriceOracle: Multiplier cannot be 0";
 export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSPriceOracle: Multiplier out of range";
-export const NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSPriceOracle: precisionMultiplier cannot be 0";
+export const ORACLE_NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSPriceOracle: precisionMultiplier cannot be 0";
+export const PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSAsymptoticPricing: precisionMultiplier cannot be 0";
 
 // ZNSRegistry
 export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
@@ -24,4 +25,5 @@ export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";
-export const PRICE_CONFIG_ERR = "ZNSPriceOracle: incorrect value set causes the price spike at maxLength.";
+export const ORACLE_PRICE_CONFIG_ERR = "ZNSPriceOracle: incorrect value set causes the price spike at maxLength.";
+export const PRICING_CONFIG_ERR = "ZNSAsymptoticPricing: incorrect value set causes the price spike at maxLength.";
