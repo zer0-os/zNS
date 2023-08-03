@@ -43,13 +43,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) public override initializer {
         _setAccessController(accessController_);
 
-        rootDomainPriceConfig.baseLength = priceConfig_.baseLength;
-        rootDomainPriceConfig.maxPrice = priceConfig_.maxPrice;
-        rootDomainPriceConfig.minPrice = priceConfig_.minPrice;
-        rootDomainPriceConfig.maxLength = priceConfig_.maxLength;
-        setPrecisionMultiplier(priceConfig_.precisionMultiplier);
-
-        _validateConfig();
+        setPriceConfig(priceConfig_);
     }
 
     /**
@@ -89,7 +83,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * Only ADMIN can call this function.
      * @param priceConfig The new price config to set
      */
-    function setPriceConfig(DomainPriceConfig calldata priceConfig) external override onlyAdmin {
+    function setPriceConfig(DomainPriceConfig calldata priceConfig) public override onlyAdmin {
         rootDomainPriceConfig.baseLength = priceConfig.baseLength;
         rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
         rootDomainPriceConfig.minPrice = priceConfig.minPrice;
