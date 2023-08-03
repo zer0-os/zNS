@@ -73,7 +73,7 @@ export const deployAccessController = async ({
 export const deployRegistry = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  isTenderlyRun : boolean
+  isTenderlyRun = false,
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
   const registry = await hre.upgrades.deployProxy(

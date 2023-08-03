@@ -20,6 +20,12 @@ export const priceConfigDefault : IASPriceConfig = {
   feePercentage: registrationFeePercDefault,
 };
 
+export const emptyDistributionConfig = {
+  pricingContract: ethers.constants.AddressZero,
+  paymentContract: ethers.constants.AddressZero,
+  accessType: 0,
+};
+
 export enum AccessType {
   LOCKED,
   OPEN,

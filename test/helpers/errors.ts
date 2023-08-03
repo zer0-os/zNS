@@ -14,7 +14,7 @@ export const NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSPriceOracle: precisionMultip
 // ZNSRegistry
 export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
 export const ONLY_OWNER_REGISTRAR_REG_ERR = "ZNSRegistry: Only Name Owner or Registrar allowed to call";
-export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
+export const NOT_AUTHORIZED_REG_ERR = "ARegistryWired: Not authorized. Only Owner or Operator allowed";
 export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
 
 // ZNSRegistrar
