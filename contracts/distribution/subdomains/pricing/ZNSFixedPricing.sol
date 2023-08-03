@@ -24,7 +24,7 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricing {
         emit PriceChanged(domainHash, _price);
     }
 
-    function getPrice(bytes32 parentHash, string calldata name) external override view returns (uint256) {
+    function getPrice(bytes32 parentHash, string calldata label) external override view returns (uint256) {
         return prices[parentHash];
     }
 
