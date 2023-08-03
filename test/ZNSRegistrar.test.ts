@@ -699,4 +699,6 @@ describe("ZNSRegistrar", () => {
       await validateUpgrade(deployer, zns.registrar, registrar, registrarFactory, contractCalls);
     });
   });
+
+  // TODO sub: add tests for the new config setter flow
 });
