@@ -10,6 +10,7 @@ import { IDomainPriceConfig } from "../../../abstractions/IDomainPriceConfig.sol
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
+
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
 contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
