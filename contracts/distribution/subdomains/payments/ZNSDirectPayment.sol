@@ -35,9 +35,11 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
                 config.beneficiary,
                 amount + fee
             );
+
+            emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
         }
 
-        emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
+        // TODO sub: do we need an event here that will signify it was a free payment ??
     }
 
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
