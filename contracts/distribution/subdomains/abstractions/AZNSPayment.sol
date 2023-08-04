@@ -24,6 +24,8 @@ abstract contract AZNSPayment {
 
     mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
 
+    // TODO sub: should we add setters and getters here? mb just virtual ??
+
     function processPayment(
         bytes32 parentHash,
         bytes32 domainHash,

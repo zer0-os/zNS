@@ -94,25 +94,25 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         return paymentConfigs[domainHash];
     }
 
-    function setStakingToken(bytes32 domainHash, IERC20 stakingToken) public onlyOwnerOrOperator(domainHash) {
+    function setPaymentToken(bytes32 domainHash, IERC20 stakingToken) public onlyOwnerOrOperator(domainHash) {
         paymentConfigs[domainHash].paymentToken = IERC20(stakingToken);
 
         emit PaymentTokenChanged(domainHash, address(stakingToken));
     }
 
-    function setFeeBeneficiary(
+    function setBeneficiary(
         bytes32 domainHash,
-        address feeBeneficiary
+        address beneficiary
     ) public onlyOwnerOrOperator(domainHash) {
-        require(feeBeneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
-        paymentConfigs[domainHash].beneficiary = feeBeneficiary;
+        require(beneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
+        paymentConfigs[domainHash].beneficiary = beneficiary;
 
-        emit PaymentBeneficiaryChanged(domainHash, feeBeneficiary);
+        emit PaymentBeneficiaryChanged(domainHash, beneficiary);
     }
 
     function setPaymentConfig(bytes32 domainHash, PaymentConfig calldata config) external {
-        setStakingToken(domainHash, config.paymentToken);
-        setFeeBeneficiary(domainHash, config.beneficiary);
+        setPaymentToken(domainHash, config.paymentToken);
+        setBeneficiary(domainHash, config.beneficiary);
     }
 
     function setRegistry(address registry_) public override onlyAdmin {
@@ -129,4 +129,9 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     function getAccessController() external view override returns (address) {
         return address(accessController);
     }
+
+    // TODO sub: should we add some method to allow someone to withdraw any tokens that were sent to this contract
+    //  without the revoke flow??
+    //  What are the complications to this? It's not desirable. Need to test if fund locking is possible here !!!
+    //  Do the same for ZNSTreasury !!
 }
