@@ -170,7 +170,7 @@ describe("ZNSDirectPayment", () => {
       );
     });
 
-    it("should not process payment if the payment token is set as 0x0", async () => {
+    it("should not process payment if the paymentToken is set as 0x0", async () => {
       await zns.directPayment.connect(user).setPaymentToken(domainHash, ethers.constants.AddressZero);
 
       const subUserBalBefore = await zns.zeroToken.balanceOf(subUser.address);
@@ -246,8 +246,8 @@ describe("ZNSDirectPayment", () => {
   });
 
   // eslint-disable-next-line max-len
-  it("#setPaymentBeneficiary() should set the new beneficiary correctly and emit #PaymentBeneficiaryChanged event", async () => {
-    const tx = await zns.directPayment.connect(user).setPaymentBeneficiary(domainHash, random.address);
+  it("#setBeneficiary() should set the new beneficiary correctly and emit #PaymentBeneficiaryChanged event", async () => {
+    const tx = await zns.directPayment.connect(user).setBeneficiary(domainHash, random.address);
 
     await expect(tx).to.emit(zns.directPayment, "PaymentBeneficiaryChanged").withArgs(
       domainHash,
