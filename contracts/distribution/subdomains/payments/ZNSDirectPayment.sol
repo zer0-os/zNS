@@ -29,17 +29,16 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
 
         // setting paymentToken to 0x0 address means free domains
         // to save on tx costs, we avoid transfering 0
-        if (address(config.paymentToken) != address(0)) {
-            config.paymentToken.safeTransferFrom(
-                payer,
-                config.beneficiary,
-                amount + fee
-            );
-
-            emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
-        }
-
         // TODO sub: do we need an event here that will signify it was a free payment ??
+        if (address(config.paymentToken) == address(0)) return;
+
+        config.paymentToken.safeTransferFrom(
+            payer,
+            config.beneficiary,
+            amount + fee
+        );
+
+        emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
     }
 
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
@@ -52,7 +51,7 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
         PaymentConfig memory configToSet
     ) external {
         setPaymentToken(domainHash, configToSet.paymentToken);
-        setPaymentBeneficiary(domainHash, configToSet.beneficiary);
+        setBeneficiary(domainHash, configToSet.beneficiary);
     }
 
     // TODO sub: what about types here? should we do address instead?
@@ -62,7 +61,7 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
         emit PaymentTokenChanged(domainHash, address(paymentToken));
     }
 
-    function setPaymentBeneficiary(bytes32 domainHash, address beneficiary) public onlyOwnerOrOperator(domainHash) {
+    function setBeneficiary(bytes32 domainHash, address beneficiary) public onlyOwnerOrOperator(domainHash) {
         require(beneficiary != address(0), "ZNSDirectPayment: beneficiary cannot be 0x0 address");
         paymentConfigs[domainHash].beneficiary = beneficiary;
 
