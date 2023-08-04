@@ -9,7 +9,8 @@ import {
   getPrice,
   NOT_AUTHORIZED_REG_ERR,
   precisionMultiDefault,
-  PRICING_CONFIG_ERR, PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  PRICING_CONFIG_ERR,
+  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR,
 } from "../../helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "../../helpers/constants";
 import {
