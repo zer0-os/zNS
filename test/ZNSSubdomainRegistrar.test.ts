@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContracts } from "./helpers/types";
+import { IDistributionConfig, ZNSContracts } from "./helpers/types";
 import {
   deployZNS, getPrice, getPriceObject,
   hashDomainLabel,
@@ -22,7 +22,7 @@ import { BigNumber, Contract } from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 
 
-describe.only("ZNSSubdomainRegistrar", () => {
+describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
   let parentOwner : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -34,12 +34,7 @@ describe.only("ZNSSubdomainRegistrar", () => {
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
 
-  // TODO sub: type this out
-  let defaultDistConfig : {
-    pricingContract : string;
-    paymentContract : string;
-    accessType : number;
-  };
+  let defaultDistConfig : IDistributionConfig;
 
   let subdomainPrice : BigNumber;
   let subdomainHash : string;
@@ -90,9 +85,7 @@ describe.only("ZNSSubdomainRegistrar", () => {
       paymentContract: zns.directPayment.address,
       accessType: 1,
     };
-  });
 
-  it("reg first subdomain (asPricing + stakePayment)", async () => {
     const distrConfig = {
       ...defaultDistConfig,
       pricingContract: zns.asPricing.address,
@@ -115,7 +108,9 @@ describe.only("ZNSSubdomainRegistrar", () => {
       fullConfig: fullRootConfig,
       isRootDomain: true,
     });
+  });
 
+  it("should register first lvl subdomain (fixedPricing + directPayment)", async () => {
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
 
@@ -182,7 +177,7 @@ describe.only("ZNSSubdomainRegistrar", () => {
     expect(domainAddress).to.eq(subOwner.address);
   });
 
-  it("reg sub of sub", async () => {
+  it("should register second lvl subdomain", async () => {
     const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
     const subSubOwnerBalBefore = await zns.zeroToken.balanceOf(subSubOwner.address);
 

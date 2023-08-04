@@ -13,6 +13,7 @@ import * as hre from "hardhat";
 import { registrationWithSetup } from "../../helpers/register-setup";
 import { expect } from "chai";
 
+
 describe("ZNSStakePayment", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
