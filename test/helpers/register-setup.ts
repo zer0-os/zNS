@@ -3,20 +3,20 @@ import { IASPriceConfig, IDistributionConfig, IFullDistributionConfig, ZNSContra
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
-import { emptyDistributionConfig } from "./constants";
+import { distrConfigEmpty } from "./constants";
 
 export const defaultRootRegistration = async ({
   user,
   zns,
   domainName,
   domainContent = user.address,
-  distrConfig,
+  distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
   zns : ZNSContracts;
   domainName : string;
   domainContent ?: string;
-  distrConfig : IDistributionConfig;
+  distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
   const tx = await zns.registrar.connect(user).registerDomain(
     domainName,
@@ -78,7 +78,7 @@ export const registrationWithSetup = async ({
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
     ? fullConfig.distrConfig
-    : emptyDistributionConfig;
+    : distrConfigEmpty;
 
   // register domain
   if (isRootDomain) {

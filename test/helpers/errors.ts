@@ -15,12 +15,14 @@ export const PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSAsymptoticPricing: p
 // ZNSRegistry
 export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
 export const ONLY_OWNER_REGISTRAR_REG_ERR = "ZNSRegistry: Only Name Owner or Registrar allowed to call";
-export const NOT_AUTHORIZED_REG_ERR = "ARegistryWired: Not authorized. Only Owner or Operator allowed";
+export const NOT_AUTHORIZED_REG_WIRED_ERR = "ARegistryWired: Not authorized. Only Owner or Operator allowed";
+export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
 export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
 
 // ZNSRegistrar
 export const NOT_NAME_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Name";
 export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token";
+export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of both Name and Token";
 
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";

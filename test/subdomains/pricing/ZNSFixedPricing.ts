@@ -1,7 +1,7 @@
 import {
   ADMIN_ROLE,
   deployFixedPricing,
-  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_ERR,
+  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR,
   priceConfigDefault,
 } from "../../helpers";
 import * as hre from "hardhat";
@@ -37,7 +37,7 @@ describe("ZNSFixedPricing", () => {
     });
 
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
+    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
@@ -102,7 +102,7 @@ describe("ZNSFixedPricing", () => {
     await expect(
       zns.fixedPricing.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
     ).to.be.revertedWith(
-      NOT_AUTHORIZED_REG_ERR
+      NOT_AUTHORIZED_REG_WIRED_ERR
     );
   });
 

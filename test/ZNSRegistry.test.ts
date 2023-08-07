@@ -12,11 +12,11 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   getAccessRevertMsg,
-  validateUpgrade,
+  validateUpgrade, NOT_AUTHORIZED_REG_ERR,
 } from "./helpers";
 import {
   ONLY_NAME_OWNER_REG_ERR,
-  NOT_AUTHORIZED_REG_ERR,
+  NOT_AUTHORIZED_REG_WIRED_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";

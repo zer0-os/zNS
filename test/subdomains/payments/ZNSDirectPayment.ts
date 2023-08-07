@@ -3,7 +3,7 @@ import {
   ADMIN_ROLE,
   deployDirectPayment,
   deployZNS,
-  getAccessRevertMsg, hashSubdomainName, NOT_AUTHORIZED_REG_ERR,
+  getAccessRevertMsg, hashSubdomainName, NOT_AUTHORIZED_REG_WIRED_ERR,
   priceConfigDefault, REGISTRAR_ROLE,
 } from "../../helpers";
 import { BigNumber, ethers } from "ethers";
@@ -229,7 +229,7 @@ describe("ZNSDirectPayment", () => {
           beneficiary: random.address,
         }
       ),
-    ).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+    ).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
   });
 
   it("#setPaymentToken() should set the new token correctly and emit #PaymentTokenChanged event", async () => {

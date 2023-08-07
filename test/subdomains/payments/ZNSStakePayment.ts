@@ -5,7 +5,7 @@ import {
   ADMIN_ROLE,
   checkBalance, deployStakePayment,
   deployZNS, getAccessRevertMsg,
-  hashSubdomainName, NOT_AUTHORIZED_REG_ERR,
+  hashSubdomainName, NOT_AUTHORIZED_REG_WIRED_ERR,
   priceConfigDefault,
   REGISTRAR_ROLE,
 } from "../../helpers";
@@ -286,7 +286,7 @@ describe("ZNSStakePayment", () => {
           beneficiary: random.address,
         }
       ),
-    ).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+    ).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
   });
 
   it("#setPaymentToken() should set the new token correctly and emit #PaymentTokenChanged event", async () => {

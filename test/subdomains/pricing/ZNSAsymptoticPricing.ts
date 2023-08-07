@@ -7,7 +7,7 @@ import { ZNSContracts } from "../../helpers/types";
 import {
   deployZNS,
   getPrice,
-  NOT_AUTHORIZED_REG_ERR,
+  NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
   PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR,
@@ -279,7 +279,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newMaxPrice = parseEther("0.7");
 
       const tx = zns.asPricing.connect(admin).setMaxPrice(domainHash, newMaxPrice);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
     it("Allows setting the max price to zero", async () => {
@@ -359,7 +359,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newMinPrice = parseEther("0.1");
 
       const tx = zns.asPricing.connect(admin).setMinPrice(domainHash, newMinPrice);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
     it("Allows setting to zero", async () => {
@@ -433,7 +433,7 @@ describe("ZNSAsymptoticPricing", () => {
 
 
       const tx = zns.asPricing.connect(admin).setMinPrice(domainHash, newMultiplier);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
     it("Fails when setting to zero", async () => {
@@ -497,7 +497,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newLength = 5;
 
       const tx = zns.asPricing.connect(admin).setBaseLength(domainHash, newLength);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
     it("Allows setting the base length to zero", async () => {
@@ -668,7 +668,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newLength = 5;
 
       const tx = zns.asPricing.connect(admin).setMaxLength(domainHash, newLength);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
     it("Allows setting the max length to zero", async () => {
@@ -724,7 +724,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newFeePerc = BigNumber.from(222);
       const tx = zns.asPricing.connect(admin)
         .setFeePercentage(domainHash, newFeePerc);
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
   });
 
