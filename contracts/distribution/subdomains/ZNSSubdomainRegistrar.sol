@@ -13,15 +13,8 @@ import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
 
 
 contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
-
-    event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
-    event PaymentContractSet(bytes32 indexed domainHash, address indexed paymentContract);
-    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
-    event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
-    event MainRegistrarSet(address registrar);
-
-    // TODO sub: change name of Registrar var and the contract also
-    IZNSRegistrar public mainRegistrar;
+    // TODO sub: change name of Registrar contract
+    IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
     mapping(bytes32 domainHash => DistributionConfig) public distrConfigs;
@@ -43,11 +36,11 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     constructor(
         address _accessController,
         address _registry,
-        address _mainRegistrar
+        address _rootRegistrar
     ) {
         _setAccessController(_accessController);
         setRegistry(_registry);
-        setMainRegistrar(_mainRegistrar);
+        setRootRegistrar(_rootRegistrar);
     }
 
     function registerSubdomain(
@@ -80,7 +73,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
         uint256 price;
         uint256 fee;
-        // TODO sub: can we make these abstract switching better ??
+        // TODO sub: can we make this abstract switching better ??
         if (parentConfig.pricingContract.feeEnforced()) {
             (price, fee) = AZNSPricingWithFee(address(parentConfig.pricingContract)).getPriceAndFee(
                 parentHash,
@@ -98,7 +91,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             fee
         );
 
-        mainRegistrar.coreRegister(
+        rootRegistrar.coreRegister(
             parentHash,
             subdomainHash,
             label,
@@ -115,17 +108,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     }
 
     function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external override {
-        // TODO sub: optimize casting domainHash to uint256 !!!
-        //  that is being done so many times here and in the main Registrar
-        //  for a single operation
-
         // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
-            mainRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
+            rootRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
             "ZNSSubdomainRegistrar: Not the owner of both Token and Name"
         );
 
-        mainRegistrar.coreRevoke(domainHash);
+        rootRegistrar.coreRevoke(domainHash);
 
         // TODO sub: do we store these as addresses or interfaces in the struct ??
         address paymentContract = address(distrConfigs[parentHash].paymentContract);
@@ -220,11 +209,11 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         _setRegistry(registry_);
     }
 
-    function setMainRegistrar(address registrar_) public override onlyAdmin {
+    function setRootRegistrar(address registrar_) public override onlyAdmin {
         require(registrar_ != address(0), "ZNSSubdomainRegistrar: _registrar can not be 0x0 address");
-        mainRegistrar = IZNSRegistrar(registrar_);
+        rootRegistrar = IZNSRegistrar(registrar_);
 
-        emit MainRegistrarSet(registrar_);
+        emit RootRegistrarSet(registrar_);
     }
 
     function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {

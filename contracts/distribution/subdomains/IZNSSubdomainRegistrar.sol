@@ -7,6 +7,12 @@ import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 
 
 interface IZNSSubdomainRegistrar is IDistributionConfig {
+    event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
+    event PaymentContractSet(bytes32 indexed domainHash, address indexed paymentContract);
+    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+    event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
+    event RootRegistrarSet(address registrar);
+
     function registerSubdomain(
         bytes32 parentHash,
         string calldata label,
@@ -49,7 +55,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setMainRegistrar(address registrar_) external;
+    function setRootRegistrar(address registrar_) external;
 
     function getAccessController() external view returns (address);
 
