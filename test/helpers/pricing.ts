@@ -1,6 +1,6 @@
-import { ZNSPriceOracle } from "../../typechain";
 import { BigNumber } from "ethers";
 import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+
 
 /**
  * Get the domain name price base on its length when given

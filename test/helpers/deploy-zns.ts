@@ -30,7 +30,6 @@ import {
   priceConfigDefault,
   priceOracleName,
   registrarName,
-  registrationFeePercDefault,
   registryName, stakePaymentName, subdomainRegistrarName, transparentProxyName,
   treasuryName,
   zeroTokenMockName,
@@ -38,7 +37,6 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./constants";
 import { REGISTRAR_ROLE } from "./access";
-import { BigNumber } from "ethers";
 import { getProxyImplAddress } from "./utils";
 
 

@@ -24,7 +24,7 @@ import {
   ZNSDirectPayment,
   ZNSSubdomainRegistrar,
   ZNSStakePayment,
-  ZNSAsymptoticPricing, AZNSPricing, AZNSPayment,
+  ZNSAsymptoticPricing,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType } from "./constants";

@@ -37,6 +37,7 @@ export const fullDistrConfigEmpty = {
   paymentConfig: paymentConfigEmpty,
 };
 
+// eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,
   OPEN,

@@ -126,7 +126,7 @@ contract ZNSAddressResolver is
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line unused-vars
+    // solhint-disable-next-line no-unused-vars
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }

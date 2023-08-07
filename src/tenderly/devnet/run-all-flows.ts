@@ -5,7 +5,6 @@ import {
   deployZNS,
   hashDomainLabel, priceConfigDefault,
 } from "../../../test/helpers";
-import { ZNSSubdomainRegistrar__factory } from "../../../typechain";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
 
