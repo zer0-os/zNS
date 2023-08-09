@@ -1,8 +1,6 @@
-import { IASPriceConfig, IFullDistributionConfig, IDomainConfigForTest, ZNSContracts, ITreeRegResult } from "../types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { IDomainConfigForTest, ZNSContracts, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
-import { priceConfigDefault } from "../constants";
-import { BigNumber, ethers } from "ethers";
+import { BigNumber } from "ethers";
 import assert from "assert";
 
 
@@ -14,7 +12,7 @@ export const registerDomainPath = async ({
   domainConfigs : Array<IDomainConfigForTest>;
 }) => domainConfigs.reduce(
   async (
-    acc : Promise<Array<ITreeRegResult>>,
+    acc : Promise<Array<IPathRegResult>>,
     config,
     idx,
     configS

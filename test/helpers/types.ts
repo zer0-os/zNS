@@ -122,10 +122,10 @@ export interface IDomainConfigForTest {
   user : SignerWithAddress;
   domainLabel : string;
   domainContent ?: string;
-  fullConfig ?: IFullDistributionConfig;
+  fullConfig : IFullDistributionConfig;
 }
 
-export interface ITreeRegResult {
+export interface IPathRegResult {
   domainHash : string;
   userBalanceBefore : BigNumber;
   userBalanceAfter : BigNumber;
