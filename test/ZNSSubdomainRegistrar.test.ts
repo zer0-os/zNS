@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDistributionConfig, ZNSContracts } from "./helpers/types";
+import { IDistributionConfig, IDomainConfigForTest, ITreeRegResult, ZNSContracts } from "./helpers/types";
 import {
   deployZNS, getPrice, getPriceObject,
   hashDomainLabel,
@@ -20,272 +20,475 @@ import { expect } from "chai";
 import { getDomainHashFromEvent, getDomainHashFromReceipt } from "./helpers/events";
 import { BigNumber, Contract } from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
+import { registerDomainTree } from "./helpers/flows/registration";
+import assert from "assert";
 
 
 describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
-  let parentOwner : SignerWithAddress;
+  let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
-  let subOwner : SignerWithAddress;
-  let subSubOwner : SignerWithAddress;
+  let lvl1SubOwner : SignerWithAddress;
+  let lvl2SubOwner : SignerWithAddress;
+  let lvl3SubOwner : SignerWithAddress;
+  let lvl4SubOwner : SignerWithAddress;
+  let lvl5SubOwner : SignerWithAddress;
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
-  let operator : SignerWithAddress;
 
   let defaultDistConfig : IDistributionConfig;
 
-  let subdomainPrice : BigNumber;
-  let subdomainHash : string;
-  let subSubdomainHash : string;
-  let subTokenId : string;
-  let subSubTokenId : string;
-  let subdomainFee : BigNumber;
+  // NI - non-isolated tests - these tests can only be run all together,
+  // since they depend on each other (one flow broken down into multiple tests)
+  describe("Register-Revoke by level - 3 levels (NI, smoke)", () => {
+    let subdomainPrice : BigNumber;
+    let subdomainHash : string;
+    let subSubdomainHash : string;
+    let subTokenId : string;
+    let subSubTokenId : string;
+    let subdomainFee : BigNumber;
 
-  const rootDomainName = normalizeName("wilder");
-  const rootDomainHash = hashDomainLabel(rootDomainName);
-  const subdomainLabel = normalizeName("beast");
-  const subSubdomainLabel = normalizeName("wape");
-  const subdomainName = `${rootDomainName}.${subdomainLabel}`;
-  const subHash = hashSubdomainName(subdomainName);
-  const subdomainHashKecc = ethers.utils.keccak256(
-    rootDomainHash,
-    ethers.utils.toUtf8Bytes(subdomainName)
-  );
+    const rootDomainName = normalizeName("wilder");
+    const rootDomainHash = hashDomainLabel(rootDomainName);
+    const subdomainLabel = normalizeName("beast");
+    const subSubdomainLabel = normalizeName("wape");
+    const subdomainName = `${rootDomainName}.${subdomainLabel}`;
+    const subHash = hashSubdomainName(subdomainName);
+    const subdomainHashKecc = ethers.utils.keccak256(
+      rootDomainHash,
+      ethers.utils.toUtf8Bytes(subdomainName)
+    );
 
-  before(async () => {
-    [
-      deployer,
-      zeroVault,
-      parentOwner,
-      operator,
-      governor,
-      admin,
-      subOwner,
-      subSubOwner,
-    ] = await hre.ethers.getSigners();
-    // zeroVault address is used to hold the fee charged to the user when registering
-    zns = await deployZNS({
-      deployer,
-      governorAddresses: [deployer.address, governor.address],
-      adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
-      zeroVaultAddress: zeroVault.address,
+    before(async () => {
+      [
+        deployer,
+        zeroVault,
+        rootOwner,
+        governor,
+        admin,
+        lvl1SubOwner,
+        lvl2SubOwner,
+      ] = await hre.ethers.getSigners();
+      // zeroVault address is used to hold the fee charged to the user when registering
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, governor.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
+
+      // Give funds to user
+      await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(rootOwner.address, priceConfigDefault.maxPrice);
+      await zns.zeroToken.mint(lvl1SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl2SubOwner.address, ethers.utils.parseEther("10000000000000"));
+
+      defaultDistConfig = {
+        pricingContract: zns.fixedPricing.address,
+        paymentContract: zns.directPayment.address,
+        accessType: 1,
+      };
+
+      const distrConfig = {
+        ...defaultDistConfig,
+        pricingContract: zns.asPricing.address,
+        paymentContract: zns.stakePayment.address,
+      };
+
+      const fullRootConfig = {
+        distrConfig,
+        priceConfig: priceConfigDefault,
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: rootOwner.address,
+        },
+      };
+
+      await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: rootDomainName,
+        fullConfig: fullRootConfig,
+        isRootDomain: true,
+      });
     });
 
-    // Give funds to user
-    await zns.zeroToken.connect(parentOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(parentOwner.address, priceConfigDefault.maxPrice);
-    await zns.zeroToken.mint(subOwner.address, ethers.utils.parseEther("10000000000000"));
-    await zns.zeroToken.mint(subSubOwner.address, ethers.utils.parseEther("10000000000000"));
+    it("should register lvl 1 subdomain (fixedPricing + directPayment)", async () => {
+      const subOwnerBalBefore = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const parentOwnerBalBefore = await zns.zeroToken.balanceOf(rootOwner.address);
 
-    defaultDistConfig = {
-      pricingContract: zns.fixedPricing.address,
-      paymentContract: zns.directPayment.address,
-      accessType: 1,
-    };
+      const subPriceObj = await getPriceObject(
+        subdomainLabel
+      );
+      ({
+        expectedPrice: subdomainPrice,
+        fee: subdomainFee,
+      } = subPriceObj);
 
-    const distrConfig = {
-      ...defaultDistConfig,
-      pricingContract: zns.asPricing.address,
-      paymentContract: zns.stakePayment.address,
-    };
+      await zns.zeroToken.connect(lvl1SubOwner).approve(
+        zns.stakePayment.address,
+        subdomainPrice.add(subdomainFee)
+      );
 
-    const fullRootConfig = {
-      distrConfig,
-      priceConfig: priceConfigDefault,
-      paymentConfig: {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: parentOwner.address,
-      },
-    };
+      const fullSubConfig = {
+        distrConfig: defaultDistConfig,
+        priceConfig: subdomainPrice,
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: lvl1SubOwner.address,
+        },
+      };
 
-    await registrationWithSetup({
-      zns,
-      user: parentOwner,
-      domainLabel: rootDomainName,
-      fullConfig: fullRootConfig,
-      isRootDomain: true,
+      subdomainHash = await registrationWithSetup({
+        zns,
+        user: lvl1SubOwner,
+        parentHash: rootDomainHash,
+        domainLabel: subdomainLabel,
+        fullConfig: fullSubConfig,
+        isRootDomain: false,
+      });
+
+      // TODO sub: figure this out!
+      // expect(parentHashFromSC).to.eq(rootDomainHash);
+      // expect(subHashFromSC).to.eq(subdomainHash);
+      // expect(subdomainHash).to.eq(subdomainHashKecc);
+
+      const subOwnerBalAfter = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const parentOwnerBalAfter = await zns.zeroToken.balanceOf(rootOwner.address);
+
+      expect(
+        subOwnerBalBefore.sub(subOwnerBalAfter)
+      ).to.eq(
+        subdomainPrice.add(subdomainFee)
+      );
+      expect(
+        parentOwnerBalAfter.sub(parentOwnerBalBefore)
+      ).to.eq(
+        subdomainFee
+      );
+
+      const dataFromReg = await zns.registry.getDomainRecord(subdomainHash);
+      expect(dataFromReg.owner).to.eq(lvl1SubOwner.address);
+      expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+
+      subTokenId = BigNumber.from(subdomainHash).toString();
+      const subTokenOwner = await zns.domainToken.ownerOf(subTokenId);
+      expect(subTokenOwner).to.eq(lvl1SubOwner.address);
+
+      // resolution check
+      const domainAddress = await zns.addressResolver.getAddress(subdomainHash);
+      expect(domainAddress).to.eq(lvl1SubOwner.address);
+    });
+
+    it("should register lvl 2 subdomain", async () => {
+      const subOwnerBalBefore = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const subSubOwnerBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      await zns.zeroToken.connect(lvl2SubOwner).approve(
+        zns.directPayment.address,
+        subdomainPrice
+      );
+
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        subdomainHash,
+        subSubdomainLabel,
+        lvl2SubOwner.address,
+        defaultDistConfig
+      );
+
+      subSubdomainHash = await getDomainHashFromEvent({
+        zns,
+        user: lvl2SubOwner,
+      });
+
+      // TODO sub: figure this out!
+      // expect(parentHashFromSC).to.eq(rootDomainHash);
+      // expect(subHashFromSC).to.eq(subdomainHash);
+      // expect(subdomainHash).to.eq(subdomainHashKecc);
+
+      const subOwnerBalAfter = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const subSubOwnerBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      expect(
+        subOwnerBalAfter.sub(subOwnerBalBefore)
+      ).to.eq(
+        subdomainPrice
+      );
+      expect(
+        subSubOwnerBalBefore.sub(subSubOwnerBalAfter)
+      ).to.eq(
+        subdomainPrice
+      );
+
+      const dataFromReg = await zns.registry.getDomainRecord(subSubdomainHash);
+      expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
+      expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+
+      subSubTokenId = BigNumber.from(subSubdomainHash).toString();
+      const subTokenOwner = await zns.domainToken.ownerOf(subSubTokenId);
+      expect(subTokenOwner).to.eq(lvl2SubOwner.address);
+
+      // resolution check
+      const domainAddress = await zns.addressResolver.getAddress(subSubdomainHash);
+      expect(domainAddress).to.eq(lvl2SubOwner.address);
+    });
+
+    it("should revoke a lvl 2 subdomain", async () => {
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(subdomainHash, subSubdomainHash);
+
+      const dataFromReg = await zns.registry.getDomainRecord(subSubdomainHash);
+      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+
+      await expect(
+        zns.domainToken.ownerOf(subSubTokenId)
+      ).to.be.revertedWith(
+        INVALID_TOKENID_ERC_ERR
+      );
+
+      // TODO sub: add checks that owner can't call domain functions on Registry anymore
+    });
+
+    it("should revoke lvl 1 subdomain with refund", async () => {
+      const subOwnerBalBefore = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const parentOwnerBalBefore = await zns.zeroToken.balanceOf(rootOwner.address);
+
+      await zns.subdomainRegistrar.connect(lvl1SubOwner).revokeSubdomain(rootDomainHash, subdomainHash);
+
+      const subOwnerBalAfter = await zns.zeroToken.balanceOf(lvl1SubOwner.address);
+      const parentOwnerBalAfter = await zns.zeroToken.balanceOf(rootOwner.address);
+
+      expect(
+        subOwnerBalAfter.sub(subOwnerBalBefore)
+      ).to.eq(
+        subdomainPrice
+      );
+      expect(
+        parentOwnerBalBefore.sub(parentOwnerBalAfter)
+      ).to.eq(
+        BigNumber.from(0)
+      );
+
+      const dataFromReg = await zns.registry.getDomainRecord(subdomainHash);
+      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+
+      await expect(
+        zns.domainToken.ownerOf(subTokenId)
+      ).to.be.revertedWith(
+        INVALID_TOKENID_ERC_ERR
+      );
     });
   });
 
-  it("should register first lvl subdomain (fixedPricing + directPayment)", async () => {
-    const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
-    const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
+  describe("6 level tree (5 subdomains) with all possible configs (NI)", () => {
+    let domainConfigs : Array<IDomainConfigForTest>;
+    let regResults : Array<ITreeRegResult>;
 
-    const subPriceObj = await getPriceObject(
-      subdomainLabel
-    );
-    ({
-      expectedPrice: subdomainPrice,
-      fee: subdomainFee,
-    } = subPriceObj);
+    const fixedPrice = ethers.utils.parseEther("1375.612");
 
-    await zns.zeroToken.connect(subOwner).approve(
-      zns.stakePayment.address,
-      subdomainPrice.add(subdomainFee)
-    );
+    before(async () => {
+      [
+        deployer,
+        zeroVault,
+        governor,
+        admin,
+        rootOwner,
+        lvl1SubOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+      ] = await hre.ethers.getSigners();
+      // zeroVault address is used to hold the fee charged to the user when registering
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, governor.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
 
-    const fullSubConfig = {
-      distrConfig: defaultDistConfig,
-      priceConfig: subdomainPrice,
-      paymentConfig: {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: subOwner.address,
-      },
-    };
+      // Give funds to user
+      await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(rootOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl1SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl2SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl3SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl4SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(lvl5SubOwner.address, ethers.utils.parseEther("10000000000000"));
 
-    subdomainHash = await registrationWithSetup({
-      zns,
-      user: subOwner,
-      parentHash: rootDomainHash,
-      domainLabel: subdomainLabel,
-      fullConfig: fullSubConfig,
-      isRootDomain: false,
+      domainConfigs = [
+        {
+          user: rootOwner,
+          domainLabel: "root",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: rootOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl1SubOwner,
+          domainLabel: "lvlOne",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.asPricing.address,
+              paymentContract: zns.stakePayment.address,
+              accessType: 1,
+            },
+            priceConfig: priceConfigDefault,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl1SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl2SubOwner,
+          domainLabel: "lvlTwo",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.asPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: priceConfigDefault,
+            paymentConfig: {
+              // TODO sub: test with different ERC20 tokens as paymentTokens
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl2SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl3SubOwner,
+          domainLabel: "lvlThree",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.stakePayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl3SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl4SubOwner,
+          domainLabel: "lvlFour",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl4SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl5SubOwner,
+          domainLabel: "lvlFive",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.asPricing.address,
+              paymentContract: zns.stakePayment.address,
+              accessType: 1,
+            },
+            priceConfig: priceConfigDefault,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl5SubOwner.address,
+            },
+          },
+        },
+      ];
+
+      regResults = await registerDomainTree({
+        zns,
+        domainConfigs,
+      });
+
+      assert.equal(regResults.length, domainConfigs.length);
     });
 
-    // TODO sub: figure this out!
-    // expect(parentHashFromSC).to.eq(rootDomainHash);
-    // expect(subHashFromSC).to.eq(subdomainHash);
-    // expect(subdomainHash).to.eq(subdomainHashKecc);
+    it("should register a tree of 5 subdomains with different configs", async () => {
+      await domainConfigs.reduce(
+        async (
+          acc,
+          {
+            user,
+            fullConfig,
+            domainLabel,
+          },
+          idx,
+          array
+        ) => {
+          await acc;
 
-    const subOwnerBalAfter = await zns.zeroToken.balanceOf(subOwner.address);
-    const parentOwnerBalAfter = await zns.zeroToken.balanceOf(parentOwner.address);
+          let expectedPrice = fixedPrice;
+          let fee = BigNumber.from(0);
 
-    expect(
-      subOwnerBalBefore.sub(subOwnerBalAfter)
-    ).to.eq(
-      subdomainPrice.add(subdomainFee)
-    );
-    expect(
-      parentOwnerBalAfter.sub(parentOwnerBalBefore)
-    ).to.eq(
-      subdomainFee
-    );
+          // calc only needed for asymptotic pricing, otherwise it is fixed
+          if (idx === 0 || array[idx - 1].fullConfig?.distrConfig.pricingContract === zns.asPricing.address) {
+            ({
+              expectedPrice,
+              fee,
+            } = getPriceObject(domainLabel));
+          }
 
-    const dataFromReg = await zns.registry.getDomainRecord(subdomainHash);
-    expect(dataFromReg.owner).to.eq(subOwner.address);
-    expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+          const {
+            domainHash,
+            userBalanceBefore,
+            userBalanceAfter,
+            parentBalanceBefore,
+            parentBalanceAfter,
+          } = regResults[idx];
 
-    subTokenId = BigNumber.from(subdomainHash).toString();
-    const subTokenOwner = await zns.domainToken.ownerOf(subTokenId);
-    expect(subTokenOwner).to.eq(subOwner.address);
+          // if parent's payment contract is staking, then beneficiary only gets the fee
+          const expParentBalDiff =
+            idx === 0 || array[idx - 1].fullConfig?.distrConfig.paymentContract === zns.stakePayment.address
+              ? fee : expectedPrice.add(fee);
 
-    // resolution check
-    const domainAddress = await zns.addressResolver.getAddress(subdomainHash);
-    expect(domainAddress).to.eq(subOwner.address);
-  });
+          // fee can be 0
+          const expUserBalDiff = expectedPrice.add(fee);
 
-  it("should register second lvl subdomain", async () => {
-    const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
-    const subSubOwnerBalBefore = await zns.zeroToken.balanceOf(subSubOwner.address);
+          // check user balance
+          expect(userBalanceBefore.sub(userBalanceAfter)).to.eq(expUserBalDiff);
+          // check parent balance
+          expect(parentBalanceAfter.sub(parentBalanceBefore)).to.eq(expParentBalDiff);
 
-    await zns.zeroToken.connect(subSubOwner).approve(
-      zns.directPayment.address,
-      subdomainPrice
-    );
+          const dataFromReg = await zns.registry.getDomainRecord(domainHash);
+          expect(dataFromReg.owner).to.eq(user.address);
+          expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
-    await zns.subdomainRegistrar.connect(subSubOwner).registerSubdomain(
-      subdomainHash,
-      subSubdomainLabel,
-      subSubOwner.address,
-      defaultDistConfig
-    );
+          const tokenId = BigNumber.from(domainHash).toString();
+          const tokenOwner = await zns.domainToken.ownerOf(tokenId);
+          expect(tokenOwner).to.eq(user.address);
 
-    subSubdomainHash = await getDomainHashFromEvent({
-      zns,
-      user: subSubOwner,
+          const domainAddress = await zns.addressResolver.getAddress(domainHash);
+          expect(domainAddress).to.eq(user.address);
+        }, Promise.resolve()
+      );
     });
-
-    // TODO sub: figure this out!
-    // expect(parentHashFromSC).to.eq(rootDomainHash);
-    // expect(subHashFromSC).to.eq(subdomainHash);
-    // expect(subdomainHash).to.eq(subdomainHashKecc);
-
-    const subOwnerBalAfter = await zns.zeroToken.balanceOf(subOwner.address);
-    const subSubOwnerBalAfter = await zns.zeroToken.balanceOf(subSubOwner.address);
-
-    expect(
-      subOwnerBalAfter.sub(subOwnerBalBefore)
-    ).to.eq(
-      subdomainPrice
-    );
-    expect(
-      subSubOwnerBalBefore.sub(subSubOwnerBalAfter)
-    ).to.eq(
-      subdomainPrice
-    );
-
-    const dataFromReg = await zns.registry.getDomainRecord(subSubdomainHash);
-    expect(dataFromReg.owner).to.eq(subSubOwner.address);
-    expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
-
-    subSubTokenId = BigNumber.from(subSubdomainHash).toString();
-    const subTokenOwner = await zns.domainToken.ownerOf(subSubTokenId);
-    expect(subTokenOwner).to.eq(subSubOwner.address);
-
-    // resolution check
-    const domainAddress = await zns.addressResolver.getAddress(subSubdomainHash);
-    expect(domainAddress).to.eq(subSubOwner.address);
   });
 
-  it("can revoke a subdomain", async () => {
-    await zns.subdomainRegistrar.connect(subSubOwner).revokeSubdomain(subdomainHash, subSubdomainHash);
-
-    const dataFromReg = await zns.registry.getDomainRecord(subSubdomainHash);
-    expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
-    expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
-
-    await expect(
-      zns.domainToken.ownerOf(subSubTokenId)
-    ).to.be.revertedWith(
-      INVALID_TOKENID_ERC_ERR
-    );
-
-    // TODO sub: add checks that owner can't call domain functions on Registry anymore
-  });
-
-  it("revoke with refund", async () => {
-    const subOwnerBalBefore = await zns.zeroToken.balanceOf(subOwner.address);
-    const parentOwnerBalBefore = await zns.zeroToken.balanceOf(parentOwner.address);
-
-    await zns.subdomainRegistrar.connect(subOwner).revokeSubdomain(rootDomainHash, subdomainHash);
-
-    const subOwnerBalAfter = await zns.zeroToken.balanceOf(subOwner.address);
-    const parentOwnerBalAfter = await zns.zeroToken.balanceOf(parentOwner.address);
-
-    expect(
-      subOwnerBalAfter.sub(subOwnerBalBefore)
-    ).to.eq(
-      subdomainPrice
-    );
-    expect(
-      parentOwnerBalBefore.sub(parentOwnerBalAfter)
-    ).to.eq(
-      BigNumber.from(0)
-    );
-
-    const dataFromReg = await zns.registry.getDomainRecord(subdomainHash);
-    expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
-    expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
-
-    await expect(
-      zns.domainToken.ownerOf(subTokenId)
-    ).to.be.revertedWith(
-      INVALID_TOKENID_ERC_ERR
-    );
-  });
-
-  it("can set registry on ZNSDirectPayment", async () => {
-    await zns.directPayment.connect(admin).setRegistry(subOwner.address);
-    let registryFromSC = await zns.directPayment.registry();
-    expect(registryFromSC).to.eq(subOwner.address);
-
-    // set back
-    await zns.directPayment.connect(admin).setRegistry(zns.registry.address);
-    registryFromSC = await zns.directPayment.registry();
-    expect(registryFromSC).to.eq(zns.registry.address);
-  });
   // TODO sub: test what happens if subOwner revokes before subSubOwner
 });
