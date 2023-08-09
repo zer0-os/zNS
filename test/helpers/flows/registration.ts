@@ -1,7 +1,10 @@
-import { IDomainConfigForTest, ZNSContracts, IPathRegResult } from "../types";
+import { IDomainConfigForTest, ZNSContracts, IPathRegResult, IASPriceConfig } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { BigNumber } from "ethers";
 import assert from "assert";
+import { getPriceObject } from "../pricing";
+import { expect } from "chai";
+import { priceConfigDefault } from "../constants";
 
 
 export const registerDomainPath = async ({
@@ -99,4 +102,78 @@ export const registerDomainPath = async ({
 
     return [...newAcc, domainObj];
   }, Promise.resolve([])
+);
+
+export const validatePathRegistration = async ({
+  zns,
+  domainConfigs,
+  regResults,
+} : {
+  zns : ZNSContracts;
+  domainConfigs : Array<IDomainConfigForTest>;
+  regResults : Array<IPathRegResult>;
+}) => domainConfigs.reduce(
+  async (
+    acc,
+    {
+      user,
+      domainLabel,
+    },
+    idx,
+    array
+  ) => {
+    await acc;
+
+    let expectedPrice : BigNumber;
+    let fee = BigNumber.from(0);
+
+    // calc only needed for asymptotic pricing, otherwise it is fixed
+    if (idx === 0 || array[idx - 1].fullConfig.distrConfig.pricingContract === zns.asPricing.address) {
+      const priceConfig = !!array[idx - 1]
+        ? array[idx - 1].fullConfig.priceConfig as IASPriceConfig
+        : priceConfigDefault;
+
+      ({
+        expectedPrice,
+        fee,
+      } = getPriceObject(
+        domainLabel,
+        priceConfig,
+      ));
+    } else {
+      expectedPrice = array[idx - 1].fullConfig?.priceConfig as BigNumber;
+    }
+
+    const {
+      domainHash,
+      userBalanceBefore,
+      userBalanceAfter,
+      parentBalanceBefore,
+      parentBalanceAfter,
+    } = regResults[idx];
+
+    // if parent's payment contract is staking, then beneficiary only gets the fee
+    const expParentBalDiff =
+        idx === 0 || array[idx - 1].fullConfig?.distrConfig.paymentContract === zns.stakePayment.address
+          ? fee : expectedPrice.add(fee);
+
+    // fee can be 0
+    const expUserBalDiff = expectedPrice.add(fee);
+
+    // check user balance
+    expect(userBalanceBefore.sub(userBalanceAfter)).to.eq(expUserBalDiff);
+    // check parent balance
+    expect(parentBalanceAfter.sub(parentBalanceBefore)).to.eq(expParentBalDiff);
+
+    const dataFromReg = await zns.registry.getDomainRecord(domainHash);
+    expect(dataFromReg.owner).to.eq(user.address);
+    expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+
+    const tokenId = BigNumber.from(domainHash).toString();
+    const tokenOwner = await zns.domainToken.ownerOf(tokenId);
+    expect(tokenOwner).to.eq(user.address);
+
+    const domainAddress = await zns.addressResolver.getAddress(domainHash);
+    expect(domainAddress).to.eq(user.address);
+  }, Promise.resolve()
 );
