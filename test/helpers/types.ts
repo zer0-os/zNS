@@ -73,6 +73,7 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
+// TODO sub: rename to IZNS
 export interface ZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
@@ -87,6 +88,7 @@ export interface ZNSContracts {
   directPayment : ZNSDirectPayment;
   stakePayment : ZNSStakePayment;
   subdomainRegistrar : ZNSSubdomainRegistrar;
+  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
@@ -114,4 +116,19 @@ export interface IFullDistributionConfig {
   distrConfig : IDistributionConfig;
   priceConfig : IASPriceConfig | BigNumber;
   paymentConfig : IPaymentConfig;
+}
+
+export interface IDomainConfigForTest {
+  user : SignerWithAddress;
+  domainLabel : string;
+  domainContent ?: string;
+  fullConfig ?: IFullDistributionConfig;
+}
+
+export interface ITreeRegResult {
+  domainHash : string;
+  userBalanceBefore : BigNumber;
+  userBalanceAfter : BigNumber;
+  parentBalanceBefore : BigNumber;
+  parentBalanceAfter : BigNumber;
 }

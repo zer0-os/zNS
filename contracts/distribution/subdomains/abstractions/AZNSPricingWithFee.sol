@@ -5,6 +5,8 @@ import { AZNSPricing } from "./AZNSPricing.sol";
 
 
 abstract contract AZNSPricingWithFee is AZNSPricing {
+    // TODO sub: what is the better way to structure these calls?
+    //  what are the best functions here ??
     function getPriceAndFee(
         bytes32 parentHash,
         string calldata label
