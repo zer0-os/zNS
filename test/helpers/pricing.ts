@@ -10,10 +10,10 @@ import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
  * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const getPrice = async (
+export const getPrice = (
   name : string,
   priceConfig = priceConfigDefault,
-) : Promise<BigNumber> => {
+) : BigNumber => {
   // Get price configuration for contract
   const {
     maxPrice,
@@ -47,15 +47,15 @@ export const getPrice = async (
  * @param priceConfig Object with all the pricing props
  * @returns The full expected price object for that domain
  */
-export const getPriceObject = async (
+export const getPriceObject = (
   name : string,
   priceConfig = priceConfigDefault,
-) : Promise<{
+) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
   fee : BigNumber;
-}> => {
-  const expectedPrice = await getPrice(name, priceConfig);
+} => {
+  const expectedPrice = getPrice(name, priceConfig);
 
   const { feePercentage } = priceConfig;
 

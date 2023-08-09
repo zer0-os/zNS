@@ -704,6 +704,7 @@ export const deployZNS = async ({
     directPayment,
     stakePayment,
     subdomainRegistrar,
+    zeroVaultAddress,
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury
