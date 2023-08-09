@@ -14,7 +14,7 @@ import * as hre from "hardhat";
 import * as ethers from "ethers";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { registerDomainPath } from "./helpers/flows/registration";
+import { validatePathRegistration, registerDomainPath } from "./helpers/flows/registration";
 import assert from "assert";
 
 
@@ -28,6 +28,8 @@ describe("ZNSSubdomainRegistrar", () => {
   let lvl4SubOwner : SignerWithAddress;
   let lvl5SubOwner : SignerWithAddress;
   let lvl6SubOwner : SignerWithAddress;
+  let branchLvl1Owner : SignerWithAddress;
+  let branchLvl2Owner : SignerWithAddress;
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
@@ -50,6 +52,8 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl4SubOwner,
         lvl5SubOwner,
         lvl6SubOwner,
+        branchLvl1Owner,
+        branchLvl2Owner,
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -62,12 +66,14 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // Give funds to user
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(rootOwner.address, ethers.utils.parseEther("10000000000000"));
-      await zns.zeroToken.mint(lvl2SubOwner.address, ethers.utils.parseEther("10000000000000"));
-      await zns.zeroToken.mint(lvl3SubOwner.address, ethers.utils.parseEther("10000000000000"));
-      await zns.zeroToken.mint(lvl4SubOwner.address, ethers.utils.parseEther("10000000000000"));
-      await zns.zeroToken.mint(lvl5SubOwner.address, ethers.utils.parseEther("10000000000000"));
-      await zns.zeroToken.mint(lvl6SubOwner.address, ethers.utils.parseEther("10000000000000"));
+      await zns.zeroToken.mint(rootOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(lvl2SubOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(lvl3SubOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(lvl4SubOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(lvl5SubOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(lvl6SubOwner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(branchLvl1Owner.address, ethers.utils.parseEther("1000000"));
+      await zns.zeroToken.mint(branchLvl2Owner.address, ethers.utils.parseEther("1000000"));
 
       domainConfigs = [
         {
@@ -178,63 +184,11 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     it("should register a path of 6 domains with different configs", async () => {
-      await domainConfigs.reduce(
-        async (
-          acc,
-          {
-            user,
-            fullConfig,
-            domainLabel,
-          },
-          idx,
-          array
-        ) => {
-          await acc;
-
-          let expectedPrice = fixedPrice;
-          let fee = BigNumber.from(0);
-
-          // calc only needed for asymptotic pricing, otherwise it is fixed
-          if (idx === 0 || array[idx - 1].fullConfig?.distrConfig.pricingContract === zns.asPricing.address) {
-            ({
-              expectedPrice,
-              fee,
-            } = getPriceObject(domainLabel));
-          }
-
-          const {
-            domainHash,
-            userBalanceBefore,
-            userBalanceAfter,
-            parentBalanceBefore,
-            parentBalanceAfter,
-          } = regResults[idx];
-
-          // if parent's payment contract is staking, then beneficiary only gets the fee
-          const expParentBalDiff =
-            idx === 0 || array[idx - 1].fullConfig?.distrConfig.paymentContract === zns.stakePayment.address
-              ? fee : expectedPrice.add(fee);
-
-          // fee can be 0
-          const expUserBalDiff = expectedPrice.add(fee);
-
-          // check user balance
-          expect(userBalanceBefore.sub(userBalanceAfter)).to.eq(expUserBalDiff);
-          // check parent balance
-          expect(parentBalanceAfter.sub(parentBalanceBefore)).to.eq(expParentBalDiff);
-
-          const dataFromReg = await zns.registry.getDomainRecord(domainHash);
-          expect(dataFromReg.owner).to.eq(user.address);
-          expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
-
-          const tokenId = BigNumber.from(domainHash).toString();
-          const tokenOwner = await zns.domainToken.ownerOf(tokenId);
-          expect(tokenOwner).to.eq(user.address);
-
-          const domainAddress = await zns.addressResolver.getAddress(domainHash);
-          expect(domainAddress).to.eq(user.address);
-        }, Promise.resolve()
-      );
+      await validatePathRegistration({
+        zns,
+        domainConfigs,
+        regResults,
+      });
     });
 
     it("should revoke lvl 6 domain without refund", async () => {
@@ -321,6 +275,56 @@ describe("ZNSSubdomainRegistrar", () => {
       await expect(
         zns.registry.connect(lvl5SubOwner).updateDomainRecord(domainHash, rootOwner.address, lvl6SubOwner.address)
       ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+    });
+
+    it("should register a new 2 lvl path at lvl 3 of the existing path", async () => {
+      const parentHash = regResults[1].domainHash;
+
+      const newConfigs = [
+        {
+          user: branchLvl1Owner,
+          domainLabel: "lvlthreenew",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl1Owner.address,
+            },
+          },
+        },
+        {
+          user: branchLvl2Owner,
+          domainLabel: "lvlfournew",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.asPricing.address,
+              paymentContract: zns.stakePayment.address,
+              accessType: 1,
+            },
+            priceConfig: priceConfigDefault,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl2Owner.address,
+            },
+          },
+        },
+      ];
+
+      const newRegResults = await registerDomainPath({
+        zns,
+        domainConfigs: newConfigs,
+      });
+
+      await validatePathRegistration({
+        zns,
+        domainConfigs: newConfigs,
+        regResults: newRegResults,
+      });
     });
   });
 
