@@ -6,7 +6,7 @@ import { BigNumber, ethers } from "ethers";
 import assert from "assert";
 
 
-export const registerDomainTree = async ({
+export const registerDomainPath = async ({
   zns,
   domainConfigs,
 } : {

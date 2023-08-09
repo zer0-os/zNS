@@ -20,7 +20,7 @@ import { expect } from "chai";
 import { getDomainHashFromEvent, getDomainHashFromReceipt } from "./helpers/events";
 import { BigNumber, Contract } from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
-import { registerDomainTree } from "./helpers/flows/registration";
+import { registerDomainPath } from "./helpers/flows/registration";
 import assert from "assert";
 
 
@@ -421,7 +421,7 @@ describe("ZNSSubdomainRegistrar", () => {
         },
       ];
 
-      regResults = await registerDomainTree({
+      regResults = await registerDomainPath({
         zns,
         domainConfigs,
       });
@@ -429,7 +429,7 @@ describe("ZNSSubdomainRegistrar", () => {
       assert.equal(regResults.length, domainConfigs.length);
     });
 
-    it("should register a tree of 5 subdomains with different configs", async () => {
+    it("should register a tree of 6 domains with different configs", async () => {
       await domainConfigs.reduce(
         async (
           acc,
@@ -487,6 +487,10 @@ describe("ZNSSubdomainRegistrar", () => {
           expect(domainAddress).to.eq(user.address);
         }, Promise.resolve()
       );
+    });
+
+    it("should revoke lvl 6 domain without a fee", async () => {
+
     });
   });
 
