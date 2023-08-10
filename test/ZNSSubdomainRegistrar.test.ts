@@ -34,7 +34,7 @@ describe("ZNSSubdomainRegistrar", () => {
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
 
-  describe.only("6 level path (5 subdomains) with all possible configs", () => {
+  describe("6 level path (5 subdomains) with all possible configs", () => {
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
 
@@ -278,8 +278,6 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     it("should register a new 2 lvl path at lvl 3 of the existing path", async () => {
-      const parentHash = regResults[1].domainHash;
-
       const newConfigs = [
         {
           user: branchLvl1Owner,
@@ -325,6 +323,53 @@ describe("ZNSSubdomainRegistrar", () => {
         domainConfigs: newConfigs,
         regResults: newRegResults,
       });
+    });
+
+    it("should properly revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
+      const lvl1Hash = regResults[0].domainHash;
+      const lvl2Hash = regResults[1].domainHash;
+      const lvl3Hash = regResults[2].domainHash;
+
+      const childExists = await zns.registry.exists(lvl3Hash);
+      assert.ok(childExists);
+
+      // revoke parent
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        lvl1Hash,
+        lvl2Hash,
+      );
+
+      const userBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      // revoke child
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        lvl2Hash,
+        lvl3Hash,
+      );
+
+      const userBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
+
+      expect(userBalAfter.sub(userBalBefore)).to.eq(expectedPrice);
+
+      const childExistsAfter = await zns.registry.exists(lvl3Hash);
+      assert.ok(!childExistsAfter);
+
+      const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
+      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+
+      const tokenId = BigNumber.from(lvl3Hash).toString();
+      await expect(
+        zns.domainToken.ownerOf(tokenId)
+      ).to.be.revertedWith(
+        INVALID_TOKENID_ERC_ERR
+      );
+
+      await expect(
+        zns.registry.connect(lvl3SubOwner).updateDomainRecord(lvl3Hash, rootOwner.address, lvl4SubOwner.address)
+      ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
   });
 
