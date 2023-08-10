@@ -122,6 +122,7 @@ export interface IDomainConfigForTest {
   user : SignerWithAddress;
   domainLabel : string;
   domainContent ?: string;
+  parentHash ?: string;
   fullConfig : IFullDistributionConfig;
 }
 
