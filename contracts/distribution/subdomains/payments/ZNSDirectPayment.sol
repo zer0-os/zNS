@@ -41,6 +41,8 @@ contract ZNSDirectPayment is AAccessControlled, ARegistryWired, AZNSPayment {
         emit PaymentProcessed(parentHash, domainHash, payer, amount, fee);
     }
 
+    // TODO sub: move these from individual contract to the abstract ??
+    //  or should we just make `paymentConfigs` in the abstract public ??
     function getPaymentConfig(bytes32 domainHash) external view returns (PaymentConfig memory) {
         return paymentConfigs[domainHash];
     }

@@ -50,6 +50,29 @@ export const getTokenIdFromReceipt = async (
   return BigNumber.from(tokenId);
 };
 
+export const getDomainRegisteredEvents = async ({
+  zns,
+  domainHash = null,
+  tokenId = null,
+  registrant = null,
+} : {
+  zns : ZNSContracts;
+  domainHash ?: string | null;
+  tokenId ?: BigNumber | null;
+  registrant ?: string | null;
+}) : Promise<Array<Event>> => {
+  const latestBlock = await time.latestBlock();
+  const filter = zns.registrar.filters.DomainRegistered(
+    null,
+    domainHash,
+    tokenId,
+    null,
+    registrant
+  );
+
+  return zns.registrar.queryFilter(filter, latestBlock - 10, latestBlock);
+};
+
 export const getDomainHashFromEvent = async ({
   zns,
   user,
