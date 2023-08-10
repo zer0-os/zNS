@@ -339,6 +339,27 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl2Hash,
       );
 
+      // make sure all parent's distribution configs still exist
+      const parentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl2Hash);
+      expect(parentDistrConfig.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
+      expect(parentDistrConfig.paymentContract).to.eq(domainConfigs[1].fullConfig.distrConfig.paymentContract);
+
+      expect(parentDistrConfig.pricingContract).to.eq(zns.asPricing.address);
+      expect(parentDistrConfig.paymentContract).to.eq(zns.stakePayment.address);
+      // check a couple of fields from price config
+      const priceConfig = await zns.asPricing.priceConfigs(lvl2Hash);
+      if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig) {
+        expect(priceConfig.maxPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.maxPrice);
+      }
+      if ("minPrice" in domainConfigs[1].fullConfig.priceConfig) {
+        expect(priceConfig.minPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.minPrice);
+      }
+      // make sure the child's stake is still there
+      const childStakedAmt = await zns.stakePayment.stakedForDomain(lvl3Hash);
+      const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
+
+      expect(childStakedAmt).to.eq(expectedPrice);
+
       const userBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
       // revoke child
@@ -348,8 +369,6 @@ describe("ZNSSubdomainRegistrar", () => {
       );
 
       const userBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-
-      const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
 
       expect(userBalAfter.sub(userBalBefore)).to.eq(expectedPrice);
 
@@ -371,7 +390,128 @@ describe("ZNSSubdomainRegistrar", () => {
         zns.registry.connect(lvl3SubOwner).updateDomainRecord(lvl3Hash, rootOwner.address, lvl4SubOwner.address)
       ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
-  });
 
-  // TODO sub: test what happens if subOwner revokes before subSubOwner
+    // TODO sub: is this a case we want to support ???
+    // how do we handle these cases? we do not remove pricing/payment configs when parent revokes
+    // to allow for refunds if needed. we can make paymentToken 0x0 address, making all subsequent registrations free
+    // but this will block refunding when children are revoked.
+    // if we do not make token a 0x0 address, then new subdomains will still pay the parent
+    // even though it has been revoked
+    // what do we do here ?? this needs a separate PR that will go deep into this and finds a solution
+    it("should properly register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
+      const lvl1Hash = regResults[0].domainHash;
+      const lvl2Hash = regResults[1].domainHash;
+
+      const childExists = await zns.registry.exists(lvl2Hash);
+      assert.ok(childExists);
+
+      // revoke parent
+      await zns.registrar.connect(rootOwner).revokeDomain(
+        lvl1Hash
+      );
+
+      const childExistsAfter = await zns.registry.exists(lvl2Hash);
+      assert.ok(childExistsAfter);
+
+      const newConfig = [
+        {
+          user: branchLvl1Owner,
+          domainLabel: "lvlthreenewnew",
+          parentHash: lvl1Hash,
+          isRootDomain: false,
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl1Owner.address,
+            },
+          },
+        },
+      ];
+
+      const newRegResults = await registerDomainPath({
+        zns,
+        domainConfigs: newConfig,
+      });
+
+      await validatePathRegistration({
+        zns,
+        domainConfigs: newConfig,
+        regResults: newRegResults,
+      });
+    });
+
+    it("should properly register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
+      const lvl1Hash = regResults[0].domainHash;
+      const lvl2Hash = regResults[1].domainHash;
+      const lvl3Hash = regResults[2].domainHash;
+
+      const childExists = await zns.registry.exists(lvl3Hash);
+      assert.ok(childExists);
+
+      // revoke parent
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        lvl1Hash,
+        lvl2Hash,
+      );
+
+      const childExistsAfter = await zns.registry.exists(lvl3Hash);
+      assert.ok(childExistsAfter);
+
+      const newConfigs = [
+        {
+          user: branchLvl2Owner,
+          domainLabel: "lvlthreenewnewnew",
+          parentHash: lvl2Hash,
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: 1,
+            },
+            priceConfig: fixedPrice,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl2Owner.address,
+            },
+          },
+        },
+      ];
+
+      const newRegResults = await registerDomainPath({
+        zns,
+        domainConfigs: newConfigs,
+      });
+
+      await validatePathRegistration({
+        zns,
+        domainConfigs: newConfigs,
+        regResults: newRegResults,
+      });
+    });
+  });
 });
+
+// TODO sub: Some tests to do:
+// -  domain registration with invalid input (e.g., empty name, invalid characters)
+// -  different access scenarios (open to all, whitelist-based, locked)
+// -  unauthorized access attempts and ensure they are rejected
+// -  scenarios where payment fails (insufficient funds, wrong token, etc.)
+// -  locking/unlocking of domains.
+// -  adding/removing addresses to/from the whitelist.
+// -  transferring ownership of domains and subdomains
+// -  scenarios where transfer fails (e.g., incorrect permissions).
+// -  accessing and managing nested subdomains.
+// -  registering domains with long names (max length).
+// -  registering domains with very short names.
+// -  using different ERC-20 tokens for payments.
+// -  using tokens with varying decimal places.
+// -  boundary values for pricing tiers and other numeric parameters.
+// -  scenarios where users need to approve token allowances.
+// -  cases where allowances are insufficient for the transaction.
+// -  upgrading the contract while maintaining data integrity.
