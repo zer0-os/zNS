@@ -1,7 +1,6 @@
-import { IDomainConfigForTest, ZNSContracts, IPathRegResult, IASPriceConfig } from "../types";
+import { IDomainConfigForTest, ZNSContracts, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { BigNumber, ethers } from "ethers";
-import assert from "assert";
 import { getPriceObject } from "../pricing";
 import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
@@ -139,12 +138,26 @@ export const validatePathRegistration = async ({
       parentHashFound = !!regResults[idx - 1] ? regResults[idx - 1].domainHash : ethers.constants.HashZero;
     }
 
-    const {
-      pricingContract,
-      paymentContract,
-    } = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
+    let pricingContract;
+    let paymentContract;
 
-    if (pricingContract === zns.asPricing.address) {
+    if (parentHashFound === ethers.constants.HashZero) {
+      pricingContract = zns.priceOracle.address;
+      paymentContract = zns.treasury.address;
+    } else {
+      ({
+        pricingContract,
+        paymentContract,
+      } = await zns.subdomainRegistrar.distrConfigs(parentHashFound));
+    }
+
+    if (pricingContract === zns.fixedPricing.address) {
+      expectedPrice = await zns.fixedPricing.getPrice(parentHashFound, domainLabel);
+    } else {
+      const configCall = pricingContract === zns.priceOracle.address
+        ? zns.priceOracle.rootDomainPriceConfig()
+        : zns.asPricing.priceConfigs(parentHashFound);
+
       const {
         maxPrice,
         minPrice,
@@ -152,7 +165,7 @@ export const validatePathRegistration = async ({
         baseLength,
         precisionMultiplier,
         feePercentage,
-      } = await zns.asPricing.priceConfigs(parentHashFound);
+      } = await configCall;
 
       ({
         expectedPrice,
@@ -168,8 +181,6 @@ export const validatePathRegistration = async ({
           feePercentage,
         },
       ));
-    } else {
-      expectedPrice = await zns.fixedPricing.getPrice(parentHashFound, domainLabel);
     }
 
     const {
@@ -182,6 +193,7 @@ export const validatePathRegistration = async ({
 
     // if parent's payment contract is staking, then beneficiary only gets the fee
     const expParentBalDiff = paymentContract === zns.stakePayment.address
+    || paymentContract === zns.treasury.address
       ? fee
       : expectedPrice.add(fee);
 
@@ -204,12 +216,14 @@ export const validatePathRegistration = async ({
     const domainAddress = await zns.addressResolver.getAddress(domainHash);
     expect(domainAddress).to.eq(user.address);
 
-    const events = await getDomainRegisteredEvents({ zns });
+    const events = await getDomainRegisteredEvents({
+      zns,
+      registrant: user.address,
+    });
     expect(events[events.length - 1].args?.parentHash).to.eq(parentHashFound);
     expect(events[events.length - 1].args?.domainHash).to.eq(domainHash);
     expect(events[events.length - 1].args?.tokenId).to.eq(tokenId);
     expect(events[events.length - 1].args?.name).to.eq(domainLabel);
-    expect(events[events.length - 1].args?.registrant).to.eq(user.address);
     expect(events[events.length - 1].args?.resolver).to.eq(zns.addressResolver.address);
     expect(events[events.length - 1].args?.domainAddress).to.eq(user.address);
   }, Promise.resolve()
