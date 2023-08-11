@@ -48,7 +48,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         string calldata label,
         address domainAddress,
         DistributionConfig calldata distrConfig
-    ) external override {
+    ) external override returns (bytes32) {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
         require(
@@ -105,6 +105,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             //      so that it can be done for root domain also
             setDistributionConfigForDomain(subdomainHash, distrConfig);
         }
+
+        return subdomainHash;
     }
 
     function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external override {
