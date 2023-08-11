@@ -11,6 +11,8 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricing {
 
     event PriceChanged(bytes32 indexed parentHash, uint256 newPrice);
 
+    // TODO sub: do we need to add fees here ??
+    //  what is this is used with the stake payment ??
     mapping(bytes32 domainHash => uint256 price) internal prices;
 
     constructor(address _accessController, address _registry) {

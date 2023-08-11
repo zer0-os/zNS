@@ -124,8 +124,6 @@ export const registrationWithSetup = async ({
       domainHash,
       fullConfig.priceConfig as IASPriceConfig,
     );
-  } else {
-    throw new Error("Wrong pricing contract in argument");
   }
 
   // set up payment
@@ -139,8 +137,6 @@ export const registrationWithSetup = async ({
       domainHash,
       fullConfig.paymentConfig,
     );
-  } else {
-    throw new Error("Wrong payment contract in argument");
   }
 
   return domainHash;
