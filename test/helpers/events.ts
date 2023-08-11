@@ -55,11 +55,13 @@ export const getDomainRegisteredEvents = async ({
   domainHash = null,
   tokenId = null,
   registrant = null,
+  blockRange = 50,
 } : {
   zns : ZNSContracts;
   domainHash ?: string | null;
   tokenId ?: BigNumber | null;
   registrant ?: string | null;
+  blockRange ?: number;
 }) : Promise<Array<Event>> => {
   const latestBlock = await time.latestBlock();
   const filter = zns.registrar.filters.DomainRegistered(
@@ -70,7 +72,7 @@ export const getDomainRegisteredEvents = async ({
     registrant
   );
 
-  return zns.registrar.queryFilter(filter, latestBlock - 10, latestBlock);
+  return zns.registrar.queryFilter(filter, latestBlock - blockRange, latestBlock);
 };
 
 export const getDomainHashFromEvent = async ({
