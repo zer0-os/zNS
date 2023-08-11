@@ -20,7 +20,7 @@ import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 
 
-describe.only("ZNSSubdomainRegistrar", () => {
+describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
