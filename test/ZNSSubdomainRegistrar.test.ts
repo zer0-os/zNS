@@ -400,25 +400,17 @@ describe("ZNSSubdomainRegistrar", () => {
     // what do we do here ?? this needs a separate PR that will go deep into this and finds a solution
     it("should properly register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
-      const lvl2Hash = regResults[1].domainHash;
-
-      const childExists = await zns.registry.exists(lvl2Hash);
-      assert.ok(childExists);
 
       // revoke parent
       await zns.registrar.connect(rootOwner).revokeDomain(
         lvl1Hash
       );
 
-      const childExistsAfter = await zns.registry.exists(lvl2Hash);
-      assert.ok(childExistsAfter);
-
       const newConfig = [
         {
           user: branchLvl1Owner,
-          domainLabel: "lvlthreenewnew",
+          domainLabel: "lvltwonewnew",
           parentHash: lvl1Hash,
-          isRootDomain: false,
           fullConfig: {
             distrConfig: {
               pricingContract: zns.fixedPricing.address,
@@ -447,27 +439,23 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     it("should properly register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
-      const lvl1Hash = regResults[0].domainHash;
-      const lvl2Hash = regResults[1].domainHash;
       const lvl3Hash = regResults[2].domainHash;
-
-      const childExists = await zns.registry.exists(lvl3Hash);
-      assert.ok(childExists);
+      const lvl4Hash = regResults[3].domainHash;
 
       // revoke parent
-      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
-        lvl1Hash,
-        lvl2Hash,
+      await zns.subdomainRegistrar.connect(lvl4SubOwner).revokeSubdomain(
+        lvl3Hash,
+        lvl4Hash,
       );
 
-      const childExistsAfter = await zns.registry.exists(lvl3Hash);
-      assert.ok(childExistsAfter);
+      const exists = await zns.registry.exists(lvl4Hash);
+      assert.ok(!exists);
 
       const newConfigs = [
         {
           user: branchLvl2Owner,
-          domainLabel: "lvlthreenewnewnew",
-          parentHash: lvl2Hash,
+          domainLabel: "lvlfivenewnewnew",
+          parentHash: lvl4Hash,
           fullConfig: {
             distrConfig: {
               pricingContract: zns.fixedPricing.address,
