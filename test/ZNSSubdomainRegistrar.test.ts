@@ -291,6 +291,7 @@ describe("ZNSSubdomainRegistrar", () => {
         {
           user: branchLvl1Owner,
           domainLabel: "lvlthreenew",
+          parentHash: regResults[2].domainHash,
           fullConfig: {
             distrConfig: {
               pricingContract: zns.fixedPricing.address,
@@ -610,6 +611,12 @@ describe("ZNSSubdomainRegistrar", () => {
       const tokenId = BigNumber.from(hash).toString();
       const tokenOwner = await zns.domainToken.ownerOf(tokenId);
       expect(tokenOwner).to.eq(lvl2SubOwner.address);
+
+      // revert back to OPEN
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
+        regResults[1].domainHash,
+        AccessType.OPEN,
+      );
     });
 
     it("should NOT allow others to register a domain when parent's accessType is LOCKED", async () => {
@@ -627,7 +634,6 @@ describe("ZNSSubdomainRegistrar", () => {
           },
         ],
       });
-
 
       // try to register child
       await expect(
