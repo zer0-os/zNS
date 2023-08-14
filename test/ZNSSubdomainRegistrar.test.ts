@@ -6,7 +6,7 @@ import {
   distrConfigEmpty,
   fullDistrConfigEmpty, getAccessRevertMsg,
   getPriceObject,
-  INVALID_TOKENID_ERC_ERR,
+  INVALID_TOKENID_ERC_ERR, NOT_BOTH_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   priceConfigDefault,
 } from "./helpers";
@@ -33,6 +33,7 @@ describe("ZNSSubdomainRegistrar", () => {
   let branchLvl1Owner : SignerWithAddress;
   let branchLvl2Owner : SignerWithAddress;
   let random : SignerWithAddress;
+  let operator : SignerWithAddress;
 
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
@@ -503,6 +504,7 @@ describe("ZNSSubdomainRegistrar", () => {
         zeroVault,
         governor,
         admin,
+        operator,
         rootOwner,
         lvl2SubOwner,
         lvl3SubOwner,
@@ -576,7 +578,41 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should NOT allow anyone to register a domain when parent's accessType is LOCKED", async () => {
+    it("should allow parent owner to register a subdomain under himself even if accessType is LOCKED", async () => {
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
+        regResults[1].domainHash,
+        AccessType.LOCKED,
+      );
+
+      const balBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      const hash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: regResults[1].domainHash,
+        domainLabel: "ownercheck",
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const balAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      // TODO sub: the diff is 0 because user pays himself now
+      //  should we do some kind of check to make sure the user is not paying anything?
+      //  otherwise the tx would be more expensive for no reason
+      expect(balAfter.sub(balBefore)).to.eq(0);
+
+      // check registry
+      const dataFromReg = await zns.registry.getDomainRecord(hash);
+      expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
+      expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+
+      // check domain token
+      const tokenId = BigNumber.from(hash).toString();
+      const tokenOwner = await zns.domainToken.ownerOf(tokenId);
+      expect(tokenOwner).to.eq(lvl2SubOwner.address);
+    });
+
+    it("should NOT allow others to register a domain when parent's accessType is LOCKED", async () => {
       // register parent with locked access
       const res = await registerDomainPath({
         zns,
@@ -726,6 +762,41 @@ describe("ZNSSubdomainRegistrar", () => {
       );
     });
 
+    it("#setWhitelistForDomain should NOT allow setting if called by non-authorized account or registrar", async () => {
+      const { domainHash } = regResults[1];
+
+      // assign operator in registry
+      // to see that he CAN do it
+      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
+        operator.address,
+        true,
+      );
+
+      // try with operator
+      await zns.subdomainRegistrar.connect(operator).setWhitelistForDomain(
+        domainHash,
+        lvl5SubOwner.address,
+        true,
+      );
+
+      const whitelisted = await zns.subdomainRegistrar.distributionWhitelist(
+        domainHash,
+        lvl5SubOwner.address
+      );
+      assert.ok(whitelisted, "User did NOT get whitelisted, but should've");
+
+      // try with non-authorized
+      await expect(
+        zns.subdomainRegistrar.connect(lvl5SubOwner).setWhitelistForDomain(
+          domainHash,
+          lvl5SubOwner.address,
+          true,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not authorized"
+      );
+    });
+
     it("should switch accessType for existing parent domain", async () => {
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
         regResults[1].domainHash,
@@ -774,6 +845,35 @@ describe("ZNSSubdomainRegistrar", () => {
       // check registry
       const dataFromReg = await zns.registry.getDomainRecord(hash);
       expect(dataFromReg.owner).to.eq(lvl5SubOwner.address);
+
+      // switch back to open
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
+        regResults[1].domainHash,
+        AccessType.OPEN
+      );
+    });
+
+    // eslint-disable-next-line max-len
+    it("should NOT allow to register subdomains under the parent that hasn't set up his distribution config", async () => {
+      const parentHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: regResults[1].domainHash,
+        domainLabel: "parentnoconfig",
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty, // accessType is 0 when supplying empty config
+      });
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl4SubOwner).registerSubdomain(
+          parentHash,
+          "notallowed",
+          ethers.constants.AddressZero,
+          distrConfigEmpty
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
+      );
     });
   });
 
@@ -788,6 +888,7 @@ describe("ZNSSubdomainRegistrar", () => {
         zeroVault,
         governor,
         admin,
+        operator,
         rootOwner,
         lvl2SubOwner,
         lvl3SubOwner,
@@ -861,6 +962,67 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
+    it("should NOT allow to register an existing subdomain that has not been revoked", async () => {
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          regResults[0].domainHash,
+          domainConfigs[1].domainLabel,
+          lvl2SubOwner.address,
+          domainConfigs[1].fullConfig.distrConfig
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Subdomain already exists"
+      );
+    });
+
+    it("should NOT allow revoking when the caller is NOT an owner of both Name and Token", async () => {
+      // change owner of the domain
+      await zns.registry.connect(lvl2SubOwner).updateDomainOwner(
+        regResults[1].domainHash,
+        rootOwner.address
+      );
+
+      // fail
+      await expect(
+        zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+          regResults[0].domainHash,
+          regResults[1].domainHash,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
+      );
+
+      // change owner back
+      await zns.registry.connect(rootOwner).updateDomainOwner(
+        regResults[1].domainHash,
+        lvl2SubOwner.address
+      );
+
+      // tranfer token
+      await zns.domainToken.connect(lvl2SubOwner).transferFrom(
+        lvl2SubOwner.address,
+        lvl3SubOwner.address,
+        regResults[1].domainHash
+      );
+
+      // fail again
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+          regResults[0].domainHash,
+          regResults[1].domainHash,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
+      );
+
+      // give token back
+      await zns.domainToken.connect(lvl3SubOwner).transferFrom(
+        lvl3SubOwner.address,
+        lvl2SubOwner.address,
+        regResults[1].domainHash
+      );
+    });
+
     it("should allow to UPDATE domain data for subdomain", async () => {
       const dataFromReg = await zns.registry.getDomainRecord(regResults[1].domainHash);
       expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
@@ -910,10 +1072,46 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(distrConfigAfter.paymentContract).to.eq(newConfig.paymentContract);
       expect(distrConfigAfter.accessType).to.eq(newConfig.accessType);
 
+      // assign operator in registry
+      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
+        operator.address,
+        true,
+      );
+
       // reset it back
-      await zns.subdomainRegistrar.connect(lvl2SubOwner).setDistributionConfigForDomain(
+      await zns.subdomainRegistrar.connect(operator).setDistributionConfigForDomain(
         domainHash,
         domainConfigs[1].fullConfig.distrConfig,
+      );
+      const origConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(origConfigAfter.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
+      expect(origConfigAfter.paymentContract).to.eq(domainConfigs[1].fullConfig.distrConfig.paymentContract);
+      expect(origConfigAfter.accessType).to.eq(domainConfigs[1].fullConfig.distrConfig.accessType);
+
+      // remove operator
+      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
+        operator.address,
+        false,
+      );
+    });
+
+    // eslint-disable-next-line max-len
+    it("#setDistributionConfigForDomain() should NOT allow to set distribution config for a non-authorized account", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      const newConfig = {
+        pricingContract: zns.asPricing.address,
+        paymentContract: zns.stakePayment.address,
+        accessType: AccessType.WHITELIST,
+      };
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
+          domainHash,
+          newConfig,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not authorized"
       );
     });
 
@@ -938,6 +1136,32 @@ describe("ZNSSubdomainRegistrar", () => {
       );
     });
 
+    it("#setPricingContractForDomain() should NOT allow setting for non-authorized account", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl3SubOwner).setPricingContractForDomain(
+          domainHash,
+          zns.asPricing.address,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not authorized"
+      );
+    });
+
+    it("#setPricingContractForDomain() should NOT set pricingContract to 0x0 address", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).setPricingContractForDomain(
+          domainHash,
+          ethers.constants.AddressZero,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
+      );
+    });
+
     it("#setPaymentContractForDomain() should re-set payment contract for an existing subdomain", async () => {
       const domainHash = regResults[1].domainHash;
 
@@ -956,6 +1180,32 @@ describe("ZNSSubdomainRegistrar", () => {
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentContractForDomain(
         domainHash,
         domainConfigs[1].fullConfig.distrConfig.paymentContract,
+      );
+    });
+
+    it("#setPaymentContractForDomain() should NOT allow setting for non-authorized account", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentContractForDomain(
+          domainHash,
+          zns.stakePayment.address,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not authorized"
+      );
+    });
+
+    it("#setPaymentContractForDomain() should NOT set paymentContract to 0x0 address", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentContractForDomain(
+          domainHash,
+          ethers.constants.AddressZero,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: paymentContract can not be 0x0 address"
       );
     });
 
@@ -1029,11 +1279,19 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(await zns.subdomainRegistrar.rootRegistrar()).to.equal(random.address);
     });
 
-    it("#setRootRegistrar() should not be callable by anyone other than ADMIN_ROLE", async () => {
+    it("#setRootRegistrar() should NOT be callable by anyone other than ADMIN_ROLE", async () => {
       await expect(
         zns.subdomainRegistrar.connect(random).setRootRegistrar(random.address),
       ).to.be.revertedWith(
         getAccessRevertMsg(random.address, ADMIN_ROLE),
+      );
+    });
+
+    it("#setRootRegistrar should NOT set registrar as 0x0 address", async () => {
+      await expect(
+        zns.subdomainRegistrar.connect(admin).setRootRegistrar(ethers.constants.AddressZero),
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: _registrar can not be 0x0 address",
       );
     });
 
