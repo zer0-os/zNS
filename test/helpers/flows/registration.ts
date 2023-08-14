@@ -4,7 +4,7 @@ import { BigNumber, ethers } from "ethers";
 import { getPriceObject } from "../pricing";
 import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
-import { IERC20__factory, ZNSAsymptoticPricing } from "../../../typechain";
+import { IERC20__factory } from "../../../typechain";
 
 
 // TODO sub: make these messy helpers better or no one will be able to maintain this
@@ -31,30 +31,19 @@ export const registerDomainPath = async ({
 
     const isRootDomain = parentHash === ethers.constants.HashZero;
 
-    // determine the price based on the pricing contract in the config
     // and get the necessary contracts based on parent config
-    let totalPrice;
-    let price = BigNumber.from(0);
-    let fee = BigNumber.from(0);
     let paymentTokenContract;
     let paymentContract;
-    let pricingContract;
     let beneficiary;
 
     if (isRootDomain) {
-      ({ totalPrice } = await zns.priceOracle.getPrice(config.domainLabel));
       paymentTokenContract = zns.zeroToken;
-      paymentContract = zns.treasury;
       beneficiary = zns.zeroVaultAddress;
     } else {
       // grab all the important contracts of the parent
       const {
-        pricingContract: pricingContractAddress,
         paymentContract: paymentContractAddress,
       } = await zns.subdomainRegistrar.distrConfigs(parentHash);
-      pricingContract = pricingContractAddress === zns.fixedPricing.address
-        ? zns.fixedPricing
-        : zns.asPricing;
       paymentContract = paymentContractAddress === zns.directPayment.address
         ? zns.directPayment
         : zns.stakePayment;
@@ -69,18 +58,7 @@ export const registerDomainPath = async ({
         const ierc20 = IERC20__factory.connect(paymentTokenAddress, config.user);
         paymentTokenContract = ierc20.attach(paymentTokenAddress);
       }
-
-      if (await pricingContract.feeEnforced()) {
-        pricingContract = pricingContract as ZNSAsymptoticPricing;
-        ({ price, fee } = await pricingContract.getPriceAndFee(parentHash, config.domainLabel));
-        totalPrice = price.add(fee);
-      } else {
-        totalPrice = await pricingContract.getPrice(parentHash, config.domainLabel);
-      }
     }
-
-    // approve the payment amount (price) set by the parent
-    await paymentTokenContract.connect(config.user).approve(paymentContract.address, totalPrice);
 
     const parentBalanceBefore = await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceBefore = await paymentTokenContract.balanceOf(config.user.address);

@@ -27,6 +27,31 @@ export const defaultRootRegistration = async ({
   return tx.wait();
 };
 
+export const approveForParent = async ({
+  zns,
+  parentHash,
+  user,
+  domainLabel,
+} : {
+  zns : ZNSContracts;
+  parentHash : string;
+  user : SignerWithAddress;
+  domainLabel : string;
+}) => {
+  const { pricingContract, paymentContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  let price = BigNumber.from(0);
+  let fee = BigNumber.from(0);
+  if (pricingContract === zns.asPricing.address) {
+    [price, fee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
+  } else if (pricingContract === zns.fixedPricing.address) {
+    price = await zns.fixedPricing.getPrice(parentHash, domainLabel);
+  }
+
+  const toApprove = price.add(fee);
+  // TODO sub: add support for any kind of token
+  await zns.zeroToken.connect(user).approve(paymentContract, toApprove);
+};
+
 /**
  * Create multiple functions:
  * 1. register a subdomain
@@ -91,6 +116,13 @@ export const registrationWithSetup = async ({
     });
   } else {
     assert.ok(parentHash, "Parent hash must be provided for subdomain registration");
+
+    await approveForParent({
+      zns,
+      parentHash,
+      user,
+      domainLabel,
+    });
 
     await defaultSubdomainRegistration({
       user,
