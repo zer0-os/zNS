@@ -68,7 +68,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
         require(
             !registry.exists(subdomainHash),
-            "ZNSSubdomainRegistrar: Domain already exists"
+            "ZNSSubdomainRegistrar: Subdomain already exists"
         );
 
         uint256 price;
@@ -113,7 +113,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
             rootRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
-            "ZNSSubdomainRegistrar: Not the owner of both Token and Name"
+            "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
         rootRegistrar.coreRevoke(domainHash);
