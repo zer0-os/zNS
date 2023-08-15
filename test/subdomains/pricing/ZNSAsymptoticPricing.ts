@@ -820,7 +820,7 @@ describe("ZNSAsymptoticPricing", () => {
       );
     });
 
-    it("should result in price for any length be 0", async () => {
+    it("should result in price for any length to be 0", async () => {
       const { maxPrice } = await zns.asPricing.priceConfigs(domainHash);
       expect(maxPrice).to.eq(priceConfigDefault.maxPrice);
       expect(maxPrice).to.not.eq(0);
@@ -845,27 +845,6 @@ describe("ZNSAsymptoticPricing", () => {
         }, Promise.resolve()
       );
     });
-  });
-
-  // eslint-disable-next-line max-len
-  it("#revokePrice() should only be callable by REGISTRAR_ROLE, make price 0 and fire #PriceRevoked event", async () => {
-    const priceBefore = await zns.fixedPricing.getPrice(domainHash, "testname");
-    expect(priceBefore).to.equal(parentPrice);
-
-    await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
-
-    const tx = await zns.fixedPricing.connect(mockRegistrar).revokePrice(domainHash);
-    // check event
-    await expect(tx).to.emit(zns.fixedPricing, "PriceRevoked").withArgs(domainHash);
-
-    const priceAfter = await zns.fixedPricing.getPrice(domainHash, "testname");
-    expect(priceAfter).to.equal(0);
-
-    await expect(
-      zns.fixedPricing.connect(user).revokePrice(domainHash)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(user.address, REGISTRAR_ROLE)
-    );
   });
 
   describe("Events", () => {
