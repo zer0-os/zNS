@@ -6,7 +6,7 @@ import {
   distrConfigEmpty,
   fullDistrConfigEmpty, getAccessRevertMsg,
   getPriceObject,
-  INVALID_TOKENID_ERC_ERR, NOT_BOTH_OWNER_RAR_ERR,
+  INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   priceConfigDefault,
 } from "./helpers";
