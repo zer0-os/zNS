@@ -495,6 +495,12 @@ describe("ZNSSubdomainRegistrar", () => {
         domainConfigs: newConfigs,
       });
 
+      // make sure that sub user did not pay anything
+      // since parent has been revoked
+      expect(
+        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
+      ).to.eq(0);
+
       await validatePathRegistration({
         zns,
         domainConfigs: newConfigs,
