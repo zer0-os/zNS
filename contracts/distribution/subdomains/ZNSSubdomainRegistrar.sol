@@ -17,7 +17,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
-    mapping(bytes32 domainHash => DistributionConfig) public distrConfigs;
+    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
     mapping(bytes32 domainHash =>
         mapping(address registrant => bool allowed)
@@ -114,13 +114,12 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        rootRegistrar.coreRevoke(domainHash);
+        DistributionConfig memory config = distrConfigs[domainHash];
 
-        // TODO sub: do we store these as addresses or interfaces in the struct ??
-        address paymentContract = address(distrConfigs[parentHash].paymentContract);
+        rootRegistrar.coreRevoke(domainHash, config.pricingContract);
 
-        if (AZNSPayment(paymentContract).refundsOnRevoke()) {
-            AZNSRefundablePayment(paymentContract).refund(
+        if (AZNSPayment(address(config.paymentContract)).refundsOnRevoke()) {
+            AZNSRefundablePayment(address(config.paymentContract)).refund(
                 parentHash,
                 domainHash,
                 msg.sender
@@ -214,6 +213,18 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar = IZNSRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
+        return distrConfigs[domainHash].pricingContract;
+    }
+
+    function getPaymentContractForDomain(bytes32 domainHash) external view returns (AZNSPayment) {
+        return distrConfigs[domainHash].paymentContract;
+    }
+
+    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType) {
+        return distrConfigs[domainHash].accessType;
     }
 
     function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {

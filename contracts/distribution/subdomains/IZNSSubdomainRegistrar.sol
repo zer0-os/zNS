@@ -57,6 +57,12 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 
     function setRootRegistrar(address registrar_) external;
 
+    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing);
+
+    function getPaymentContractForDomain(bytes32 domainHash) external view returns (AZNSPayment);
+
+    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType);
+
     function getAccessController() external view returns (address);
 
     function setAccessController(address accessController_) external;
