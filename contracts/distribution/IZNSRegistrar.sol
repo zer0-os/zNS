@@ -2,6 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
+import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 
 
 interface IZNSRegistrar is IDistributionConfig {
@@ -91,7 +92,7 @@ interface IZNSRegistrar is IDistributionConfig {
         address domainAddress
     ) external;
 
-    function coreRevoke(bytes32 domainHash) external;
+    function coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) external;
 
     function revokeDomain(bytes32 domainHash) external;
 

@@ -10,6 +10,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 
 
 /**
@@ -190,18 +191,22 @@ contract ZNSRegistrar is
             isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
             "ZNSRegistrar: Not the owner of both Name and Token"
         );
-        _coreRevoke(domainHash);
+
+        AZNSPricing pricingContract = subdomainRegistrar.getPricingContractForDomain(domainHash);
+        _coreRevoke(domainHash, pricingContract);
+
         treasury.unstakeForDomain(domainHash, msg.sender);
     }
 
-    function coreRevoke(bytes32 domainHash) external override onlyRegistrar {
-        _coreRevoke(domainHash);
+    function coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) external override onlyRegistrar {
+        _coreRevoke(domainHash, pricingContract);
     }
 
-    function _coreRevoke(bytes32 domainHash) internal {
+    function _coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);
+        pricingContract.revokePrice(domainHash);
 
         emit DomainRevoked(domainHash, msg.sender);
     }
