@@ -38,7 +38,7 @@ describe("ZNSSubdomainRegistrar", () => {
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
 
-  describe("6 level path (5 subdomains) with all possible configs", () => {
+  describe("Operations within domain paths", () => {
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
 
@@ -385,6 +385,9 @@ describe("ZNSSubdomainRegistrar", () => {
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
 
+      const stakedAfterRevoke = await zns.stakePayment.stakedForDomain(lvl3Hash);
+      expect(stakedAfterRevoke).to.eq(0);
+
       const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
@@ -440,6 +443,12 @@ describe("ZNSSubdomainRegistrar", () => {
         zns,
         domainConfigs: newConfig,
       });
+
+      // make sure that sub user did not pay anything
+      // since parent has been revoked
+      expect(
+        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
+      ).to.eq(0);
 
       await validatePathRegistration({
         zns,
