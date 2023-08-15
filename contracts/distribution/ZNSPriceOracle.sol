@@ -107,7 +107,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @notice Sets the max price for domains. Validates the config with the new price.
      * Fires `MaxPriceSet` event.
      * Only ADMIN can call this function.
-     * > `maxPrice` can be set to 0 to make all domains free!
+     * > `maxPrice` can be set to 0 along with `baseLength` or `minPrice` to make all domains free!
      * @param maxPrice The maximum price to set in $ZERO
      */
     function setMaxPrice(

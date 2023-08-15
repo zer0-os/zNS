@@ -78,6 +78,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         // during a promo without a stake
         // see `processPayment()` to see that setting stakingToken to 0x0 address
         // means free domains
+        // TODO sub: test this case !!
         if (stakedAmount == 0) return;
 
         delete stakedForDomain[domainHash];
