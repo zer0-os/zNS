@@ -70,17 +70,23 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
         return price * priceConfigs[parentHash].feePercentage / PERCENTAGE_BASIS;
     }
 
+    function revokePrice(bytes32 domainHash) external override onlyRegistrar {
+        priceConfigs[domainHash].maxPrice = 0;
+        priceConfigs[domainHash].minPrice = 0;
+        emit PriceRevoked(domainHash);
+    }
+
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig
     // TODO sub: do we need a modifier here since it checks in the function inside ??
-    ) external onlyOwnerOrOperator(domainHash) {
+    ) external {
+        setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
         priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
-        setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
 
         _validateConfig(domainHash);
 

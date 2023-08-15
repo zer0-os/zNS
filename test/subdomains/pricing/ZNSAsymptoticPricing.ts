@@ -22,6 +22,7 @@ import { registrationWithSetup } from "../../helpers/register-setup";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
+// TODO sub: add PriceRevoked event tests !
 describe("ZNSAsymptoticPricing", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
