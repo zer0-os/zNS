@@ -108,8 +108,6 @@ export const validatePathRegistration = async ({
     let expectedPrice : BigNumber;
     let fee = BigNumber.from(0);
 
-    // TODO sub: fix this since it doesn't support partial paths
-    //  under existing domains
     // calc only needed for asymptotic pricing, otherwise it is fixed
     let parentHashFound = parentHash;
     if (!parentHashFound) {

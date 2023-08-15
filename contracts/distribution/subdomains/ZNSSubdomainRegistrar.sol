@@ -101,8 +101,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
         if (address(distrConfig.pricingContract) != address(0)
             && address(distrConfig.paymentContract) != address(0)) {
-            // TODO sub: what is the best way to do this ??
-            //      so that it can be done for root domain also
             setDistributionConfigForDomain(subdomainHash, distrConfig);
         }
 
