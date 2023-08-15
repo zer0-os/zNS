@@ -13,6 +13,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 
+// TODO sub: add PriceRevoked event tests !
 describe("ZNSFixedPricing", () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
