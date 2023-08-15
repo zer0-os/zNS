@@ -2,7 +2,9 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  deployZNS, distrConfigEmpty,
+  AccessType,
+  deployZNS,
+  distrConfigEmpty,
   hashDomainLabel,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
@@ -15,12 +17,12 @@ import {
 } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
+import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
-import { BigNumber } from "ethers";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
@@ -96,14 +98,53 @@ describe("ZNSRegistrar", () => {
       ).to.be.revertedWith("ZNSRegistrar: Domain Name not provided");
     });
 
-    it("Successfully registers a domain without a resolver or resolver content", async () => {
-      const tx = zns.registrar.connect(user).registerDomain(
+    // eslint-disable-next-line max-len
+    it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
+      const tx = await zns.registrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
       );
 
-      await expect(tx).to.not.be.reverted;
+      const hashFromTS = hashDomainLabel(defaultDomain);
+
+      await expect(tx).to.emit(zns.registrar, "DomainRegistered").withArgs(
+        ethers.constants.HashZero,
+        hashFromTS,
+        BigNumber.from(hashFromTS),
+        defaultDomain,
+        user.address,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+      );
+    });
+
+    it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
+      const distrConfig = {
+        pricingContract: zns.fixedPricing.address,
+        paymentContract: zns.directPayment.address,
+        accessType: AccessType.OPEN,
+      };
+
+      const tx = await zns.registrar.connect(user).registerDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        distrConfig
+      );
+
+      const receipt = await tx.wait(0);
+
+      const domainHash = await getDomainHashFromReceipt(receipt);
+
+      const {
+        pricingContract,
+        paymentContract,
+        accessType,
+      } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+
+      expect(pricingContract).to.eq(distrConfig.pricingContract);
+      expect(paymentContract).to.eq(distrConfig.paymentContract);
+      expect(accessType).to.eq(distrConfig.accessType);
     });
 
     it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
@@ -235,6 +276,7 @@ describe("ZNSRegistrar", () => {
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
+      expect(domainHash).to.eq(hashDomainLabel(defaultDomain));
     });
 
     it("Creates and finds the correct tokenId", async () => {
@@ -413,13 +455,28 @@ describe("ZNSRegistrar", () => {
 
   describe("Revoking Domains", () => {
     it("Revokes a Top level Domain - Happy Path", async () => {
-    // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user, zns, domainName: defaultDomain });
-      const parentDomainHash = await getDomainHashFromReceipt(topLevelTx);
+      // Register Top level
+      const topLevelTx = await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+        distrConfig: {
+          pricingContract: zns.fixedPricing.address,
+          paymentContract: zns.directPayment.address,
+          accessType: AccessType.OPEN,
+        },
+      });
+
+      const domainHash = await getDomainHashFromReceipt(topLevelTx);
+
+      const ogPrice = BigNumber.from(135);
+      await zns.fixedPricing.connect(user).setPrice(domainHash, ogPrice);
+      expect(await zns.fixedPricing.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
+
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
       // Revoke the domain and then verify
-      await zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      const tx = await zns.registrar.connect(user).revokeDomain(domainHash);
 
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
@@ -428,8 +485,13 @@ describe("ZNSRegistrar", () => {
       );
 
       // Verify Domain Record Deleted
-      const exists = await zns.registry.exists(parentDomainHash);
+      const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.false;
+
+      // validate price has been reset
+      expect(
+        await zns.fixedPricing.getPrice(domainHash, defaultDomain)
+      ).to.eq(ethers.constants.Zero);
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {
