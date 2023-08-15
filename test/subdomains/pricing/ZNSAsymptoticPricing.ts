@@ -10,7 +10,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
-  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE,
 } from "../../helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "../../helpers/constants";
 import {
@@ -22,12 +22,12 @@ import { registrationWithSetup } from "../../helpers/register-setup";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-// TODO sub: add PriceRevoked event tests !
 describe("ZNSAsymptoticPricing", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
 
   let zns : ZNSContracts;
   let domainHash : string;
@@ -40,6 +40,7 @@ describe("ZNSAsymptoticPricing", () => {
       user,
       admin,
       randomAcc,
+      mockRegistrar,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS({
@@ -786,6 +787,85 @@ describe("ZNSAsymptoticPricing", () => {
         getAccessRevertMsg(user.address, ADMIN_ROLE)
       );
     });
+  });
+
+  describe("#revokePrice", () => {
+    it("should set maxPrice and minPrice to 0 if called by REGISTRAR_ROLE and fire a #PriceRevoked", async () => {
+      const {
+        maxPrice: maxPriceBefore,
+        minPrice: minPriceBefore,
+      } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPriceBefore).to.eq(priceConfigDefault.maxPrice);
+      expect(minPriceBefore).to.eq(priceConfigDefault.minPrice);
+
+      await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+      const tx = await zns.asPricing.connect(mockRegistrar).revokePrice(domainHash);
+      // check event
+      await expect(tx).to.emit(zns.asPricing, "PriceRevoked").withArgs(domainHash);
+
+      const {
+        maxPrice: maxPriceAfter,
+        minPrice: minPriceAfter,
+      } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPriceAfter).to.eq(0);
+      expect(minPriceAfter).to.eq(0);
+    });
+
+    it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
+      await expect(
+        zns.asPricing.connect(user).revokePrice(domainHash)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(user.address, REGISTRAR_ROLE)
+      );
+    });
+
+    it("should result in price for any length be 0", async () => {
+      const { maxPrice } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPrice).to.eq(priceConfigDefault.maxPrice);
+      expect(maxPrice).to.not.eq(0);
+
+      await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+      await zns.asPricing.connect(mockRegistrar).revokePrice(domainHash);
+
+      const labels = [
+        "a",
+        "abc",
+        "abcdefghijklmnop",
+        "abcdefghijklmnopqrstuvwxyzalksjdlakssdaasdasljkdbasldkuwgljkabclaksjdgawuet",
+      ];
+
+      await labels.reduce(
+        async (acc, label) => {
+          await acc;
+          expect(
+            await zns.asPricing.getPrice(domainHash, label)
+          ).to.eq(0);
+        }, Promise.resolve()
+      );
+    });
+  });
+
+  // eslint-disable-next-line max-len
+  it("#revokePrice() should only be callable by REGISTRAR_ROLE, make price 0 and fire #PriceRevoked event", async () => {
+    const priceBefore = await zns.fixedPricing.getPrice(domainHash, "testname");
+    expect(priceBefore).to.equal(parentPrice);
+
+    await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+    const tx = await zns.fixedPricing.connect(mockRegistrar).revokePrice(domainHash);
+    // check event
+    await expect(tx).to.emit(zns.fixedPricing, "PriceRevoked").withArgs(domainHash);
+
+    const priceAfter = await zns.fixedPricing.getPrice(domainHash, "testname");
+    expect(priceAfter).to.equal(0);
+
+    await expect(
+      zns.fixedPricing.connect(user).revokePrice(domainHash)
+    ).to.be.revertedWith(
+      getAccessRevertMsg(user.address, REGISTRAR_ROLE)
+    );
   });
 
   describe("Events", () => {
