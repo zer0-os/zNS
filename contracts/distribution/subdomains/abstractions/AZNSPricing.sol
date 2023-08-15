@@ -4,8 +4,8 @@ pragma solidity ^0.8.18;
 
 // TODO sub: abstract or interface?
 abstract contract AZNSPricing {
-    // TODO sub: do we leave only return of the price
-    //  or do we leave fee values here as well?
+    event PriceRevoked(bytes32 indexed parentHash);
+
     function getPrice(
         bytes32 parentHash,
         string calldata label
@@ -14,4 +14,6 @@ abstract contract AZNSPricing {
     function feeEnforced() external pure virtual returns (bool) {
         return false;
     }
+
+    function revokePrice(bytes32 domainHash) external virtual;
 }
