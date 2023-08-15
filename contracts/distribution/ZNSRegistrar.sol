@@ -206,7 +206,10 @@ contract ZNSRegistrar is
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);
-        pricingContract.revokePrice(domainHash);
+
+        if (address(pricingContract) != address(0)) {
+            pricingContract.revokePrice(domainHash);
+        }
 
         emit DomainRevoked(domainHash, msg.sender);
     }
