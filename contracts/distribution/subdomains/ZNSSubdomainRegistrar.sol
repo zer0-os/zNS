@@ -114,12 +114,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        DistributionConfig memory config = distrConfigs[domainHash];
+        rootRegistrar.coreRevoke(domainHash, distrConfigs[domainHash].pricingContract);
 
-        rootRegistrar.coreRevoke(domainHash, config.pricingContract);
-
-        if (AZNSPayment(address(config.paymentContract)).refundsOnRevoke()) {
-            AZNSRefundablePayment(address(config.paymentContract)).refund(
+        address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
+        // TODO sub: is this the correct usage of abstracts here?
+        //  need to make sure that we get proper reply from the overriden
+        //  function here and not the default "false" that comes from AZNSPayment
+        if (AZNSPayment(parentPaymentContract).refundsOnRevoke()) {
+            AZNSRefundablePayment(parentPaymentContract).refund(
                 parentHash,
                 domainHash,
                 msg.sender
