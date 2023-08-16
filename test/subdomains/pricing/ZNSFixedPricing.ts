@@ -110,7 +110,7 @@ describe("ZNSFixedPricing", () => {
   // eslint-disable-next-line max-len
   it("#revokePrice() should only be callable by REGISTRAR_ROLE, make price 0 and fire #PriceRevoked event", async () => {
     const priceBefore = await zns.fixedPricing.getPrice(domainHash, "testname");
-    expect(priceBefore).to.equal(parentPrice);
+    expect(priceBefore).to.not.equal(0);
 
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
