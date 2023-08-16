@@ -24,7 +24,6 @@ interface IZNSRegistrar is IDistributionConfig {
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
      * @param registrant The address that called `ZNSRegistrar.registerDomain()`
-     * @param resolver The resolver contract address of the domain registered
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
@@ -33,7 +32,6 @@ interface IZNSRegistrar is IDistributionConfig {
         uint256 indexed tokenId,
         string name,
         address indexed registrant,
-        address resolver,
         address domainAddress
     );
 

@@ -160,7 +160,6 @@ contract ZNSRegistrar is
             tokenId,
             name,
             owner,
-            address(addressResolver),
             domainAddress
         );
     }
