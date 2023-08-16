@@ -33,7 +33,7 @@ export const paymentConfigEmpty = {
 
 export const fullDistrConfigEmpty = {
   distrConfig: distrConfigEmpty,
-  priceConfig: BigNumber.from(0),
+  priceConfig: undefined,
   paymentConfig: paymentConfigEmpty,
 };
 

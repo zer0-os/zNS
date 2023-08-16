@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IASPriceConfig, IDistributionConfig, IFullDistributionConfig, ZNSContracts } from "./types";
+import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
 import { BigNumber, ContractReceipt } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
@@ -44,7 +44,7 @@ export const approveForParent = async ({
   if (pricingContract === zns.asPricing.address) {
     [price, fee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
   } else if (pricingContract === zns.fixedPricing.address) {
-    price = await zns.fixedPricing.getPrice(parentHash, domainLabel);
+    [price, fee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
   }
 
   const toApprove = price.add(fee);
@@ -147,9 +147,9 @@ export const registrationWithSetup = async ({
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
   if (fullConfig.distrConfig.pricingContract === zns.fixedPricing.address) {
-    await zns.fixedPricing.connect(user).setPrice(
+    await zns.fixedPricing.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as BigNumber,
+      fullConfig.priceConfig as IFixedPriceConfig,
     );
   } else if (fullConfig.distrConfig.pricingContract === zns.asPricing.address) {
     await zns.asPricing.connect(user).setPriceConfig(

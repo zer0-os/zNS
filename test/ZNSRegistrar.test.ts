@@ -21,7 +21,7 @@ import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
-import { getPrice, getPriceObject } from "./helpers/pricing";
+import { calcAsymptoticPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getDomainRegisteredEvents, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
@@ -364,7 +364,7 @@ describe("ZNSRegistrar", () => {
       expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await getPrice(normalizedDomainLabel, priceConfigDefault);
+      const expectedStaked = await calcAsymptoticPrice(normalizedDomainLabel, priceConfigDefault);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });

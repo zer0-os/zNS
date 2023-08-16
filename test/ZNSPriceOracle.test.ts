@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, getPrice, precisionMultiDefault, ORACLE_PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
+import { deployZNS, calcAsymptoticPrice, precisionMultiDefault, ORACLE_PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
   ORACLE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
@@ -105,8 +105,8 @@ describe("ZNSPriceOracle", () => {
       const domainOneRefValue = BigNumber.from("4545450000000000000000");
       const domainTwoRefValue = BigNumber.from("7692300000000000000000");
 
-      const domainOneExpPrice = await getPrice(domainOne, priceConfigDefault);
-      const domainTwoExpPrice = await getPrice(domainTwo, priceConfigDefault);
+      const domainOneExpPrice = await calcAsymptoticPrice(domainOne, priceConfigDefault);
+      const domainTwoExpPrice = await calcAsymptoticPrice(domainTwo, priceConfigDefault);
 
       const { domainPrice: domainOnePriceSC } = await zns.priceOracle.getPrice(domainOne);
       const { domainPrice: domainTwoPriceSC } = await zns.priceOracle.getPrice(domainTwo);
@@ -126,7 +126,7 @@ describe("ZNSPriceOracle", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
-      const expectedPrice = await getPrice(domain, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domain, priceConfigDefault);
       const { domainPrice } = await zns.priceOracle.getPrice(domain);
 
       expect(domainPrice).to.eq(expectedPrice);
@@ -139,15 +139,15 @@ describe("ZNSPriceOracle", () => {
       const medium = "wilderworld";
       const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
 
-      const expectedShortPrice = await getPrice(short, priceConfigDefault);
+      const expectedShortPrice = await calcAsymptoticPrice(short, priceConfigDefault);
       const { domainPrice: shortPrice } = await zns.priceOracle.getPrice(short);
       expect(expectedShortPrice).to.eq(shortPrice);
 
-      const expectedMediumPrice = await getPrice(medium, priceConfigDefault);
+      const expectedMediumPrice = await calcAsymptoticPrice(medium, priceConfigDefault);
       const { domainPrice: mediumPrice } = await zns.priceOracle.getPrice(medium);
       expect(expectedMediumPrice).to.eq(mediumPrice);
 
-      const expectedLongPrice = await getPrice(long, priceConfigDefault);
+      const expectedLongPrice = await calcAsymptoticPrice(long, priceConfigDefault);
       const { domainPrice: longPrice } = await zns.priceOracle.getPrice(long);
       expect(expectedLongPrice).to.eq(longPrice);
     });
@@ -156,7 +156,7 @@ describe("ZNSPriceOracle", () => {
       const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
       const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
       const domainWithoutSpecials = "abcdef";
-      const expectedPrice = await getPrice(domainWithoutSpecials, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domainWithoutSpecials, priceConfigDefault);
       let { domainPrice } = await zns.priceOracle.getPrice(domainSpecialCharacterSet1);
       expect(domainPrice).to.eq(expectedPrice);
 
@@ -172,7 +172,7 @@ describe("ZNSPriceOracle", () => {
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
       "a";
-      const expectedPrice = await getPrice(domain, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domain, priceConfigDefault);
       const { domainPrice } = await zns.priceOracle.getPrice(domain);
       expect(domainPrice).to.eq(expectedPrice);
     });
@@ -299,7 +299,7 @@ describe("ZNSPriceOracle", () => {
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
       const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("9"));
 
-      const expectedPriceBefore = await getPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(defaultDomain);
 
       expect(expectedPriceBefore).to.eq(priceBefore);
@@ -311,7 +311,7 @@ describe("ZNSPriceOracle", () => {
         maxPrice: newMaxPrice,
       };
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(defaultDomain);
 
       expect(expectedPriceAfter).to.eq(priceAfter);
@@ -540,7 +540,7 @@ describe("ZNSPriceOracle", () => {
       const newLength = 8;
       const paramsBefore = await zns.priceOracle.rootDomainPriceConfig();
 
-      const expectedPriceBefore = await getPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.not.eq(paramsBefore.maxPrice);
@@ -554,7 +554,7 @@ describe("ZNSPriceOracle", () => {
         baseLength: BigNumber.from(newLength),
       };
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
@@ -571,7 +571,7 @@ describe("ZNSPriceOracle", () => {
 
       const paramsBefore = await zns.priceOracle.rootDomainPriceConfig();
 
-      const expectedPriceBefore = await getPrice(defaultDomain, newConfig1);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, newConfig1);
       const { domainPrice: priceBefore } = await zns.priceOracle.getPrice(defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.eq(paramsBefore.maxPrice);
@@ -586,7 +586,7 @@ describe("ZNSPriceOracle", () => {
 
       const paramsAfter = await zns.priceOracle.rootDomainPriceConfig();
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig2);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig2);
       const { domainPrice: priceAfter } = await zns.priceOracle.getPrice(defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.not.eq(paramsAfter.maxPrice);
@@ -620,7 +620,7 @@ describe("ZNSPriceOracle", () => {
         baseLength: BigNumber.from(newRootLength),
       };
 
-      const expectedRootPrice = await getPrice(defaultDomain, newConfig);
+      const expectedRootPrice = await calcAsymptoticPrice(defaultDomain, newConfig);
       const { domainPrice: rootPrice } = await zns.priceOracle.getPrice(defaultDomain);
 
       expect(rootPrice).to.eq(expectedRootPrice);
