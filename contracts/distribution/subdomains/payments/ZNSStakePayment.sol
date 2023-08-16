@@ -40,9 +40,6 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         //  will having a default of AccessType.LOCKED prevent this ?? (TEST!)
         if (address(config.paymentToken) == address(0)) return;
 
-        // TODO sub: should we add an if() here that will not do the transfer if
-        //  if the amount is 0 ??
-
         // Transfer stake amount and fee to this contract
         config.paymentToken.safeTransferFrom(
             payer,
@@ -51,7 +48,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         );
 
         if (fee != 0) {
-            // Transfer the fee to the `feeBeneficiary` from this contract
+            // Transfer the fee to the `beneficiary` from this contract
             config.paymentToken.safeTransfer(
                 config.beneficiary,
                 fee

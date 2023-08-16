@@ -74,6 +74,9 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         uint256 price;
         uint256 fee;
         // TODO sub: can we make this abstract switching better ??
+        // TODO sub: should we eliminate Pricing with not fee abstract at all??
+        //  what are the downsides of this?? We can just make fees 0 in any contract
+        //  would that make us pay more gas for txes with no fees?
         if (parentConfig.pricingContract.feeEnforced()) {
             (price, fee) = AZNSPricingWithFee(address(parentConfig.pricingContract)).getPriceAndFee(
                 parentHash,
