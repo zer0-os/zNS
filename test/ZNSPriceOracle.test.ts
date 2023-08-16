@@ -4,7 +4,13 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "./helpers/types";
-import { deployZNS, calcAsymptoticPrice, precisionMultiDefault, ORACLE_PRICE_CONFIG_ERR, validateUpgrade } from "./helpers";
+import {
+  deployZNS,
+  calcAsymptoticPrice,
+  precisionMultiDefault,
+  ORACLE_PRICE_CONFIG_ERR,
+  validateUpgrade,
+} from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
   ORACLE_NO_ZERO_PRECISION_MULTIPLIER_ERR,

@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, ZNSContracts } from "./helpers/types";
+import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
   AccessType, ADMIN_ROLE,
   deployZNS,
