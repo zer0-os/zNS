@@ -108,7 +108,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         bytes32 domainHash,
         address beneficiary
     ) public onlyOwnerOrOperator(domainHash) {
-        require(beneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
+        require(beneficiary != address(0), "ZNSStakePayment: beneficiary cannot be 0x0 address");
         paymentConfigs[domainHash].beneficiary = beneficiary;
 
         emit PaymentBeneficiaryChanged(domainHash, beneficiary);
