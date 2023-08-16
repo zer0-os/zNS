@@ -12,7 +12,7 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR,
+  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
@@ -22,7 +22,7 @@ import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
 import { getPrice, getPriceObject } from "./helpers/pricing";
-import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
+import { getDomainHashFromReceipt, getDomainRegisteredEvents, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
@@ -85,6 +85,136 @@ describe("ZNSRegistrar", () => {
     await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
   });
 
+  it("Should NOT initialize twice", async () => {
+    const tx = zns.registrar.connect(deployer).initialize(
+      zns.accessController.address,
+      randomUser.address,
+      randomUser.address,
+      randomUser.address,
+      randomUser.address,
+    );
+
+    await expect(tx).to.be.revertedWith("Initializable: contract is already initialized");
+  });
+
+  describe("General functionality", () => {
+    it("#coreRegister() should revert if called by address without REGISTRAR_ROLE", async () => {
+      const isRegistrar = await zns.accessController.hasRole(REGISTRAR_ROLE, randomUser.address);
+      expect(isRegistrar).to.be.false;
+
+      await expect(
+        zns.registrar.connect(randomUser).coreRegister(
+          ethers.constants.HashZero,
+          ethers.constants.HashZero,
+          "randomname",
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+        )
+      ).to.be.revertedWith(
+        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
+      );
+    });
+
+    it("#coreRevoke() should revert if called by address without REGISTRAR_ROLE", async () => {
+      const isRegistrar = await zns.accessController.hasRole(REGISTRAR_ROLE, randomUser.address);
+      expect(isRegistrar).to.be.false;
+
+      await expect(
+        zns.registrar.connect(randomUser).coreRevoke(
+          ethers.constants.HashZero,
+          ethers.constants.AddressZero,
+        )
+      ).to.be.revertedWith(
+        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
+      );
+    });
+
+    it("#isOwnerOf() returns correct bools", async () => {
+      const topLevelTx = await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+      });
+      const domainHash = await getDomainHashFromReceipt(topLevelTx);
+      const tokenId = BigNumber.from(domainHash);
+
+      const isOwnerOfBothUser = await zns.registrar.isOwnerOf(
+        domainHash,
+        user.address,
+        OwnerOf.BOTH
+      );
+      expect(isOwnerOfBothUser).to.be.true;
+
+      const isOwnerOfBothRandom = await zns.registrar.isOwnerOf(
+        domainHash,
+        randomUser.address,
+        OwnerOf.BOTH
+      );
+      expect(isOwnerOfBothRandom).to.be.false;
+
+      // transfer token
+      await zns.domainToken.connect(user).transferFrom(user.address, randomUser.address, tokenId);
+      const isOwnerOfTokenUser = await zns.registrar.isOwnerOf(
+        domainHash,
+        user.address,
+        OwnerOf.TOKEN
+      );
+      expect(isOwnerOfTokenUser).to.be.false;
+
+      const isOwnerOfTokenRandom = await zns.registrar.isOwnerOf(
+        domainHash,
+        randomUser.address,
+        OwnerOf.TOKEN
+      );
+      expect(isOwnerOfTokenRandom).to.be.true;
+
+      const isOwnerOfNameUser = await zns.registrar.isOwnerOf(
+        domainHash,
+        user.address,
+        OwnerOf.NAME
+      );
+      expect(isOwnerOfNameUser).to.be.true;
+
+      const isOwnerOfNameRandom = await zns.registrar.isOwnerOf(
+        domainHash,
+        randomUser.address,
+        OwnerOf.NAME
+      );
+      expect(isOwnerOfNameRandom).to.be.false;
+
+      await expect(
+        zns.registrar.isOwnerOf(domainHash, user.address, 3)
+      ).to.be.reverted;
+    });
+
+    it("#setSubdomainRegistrar() should revert if called by address without ADMIN_ROLE", async () => {
+      const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
+      expect(isAdmin).to.be.false;
+
+      await expect(
+        zns.registrar.connect(randomUser).setSubdomainRegistrar(randomUser.address)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
+      );
+    });
+
+    it("#setSubdomainRegistrar() should set the correct address", async () => {
+      await zns.registrar.connect(admin).setSubdomainRegistrar(randomUser.address);
+
+      expect(
+        await zns.registrar.subdomainRegistrar()
+      ).to.equal(randomUser.address);
+    });
+
+    it("#setSubdomainRegistrar() should NOT set the address to zero address", async () => {
+      await expect(
+        zns.registrar.connect(admin).setSubdomainRegistrar(ethers.constants.AddressZero)
+      ).to.be.revertedWith(
+        "ZNSRegistrar: subdomainRegistrar_ is 0x0 address"
+      );
+    });
+  });
+
   describe("Registers a top level domain", () => {
     it("Can NOT register a TLD with an empty name", async () => {
       const emptyName = "";
@@ -114,7 +244,6 @@ describe("ZNSRegistrar", () => {
         BigNumber.from(hashFromTS),
         defaultDomain,
         user.address,
-        ethers.constants.AddressZero,
         ethers.constants.AddressZero,
       );
     });
