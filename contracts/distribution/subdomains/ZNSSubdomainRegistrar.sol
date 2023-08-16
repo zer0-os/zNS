@@ -83,13 +83,15 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             price = parentConfig.pricingContract.getPrice(parentHash, label);
         }
 
-        parentConfig.paymentContract.processPayment(
-            parentHash,
-            subdomainHash,
-            msg.sender,
-            price,
-            fee
-        );
+        if (price + fee > 0) {
+            parentConfig.paymentContract.processPayment(
+                parentHash,
+                subdomainHash,
+                msg.sender,
+                price,
+                fee
+            );
+        }
 
         rootRegistrar.coreRegister(
             parentHash,
