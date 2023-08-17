@@ -95,10 +95,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: {
-              price: fixedPrice,
-              feePercentage: fixedFeePercentage,
-            },
+            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: rootOwner.address,
@@ -1293,8 +1290,15 @@ describe("ZNSSubdomainRegistrar", () => {
       const { domainHash: parentHash } = regResults[1];
       const domainLabel = "allowed";
 
+      const {
+        expectedPrice,
+        fee,
+      } = getPriceObject(
+        domainLabel,
+        domainConfigs[1].fullConfig.priceConfig
+      );
       // approve direct payment
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, fixedPrice);
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
 
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         parentHash,
@@ -1351,26 +1355,20 @@ describe("ZNSSubdomainRegistrar", () => {
         true,
       );
 
-      // approve direct payment
-      await zns.zeroToken.connect(lvl4SubOwner).approve(zns.directPayment.address, fixedPrice);
-
       // register child
-      await zns.subdomainRegistrar.connect(lvl4SubOwner).registerSubdomain(
-        parentHash,
-        "whitelisted",
-        ethers.constants.AddressZero,
-        distrConfigEmpty
-      );
-
-      const hash = await getDomainHashFromEvent({
+      const hash = await registrationWithSetup({
         zns,
         user: lvl4SubOwner,
+        parentHash,
+        domainLabel: "whitelisted",
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
       });
 
       // check registry
       const dataFromReg = await zns.registry.getDomainRecord(hash);
       expect(dataFromReg.owner).to.eq(lvl4SubOwner.address);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
       // check domain token
       const tokenId = BigNumber.from(hash).toString();
@@ -1474,8 +1472,18 @@ describe("ZNSSubdomainRegistrar", () => {
         true,
       );
 
+      const label = "alloweddddd";
+
       // approve
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, fixedPrice);
+      const {
+        expectedPrice,
+        fee,
+      } = getPriceObject(
+        label,
+        domainConfigs[1].fullConfig.priceConfig
+      );
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
+
       // register
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         regResults[1].domainHash,
