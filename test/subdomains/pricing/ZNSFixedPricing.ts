@@ -24,10 +24,12 @@ describe("ZNSFixedPricing", () => {
   let zns : ZNSContracts;
   let domainHash : string;
   let parentPrice : BigNumber;
+  let parentFeePercentage : BigNumber;
 
   before(async () => {
     [deployer, admin, user, zeroVault, random, mockRegistrar] = await hre.ethers.getSigners();
     parentPrice = ethers.utils.parseEther("2223");
+    parentFeePercentage = BigNumber.from(2310);
 
     zns = await deployZNS({
       deployer,
@@ -46,7 +48,10 @@ describe("ZNSFixedPricing", () => {
         paymentContract: zns.directPayment.address,
         accessType: 1,
       },
-      priceConfig: parentPrice,
+      priceConfig: {
+        price: parentPrice,
+        feePercentage: parentFeePercentage,
+      },
       paymentConfig: {
         paymentToken: zns.zeroToken.address,
         beneficiary: user.address,
@@ -79,11 +84,11 @@ describe("ZNSFixedPricing", () => {
     );
   });
 
-  it("#setPrice() should work correctly and emit #PriceChanged event", async () => {
+  it("#setPrice() should work correctly and emit #PriceSet event", async () => {
     const newPrice = ethers.utils.parseEther("1823");
     const tx = zns.fixedPricing.connect(user).setPrice(domainHash, newPrice);
 
-    await expect(tx).to.emit(zns.fixedPricing, "PriceChanged").withArgs(domainHash, newPrice);
+    await expect(tx).to.emit(zns.fixedPricing, "PriceSet").withArgs(domainHash, newPrice);
 
     expect(
       await zns.fixedPricing.getPrice(domainHash, "testname")
