@@ -27,6 +27,7 @@ export const runAllFlows = async () => {
   });
 
   const rootPrice = BigNumber.from(ethers.utils.parseEther("200"));
+  const rootFeePercentage = BigNumber.from(250);
 
   const fullRootConfig = {
     distrConfig: {
@@ -34,7 +35,10 @@ export const runAllFlows = async () => {
       paymentContract: zns.directPayment.address,
       accessType: 1,
     },
-    priceConfig: rootPrice,
+    priceConfig: {
+      price: rootPrice,
+      feePercentage: rootFeePercentage,
+    },
     paymentConfig: {
       paymentToken: zns.zeroToken.address,
       beneficiary: governor.address,
