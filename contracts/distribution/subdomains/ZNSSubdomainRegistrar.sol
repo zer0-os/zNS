@@ -126,7 +126,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        rootRegistrar.coreRevoke(domainHash, distrConfigs[domainHash].pricingContract);
+        rootRegistrar.coreRevoke(domainHash);
 
         address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
         // TODO sub: is this the correct usage of abstracts here?

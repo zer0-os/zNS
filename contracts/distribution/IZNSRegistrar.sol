@@ -90,7 +90,7 @@ interface IZNSRegistrar is IDistributionConfig {
         address domainAddress
     ) external;
 
-    function coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) external;
+    function coreRevoke(bytes32 domainHash) external;
 
     function revokeDomain(bytes32 domainHash) external;
 
