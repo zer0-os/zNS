@@ -434,6 +434,20 @@ describe("ZNSSubdomainRegistrar", () => {
       const lvl2Hash = regResults[1].domainHash;
       const parentHash = regResults[0].domainHash;
 
+      const exists = await zns.registry.exists(lvl2Hash);
+      if (!exists) {
+        const newHash = await registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash,
+          domainLabel: domainConfigs[1].domainLabel,
+          fullConfig: fullDistrConfigEmpty,
+          isRootDomain: false,
+        });
+
+        expect(newHash).to.eq(lvl2Hash);
+      }
+
       // revoke subdomain
       await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
         parentHash,
