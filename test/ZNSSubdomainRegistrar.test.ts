@@ -3,7 +3,7 @@ import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/ty
 import {
   AccessType, ADMIN_ROLE,
   deployZNS,
-  distrConfigEmpty,
+  distrConfigEmpty, DISTRIBUTION_LOCKED_ERR,
   fullDistrConfigEmpty, getAccessRevertMsg,
   getPriceObject,
   INVALID_TOKENID_ERC_ERR,
@@ -202,7 +202,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should revoke lvl 6 domain without refund", async () => {
+    it("should revoke lvl 6 domain without refund and lock registration", async () => {
       const domainHash = regResults[5].domainHash;
       const parentHash = regResults[4].domainHash;
 
@@ -217,12 +217,21 @@ describe("ZNSSubdomainRegistrar", () => {
 
       expect(userBalAfter.sub(userBalBefore)).to.eq(0);
 
-      const {
-        price: revokedPrice,
-        fee: revokedFee,
-      } = await zns.asPricing.getPriceAndFee(domainHash, "randomlabel");
-      expect(revokedPrice).to.eq(0);
-      expect(revokedFee).to.eq(0);
+      // make sure that accessType has been set to LOCKED
+      // and nobody can register a subdomain under this domain
+      const { accessType: accessTypeFromSC } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(accessTypeFromSC).to.eq(AccessType.LOCKED);
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl6SubOwner).registerSubdomain(
+          domainHash,
+          "newsubdomain",
+          lvl6SubOwner.address,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        DISTRIBUTION_LOCKED_ERR
+      );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
@@ -279,8 +288,21 @@ describe("ZNSSubdomainRegistrar", () => {
         expectedPrice
       );
 
-      const revokedPrice = await zns.fixedPricing.getPrice(domainHash, "randomlabel");
-      expect(revokedPrice).to.eq(0);
+      // make sure that accessType has been set to LOCKED
+      // and nobody can register a subdomain under this domain
+      const { accessType: accessTypeFromSC } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(accessTypeFromSC).to.eq(AccessType.LOCKED);
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl6SubOwner).registerSubdomain(
+          domainHash,
+          "newsubdomain",
+          lvl6SubOwner.address,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        DISTRIBUTION_LOCKED_ERR
+      );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
@@ -361,14 +383,6 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl2Hash,
       );
 
-      // make sure price has been revoked
-      const {
-        price: revokedPrice,
-        fee: revokedFee,
-      } = await zns.asPricing.getPriceAndFee(lvl2Hash, "randomlabel");
-      expect(revokedPrice).to.eq(0);
-      expect(revokedFee).to.eq(0);
-
       // make sure all parent's distribution configs still exist
       const parentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl2Hash);
       expect(parentDistrConfig.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
@@ -377,14 +391,17 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(parentDistrConfig.pricingContract).to.eq(zns.asPricing.address);
       expect(parentDistrConfig.paymentContract).to.eq(zns.stakePayment.address);
 
-      // check a couple of fields from price config to make sure they've been reset
+      // check a couple of fields from price config
       const priceConfig = await zns.asPricing.priceConfigs(lvl2Hash);
-      if (domainConfigs[1].fullConfig.priceConfig) {
-        expect(priceConfig.maxPrice).to.eq(0);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig!) {
+        expect(priceConfig.maxPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.maxPrice);
       }
-      if (domainConfigs[1].fullConfig.priceConfig) {
-        expect(priceConfig.minPrice).to.eq(0);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      if ("minPrice" in domainConfigs[1].fullConfig.priceConfig!) {
+        expect(priceConfig.minPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.minPrice);
       }
+
       // make sure the child's stake is still there
       const childStakedAmt = await zns.stakePayment.stakedForDomain(lvl3Hash);
       const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
@@ -487,14 +504,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    // TODO sub: is this a case we want to support ???
-    // how do we handle these cases? we do not remove pricing/payment configs when parent revokes
-    // to allow for refunds if needed. we can make paymentToken 0x0 address, making all subsequent registrations free
-    // but this will block refunding when children are revoked.
-    // if we do not make token a 0x0 address, then new subdomains will still pay the parent
-    // even though it has been revoked
-    // what do we do here ?? this needs a separate PR that will go deep into this and finds a solution
-    it("should register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
+    it("should NOT register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
 
       // revoke parent
@@ -502,45 +512,20 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl1Hash
       );
 
-      const newConfig = [
-        {
-          user: branchLvl1Owner,
-          domainLabel: "lvltwonewnew",
-          parentHash: lvl1Hash,
-          fullConfig: {
-            distrConfig: {
-              pricingContract: zns.fixedPricing.address,
-              paymentContract: zns.directPayment.address,
-              accessType: AccessType.OPEN,
-            },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
-            paymentConfig: {
-              paymentToken: zns.zeroToken.address,
-              beneficiary: branchLvl1Owner.address,
-            },
-          },
-        },
-      ];
+      const exists = await zns.registry.exists(lvl1Hash);
+      assert.ok(!exists);
 
-      const newRegResults = await registerDomainPath({
-        zns,
-        domainConfigs: newConfig,
-      });
-
-      // make sure that sub user did not pay anything
-      // since parent has been revoked
-      expect(
-        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
-      ).to.eq(0);
-
-      await validatePathRegistration({
-        zns,
-        domainConfigs: newConfig,
-        regResults: newRegResults,
-      });
+      await expect(
+        zns.subdomainRegistrar.connect(branchLvl1Owner).registerSubdomain(
+          lvl1Hash,
+          "newsubdomain",
+          branchLvl1Owner.address,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
     });
 
-    it("should register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
+    it("should NOT register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
       const lvl3Hash = regResults[2].domainHash;
       const lvl4Hash = regResults[3].domainHash;
 
@@ -553,42 +538,14 @@ describe("ZNSSubdomainRegistrar", () => {
       const exists = await zns.registry.exists(lvl4Hash);
       assert.ok(!exists);
 
-      const newConfigs = [
-        {
-          user: branchLvl2Owner,
-          domainLabel: "lvlfivenewnewnew",
-          parentHash: lvl4Hash,
-          fullConfig: {
-            distrConfig: {
-              pricingContract: zns.fixedPricing.address,
-              paymentContract: zns.directPayment.address,
-              accessType: AccessType.OPEN,
-            },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
-            paymentConfig: {
-              paymentToken: zns.zeroToken.address,
-              beneficiary: branchLvl2Owner.address,
-            },
-          },
-        },
-      ];
-
-      const newRegResults = await registerDomainPath({
-        zns,
-        domainConfigs: newConfigs,
-      });
-
-      // make sure that sub user did not pay anything
-      // since parent has been revoked
-      expect(
-        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
-      ).to.eq(0);
-
-      await validatePathRegistration({
-        zns,
-        domainConfigs: newConfigs,
-        regResults: newRegResults,
-      });
+      await expect(
+        zns.subdomainRegistrar.connect(branchLvl2Owner).registerSubdomain(
+          lvl4Hash,
+          "newsubdomain",
+          branchLvl2Owner.address,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
     });
   });
 
@@ -1356,7 +1313,7 @@ describe("ZNSSubdomainRegistrar", () => {
           distrConfigEmpty
         )
       ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
+        DISTRIBUTION_LOCKED_ERR
       );
     });
 
@@ -1530,7 +1487,7 @@ describe("ZNSSubdomainRegistrar", () => {
           distrConfigEmpty
         )
       ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
+        DISTRIBUTION_LOCKED_ERR
       );
 
       // switch to whitelist
@@ -1601,7 +1558,7 @@ describe("ZNSSubdomainRegistrar", () => {
           distrConfigEmpty
         )
       ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
+        DISTRIBUTION_LOCKED_ERR
       );
     });
   });
