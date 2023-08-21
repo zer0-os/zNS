@@ -18,6 +18,7 @@ import { registerDomainPath, validatePathRegistration } from "./helpers/flows/re
 import assert from "assert";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
 describe("ZNSSubdomainRegistrar", () => {
@@ -346,7 +347,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should properly revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
+    it("should revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
       const lvl2Hash = regResults[1].domainHash;
       const lvl3Hash = regResults[2].domainHash;
@@ -424,6 +425,68 @@ describe("ZNSSubdomainRegistrar", () => {
       ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
+    // TODO sub: add more tests here:
+    //  1. reregister a revoked domain and set your own config and distribute subs
+    //  2. after revocation NOONE can register!
+    //  3. After a new owner came in on revoked domain, people can register as usual
+    //  4. find more cases !
+    it("should let anyone register a previously revoked domain", async () => {
+      const lvl2Hash = regResults[1].domainHash;
+      const parentHash = regResults[0].domainHash;
+
+      const exists = await zns.registry.exists(lvl2Hash);
+      if (!exists) {
+        const newHash = await registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash,
+          domainLabel: domainConfigs[1].domainLabel,
+          fullConfig: fullDistrConfigEmpty,
+          isRootDomain: false,
+        });
+
+        expect(newHash).to.eq(lvl2Hash);
+      }
+
+      // revoke subdomain
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        parentHash,
+        lvl2Hash,
+      );
+
+      // someone else is taking it
+      const newConfig = [
+        {
+          user: branchLvl1Owner,
+          domainLabel: "lvltwonew",
+          parentHash,
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: AccessType.OPEN,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl1Owner.address,
+            },
+          },
+        },
+      ];
+
+      const newResult = await registerDomainPath({
+        zns,
+        domainConfigs: newConfig,
+      });
+
+      await validatePathRegistration({
+        zns,
+        domainConfigs: newConfig,
+        regResults: newResult,
+      });
+    });
+
     // TODO sub: is this a case we want to support ???
     // how do we handle these cases? we do not remove pricing/payment configs when parent revokes
     // to allow for refunds if needed. we can make paymentToken 0x0 address, making all subsequent registrations free
@@ -431,7 +494,7 @@ describe("ZNSSubdomainRegistrar", () => {
     // if we do not make token a 0x0 address, then new subdomains will still pay the parent
     // even though it has been revoked
     // what do we do here ?? this needs a separate PR that will go deep into this and finds a solution
-    it("should properly register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
+    it("should register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
 
       // revoke parent
@@ -477,7 +540,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should properly register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
+    it("should register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
       const lvl3Hash = regResults[2].domainHash;
       const lvl4Hash = regResults[3].domainHash;
 
@@ -1233,6 +1296,17 @@ describe("ZNSSubdomainRegistrar", () => {
         isRootDomain: false,
         fullConfig: fullDistrConfigEmpty,
       });
+
+      const latestBlock = await time.latestBlock();
+      // look for an event where user pays himself
+      const filter = zns.zeroToken.filters.Transfer(lvl2SubOwner.address, lvl2SubOwner.address);
+      const events = await zns.zeroToken.queryFilter(
+        filter,
+        latestBlock - 50,
+        latestBlock
+      );
+      // this means NO transfers have been executed, which is what we need
+      expect(events.length).to.eq(0);
 
       const balAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       // TODO sub: the diff is 0 because user pays himself now
