@@ -86,6 +86,9 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
                         label
                     );
             } else {
+                // TODO sub: do we even need this case ??
+                //  I don't think so. refactor and determine how this will work
+                //  change this whenever abstracts are reworked
                 price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
 
