@@ -193,6 +193,7 @@ contract ZNSRegistrar is
 
         _coreRevoke(domainHash);
 
+        subdomainRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
         treasury.unstakeForDomain(domainHash, msg.sender);
     }
 
