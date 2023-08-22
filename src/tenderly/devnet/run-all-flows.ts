@@ -84,8 +84,8 @@ export const runAllFlows = async () => {
 
   // TODO sub:
   // - original root reg: 339,104 gas
-  // - current root reg: 409,429 gas (with config set) - 339,235 gas (without config)
-  // - current sub reg: 339,377 gas
+  // - current root reg: 405,831 gas (with config set) - 339,235 gas (without config)
+  // - current sub reg: 341,144 gas (with config)
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
