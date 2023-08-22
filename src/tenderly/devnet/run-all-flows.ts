@@ -3,7 +3,8 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import {
   deployZNS,
-  hashDomainLabel, priceConfigDefault,
+  hashDomainLabel,
+  priceConfigDefault,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 

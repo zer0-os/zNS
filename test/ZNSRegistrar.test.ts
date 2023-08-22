@@ -122,7 +122,6 @@ describe("ZNSRegistrar", () => {
       await expect(
         zns.registrar.connect(randomUser).coreRevoke(
           ethers.constants.HashZero,
-          ethers.constants.AddressZero,
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
@@ -617,10 +616,9 @@ describe("ZNSRegistrar", () => {
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.false;
 
-      // validate price has been reset
-      expect(
-        await zns.fixedPricing.getPrice(domainHash, defaultDomain)
-      ).to.eq(ethers.constants.Zero);
+      // validate access type has been set to LOCKED
+      const { accessType } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(accessType).to.eq(AccessType.LOCKED);
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {
