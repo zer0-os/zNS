@@ -12,6 +12,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
     event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
     event RootRegistrarSet(address registrar);
+    event StakePaymentSet(address stakePayment);
 
     function registerSubdomain(
         bytes32 parentHash,

@@ -14,7 +14,7 @@ import {
   ZNSRegistrar,
   ZNSRegistrar__factory,
   ZNSRegistry,
-  ZNSRegistry__factory, ZNSStakePayment__factory, ZNSSubdomainRegistrar__factory,
+  ZNSRegistry__factory, ZNSStakePayment, ZNSStakePayment__factory, ZNSSubdomainRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
@@ -543,6 +543,7 @@ export const deploySubdomainRegistrar = async ({
   accessController,
   registry,
   registrar,
+  stakePayment,
   admin,
   isTenderlyRun = false,
 } : {
@@ -550,6 +551,7 @@ export const deploySubdomainRegistrar = async ({
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   registrar : ZNSRegistrar;
+  stakePayment : ZNSStakePayment;
   admin : SignerWithAddress;
   isTenderlyRun ?: boolean;
 }) => {
@@ -558,6 +560,7 @@ export const deploySubdomainRegistrar = async ({
     accessController.address,
     registry.address,
     registrar.address,
+    stakePayment.address
   );
   await subRegistrar.deployed();
 
@@ -687,6 +690,7 @@ export const deployZNS = async ({
     accessController,
     registry,
     registrar,
+    stakePayment,
     admin: deployer,
   });
 

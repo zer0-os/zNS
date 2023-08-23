@@ -10,11 +10,14 @@ import { IZNSRegistrar } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
+import { ZNSStakePayment } from "./payments/ZNSStakePayment.sol";
 
 
 contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
     // TODO sub: change name of Registrar contract
     IZNSRegistrar public rootRegistrar;
+    // TODO sub: change to Interface or abstract var !
+    ZNSStakePayment public stakePayment;
 
     // TODO sub: make better name AND for the setter function !
     mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
@@ -36,11 +39,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     constructor(
         address _accessController,
         address _registry,
-        address _rootRegistrar
+        address _rootRegistrar,
+        address _stakePayment
     ) {
         _setAccessController(_accessController);
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
+        setStakePayment(_stakePayment);
     }
 
     function registerSubdomain(
@@ -129,12 +134,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar.coreRevoke(domainHash);
         _setAccessTypeForDomain(domainHash, AccessType.LOCKED);
 
-        address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
-        // TODO sub: is this the correct usage of abstracts here?
-        //  need to make sure that we get proper reply from the overriden
-        //  function here and not the default "false" that comes from AZNSPayment
-        if (AZNSPayment(parentPaymentContract).refundsOnRevoke()) {
-            AZNSRefundablePayment(parentPaymentContract).refund(
+        uint256 stakedAmount = stakePayment.stakedForDomain(domainHash);
+
+        if (stakedAmount > 0) {
+            stakePayment.refund(
                 parentHash,
                 domainHash,
                 msg.sender
@@ -235,6 +238,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar = IZNSRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    // TODO sub: add tests for this !!!
+    function setStakePayment(address stakePayment_) public onlyAdmin {
+        require(stakePayment_ != address(0), "ZNSSubdomainRegistrar: _stakePayment can not be 0x0 address");
+        stakePayment = ZNSStakePayment(stakePayment_);
+
+        emit StakePaymentSet(stakePayment_);
     }
 
     function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
