@@ -31,6 +31,8 @@ describe("ZNSSubdomainRegistrar", () => {
   let lvl4SubOwner : SignerWithAddress;
   let lvl5SubOwner : SignerWithAddress;
   let lvl6SubOwner : SignerWithAddress;
+  let lvl7SubOwner : SignerWithAddress;
+  let lvl8SubOwner : SignerWithAddress;
   let branchLvl1Owner : SignerWithAddress;
   let branchLvl2Owner : SignerWithAddress;
   let random : SignerWithAddress;
@@ -58,6 +60,8 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl4SubOwner,
         lvl5SubOwner,
         lvl6SubOwner,
+        lvl7SubOwner,
+        lvl8SubOwner,
         branchLvl1Owner,
         branchLvl2Owner,
       ] = await hre.ethers.getSigners();
@@ -79,6 +83,8 @@ describe("ZNSSubdomainRegistrar", () => {
           lvl4SubOwner,
           lvl5SubOwner,
           lvl6SubOwner,
+          lvl7SubOwner,
+          lvl8SubOwner,
           branchLvl1Owner,
           branchLvl2Owner,
         ].map(async ({ address }) =>
@@ -181,6 +187,38 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: lvl6SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl7SubOwner,
+          domainLabel: "lvlseven",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.asPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: AccessType.OPEN,
+            },
+            priceConfig: priceConfigDefault,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl7SubOwner.address,
+            },
+          },
+        },
+        {
+          user: lvl8SubOwner,
+          domainLabel: "lvleight",
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: AccessType.OPEN,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl8SubOwner.address,
             },
           },
         },
@@ -546,6 +584,90 @@ describe("ZNSSubdomainRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
+    });
+
+    it.only("TEZD !!!", async () => {
+      // revoke lvl 7 domain
+      const lvl5Hash = regResults[4].domainHash;
+      const lvl6Hash = regResults[5].domainHash;
+      const lvl7Hash = regResults[6].domainHash;
+      const lvl8Hash = regResults[7].domainHash;
+
+      // reregister with the same owner and config if revoked in previous tests
+      const exists = await zns.registry.exists(lvl6Hash);
+      if (!exists) {
+        const newHash = await registrationWithSetup({
+          zns,
+          user: lvl6SubOwner,
+          parentHash: lvl5Hash,
+          domainLabel: domainConfigs[5].domainLabel,
+          fullConfig: domainConfigs[5].fullConfig,
+          isRootDomain: false,
+        });
+
+        expect(newHash).to.eq(lvl6Hash);
+      }
+
+      const ogParentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl6Hash);
+      const ogParentPriceConfig = await zns.asPricing.priceConfigs(lvl6Hash);
+      const ogParentPaymentConfig = await zns.stakePayment.getPaymentConfig(lvl6Hash);
+
+      const tx = await zns.subdomainRegistrar.connect(lvl6SubOwner)
+        .revokeSubdomain(lvl5Hash, lvl6Hash);
+      const { cumulativeGasUsed: gasNoStake } = await tx.wait();
+
+      const newParentConfigIn = {
+        distrConfig: {
+          pricingContract: zns.fixedPricing.address,
+          paymentContract: zns.directPayment.address,
+          accessType: AccessType.OPEN,
+        },
+        priceConfig: {
+          price: fixedPrice,
+          feePercentage: fixedFeePercentage,
+        },
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: branchLvl1Owner.address,
+        },
+      };
+
+      // register new owner for the revoked parent domain
+      const newParentHash = await registrationWithSetup({
+        zns,
+        user: branchLvl1Owner,
+        parentHash: lvl5Hash,
+        domainLabel: domainConfigs[5].domainLabel,
+        fullConfig: newParentConfigIn,
+        isRootDomain: false,
+      });
+      expect(newParentHash).to.eq(lvl6Hash);
+
+      const newParentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl6Hash);
+      const newParentPriceConfig = await zns.fixedPricing.priceConfigs(lvl6Hash);
+      const newParentPaymentConfig = await zns.directPayment.getPaymentConfig(lvl6Hash);
+
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl7SubOwner.address);
+
+      const stakedForDomain = await zns.stakePayment.stakedForDomain(lvl7Hash);
+      // revoke the child from under the new parent, while it was registered under the og parent
+      const tx2 = await zns.subdomainRegistrar.connect(lvl7SubOwner)
+        .revokeSubdomain(lvl6Hash, lvl7Hash);
+      const { cumulativeGasUsed: gasWithStake } = await tx2.wait();
+
+      // revoke costs with new refund logic
+      // 89458 ---- 137560 - with check for bool
+      // 96937 ---- 137541 - with check for all -- ~7.4k gas diff
+
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl7SubOwner.address);
+      const diff = childBalAfter.sub(childBalBefore);
+
+      const ogPrice = await zns.asPricing.getPrice(lvl6Hash, domainConfigs[6].domainLabel);
+      // TODO sub: is there a problem that we do not wipe pricing data from the old parent
+      //  can there be any problems or discrepancies ? now we have the same domain hash mapped to different configs
+      //  based on the contract used by the owner
+      expect(diff).to.eq(ogPrice);
+      expect(stakedForDomain).to.eq(diff);
     });
   });
 
