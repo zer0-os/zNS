@@ -72,7 +72,7 @@ interface IZNSPriceOracle is IDomainPriceConfig {
         uint256 fee
     );
 
-    function getRegistrationFee(uint256 domainPrice) external view returns (uint256);
+    function getProtocolFee(uint256 domainPrice) external view returns (uint256);
 
     function setPriceConfig(DomainPriceConfig calldata priceConfig) external;
 

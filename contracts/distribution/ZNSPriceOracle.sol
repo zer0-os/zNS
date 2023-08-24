@@ -62,7 +62,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
         if (length == 0) return (0, 0, 0);
 
         domainPrice = _getPrice(length);
-        fee = getRegistrationFee(domainPrice);
+        fee = getProtocolFee(domainPrice);
 
         totalPrice = domainPrice + fee;
     }
@@ -72,7 +72,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * as `domainPrice * rootDomainPriceConfig.feePercentage / PERCENTAGE_BASIS`.
      * @param domainPrice The price of the domain
      */
-    function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
+    function getProtocolFee(uint256 domainPrice) public view override returns (uint256) {
         return (domainPrice * rootDomainPriceConfig.feePercentage) / PERCENTAGE_BASIS;
     }
 

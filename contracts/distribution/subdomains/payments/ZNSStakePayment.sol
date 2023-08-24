@@ -29,7 +29,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         // TODO sub: figure out the best system to standardize fees and make them work for any abstract
         //  how do we handle fees on payment contracts?
         //  what if we choose fee pricing, but payment contract does not allow fees ??
-        uint256 fee
+        uint256 parentFee
     ) external override onlyRegistrar {
         PaymentConfig memory config = paymentConfigs[parentHash];
 
@@ -44,14 +44,14 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         config.paymentToken.safeTransferFrom(
             payer,
             address(this),
-            amount + fee
+            amount + parentFee
         );
 
-        if (fee != 0) {
+        if (parentFee != 0) {
             // Transfer the fee to the `beneficiary` from this contract
             config.paymentToken.safeTransfer(
                 config.beneficiary,
-                fee
+                parentFee
             );
         }
 
@@ -63,7 +63,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
             domainHash,
             payer,
             amount,
-            fee
+            parentFee
         );
     }
 
@@ -74,11 +74,9 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
     ) external override onlyRegistrar {
         uint256 stakedAmount = stakedForDomain[domainHash];
 
-        // this signifies that the domain was registered
-        // during a promo without a stake
-        // see `processPayment()` to see that setting stakingToken to 0x0 address
-        // means free domains
         // TODO sub: test this case !!
+        // TODO sub: do we still need this if we only call if when stakedAmount is not 0
+        //  in SubdomainRegistrar.revokeSubdomain()
         if (stakedAmount == 0) return;
 
         delete stakedForDomain[domainHash];

@@ -56,10 +56,10 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function getPriceAndFee(
         bytes32 parentHash,
         string calldata label
-    ) external view override returns (uint256 price, uint256 fee) {
+    ) external view override returns (uint256 price, uint256 parentFee) {
         price = getPrice(parentHash, label);
-        fee = getFeeForPrice(parentHash, price);
-        return (price, fee);
+        parentFee = getFeeForPrice(parentHash, price);
+        return (price, parentFee);
     }
 
     // TODO sub: is this function needed ??
@@ -79,7 +79,6 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig
-    // TODO sub: do we need a modifier here since it checks in the function inside ??
     ) external {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
