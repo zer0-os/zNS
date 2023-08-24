@@ -53,43 +53,28 @@ interface IZNSRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `priceOracle` address is set in state.
-     * @param priceOracle The new address of the PriceOracle contract
-     */
-    event PriceOracleSet(address priceOracle);
-
-    /**
      * @notice Emitted when the `treasury` address is set in state.
-     * @param treasury The new address of the Treasury contract
+     * @param treasury The new address of the treasury contract
      */
     event TreasurySet(address treasury);
 
     /**
      * @notice Emitted when the `domainToken` address is set in state.
-     * @param domainToken The new address of the DomainToken contract
+     * @param domainToken The new address of the domainToken contract
      */
     event DomainTokenSet(address domainToken);
 
     /**
      * @notice Emitted when the `subdomainRegistrar` address is set in state.
-     * @param subdomainRegistrar The new address of the SubdomainRegistrar contract
+     * @param subdomainRegistrar The new address of the subdomainRegistrar contract
      */
     event SubdomainRegistrarSet(address subdomainRegistrar);
 
     /**
      * @notice Emitted when the `addressResolver` address is set in state.
-     * @param addressResolver The new address of the AddressResolver contract
+     * @param addressResolver The new address of the addressResolver contract
      */
     event AddressResolverSet(address addressResolver);
-
-    function initialize(
-        address accessController_,
-        address registry_,
-        address priceOracle_,
-        address treasury_,
-        address domainToken_,
-        address addressResolver_
-    ) external;
 
     function registerDomain(
         string calldata name,
@@ -115,8 +100,6 @@ interface IZNSRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setPriceOracle(address priceOracle_) external;
-
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
@@ -128,4 +111,12 @@ interface IZNSRegistrar is IDistributionConfig {
     function setAccessController(address accessController_) external;
 
     function getAccessController() external view returns (address);
+
+    function initialize(
+        address accessController_,
+        address registry_,
+        address treasury_,
+        address domainToken_,
+        address addressResolver_
+    ) external;
 }

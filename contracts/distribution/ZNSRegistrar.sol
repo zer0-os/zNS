@@ -11,7 +11,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 
 
 /**
@@ -32,7 +31,6 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    IZNSPriceOracle public priceOracle;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -52,14 +50,12 @@ contract ZNSRegistrar is
     function initialize(
         address accessController_,
         address registry_,
-        address priceOracle_,
         address treasury_,
         address domainToken_,
         address addressResolver_
     ) public override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setPriceOracle(priceOracle_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
         setAddressResolver(addressResolver_);
@@ -259,16 +255,6 @@ contract ZNSRegistrar is
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSRegistrar) onlyAdmin {
         _setRegistry(registry_);
-    }
-
-    function setPriceOracle(address priceOracle_) public override onlyAdmin {
-        require(
-            priceOracle_ != address(0),
-            "ZNSRegistrar: priceOracle_ is 0x0 address"
-        );
-        priceOracle = IZNSPriceOracle(priceOracle_);
-
-        emit PriceOracleSet(priceOracle_);
     }
 
     /**
