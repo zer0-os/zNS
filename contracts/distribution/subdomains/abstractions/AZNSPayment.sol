@@ -22,7 +22,7 @@ abstract contract AZNSPayment {
         address beneficiary;
     }
 
-    mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
+    mapping(bytes32 domainHash => PaymentConfig config) public paymentConfigs;
 
     // TODO sub: should we add setters and getters here? mb just virtual ??
 

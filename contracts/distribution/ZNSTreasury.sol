@@ -85,32 +85,42 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      */
     function stakeForDomain(
         bytes32 domainHash,
+        // TODO sub fee: change name to label
         string calldata domainName,
-        address depositor
+        address depositor,
+        IERC20 paymentToken,
+        uint256 stakeAmount,
+        uint256 parentFee,
+        uint256 protocolFee
     ) external override onlyRegistrar {
-        // Get price and fee for the domain
-        (
-            uint256 totalPrice,
-            uint256 stakeAmount,
-            uint256 registrationFee
-        ) = priceOracle.getPrice(
-            domainName
-        );
+        // paymentToken should NOT be specified for root domains !!
+        IERC20 token = paymentToken == IERC20(address(0)) ? stakingToken : paymentToken;
+
+        uint256 totalAmount = stakeAmount + parentFee + protocolFee;
 
         // Transfer stake amount and fee to this address
-        stakingToken.safeTransferFrom(depositor, address(this), totalPrice);
+        token.safeTransferFrom(depositor, address(this), totalAmount);
         // Transfer registration fee to the Zero Vault from this address
-        stakingToken.safeTransfer(zeroVault, registrationFee);
+        token.safeTransfer(zeroVault, protocolFee);
+        // transfer parent fee to the parent owner if it's not 0
+        // TODO sub fee: make this work for subdomains !!!
+//        if (parentFee != 0) {
+//            token.safeTransfer(
+//                beneficiary,
+//                parentFee
+//            );
+//        }
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
 
+        // TODO sub fee: do we need more params here ???
         emit StakeDeposited(
             domainHash,
             domainName,
             depositor,
             stakeAmount,
-            registrationFee
+            protocolFee
         );
     }
 

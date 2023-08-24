@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 interface IZNSTreasury {
     /**
@@ -51,8 +53,13 @@ interface IZNSTreasury {
 
     function stakeForDomain(
         bytes32 domainHash,
+    // TODO sub fee: change name to label
         string calldata domainName,
-        address depositor
+        address depositor,
+        IERC20 paymentToken,
+        uint256 stakeAmount,
+        uint256 parentFee,
+        uint256 protocolFee
     ) external;
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;

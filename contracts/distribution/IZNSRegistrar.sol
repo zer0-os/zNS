@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 interface IZNSRegistrar is IDistributionConfig {
@@ -101,8 +102,12 @@ interface IZNSRegistrar is IDistributionConfig {
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
-        address owner,
-        address domainAddress
+        address registrant,
+        IERC20 paymentToken,
+        uint256 price,
+        uint256 parentFee,
+        address domainAddress,
+        bool isStakePayment
     ) external;
 
     function coreRevoke(bytes32 domainHash) external;

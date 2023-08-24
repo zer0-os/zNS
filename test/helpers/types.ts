@@ -74,6 +74,7 @@ export interface IFixedPriceConfig {
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
+  priceOracleAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
 }

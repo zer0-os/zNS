@@ -12,6 +12,7 @@ import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol"
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
@@ -95,15 +96,20 @@ contract ZNSRegistrar is
             "ZNSRegistrar: Domain already exists"
         );
 
-        // Staking logic
-        treasury.stakeForDomain(domainHash, name, msg.sender);
+        // Get price and fee for the domain
+        // TODO sub fee: refactor to return price only if left as is !!
+        (, uint256 domainPrice, ) = priceOracle.getPrice(name);
 
         _coreRegister(
             bytes32(0),
             domainHash,
             name,
             msg.sender,
-            domainAddress
+            IERC20(address(0)),
+            domainPrice,
+            0,
+            domainAddress,
+            true
         );
 
         if (address(distributionConfig.pricingContract) != address(0)
@@ -111,8 +117,6 @@ contract ZNSRegistrar is
             // TODO sub: this adds 52k gas !
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
-        // TODO sub: add setting the distribution config in the best way possible !
-        //  calling back the subRegistrar might not be the best idea
 
         return domainHash;
     }
@@ -121,15 +125,23 @@ contract ZNSRegistrar is
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
-        address owner,
-        address domainAddress
+        address registrant,
+        IERC20 paymentToken,
+        uint256 price,
+        uint256 parentFee,
+        address domainAddress,
+        bool isStakePayment
     ) external override onlyRegistrar {
         _coreRegister(
             parentHash,
             domainHash,
             name,
-            owner,
-            domainAddress
+            registrant,
+            paymentToken,
+            price,
+            parentFee,
+            domainAddress,
+            isStakePayment
         );
     }
 
@@ -138,13 +150,37 @@ contract ZNSRegistrar is
         bytes32 parentHash,
         bytes32 domainHash,
         string memory name,
-        address owner,
-        address domainAddress
+        address registrant,
+        IERC20 paymentToken,
+        uint256 price,
+        uint256 parentFee,
+        address domainAddress,
+        bool isStakePayment
     ) internal {
+        // parentHash == bytes32(0) means we are registering a root domain
+        uint256 protocolFee = parentHash == bytes32(0)
+            ? priceOracle.getProtocolFee(price)
+            : priceOracle.getProtocolFee(price + parentFee);
+
+        if (parentHash != bytes32(0) && !isStakePayment) { // direct payment for subdomains
+            // TODO sub fee: finish this !!!
+//            treasury.processDirectPayment();
+        } else { // for all root domains or subdomains with stake payment
+            treasury.stakeForDomain(
+                domainHash,
+                name,
+                registrant,
+                paymentToken,
+                price,
+                parentFee,
+                protocolFee
+            );
+        }
+
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(domainHash);
         // mint token
-        domainToken.register(owner, tokenId);
+        domainToken.register(registrant, tokenId);
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
@@ -152,10 +188,10 @@ contract ZNSRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (domainAddress != address(0)) {
-            registry.createDomainRecord(domainHash, owner, address(addressResolver));
+            registry.createDomainRecord(domainHash, registrant, address(addressResolver));
             addressResolver.setAddress(domainHash, domainAddress);
         } else {
-            registry.createDomainRecord(domainHash, owner, address(0));
+            registry.createDomainRecord(domainHash, registrant, address(0));
         }
 
         emit DomainRegistered(
@@ -163,7 +199,7 @@ contract ZNSRegistrar is
             domainHash,
             tokenId,
             name,
-            owner,
+            registrant,
             domainAddress
         );
     }

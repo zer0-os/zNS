@@ -336,6 +336,7 @@ export const deployRegistrar = async (
     [
       accessController.address,
       config.registryAddress,
+      config.priceOracleAddress,
       config.treasury.address,
       config.domainTokenAddress,
       config.addressResolverAddress,
@@ -659,6 +660,7 @@ export const deployZNS = async ({
   const config : RegistrarConfig = {
     treasury,
     registryAddress: registry.address,
+    priceOracleAddress: priceOracle.address,
     domainTokenAddress: domainToken.address,
     addressResolverAddress: addressResolver.address,
   };
