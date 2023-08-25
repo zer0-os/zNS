@@ -6,6 +6,23 @@ import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+struct CoreRegisterArgs {
+    // 0x0 for root domains
+    bytes32 parentHash;
+    bytes32 domainHash;
+    string label;
+    address registrant;
+    // 0x0 for root domains
+    address paymentBeneficiary;
+    // 0x0 for root domains
+    IERC20 paymentToken;
+    uint256 price;
+    // 0x0 for root domains
+    uint256 parentFee;
+    address domainAddress;
+    bool isStakePayment;
+}
+
 interface IZNSRegistrar is IDistributionConfig {
 
     enum OwnerOf {
@@ -99,15 +116,7 @@ interface IZNSRegistrar is IDistributionConfig {
     ) external returns (bytes32);
 
     function coreRegister(
-        bytes32 parentHash,
-        bytes32 domainHash,
-        string memory name,
-        address registrant,
-        IERC20 paymentToken,
-        uint256 price,
-        uint256 parentFee,
-        address domainAddress,
-        bool isStakePayment
+        CoreRegisterArgs memory args
     ) external;
 
     function coreRevoke(bytes32 domainHash) external;

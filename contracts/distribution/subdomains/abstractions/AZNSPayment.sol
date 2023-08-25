@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 // TODO sub: add ERC-165 inteface checking? how to validate that a contract inherited this?
+// TODO sub fee: possibly remove this !
 abstract contract AZNSPayment {
 
     event PaymentTokenChanged(bytes32 indexed domainHash, address newPaymentToken);

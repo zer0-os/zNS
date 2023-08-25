@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSRegistrar } from "./IZNSRegistrar.sol";
+import { IZNSRegistrar, CoreRegisterArgs } from "./IZNSRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
@@ -101,15 +101,18 @@ contract ZNSRegistrar is
         (, uint256 domainPrice, ) = priceOracle.getPrice(name);
 
         _coreRegister(
-            bytes32(0),
-            domainHash,
-            name,
-            msg.sender,
-            IERC20(address(0)),
-            domainPrice,
-            0,
-            domainAddress,
-            true
+            CoreRegisterArgs(
+                bytes32(0),
+                domainHash,
+                name,
+                msg.sender,
+                address(0),
+                IERC20(address(0)),
+                domainPrice,
+                0,
+                domainAddress,
+                true
+            )
         );
 
         if (address(distributionConfig.pricingContract) != address(0)
@@ -122,85 +125,61 @@ contract ZNSRegistrar is
     }
 
     function coreRegister(
-        bytes32 parentHash,
-        bytes32 domainHash,
-        string memory name,
-        address registrant,
-        IERC20 paymentToken,
-        uint256 price,
-        uint256 parentFee,
-        address domainAddress,
-        bool isStakePayment
+        CoreRegisterArgs memory args
     ) external override onlyRegistrar {
         _coreRegister(
-            parentHash,
-            domainHash,
-            name,
-            registrant,
-            paymentToken,
-            price,
-            parentFee,
-            domainAddress,
-            isStakePayment
+            args
         );
     }
 
     function _coreRegister(
-        // 0x0 when registering a root domain
-        bytes32 parentHash,
-        bytes32 domainHash,
-        string memory name,
-        address registrant,
-        IERC20 paymentToken,
-        uint256 price,
-        uint256 parentFee,
-        address domainAddress,
-        bool isStakePayment
+        CoreRegisterArgs memory args
     ) internal {
         // parentHash == bytes32(0) means we are registering a root domain
-        uint256 protocolFee = parentHash == bytes32(0)
-            ? priceOracle.getProtocolFee(price)
-            : priceOracle.getProtocolFee(price + parentFee);
+        uint256 protocolFee = args.parentHash == bytes32(0)
+            ? priceOracle.getProtocolFee(args.price)
+            : priceOracle.getProtocolFee(args.price + args.parentFee);
 
-        if (parentHash != bytes32(0) && !isStakePayment) { // direct payment for subdomains
+        if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
             // TODO sub fee: finish this !!!
 //            treasury.processDirectPayment();
         } else { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
-                domainHash,
-                name,
-                registrant,
-                paymentToken,
-                price,
-                parentFee,
+                args.domainHash,
+                args.label,
+                args.registrant,
+                args.paymentBeneficiary,
+                args.paymentToken,
+                args.price,
+                args.parentFee,
                 protocolFee
             );
         }
 
         // Get tokenId for the new token to be minted for the new domain
-        uint256 tokenId = uint256(domainHash);
+        uint256 tokenId = uint256(args.domainHash);
         // mint token
-        domainToken.register(registrant, tokenId);
+        domainToken.register(args.registrant, tokenId);
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
         // `ZNSAddressResolver` is called to assign an address to the newly registered domain.
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
-        if (domainAddress != address(0)) {
-            registry.createDomainRecord(domainHash, registrant, address(addressResolver));
-            addressResolver.setAddress(domainHash, domainAddress);
+        if (args.domainAddress != address(0)) {
+            registry.createDomainRecord(args.domainHash, args.registrant, address(addressResolver));
+            addressResolver.setAddress(args.domainHash, args.domainAddress);
         } else {
-            registry.createDomainRecord(domainHash, registrant, address(0));
+            registry.createDomainRecord(args.domainHash, args.registrant, address(0));
         }
 
         emit DomainRegistered(
-            parentHash,
-            domainHash,
+            args.parentHash,
+            args.domainHash,
             tokenId,
-            name,
-            registrant,
-            domainAddress
+            args.label,
+            args.registrant,
+            args.domainAddress
         );
     }
 

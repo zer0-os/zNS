@@ -56,6 +56,7 @@ interface IZNSTreasury {
     // TODO sub fee: change name to label
         string calldata domainName,
         address depositor,
+        address parentFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 parentFee,

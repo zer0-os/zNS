@@ -88,6 +88,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         // TODO sub fee: change name to label
         string calldata domainName,
         address depositor,
+        address parentFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 parentFee,
@@ -104,12 +105,12 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         token.safeTransfer(zeroVault, protocolFee);
         // transfer parent fee to the parent owner if it's not 0
         // TODO sub fee: make this work for subdomains !!!
-//        if (parentFee != 0) {
-//            token.safeTransfer(
-//                beneficiary,
-//                parentFee
-//            );
-//        }
+        if (parentFee != 0) {
+            token.safeTransfer(
+                parentFeeBeneficiary,
+                parentFee
+            );
+        }
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;

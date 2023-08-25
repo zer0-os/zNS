@@ -6,10 +6,11 @@ import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
 import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
-import { IZNSRegistrar } from "../IZNSRegistrar.sol";
+import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
@@ -65,22 +66,32 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             );
         }
 
-        bytes32 subdomainHash = hashWithParent(parentHash, label);
+        CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
+            parentHash: parentHash,
+            domainHash: hashWithParent(parentHash, label),
+            label: label,
+            registrant: msg.sender,
+            paymentBeneficiary: address(0),
+            paymentToken: IERC20(address(0)),
+            price: 0,
+            parentFee: 0,
+            domainAddress: domainAddress,
+            isStakePayment: true // TODO sub fee: determine this !!!!
+        });
 
         require(
-            !registry.exists(subdomainHash),
+            !registry.exists(coreRegisterArgs.domainHash),
             "ZNSSubdomainRegistrar: Subdomain already exists"
         );
 
+        // TODO sub fee: add logic everywhere to not perform any transfers if price + parentFee == 0 !!
         if (!isOwnerOrOperator) {
-            uint256 price;
-            uint256 parentFee;
             // TODO sub: can we make this abstract switching better ??
             // TODO sub: should we eliminate Pricing with not fee abstract at all??
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
             if (parentConfig.pricingContract.feeEnforced()) {
-                (price, parentFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
+                (coreRegisterArgs.price, coreRegisterArgs.parentFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
                     .getPriceAndFee(
                         parentHash,
                         label
@@ -89,34 +100,34 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
                 // TODO sub: do we even need this case ??
                 //  I don't think so. refactor and determine how this will work
                 //  change this whenever abstracts are reworked
-                price = parentConfig.pricingContract.getPrice(parentHash, label);
+                coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
 
-            if (price + parentFee > 0) {
-                parentConfig.paymentContract.processPayment(
-                    parentHash,
-                    subdomainHash,
-                    msg.sender,
-                    price,
-                    parentFee
-                );
-            }
+//            if (price + parentFee > 0) {
+//                parentConfig.paymentContract.processPayment(
+//                    parentHash,
+//                    subdomainHash,
+//                    msg.sender,
+//                    price,
+//                    parentFee
+//                );
+//            }
         }
 
-        rootRegistrar.coreRegister(
-            parentHash,
-            subdomainHash,
-            label,
-            msg.sender,
-            domainAddress
-        );
+        // TODO sub: how can we improve all these external calls that will add up with proxies ???
+        (
+            coreRegisterArgs.paymentToken,
+            coreRegisterArgs.paymentBeneficiary
+        ) = parentConfig.paymentContract.paymentConfigs(parentHash);
+        // TODO sub fee: add support for parent owner to not pay for subdomains !!
+        rootRegistrar.coreRegister(coreRegisterArgs);
 
         if (address(distrConfig.pricingContract) != address(0)
             && address(distrConfig.paymentContract) != address(0)) {
-            setDistributionConfigForDomain(subdomainHash, distrConfig);
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
-        return subdomainHash;
+        return coreRegisterArgs.domainHash;
     }
 
     function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external override {

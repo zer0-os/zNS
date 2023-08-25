@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import { AZNSPayment } from "./AZNSPayment.sol";
 
 
+// TODO sub fee: possibly remove all these !!
 abstract contract AZNSRefundablePayment is AZNSPayment {
     event RefundProcessed(
         bytes32 indexed parentHash,
