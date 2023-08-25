@@ -110,7 +110,7 @@ describe("ZNSTreasury", () => {
 
       const {
         expectedPrice,
-        fee,
+        parentFee,
       } = await getPriceObject(
         domain,
         priceConfigDefault
@@ -129,7 +129,7 @@ describe("ZNSTreasury", () => {
           domain,
           user.address,
           expectedPrice,
-          fee
+          parentFee
         );
     });
   });
