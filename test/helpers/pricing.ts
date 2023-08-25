@@ -40,6 +40,13 @@ export const calcAsymptoticPrice = (
   return base.div(precisionMultiplier).mul(precisionMultiplier);
 };
 
+export const getProtocolFee = (
+  forAmount : BigNumber,
+  feePercentage : BigNumber
+) => forAmount
+  .mul(feePercentage)
+  .div(PERCENTAGE_BASIS);
+
 /**
  * Get the domain name price, the registration fee and the total
  * based on name length when given an already deployed contract
@@ -54,7 +61,7 @@ export const getPriceObject = (
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
-  fee : BigNumber;
+  parentFee : BigNumber;
 } => {
   let expectedPrice;
   if (Object.keys(priceConfig).length === 6) {
@@ -67,15 +74,13 @@ export const getPriceObject = (
 
   const { feePercentage } = priceConfig;
 
-  const fee = expectedPrice
-    .mul(feePercentage)
-    .div(PERCENTAGE_BASIS);
+  const fee = getProtocolFee(expectedPrice, feePercentage);
 
   const totalPrice = expectedPrice.add(fee);
 
   return {
     totalPrice,
     expectedPrice,
-    fee,
+    parentFee: fee,
   };
 };
