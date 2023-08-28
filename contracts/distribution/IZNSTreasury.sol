@@ -33,6 +33,13 @@ interface IZNSTreasury {
         uint256 indexed stakeAmount
     );
 
+    event DirectPaymentProcessed(
+        address indexed payer,
+        address indexed beneficiary,
+        uint256 indexed amount,
+        uint256 protocolFee
+    );
+
     /**
      * @notice Emitted when `priceOracle` is set in state.
      * @param priceOracle The new address of the price oracle contract
@@ -56,6 +63,7 @@ interface IZNSTreasury {
     // TODO sub fee: change name to label
         string calldata domainName,
         address depositor,
+    // TODO sub fee: change to stakeFee everywhere in code !!!
         address parentFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
@@ -64,6 +72,16 @@ interface IZNSTreasury {
     ) external;
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;
+
+    function processDirectPayment(
+        address payer,
+        address paymentBeneficiary,
+        IERC20 paymentToken,
+        uint256 paymentAmount,
+        uint256 protocolFee
+    ) external;
+
+    function stakedForDomain(bytes32 domainHash) external view returns (uint256);
 
     function setZeroVaultAddress(address zeroVaultAddress) external;
 

@@ -42,7 +42,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
      * > Stake is owned by the owner of the Name in `ZNSRegistry`!
      */
-    mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
+    mapping(bytes32 domainHash => uint256 amountStaked) public override stakedForDomain;
 
     /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
@@ -97,14 +97,18 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         // paymentToken should NOT be specified for root domains !!
         IERC20 token = paymentToken == IERC20(address(0)) ? stakingToken : paymentToken;
 
-        uint256 totalAmount = stakeAmount + parentFee + protocolFee;
-
         // Transfer stake amount and fee to this address
-        token.safeTransferFrom(depositor, address(this), totalAmount);
+        token.safeTransferFrom(
+            depositor,
+            address(this),
+            stakeAmount + parentFee + protocolFee
+        );
+
+        // TODO sub fee: should these be safeTransferFrom for all ???
         // Transfer registration fee to the Zero Vault from this address
         token.safeTransfer(zeroVault, protocolFee);
+
         // transfer parent fee to the parent owner if it's not 0
-        // TODO sub fee: make this work for subdomains !!!
         if (parentFee != 0) {
             token.safeTransfer(
                 parentFeeBeneficiary,
@@ -145,6 +149,33 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         stakingToken.safeTransfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
+    }
+
+    // TODO sub fee: figure out how to NOT do fee here, but have it in Pricing !!!
+    function processDirectPayment(
+        address payer,
+        address paymentBeneficiary,
+        IERC20 paymentToken,
+        uint256 paymentAmount,
+        uint256 protocolFee
+    ) external override onlyRegistrar {
+        // Transfer stake amount and fee to this address
+        paymentToken.safeTransferFrom(
+            payer,
+            paymentBeneficiary,
+            paymentAmount
+        );
+
+        // TODO sub fee: does transferFrom require additional approval here ???
+        // Transfer registration fee to the Zero Vault from this address
+        paymentToken.safeTransferFrom(payer, zeroVault, protocolFee);
+
+        emit DirectPaymentProcessed(
+            payer,
+            paymentBeneficiary,
+            paymentAmount,
+            protocolFee
+        );
     }
 
     /**
