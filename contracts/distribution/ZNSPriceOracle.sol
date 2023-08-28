@@ -275,7 +275,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     function _validateConfig() internal view {
         uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
         require(
-            rootDomainPriceConfig.minPrice < prevToMinPrice,
+            rootDomainPriceConfig.minPrice <= prevToMinPrice,
             "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."
         );
     }
