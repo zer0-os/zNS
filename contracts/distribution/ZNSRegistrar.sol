@@ -135,33 +135,13 @@ contract ZNSRegistrar is
 
     // TODO sub fee: ONLY proceed with transfers if price is > 0 !!!
     // TODO sub fee: determine how to manage the fee when the price is 0 ! is it even possible?
+    // TODO sub fee: ADD TEST FOR THIS!
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
-        // parentHash == bytes32(0) means we are registering a root domain
-        uint256 protocolFee = args.parentHash == bytes32(0)
-            ? priceOracle.getProtocolFee(args.price)
-            : priceOracle.getProtocolFee(args.price + args.stakeFee);
-
-        if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
-            treasury.processDirectPayment(
-                args.registrant,
-                args.beneficiary,
-                args.paymentToken,
-                args.price,
-                protocolFee
-            );
-        } else { // for all root domains or subdomains with stake payment
-            treasury.stakeForDomain(
-                args.domainHash,
-                args.label,
-                args.registrant,
-                args.beneficiary,
-                args.paymentToken,
-                args.price,
-                args.stakeFee,
-                protocolFee
-            );
+        // payment part of the logic
+        if (args.price + args.stakeFee > 0) {
+            _processPayment(args);
         }
 
         // Get tokenId for the new token to be minted for the new domain
@@ -189,6 +169,34 @@ contract ZNSRegistrar is
             args.registrant,
             args.domainAddress
         );
+    }
+
+    function _processPayment(CoreRegisterArgs memory args) internal {
+        // parentHash == bytes32(0) means we are registering a root domain
+        uint256 protocolFee = args.parentHash == bytes32(0)
+            ? priceOracle.getProtocolFee(args.price)
+            : priceOracle.getProtocolFee(args.price + args.stakeFee);
+
+        if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
+            treasury.processDirectPayment(
+                args.registrant,
+                args.beneficiary,
+                args.paymentToken,
+                args.price,
+                protocolFee
+            );
+        } else { // for all root domains or subdomains with stake payment
+            treasury.stakeForDomain(
+                args.domainHash,
+                args.label,
+                args.registrant,
+                args.beneficiary,
+                args.paymentToken,
+                args.price,
+                args.stakeFee,
+                protocolFee
+            );
+        }
     }
 
     /**
