@@ -100,15 +100,15 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
                 //  stakeFee is not planned to be allowed for direct payment
                 coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
-        }
 
-        (
-            coreRegisterArgs.paymentToken,
-            coreRegisterArgs.beneficiary
-        ) = (
-            parentConfig.paymentConfig.paymentToken,
-            parentConfig.paymentConfig.beneficiary
-        );
+            (
+                coreRegisterArgs.paymentToken,
+                coreRegisterArgs.beneficiary
+            ) = (
+                parentConfig.paymentConfig.paymentToken,
+                parentConfig.paymentConfig.beneficiary
+            );
+        }
 
         // TODO sub fee: add support for parent owner to not pay for subdomains !!
         rootRegistrar.coreRegister(coreRegisterArgs);
