@@ -115,8 +115,9 @@ contract ZNSRegistrar is
             )
         );
 
-        if (address(distributionConfig.pricingContract) != address(0)
-            && address(distributionConfig.paymentContract) != address(0)) {
+        // TODO sub fee: is this enough of a check ?! what problems can this cause
+        //  if the user doesn't set the full config ??
+        if (address(distributionConfig.pricingContract) != address(0)) {
             // TODO sub: this adds 52k gas !
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
@@ -132,26 +133,33 @@ contract ZNSRegistrar is
         );
     }
 
+    // TODO sub fee: ONLY proceed with transfers if price is > 0 !!!
+    // TODO sub fee: determine how to manage the fee when the price is 0 ! is it even possible?
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
         // parentHash == bytes32(0) means we are registering a root domain
         uint256 protocolFee = args.parentHash == bytes32(0)
             ? priceOracle.getProtocolFee(args.price)
-            : priceOracle.getProtocolFee(args.price + args.parentFee);
+            : priceOracle.getProtocolFee(args.price + args.stakeFee);
 
         if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
-            // TODO sub fee: finish this !!!
-//            treasury.processDirectPayment();
+            treasury.processDirectPayment(
+                args.registrant,
+                args.beneficiary,
+                args.paymentToken,
+                args.price,
+                protocolFee
+            );
         } else { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
                 args.domainHash,
                 args.label,
                 args.registrant,
-                args.paymentBeneficiary,
+                args.beneficiary,
                 args.paymentToken,
                 args.price,
-                args.parentFee,
+                args.stakeFee,
                 protocolFee
             );
         }
@@ -210,22 +218,27 @@ contract ZNSRegistrar is
             "ZNSRegistrar: Not the owner of both Name and Token"
         );
 
-        _coreRevoke(domainHash);
-
         subdomainRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
-        treasury.unstakeForDomain(domainHash, msg.sender);
+        _coreRevoke(domainHash, msg.sender);
     }
 
-    function coreRevoke(bytes32 domainHash) external override onlyRegistrar {
-        _coreRevoke(domainHash);
+    function coreRevoke(bytes32 domainHash, address owner) external override onlyRegistrar {
+        _coreRevoke(domainHash, owner);
     }
 
-    function _coreRevoke(bytes32 domainHash) internal {
+    function _coreRevoke(bytes32 domainHash, address owner) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);
 
-        emit DomainRevoked(domainHash, msg.sender);
+        // check if user registered a domain with the stake
+        uint256 stakedAmount = treasury.stakedForDomain(domainHash);
+        // send the stake back if it exists
+        if (stakedAmount > 0) {
+            treasury.unstakeForDomain(domainHash, owner);
+        }
+
+        emit DomainRevoked(domainHash, owner);
     }
 
     /**

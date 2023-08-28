@@ -71,12 +71,12 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             domainHash: hashWithParent(parentHash, label),
             label: label,
             registrant: msg.sender,
-            paymentBeneficiary: address(0),
+            beneficiary: address(0),
             paymentToken: IERC20(address(0)),
             price: 0,
-            parentFee: 0,
+            stakeFee: 0,
             domainAddress: domainAddress,
-            isStakePayment: true // TODO sub fee: determine this !!!!
+            isStakePayment: parentConfig.paymentConfig.paymentType == PaymentType.STAKE
         });
 
         require(
@@ -84,46 +84,38 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Subdomain already exists"
         );
 
-        // TODO sub fee: add logic everywhere to not perform any transfers if price + parentFee == 0 !!
+        // TODO sub fee: add logic everywhere to not perform any transfers if price + stakeFee == 0 !!
         if (!isOwnerOrOperator) {
             // TODO sub: can we make this abstract switching better ??
             // TODO sub: should we eliminate Pricing with not fee abstract at all??
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
-            if (parentConfig.pricingContract.feeEnforced()) {
-                (coreRegisterArgs.price, coreRegisterArgs.parentFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
+            if (parentConfig.paymentConfig.paymentType == PaymentType.STAKE) {
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                // TODO sub: do we even need this case ??
-                //  I don't think so. refactor and determine how this will work
-                //  change this whenever abstracts are reworked
+                //  stakeFee is not planned to be allowed for direct payment
                 coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
-
-//            if (price + parentFee > 0) {
-//                parentConfig.paymentContract.processPayment(
-//                    parentHash,
-//                    subdomainHash,
-//                    msg.sender,
-//                    price,
-//                    parentFee
-//                );
-//            }
         }
 
-        // TODO sub: how can we improve all these external calls that will add up with proxies ???
         (
             coreRegisterArgs.paymentToken,
-            coreRegisterArgs.paymentBeneficiary
-        ) = parentConfig.paymentContract.paymentConfigs(parentHash);
+            coreRegisterArgs.beneficiary
+        ) = (
+            parentConfig.paymentConfig.paymentToken,
+            parentConfig.paymentConfig.beneficiary
+        );
+
         // TODO sub fee: add support for parent owner to not pay for subdomains !!
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        if (address(distrConfig.pricingContract) != address(0)
-            && address(distrConfig.paymentContract) != address(0)) {
+        // TODO sub fee: is this enough of a check ?! what problems can this cause
+        //  if the user doesn't set the full config ??
+        if (address(distrConfig.pricingContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
@@ -137,20 +129,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        rootRegistrar.coreRevoke(domainHash);
         _setAccessTypeForDomain(domainHash, AccessType.LOCKED);
-
-        address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
-        // TODO sub: is this the correct usage of abstracts here?
-        //  need to make sure that we get proper reply from the overriden
-        //  function here and not the default "false" that comes from AZNSPayment
-        if (AZNSPayment(parentPaymentContract).refundsOnRevoke()) {
-            AZNSRefundablePayment(parentPaymentContract).refund(
-                parentHash,
-                domainHash,
-                msg.sender
-            );
-        }
+        rootRegistrar.coreRevoke(domainHash, msg.sender);
 
         // TODO sub: should we clear the data from all other contracts (configs, etc.) ??
         //  can we even do this?
@@ -173,7 +153,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         DistributionConfig calldata config
     ) public override {
         setPricingContractForDomain(domainHash, config.pricingContract);
-        setPaymentContractForDomain(domainHash, config.paymentContract);
+        setPaymentConfigForDomain(domainHash, config.paymentConfig);
         _setAccessTypeForDomain(domainHash, config.accessType);
     }
 
@@ -193,17 +173,24 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit PricingContractSet(domainHash, address(pricingContract));
     }
 
-    function setPaymentContractForDomain(
+    // TODO sub fee: add individual methods to set internal config values !!!
+    function setPaymentConfigForDomain(
         bytes32 domainHash,
-        AZNSPayment paymentContract
+        PaymentConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(
-            address(paymentContract) != address(0),
-            "ZNSSubdomainRegistrar: paymentContract can not be 0x0 address"
+            address(config.paymentToken) != address(0),
+            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+        );
+        require(
+            config.beneficiary != address(0),
+            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
         );
 
-        distrConfigs[domainHash].paymentContract = AZNSPayment(paymentContract);
-        emit PaymentContractSet(domainHash, address(paymentContract));
+        distrConfigs[domainHash].paymentConfig = config;
+        // TODO sub fee: fix this event or create new ones for every field !!!
+        // this is incorrect now !! fix !!
+        emit PaymentContractSet(domainHash, address(config.paymentToken));
     }
 
     function _setAccessTypeForDomain(
@@ -248,12 +235,9 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit RootRegistrarSet(registrar_);
     }
 
+    // TODO sub fee: do we need these getters ???
     function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
         return distrConfigs[domainHash].pricingContract;
-    }
-
-    function getPaymentContractForDomain(bytes32 domainHash) external view returns (AZNSPayment) {
-        return distrConfigs[domainHash].paymentContract;
     }
 
     function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType) {
