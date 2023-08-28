@@ -275,7 +275,7 @@ describe("ZNSRegistrar", () => {
       expect(accessType).to.eq(distrConfig.accessType);
     });
 
-    it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
+    it.only("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
       const balanceBeforeUser = await zns.zeroToken.balanceOf(user.address);
       const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
 

@@ -33,7 +33,7 @@ export const runAllFlows = async () => {
   const fullRootConfig = {
     distrConfig: {
       pricingContract: zns.fixedPricing.address,
-      paymentContract: zns.directPayment.address,
+      paymentContract: zns.stakePayment.address,
       accessType: 1,
     },
     priceConfig: {
@@ -61,7 +61,7 @@ export const runAllFlows = async () => {
   const fullSubConfig = {
     distrConfig: {
       pricingContract: zns.asPricing.address,
-      paymentContract: zns.stakePayment.address,
+      paymentContract: zns.directPayment.address,
       accessType: 1,
     },
     priceConfig: priceConfigDefault,
@@ -85,8 +85,8 @@ export const runAllFlows = async () => {
 
   // TODO sub:
   // - original root reg: 339,104 gas
-  // - current root reg: 405,831 gas (with config set) - 339,235 gas (without config)
-  // - current sub reg: 341,144 gas (with config)
+  // - current root reg: 405,831 gas (with config set) - 408,489 (with new payment logic) - 339,235 gas (without config)
+  // - current sub reg: 341,144 gas (with config) - 412,897 gas (with new payment logic)
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);

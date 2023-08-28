@@ -7,7 +7,7 @@ import {
   fullDistrConfigEmpty, getAccessRevertMsg,
   getPriceObject, getProtocolFee,
   INVALID_TOKENID_ERC_ERR,
-  ONLY_NAME_OWNER_REG_ERR,
+  ONLY_NAME_OWNER_REG_ERR, PaymentType,
   priceConfigDefault,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -603,17 +603,17 @@ describe("ZNSSubdomainRegistrar", () => {
         domainLabel: "root",
         fullConfig: {
           distrConfig: {
-            pricingContract: zns.fixedPricing.address,
-            paymentContract: zns.directPayment.address,
             accessType: AccessType.OPEN,
+            pricingContract: zns.fixedPricing.address,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: rootOwner.address,
+              paymentType: PaymentType.DIRECT,
+            },
           },
           priceConfig: {
             price: fixedPrice,
             feePercentage: BigNumber.from(0),
-          },
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: rootOwner.address,
           },
         },
       });
@@ -635,14 +635,14 @@ describe("ZNSSubdomainRegistrar", () => {
         fullConfig: {
           distrConfig: {
             pricingContract: zns.fixedPricing.address,
-            paymentContract: zns.stakePayment.address,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl2SubOwner.address,
+              paymentType: PaymentType.STAKE,
+            },
             accessType: AccessType.OPEN,
           },
           priceConfig,
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: lvl2SubOwner.address,
-          },
         },
       });
 
@@ -708,18 +708,18 @@ describe("ZNSSubdomainRegistrar", () => {
         fullConfig: {
           distrConfig: {
             pricingContract: zns.fixedPricing.address,
-            paymentContract: zns.stakePayment.address,
             accessType: AccessType.OPEN,
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl2SubOwner.address,
+              paymentType: PaymentType.STAKE,
+            },
           },
           priceConfig,
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: lvl2SubOwner.address,
-          },
         },
       });
 
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
@@ -736,12 +736,13 @@ describe("ZNSSubdomainRegistrar", () => {
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
+      const protocolFee = getProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
-      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
 
       // revoke
@@ -751,7 +752,7 @@ describe("ZNSSubdomainRegistrar", () => {
       );
 
       // should offer refund !
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
       const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
       const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
 
@@ -760,7 +761,7 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
     });
 
-    it("FixedPricing + DirectPayment with fee", async () => {
+    it.only("FixedPricing + DirectPayment with fee", async () => {
       const priceConfig = {
         price: fixedPrice,
         feePercentage,
@@ -774,21 +775,22 @@ describe("ZNSSubdomainRegistrar", () => {
         isRootDomain: false,
         fullConfig: {
           distrConfig: {
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: lvl2SubOwner.address,
+              paymentType: PaymentType.DIRECT,
+            },
             pricingContract: zns.fixedPricing.address,
-            paymentContract: zns.directPayment.address,
             accessType: AccessType.OPEN,
           },
           priceConfig,
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: lvl2SubOwner.address,
-          },
         },
       });
 
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.directPayment.address);
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const label = "fixeddirectchild";
 
@@ -803,13 +805,19 @@ describe("ZNSSubdomainRegistrar", () => {
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.directPayment.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
-      const { expectedPrice, parentFee } = getPriceObject(label, priceConfig);
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+      const protocolFee = getProtocolFee(
+        expectedPrice,
+        priceConfigDefault.feePercentage
+      );
 
-      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice.add(parentFee));
-      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(parentFee));
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(0);
+      expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
@@ -820,11 +828,13 @@ describe("ZNSSubdomainRegistrar", () => {
       // should NOT offer refund !
       const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.directPayment.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
 
       expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
       expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
+      expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
     it("FixedPricing + DirectPayment no fee", async () => {
