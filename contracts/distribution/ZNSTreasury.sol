@@ -91,7 +91,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         address parentFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
-        uint256 parentFee,
+        uint256 stakeFee,
         uint256 protocolFee
     ) external override onlyRegistrar {
         // paymentToken should NOT be specified for root domains !!
@@ -101,7 +101,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         token.safeTransferFrom(
             depositor,
             address(this),
-            stakeAmount + parentFee + protocolFee
+            stakeAmount + stakeFee + protocolFee
         );
 
         // TODO sub fee: should these be safeTransferFrom for all ???
@@ -109,10 +109,10 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         token.safeTransfer(zeroVault, protocolFee);
 
         // transfer parent fee to the parent owner if it's not 0
-        if (parentFee != 0) {
+        if (stakeFee != 0) {
             token.safeTransfer(
                 parentFeeBeneficiary,
-                parentFee
+                stakeFee
             );
         }
 

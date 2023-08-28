@@ -272,6 +272,8 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @dev We are checking here for possible price spike at `maxLength`
      * which can occur if some of the config values are not properly chosen and set.
      */
+    // TODO sub fee: figure out these this logic! it doesn't work when we try and set the price to 0 !!!
+    // TODO sub fee: HERE and in AsymptoticPricing !!!
     function _validateConfig() internal view {
         uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
         require(
