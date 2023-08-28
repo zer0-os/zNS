@@ -13,12 +13,12 @@ struct CoreRegisterArgs {
     string label;
     address registrant;
     // 0x0 for root domains
-    address paymentBeneficiary;
+    address beneficiary;
     // 0x0 for root domains
     IERC20 paymentToken;
     uint256 price;
-    // 0x0 for root domains
-    uint256 parentFee;
+    // 0x0 for anything other than subdomain under a parent with Stake Payment
+    uint256 stakeFee;
     address domainAddress;
     bool isStakePayment;
 }
@@ -119,7 +119,7 @@ interface IZNSRegistrar is IDistributionConfig {
         CoreRegisterArgs memory args
     ) external;
 
-    function coreRevoke(bytes32 domainHash) external;
+    function coreRevoke(bytes32 domainHash, address owner) external;
 
     function revokeDomain(bytes32 domainHash) external;
 

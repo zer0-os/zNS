@@ -37,9 +37,9 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         AZNSPricing pricingContract
     ) external;
 
-    function setPaymentContractForDomain(
+    function setPaymentConfigForDomain(
         bytes32 domainHash,
-        AZNSPayment paymentContract
+        PaymentConfig calldata config
     ) external;
 
     function setAccessTypeForDomain(
@@ -58,8 +58,6 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
     function setRootRegistrar(address registrar_) external;
 
     function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing);
-
-    function getPaymentContractForDomain(bytes32 domainHash) external view returns (AZNSPayment);
 
     function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType);
 
