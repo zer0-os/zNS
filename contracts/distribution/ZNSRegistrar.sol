@@ -140,7 +140,7 @@ contract ZNSRegistrar is
         CoreRegisterArgs memory args
     ) internal {
         // payment part of the logic
-        if (args.price + args.stakeFee > 0) {
+        if (args.price > 0) {
             _processPayment(args);
         }
 
