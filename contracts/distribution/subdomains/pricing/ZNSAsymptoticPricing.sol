@@ -206,7 +206,7 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function _validateConfig(bytes32 domainHash) internal view {
         uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
         require(
-            priceConfigs[domainHash].minPrice < prevToMinPrice,
+            priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSAsymptoticPricing: incorrect value set causes the price spike at maxLength."
         );
     }
