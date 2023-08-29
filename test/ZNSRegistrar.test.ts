@@ -12,7 +12,7 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, REGISTRAR_ROLE,
+  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
@@ -250,8 +250,12 @@ describe("ZNSRegistrar", () => {
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
       const distrConfig = {
         pricingContract: zns.fixedPricing.address,
-        paymentContract: zns.directPayment.address,
         accessType: AccessType.OPEN,
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: user.address,
+          paymentType: PaymentType.DIRECT,
+        },
       };
 
       const tx = await zns.registrar.connect(user).registerDomain(
@@ -275,7 +279,7 @@ describe("ZNSRegistrar", () => {
       expect(accessType).to.eq(distrConfig.accessType);
     });
 
-    it.only("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
+    it("Stakes the correct amount, takes the correct fee and sends fee to Zero Vault", async () => {
       const balanceBeforeUser = await zns.zeroToken.balanceOf(user.address);
       const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
 
@@ -430,6 +434,40 @@ describe("ZNSRegistrar", () => {
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
+    });
+
+    it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
+      // set config on PriceOracle for the price to be 0
+      await zns.priceOracle.connect(admin).setMaxPrice("0");
+      await zns.priceOracle.connect(admin).setMinPrice("0");
+
+      const userBalanceBefore = await zns.zeroToken.balanceOf(user.address);
+      const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
+
+      // register a domain
+      await zns.registrar.connect(user).registerDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        distrConfigEmpty
+      );
+
+      const userBalanceAfter = await zns.zeroToken.balanceOf(user.address);
+      const vaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
+
+      expect(userBalanceBefore).to.eq(userBalanceAfter);
+      expect(vaultBalanceBefore).to.eq(vaultBalanceAfter);
+
+      // check existence in Registry
+      const domainHash = hashDomainLabel(defaultDomain);
+      const exists = await zns.registry.exists(domainHash);
+      expect(exists).to.be.true;
+
+      // make sure no transfers happened
+      const transferEventFilter = zns.zeroToken.filters.Transfer(
+        user.address,
+      );
+      const events = await zns.zeroToken.queryFilter(transferEventFilter);
+      expect(events.length).to.eq(0);
     });
   });
 

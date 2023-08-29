@@ -159,18 +159,5 @@ export const registrationWithSetup = async ({
     );
   }
 
-  // set up payment
-  if (fullConfig.distrConfig.paymentContract === zns.directPayment.address) {
-    await zns.directPayment.connect(user).setPaymentConfig(
-      domainHash,
-      fullConfig.paymentConfig,
-    );
-  } else if (fullConfig.distrConfig.paymentContract === zns.stakePayment.address) {
-    await zns.stakePayment.connect(user).setPaymentConfig(
-      domainHash,
-      fullConfig.paymentConfig,
-    );
-  }
-
   return domainHash;
 };

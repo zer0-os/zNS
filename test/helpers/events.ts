@@ -91,11 +91,8 @@ export const getDomainHashFromEvent = async ({
     user.address
   );
 
-  const [
-    {
-      args: { domainHash },
-    },
-  ] = await zns.registrar.queryFilter(filter, latestBlock - 2, latestBlock);
+  const events = await zns.registrar.queryFilter(filter, latestBlock - 2, latestBlock);
+  const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;
 };

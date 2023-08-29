@@ -274,6 +274,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     // TODO sub fee: figure out these this logic! it doesn't work when we try and set the price to 0 !!!
     // TODO sub fee: HERE and in AsymptoticPricing !!!
+    // TODO sub fee: currently it fails if we set maxPrice + baseLength as 0s
     function _validateConfig() internal view {
         uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
         require(
