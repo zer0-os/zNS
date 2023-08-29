@@ -147,10 +147,22 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
-    ) public override {
-        setPricingContractForDomain(domainHash, config.pricingContract);
-        setPaymentConfigForDomain(domainHash, config.paymentConfig);
-        _setAccessTypeForDomain(domainHash, config.accessType);
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        require(address(config.pricingContract) != address(0), "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address");
+        require(
+            address(config.paymentConfig.paymentToken) != address(0),
+            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+        );
+        require(
+            config.paymentConfig.beneficiary != address(0),
+            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
+        );
+        distrConfigs[domainHash] = config;
+
+        // TODO sub: figure out how to optimize all these setters !!!
+//        setPricingContractForDomain(domainHash, config.pricingContract);
+//        setPaymentConfigForDomain(domainHash, config.paymentConfig);
+//        _setAccessTypeForDomain(domainHash, config.accessType);
     }
 
     function setPricingContractForDomain(
@@ -169,7 +181,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit PricingContractSet(domainHash, address(pricingContract));
     }
 
-    // TODO sub fee: add individual methods to set internal config values !!!
     function setPaymentConfigForDomain(
         bytes32 domainHash,
         PaymentConfig calldata config
@@ -184,9 +195,51 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         );
 
         distrConfigs[domainHash].paymentConfig = config;
-        // TODO sub fee: fix this event or create new ones for every field !!!
-        // this is incorrect now !! fix !!
-        emit PaymentContractSet(domainHash, address(config.paymentToken));
+
+        emit PaymentConfigSet(
+            domainHash,
+            config.paymentToken,
+            config.beneficiary,
+            config.paymentType
+        );
+    }
+
+    function setPaymentTokenForDomain(
+        bytes32 domainHash,
+        IERC20 paymentToken
+    // TODO sub fee: do we need these for all setters ??
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        require(
+            address(paymentToken) != address(0),
+            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+        );
+
+        distrConfigs[domainHash].paymentConfig.paymentToken = paymentToken;
+
+        emit PaymentTokenSet(domainHash, address(paymentToken));
+    }
+
+    function setBeneficiaryForDomain(
+        bytes32 domainHash,
+        address beneficiary
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        require(
+            beneficiary != address(0),
+            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
+        );
+
+        distrConfigs[domainHash].paymentConfig.beneficiary = beneficiary;
+
+        emit PaymentBeneficiarySet(domainHash, beneficiary);
+    }
+
+    function setPaymentTypeForDomain(
+        bytes32 domainHash,
+        PaymentType paymentType
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        distrConfigs[domainHash].paymentConfig.paymentType = paymentType;
+
+        emit PaymentTypeSet(domainHash, paymentType);
     }
 
     function _setAccessTypeForDomain(
@@ -213,7 +266,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         bool allowed
         // TODO sub: should we allow Registrar role to call this ??
         //  if so - why ?? what can we call from there ??
-        //  should we cut Registrar out of this ??
+        //  should we cut Registrar out of this and other methods ??
     ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
         distributionWhitelist[domainHash][registrant] = allowed;
 
