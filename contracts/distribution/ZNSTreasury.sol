@@ -86,9 +86,9 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     function stakeForDomain(
         bytes32 domainHash,
         // TODO sub fee: change name to label
-        string calldata domainName,
+        string calldata domainLabel,
         address depositor,
-        address parentFeeBeneficiary,
+        address stakeFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 stakeFee,
@@ -111,7 +111,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         // transfer parent fee to the parent owner if it's not 0
         if (stakeFee != 0) {
             token.safeTransfer(
-                parentFeeBeneficiary,
+                stakeFeeBeneficiary,
                 stakeFee
             );
         }
@@ -119,12 +119,13 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
 
-        // TODO sub fee: do we need more params here ???
         emit StakeDeposited(
             domainHash,
-            domainName,
+            domainLabel,
             depositor,
+            address(token),
             stakeAmount,
+            stakeFee,
             protocolFee
         );
     }
@@ -151,7 +152,6 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
-    // TODO sub fee: figure out how to NOT do fee here, but have it in Pricing !!!
     function processDirectPayment(
         address payer,
         address paymentBeneficiary,
@@ -159,15 +159,14 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         uint256 paymentAmount,
         uint256 protocolFee
     ) external override onlyRegistrar {
-        // Transfer stake amount and fee to this address
+        // Transfer payment to parent beneficiary from payer
         paymentToken.safeTransferFrom(
             payer,
             paymentBeneficiary,
             paymentAmount
         );
 
-        // TODO sub fee: does transferFrom require additional approval here ???
-        // Transfer registration fee to the Zero Vault from this address
+        // Transfer registration fee to the Zero Vault from payer
         paymentToken.safeTransferFrom(payer, zeroVault, protocolFee);
 
         emit DirectPaymentProcessed(

@@ -15,10 +15,12 @@ interface IZNSTreasury {
      */
     event StakeDeposited(
         bytes32 indexed domainHash,
-        string domainName,
+        string domainLabel,
         address indexed depositor,
+        address stakingToken,
         uint256 indexed stakeAmount,
-        uint256 registrationFee
+        uint256 stakeFee,
+        uint256 protocolFee
     );
 
     /**
