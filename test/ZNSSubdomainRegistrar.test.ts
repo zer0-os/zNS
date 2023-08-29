@@ -1,5 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
+import {
+  IDistributionConfig,
+  IDomainConfigForTest,
+  IFullDistributionConfig,
+  IPathRegResult,
+  ZNSContracts,
+} from "./helpers/types";
 import {
   AccessType, ADMIN_ROLE,
   deployZNS,
@@ -44,7 +50,9 @@ describe("ZNSSubdomainRegistrar", () => {
 
   // TODO sub: remove this test when done with the feature
   describe.only("Gas Change Test !!!", () => {
-    let rootHash : string;
+    let rootHashDirect : string;
+    let rootHashStake : string;
+    let config : IDistributionConfig;
 
     before(async () => {
       [
@@ -64,6 +72,16 @@ describe("ZNSSubdomainRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
+      config = {
+        pricingContract: zns.fixedPricing.address,
+        paymentConfig: {
+          paymentType: PaymentType.DIRECT,
+          paymentToken: zns.zeroToken.address,
+          beneficiary: rootOwner.address,
+        },
+        accessType: AccessType.OPEN,
+      };
+
       // Give funds to users
       await Promise.all(
         [
@@ -74,26 +92,45 @@ describe("ZNSSubdomainRegistrar", () => {
       );
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
-      rootHash = await registrationWithSetup({
+      rootHashDirect = await registrationWithSetup({
         zns,
         user: rootOwner,
-        domainLabel: "rootrooooot",
+        domainLabel: "rootdirect",
         fullConfig: {
           distrConfig: {
             accessType: AccessType.OPEN,
-            pricingContract: zns.fixedPricing.address,
+            pricingContract: zns.asPricing.address,
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: rootOwner.address,
               paymentType: PaymentType.DIRECT,
             },
           },
-          priceConfig: {
-            price: BigNumber.from(ethers.utils.parseEther("1375.612")),
-            feePercentage: BigNumber.from(0),
-          },
+          priceConfig: priceConfigDefault,
         },
       });
+
+      // TODO sub fee: add cases for subs under this !
+      // rootHashStake = await registrationWithSetup({
+      //   zns,
+      //   user: rootOwner,
+      //   domainLabel: "rootstake",
+      //   fullConfig: {
+      //     distrConfig: {
+      //       accessType: AccessType.OPEN,
+      //       pricingContract: zns.asPricing.address,
+      //       paymentConfig: {
+      //         paymentToken: zns.zeroToken.address,
+      //         beneficiary: rootOwner.address,
+      //         paymentType: PaymentType.STAKE,
+      //       },
+      //     },
+      //     priceConfig: {
+      //       price: BigNumber.from(ethers.utils.parseEther("1375.612")),
+      //       feePercentage: BigNumber.from(0),
+      //     },
+      //   },
+      // });
 
       fs.existsSync(gasCostFile) || fs.writeFileSync(gasCostFile, JSON.stringify({}));
     });
@@ -105,7 +142,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const tx = await zns.registrar.connect(rootOwner).registerDomain(
         "root",
         rootOwner.address,
-        distrConfigEmpty
+        config
       );
 
       const { cumulativeGasUsed } = await tx.wait();
@@ -143,10 +180,10 @@ describe("ZNSSubdomainRegistrar", () => {
       await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
       // register subdomain
       const tx = await zns.subdomainRegistrar.connect(lvl2SubOwner).registerSubdomain(
-        rootHash,
+        rootHashDirect,
         "subdomain",
         lvl2SubOwner.address,
-        distrConfigEmpty,
+        config,
       );
       const { cumulativeGasUsed } = await tx.wait();
 
