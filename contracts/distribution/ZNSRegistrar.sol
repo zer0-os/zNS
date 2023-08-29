@@ -114,8 +114,6 @@ contract ZNSRegistrar is
             )
         );
 
-        // TODO sub fee: is this enough of a check ?! what problems can this cause
-        //  if the user doesn't set the full config ??
         if (address(distributionConfig.pricingContract) != address(0)) {
             // TODO sub: this adds 52k gas !
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
@@ -132,9 +130,6 @@ contract ZNSRegistrar is
         );
     }
 
-    // TODO sub fee: ONLY proceed with transfers if price is > 0 !!!
-    // TODO sub fee: determine how to manage the fee when the price is 0 ! is it even possible?
-    // TODO sub fee: ADD TEST FOR THIS!
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {

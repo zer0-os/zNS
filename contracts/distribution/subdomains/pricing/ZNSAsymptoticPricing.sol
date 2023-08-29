@@ -56,10 +56,10 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function getPriceAndFee(
         bytes32 parentHash,
         string calldata label
-    ) external view override returns (uint256 price, uint256 parentFee) {
+    ) external view override returns (uint256 price, uint256 stakeFee) {
         price = getPrice(parentHash, label);
-        parentFee = getFeeForPrice(parentHash, price);
-        return (price, parentFee);
+        stakeFee = getFeeForPrice(parentHash, price);
+        return (price, stakeFee);
     }
 
     // TODO sub: is this function needed ??

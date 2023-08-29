@@ -80,12 +80,11 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * to this contract and then transfers the `registrationFee` to the Zero Vault.
      * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a `StakeDeposited` event.
      * @param domainHash The hash of the domain for which the stake is being deposited.
-     * @param domainName The name of the domain for which the stake is being deposited.
+     * @param domainLabel The label (last part after ".") of the domain for which the stake is being deposited.
      * @param depositor The address of the user who is depositing the stake.
      */
     function stakeForDomain(
         bytes32 domainHash,
-        // TODO sub fee: change name to label
         string calldata domainLabel,
         address depositor,
         address stakeFeeBeneficiary,

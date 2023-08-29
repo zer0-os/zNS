@@ -32,7 +32,7 @@ abstract contract AZNSPayment {
         bytes32 domainHash,
         address payer,
         uint256 amount,
-        uint256 parentFee
+        uint256 stakeFee
     ) external virtual;
 
     function refundsOnRevoke() external pure virtual returns (bool) {

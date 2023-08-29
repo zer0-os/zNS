@@ -8,10 +8,10 @@ interface IZNSTreasury {
     /**
      * @notice Emitted when a new stake is deposited upon registration of a new domain.
      * @param domainHash The hash of the domain name
-     * @param domainName The domain name as a string
+     * @param domainLabel The domain name as a string
      * @param depositor The address of the depositing user / new domain owner
      * @param stakeAmount The amount they are depositing / price of the domain based on name length
-     * @param registrationFee The registration fee paid by the user on top of the staked amount
+     * @param stakeFee The registration fee paid by the user on top of the staked amount
      */
     event StakeDeposited(
         bytes32 indexed domainHash,
@@ -62,14 +62,12 @@ interface IZNSTreasury {
 
     function stakeForDomain(
         bytes32 domainHash,
-    // TODO sub fee: change name to label
         string calldata domainName,
         address depositor,
-    // TODO sub fee: change to stakeFee everywhere in code !!!
-        address parentFeeBeneficiary,
+        address stakeFeeBeneficiary,
         IERC20 paymentToken,
         uint256 stakeAmount,
-        uint256 parentFee,
+        uint256 stakeFee,
         uint256 protocolFee
     ) external;
 

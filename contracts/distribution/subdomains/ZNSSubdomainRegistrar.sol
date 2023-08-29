@@ -84,7 +84,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Subdomain already exists"
         );
 
-        // TODO sub fee: add logic everywhere to not perform any transfers if price + stakeFee == 0 !!
         if (!isOwnerOrOperator) {
             // TODO sub: can we make this abstract switching better ??
             // TODO sub: should we eliminate Pricing with not fee abstract at all??
@@ -97,7 +96,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
                         label
                     );
             } else {
-                //  stakeFee is not planned to be allowed for direct payment
+                //  stakeFee is not taken into account for direct payment even if set on pricing contract
                 coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
 
@@ -110,11 +109,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             );
         }
 
-        // TODO sub fee: add support for parent owner to not pay for subdomains !!
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        // TODO sub fee: is this enough of a check ?! what problems can this cause
-        //  if the user doesn't set the full config ??
         if (address(distrConfig.pricingContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
