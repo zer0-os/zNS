@@ -66,11 +66,7 @@ interface IZNSPriceOracle is IDomainPriceConfig {
 
     function getPrice(
         string calldata name
-    ) external view returns (
-        uint256 totalPrice,
-        uint256 domainPrice,
-        uint256 fee
-    );
+    ) external view returns (uint256);
 
     function getProtocolFee(uint256 domainPrice) external view returns (uint256);
 

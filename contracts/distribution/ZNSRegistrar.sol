@@ -96,9 +96,8 @@ contract ZNSRegistrar is
             "ZNSRegistrar: Domain already exists"
         );
 
-        // Get price and fee for the domain
-        // TODO sub fee: refactor to return price only if left as is !!
-        (, uint256 domainPrice, ) = priceOracle.getPrice(name);
+        // Get price for the domain
+        uint256 domainPrice = priceOracle.getPrice(name);
 
         _coreRegister(
             CoreRegisterArgs(

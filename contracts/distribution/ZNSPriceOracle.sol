@@ -52,19 +52,12 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function getPrice(
         string calldata name
-    ) external view override returns (
-        uint256 totalPrice,
-        uint256 domainPrice,
-        uint256 fee
-    ) {
+    ) external view override returns (uint256) {
         uint256 length = name.strlen();
         // No pricing is set for 0 length domains
-        if (length == 0) return (0, 0, 0);
+        if (length == 0) return 0;
 
-        domainPrice = _getPrice(length);
-        fee = getProtocolFee(domainPrice);
-
-        totalPrice = domainPrice + fee;
+        return _getPrice(length);
     }
 
     /**
