@@ -80,6 +80,7 @@ describe("ZNSRegistrar", () => {
       randomUser.address,
       randomUser.address,
       randomUser.address,
+      randomUser.address,
     );
 
     await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
@@ -88,6 +89,7 @@ describe("ZNSRegistrar", () => {
   it("Should NOT initialize twice", async () => {
     const tx = zns.registrar.connect(deployer).initialize(
       zns.accessController.address,
+      randomUser.address,
       randomUser.address,
       randomUser.address,
       randomUser.address,
@@ -103,13 +105,18 @@ describe("ZNSRegistrar", () => {
       expect(isRegistrar).to.be.false;
 
       await expect(
-        zns.registrar.connect(randomUser).coreRegister(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          "randomname",
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-        )
+        zns.registrar.connect(randomUser).coreRegister({
+          parentHash: ethers.constants.HashZero,
+          domainHash: ethers.constants.HashZero,
+          label: "randomname",
+          registrant: ethers.constants.AddressZero,
+          beneficiary: ethers.constants.AddressZero,
+          paymentToken: ethers.constants.AddressZero,
+          price: "0",
+          stakeFee: "0",
+          domainAddress: ethers.constants.AddressZero,
+          isStakePayment: false,
+        })
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
       );
@@ -122,6 +129,7 @@ describe("ZNSRegistrar", () => {
       await expect(
         zns.registrar.connect(randomUser).coreRevoke(
           ethers.constants.HashZero,
+          ethers.constants.AddressZero,
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
@@ -270,12 +278,12 @@ describe("ZNSRegistrar", () => {
 
       const {
         pricingContract,
-        paymentContract,
+        paymentConfig,
         accessType,
       } = await zns.subdomainRegistrar.distrConfigs(domainHash);
 
       expect(pricingContract).to.eq(distrConfig.pricingContract);
-      expect(paymentContract).to.eq(distrConfig.paymentContract);
+      expect(paymentConfig).to.deep.eq(distrConfig.paymentConfig);
       expect(accessType).to.eq(distrConfig.accessType);
     });
 
@@ -628,7 +636,11 @@ describe("ZNSRegistrar", () => {
         domainName: defaultDomain,
         distrConfig: {
           pricingContract: zns.fixedPricing.address,
-          paymentContract: zns.directPayment.address,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: user.address,
+            paymentType: PaymentType.DIRECT,
+          },
           accessType: AccessType.OPEN,
         },
       });
