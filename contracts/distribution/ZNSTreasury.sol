@@ -103,7 +103,6 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
             stakeAmount + stakeFee + protocolFee
         );
 
-        // TODO sub fee: should these be safeTransferFrom for all ???
         // Transfer registration fee to the Zero Vault from this address
         token.safeTransfer(zeroVault, protocolFee);
 
