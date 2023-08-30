@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDistributionConfig, IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
+import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -1586,7 +1586,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
     it("should allow anyone to register a domain when parent's accessType is OPEN", async () => {
       const { domainHash: parentHash } = regResults[1];
-      const { paymentConfig: { paymentType } } = domainConfigs[1].fullConfig.distrConfig;
       const domainLabel = "alloweded";
 
       const {

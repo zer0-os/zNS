@@ -18,6 +18,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
+    // TODO sub fee: should we move PaymentConfigs to Treasury ???!!! test gas usage!
     mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
     mapping(bytes32 domainHash =>

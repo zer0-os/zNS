@@ -24,7 +24,7 @@ describe("Transaction Gas Costs Test", () => {
   let zns : ZNSContracts;
 
   let rootHashDirect : string;
-  let rootHashStake : string;
+  // let rootHashStake : string;
   let config : IDistributionConfig;
 
   before(async () => {
@@ -123,8 +123,10 @@ describe("Transaction Gas Costs Test", () => {
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")
     );
-    // eslint-disable-next-line no-invalid-this
-    const prevGas = previous[this.test!.title];
+
+    const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
+    const prevGas = previous[title];
+
     let gasDiff = BigNumber.from(0);
     if (prevGas) {
       gasDiff = gasUsed.sub(BigNumber.from(prevGas));
@@ -142,7 +144,7 @@ describe("Transaction Gas Costs Test", () => {
         JSON.stringify({
           ...previous,
           // eslint-disable-next-line no-invalid-this
-          [this.test!.title]: gasUsed.toString(),
+          [title]: gasUsed.toString(),
         })
       );
     }
@@ -163,8 +165,10 @@ describe("Transaction Gas Costs Test", () => {
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")
     );
-    // eslint-disable-next-line no-invalid-this
-    const prevGas = previous[this.test!.title];
+
+    const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
+
+    const prevGas = previous[title];
     let gasDiff = BigNumber.from(0);
     if (prevGas) {
       gasDiff = gasUsed.sub(BigNumber.from(prevGas));
@@ -182,7 +186,7 @@ describe("Transaction Gas Costs Test", () => {
         JSON.stringify({
           ...previous,
           // eslint-disable-next-line no-invalid-this
-          [this.test!.title]: gasUsed.toString(),
+          [title]: gasUsed.toString(),
         },
         null,
         "\t")
