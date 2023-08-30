@@ -211,12 +211,10 @@ describe("ZNSSubdomainRegistrar", () => {
 
     it("should revoke lvl 6 domain without refund and lock registration", async () => {
       const domainHash = regResults[5].domainHash;
-      const parentHash = regResults[4].domainHash;
 
       const userBalBefore = await zns.zeroToken.balanceOf(lvl6SubOwner.address);
 
       await zns.subdomainRegistrar.connect(lvl6SubOwner).revokeSubdomain(
-        parentHash,
         domainHash,
       );
 
@@ -258,13 +256,12 @@ describe("ZNSSubdomainRegistrar", () => {
 
     it("should revoke lvl 5 domain with refund", async () => {
       const domainHash = regResults[4].domainHash;
-      const parentHash = regResults[3].domainHash;
 
       const userBalanceBefore = await zns.zeroToken.balanceOf(lvl5SubOwner.address);
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
 
-      await zns.subdomainRegistrar.connect(lvl5SubOwner).revokeSubdomain(parentHash, domainHash);
+      await zns.subdomainRegistrar.connect(lvl5SubOwner).revokeSubdomain(domainHash);
 
       const userBalAfter = await zns.zeroToken.balanceOf(lvl5SubOwner.address);
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
@@ -370,7 +367,6 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     it("should revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
-      const lvl1Hash = regResults[0].domainHash;
       const lvl2Hash = regResults[1].domainHash;
       const lvl3Hash = regResults[2].domainHash;
 
@@ -379,7 +375,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke parent
       await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
-        lvl1Hash,
         lvl2Hash,
       );
 
@@ -425,7 +420,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke child
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        lvl2Hash,
         lvl3Hash,
       );
 
@@ -480,7 +474,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke subdomain
       await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
-        parentHash,
         lvl2Hash,
       );
 
@@ -539,12 +532,10 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     it("should NOT register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
-      const lvl3Hash = regResults[2].domainHash;
       const lvl4Hash = regResults[3].domainHash;
 
       // revoke parent
       await zns.subdomainRegistrar.connect(lvl4SubOwner).revokeSubdomain(
-        lvl3Hash,
         lvl4Hash,
       );
 
@@ -689,7 +680,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -762,7 +752,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -838,7 +827,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -908,7 +896,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -981,7 +968,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1054,7 +1040,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1140,7 +1125,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1227,7 +1211,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1314,7 +1297,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1402,7 +1384,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // revoke
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        subdomainParentHash,
         childHash,
       );
 
@@ -1952,7 +1933,6 @@ describe("ZNSSubdomainRegistrar", () => {
       // fail
       await expect(
         zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-          regResults[0].domainHash,
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
@@ -1975,7 +1955,6 @@ describe("ZNSSubdomainRegistrar", () => {
       // fail again
       await expect(
         zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
-          regResults[0].domainHash,
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
@@ -2299,7 +2278,6 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // try revoking
       await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
-        regResults[0].domainHash,
         regResults[1].domainHash,
       );
 
