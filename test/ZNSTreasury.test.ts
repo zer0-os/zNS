@@ -122,7 +122,7 @@ describe("ZNSTreasury", () => {
 
       const {
         expectedPrice,
-        fee,
+        stakeFee,
       } = getPriceObject(
         domain,
         priceConfigDefault
@@ -136,7 +136,7 @@ describe("ZNSTreasury", () => {
         zns.zeroToken.address,
         expectedPrice,
         ethers.constants.Zero,
-        fee
+        stakeFee
       );
 
       await expect(tx)
@@ -148,7 +148,7 @@ describe("ZNSTreasury", () => {
           zns.zeroToken.address,
           expectedPrice,
           ethers.constants.Zero,
-          fee
+          stakeFee
         );
     });
   });
@@ -341,7 +341,7 @@ describe("ZNSTreasury", () => {
 
       const domainName = "world";
       const domainHash = hashSubdomainName(domainName);
-      const { expectedPrice, fee } = getPriceObject(domainName, priceConfigDefault);
+      const { expectedPrice, stakeFee } = getPriceObject(domainName, priceConfigDefault);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
@@ -351,7 +351,7 @@ describe("ZNSTreasury", () => {
         zns.zeroToken.address,
         expectedPrice,
         ethers.constants.Zero,
-        fee
+        stakeFee
       );
 
       const calls = [

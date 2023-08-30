@@ -283,7 +283,9 @@ describe("ZNSRegistrar", () => {
       } = await zns.subdomainRegistrar.distrConfigs(domainHash);
 
       expect(pricingContract).to.eq(distrConfig.pricingContract);
-      expect(paymentConfig).to.deep.eq(distrConfig.paymentConfig);
+      expect(paymentConfig.paymentToken).to.eq(distrConfig.paymentConfig.paymentToken);
+      expect(paymentConfig.beneficiary).to.eq(distrConfig.paymentConfig.beneficiary);
+      expect(paymentConfig.paymentType).to.eq(distrConfig.paymentConfig.paymentType);
       expect(accessType).to.eq(distrConfig.accessType);
     });
 
@@ -301,7 +303,7 @@ describe("ZNSRegistrar", () => {
       const {
         totalPrice,
         expectedPrice,
-        fee,
+        stakeFee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
 
       await checkBalance({
@@ -315,7 +317,7 @@ describe("ZNSRegistrar", () => {
         token: zns.zeroToken,
         balanceBefore: balanceBeforeVault,
         userAddress: zeroVault.address,
-        target: fee,
+        target: stakeFee,
         shouldDecrease: false,
       });
 
@@ -694,7 +696,7 @@ describe("ZNSRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-        fee: expectedStakeFee,
+        stakeFee: expectedStakeFee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);

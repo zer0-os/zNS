@@ -40,9 +40,9 @@ export const calcAsymptoticPrice = (
   return base.div(precisionMultiplier).mul(precisionMultiplier);
 };
 
-export const getProtocolFee = (
+export const getStakingOrProtocolFee = (
   forAmount : BigNumber,
-  feePercentage : BigNumber
+  feePercentage : BigNumber = priceConfigDefault.feePercentage,
 ) => forAmount
   .mul(feePercentage)
   .div(PERCENTAGE_BASIS);
@@ -61,7 +61,7 @@ export const getPriceObject = (
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
-  fee : BigNumber;
+  stakeFee : BigNumber;
 } => {
   let expectedPrice;
   if (Object.keys(priceConfig).length === 6) {
@@ -74,13 +74,13 @@ export const getPriceObject = (
 
   const { feePercentage } = priceConfig;
 
-  const fee = getProtocolFee(expectedPrice, feePercentage);
+  const stakeFee = getStakingOrProtocolFee(expectedPrice, feePercentage);
 
-  const totalPrice = expectedPrice.add(fee);
+  const totalPrice = expectedPrice.add(stakeFee);
 
   return {
     totalPrice,
     expectedPrice,
-    fee,
+    stakeFee,
   };
 };
