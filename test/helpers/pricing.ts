@@ -61,7 +61,7 @@ export const getPriceObject = (
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
-  parentFee : BigNumber;
+  fee : BigNumber;
 } => {
   let expectedPrice;
   if (Object.keys(priceConfig).length === 6) {
@@ -81,6 +81,6 @@ export const getPriceObject = (
   return {
     totalPrice,
     expectedPrice,
-    parentFee: fee,
+    fee,
   };
 };

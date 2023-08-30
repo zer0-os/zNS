@@ -67,14 +67,21 @@ describe("ZNSTreasury", () => {
       const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
       const zeroVaultBalanceBeforeStake = await zns.zeroToken.balanceOf(zeroVault.address);
 
+      const expectedStake = await zns.priceOracle.getPrice(domain);
+      const fee = await zns.priceOracle.getProtocolFee(expectedStake);
+
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domain,
-        user.address
+        user.address,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        expectedStake,
+        "0",
+        fee
       );
 
       const stake = await zns.treasury.stakedForDomain(domainHash);
-      const { domainPrice: expectedStake, fee } = await zns.priceOracle.getPrice(domain);
       expect(stake).to.eq(expectedStake);
 
       await checkBalance({
@@ -96,7 +103,12 @@ describe("ZNSTreasury", () => {
       const tx = zns.treasury.connect(randomAcc).stakeForDomain(
         domainHash,
         domain,
-        user.address
+        user.address,
+        ethers.constants.AddressZero,
+        ethers.constants.AddressZero,
+        ethers.constants.Zero,
+        ethers.constants.Zero,
+        ethers.constants.Zero
       );
 
       await expect(tx).to.be.revertedWith(
@@ -110,8 +122,8 @@ describe("ZNSTreasury", () => {
 
       const {
         expectedPrice,
-        parentFee,
-      } = await getPriceObject(
+        fee,
+      } = getPriceObject(
         domain,
         priceConfigDefault
       );
@@ -119,7 +131,12 @@ describe("ZNSTreasury", () => {
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domain,
-        user.address
+        user.address,
+        randomAcc.address,
+        zns.zeroToken.address,
+        expectedPrice,
+        ethers.constants.Zero,
+        fee
       );
 
       await expect(tx)
@@ -128,8 +145,10 @@ describe("ZNSTreasury", () => {
           domainHash,
           domain,
           user.address,
+          zns.zeroToken.address,
           expectedPrice,
-          parentFee
+          ethers.constants.Zero,
+          fee
         );
     });
   });
@@ -138,11 +157,18 @@ describe("ZNSTreasury", () => {
     it("Unstakes the correct amount", async () => {
       const domain = "wilder";
       const domainHash = hashDomainLabel(domain);
+      const stakeAmt = ethers.utils.parseEther("173");
+      const protocolFee = ethers.utils.parseEther("3.112");
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domain,
-        user.address
+        user.address,
+        ethers.constants.AddressZero,
+        zns.zeroToken.address,
+        stakeAmt,
+        ethers.constants.Zero,
+        protocolFee
       );
 
       const balanceBeforeUnstake = await zns.zeroToken.balanceOf(user.address);
@@ -315,11 +341,17 @@ describe("ZNSTreasury", () => {
 
       const domainName = "world";
       const domainHash = hashSubdomainName(domainName);
+      const { expectedPrice, fee } = getPriceObject(domainName, priceConfigDefault);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         domainHash,
         domainName,
-        deployer.address
+        deployer.address,
+        ethers.constants.AddressZero,
+        zns.zeroToken.address,
+        expectedPrice,
+        ethers.constants.Zero,
+        fee
       );
 
       const calls = [

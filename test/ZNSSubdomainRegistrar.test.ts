@@ -49,7 +49,7 @@ describe("ZNSSubdomainRegistrar", () => {
   let zeroVault : SignerWithAddress;
 
   // TODO sub: remove this test when done with the feature
-  describe.only("Gas Change Test !!!", () => {
+  describe("Gas Change Test !!!", () => {
     let rootHashDirect : string;
     let rootHashStake : string;
     let config : IDistributionConfig;
@@ -163,7 +163,7 @@ describe("ZNSSubdomainRegistrar", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-      if (gasDiff.gt(1000)) {
+      if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
         fs.writeFileSync(
           gasCostFile,
           JSON.stringify({
@@ -203,7 +203,7 @@ describe("ZNSSubdomainRegistrar", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-      if (gasDiff.gt(1000)) {
+      if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
         fs.writeFileSync(
           gasCostFile,
           JSON.stringify({
@@ -792,7 +792,6 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    // TODO sub fee: make this new logic on contracts work with direct payment
     it("FixedPricing + StakePayment with stake fee", async () => {
       const priceConfig = {
         price: fixedPrice,
@@ -840,10 +839,10 @@ describe("ZNSSubdomainRegistrar", () => {
       const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
-      const { expectedPrice, parentFee } = getPriceObject(label, priceConfig);
+      const { expectedPrice, fee: parentFee } = getPriceObject(label, priceConfig);
       const protocolFee = getProtocolFee(expectedPrice.add(parentFee), priceConfigDefault.feePercentage);
 
-      expect(parentBalAfter.sub(parentBalBefore)).to.eq(parentFee);
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(protocolFee);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(parentFee).add(protocolFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
@@ -1059,11 +1058,11 @@ describe("ZNSSubdomainRegistrar", () => {
       const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
-      const { expectedPrice, parentFee } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice.add(parentFee), priceConfigDefault.feePercentage);
+      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
+      const protocolFee = getProtocolFee(expectedPrice.add(protocolFee), priceConfigDefault.feePercentage);
 
-      expect(parentBalAfter.sub(parentBalBefore)).to.eq(parentFee);
-      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(parentFee).add(protocolFee));
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(protocolFee);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee).add(protocolFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
@@ -1753,13 +1752,13 @@ describe("ZNSSubdomainRegistrar", () => {
 
       const {
         expectedPrice,
-        parentFee,
+        fee,
       } = getPriceObject(
         domainLabel,
         domainConfigs[1].fullConfig.priceConfig
       );
       // approve direct payment
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(parentFee));
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
 
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         parentHash,
@@ -1938,12 +1937,12 @@ describe("ZNSSubdomainRegistrar", () => {
       // approve
       const {
         expectedPrice,
-        parentFee,
+        fee,
       } = getPriceObject(
         label,
         domainConfigs[1].fullConfig.priceConfig
       );
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(parentFee));
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
 
       // register
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(

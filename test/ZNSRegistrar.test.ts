@@ -301,7 +301,7 @@ describe("ZNSRegistrar", () => {
       const {
         totalPrice,
         expectedPrice,
-        parentFee,
+        fee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
 
       await checkBalance({
@@ -315,7 +315,7 @@ describe("ZNSRegistrar", () => {
         token: zns.zeroToken,
         balanceBefore: balanceBeforeVault,
         userAddress: zeroVault.address,
-        target: parentFee,
+        target: fee,
         shouldDecrease: false,
       });
 
@@ -694,7 +694,7 @@ describe("ZNSRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-        parentFee: expectedStakeFee,
+        fee: expectedStakeFee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
