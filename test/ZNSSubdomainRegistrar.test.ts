@@ -1,19 +1,18 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { IDistributionConfig, IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
-  IDistributionConfig,
-  IDomainConfigForTest,
-  IFullDistributionConfig,
-  IPathRegResult,
-  ZNSContracts,
-} from "./helpers/types";
-import {
-  AccessType, ADMIN_ROLE,
+  AccessType,
+  ADMIN_ROLE,
   deployZNS,
-  distrConfigEmpty, DISTRIBUTION_LOCKED_ERR,
-  fullDistrConfigEmpty, getAccessRevertMsg,
-  getPriceObject, getProtocolFee,
+  distrConfigEmpty,
+  DISTRIBUTION_LOCKED_ERR,
+  fullDistrConfigEmpty,
+  getAccessRevertMsg,
+  getPriceObject,
+  getStakingOrProtocolFee,
   INVALID_TOKENID_ERC_ERR,
-  ONLY_NAME_OWNER_REG_ERR, PaymentType,
+  ONLY_NAME_OWNER_REG_ERR,
+  PaymentType,
   priceConfigDefault,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -145,7 +144,7 @@ describe("ZNSSubdomainRegistrar", () => {
         config
       );
 
-      const { cumulativeGasUsed } = await tx.wait();
+      const { gasUsed } = await tx.wait();
 
       const previous = JSON.parse(
         fs.readFileSync(gasCostFile, "utf8")
@@ -154,12 +153,12 @@ describe("ZNSSubdomainRegistrar", () => {
       const prevGas = previous[this.test!.title];
       let gasDiff = BigNumber.from(0);
       if (prevGas) {
-        gasDiff = cumulativeGasUsed.sub(BigNumber.from(prevGas));
+        gasDiff = gasUsed.sub(BigNumber.from(prevGas));
       }
 
       console.log(`
       Root Domain Price:
-        Gas Used: ${cumulativeGasUsed.toString()}
+        Gas Used: ${gasUsed.toString()}
         Gas Diff: ${gasDiff.toString()}
       `);
 
@@ -169,7 +168,7 @@ describe("ZNSSubdomainRegistrar", () => {
           JSON.stringify({
             ...previous,
             // eslint-disable-next-line no-invalid-this
-            [this.test!.title]: cumulativeGasUsed.toString(),
+            [this.test!.title]: gasUsed.toString(),
           })
         );
       }
@@ -185,7 +184,7 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl2SubOwner.address,
         config,
       );
-      const { cumulativeGasUsed } = await tx.wait();
+      const { gasUsed } = await tx.wait();
 
       const previous = JSON.parse(
         fs.readFileSync(gasCostFile, "utf8")
@@ -194,12 +193,12 @@ describe("ZNSSubdomainRegistrar", () => {
       const prevGas = previous[this.test!.title];
       let gasDiff = BigNumber.from(0);
       if (prevGas) {
-        gasDiff = cumulativeGasUsed.sub(BigNumber.from(prevGas));
+        gasDiff = gasUsed.sub(BigNumber.from(prevGas));
       }
 
       console.log(`
       Subdomain Price:
-        Gas Used: ${cumulativeGasUsed.toString()}
+        Gas Used: ${gasUsed.toString()}
         Gas Diff: ${gasDiff.toString()}
       `);
 
@@ -209,7 +208,7 @@ describe("ZNSSubdomainRegistrar", () => {
           JSON.stringify({
             ...previous,
             // eslint-disable-next-line no-invalid-this
-            [this.test!.title]: cumulativeGasUsed.toString(),
+            [this.test!.title]: gasUsed.toString(),
           },
           null,
           "\t")
@@ -560,7 +559,21 @@ describe("ZNSSubdomainRegistrar", () => {
       // make sure all parent's distribution configs still exist
       const parentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl2Hash);
       expect(parentDistrConfig.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
-      expect(parentDistrConfig.paymentConfig).to.deep.eq(domainConfigs[1].fullConfig.distrConfig.paymentConfig);
+      expect(
+        parentDistrConfig.paymentConfig.paymentType
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType
+      );
+      expect(
+        parentDistrConfig.paymentConfig.paymentToken
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentToken
+      );
+      expect(
+        parentDistrConfig.paymentConfig.beneficiary
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.beneficiary
+      );
 
       expect(parentDistrConfig.pricingContract).to.eq(zns.asPricing.address);
 
@@ -576,7 +589,7 @@ describe("ZNSSubdomainRegistrar", () => {
       }
 
       // make sure the child's stake is still there
-      const childStakedAmt = await zns.stakePayment.stakedForDomain(lvl3Hash);
+      const childStakedAmt = await zns.treasury.stakedForDomain(lvl3Hash);
       const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
 
       expect(childStakedAmt).to.eq(expectedPrice);
@@ -596,7 +609,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
 
-      const stakedAfterRevoke = await zns.stakePayment.stakedForDomain(lvl3Hash);
+      const stakedAfterRevoke = await zns.treasury.stakedForDomain(lvl3Hash);
       expect(stakedAfterRevoke).to.eq(0);
 
       const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
@@ -839,11 +852,11 @@ describe("ZNSSubdomainRegistrar", () => {
       const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
-      const { expectedPrice, fee: parentFee } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice.add(parentFee), priceConfigDefault.feePercentage);
+      const { expectedPrice, stakeFee: stakeFee } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice.add(stakeFee), priceConfigDefault.feePercentage);
 
-      expect(parentBalAfter.sub(parentBalBefore)).to.eq(protocolFee);
-      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(parentFee).add(protocolFee));
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(stakeFee);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(stakeFee).add(protocolFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
@@ -913,7 +926,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -986,7 +999,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(
+      const protocolFee = getStakingOrProtocolFee(
         expectedPrice,
         priceConfigDefault.feePercentage
       );
@@ -1058,11 +1071,11 @@ describe("ZNSSubdomainRegistrar", () => {
       const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
-      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice.add(protocolFee), priceConfigDefault.feePercentage);
+      const { expectedPrice, stakeFee: stakeFee } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice.add(stakeFee), priceConfigDefault.feePercentage);
 
-      expect(parentBalAfter.sub(parentBalBefore)).to.eq(protocolFee);
-      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee).add(protocolFee));
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(stakeFee);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee).add(stakeFee));
       expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
@@ -1132,7 +1145,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -1205,7 +1218,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -1695,9 +1708,7 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(events.length).to.eq(0);
 
       const balAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      // TODO sub: the diff is 0 because user pays himself now
-      //  should we do some kind of check to make sure the user is not paying anything?
-      //  otherwise the tx would be more expensive for no reason
+      // the diff is 0 because user should not pay himself
       expect(balAfter.sub(balBefore)).to.eq(0);
 
       // check registry
@@ -1748,17 +1759,22 @@ describe("ZNSSubdomainRegistrar", () => {
 
     it("should allow anyone to register a domain when parent's accessType is OPEN", async () => {
       const { domainHash: parentHash } = regResults[1];
-      const domainLabel = "allowed";
+      const { paymentConfig: { paymentType } } = domainConfigs[1].fullConfig.distrConfig;
+      const domainLabel = "alloweded";
 
       const {
         expectedPrice,
-        fee,
       } = getPriceObject(
         domainLabel,
         domainConfigs[1].fullConfig.priceConfig
       );
+
+      const protocolFee = getStakingOrProtocolFee(expectedPrice);
       // approve direct payment
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
+      await zns.zeroToken.connect(lvl5SubOwner).approve(
+        zns.treasury.address,
+        expectedPrice.add(protocolFee)
+      );
 
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         parentHash,
@@ -1786,7 +1802,7 @@ describe("ZNSSubdomainRegistrar", () => {
     // eslint-disable-next-line max-len
     it("should ONLY allow whitelisted addresses and NOT allow other ones to register a domain when parent's accessType is WHITELIST", async () => {
       // approve direct payment
-      await zns.zeroToken.connect(lvl3SubOwner).approve(zns.directPayment.address, fixedPrice);
+      await zns.zeroToken.connect(lvl3SubOwner).approve(zns.treasury.address, fixedPrice);
       // register parent with whitelisted access
       const parentHash = await registrationWithSetup({
         zns,
@@ -1937,12 +1953,20 @@ describe("ZNSSubdomainRegistrar", () => {
       // approve
       const {
         expectedPrice,
-        fee,
+        stakeFee,
       } = getPriceObject(
         label,
         domainConfigs[1].fullConfig.priceConfig
       );
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
+      const paymentToParent = domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType === PaymentType.STAKE
+        ? expectedPrice.add(stakeFee)
+        : expectedPrice;
+
+      const protocolFee = getStakingOrProtocolFee(paymentToParent);
+      await zns.zeroToken.connect(lvl5SubOwner).approve(
+        zns.treasury.address,
+        paymentToParent.add(protocolFee)
+      );
 
       // register
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
@@ -2169,9 +2193,23 @@ describe("ZNSSubdomainRegistrar", () => {
       const domainHash = regResults[1].domainHash;
 
       const distrConfigBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(distrConfigBefore.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
-      expect(distrConfigBefore.paymentConfig).to.deep.eq(domainConfigs[1].fullConfig.distrConfig.paymentConfig);
       expect(distrConfigBefore.accessType).to.eq(domainConfigs[1].fullConfig.distrConfig.accessType);
+      expect(distrConfigBefore.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
+      expect(
+        distrConfigBefore.paymentConfig.paymentType
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType
+      );
+      expect(
+        distrConfigBefore.paymentConfig.paymentToken
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentToken
+      );
+      expect(
+        distrConfigBefore.paymentConfig.beneficiary
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.beneficiary
+      );
 
       const newConfig = {
         pricingContract: zns.asPricing.address,
@@ -2189,9 +2227,11 @@ describe("ZNSSubdomainRegistrar", () => {
       );
 
       const distrConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(distrConfigAfter.pricingContract).to.eq(newConfig.pricingContract);
-      expect(distrConfigAfter.paymentConfig).to.deep.eq(newConfig.paymentConfig);
       expect(distrConfigAfter.accessType).to.eq(newConfig.accessType);
+      expect(distrConfigAfter.pricingContract).to.eq(newConfig.pricingContract);
+      expect(distrConfigAfter.paymentConfig.paymentType).to.eq(newConfig.paymentConfig.paymentType);
+      expect(distrConfigAfter.paymentConfig.paymentToken).to.eq(newConfig.paymentConfig.paymentToken);
+      expect(distrConfigAfter.paymentConfig.beneficiary).to.eq(newConfig.paymentConfig.beneficiary);
 
       // assign operator in registry
       await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
@@ -2205,9 +2245,23 @@ describe("ZNSSubdomainRegistrar", () => {
         domainConfigs[1].fullConfig.distrConfig,
       );
       const origConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(origConfigAfter.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
-      expect(origConfigAfter.paymentConfig).to.deep.eq(domainConfigs[1].fullConfig.distrConfig.paymentConfig);
       expect(origConfigAfter.accessType).to.eq(domainConfigs[1].fullConfig.distrConfig.accessType);
+      expect(origConfigAfter.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
+      expect(
+        origConfigAfter.paymentConfig.paymentType
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType
+      );
+      expect(
+        origConfigAfter.paymentConfig.paymentToken
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentToken
+      );
+      expect(
+        origConfigAfter.paymentConfig.beneficiary
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.beneficiary
+      );
 
       // remove operator
       await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
@@ -2287,16 +2341,30 @@ describe("ZNSSubdomainRegistrar", () => {
       );
     });
 
-    it("#setPaymentContractForDomain() should re-set payment config for an existing subdomain", async () => {
+    it("#setPaymentConfigForDomain() should re-set payment config for an existing subdomain", async () => {
       const domainHash = regResults[1].domainHash;
 
       const paymentContractBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(paymentContractBefore.paymentConfig).to.eq(domainConfigs[1].fullConfig.distrConfig.paymentConfig);
+      expect(
+        paymentContractBefore.paymentConfig.paymentType
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType
+      );
+      expect(
+        paymentContractBefore.paymentConfig.paymentToken
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentToken
+      );
+      expect(
+        paymentContractBefore.paymentConfig.beneficiary
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.beneficiary
+      );
 
       const configToSet = {
         paymentType: PaymentType.STAKE,
-        paymentToken: random.address,
-        beneficiary: random.address,
+        paymentToken: lvl2SubOwner.address,
+        beneficiary: lvl2SubOwner.address,
       };
 
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
@@ -2305,7 +2373,9 @@ describe("ZNSSubdomainRegistrar", () => {
       );
 
       const paymentContractAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(paymentContractAfter.paymentConfig).to.deep.eq(configToSet);
+      expect(paymentContractAfter.paymentConfig.paymentType).to.eq(configToSet.paymentType);
+      expect(paymentContractAfter.paymentConfig.paymentToken).to.eq(configToSet.paymentToken);
+      expect(paymentContractAfter.paymentConfig.beneficiary).to.eq(configToSet.beneficiary);
 
       // reset it back
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
@@ -2314,13 +2384,13 @@ describe("ZNSSubdomainRegistrar", () => {
       );
     });
 
-    it("#setPaymentContractForDomain() should NOT allow setting for non-authorized account", async () => {
+    it("#setPaymentConfigForDomain() should NOT allow setting for non-authorized account", async () => {
       const domainHash = regResults[1].domainHash;
 
       const configToSet = {
         paymentType: PaymentType.STAKE,
-        paymentToken: random.address,
-        beneficiary: random.address,
+        paymentToken: lvl3SubOwner.address,
+        beneficiary: lvl3SubOwner.address,
       };
 
       await expect(
@@ -2333,21 +2403,36 @@ describe("ZNSSubdomainRegistrar", () => {
       );
     });
 
-    it("#setPaymentContractForDomain() should NOT set paymentContract to 0x0 address", async () => {
+    it("#setPaymentConfigForDomain() should NOT set paymentToken or beneficiary to 0x0 address", async () => {
       const domainHash = regResults[1].domainHash;
-      const configToSet = {
+      const zeroTokenConfig = {
         paymentType: PaymentType.STAKE,
-        paymentToken: random.address,
-        beneficiary: random.address,
+        paymentToken: ethers.constants.AddressZero,
+        beneficiary: lvl2SubOwner.address,
       };
 
       await expect(
         zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
           domainHash,
-          configToSet
+          zeroTokenConfig
         )
       ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: paymentContract can not be 0x0 address"
+        "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+      );
+
+      const zeroBeneficiaryConfig = {
+        paymentType: PaymentType.STAKE,
+        paymentToken: lvl2SubOwner.address,
+        beneficiary: ethers.constants.AddressZero,
+      };
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
+          domainHash,
+          zeroBeneficiaryConfig
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
       );
     });
 
@@ -2355,7 +2440,7 @@ describe("ZNSSubdomainRegistrar", () => {
     it("should TRANSFER ownership of a subdomain and let the receiver RECLAIM and then revoke with REFUND", async () => {
       const tokenId = BigNumber.from(regResults[1].domainHash).toString();
 
-      const stakedBefore = await zns.stakePayment.stakedForDomain(regResults[1].domainHash);
+      const stakedBefore = await zns.treasury.stakedForDomain(regResults[1].domainHash);
 
       await zns.domainToken.connect(lvl2SubOwner).transferFrom(
         lvl2SubOwner.address,
@@ -2381,7 +2466,7 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(dataFromRegAfter.owner).to.eq(lvl3SubOwner.address);
 
       // verify stake still existing
-      const stakedAfter = await zns.stakePayment.stakedForDomain(regResults[1].domainHash);
+      const stakedAfter = await zns.treasury.stakedForDomain(regResults[1].domainHash);
       expect(stakedAfter).to.eq(stakedBefore);
 
       const userBalbefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
