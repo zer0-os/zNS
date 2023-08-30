@@ -1,19 +1,19 @@
-import { ZNSPriceOracle } from "../../typechain";
 import { BigNumber } from "ethers";
+import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+
 
 /**
  * Get the domain name price base on its length when given
  * an already deployed contract
  *
  * @param name Length of the domain name
- * @param contract The deployer ZNSPriceOracle contract
- * @param isRootDomain Flag if this is root or subdomain
+ * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const getPrice = async (
+export const getPrice = (
   name : string,
-  contract : ZNSPriceOracle
-) : Promise<BigNumber> => {
+  priceConfig = priceConfigDefault,
+) : BigNumber => {
   // Get price configuration for contract
   const {
     maxPrice,
@@ -21,7 +21,7 @@ export const getPrice = async (
     baseLength,
     maxLength,
     precisionMultiplier,
-  } = await contract.rootDomainPriceConfig();
+  } = priceConfig;
 
   if (baseLength.eq(0)) return maxPrice;
 
@@ -44,20 +44,25 @@ export const getPrice = async (
  * based on name length when given an already deployed contract
  *
  * @param name Length of the domain name
- * @param contract The deployer ZNSPriceOracle contract
+ * @param priceConfig Object with all the pricing props
  * @returns The full expected price object for that domain
  */
-export const getPriceObject = async (
+export const getPriceObject = (
   name : string,
-  contract : ZNSPriceOracle,
-) : Promise<{
+  priceConfig = priceConfigDefault,
+) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
   fee : BigNumber;
-}> => {
-  const expectedPrice = await getPrice(name, contract);
+} => {
+  const expectedPrice = getPrice(name, priceConfig);
 
-  const fee = await contract.getRegistrationFee(expectedPrice);
+  const { feePercentage } = priceConfig;
+
+  const fee = expectedPrice
+    .mul(feePercentage)
+    .div(PERCENTAGE_BASIS);
+
   const totalPrice = expectedPrice.add(fee);
 
   return {

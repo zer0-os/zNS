@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
 
-/**
- * @dev **`DomainPriceConfig` struct properties:**
- *
- * - `maxPrice` (uint256): Maximum price for a domain returned at <= `baseLength`
- * - `minPrice` (uint256): Minimum price for a domain returned at > `maxLength`
- * - `maxLength` (uint256): Maximum length of a domain name. If the name is longer than this value we return the `minPrice`
- * - `baseLength` (uint256): Base length of a domain name. If the name is less than or equal to this value we return the `maxPrice`
- * - `precisionMultiplier` (uint256): The precision multiplier of the price. This multiplier
- * should be picked based on the number of token decimals to calculate properly.
- * e.g. if we use a token with 18 decimals, and want precision of 2,
- * our precision multiplier will be equal 10^18 - 10^2 = 10^16
- */
-interface IZNSPriceOracle {
+
+interface IZNSPriceOracle is IDomainPriceConfig {
 
     /**
      * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`
@@ -65,45 +55,13 @@ interface IZNSPriceOracle {
         uint256 minPrice,
         uint256 maxLength,
         uint256 baseLength,
-        uint256 precisionMultiplier
+        uint256 precisionMultiplier,
+        uint256 feePercentage
     );
-
-    /**
-     * @notice Struct for each configurable variable for price calculations.
-     * Does NOT include variables for calcs of registration fees.
-     */
-    struct DomainPriceConfig {
-        /**
-         * @notice Maximum price for a domain returned at <= `baseLength`
-        */
-        uint256 maxPrice;
-        /**
-         * @notice Minimum price for a domain returned at > `maxLength`
-         */
-        uint256 minPrice;
-        /**
-         * @notice Maximum length of a domain name. If the name is longer than this
-         * value we return the `minPrice`
-         */
-        uint256 maxLength;
-        /**
-         * @notice Base length of a domain name. If the name is less than or equal to
-         * this value we return the `maxPrice`
-         */
-        uint256 baseLength;
-        /**
-         * @notice The precision multiplier of the price. This multiplier
-         * should be picked based on the number of token decimals to calculate properly.
-         * e.g. if we use a token with 18 decimals, and want precision of 2,
-         * our precision multiplier will be equal 10^18 - 10^2 = 10^16
-         */
-        uint256 precisionMultiplier;
-    }
 
     function initialize(
         address accessController_,
-        DomainPriceConfig calldata priceConfig_,
-        uint256 regFeePercentage_
+        DomainPriceConfig calldata priceConfig_
     ) external;
 
     function getPrice(

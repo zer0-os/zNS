@@ -6,39 +6,37 @@ import {
   ZNSAccessController,
   ZNSAccessController__factory,
   ZNSAddressResolver,
-  ZNSAddressResolver__factory,
+  ZNSAddressResolver__factory, ZNSAsymptoticPricing__factory, ZNSDirectPayment__factory,
   ZNSDomainToken,
-  ZNSDomainToken__factory,
+  ZNSDomainToken__factory, ZNSFixedPricing__factory,
   ZNSPriceOracle,
   ZNSPriceOracle__factory,
   ZNSRegistrar,
   ZNSRegistrar__factory,
   ZNSRegistry,
-  ZNSRegistry__factory,
+  ZNSRegistry__factory, ZNSStakePayment__factory, ZNSSubdomainRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
-import { DeployZNSParams, PriceParams, RegistrarConfig, ZNSContracts } from "./types";
+import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   accessControllerName,
-  addressResolverName,
+  addressResolverName, asymptoticPricingName, directPaymentName,
   domainTokenName,
-  erc1967ProxyName,
+  erc1967ProxyName, fixedPricingName,
   priceConfigDefault,
   priceOracleName,
   registrarName,
-  registrationFeePercDefault,
-  registryName, transparentProxyName,
+  registryName, stakePaymentName, subdomainRegistrarName, transparentProxyName,
   treasuryName,
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./constants";
 import { REGISTRAR_ROLE } from "./access";
-import { BigNumber } from "ethers";
 import { getProxyImplAddress } from "./utils";
 
 
@@ -73,7 +71,7 @@ export const deployAccessController = async ({
 export const deployRegistry = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  isTenderlyRun : boolean
+  isTenderlyRun = false,
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
   const registry = await hre.upgrades.deployProxy(
@@ -238,13 +236,11 @@ export const deployPriceOracle = async ({
   deployer,
   accessControllerAddress,
   priceConfig,
-  registrationFee,
   isTenderlyRun,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
-  priceConfig : PriceParams;
-  registrationFee : BigNumber;
+  priceConfig : IASPriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSPriceOracle> => {
   const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
@@ -254,7 +250,6 @@ export const deployPriceOracle = async ({
     [
       accessControllerAddress,
       priceConfig,
-      registrationFee,
     ],
     {
       kind: "uups",
@@ -396,6 +391,203 @@ export const deployZeroTokenMock = async (
   return token;
 };
 
+export const deployFixedPricing = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
+  const pricingFactory = new ZNSFixedPricing__factory(deployer);
+  const fixedPricing = await pricingFactory.deploy(acAddress, regAddress);
+  await fixedPricing.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: fixedPricingName,
+      address: fixedPricing.address,
+    });
+
+    const impl = await getProxyImplAddress(fixedPricing.address);
+
+    await hre.tenderly.verify({
+      name: fixedPricingName,
+      address: impl,
+    });
+
+    console.log(`${fixedPricingName} deployed at:
+                proxy: ${fixedPricing.address}
+                implementation: ${impl}`);
+  }
+
+  return fixedPricing;
+};
+
+export const deployAsymptoticPricing = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
+  const factory = new ZNSAsymptoticPricing__factory(deployer);
+  const asPricing = await factory.deploy(
+    acAddress,
+    regAddress
+  );
+  await asPricing.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: asymptoticPricingName,
+      address: asPricing.address,
+    });
+
+    const impl = await getProxyImplAddress(asPricing.address);
+
+    await hre.tenderly.verify({
+      name: asymptoticPricingName,
+      address: impl,
+    });
+
+    console.log(`${asymptoticPricingName} deployed at:
+                proxy: ${asPricing.address}
+                implementation: ${impl}`);
+  }
+
+  return asPricing;
+};
+
+export const deployDirectPayment = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
+  const paymentFactory = new ZNSDirectPayment__factory(deployer);
+  const directPayment = await paymentFactory.deploy(acAddress, regAddress);
+  await directPayment.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: directPaymentName,
+      address: directPayment.address,
+    });
+
+    const impl = await getProxyImplAddress(directPayment.address);
+
+    await hre.tenderly.verify({
+      name: directPaymentName,
+      address: impl,
+    });
+
+    console.log(`${directPaymentName} deployed at:
+                proxy: ${directPayment.address}
+                implementation: ${impl}`);
+  }
+
+  return directPayment;
+};
+
+export const deployStakePayment = async ({
+  deployer,
+  acAddress,
+  regAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  acAddress : string;
+  regAddress : string;
+  isTenderlyRun ?: boolean;
+}) => {
+  const factory = new ZNSStakePayment__factory(deployer);
+  const stakePayment = await factory.deploy(acAddress, regAddress);
+  await stakePayment.deployed();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: stakePaymentName,
+      address: stakePayment.address,
+    });
+
+    const impl = await getProxyImplAddress(stakePayment.address);
+
+    await hre.tenderly.verify({
+      name: stakePaymentName,
+      address: impl,
+    });
+
+    console.log(`${stakePaymentName} deployed at:
+                proxy: ${stakePayment.address}
+                implementation: ${impl}`);
+  }
+
+  return stakePayment;
+};
+
+export const deploySubdomainRegistrar = async ({
+  deployer,
+  accessController,
+  registry,
+  registrar,
+  admin,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  registrar : ZNSRegistrar;
+  admin : SignerWithAddress;
+  isTenderlyRun ?: boolean;
+}) => {
+  const subRegistrarFactory = new ZNSSubdomainRegistrar__factory(deployer);
+  const subRegistrar = await subRegistrarFactory.deploy(
+    accessController.address,
+    registry.address,
+    registrar.address,
+  );
+  await subRegistrar.deployed();
+
+  // set SubdomainRegistrar on MainRegistrar
+  await registrar.setSubdomainRegistrar(subRegistrar.address);
+
+  // give SubRegistrar REGISTRAR_ROLE
+  await accessController.connect(admin).grantRole(REGISTRAR_ROLE, subRegistrar.address);
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: subdomainRegistrarName,
+      address: subRegistrar.address,
+    });
+
+    const impl = await getProxyImplAddress(subRegistrar.address);
+
+    await hre.tenderly.verify({
+      name: subdomainRegistrarName,
+      address: impl,
+    });
+
+    console.log(`${subdomainRegistrarName} deployed at:
+                proxy: ${subRegistrar.address}
+                implementation: ${impl}`);
+  }
+
+  return subRegistrar;
+};
+
 /**
  * We use this script to aid in testing, NOT for anything more
  * such as deploying to live testnets or mainnet. Do not use any
@@ -407,7 +599,6 @@ export const deployZNS = async ({
   governorAddresses,
   adminAddresses,
   priceConfig = priceConfigDefault,
-  registrationFeePerc = registrationFeePercDefault,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<ZNSContracts> => {
@@ -453,7 +644,6 @@ export const deployZNS = async ({
     deployer,
     accessControllerAddress: accessController.address,
     priceConfig,
-    registrationFee: registrationFeePerc,
     isTenderlyRun,
   });
 
@@ -480,6 +670,26 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
+  const subModuleDeployArgs = {
+    deployer,
+    acAddress: accessController.address,
+    regAddress: registry.address,
+    isTenderlyRun,
+  };
+
+  const fixedPricing = await deployFixedPricing(subModuleDeployArgs);
+  const directPayment = await deployDirectPayment(subModuleDeployArgs);
+  const stakePayment = await deployStakePayment(subModuleDeployArgs);
+  const asPricing = await deployAsymptoticPricing(subModuleDeployArgs);
+
+  const subdomainRegistrar = await deploySubdomainRegistrar({
+    deployer,
+    accessController,
+    registry,
+    registrar,
+    admin: deployer,
+  });
+
   const znsContracts : ZNSContracts = {
     accessController,
     registry,
@@ -489,11 +699,17 @@ export const deployZNS = async ({
     priceOracle,
     treasury,
     registrar,
+    fixedPricing,
+    asPricing,
+    directPayment,
+    stakePayment,
+    subdomainRegistrar,
+    zeroVaultAddress,
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
-  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("50000"));
+  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("5000000"));
 
   return znsContracts;
 };

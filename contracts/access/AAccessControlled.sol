@@ -10,7 +10,7 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
  * @dev In order to connect an arbitrary module to `ZNSAccessController` and it's functionality,
  * this contract needs to be inherited by the module.
  */
-abstract contract AccessControlled {
+abstract contract AAccessControlled {
 
     /**
      * @notice Emitted when the access controller contract address is set.
@@ -32,11 +32,21 @@ abstract contract AccessControlled {
     }
 
     /**
+     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
+     * or an address holding REGISTRAR_ROLE.
+     */
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
+
+    /**
      * @notice Virtual function to make sure the getter is always implemented in children,
      * otherwise we will not be able to read the AC address in children
      */
     function getAccessController() external view virtual returns (address);
 
+    // TODO sub: can we make this an actual function ?? why implement this in every child ??
     /**
      * @notice Virtual function to make sure the setter is always implemented in children,
      * otherwise we will not be able to reset the AC address in children

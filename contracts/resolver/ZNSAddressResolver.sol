@@ -5,7 +5,8 @@ import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
 
 /**
@@ -13,13 +14,12 @@ import { AccessControlled } from "../access/AccessControlled.sol";
  * @notice This Resolver supports ONLY the address type. Every domain in ZNS made for a contract or wallet address
  * will have a corresponding record in this Resolver.
  */
-contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAddressResolver {
-    /**
-     * @notice Address of the `ZNSRegistry` contract that holds all crucial data
-     * for every domain in the system
-     */
-    IZNSRegistry public registry;
-
+contract ZNSAddressResolver is
+    UUPSUpgradeable,
+    AAccessControlled,
+    ARegistryWired,
+    ERC165,
+    IZNSAddressResolver {
     /**
      * @notice Mapping of domain hash to address used to bind domains
      * to Ethereum wallets or contracts registered in ZNS.
@@ -100,14 +100,8 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      * Emits a `RegistrySet` event.
      * @param _registry The address of the `ZNSRegistry` contract
      */
-    function setRegistry(address _registry) public override onlyAdmin {
-        require(
-            _registry != address(0),
-            "ZNSAddressResolver: _registry is 0x0 address"
-        );
-        registry = IZNSRegistry(_registry);
-
-        emit RegistrySet(_registry);
+    function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolver) onlyAdmin {
+        _setRegistry(_registry);
     }
 
     /**
@@ -117,14 +111,14 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      */
     function setAccessController(
         address accessController
-    ) external override(AccessControlled, IZNSAddressResolver) onlyAdmin {
+    ) external override(AAccessControlled, IZNSAddressResolver) onlyAdmin {
         _setAccessController(accessController);
     }
 
     /**
      * @dev Returns the address of the `ZNSAccessController` contract saved in state.
      */
-    function getAccessController() external view override(AccessControlled, IZNSAddressResolver) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSAddressResolver) returns (address) {
         return address(accessController);
     }
 
@@ -132,7 +126,7 @@ contract ZNSAddressResolver is AccessControlled, UUPSUpgradeable, ERC165, IZNSAd
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line unused-vars
+    // solhint-disable-next-line no-unused-vars
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }

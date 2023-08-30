@@ -11,12 +11,6 @@ interface IZNSAddressResolver {
     event AddressSet(bytes32 indexed domainHash, address indexed newAddress);
 
     /**
-     * @dev Emit when the registry is set
-     * @param registry The address of the registry
-     */
-    event RegistrySet(address registry);
-
-    /**
      * @dev ERC-165 check for implementation identifier
      * @dev Supports interfaces IZNSAddressResolver and IERC165
      * @param interfaceId ID to check, XOR of the first 4 bytes of each function signature

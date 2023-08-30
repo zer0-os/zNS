@@ -8,7 +8,7 @@ import { ZNSRoles } from "./ZNSRoles.sol";
 
 /**
  * @title The main module for system-wide Access Control.
- * @dev ZNS Business Logic Contract access to this module is outlined in `AccessControlled`.
+ * @dev ZNS Business Logic Contract access to this module is outlined in `AAccessControlled.sol`.
  * Uses a role-based access control scheme with levels:
  * - GOVERNOR: The highest rank, assigns Admins, new roles and Role Admins
  * - ADMIN: The main maintainer role, that gets access to all system functions (managed by Governor)
@@ -16,7 +16,7 @@ import { ZNSRoles } from "./ZNSRoles.sol";
  * - REGISTRAR: This role is here specifically for the ZNSRegistrar contract (managed by Admin)
  *
  * > This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
- * and all modules will be updated to use the new address, since they all inherit from `AccessControlled`.
+ * and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.
  */
 contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     constructor(

@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers/deployZNS";
+import { deployZNS } from "./helpers/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistryUpgradeMock__factory } from "../typechain";
@@ -12,11 +12,10 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   getAccessRevertMsg,
-  validateUpgrade,
+  validateUpgrade, NOT_AUTHORIZED_REG_ERR,
 } from "./helpers";
 import {
   ONLY_NAME_OWNER_REG_ERR,
-  NOT_AUTHORIZED_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";

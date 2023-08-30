@@ -18,9 +18,16 @@ import {
   ZNSRegistrarUpgradeMock__factory,
   ZNSPriceOracleUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory, ZeroToken,
+  ZNSTreasuryUpgradeMock__factory,
+  ZeroToken,
+  ZNSFixedPricing,
+  ZNSDirectPayment,
+  ZNSSubdomainRegistrar,
+  ZNSStakePayment,
+  ZNSAsymptoticPricing,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { AccessType } from "./constants";
 
 export type Maybe<T> = T | undefined;
 
@@ -50,12 +57,13 @@ export type ZNSContract =
   ZNSAddressResolver |
   ZNSDomainToken;
 
-export interface PriceParams {
+export interface IASPriceConfig {
   maxPrice : BigNumber;
   minPrice : BigNumber;
   maxLength : BigNumber;
   baseLength : BigNumber;
   precisionMultiplier : BigNumber;
+  feePercentage : BigNumber;
 }
 
 export interface RegistrarConfig {
@@ -65,6 +73,7 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
+// TODO sub: rename to IZNS
 export interface ZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
@@ -74,14 +83,53 @@ export interface ZNSContracts {
   priceOracle : ZNSPriceOracle;
   treasury : ZNSTreasury;
   registrar : ZNSRegistrar;
+  fixedPricing : ZNSFixedPricing;
+  asPricing : ZNSAsymptoticPricing;
+  directPayment : ZNSDirectPayment;
+  stakePayment : ZNSStakePayment;
+  subdomainRegistrar : ZNSSubdomainRegistrar;
+  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: PriceParams;
+  priceConfig ?: IASPriceConfig;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
+}
+
+export interface IDistributionConfig {
+  pricingContract : string;
+  paymentContract : string;
+  accessType : AccessType;
+}
+
+export interface IPaymentConfig {
+  paymentToken : string;
+  beneficiary : string;
+}
+
+export interface IFullDistributionConfig {
+  distrConfig : IDistributionConfig;
+  priceConfig : IASPriceConfig | BigNumber;
+  paymentConfig : IPaymentConfig;
+}
+
+export interface IDomainConfigForTest {
+  user : SignerWithAddress;
+  domainLabel : string;
+  domainContent ?: string;
+  parentHash ?: string;
+  fullConfig : IFullDistributionConfig;
+}
+
+export interface IPathRegResult {
+  domainHash : string;
+  userBalanceBefore : BigNumber;
+  userBalanceAfter : BigNumber;
+  parentBalanceBefore : BigNumber;
+  parentBalanceAfter : BigNumber;
 }

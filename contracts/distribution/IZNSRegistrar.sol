@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 
-interface IZNSRegistrar {
+
+interface IZNSRegistrar is IDistributionConfig {
+
+    enum OwnerOf {
+        NAME,
+        TOKEN,
+        BOTH
+    }
 
     /**
      * @notice Emitted when a NEW domain is registered.
@@ -10,6 +18,7 @@ interface IZNSRegistrar {
      * E.g. if a user made a domain for his wallet, the address of the wallet will be the `domainAddress`.
      * This can be 0 as this variable is not required to perform registration process
      * and can be set at a later time by the domain owner.
+     * @param parentHash The hash of the parent domain (0x0 for root domains)
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
@@ -18,6 +27,7 @@ interface IZNSRegistrar {
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
+        bytes32 parentHash,
         bytes32 indexed domainHash,
         uint256 indexed tokenId,
         string name,
@@ -44,12 +54,6 @@ interface IZNSRegistrar {
     );
 
     /**
-     * @notice Emitted when the `registry` address is set in state.
-     * @param registry The new address of the registry contract
-     */
-    event RegistrySet(address registry);
-
-    /**
      * @notice Emitted when the `treasury` address is set in state.
      * @param treasury The new address of the treasury contract
      */
@@ -62,6 +66,12 @@ interface IZNSRegistrar {
     event DomainTokenSet(address domainToken);
 
     /**
+     * @notice Emitted when the `subdomainRegistrar` address is set in state.
+     * @param subdomainRegistrar The new address of the subdomainRegistrar contract
+     */
+    event SubdomainRegistrarSet(address subdomainRegistrar);
+
+    /**
      * @notice Emitted when the `addressResolver` address is set in state.
      * @param addressResolver The new address of the addressResolver contract
      */
@@ -69,18 +79,33 @@ interface IZNSRegistrar {
 
     function registerDomain(
         string calldata name,
-        address resolverContent
+        address domainAddress,
+        DistributionConfig calldata distributionConfig
     ) external returns (bytes32);
+
+    function coreRegister(
+        bytes32 parentHash,
+        bytes32 domainHash,
+        string memory name,
+        address owner,
+        address domainAddress
+    ) external;
+
+    function coreRevoke(bytes32 domainHash) external;
 
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
+
+    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
     function setRegistry(address registry_) external;
 
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
+
+    function setSubdomainRegistrar(address subdomainRegistrar_) external;
 
     function setAddressResolver(address addressResolver_) external;
 

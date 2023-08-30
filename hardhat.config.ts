@@ -21,7 +21,7 @@ import "solidity-docgen";
 // keep it commented out and uncomment when using DevNet
 // locally.
 // !!! Uncomment this when using Tenderly DevNet !!!
-tenderly.setup({ automaticVerifications: false });
+// tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { IZNSRegistry } from "./IZNSRegistry.sol";
-import { AccessControlled } from "../access/AccessControlled.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -11,7 +11,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * in the call chain of many operations where the most crucial Name owner data settles.
  * Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.
  */
-contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
+contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Mapping of `domainHash` to [DomainRecord](./IZNSRegistry.md#iznsregistry) struct to hold information
      * about each domain
@@ -48,15 +48,6 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
             records[domainHash].owner == msg.sender,
             "ZNSRegistry: Not the Name Owner"
         );
-        _;
-    }
-
-    /**
-     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
-     * or an address holding REGISTRAR_ROLE.
-     */
-    modifier onlyRegistrar {
-        accessController.checkRegistrar(msg.sender);
         _;
     }
 
@@ -232,14 +223,14 @@ contract ZNSRegistry is AccessControlled, UUPSUpgradeable, IZNSRegistry {
      */
     function setAccessController(
         address accessController
-    ) external override(AccessControlled, IZNSRegistry) onlyAdmin {
+    ) external override(AAccessControlled, IZNSRegistry) onlyAdmin {
         _setAccessController(accessController);
     }
 
     /**
      * @notice Gets the `accessController` from state.
      */
-    function getAccessController() external view override(AccessControlled, IZNSRegistry) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSRegistry) returns (address) {
         return address(accessController);
     }
 
