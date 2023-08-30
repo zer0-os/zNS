@@ -50,7 +50,7 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
 
-        return _getPrice(parentHash, label.strlen());
+        return _getPrice(parentHash, length);
     }
 
     function getPriceAndFee(
@@ -67,7 +67,7 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
         bytes32 parentHash,
         uint256 price
     ) public view override returns (uint256) {
-        return price * priceConfigs[parentHash].feePercentage / PERCENTAGE_BASIS;
+        return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
     }
 
     function revokePrice(bytes32 domainHash) external override onlyRegistrar {

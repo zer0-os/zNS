@@ -128,7 +128,10 @@ export const validatePathRegistration = async ({
     }
 
     if (pricingContract === zns.fixedPricing.address) {
-      expectedPrice = await zns.fixedPricing.getPrice(parentHashFound, domainLabel);
+      ({
+        price: expectedPrice,
+        fee,
+      } = await zns.fixedPricing.getPriceAndFee(parentHashFound, domainLabel));
     } else {
       const configCall = pricingContract === zns.priceOracle.address
         ? zns.priceOracle.rootDomainPriceConfig()

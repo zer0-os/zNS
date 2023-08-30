@@ -51,9 +51,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) external override returns (bytes32) {
         // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
+
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
-            parentConfig.accessType != AccessType.LOCKED
-                || registry.isOwnerOrOperator(parentHash, msg.sender),
+            parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
             "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
         );
 
@@ -71,26 +72,32 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Subdomain already exists"
         );
 
-        uint256 price;
-        uint256 fee;
-        // TODO sub: can we make this abstract switching better ??
-        if (parentConfig.pricingContract.feeEnforced()) {
-            (price, fee) = AZNSPricingWithFee(address(parentConfig.pricingContract)).getPriceAndFee(
-                parentHash,
-                label
-            );
-        } else {
-            price = parentConfig.pricingContract.getPrice(parentHash, label);
-        }
+        if (!isOwnerOrOperator) {
+            uint256 price;
+            uint256 fee;
+            // TODO sub: can we make this abstract switching better ??
+            // TODO sub: should we eliminate Pricing with not fee abstract at all??
+            //  what are the downsides of this?? We can just make fees 0 in any contract
+            //  would that make us pay more gas for txes with no fees?
+            if (parentConfig.pricingContract.feeEnforced()) {
+                (price, fee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
+                    .getPriceAndFee(
+                        parentHash,
+                        label
+                    );
+            } else {
+                price = parentConfig.pricingContract.getPrice(parentHash, label);
+            }
 
-        if (price + fee > 0) {
-            parentConfig.paymentContract.processPayment(
-                parentHash,
-                subdomainHash,
-                msg.sender,
-                price,
-                fee
-            );
+            if (price + fee > 0) {
+                parentConfig.paymentContract.processPayment(
+                    parentHash,
+                    subdomainHash,
+                    msg.sender,
+                    price,
+                    fee
+                );
+            }
         }
 
         rootRegistrar.coreRegister(

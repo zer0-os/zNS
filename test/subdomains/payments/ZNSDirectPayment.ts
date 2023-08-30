@@ -24,6 +24,7 @@ describe("ZNSDirectPayment", () => {
   let zns : ZNSContracts;
   let domainHash : string;
   let subdomainPrice : BigNumber;
+  let subdomainFeePercentage : BigNumber;
 
   const randomHash = hashSubdomainName("random");
 
@@ -47,6 +48,7 @@ describe("ZNSDirectPayment", () => {
     await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
 
     subdomainPrice = ethers.utils.parseEther("2223");
+    subdomainFeePercentage = BigNumber.from(1500);
 
     const fullConfig = {
       distrConfig: {
@@ -54,7 +56,10 @@ describe("ZNSDirectPayment", () => {
         paymentContract: zns.directPayment.address,
         accessType: 1,
       },
-      priceConfig: subdomainPrice,
+      priceConfig: {
+        price: subdomainPrice,
+        feePercentage: subdomainFeePercentage,
+      },
       paymentConfig: {
         paymentToken: zns.zeroToken.address,
         beneficiary: user.address,

@@ -21,8 +21,8 @@ import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
-import { getPrice, getPriceObject } from "./helpers/pricing";
-import { getDomainHashFromReceipt, getDomainRegisteredEvents, getTokenIdFromReceipt } from "./helpers/events";
+import { calcAsymptoticPrice, getPriceObject } from "./helpers/pricing";
+import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
@@ -364,7 +364,7 @@ describe("ZNSRegistrar", () => {
       expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await getPrice(normalizedDomainLabel, priceConfigDefault);
+      const expectedStaked = await calcAsymptoticPrice(normalizedDomainLabel, priceConfigDefault);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });
@@ -605,7 +605,7 @@ describe("ZNSRegistrar", () => {
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
       // Revoke the domain and then verify
-      const tx = await zns.registrar.connect(user).revokeDomain(domainHash);
+      await zns.registrar.connect(user).revokeDomain(domainHash);
 
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);

@@ -25,6 +25,7 @@ describe("ZNSStakePayment", () => {
   let zns : ZNSContracts;
   let domainHash : string;
   let subdomainPrice : BigNumber;
+  let subdomainFeePercentage : BigNumber;
 
   const randomHash = hashSubdomainName("random");
   const subFee = ethers.utils.parseEther("11");
@@ -46,6 +47,7 @@ describe("ZNSStakePayment", () => {
     });
 
     subdomainPrice = ethers.utils.parseEther("2223");
+    subdomainFeePercentage = BigNumber.from(1750);
 
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
@@ -58,7 +60,10 @@ describe("ZNSStakePayment", () => {
         paymentContract: zns.stakePayment.address,
         accessType: 1,
       },
-      priceConfig: subdomainPrice,
+      priceConfig: {
+        price: subdomainPrice,
+        feePercentage: subdomainFeePercentage,
+      },
       paymentConfig: {
         paymentToken: zns.zeroToken.address,
         beneficiary: user.address,

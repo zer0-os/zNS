@@ -66,6 +66,11 @@ export interface IASPriceConfig {
   feePercentage : BigNumber;
 }
 
+export interface IFixedPriceConfig {
+  price : BigNumber;
+  feePercentage : BigNumber;
+}
+
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
@@ -114,7 +119,7 @@ export interface IPaymentConfig {
 
 export interface IFullDistributionConfig {
   distrConfig : IDistributionConfig;
-  priceConfig : IASPriceConfig | BigNumber;
+  priceConfig : IASPriceConfig | IFixedPriceConfig | undefined;
   paymentConfig : IPaymentConfig;
 }
 

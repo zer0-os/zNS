@@ -1,5 +1,6 @@
 import { BigNumber } from "ethers";
 import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+import { IASPriceConfig, IFixedPriceConfig } from "./types";
 
 
 /**
@@ -10,7 +11,7 @@ import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
  * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const getPrice = (
+export const calcAsymptoticPrice = (
   name : string,
   priceConfig = priceConfigDefault,
 ) : BigNumber => {
@@ -49,13 +50,20 @@ export const getPrice = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig = priceConfigDefault,
+  priceConfig : IASPriceConfig | IFixedPriceConfig = priceConfigDefault,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
   fee : BigNumber;
 } => {
-  const expectedPrice = getPrice(name, priceConfig);
+  let expectedPrice;
+  if (Object.keys(priceConfig).length === 6) {
+    expectedPrice = calcAsymptoticPrice(name, priceConfig as IASPriceConfig);
+  } else if (Object.keys(priceConfig).length === 2) {
+    ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
+  } else {
+    throw new Error("Invalid price config");
+  }
 
   const { feePercentage } = priceConfig;
 

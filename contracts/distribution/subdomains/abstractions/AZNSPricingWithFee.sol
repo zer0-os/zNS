@@ -12,7 +12,9 @@ abstract contract AZNSPricingWithFee is AZNSPricing {
         string calldata label
     ) external view virtual returns (uint256 price, uint256 fee);
 
-    function feeEnforced() external pure override returns (bool) {
+    // TODO sub: do we need this method if we merge both Pricing abstracts
+    //  into one ??
+    function feeEnforced() external pure virtual override returns (bool) {
         return true;
     }
 

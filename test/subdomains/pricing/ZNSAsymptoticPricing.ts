@@ -6,7 +6,7 @@ import { parseEther } from "ethers/lib/utils";
 import { ZNSContracts } from "../../helpers/types";
 import {
   deployZNS,
-  getPrice,
+  calcAsymptoticPrice,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
@@ -134,8 +134,8 @@ describe("ZNSAsymptoticPricing", () => {
       const domainOneRefValue = BigNumber.from("4545450000000000000000");
       const domainTwoRefValue = BigNumber.from("7692300000000000000000");
 
-      const domainOneExpPrice = await getPrice(domainOne, priceConfigDefault);
-      const domainTwoExpPrice = await getPrice(domainTwo, priceConfigDefault);
+      const domainOneExpPrice = await calcAsymptoticPrice(domainOne, priceConfigDefault);
+      const domainTwoExpPrice = await calcAsymptoticPrice(domainTwo, priceConfigDefault);
 
       const domainOnePriceSC = await zns.asPricing.getPrice(domainHash, domainOne);
       const domainTwoPriceSC = await zns.asPricing.getPrice(domainHash, domainTwo);
@@ -155,7 +155,7 @@ describe("ZNSAsymptoticPricing", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
-      const expectedPrice = await getPrice(domain, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domain, priceConfigDefault);
       const domainPrice = await zns.asPricing.getPrice(domainHash, domain);
 
       expect(domainPrice).to.eq(expectedPrice);
@@ -168,15 +168,15 @@ describe("ZNSAsymptoticPricing", () => {
       const medium = "wilderworld";
       const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
 
-      const expectedShortPrice = await getPrice(short, priceConfigDefault);
+      const expectedShortPrice = await calcAsymptoticPrice(short, priceConfigDefault);
       const shortPrice = await zns.asPricing.getPrice(domainHash, short);
       expect(expectedShortPrice).to.eq(shortPrice);
 
-      const expectedMediumPrice = await getPrice(medium, priceConfigDefault);
+      const expectedMediumPrice = await calcAsymptoticPrice(medium, priceConfigDefault);
       const mediumPrice = await zns.asPricing.getPrice(domainHash, medium);
       expect(expectedMediumPrice).to.eq(mediumPrice);
 
-      const expectedLongPrice = await getPrice(long, priceConfigDefault);
+      const expectedLongPrice = await calcAsymptoticPrice(long, priceConfigDefault);
       const longPrice = await zns.asPricing.getPrice(domainHash, long);
       expect(expectedLongPrice).to.eq(longPrice);
     });
@@ -185,7 +185,7 @@ describe("ZNSAsymptoticPricing", () => {
       const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
       const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
       const domainWithoutSpecials = "abcdef";
-      const expectedPrice = await getPrice(domainWithoutSpecials, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domainWithoutSpecials, priceConfigDefault);
       let domainPrice = await zns.asPricing.getPrice(domainHash, domainSpecialCharacterSet1);
       expect(domainPrice).to.eq(expectedPrice);
 
@@ -201,7 +201,7 @@ describe("ZNSAsymptoticPricing", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "a";
-      const expectedPrice = await getPrice(domain, priceConfigDefault);
+      const expectedPrice = await calcAsymptoticPrice(domain, priceConfigDefault);
       const domainPrice = await zns.asPricing.getPrice(domainHash, domain);
       expect(domainPrice).to.eq(expectedPrice);
     });
@@ -326,7 +326,7 @@ describe("ZNSAsymptoticPricing", () => {
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
       const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("9"));
 
-      const expectedPriceBefore = await getPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
       const priceBefore= await zns.asPricing.getPrice(domainHash, defaultDomain);
 
       expect(expectedPriceBefore).to.eq(priceBefore);
@@ -338,7 +338,7 @@ describe("ZNSAsymptoticPricing", () => {
         maxPrice: newMaxPrice,
       };
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
       const priceAfter = await zns.asPricing.getPrice(domainHash, defaultDomain);
 
       expect(expectedPriceAfter).to.eq(priceAfter);
@@ -561,7 +561,7 @@ describe("ZNSAsymptoticPricing", () => {
       const newLength = 8;
       const paramsBefore = await zns.asPricing.priceConfigs(domainHash);
 
-      const expectedPriceBefore = await getPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
       const priceBefore = await zns.asPricing.getPrice(domainHash, defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.not.eq(paramsBefore.maxPrice);
@@ -575,7 +575,7 @@ describe("ZNSAsymptoticPricing", () => {
         baseLength: BigNumber.from(newLength),
       };
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
       const priceAfter = await zns.asPricing.getPrice(domainHash, defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
@@ -592,7 +592,7 @@ describe("ZNSAsymptoticPricing", () => {
 
       const paramsBefore = await zns.asPricing.priceConfigs(domainHash);
 
-      const expectedPriceBefore = await getPrice(defaultDomain, newConfig1);
+      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, newConfig1);
       const priceBefore = await zns.asPricing.getPrice(domainHash, defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.eq(paramsBefore.maxPrice);
@@ -607,7 +607,7 @@ describe("ZNSAsymptoticPricing", () => {
 
       const paramsAfter = await zns.asPricing.priceConfigs(domainHash);
 
-      const expectedPriceAfter = await getPrice(defaultDomain, newConfig2);
+      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig2);
       const priceAfter = await zns.asPricing.getPrice(domainHash, defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.not.eq(paramsAfter.maxPrice);
@@ -642,7 +642,7 @@ describe("ZNSAsymptoticPricing", () => {
         baseLength: BigNumber.from(newRootLength),
       };
 
-      const expectedRootPrice = await getPrice(defaultDomain, newConfig);
+      const expectedRootPrice = await calcAsymptoticPrice(defaultDomain, newConfig);
       const rootPrice = await zns.asPricing.getPrice(domainHash, defaultDomain);
 
       expect(rootPrice).to.eq(expectedRootPrice);

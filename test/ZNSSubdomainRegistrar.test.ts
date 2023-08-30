@@ -18,6 +18,7 @@ import { registerDomainPath, validatePathRegistration } from "./helpers/flows/re
 import assert from "assert";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
 describe("ZNSSubdomainRegistrar", () => {
@@ -43,6 +44,7 @@ describe("ZNSSubdomainRegistrar", () => {
     let regResults : Array<IPathRegResult>;
 
     const fixedPrice = ethers.utils.parseEther("1375.612");
+    const fixedFeePercentage = BigNumber.from(200);
 
     before(async () => {
       [
@@ -94,7 +96,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: rootOwner.address,
@@ -159,7 +161,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: lvl5SubOwner.address,
@@ -308,7 +310,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: branchLvl1Owner.address,
@@ -345,7 +347,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should properly revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
+    it("should revoke lvl 3 domain (child) with refund after lvl 2 (parent) has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
       const lvl2Hash = regResults[1].domainHash;
       const lvl3Hash = regResults[2].domainHash;
@@ -377,10 +379,10 @@ describe("ZNSSubdomainRegistrar", () => {
 
       // check a couple of fields from price config to make sure they've been reset
       const priceConfig = await zns.asPricing.priceConfigs(lvl2Hash);
-      if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig) {
+      if (domainConfigs[1].fullConfig.priceConfig) {
         expect(priceConfig.maxPrice).to.eq(0);
       }
-      if ("minPrice" in domainConfigs[1].fullConfig.priceConfig) {
+      if (domainConfigs[1].fullConfig.priceConfig) {
         expect(priceConfig.minPrice).to.eq(0);
       }
       // make sure the child's stake is still there
@@ -423,6 +425,68 @@ describe("ZNSSubdomainRegistrar", () => {
       ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
+    // TODO sub: add more tests here:
+    //  1. reregister a revoked domain and set your own config and distribute subs
+    //  2. after revocation NOONE can register!
+    //  3. After a new owner came in on revoked domain, people can register as usual
+    //  4. find more cases !
+    it("should let anyone register a previously revoked domain", async () => {
+      const lvl2Hash = regResults[1].domainHash;
+      const parentHash = regResults[0].domainHash;
+
+      const exists = await zns.registry.exists(lvl2Hash);
+      if (!exists) {
+        const newHash = await registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash,
+          domainLabel: domainConfigs[1].domainLabel,
+          fullConfig: fullDistrConfigEmpty,
+          isRootDomain: false,
+        });
+
+        expect(newHash).to.eq(lvl2Hash);
+      }
+
+      // revoke subdomain
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        parentHash,
+        lvl2Hash,
+      );
+
+      // someone else is taking it
+      const newConfig = [
+        {
+          user: branchLvl1Owner,
+          domainLabel: "lvltwonew",
+          parentHash,
+          fullConfig: {
+            distrConfig: {
+              pricingContract: zns.fixedPricing.address,
+              paymentContract: zns.directPayment.address,
+              accessType: AccessType.OPEN,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
+            paymentConfig: {
+              paymentToken: zns.zeroToken.address,
+              beneficiary: branchLvl1Owner.address,
+            },
+          },
+        },
+      ];
+
+      const newResult = await registerDomainPath({
+        zns,
+        domainConfigs: newConfig,
+      });
+
+      await validatePathRegistration({
+        zns,
+        domainConfigs: newConfig,
+        regResults: newResult,
+      });
+    });
+
     // TODO sub: is this a case we want to support ???
     // how do we handle these cases? we do not remove pricing/payment configs when parent revokes
     // to allow for refunds if needed. we can make paymentToken 0x0 address, making all subsequent registrations free
@@ -430,7 +494,7 @@ describe("ZNSSubdomainRegistrar", () => {
     // if we do not make token a 0x0 address, then new subdomains will still pay the parent
     // even though it has been revoked
     // what do we do here ?? this needs a separate PR that will go deep into this and finds a solution
-    it("should properly register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
+    it("should register a child (subdomain) under a parent (root domain) that has been revoked", async () => {
       const lvl1Hash = regResults[0].domainHash;
 
       // revoke parent
@@ -449,7 +513,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: branchLvl1Owner.address,
@@ -476,7 +540,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
     });
 
-    it("should properly register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
+    it("should register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
       const lvl3Hash = regResults[2].domainHash;
       const lvl4Hash = regResults[3].domainHash;
 
@@ -500,7 +564,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: branchLvl2Owner.address,
@@ -528,10 +592,612 @@ describe("ZNSSubdomainRegistrar", () => {
     });
   });
 
+  describe("Token transfers for different distr configs", () => {
+    let rootHash : string;
+    let fixedPrice : BigNumber;
+    let feePercentage : BigNumber;
+
+    before(async () => {
+      [
+        deployer,
+        zeroVault,
+        governor,
+        admin,
+        rootOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+        lvl6SubOwner,
+        branchLvl1Owner,
+        branchLvl2Owner,
+      ] = await hre.ethers.getSigners();
+      // zeroVault address is used to hold the fee charged to the user when registering
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, governor.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
+
+      // Give funds to users
+      await Promise.all(
+        [
+          rootOwner,
+          lvl2SubOwner,
+          lvl3SubOwner,
+          lvl4SubOwner,
+          lvl5SubOwner,
+          lvl6SubOwner,
+          branchLvl1Owner,
+          branchLvl2Owner,
+        ].map(async ({ address }) =>
+          zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+      );
+      await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      fixedPrice = ethers.utils.parseEther("397.13");
+      feePercentage = BigNumber.from(200);
+      // register root domain
+      rootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "root",
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.fixedPricing.address,
+            paymentContract: zns.directPayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig: {
+            price: fixedPrice,
+            feePercentage: BigNumber.from(0),
+          },
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+    });
+
+    it("FixedPricing + StakePayment with fee", async () => {
+      const priceConfig = {
+        price: fixedPrice,
+        feePercentage,
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "fixedstake",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.fixedPricing.address,
+            paymentContract: zns.stakePayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "fixedstakechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+
+      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(fee);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(fee));
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should offer refund !
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+    });
+
+    it("FixedPricing + StakePayment no fee", async () => {
+      const priceConfig = {
+        price: fixedPrice,
+        feePercentage: BigNumber.from(0),
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "fixedstakenofee",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.fixedPricing.address,
+            paymentContract: zns.stakePayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "fixedstakenofeechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should offer refund !
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+    });
+
+    it("FixedPricing + DirectPayment with fee", async () => {
+      const priceConfig = {
+        price: fixedPrice,
+        feePercentage,
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "fixeddirect",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.fixedPricing.address,
+            paymentContract: zns.directPayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const label = "fixeddirectchild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice.add(fee));
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(fee));
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(0);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should NOT offer refund !
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
+      expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
+    });
+
+    it("FixedPricing + DirectPayment no fee", async () => {
+      const priceConfig = {
+        price: fixedPrice,
+        feePercentage: BigNumber.from(0),
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "fixeddirectnofee",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.fixedPricing.address,
+            paymentContract: zns.directPayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const label = "fixeddirectnofeechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(0);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should NOT offer refund !
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
+      expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
+    });
+
+    it("AsymptoticPricing + StakePayment with fee", async () => {
+      const priceConfig = priceConfigDefault;
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "asympstake",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.asPricing.address,
+            paymentContract: zns.stakePayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "asstakechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(fee);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(fee));
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should offer refund !
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+    });
+
+    it("AsymptoticPricing + StakePayment no fee", async () => {
+      const priceConfig = {
+        ...priceConfigDefault,
+        feePercentage: BigNumber.from(0),
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "asstakenofee",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.asPricing.address,
+            paymentContract: zns.stakePayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "asstakenofeechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(expectedPrice);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should offer refund !
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.stakePayment.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+
+      expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+    });
+
+    it("AsymptoticPricing + DirectPayment with fee", async () => {
+      const priceConfig = priceConfigDefault;
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "asdirect",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.asPricing.address,
+            paymentContract: zns.directPayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.directPayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "asdirectchild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const { expectedPrice, fee } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice.add(fee));
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(fee));
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(0);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should NOT offer refund !
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
+      expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
+    });
+
+    it("AsymptoticPricing + DirectPayment no fee", async () => {
+      const priceConfig = {
+        ...priceConfigDefault,
+        feePercentage: BigNumber.from(0),
+      };
+
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "asdirectnofee",
+        isRootDomain: false,
+        fullConfig: {
+          distrConfig: {
+            pricingContract: zns.asPricing.address,
+            paymentContract: zns.directPayment.address,
+            accessType: AccessType.OPEN,
+          },
+          priceConfig,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      const contractBalBefore = await zns.zeroToken.balanceOf(zns.directPayment.address);
+      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+
+      const label = "asdirectnofeechild";
+
+      const childHash = await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+
+      expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
+      expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice);
+      expect(contractBalAfter.sub(contractBalBefore)).to.eq(0);
+
+      // revoke
+      await zns.subdomainRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        subdomainParentHash,
+        childHash,
+      );
+
+      // should NOT offer refund !
+      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
+      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
+      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.directPayment.address);
+
+      expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
+      expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
+      expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
+    });
+  });
+
   describe("Registration access", () => {
     let fixedPrice : BigNumber;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
+    let fixedFeePercentage : BigNumber;
 
     before(async () => {
       [
@@ -557,6 +1223,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
 
       fixedPrice = ethers.utils.parseEther("397");
+      fixedFeePercentage = BigNumber.from(200);
 
       await Promise.all(
         [
@@ -582,7 +1249,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: rootOwner.address,
@@ -598,7 +1265,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: lvl2SubOwner.address,
@@ -629,6 +1296,17 @@ describe("ZNSSubdomainRegistrar", () => {
         isRootDomain: false,
         fullConfig: fullDistrConfigEmpty,
       });
+
+      const latestBlock = await time.latestBlock();
+      // look for an event where user pays himself
+      const filter = zns.zeroToken.filters.Transfer(lvl2SubOwner.address, lvl2SubOwner.address);
+      const events = await zns.zeroToken.queryFilter(
+        filter,
+        latestBlock - 50,
+        latestBlock
+      );
+      // this means NO transfers have been executed, which is what we need
+      expect(events.length).to.eq(0);
 
       const balAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       // TODO sub: the diff is 0 because user pays himself now
@@ -686,8 +1364,15 @@ describe("ZNSSubdomainRegistrar", () => {
       const { domainHash: parentHash } = regResults[1];
       const domainLabel = "allowed";
 
+      const {
+        expectedPrice,
+        fee,
+      } = getPriceObject(
+        domainLabel,
+        domainConfigs[1].fullConfig.priceConfig
+      );
       // approve direct payment
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, fixedPrice);
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
 
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         parentHash,
@@ -729,7 +1414,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentContract: zns.directPayment.address,
             accessType: AccessType.WHITELIST,
           },
-          priceConfig: fixedPrice,
+          priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           paymentConfig: {
             paymentToken: zns.zeroToken.address,
             beneficiary: lvl3SubOwner.address,
@@ -744,26 +1429,20 @@ describe("ZNSSubdomainRegistrar", () => {
         true,
       );
 
-      // approve direct payment
-      await zns.zeroToken.connect(lvl4SubOwner).approve(zns.directPayment.address, fixedPrice);
-
       // register child
-      await zns.subdomainRegistrar.connect(lvl4SubOwner).registerSubdomain(
-        parentHash,
-        "whitelisted",
-        ethers.constants.AddressZero,
-        distrConfigEmpty
-      );
-
-      const hash = await getDomainHashFromEvent({
+      const hash = await registrationWithSetup({
         zns,
         user: lvl4SubOwner,
+        parentHash,
+        domainLabel: "whitelisted",
+        isRootDomain: false,
+        fullConfig: fullDistrConfigEmpty,
       });
 
       // check registry
       const dataFromReg = await zns.registry.getDomainRecord(hash);
       expect(dataFromReg.owner).to.eq(lvl4SubOwner.address);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
       // check domain token
       const tokenId = BigNumber.from(hash).toString();
@@ -867,8 +1546,18 @@ describe("ZNSSubdomainRegistrar", () => {
         true,
       );
 
+      const label = "alloweddddd";
+
       // approve
-      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, fixedPrice);
+      const {
+        expectedPrice,
+        fee,
+      } = getPriceObject(
+        label,
+        domainConfigs[1].fullConfig.priceConfig
+      );
+      await zns.zeroToken.connect(lvl5SubOwner).approve(zns.directPayment.address, expectedPrice.add(fee));
+
       // register
       await zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
         regResults[1].domainHash,
@@ -921,6 +1610,7 @@ describe("ZNSSubdomainRegistrar", () => {
     let fixedPrice : BigNumber;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
+    let fixedFeePercentage : BigNumber;
 
     before(async () => {
       [
@@ -946,6 +1636,7 @@ describe("ZNSSubdomainRegistrar", () => {
       });
 
       fixedPrice = ethers.utils.parseEther("397");
+      fixedFeePercentage = BigNumber.from(200);
 
       await Promise.all(
         [
@@ -971,7 +1662,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.stakePayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: rootOwner.address,
@@ -987,7 +1678,7 @@ describe("ZNSSubdomainRegistrar", () => {
               paymentContract: zns.directPayment.address,
               accessType: AccessType.OPEN,
             },
-            priceConfig: fixedPrice,
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
             paymentConfig: {
               paymentToken: zns.zeroToken.address,
               beneficiary: lvl2SubOwner.address,
