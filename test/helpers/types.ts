@@ -138,4 +138,8 @@ export interface IPathRegResult {
   userBalanceAfter : BigNumber;
   parentBalanceBefore : BigNumber;
   parentBalanceAfter : BigNumber;
+  treasuryBalanceBefore : BigNumber;
+  treasuryBalanceAfter : BigNumber;
+  zeroVaultBalanceBefore : BigNumber;
+  zeroVaultBalanceAfter : BigNumber;
 }
