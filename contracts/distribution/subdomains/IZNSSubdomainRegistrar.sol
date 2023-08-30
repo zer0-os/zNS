@@ -29,7 +29,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         DistributionConfig calldata configForSubdomains
     ) external returns (bytes32);
 
-    function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external;
+    function revokeSubdomain(bytes32 subdomainHash) external;
 
     function hashWithParent(
         bytes32 parentHash,

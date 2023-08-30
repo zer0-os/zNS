@@ -120,15 +120,15 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         return coreRegisterArgs.domainHash;
     }
 
-    function revokeSubdomain(bytes32 parentHash, bytes32 domainHash) external override {
+    function revokeSubdomain(bytes32 subdomainHash) external override {
         // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
-            rootRegistrar.isOwnerOf(domainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
+            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        _setAccessTypeForDomain(domainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(domainHash, msg.sender);
+        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
+        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
 
         // TODO sub: should we clear the data from all other contracts (configs, etc.) ??
         //  can we even do this?
