@@ -22,7 +22,6 @@ import {
   ZeroToken,
   ZNSFixedPricing,
   ZNSSubdomainRegistrar,
-  ZNSStakePayment,
   ZNSAsymptoticPricing,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -90,7 +89,6 @@ export interface ZNSContracts {
   registrar : ZNSRegistrar;
   fixedPricing : ZNSFixedPricing;
   asPricing : ZNSAsymptoticPricing;
-  stakePayment : ZNSStakePayment;
   subdomainRegistrar : ZNSSubdomainRegistrar;
   zeroVaultAddress : string;
 }
