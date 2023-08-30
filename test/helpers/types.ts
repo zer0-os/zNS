@@ -21,7 +21,6 @@ import {
   ZNSTreasuryUpgradeMock__factory,
   ZeroToken,
   ZNSFixedPricing,
-  ZNSDirectPayment,
   ZNSSubdomainRegistrar,
   ZNSStakePayment,
   ZNSAsymptoticPricing,
@@ -91,7 +90,6 @@ export interface ZNSContracts {
   registrar : ZNSRegistrar;
   fixedPricing : ZNSFixedPricing;
   asPricing : ZNSAsymptoticPricing;
-  directPayment : ZNSDirectPayment;
   stakePayment : ZNSStakePayment;
   subdomainRegistrar : ZNSSubdomainRegistrar;
   zeroVaultAddress : string;

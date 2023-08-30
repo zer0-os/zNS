@@ -72,6 +72,5 @@ export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
 export const fixedPricingName = "ZNSFixedPricing";
 export const asymptoticPricingName = "ZNSAsymptoticPricing";
-export const directPaymentName = "ZNSDirectPayment";
 export const stakePaymentName = "ZNSStakePayment";
 export const subdomainRegistrarName = "ZNSSubdomainRegistrar";

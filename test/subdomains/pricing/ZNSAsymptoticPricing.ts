@@ -10,7 +10,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
-  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE,
+  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE, PaymentType,
 } from "../../helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "../../helpers/constants";
 import {
@@ -54,15 +54,15 @@ describe("ZNSAsymptoticPricing", () => {
 
     const fullConfig = {
       distrConfig: {
+        paymentConfig: {
+          paymentType: PaymentType.DIRECT,
+          paymentToken: zns.zeroToken.address,
+          beneficiary: user.address,
+        },
         pricingContract: zns.asPricing.address,
-        paymentContract: zns.directPayment.address,
         accessType: 1,
       },
       priceConfig: priceConfigDefault,
-      paymentConfig: {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: user.address,
-      },
     };
 
     domainHash = await registrationWithSetup({
