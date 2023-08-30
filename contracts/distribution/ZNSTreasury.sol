@@ -21,6 +21,8 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     /**
      * @notice The address of the `ZNSPriceOracle` contract.
      */
+    // TODO sub fee: remove this if not used in this contract !!!
+    // TODO sub fee: move tests for deleted functions to RootRegistrar
     IZNSPriceOracle public priceOracle;
 
     /**

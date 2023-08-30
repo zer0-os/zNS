@@ -115,7 +115,7 @@ contract ZNSRegistrar is
         );
 
         if (address(distributionConfig.pricingContract) != address(0)) {
-            // TODO sub: this adds 52k gas !
+            // this adds roughly 100k gas to the register tx
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
 

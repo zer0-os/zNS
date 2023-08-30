@@ -12,6 +12,8 @@ import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
+// TODO sub: can we turn this into a single contract of PriceOracle ??
+// TODO sub: should we rename PriceOracle into this contract and use a single one where we map root to 0x0 hash as parent ???
 contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
 
