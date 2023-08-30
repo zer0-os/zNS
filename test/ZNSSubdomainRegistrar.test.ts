@@ -38,7 +38,7 @@ describe("ZNSSubdomainRegistrar", () => {
   let zns : ZNSContracts;
   let zeroVault : SignerWithAddress;
 
-  describe("6 level path (5 subdomains) with all possible configs", () => {
+  describe("Operations within domain paths", () => {
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
 
@@ -215,6 +215,13 @@ describe("ZNSSubdomainRegistrar", () => {
 
       expect(userBalAfter.sub(userBalBefore)).to.eq(0);
 
+      const {
+        price: revokedPrice,
+        fee: revokedFee,
+      } = await zns.asPricing.getPriceAndFee(domainHash, "randomlabel");
+      expect(revokedPrice).to.eq(0);
+      expect(revokedFee).to.eq(0);
+
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
@@ -269,6 +276,9 @@ describe("ZNSSubdomainRegistrar", () => {
       ).to.eq(
         expectedPrice
       );
+
+      const revokedPrice = await zns.fixedPricing.getPrice(domainHash, "randomlabel");
+      expect(revokedPrice).to.eq(0);
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
@@ -349,6 +359,14 @@ describe("ZNSSubdomainRegistrar", () => {
         lvl2Hash,
       );
 
+      // make sure price has been revoked
+      const {
+        price: revokedPrice,
+        fee: revokedFee,
+      } = await zns.asPricing.getPriceAndFee(lvl2Hash, "randomlabel");
+      expect(revokedPrice).to.eq(0);
+      expect(revokedFee).to.eq(0);
+
       // make sure all parent's distribution configs still exist
       const parentDistrConfig = await zns.subdomainRegistrar.distrConfigs(lvl2Hash);
       expect(parentDistrConfig.pricingContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricingContract);
@@ -356,13 +374,14 @@ describe("ZNSSubdomainRegistrar", () => {
 
       expect(parentDistrConfig.pricingContract).to.eq(zns.asPricing.address);
       expect(parentDistrConfig.paymentContract).to.eq(zns.stakePayment.address);
-      // check a couple of fields from price config
+
+      // check a couple of fields from price config to make sure they've been reset
       const priceConfig = await zns.asPricing.priceConfigs(lvl2Hash);
       if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig) {
-        expect(priceConfig.maxPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.maxPrice);
+        expect(priceConfig.maxPrice).to.eq(0);
       }
       if ("minPrice" in domainConfigs[1].fullConfig.priceConfig) {
-        expect(priceConfig.minPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.minPrice);
+        expect(priceConfig.minPrice).to.eq(0);
       }
       // make sure the child's stake is still there
       const childStakedAmt = await zns.stakePayment.stakedForDomain(lvl3Hash);
@@ -384,6 +403,9 @@ describe("ZNSSubdomainRegistrar", () => {
 
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
+
+      const stakedAfterRevoke = await zns.stakePayment.stakedForDomain(lvl3Hash);
+      expect(stakedAfterRevoke).to.eq(0);
 
       const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
@@ -441,6 +463,12 @@ describe("ZNSSubdomainRegistrar", () => {
         domainConfigs: newConfig,
       });
 
+      // make sure that sub user did not pay anything
+      // since parent has been revoked
+      expect(
+        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
+      ).to.eq(0);
+
       await validatePathRegistration({
         zns,
         domainConfigs: newConfig,
@@ -485,6 +513,12 @@ describe("ZNSSubdomainRegistrar", () => {
         zns,
         domainConfigs: newConfigs,
       });
+
+      // make sure that sub user did not pay anything
+      // since parent has been revoked
+      expect(
+        newRegResults[0].parentBalanceAfter.sub(newRegResults[0].parentBalanceBefore)
+      ).to.eq(0);
 
       await validatePathRegistration({
         zns,

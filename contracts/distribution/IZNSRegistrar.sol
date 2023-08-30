@@ -2,6 +2,7 @@
 pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
+import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 
 
 interface IZNSRegistrar is IDistributionConfig {
@@ -23,7 +24,6 @@ interface IZNSRegistrar is IDistributionConfig {
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
      * @param registrant The address that called `ZNSRegistrar.registerDomain()`
-     * @param resolver The resolver contract address of the domain registered
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
@@ -32,7 +32,6 @@ interface IZNSRegistrar is IDistributionConfig {
         uint256 indexed tokenId,
         string name,
         address indexed registrant,
-        address resolver,
         address domainAddress
     );
 
@@ -91,7 +90,7 @@ interface IZNSRegistrar is IDistributionConfig {
         address domainAddress
     ) external;
 
-    function coreRevoke(bytes32 domainHash) external;
+    function coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) external;
 
     function revokeDomain(bytes32 domainHash) external;
 

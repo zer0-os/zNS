@@ -10,7 +10,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
-  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE,
 } from "../../helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "../../helpers/constants";
 import {
@@ -27,6 +27,7 @@ describe("ZNSAsymptoticPricing", () => {
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
+  let mockRegistrar : SignerWithAddress;
 
   let zns : ZNSContracts;
   let domainHash : string;
@@ -39,6 +40,7 @@ describe("ZNSAsymptoticPricing", () => {
       user,
       admin,
       randomAcc,
+      mockRegistrar,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS({
@@ -783,6 +785,64 @@ describe("ZNSAsymptoticPricing", () => {
       const tx = zns.asPricing.connect(user).setRegistry(randomAcc.address);
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+  });
+
+  describe("#revokePrice", () => {
+    it("should set maxPrice and minPrice to 0 if called by REGISTRAR_ROLE and fire a #PriceRevoked", async () => {
+      const {
+        maxPrice: maxPriceBefore,
+        minPrice: minPriceBefore,
+      } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPriceBefore).to.eq(priceConfigDefault.maxPrice);
+      expect(minPriceBefore).to.eq(priceConfigDefault.minPrice);
+
+      await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+      const tx = await zns.asPricing.connect(mockRegistrar).revokePrice(domainHash);
+      // check event
+      await expect(tx).to.emit(zns.asPricing, "PriceRevoked").withArgs(domainHash);
+
+      const {
+        maxPrice: maxPriceAfter,
+        minPrice: minPriceAfter,
+      } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPriceAfter).to.eq(0);
+      expect(minPriceAfter).to.eq(0);
+    });
+
+    it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
+      await expect(
+        zns.asPricing.connect(user).revokePrice(domainHash)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(user.address, REGISTRAR_ROLE)
+      );
+    });
+
+    it("should result in price for any length to be 0", async () => {
+      const { maxPrice } = await zns.asPricing.priceConfigs(domainHash);
+      expect(maxPrice).to.eq(priceConfigDefault.maxPrice);
+      expect(maxPrice).to.not.eq(0);
+
+      await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+
+      await zns.asPricing.connect(mockRegistrar).revokePrice(domainHash);
+
+      const labels = [
+        "a",
+        "abc",
+        "abcdefghijklmnop",
+        "abcdefghijklmnopqrstuvwxyzalksjdlakssdaasdasljkdbasldkuwgljkabclaksjdgawuet",
+      ];
+
+      await labels.reduce(
+        async (acc, label) => {
+          await acc;
+          expect(
+            await zns.asPricing.getPrice(domainHash, label)
+          ).to.eq(0);
+        }, Promise.resolve()
       );
     });
   });

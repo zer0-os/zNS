@@ -316,6 +316,25 @@ describe("ZNSStakePayment", () => {
     expect(beneficiary).to.equal(random.address);
   });
 
+  it("#setBeneficiary() should only be callable by the owner or operator of a domain", async () => {
+    await expect(
+      zns.stakePayment.connect(random).setBeneficiary(domainHash, random.address),
+    ).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
+
+    // set operator in registry
+    await zns.registry.connect(user).setOwnerOperator(random.address, true);
+
+    await expect(
+      zns.stakePayment.connect(random).setBeneficiary(domainHash, random.address),
+    ).to.not.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
+  });
+
+  it("#setBeneficiary() should revert when trying to set 0x0 address", async () => {
+    await expect(
+      zns.stakePayment.connect(user).setBeneficiary(domainHash, ethers.constants.AddressZero),
+    ).to.be.revertedWith("ZNSStakePayment: beneficiary cannot be 0x0 address");
+  });
+
   it("#setRegistry() should set the new registry correctly and emit #RegistrySet event", async () => {
     const tx = await zns.stakePayment.connect(admin).setRegistry(random.address);
 

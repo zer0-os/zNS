@@ -40,6 +40,9 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         //  will having a default of AccessType.LOCKED prevent this ?? (TEST!)
         if (address(config.paymentToken) == address(0)) return;
 
+        // TODO sub: should we add an if() here that will not do the transfer if
+        //  if the amount is 0 ??
+
         // Transfer stake amount and fee to this contract
         config.paymentToken.safeTransferFrom(
             payer,
@@ -78,6 +81,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         // during a promo without a stake
         // see `processPayment()` to see that setting stakingToken to 0x0 address
         // means free domains
+        // TODO sub: test this case !!
         if (stakedAmount == 0) return;
 
         delete stakedForDomain[domainHash];
@@ -104,7 +108,7 @@ contract ZNSStakePayment is AAccessControlled, ARegistryWired, AZNSRefundablePay
         bytes32 domainHash,
         address beneficiary
     ) public onlyOwnerOrOperator(domainHash) {
-        require(beneficiary != address(0), "ZNSStakePayment: feeBeneficiary can not be 0x0 address");
+        require(beneficiary != address(0), "ZNSStakePayment: beneficiary cannot be 0x0 address");
         paymentConfigs[domainHash].beneficiary = beneficiary;
 
         emit PaymentBeneficiaryChanged(domainHash, beneficiary);

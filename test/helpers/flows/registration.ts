@@ -200,7 +200,6 @@ export const validatePathRegistration = async ({
     expect(events[events.length - 1].args?.domainHash).to.eq(domainHash);
     expect(events[events.length - 1].args?.tokenId).to.eq(tokenId);
     expect(events[events.length - 1].args?.name).to.eq(domainLabel);
-    expect(events[events.length - 1].args?.resolver).to.eq(zns.addressResolver.address);
     expect(events[events.length - 1].args?.domainAddress).to.eq(user.address);
   }, Promise.resolve()
 );

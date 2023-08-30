@@ -17,7 +17,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
-    mapping(bytes32 domainHash => DistributionConfig) public distrConfigs;
+    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
     mapping(bytes32 domainHash =>
         mapping(address registrant => bool allowed)
@@ -83,13 +83,15 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             price = parentConfig.pricingContract.getPrice(parentHash, label);
         }
 
-        parentConfig.paymentContract.processPayment(
-            parentHash,
-            subdomainHash,
-            msg.sender,
-            price,
-            fee
-        );
+        if (price + fee > 0) {
+            parentConfig.paymentContract.processPayment(
+                parentHash,
+                subdomainHash,
+                msg.sender,
+                price,
+                fee
+            );
+        }
 
         rootRegistrar.coreRegister(
             parentHash,
@@ -114,13 +116,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        rootRegistrar.coreRevoke(domainHash);
+        rootRegistrar.coreRevoke(domainHash, distrConfigs[domainHash].pricingContract);
 
-        // TODO sub: do we store these as addresses or interfaces in the struct ??
-        address paymentContract = address(distrConfigs[parentHash].paymentContract);
-
-        if (AZNSPayment(paymentContract).refundsOnRevoke()) {
-            AZNSRefundablePayment(paymentContract).refund(
+        address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
+        // TODO sub: is this the correct usage of abstracts here?
+        //  need to make sure that we get proper reply from the overriden
+        //  function here and not the default "false" that comes from AZNSPayment
+        if (AZNSPayment(parentPaymentContract).refundsOnRevoke()) {
+            AZNSRefundablePayment(parentPaymentContract).refund(
                 parentHash,
                 domainHash,
                 msg.sender
@@ -214,6 +217,18 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar = IZNSRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
+        return distrConfigs[domainHash].pricingContract;
+    }
+
+    function getPaymentContractForDomain(bytes32 domainHash) external view returns (AZNSPayment) {
+        return distrConfigs[domainHash].paymentContract;
+    }
+
+    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType) {
+        return distrConfigs[domainHash].accessType;
     }
 
     function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {

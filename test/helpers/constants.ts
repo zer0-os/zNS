@@ -44,6 +44,13 @@ export enum AccessType {
   WHITELIST,
 }
 
+// eslint-disable-next-line no-shadow
+export enum OwnerOf {
+  NAME,
+  TOKEN,
+  BOTH,
+}
+
 export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
 // Contract names
