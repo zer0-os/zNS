@@ -8,7 +8,8 @@
         "no-unused-expressions": "off",
         "no-console": "off",
         "no-shadow": "warn",
-        "@typescript-eslint/no-shadow": "warn"
+        "@typescript-eslint/no-shadow": "warn",
+        "no-invalid-this": "off"
         // "@typescript-eslint/no-unused-vars": "off" // For debugging
       }
     }
