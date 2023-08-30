@@ -96,10 +96,10 @@ describe("ZNSAsymptoticPricing", () => {
     it("Returns 0 price for a root name with no length", async () => {
       const {
         price,
-        fee,
+        stakeFee,
       } = await zns.asPricing.getPriceAndFee(domainHash, "");
       expect(price).to.eq(0);
-      expect(fee).to.eq(0);
+      expect(stakeFee).to.eq(0);
     });
 
     it("Returns the base price for domains that are equal to the base length", async () => {
