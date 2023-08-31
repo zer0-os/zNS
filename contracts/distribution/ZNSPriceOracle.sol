@@ -25,10 +25,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * that participates in the price calculation.
      * @dev See [IZNSPriceOracle.md](./IZNSPriceOracle.md) for more details.
      */
-    // TODO sub data: remove this if proven to not be necessary !
     DomainPriceConfig public rootDomainPriceConfig;
-
-    mapping(bytes32 => DomainPriceConfig) public priceConfigs;
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
@@ -46,7 +43,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
     ) public override initializer {
         _setAccessController(accessController_);
 
-        setPriceConfig(0x0, priceConfig_);
+        setPriceConfig(priceConfig_);
     }
 
     /**
@@ -54,14 +51,13 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param name The name of the domain to check
      */
     function getPrice(
-        bytes32 parentHash,
-        string calldata label
+        string calldata name
     ) external view override returns (uint256) {
-        uint256 length = label.strlen();
+        uint256 length = name.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
 
-        return _getPrice(parentHash, length);
+        return _getPrice(length);
     }
 
     /**
@@ -70,7 +66,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param domainPrice The price of the domain
      */
     function getProtocolFee(uint256 domainPrice) public view override returns (uint256) {
-        return (domainPrice * priceConfigs[0x0].feePercentage) / PERCENTAGE_BASIS;
+        return (domainPrice * rootDomainPriceConfig.feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**
@@ -80,19 +76,17 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * Only ADMIN can call this function.
      * @param priceConfig The new price config to set
      */
-    // TODO sub data: add proper AC here so owners can set !
-    function setPriceConfig(bytes32 domainHash, DomainPriceConfig calldata priceConfig) public override onlyAdmin {
-        priceConfigs[domainHash].baseLength = priceConfig.baseLength;
-        priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        priceConfigs[domainHash].minPrice = priceConfig.minPrice;
-        priceConfigs[domainHash].maxLength = priceConfig.maxLength;
-        priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
+    function setPriceConfig(DomainPriceConfig calldata priceConfig) public override onlyAdmin {
+        rootDomainPriceConfig.baseLength = priceConfig.baseLength;
+        rootDomainPriceConfig.maxPrice = priceConfig.maxPrice;
+        rootDomainPriceConfig.minPrice = priceConfig.minPrice;
+        rootDomainPriceConfig.maxLength = priceConfig.maxLength;
+        rootDomainPriceConfig.feePercentage = priceConfig.feePercentage;
         setPrecisionMultiplier(priceConfig.precisionMultiplier);
 
-        _validateConfig(domainHash);
+        _validateConfig();
 
         emit PriceConfigSet(
-            domainHash,
             priceConfig.maxPrice,
             priceConfig.minPrice,
             priceConfig.maxLength,
@@ -110,14 +104,13 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param maxPrice The maximum price to set in $ZERO
      */
     function setMaxPrice(
-        bytes32 domainHash,
         uint256 maxPrice
     ) external override onlyAdmin {
-        priceConfigs[domainHash].maxPrice = maxPrice;
+        rootDomainPriceConfig.maxPrice = maxPrice;
 
-        if (maxPrice != 0) _validateConfig(domainHash);
+        if (maxPrice != 0) _validateConfig();
 
-        emit MaxPriceSet(domainHash, maxPrice);
+        emit MaxPriceSet(maxPrice);
     }
 
     /**
@@ -127,14 +120,13 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param minPrice The minimum price to set in $ZERO
      */
     function setMinPrice(
-        bytes32 domainHash,
         uint256 minPrice
     ) external override onlyAdmin {
-        priceConfigs[domainHash].minPrice = minPrice;
+        rootDomainPriceConfig.minPrice = minPrice;
 
-        _validateConfig(domainHash);
+        _validateConfig();
 
-        emit MinPriceSet(domainHash, minPrice);
+        emit MinPriceSet(minPrice);
     }
 
     /**
@@ -149,12 +141,11 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @param length Boundary to set
      */
     function setBaseLength(
-        bytes32 domainHash,
         uint256 length
     ) external override onlyAdmin {
-        priceConfigs[domainHash].baseLength = length;
+        rootDomainPriceConfig.baseLength = length;
 
-        _validateConfig(domainHash);
+        _validateConfig();
 
         emit BaseLengthSet(length);
     }
