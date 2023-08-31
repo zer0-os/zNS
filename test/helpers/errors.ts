@@ -24,6 +24,9 @@ export const NOT_NAME_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Name";
 export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token";
 export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of both Name and Token";
 
+// Subdomain Registrar
+export const DISTRIBUTION_LOCKED_ERR = "ZNSSubdomainRegistrar: Parent domain's distribution is locked";
+
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";

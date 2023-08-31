@@ -191,24 +191,20 @@ contract ZNSRegistrar is
             "ZNSRegistrar: Not the owner of both Name and Token"
         );
 
-        AZNSPricing pricingContract = subdomainRegistrar.getPricingContractForDomain(domainHash);
-        _coreRevoke(domainHash, pricingContract);
+        _coreRevoke(domainHash);
 
+        subdomainRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
         treasury.unstakeForDomain(domainHash, msg.sender);
     }
 
-    function coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) external override onlyRegistrar {
-        _coreRevoke(domainHash, pricingContract);
+    function coreRevoke(bytes32 domainHash) external override onlyRegistrar {
+        _coreRevoke(domainHash);
     }
 
-    function _coreRevoke(bytes32 domainHash, AZNSPricing pricingContract) internal {
+    function _coreRevoke(bytes32 domainHash) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
         registry.deleteRecord(domainHash);
-
-        if (address(pricingContract) != address(0)) {
-            pricingContract.revokePrice(domainHash);
-        }
 
         emit DomainRevoked(domainHash, msg.sender);
     }

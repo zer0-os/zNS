@@ -39,6 +39,7 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFe
 
     // TODO sub: is this a viable solution to not pay for subdomains
     //  of a revoked parent ?? this lets us wipe the price at any time for the parent
+    // TODO sub: do we need this now since we're not wiping the price ??!!
     function revokePrice(bytes32 domainHash) external override onlyRegistrar {
         priceConfigs[domainHash].price = 0;
         priceConfigs[domainHash].feePercentage = 0;

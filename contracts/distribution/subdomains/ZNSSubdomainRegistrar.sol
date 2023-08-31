@@ -86,6 +86,9 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
                         label
                     );
             } else {
+                // TODO sub: do we even need this case ??
+                //  I don't think so. refactor and determine how this will work
+                //  change this whenever abstracts are reworked
                 price = parentConfig.pricingContract.getPrice(parentHash, label);
             }
 
@@ -123,7 +126,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
         );
 
-        rootRegistrar.coreRevoke(domainHash, distrConfigs[domainHash].pricingContract);
+        rootRegistrar.coreRevoke(domainHash);
+        _setAccessTypeForDomain(domainHash, AccessType.LOCKED);
 
         address parentPaymentContract = address(distrConfigs[parentHash].paymentContract);
         // TODO sub: is this the correct usage of abstracts here?
@@ -159,7 +163,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) public override {
         setPricingContractForDomain(domainHash, config.pricingContract);
         setPaymentContractForDomain(domainHash, config.paymentContract);
-        setAccessTypeForDomain(domainHash, config.accessType);
+        _setAccessTypeForDomain(domainHash, config.accessType);
     }
 
     function setPricingContractForDomain(
@@ -191,14 +195,21 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit PaymentContractSet(domainHash, address(paymentContract));
     }
 
-    function setAccessTypeForDomain(
+    function _setAccessTypeForDomain(
         bytes32 domainHash,
         // TODO sub: test that we can not set the value larger
         //  than possible values for the enum
         AccessType accessType
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+    ) internal {
         distrConfigs[domainHash].accessType = accessType;
         emit AccessTypeSet(domainHash, accessType);
+    }
+
+    function setAccessTypeForDomain(
+        bytes32 domainHash,
+        AccessType accessType
+    ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
+        _setAccessTypeForDomain(domainHash, accessType);
     }
 
     // TODO sub: iron this out !!
