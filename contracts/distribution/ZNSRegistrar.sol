@@ -180,6 +180,7 @@ contract ZNSRegistrar is
         } else { // direct payment for subdomains
             treasury.processDirectPayment(
                 args.parentHash,
+                args.domainHash,
                 args.registrant,
                 args.price,
                 protocolFee

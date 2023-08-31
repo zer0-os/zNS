@@ -20,10 +20,11 @@ interface IZNSTreasury {
      * @param stakeFee The registration fee paid by the user on top of the staked amount
      */
     event StakeDeposited(
+        bytes32 indexed parentHash,
         bytes32 indexed domainHash,
         address indexed depositor,
         address stakingToken,
-        uint256 indexed stakeAmount,
+        uint256 stakeAmount,
         uint256 stakeFee,
         uint256 protocolFee
     );
@@ -41,9 +42,11 @@ interface IZNSTreasury {
     );
 
     event DirectPaymentProcessed(
+        bytes32 indexed parentHash,
+        bytes32 indexed domainHash,
         address indexed payer,
-        address indexed beneficiary,
-        uint256 indexed amount,
+        address beneficiary,
+        uint256 amount,
         uint256 protocolFee
     );
 
@@ -85,6 +88,7 @@ interface IZNSTreasury {
 
     function processDirectPayment(
         bytes32 parentHash,
+        bytes32 domainHash,
         address payer,
         uint256 paymentAmount,
         uint256 protocolFee

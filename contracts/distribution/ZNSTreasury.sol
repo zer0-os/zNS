@@ -76,9 +76,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
             paymentToken: IERC20(paymentToken_),
             beneficiary : zeroVault_
         });
-        // TODO sub data: fix-optimize these later !
-//        setPaymentToken(stakingToken_);
-//        setZeroVaultAddress(zeroVault_);
     }
 
     /**
@@ -115,7 +112,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // Transfer registration fee to the Zero Vault from this address
         parentConfig.paymentToken.safeTransfer(
-        // TODO sub data: turn this into a constant possibly
             paymentConfigs[0x0].beneficiary,
             protocolFee
         );
@@ -132,6 +128,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         stakedForDomain[domainHash] = stakeAmount;
 
         emit StakeDeposited(
+            parentHash,
             domainHash,
             depositor,
             address(parentConfig.paymentToken),
@@ -168,12 +165,13 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
     function processDirectPayment(
         bytes32 parentHash,
+        bytes32 domainHash,
         address payer,
         uint256 paymentAmount,
         uint256 protocolFee
     ) external override onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
-        // TODO sub data: check gas and optimize this to use memory var if needed !!
+
         // Transfer payment to parent beneficiary from payer
         parentConfig.paymentToken.safeTransferFrom(
             payer,
@@ -189,6 +187,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
 
         emit DirectPaymentProcessed(
+            parentHash,
+            domainHash,
             payer,
             parentConfig.beneficiary,
             paymentAmount,
