@@ -71,7 +71,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     ) external override initializer {
         _setAccessController(accessController_);
         // TODO sub data: add checks !!!
-        paymentConfigs[bytes32(0)] = PaymentConfig({
+        paymentConfigs[0x0] = PaymentConfig({
             paymentToken: IERC20(stakingToken_),
             beneficiary : zeroVault_
         });
@@ -180,16 +180,17 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         uint256 paymentAmount,
         uint256 protocolFee
     ) external override onlyRegistrar {
+        PaymentConfig memory parentConfig = paymentConfigs[parentHash];
         // TODO sub data: check gas and optimize this to use memory var if needed !!
         // Transfer payment to parent beneficiary from payer
-        paymentConfigs[parentHash].paymentToken.safeTransferFrom(
+        parentConfig.paymentToken.safeTransferFrom(
             payer,
-            paymentConfigs[parentHash].beneficiary,
+            parentConfig.beneficiary,
             paymentAmount
         );
 
         // Transfer registration fee to the Zero Vault from payer
-        paymentConfigs[parentHash].paymentToken.safeTransferFrom(
+        parentConfig.paymentToken.safeTransferFrom(
             payer,
             paymentConfigs[0x0].beneficiary,
             protocolFee
@@ -197,7 +198,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
 
         emit DirectPaymentProcessed(
             payer,
-            paymentConfigs[parentHash].beneficiary,
+            parentConfig.beneficiary,
             paymentAmount,
             protocolFee
         );
