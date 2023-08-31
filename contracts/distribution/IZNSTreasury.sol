@@ -55,20 +55,22 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when `stakingToken` is set in state.
-     * @param stakingToken The new address of the ERC-20 compliant staking token contract
+     * @param token The new address of the ERC-20 compliant payment token contract
      */
-    event StakingTokenSet(address stakingToken);
+    event PaymentTokenSet(bytes32 indexed domainHash, address indexed token);
 
     /**
      * @notice Emitted when `zeroVault` is set in state.
-     * @param zeroVault The new address of the zero vault contract or wallet
+     * @param beneficiary The new address of the beneficiary contract or wallet
      */
-    event ZeroVaultAddressSet(address zeroVault);
+    event BeneficiarySet(bytes32 indexed domainHash, address indexed beneficiary);
 
-    function setPaymentConfig(
-        bytes32 domainHash,
-        PaymentConfig memory paymentConfig
-    ) external;
+    function paymentConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        IERC20 paymentToken,
+        address beneficiary
+    );
 
     function stakeForDomain(
         bytes32 parentHash,
@@ -90,13 +92,24 @@ interface IZNSTreasury {
 
     function stakedForDomain(bytes32 domainHash) external view returns (uint256);
 
-    function setZeroVaultAddress(address zeroVaultAddress) external;
+    function setPaymentConfig(
+        bytes32 domainHash,
+        PaymentConfig memory paymentConfig
+    ) external;
 
-    function setPriceOracle(address priceOracle_) external;
+    function setBeneficiary(
+        bytes32 domainHash,
+        address beneficiary
+    ) external;
 
-    function setStakingToken(address stakingToken_) external;
+    function setPaymentToken(
+        bytes32 domainHash,
+        address paymentToken
+    ) external;
 
     function setAccessController(address accessController) external;
+
+    function setRegistry(address registry_) external;
 
     function getAccessController() external view returns (address);
 
