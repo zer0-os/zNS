@@ -62,10 +62,10 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 //        address beneficiary
 //    ) external;
 
-    function setPaymentTypeForDomain(
-        bytes32 domainHash,
-        PaymentType paymentType
-    ) external;
+//    function setPaymentTypeForDomain(
+//        bytes32 domainHash,
+//        PaymentType paymentType
+//    ) external;
 
     function setAccessTypeForDomain(
         bytes32 domainHash,

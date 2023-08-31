@@ -13,7 +13,6 @@ import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./subdomains/pricing/ZNSAsymptoticPricing.sol";
 
 
 /**
@@ -34,7 +33,7 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    ZNSAsymptoticPricing public priceOracle;
+    IZNSPriceOracle public priceOracle;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -98,7 +97,7 @@ contract ZNSRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = priceOracle.getPrice(0x0, name);
+        uint256 domainPrice = priceOracle.getPrice(name);
 
         _coreRegister(
             CoreRegisterArgs(
@@ -290,7 +289,7 @@ contract ZNSRegistrar is
             priceOracle_ != address(0),
             "ZNSRegistrar: priceOracle_ is 0x0 address"
         );
-        priceOracle = ZNSAsymptoticPricing(priceOracle_);
+        priceOracle = IZNSPriceOracle(priceOracle_);
 
         emit PriceOracleSet(priceOracle_);
     }

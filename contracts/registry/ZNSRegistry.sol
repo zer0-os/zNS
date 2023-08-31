@@ -56,7 +56,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param accessController_ The address of the `ZNSAccessController` contract
      */
     function initialize(address accessController_) public override initializer {
-        records[0x0].owner = msg.sender;
         _setAccessController(accessController_);
     }
 
