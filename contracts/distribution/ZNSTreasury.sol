@@ -147,6 +147,9 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
         delete stakedForDomain[domainHash];
 
+        // TODO sub data: error here!!! we need to get this token dynamically !!!
+        // tODO sub data: how do we do this if parent has changed the PaymentConfig ?!?!?
+        // TODO sub data: possibly add stakingToken to the stakedForDomain[domainHash] mapping !!!
         stakingToken.safeTransfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
