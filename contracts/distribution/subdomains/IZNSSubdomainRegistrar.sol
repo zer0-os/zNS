@@ -18,8 +18,25 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         PaymentType paymentType,
         AccessType accessType
     );
-    event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
+    event WhitelistUpdated(
+        bytes32 indexed domainHash,
+        address[] indexed candidates,
+        bool[] allowed
+    );
     event RootRegistrarSet(address registrar);
+
+    function distrConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        AZNSPricing pricingContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
+
+    function mintlist(
+        bytes32 domainHash,
+        address candidate
+    ) external view returns (bool);
 
     function registerSubdomain(
         bytes32 parentHash,
@@ -57,17 +74,13 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 
     function setWhitelistForDomain(
         bytes32 domainHash,
-        address registrant,
-        bool allowed
+        address[] calldata candidates,
+        bool[] calldata allowed
     ) external;
 
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
-
-    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing);
-
-    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType);
 
     function getAccessController() external view returns (address);
 

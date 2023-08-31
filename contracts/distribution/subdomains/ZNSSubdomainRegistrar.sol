@@ -19,11 +19,11 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     // TODO sub: make better name AND for the setter function !
     // TODO sub fee: should we move PaymentConfigs to Treasury ???!!! test gas usage!
     // TODO sub: when adding proxies test that more fields can be added to struct with upgrade !
-    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
+    mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
     mapping(bytes32 domainHash =>
-        mapping(address registrant => bool allowed)
-    ) public distributionWhitelist;
+        mapping(address candidate => bool allowed)
+    ) public override mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
@@ -57,13 +57,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
+            // TODO sub: consider getting rid of large revert messages
             "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
         );
 
-        if (parentConfig.accessType == AccessType.WHITELIST) {
+        if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
-                distributionWhitelist[parentHash][msg.sender],
-                "ZNSSubdomainRegistrar: Sender is not whitelisted"
+                mintlist[parentHash][msg.sender],
+                "ZNSSubdomainRegistrar: Sender is not in the mintlist"
             );
         }
 
@@ -162,7 +163,12 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         // TODO sub: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
         AZNSPricing pricingContract
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+    ) public override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
+        );
+
         require(
             address(pricingContract) != address(0),
             "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
@@ -176,7 +182,12 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     function setPaymentTypeForDomain(
         bytes32 domainHash,
         PaymentType paymentType
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+    ) public override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
+        );
+
         distrConfigs[domainHash].paymentType = paymentType;
 
         emit PaymentTypeSet(domainHash, paymentType);
@@ -200,17 +211,22 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     }
 
     // TODO sub: iron this out and make this function to accept an array of addresses !!
-    function setWhitelistForDomain(
+    function setMintlistForDomain(
         bytes32 domainHash,
-        address registrant,
-        bool allowed
-        // TODO sub: should we allow Registrar role to call this ??
-        //  if so - why ?? what can we call from there ??
-        //  should we cut Registrar out of this and other methods ??
-    ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
-        distributionWhitelist[domainHash][registrant] = allowed;
+        address[] calldata candidates,
+        bool[] calldata allowed
+    ) external override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
+        );
 
-        emit WhitelistUpdated(domainHash, registrant, allowed);
+        for (uint256 i; i < candidates.length; i++) {
+            mintlist[domainHash][candidates[i]] = allowed[i];
+        }
+
+        // TODO sub: test this returns proper arrays
+        emit WhitelistUpdated(domainHash, candidates, allowed);
     }
 
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubdomainRegistrar) onlyAdmin {
@@ -222,15 +238,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar = IZNSRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
-    }
-
-    // TODO sub fee: do we need these getters ???
-    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
-        return distrConfigs[domainHash].pricingContract;
-    }
-
-    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType) {
-        return distrConfigs[domainHash].accessType;
     }
 
     function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {

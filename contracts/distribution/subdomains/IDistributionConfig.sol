@@ -10,7 +10,7 @@ interface IDistributionConfig {
     enum AccessType {
         LOCKED,
         OPEN,
-        WHITELIST
+        MINTLIST
     }
 
     enum PaymentType {
