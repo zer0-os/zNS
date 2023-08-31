@@ -152,8 +152,8 @@ export const registrationWithSetup = async ({
       domainHash,
       fullConfig.priceConfig as IFixedPriceConfig,
     );
-  } else if (fullConfig.distrConfig.pricingContract === zns.asPricing.address) {
-    await zns.asPricing.connect(user).setPriceConfig(
+  } else if (fullConfig.distrConfig.pricingContract === zns.priceOracle.address) {
+    await zns.priceOracle.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IASPriceConfig,
     );

@@ -72,6 +72,10 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
         return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
     }
 
+    function getProtocolFee(uint256 price) external view returns (uint256) {
+        return (price * priceConfigs[0x0].feePercentage) / PERCENTAGE_BASIS;
+    }
+
     function revokePrice(bytes32 domainHash) external override onlyRegistrar {
         priceConfigs[domainHash].maxPrice = 0;
         priceConfigs[domainHash].minPrice = 0;
