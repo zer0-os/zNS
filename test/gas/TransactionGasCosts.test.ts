@@ -45,6 +45,8 @@ describe.only("Transaction Gas Costs Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
+    await zns.priceOracle.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
+
     config = {
       pricingContract: zns.fixedPricing.address,
       paymentType: PaymentType.DIRECT,
@@ -68,7 +70,8 @@ describe.only("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          pricingContract: zns.asPricing.address,
+          // TODO sub data: the original val was zns.asPricing.address
+          pricingContract: zns.priceOracle.address,
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {

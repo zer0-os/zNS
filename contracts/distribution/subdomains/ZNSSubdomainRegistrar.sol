@@ -227,14 +227,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 //    }
 
     // TODO sub data: fix this !!!
-//    function setPaymentTypeForDomain(
-//        bytes32 domainHash,
-//        PaymentType paymentType
-//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-//        distrConfigs[domainHash].paymentConfig.paymentType = paymentType;
-//
-//        emit PaymentTypeSet(domainHash, paymentType);
-//    }
+    function setPaymentTypeForDomain(
+        bytes32 domainHash,
+        PaymentType paymentType
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        distrConfigs[domainHash].paymentType = paymentType;
+
+        emit PaymentTypeSet(domainHash, paymentType);
+    }
 
     function _setAccessTypeForDomain(
         bytes32 domainHash,
