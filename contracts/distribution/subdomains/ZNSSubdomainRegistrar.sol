@@ -142,17 +142,19 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         bytes32 domainHash,
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(address(config.pricingContract) != address(0), "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address");
+        require(
+            address(config.pricingContract) != address(0),
+            "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
+        );
 
-        // TODO sub data: make this function work properly !!!
-
-        // TODO sub data: do we need enum checks here for paymentType and accessType ??
         distrConfigs[domainHash] = config;
 
-        // TODO sub: figure out how to optimize all these setters !!!
-//        setPricingContractForDomain(domainHash, config.pricingContract);
-//        setPaymentConfigForDomain(domainHash, config.paymentConfig);
-//        _setAccessTypeForDomain(domainHash, config.accessType);
+        emit DistributionConfigSet(
+            domainHash,
+            config.pricingContract,
+            config.paymentType,
+            config.accessType
+        );
     }
 
     function setPricingContractForDomain(
@@ -171,60 +173,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit PricingContractSet(domainHash, address(pricingContract));
     }
 
-    // TODO sub data: fix this !
-//    function setPaymentConfigForDomain(
-//        bytes32 domainHash,
-//        PaymentConfig calldata config
-//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-//        require(
-//            address(config.paymentToken) != address(0),
-//            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-//        );
-//        require(
-//            config.beneficiary != address(0),
-//            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-//        );
-//
-//        distrConfigs[domainHash].paymentConfig = config;
-//
-//        emit PaymentConfigSet(
-//            domainHash,
-//            config.paymentToken,
-//            config.beneficiary,
-//            config.paymentType
-//        );
-//    }
-
-//    function setPaymentTokenForDomain(
-//        bytes32 domainHash,
-//        IERC20 paymentToken
-//    // TODO sub fee: do we need these for all setters ??
-//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-//        require(
-//            address(paymentToken) != address(0),
-//            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-//        );
-//
-//        distrConfigs[domainHash].paymentConfig.paymentToken = paymentToken;
-//
-//        emit PaymentTokenSet(domainHash, address(paymentToken));
-//    }
-//
-//    function setBeneficiaryForDomain(
-//        bytes32 domainHash,
-//        address beneficiary
-//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-//        require(
-//            beneficiary != address(0),
-//            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-//        );
-//
-//        distrConfigs[domainHash].paymentConfig.beneficiary = beneficiary;
-//
-//        emit PaymentBeneficiarySet(domainHash, beneficiary);
-//    }
-
-    // TODO sub data: fix this !!!
     function setPaymentTypeForDomain(
         bytes32 domainHash,
         PaymentType paymentType
@@ -251,7 +199,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    // TODO sub: iron this out !!
+    // TODO sub: iron this out and make this function to accept an array of addresses !!
     function setWhitelistForDomain(
         bytes32 domainHash,
         address registrant,

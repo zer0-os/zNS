@@ -10,16 +10,14 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IZNSSubdomainRegistrar is IDistributionConfig {
     event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
-    event PaymentConfigSet(
-        bytes32 indexed domainHash,
-        IERC20 indexed paymentToken,
-        address indexed beneficiary,
-        PaymentType paymentType
-    );
-    event PaymentTokenSet(bytes32 indexed domainHash, address indexed paymentToken);
-    event PaymentBeneficiarySet(bytes32 indexed domainHash, address indexed beneficiary);
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+    event DistributionConfigSet(
+        bytes32 indexed domainHash,
+        AZNSPricing pricingContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
     event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
     event RootRegistrarSet(address registrar);
 
@@ -46,22 +44,6 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         bytes32 domainHash,
         AZNSPricing pricingContract
     ) external;
-
-    // TODO sub data: remove or fix all these below!
-//    function setPaymentConfigForDomain(
-//        bytes32 domainHash,
-//        PaymentConfig calldata config
-//    ) external;
-
-//    function setPaymentTokenForDomain(
-//        bytes32 domainHash,
-//        IERC20 paymentToken
-//    ) external;
-//
-//    function setBeneficiaryForDomain(
-//        bytes32 domainHash,
-//        address beneficiary
-//    ) external;
 
     function setPaymentTypeForDomain(
         bytes32 domainHash,

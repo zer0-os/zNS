@@ -6,6 +6,7 @@ import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+// TODO sub data: can we make this better??
 struct CoreRegisterArgs {
     // 0x0 for root domains
     bytes32 parentHash;
