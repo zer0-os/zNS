@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
 import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
@@ -11,7 +10,6 @@ import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { PaymentConfig } from "./IDistributionConfig.sol";
 
 
 contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
