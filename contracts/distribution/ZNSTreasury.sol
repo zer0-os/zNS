@@ -23,16 +23,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     mapping(bytes32 => PaymentConfig) public override paymentConfigs;
 
     /**
-     * @notice The address of the payment/staking token. Will be set to $ZERO.
-     */
-    IERC20 public stakingToken;
-
-    /**
-     * @notice Address of the Zero Vault, a wallet or contract which gathers all the registration fees.
-     */
-    address public zeroVault;
-
-    /**
      * @notice The main mapping of the contract. It stores the amount staked for each domain
      * which is mapped to the domain hash.
      * Note that there is no address to which the stake is tied to. Instead, the owner data from `ZNSRegistry`
@@ -41,7 +31,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
      * > Stake is owned by the owner of the Name in `ZNSRegistry`!
      */
-    mapping(bytes32 domainHash => uint256 amountStaked) public override stakedForDomain;
+    mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
 
     /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
@@ -65,7 +55,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         require(
             paymentToken_ != address(0),
-            "ZNSTreasury: stakingToken_ passed as 0x0 address"
+            "ZNSTreasury: paymentToken_ passed as 0x0 address"
         );
         require(
             zeroVault_ != address(0),
@@ -125,7 +115,10 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         }
 
         // Record staked amount for this domain
-        stakedForDomain[domainHash] = stakeAmount;
+        stakedForDomain[domainHash] = Stake({
+            token: parentConfig.paymentToken,
+            amount: stakeAmount
+        });
 
         emit StakeDeposited(
             parentHash,
@@ -151,16 +144,19 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address owner
     ) external override onlyRegistrar {
-        uint256 stakeAmount = stakedForDomain[domainHash];
-        require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
+        Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
 
-        // TODO sub data: error here!!! we need to get this token dynamically !!!
-        // tODO sub data: how do we do this if parent has changed the PaymentConfig ?!?!?
-        // TODO sub data: possibly add stakingToken to the stakedForDomain[domainHash] mapping !!!
-        stakingToken.safeTransfer(owner, stakeAmount);
+        // TODO sub data: TEST that this works with any token
+        // TODO sub data: and that this works when parent changes the paymentConfig.paymentToken !!!
+        stakeData.token.safeTransfer(owner, stakeData.amount);
 
-        emit StakeWithdrawn(domainHash, owner, stakeAmount);
+        emit StakeWithdrawn(
+            domainHash,
+            owner,
+            address(stakeData.token),
+            stakeData.amount
+        );
     }
 
     function processDirectPayment(
@@ -205,7 +201,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Setter function for the `zeroVault` state variable.
+     * @notice Setter function for the `beneficiary` address chosen by domain owner.
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param domainHash The hash of the domain to set beneficiary for
      * @param beneficiary The address of the new beneficiary
@@ -222,7 +218,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Setter function for the `stakingToken` state variable.
+     * @notice Setter function for the `paymentToken` chosen by the domain owner.
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param paymentToken The address of the new payment/staking token (currently $ZERO).
      */

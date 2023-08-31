@@ -229,13 +229,15 @@ contract ZNSRegistrar is
         registry.deleteRecord(domainHash);
 
         // check if user registered a domain with the stake
-        uint256 stakedAmount = treasury.stakedForDomain(domainHash);
+        (, uint256 stakedAmount) = treasury.stakedForDomain(domainHash);
+        bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
             treasury.unstakeForDomain(domainHash, owner);
+            stakeRefunded = true;
         }
 
-        emit DomainRevoked(domainHash, owner);
+        emit DomainRevoked(domainHash, owner, stakeRefunded);
     }
 
     /**

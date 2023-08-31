@@ -52,9 +52,14 @@ interface IZNSRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a domain is revoked.
      * @param domainHash The hash of the domain revoked
-     * @param registrant The address that called `ZNSRegistrar.revokeDomain()`
+     * @param owner The address that called `ZNSRegistrar.revokeDomain()` and domain owner
+     * @param stakeRefunded A flag for whether the stake was refunded or not
      */
-    event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
+    event DomainRevoked(
+        bytes32 indexed domainHash,
+        address indexed owner,
+        bool indexed stakeRefunded
+    );
 
     /**
      * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.

@@ -12,6 +12,12 @@ struct PaymentConfig {
 
 
 interface IZNSTreasury {
+
+    struct Stake {
+        IERC20 token;
+        uint256 amount;
+    }
+
     /**
      * @notice Emitted when a new stake is deposited upon registration of a new domain.
      * @param domainHash The hash of the domain name
@@ -38,7 +44,8 @@ interface IZNSTreasury {
     event StakeWithdrawn(
         bytes32 indexed domainHash,
         address indexed owner,
-        uint256 indexed stakeAmount
+        address indexed stakingToken,
+        uint256 stakeAmount
     );
 
     event DirectPaymentProcessed(
@@ -75,6 +82,8 @@ interface IZNSTreasury {
         address beneficiary
     );
 
+    function stakedForDomain(bytes32 domainHash) external view returns (IERC20, uint256);
+
     function stakeForDomain(
         bytes32 parentHash,
         bytes32 domainHash,
@@ -93,8 +102,6 @@ interface IZNSTreasury {
         uint256 paymentAmount,
         uint256 protocolFee
     ) external;
-
-    function stakedForDomain(bytes32 domainHash) external view returns (uint256);
 
     function setPaymentConfig(
         bytes32 domainHash,
