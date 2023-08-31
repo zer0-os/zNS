@@ -11,6 +11,7 @@ import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { PaymentConfig } from "./IDistributionConfig.sol";
 
 
 contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
@@ -73,12 +74,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             domainHash: hashWithParent(parentHash, label),
             label: label,
             registrant: msg.sender,
-            beneficiary: address(0),
-            paymentToken: IERC20(address(0)),
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
-            isStakePayment: parentConfig.paymentConfig.paymentType == PaymentType.STAKE
+            isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 
         require(
@@ -91,24 +90,19 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             // TODO sub: should we eliminate Pricing with not fee abstract at all??
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
-            if (parentConfig.paymentConfig.paymentType == PaymentType.STAKE) {
+            if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                //  stakeFee is not taken into account for direct payment even if set on pricing contract
-                coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
+                coreRegisterArgs.price = AZNSPricing(address(parentConfig.pricingContract))
+                    .getPrice(
+                        parentHash,
+                        label
+                    );
             }
-
-            (
-                coreRegisterArgs.paymentToken,
-                coreRegisterArgs.beneficiary
-            ) = (
-                parentConfig.paymentConfig.paymentToken,
-                parentConfig.paymentConfig.beneficiary
-            );
         }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
@@ -151,14 +145,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(address(config.pricingContract) != address(0), "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address");
-        require(
-            address(config.paymentConfig.paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-        );
-        require(
-            config.paymentConfig.beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-        );
+
+        // TODO sub data: make this function work properly !!!
+
+        // TODO sub data: do we need enum checks here for paymentType and accessType ??
         distrConfigs[domainHash] = config;
 
         // TODO sub: figure out how to optimize all these setters !!!
@@ -183,66 +173,68 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit PricingContractSet(domainHash, address(pricingContract));
     }
 
-    function setPaymentConfigForDomain(
-        bytes32 domainHash,
-        PaymentConfig calldata config
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            address(config.paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-        );
-        require(
-            config.beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-        );
+    // TODO sub data: fix this !
+//    function setPaymentConfigForDomain(
+//        bytes32 domainHash,
+//        PaymentConfig calldata config
+//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+//        require(
+//            address(config.paymentToken) != address(0),
+//            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+//        );
+//        require(
+//            config.beneficiary != address(0),
+//            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
+//        );
+//
+//        distrConfigs[domainHash].paymentConfig = config;
+//
+//        emit PaymentConfigSet(
+//            domainHash,
+//            config.paymentToken,
+//            config.beneficiary,
+//            config.paymentType
+//        );
+//    }
 
-        distrConfigs[domainHash].paymentConfig = config;
+//    function setPaymentTokenForDomain(
+//        bytes32 domainHash,
+//        IERC20 paymentToken
+//    // TODO sub fee: do we need these for all setters ??
+//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+//        require(
+//            address(paymentToken) != address(0),
+//            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+//        );
+//
+//        distrConfigs[domainHash].paymentConfig.paymentToken = paymentToken;
+//
+//        emit PaymentTokenSet(domainHash, address(paymentToken));
+//    }
+//
+//    function setBeneficiaryForDomain(
+//        bytes32 domainHash,
+//        address beneficiary
+//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+//        require(
+//            beneficiary != address(0),
+//            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
+//        );
+//
+//        distrConfigs[domainHash].paymentConfig.beneficiary = beneficiary;
+//
+//        emit PaymentBeneficiarySet(domainHash, beneficiary);
+//    }
 
-        emit PaymentConfigSet(
-            domainHash,
-            config.paymentToken,
-            config.beneficiary,
-            config.paymentType
-        );
-    }
-
-    function setPaymentTokenForDomain(
-        bytes32 domainHash,
-        IERC20 paymentToken
-    // TODO sub fee: do we need these for all setters ??
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            address(paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-        );
-
-        distrConfigs[domainHash].paymentConfig.paymentToken = paymentToken;
-
-        emit PaymentTokenSet(domainHash, address(paymentToken));
-    }
-
-    function setBeneficiaryForDomain(
-        bytes32 domainHash,
-        address beneficiary
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-        );
-
-        distrConfigs[domainHash].paymentConfig.beneficiary = beneficiary;
-
-        emit PaymentBeneficiarySet(domainHash, beneficiary);
-    }
-
-    function setPaymentTypeForDomain(
-        bytes32 domainHash,
-        PaymentType paymentType
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        distrConfigs[domainHash].paymentConfig.paymentType = paymentType;
-
-        emit PaymentTypeSet(domainHash, paymentType);
-    }
+    // TODO sub data: fix this !!!
+//    function setPaymentTypeForDomain(
+//        bytes32 domainHash,
+//        PaymentType paymentType
+//    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+//        distrConfigs[domainHash].paymentConfig.paymentType = paymentType;
+//
+//        emit PaymentTypeSet(domainHash, paymentType);
+//    }
 
     function _setAccessTypeForDomain(
         bytes32 domainHash,

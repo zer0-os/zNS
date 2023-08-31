@@ -7,6 +7,9 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+// TODO sub data: figure out the best way to import these !
+import { PaymentConfig } from "./subdomains/IDistributionConfig.sol";
+
 
 // TODO sub: should we convert this to AZNSPayment ??
 /**
@@ -24,6 +27,9 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     // TODO sub fee: remove this if not used in this contract !!!
     // TODO sub fee: move tests for deleted functions to RootRegistrar
     IZNSPriceOracle public priceOracle;
+
+    // TODO sub data: add to interface !!!
+    mapping(bytes32 => PaymentConfig) public paymentConfigs;
 
     /**
      * @notice The address of the payment/staking token. Will be set to $ZERO.
@@ -64,9 +70,23 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         address zeroVault_
     ) external override initializer {
         _setAccessController(accessController_);
-        setZeroVaultAddress(zeroVault_);
-        setStakingToken(stakingToken_);
+        // TODO sub data: add checks !!!
+        paymentConfigs[bytes32(0)] = PaymentConfig({
+            paymentToken: IERC20(stakingToken_),
+            beneficiary : zeroVault_
+        });
+        // TODO sub data: fix-optimize these later !
+//        setZeroVaultAddress(zeroVault_);
+//        setStakingToken(stakingToken_);
         setPriceOracle(priceOracle_);
+    }
+
+    function setPaymentConfig(
+        bytes32 domainHash,
+        PaymentConfig memory paymentConfig
+    // TODO sub data: add AC here !!!
+    ) external override {
+        paymentConfigs[domainHash] = paymentConfig;
     }
 
     /**
@@ -82,36 +102,36 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * to this contract and then transfers the `registrationFee` to the Zero Vault.
      * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a `StakeDeposited` event.
      * @param domainHash The hash of the domain for which the stake is being deposited.
-     * @param domainLabel The label (last part after ".") of the domain for which the stake is being deposited.
      * @param depositor The address of the user who is depositing the stake.
      */
     function stakeForDomain(
+        bytes32 parentHash,
         bytes32 domainHash,
-        string calldata domainLabel,
         address depositor,
-        address stakeFeeBeneficiary,
-        IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 stakeFee,
         uint256 protocolFee
     ) external override onlyRegistrar {
-        // paymentToken should NOT be specified for root domains !!
-        IERC20 token = paymentToken == IERC20(address(0)) ? stakingToken : paymentToken;
+        PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer stake amount and fee to this address
-        token.safeTransferFrom(
+        parentConfig.paymentToken.safeTransferFrom(
             depositor,
             address(this),
             stakeAmount + stakeFee + protocolFee
         );
 
         // Transfer registration fee to the Zero Vault from this address
-        token.safeTransfer(zeroVault, protocolFee);
+        parentConfig.paymentToken.safeTransfer(
+        // TODO sub data: turn this into a constant possibly
+            paymentConfigs[0x0].beneficiary,
+            protocolFee
+        );
 
         // transfer parent fee to the parent owner if it's not 0
         if (stakeFee != 0) {
-            token.safeTransfer(
-                stakeFeeBeneficiary,
+            parentConfig.paymentToken.safeTransfer(
+                parentConfig.beneficiary,
                 stakeFee
             );
         }
@@ -121,9 +141,8 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
 
         emit StakeDeposited(
             domainHash,
-            domainLabel,
             depositor,
-            address(token),
+            address(parentConfig.paymentToken),
             stakeAmount,
             stakeFee,
             protocolFee
@@ -147,31 +166,38 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
         delete stakedForDomain[domainHash];
 
+        // TODO sub data: error here!!! we need to get this token dynamically !!!
+        // tODO sub data: how do we do this if parent has changed the PaymentConfig ?!?!?
+        // TODO sub data: possibly add stakingToken to the stakedForDomain[domainHash] mapping !!!
         stakingToken.safeTransfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
     }
 
     function processDirectPayment(
+        bytes32 parentHash,
         address payer,
-        address paymentBeneficiary,
-        IERC20 paymentToken,
         uint256 paymentAmount,
         uint256 protocolFee
     ) external override onlyRegistrar {
+        // TODO sub data: check gas and optimize this to use memory var if needed !!
         // Transfer payment to parent beneficiary from payer
-        paymentToken.safeTransferFrom(
+        paymentConfigs[parentHash].paymentToken.safeTransferFrom(
             payer,
-            paymentBeneficiary,
+            paymentConfigs[parentHash].beneficiary,
             paymentAmount
         );
 
         // Transfer registration fee to the Zero Vault from payer
-        paymentToken.safeTransferFrom(payer, zeroVault, protocolFee);
+        paymentConfigs[parentHash].paymentToken.safeTransferFrom(
+            payer,
+            paymentConfigs[0x0].beneficiary,
+            protocolFee
+        );
 
         emit DirectPaymentProcessed(
             payer,
-            paymentBeneficiary,
+            paymentConfigs[parentHash].beneficiary,
             paymentAmount,
             protocolFee
         );

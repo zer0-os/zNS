@@ -105,8 +105,6 @@ contract ZNSRegistrar is
                 domainHash,
                 name,
                 msg.sender,
-                address(0),
-                IERC20(address(0)),
                 domainPrice,
                 0,
                 domainAddress,
@@ -166,28 +164,23 @@ contract ZNSRegistrar is
     }
 
     function _processPayment(CoreRegisterArgs memory args) internal {
-        // parentHash == bytes32(0) means we are registering a root domain
-        uint256 protocolFee = args.parentHash == bytes32(0)
-            ? priceOracle.getProtocolFee(args.price)
-            : priceOracle.getProtocolFee(args.price + args.stakeFee);
+        // args.stakeFee can be 0
+        uint256 protocolFee = priceOracle.getProtocolFee(args.price + args.stakeFee);
 
-        if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
-            treasury.processDirectPayment(
-                args.registrant,
-                args.beneficiary,
-                args.paymentToken,
-                args.price,
-                protocolFee
-            );
-        } else { // for all root domains or subdomains with stake payment
+        if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
+                args.parentHash,
                 args.domainHash,
-                args.label,
                 args.registrant,
-                args.beneficiary,
-                args.paymentToken,
                 args.price,
                 args.stakeFee,
+                protocolFee
+            );
+        } else { // direct payment for subdomains
+            treasury.processDirectPayment(
+                args.parentHash,
+                args.registrant,
+                args.price,
                 protocolFee
             );
         }

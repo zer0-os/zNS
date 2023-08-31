@@ -2,20 +2,19 @@
 pragma solidity ^0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { PaymentConfig } from "./subdomains/IDistributionConfig.sol";
 
 
 interface IZNSTreasury {
     /**
      * @notice Emitted when a new stake is deposited upon registration of a new domain.
      * @param domainHash The hash of the domain name
-     * @param domainLabel The domain name as a string
      * @param depositor The address of the depositing user / new domain owner
      * @param stakeAmount The amount they are depositing / price of the domain based on name length
      * @param stakeFee The registration fee paid by the user on top of the staked amount
      */
     event StakeDeposited(
         bytes32 indexed domainHash,
-        string domainLabel,
         address indexed depositor,
         address stakingToken,
         uint256 indexed stakeAmount,
@@ -60,12 +59,15 @@ interface IZNSTreasury {
      */
     event ZeroVaultAddressSet(address zeroVault);
 
-    function stakeForDomain(
+    function setPaymentConfig(
         bytes32 domainHash,
-        string calldata domainName,
+        PaymentConfig memory paymentConfig
+    ) external;
+
+    function stakeForDomain(
+        bytes32 parentHash,
+        bytes32 domainHash,
         address depositor,
-        address stakeFeeBeneficiary,
-        IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 stakeFee,
         uint256 protocolFee
@@ -74,9 +76,8 @@ interface IZNSTreasury {
     function unstakeForDomain(bytes32 domainHash, address owner) external;
 
     function processDirectPayment(
+        bytes32 parentHash,
         address payer,
-        address paymentBeneficiary,
-        IERC20 paymentToken,
         uint256 paymentAmount,
         uint256 protocolFee
     ) external;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDistributionConfig } from "./IDistributionConfig.sol";
+import { IDistributionConfig, PaymentConfig } from "./IDistributionConfig.sol";
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -46,25 +46,26 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         AZNSPricing pricingContract
     ) external;
 
-    function setPaymentConfigForDomain(
-        bytes32 domainHash,
-        PaymentConfig calldata config
-    ) external;
+    // TODO sub data: remove or fix all these below!
+//    function setPaymentConfigForDomain(
+//        bytes32 domainHash,
+//        PaymentConfig calldata config
+//    ) external;
 
-    function setPaymentTokenForDomain(
-        bytes32 domainHash,
-        IERC20 paymentToken
-    ) external;
+//    function setPaymentTokenForDomain(
+//        bytes32 domainHash,
+//        IERC20 paymentToken
+//    ) external;
+//
+//    function setBeneficiaryForDomain(
+//        bytes32 domainHash,
+//        address beneficiary
+//    ) external;
 
-    function setBeneficiaryForDomain(
-        bytes32 domainHash,
-        address beneficiary
-    ) external;
-
-    function setPaymentTypeForDomain(
-        bytes32 domainHash,
-        PaymentType paymentType
-    ) external;
+//    function setPaymentTypeForDomain(
+//        bytes32 domainHash,
+//        PaymentType paymentType
+//    ) external;
 
     function setAccessTypeForDomain(
         bytes32 domainHash,

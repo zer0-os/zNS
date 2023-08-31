@@ -12,10 +12,6 @@ struct CoreRegisterArgs {
     bytes32 domainHash;
     string label;
     address registrant;
-    // 0x0 for root domains
-    address beneficiary;
-    // 0x0 for root domains
-    IERC20 paymentToken;
     uint256 price;
     // 0x0 for anything other than subdomain under a parent with Stake Payment
     uint256 stakeFee;

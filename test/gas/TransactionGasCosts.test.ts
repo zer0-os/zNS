@@ -13,7 +13,7 @@ const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 // TODO sub: add more tests here for each tx with different configs
 //  so we can track gas changes better when developing
-describe("Transaction Gas Costs Test", () => {
+describe.only("Transaction Gas Costs Test", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -47,11 +47,7 @@ describe("Transaction Gas Costs Test", () => {
 
     config = {
       pricingContract: zns.fixedPricing.address,
-      paymentConfig: {
-        paymentType: PaymentType.DIRECT,
-        paymentToken: zns.zeroToken.address,
-        beneficiary: rootOwner.address,
-      },
+      paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
 
@@ -73,11 +69,11 @@ describe("Transaction Gas Costs Test", () => {
         distrConfig: {
           accessType: AccessType.OPEN,
           pricingContract: zns.asPricing.address,
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: rootOwner.address,
-            paymentType: PaymentType.DIRECT,
-          },
+          paymentType: PaymentType.DIRECT,
+        },
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: rootOwner.address,
         },
         priceConfig: priceConfigDefault,
       },

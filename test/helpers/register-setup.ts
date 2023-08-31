@@ -159,5 +159,11 @@ export const registrationWithSetup = async ({
     );
   }
 
+  // set up payment config
+  await zns.treasury.connect(user).setPaymentConfig(
+    domainHash,
+    fullConfig.paymentConfig,
+  );
+
   return domainHash;
 };

@@ -5,8 +5,16 @@ import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+// TODO sub data: move these to a separate file or organize better here !!
+struct PaymentConfig {
+    IERC20 paymentToken;
+    // feeBeneficiary if STAKE, paymentBeneficiary if DIRECT
+    address beneficiary;
+}
+
 
 // TODO sub: do we need this as a separate interface ??
+// TODO sub data: possibly rename to IConfigs? depending on how we structure this code
 interface IDistributionConfig {
 
     enum AccessType {
@@ -20,16 +28,9 @@ interface IDistributionConfig {
         STAKE
     }
 
-    struct PaymentConfig {
-        PaymentType paymentType;
-        IERC20 paymentToken;
-        // feeBeneficiary if STAKE, paymentBeneficiary if DIRECT
-        address beneficiary;
-    }
-
     struct DistributionConfig {
         AZNSPricing pricingContract;
-        PaymentConfig paymentConfig;
+        PaymentType paymentType;
         AccessType accessType;
     }
 }
