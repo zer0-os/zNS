@@ -88,7 +88,6 @@ export interface ZNSContracts {
   treasury : ZNSTreasury;
   registrar : ZNSRegistrar;
   fixedPricing : ZNSFixedPricing;
-  asPricing : ZNSAsymptoticPricing;
   subdomainRegistrar : ZNSSubdomainRegistrar;
   zeroVaultAddress : string;
 }

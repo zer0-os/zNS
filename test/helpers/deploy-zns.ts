@@ -242,11 +242,13 @@ export const deployAddressResolver = async (
 export const deployPriceOracle = async ({
   deployer,
   accessControllerAddress,
+  registryAddress,
   priceConfig,
   isTenderlyRun,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
+  registryAddress : string;
   priceConfig : IASPriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSPriceOracle> => {
@@ -256,6 +258,7 @@ export const deployPriceOracle = async ({
     priceOracleFactory,
     [
       accessControllerAddress,
+      registryAddress,
       priceConfig,
     ],
     {
@@ -576,19 +579,13 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
-  const priceOracle = await deployAsymptoticPricing({
+  const priceOracle = await deployPriceOracle({
     deployer,
-    acAddress: accessController.address,
-    regAddress: registry.address,
+    accessControllerAddress: accessController.address,
+    registryAddress: registry.address,
+    priceConfig,
     isTenderlyRun,
   });
-  // TODO sub data: fix this !
-  // const priceOracle = await deployPriceOracle({
-  //   deployer,
-  //   accessControllerAddress: accessController.address,
-  //   priceConfig,
-  //   isTenderlyRun,
-  // });
 
   const treasury = await deployTreasury(
     deployer,
@@ -622,8 +619,6 @@ export const deployZNS = async ({
   };
 
   const fixedPricing = await deployFixedPricing(subModuleDeployArgs);
-  // TODO sub data: uncomment !
-  const asPricing = { address: ethers.constants.AddressZero }; // await deployAsymptoticPricing(subModuleDeployArgs);
 
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
@@ -643,7 +638,6 @@ export const deployZNS = async ({
     treasury,
     registrar,
     fixedPricing,
-    asPricing,
     subdomainRegistrar,
     zeroVaultAddress,
   };
