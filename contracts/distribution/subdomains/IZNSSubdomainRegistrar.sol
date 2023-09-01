@@ -4,7 +4,6 @@ pragma solidity ^0.8.18;
 import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../IZNSTreasury.sol";
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 

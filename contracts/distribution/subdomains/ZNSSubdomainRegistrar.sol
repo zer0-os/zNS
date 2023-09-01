@@ -3,7 +3,6 @@ pragma solidity ^0.8.18;
 
 import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
 import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
-import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
@@ -17,7 +16,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
-    // TODO sub fee: should we move PaymentConfigs to Treasury ???!!! test gas usage!
     // TODO sub: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
