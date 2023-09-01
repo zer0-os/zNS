@@ -126,6 +126,8 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setMaxPrice(
         bytes32 domainHash,
         uint256 maxPrice
+    // TODO sub data: how do we handle AC of our own wallets?
+    // TODO sub data: is having a single owner of the 0x0 hash a good idea? should it be a multisig?
     ) external override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxPrice = maxPrice;
 

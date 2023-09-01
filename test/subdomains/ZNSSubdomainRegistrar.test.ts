@@ -26,6 +26,7 @@ import { getDomainHashFromEvent } from "../helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
+// TODO sub data: fix these tests and all other!
 describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;

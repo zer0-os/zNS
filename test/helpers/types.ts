@@ -29,7 +29,14 @@ import { AccessType, PaymentType } from "./constants";
 
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
+export type GetterFunction = Promise<
+string
+| boolean
+| BigNumber
+| Array<BigNumber>
+| [string, BigNumber]
+& { token : string; amount : BigNumber; }
+>;
 
 export type ZNSContractMockFactory =
   ZNSRegistrarUpgradeMock__factory |

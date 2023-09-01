@@ -41,8 +41,8 @@ export const approveForParent = async ({
   const { pricingContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
-  if (pricingContract === zns.asPricing.address) {
-    [price, parentFee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
+  if (pricingContract === zns.priceOracle.address) {
+    [price, parentFee] = await zns.priceOracle.getPriceAndFee(parentHash, domainLabel);
   } else if (pricingContract === zns.fixedPricing.address) {
     [price, parentFee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
   }

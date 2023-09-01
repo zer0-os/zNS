@@ -18,9 +18,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     // TODO sub: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
-    mapping(bytes32 domainHash =>
-        mapping(address candidate => bool allowed)
-    ) public override mintlist;
+    mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
