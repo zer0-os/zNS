@@ -48,8 +48,6 @@ export const paymentConfigEmpty = {
 
 export const distrConfigEmpty = {
   pricingContract: ethers.constants.AddressZero,
-  // TODO sub data: move this!
-  // paymentConfig: paymentConfigEmpty,
   paymentType: 0,
   accessType: 0,
 };

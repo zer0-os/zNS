@@ -105,17 +105,17 @@ export interface DeployZNSParams {
 
 export interface IDistributionConfig {
   pricingContract : string;
-  paymentConfig : IPaymentConfig;
+  paymentType : PaymentType;
   accessType : AccessType;
 }
 
 export interface IPaymentConfig {
   paymentToken : string;
   beneficiary : string;
-  paymentType : PaymentType;
 }
 
 export interface IFullDistributionConfig {
+  paymentConfig : IPaymentConfig;
   distrConfig : IDistributionConfig;
   priceConfig : IASPriceConfig | IFixedPriceConfig | undefined;
 }

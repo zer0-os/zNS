@@ -289,7 +289,7 @@ export const deployPriceOracle = async ({
 export const deployTreasury = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
-  priceOracleAddress : string,
+  registryAddress : string,
   zTokenMockAddress : string,
   zeroVaultAddress : string,
   isTenderlyRun : boolean
@@ -298,7 +298,7 @@ export const deployTreasury = async (
   const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
     [
       accessControllerAddress,
-      priceOracleAddress,
+      registryAddress,
       zTokenMockAddress,
       zeroVaultAddress,
     ],
@@ -593,7 +593,7 @@ export const deployZNS = async ({
   const treasury = await deployTreasury(
     deployer,
     accessController.address,
-    priceOracle.address,
+    registry.address,
     zeroTokenMock.address,
     zeroVaultAddress,
     isTenderlyRun

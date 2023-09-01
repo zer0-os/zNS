@@ -11,6 +11,9 @@ import fs from "fs";
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 
+// TODO sub data:
+//  current saved gas costs (Treasury + Oracle merge proto): root = -74461, sub = -77937
+
 // TODO sub: add more tests here for each tx with different configs
 //  so we can track gas changes better when developing
 describe.only("Transaction Gas Costs Test", () => {
