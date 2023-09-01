@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+import { IZNSPricing } from "../abstractions/IZNSPricing.sol";
+
+
+interface IZNSFixedPricing is IZNSPricing {
+    event PriceSet(bytes32 indexed parentHash, uint256 indexed newPrice);
+    event FeePercentageSet(bytes32 indexed parentHash, uint256 indexed feePercentage);
+
+    struct PriceConfig {
+        uint256 price;
+        uint256 feePercentage;
+    }
+
+    function setPrice(bytes32 domainHash, uint256 _price) external;
+
+    function getPrice(bytes32 parentHash, string calldata label) external view returns (uint256);
+
+    function setFeePercentage(
+        bytes32 domainHash,
+        uint256 feePercentage
+    ) external;
+
+    function getFeeForPrice(
+        bytes32 parentHash,
+        uint256 price
+    ) external view returns (uint256);
+
+    function getPriceAndFee(
+        bytes32 parentHash,
+        string calldata label
+    ) external view returns (uint256 price, uint256 fee);
+
+    function setPriceConfig(
+        bytes32 domainHash,
+        PriceConfig calldata priceConfig
+    ) external;
+
+    function setRegistry(address registry_) external;
+
+    function setAccessController(address accessController_) external;
+
+    function getAccessController() external view returns (address);
+}
