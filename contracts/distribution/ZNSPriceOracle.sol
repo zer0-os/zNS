@@ -12,6 +12,7 @@ import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
  * @title Implementation of the Price Oracle, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
  */
+// TODO sub data: rename this contract !
 contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSPriceOracle {
     using StringUtils for string;
 
@@ -31,7 +32,7 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * - `setPrecisionMultiplier()` to validate precision multiplier
      * - `_validateConfig()` to validate the whole config in order to avoid price spikes
      * @param accessController_ the address of the ZNSAccessController contract.
-     * @param priceConfig_ a number of variables that participate in the price calculation.
+     * @param zeroPriceConfig_ a number of variables that participate in the price calculation for Zero.
      */
     function initialize(
         address accessController_,
@@ -46,12 +47,12 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Get the price of a given domain name
-     * @param name The name of the domain to check
+     * @param label The name of the domain to check
      */
     function getPrice(
         bytes32 parentHash,
         string calldata label
-    ) external view override returns (uint256) {
+    ) public view override returns (uint256) {
         uint256 length = label.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
@@ -220,9 +221,9 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev Fee percentage is set according to the basis of 10000, outlined in ``PERCENTAGE_BASIS``.
      * Fires ``FeePercentageSet`` event.
      * Only ADMIN can call this function.
-     * @param regFeePercentage The fee percentage to set
+     * @param feePercentage The fee percentage to set
      */
-    function setStakeFeePercentage(bytes32 domainHash, uint256 feePercentage)
+    function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
     external
     override
     onlyOwnerOrOperator(domainHash) {
@@ -298,7 +299,7 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     // TODO sub fee: HERE and in AsymptoticPricing !!!
     // TODO sub fee: currently it fails if we set maxPrice + baseLength as 0s
     function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(priceConfigs[domainHash].maxLength - 1);
+        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."

@@ -2,9 +2,10 @@
 pragma solidity ^0.8.18;
 
 import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
+import { IZNSPricing } from "./subdomains/abstractions/IZNSPricing.sol";
 
 
-interface IZNSPriceOracle is IDomainPriceConfig {
+interface IZNSPriceOracle is IDomainPriceConfig, IZNSPricing {
 
     /**
      * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`
@@ -101,7 +102,7 @@ interface IZNSPriceOracle is IDomainPriceConfig {
 
     function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
 
-    function setStakeFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
+    function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
 
     function setRegistry(address registry_) external;
 
