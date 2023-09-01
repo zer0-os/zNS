@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPricingWithFee } from "../abstractions/AZNSPricingWithFee.sol";
 import { StringUtils } from "../../../utils/StringUtils.sol";
 import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 // TODO sub: possibly remove if moved to an interface
@@ -9,12 +8,14 @@ import { IDomainPriceConfig } from "../../../abstractions/IDomainPriceConfig.sol
 // TODO sub: do we need this ??
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
+import { IZNSPricing } from "../abstractions/IZNSPricing.sol";
 
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
 // TODO sub: can we turn this into a single contract of PriceOracle ??
 // TODO sub: should we rename PriceOracle into this contract and use a single one where we map root to 0x0 hash as parent ???
-contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee, IDomainPriceConfig {
+// TODO sub data: this contract can be removed in PriceOracle works as expected after all tests are moved
+contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, IDomainPriceConfig, IZNSPricing {
     using StringUtils for string;
 
     // TODO sub: possibly move to an interface
@@ -68,18 +69,12 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
     }
 
     function getProtocolFee(uint256 price) external view returns (uint256) {
         return (price * priceConfigs[0x0].feePercentage) / PERCENTAGE_BASIS;
-    }
-
-    function revokePrice(bytes32 domainHash) external override onlyRegistrar {
-        priceConfigs[domainHash].maxPrice = 0;
-        priceConfigs[domainHash].minPrice = 0;
-        emit PriceRevoked(domainHash);
     }
 
     function setPriceConfig(

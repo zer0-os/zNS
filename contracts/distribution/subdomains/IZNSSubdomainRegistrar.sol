@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../IZNSTreasury.sol";
-import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
+import { IZNSPricing } from "./abstractions/IZNSPricing.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
@@ -13,7 +13,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
     event DistributionConfigSet(
         bytes32 indexed domainHash,
-        AZNSPricing pricingContract,
+        IZNSPricing pricingContract,
         PaymentType paymentType,
         AccessType accessType
     );
@@ -27,7 +27,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
     function distrConfigs(
         bytes32 domainHash
     ) external view returns (
-        AZNSPricing pricingContract,
+        IZNSPricing pricingContract,
         PaymentType paymentType,
         AccessType accessType
     );
@@ -58,7 +58,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
 
     function setPricingContractForDomain(
         bytes32 domainHash,
-        AZNSPricing pricingContract
+        IZNSPricing pricingContract
     ) external;
 
     function setPaymentTypeForDomain(
@@ -71,7 +71,7 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function setWhitelistForDomain(
+    function setMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed

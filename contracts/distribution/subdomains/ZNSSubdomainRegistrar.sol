@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
+import { IZNSPricing } from "./abstractions/IZNSPricing.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
@@ -88,13 +87,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
             if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricing(address(parentConfig.pricingContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                coreRegisterArgs.price = AZNSPricing(address(parentConfig.pricingContract))
+                coreRegisterArgs.price = IZNSPricing(address(parentConfig.pricingContract))
                     .getPrice(
                         parentHash,
                         label
@@ -137,6 +136,9 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         );
     }
 
+    // TODO sub: should we setting pricing contracts here to any address?
+    // TODO sub: what problems could we face if we let users set their own contracts??
+    // TODO sub: test if we have enough time, otherwise consider limiting
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
@@ -160,7 +162,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         bytes32 domainHash,
         // TODO sub: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
-        AZNSPricing pricingContract
+        IZNSPricing pricingContract
     ) public override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),

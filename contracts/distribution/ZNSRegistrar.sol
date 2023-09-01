@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import { IZNSRegistrar, CoreRegisterArgs } from "./IZNSRegistrar.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
@@ -10,10 +9,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
-import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./subdomains/pricing/ZNSAsymptoticPricing.sol";
 
 
 /**
@@ -34,7 +30,8 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    ZNSAsymptoticPricing public priceOracle;
+    // TODO sub data: rename all mentions of priceOracle to a new name that a contract will get !
+    IZNSPriceOracle public priceOracle;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -293,7 +290,7 @@ contract ZNSRegistrar is
             priceOracle_ != address(0),
             "ZNSRegistrar: priceOracle_ is 0x0 address"
         );
-        priceOracle = ZNSAsymptoticPricing(priceOracle_);
+        priceOracle = IZNSPriceOracle(priceOracle_);
 
         emit PriceOracleSet(priceOracle_);
     }

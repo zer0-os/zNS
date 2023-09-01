@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
+import { IZNSPricing } from "./abstractions/IZNSPricing.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 interface IDistributionConfig {
 
@@ -18,7 +19,7 @@ interface IDistributionConfig {
     }
 
     struct DistributionConfig {
-        AZNSPricing pricingContract;
+        IZNSPricing pricingContract;
         PaymentType paymentType;
         AccessType accessType;
     }
