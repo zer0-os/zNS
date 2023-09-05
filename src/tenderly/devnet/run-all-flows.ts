@@ -35,7 +35,7 @@ export const runAllFlows = async () => {
       pricingContract: zns.fixedPricing.address,
       paymentConfig: {
         paymentType: PaymentType.STAKE,
-        paymentToken: zns.zeroToken.address,
+        token: zns.zeroToken.address,
         beneficiary: governor.address,
       },
       accessType: 1,
@@ -63,7 +63,7 @@ export const runAllFlows = async () => {
       pricingContract: zns.asPricing.address,
       paymentConfig: {
         paymentType: PaymentType.DIRECT,
-        paymentToken: zns.zeroToken.address,
+        token: zns.zeroToken.address,
         beneficiary: user.address,
       },
       accessType: 1,

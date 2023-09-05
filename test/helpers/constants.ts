@@ -41,7 +41,7 @@ export const priceConfigDefault : IASPriceConfig = {
 };
 
 export const paymentConfigEmpty = {
-  paymentToken: ethers.constants.AddressZero,
+  token: ethers.constants.AddressZero,
   beneficiary: ethers.constants.AddressZero,
   paymentType: PaymentType.DIRECT,
 };

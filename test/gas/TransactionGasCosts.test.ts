@@ -78,7 +78,7 @@ describe("Transaction Gas Costs Test", () => {
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
-          paymentToken: zns.zeroToken.address,
+          token: zns.zeroToken.address,
           beneficiary: rootOwner.address,
         },
         priceConfig: priceConfigDefault,
@@ -95,7 +95,7 @@ describe("Transaction Gas Costs Test", () => {
     //       accessType: AccessType.OPEN,
     //       pricingContract: zns.asPricing.address,
     //       paymentConfig: {
-    //         paymentToken: zns.zeroToken.address,
+    //         token: zns.zeroToken.address,
     //         beneficiary: rootOwner.address,
     //         paymentType: PaymentType.STAKE,
     //       },

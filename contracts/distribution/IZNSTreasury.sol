@@ -5,7 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 struct PaymentConfig {
-    IERC20 paymentToken;
+    IERC20 token;
     // feeBeneficiary if STAKE, paymentBeneficiary if DIRECT
     address beneficiary;
 }
@@ -78,7 +78,7 @@ interface IZNSTreasury {
     function paymentConfigs(
         bytes32 domainHash
     ) external view returns (
-        IERC20 paymentToken,
+        IERC20 token,
         address beneficiary
     );
 

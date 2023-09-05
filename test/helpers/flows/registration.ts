@@ -43,7 +43,7 @@ export const registerDomainPath = async ({
     } else {
       // grab all the important data of the parent
       const { paymentConfig } = await zns.subdomainRegistrar.distrConfigs(parentHash);
-      const { paymentToken: paymentTokenAddress } = paymentConfig;
+      const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
       if (paymentTokenAddress === zns.zeroToken.address) {

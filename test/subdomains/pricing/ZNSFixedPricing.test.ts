@@ -46,7 +46,7 @@ describe("ZNSFixedPricing", () => {
       distrConfig: {
         paymentConfig: {
           paymentType: PaymentType.DIRECT,
-          paymentToken: zns.zeroToken.address,
+          token: zns.zeroToken.address,
           beneficiary: user.address,
         },
         pricingContract: zns.fixedPricing.address,

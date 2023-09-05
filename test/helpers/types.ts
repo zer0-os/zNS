@@ -29,13 +29,15 @@ import { AccessType, PaymentType } from "./constants";
 
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction = Promise<
+export type GeneralContractGetter = Promise<
 string
 | boolean
 | BigNumber
 | Array<BigNumber>
 | [string, BigNumber]
 & { token : string; amount : BigNumber; }
+|[string, string]
+& { token : string; beneficiary : string; }
 >;
 
 export type ZNSContractMockFactory =
@@ -116,7 +118,7 @@ export interface IDistributionConfig {
 }
 
 export interface IPaymentConfig {
-  paymentToken : string;
+  token : string;
   beneficiary : string;
 }
 

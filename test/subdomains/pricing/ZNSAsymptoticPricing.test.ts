@@ -59,7 +59,7 @@ describe("ZNSAsymptoticPricing", () => {
         accessType: 1,
       },
       paymentConfig: {
-        paymentToken: zns.zeroToken.address,
+        token: zns.zeroToken.address,
         beneficiary: user.address,
       },
       priceConfig: priceConfigDefault,

@@ -103,7 +103,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: rootOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
@@ -119,7 +119,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl2SubOwner.address,
             },
             priceConfig: priceConfigDefault,
@@ -135,8 +135,8 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              // TODO sub: test with different ERC20 tokens as paymentTokens
-              paymentToken: zns.zeroToken.address,
+              // TODO sub: test with different ERC20 tokens as tokens
+              token: zns.zeroToken.address,
               beneficiary: lvl3SubOwner.address,
             },
             priceConfig: priceConfigDefault,
@@ -152,7 +152,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl4SubOwner.address,
             },
             priceConfig: priceConfigDefault,
@@ -169,7 +169,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl5SubOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -186,7 +186,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl6SubOwner.address,
             },
             priceConfig: priceConfigDefault,
@@ -331,7 +331,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: branchLvl1Owner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -347,7 +347,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: branchLvl2Owner.address,
             },
             priceConfig: priceConfigDefault,
@@ -389,9 +389,9 @@ describe("ZNSSubdomainRegistrar", () => {
         domainConfigs[1].fullConfig.distrConfig.paymentType
       );
       expect(
-        parentPaymentConfig.paymentToken
+        parentPaymentConfig.token
       ).to.eq(
-        domainConfigs[1].fullConfig.paymentConfig.paymentToken
+        domainConfigs[1].fullConfig.paymentConfig.token
       );
       expect(
         parentPaymentConfig.beneficiary
@@ -491,7 +491,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: branchLvl1Owner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -613,7 +613,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: rootOwner.address,
           },
           priceConfig: {
@@ -643,7 +643,7 @@ describe("ZNSSubdomainRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -715,7 +715,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -786,7 +786,7 @@ describe("ZNSSubdomainRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -858,7 +858,7 @@ describe("ZNSSubdomainRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -930,7 +930,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1001,7 +1001,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1072,7 +1072,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1157,7 +1157,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1242,7 +1242,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1328,7 +1328,7 @@ describe("ZNSSubdomainRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1451,7 +1451,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: rootOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -1467,7 +1467,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl2SubOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -1617,7 +1617,7 @@ describe("ZNSSubdomainRegistrar", () => {
             accessType: AccessType.WHITELIST,
           },
           paymentConfig: {
-            paymentToken: zns.zeroToken.address,
+            token: zns.zeroToken.address,
             beneficiary: lvl3SubOwner.address,
           },
           priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -1872,7 +1872,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: rootOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
@@ -1888,7 +1888,7 @@ describe("ZNSSubdomainRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              paymentToken: zns.zeroToken.address,
+              token: zns.zeroToken.address,
               beneficiary: lvl2SubOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },

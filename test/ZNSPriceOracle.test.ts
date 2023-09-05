@@ -21,6 +21,7 @@ import { ZNSPriceOracleUpgradeMock__factory, ZNSPriceOracle__factory } from "../
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
+const { HashZero } = ethers.constants;
 
 describe("ZNSPriceOracle", () => {
   let deployer : SignerWithAddress;
@@ -49,7 +50,7 @@ describe("ZNSPriceOracle", () => {
 
   it("Confirms values were initially set correctly", async () => {
     const valueCalls = [
-      zns.priceOracle.priceConfigs(ethers.constants.HashZero),
+      zns.priceOracle.priceConfigs(HashZero),
     ];
 
     const [
@@ -63,11 +64,17 @@ describe("ZNSPriceOracle", () => {
       // @ts-ignore
       (val, idx) => expect(val).to.eq(priceConfigFromSC[idx])
     );
+
+    const regFromSC = await zns.priceOracle.registry();
+    const acFromSC = await zns.priceOracle.getAccessController();
+
+    expect(regFromSC).to.eq(zns.registry.address);
+    expect(acFromSC).to.eq(zns.accessController.address);
   });
 
   describe("#getPrice", async () => {
     it("Returns 0 price for a root name with no length", async () => {
-      const price = await zns.priceOracle.getPrice("");
+      const price = await zns.priceOracle.getPrice(HashZero, "");
       expect(price).to.eq(0);
     });
 

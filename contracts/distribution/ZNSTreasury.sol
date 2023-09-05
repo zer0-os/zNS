@@ -10,7 +10,6 @@ import { PaymentConfig } from "./IZNSTreasury.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
 
-// TODO sub: should we convert this to AZNSPayment ??
 /**
  * @title Contract responsible for all staking operations in ZNS and communication with `ZNSPriceOracle`.
  * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
@@ -63,7 +62,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
 
         paymentConfigs[0x0] = PaymentConfig({
-            paymentToken: IERC20(paymentToken_),
+            token: IERC20(paymentToken_),
             beneficiary : zeroVault_
         });
     }
@@ -94,21 +93,21 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer stake amount and fee to this address
-        parentConfig.paymentToken.safeTransferFrom(
+        parentConfig.token.safeTransferFrom(
             depositor,
             address(this),
             stakeAmount + stakeFee + protocolFee
         );
 
         // Transfer registration fee to the Zero Vault from this address
-        parentConfig.paymentToken.safeTransfer(
+        parentConfig.token.safeTransfer(
             paymentConfigs[0x0].beneficiary,
             protocolFee
         );
 
         // transfer parent fee to the parent owner if it's not 0
         if (stakeFee != 0) {
-            parentConfig.paymentToken.safeTransfer(
+            parentConfig.token.safeTransfer(
                 parentConfig.beneficiary,
                 stakeFee
             );
@@ -116,7 +115,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = Stake({
-            token: parentConfig.paymentToken,
+            token: parentConfig.token,
             amount: stakeAmount
         });
 
@@ -124,7 +123,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
             parentHash,
             domainHash,
             depositor,
-            address(parentConfig.paymentToken),
+            address(parentConfig.token),
             stakeAmount,
             stakeFee,
             protocolFee
@@ -148,7 +147,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         delete stakedForDomain[domainHash];
 
         // TODO sub: TEST that this works with any token
-        // TODO sub: and that this works when parent changes the paymentConfig.paymentToken !!!
+        // TODO sub: and that this works when parent changes the paymentConfig.token !!!
         stakeData.token.safeTransfer(owner, stakeData.amount);
 
         emit StakeWithdrawn(
@@ -169,14 +168,14 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer payment to parent beneficiary from payer
-        parentConfig.paymentToken.safeTransferFrom(
+        parentConfig.token.safeTransferFrom(
             payer,
             parentConfig.beneficiary,
             paymentAmount
         );
 
         // Transfer registration fee to the Zero Vault from payer
-        parentConfig.paymentToken.safeTransferFrom(
+        parentConfig.token.safeTransferFrom(
             payer,
             paymentConfigs[0x0].beneficiary,
             protocolFee
@@ -192,12 +191,14 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
     }
 
+    // TODO sub: can we refactor this as in other contracts,
+    //  so that we don't call 2 functions for 1 config ??
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
     ) external override {
         setBeneficiary(domainHash, paymentConfig.beneficiary);
-        setPaymentToken(domainHash, address(paymentConfig.paymentToken));
+        setPaymentToken(domainHash, address(paymentConfig.token));
     }
 
     /**
@@ -228,7 +229,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     ) public override onlyOwnerOrOperator(domainHash) {
         require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
 
-        paymentConfigs[domainHash].paymentToken = IERC20(paymentToken);
+        paymentConfigs[domainHash].token = IERC20(paymentToken);
         emit PaymentTokenSet(domainHash, paymentToken);
     }
 
