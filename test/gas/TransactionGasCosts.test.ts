@@ -16,7 +16,7 @@ const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 // TODO sub: add more tests here for each tx with different configs
 //  so we can track gas changes better when developing
-describe.only("Transaction Gas Costs Test", () => {
+describe("Transaction Gas Costs Test", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -73,7 +73,7 @@ describe.only("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          // TODO sub data: the original val was zns.asPricing.address
+          // TODO sub data: change naming everywhere
           pricingContract: zns.priceOracle.address,
           paymentType: PaymentType.DIRECT,
         },
