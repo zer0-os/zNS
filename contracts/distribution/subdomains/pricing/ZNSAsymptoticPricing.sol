@@ -11,7 +11,6 @@ import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 import { IZNSPricing } from "../abstractions/IZNSPricing.sol";
 
 
-// TODO sub data: delete this contract !
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
 // TODO sub: can we turn this into a single contract of PriceOracle ??
 // TODO sub: should we rename PriceOracle into this contract and use a single one where we map root to 0x0 hash as parent ???

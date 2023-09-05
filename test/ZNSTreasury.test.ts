@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { checkBalance, deployZNS, getPriceObject, priceConfigDefault, validateUpgrade } from "./helpers";
+import { checkBalance, deployZNS, getPriceObject, PaymentType, priceConfigDefault, validateUpgrade } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
@@ -196,6 +196,104 @@ describe("ZNSTreasury", () => {
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(user.address, REGISTRAR_ROLE)
+      );
+    });
+  });
+
+  describe("Payment Data Setters", () => {
+    // TODO sub data: adapt these tests brought from SubRegistrar test and add more tests!
+    it("#setPaymentConfigForDomain() should re-set payment config for an existing subdomain", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      const paymentContractBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(
+        paymentContractBefore.paymentConfig.paymentType
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentType
+      );
+      expect(
+        paymentContractBefore.paymentConfig.paymentToken
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.paymentToken
+      );
+      expect(
+        paymentContractBefore.paymentConfig.beneficiary
+      ).to.eq(
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig.beneficiary
+      );
+
+      const configToSet = {
+        paymentType: PaymentType.STAKE,
+        paymentToken: lvl2SubOwner.address,
+        beneficiary: lvl2SubOwner.address,
+      };
+
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
+        domainHash,
+        configToSet,
+      );
+
+      const paymentContractAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      expect(paymentContractAfter.paymentConfig.paymentType).to.eq(configToSet.paymentType);
+      expect(paymentContractAfter.paymentConfig.paymentToken).to.eq(configToSet.paymentToken);
+      expect(paymentContractAfter.paymentConfig.beneficiary).to.eq(configToSet.beneficiary);
+
+      // reset it back
+      await zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
+        domainHash,
+        domainConfigs[1].fullConfig.distrConfig.paymentConfig,
+      );
+    });
+
+    it("#setPaymentConfigForDomain() should NOT allow setting for non-authorized account", async () => {
+      const domainHash = regResults[1].domainHash;
+
+      const configToSet = {
+        paymentType: PaymentType.STAKE,
+        paymentToken: lvl3SubOwner.address,
+        beneficiary: lvl3SubOwner.address,
+      };
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentConfigForDomain(
+          domainHash,
+          configToSet,
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: Not authorized"
+      );
+    });
+
+    it("#setPaymentConfigForDomain() should NOT set paymentToken or beneficiary to 0x0 address", async () => {
+      const domainHash = regResults[1].domainHash;
+      const zeroTokenConfig = {
+        paymentType: PaymentType.STAKE,
+        paymentToken: ethers.constants.AddressZero,
+        beneficiary: lvl2SubOwner.address,
+      };
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
+          domainHash,
+          zeroTokenConfig
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+      );
+
+      const zeroBeneficiaryConfig = {
+        paymentType: PaymentType.STAKE,
+        paymentToken: lvl2SubOwner.address,
+        beneficiary: ethers.constants.AddressZero,
+      };
+
+      await expect(
+        zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentConfigForDomain(
+          domainHash,
+          zeroBeneficiaryConfig
+        )
+      ).to.be.revertedWith(
+        "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
       );
     });
   });

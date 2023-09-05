@@ -3,7 +3,7 @@ import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributi
 import { BigNumber, ContractReceipt } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
-import { distrConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
 
 export const defaultRootRegistration = async ({
   user,
@@ -90,7 +90,7 @@ export const registrationWithSetup = async ({
   parentHash,
   domainLabel,
   domainContent = user.address,
-  fullConfig,
+  fullConfig = fullDistrConfigEmpty,
   isRootDomain = true,
 } : {
   zns : ZNSContracts;

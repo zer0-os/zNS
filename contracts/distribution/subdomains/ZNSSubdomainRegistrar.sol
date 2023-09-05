@@ -59,7 +59,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
                 mintlist[parentHash][msg.sender],
-                "ZNSSubdomainRegistrar: Sender is not in the mintlist"
+                "ZNSSubdomainRegistrar: Sender is not approved for purchase"
             );
         }
 

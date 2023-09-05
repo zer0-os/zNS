@@ -6,7 +6,6 @@ import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 import { IZNSFixedPricing } from "./IZNSFixedPricing.sol";
 
 
-// TODO sub data: create proper interface for this contract and inherit IZNSPricing !!
 contract ZNSFixedPricing is AAccessControlled, ARegistryWired, IZNSFixedPricing {
 
     uint256 public constant PERCENTAGE_BASIS = 10000;

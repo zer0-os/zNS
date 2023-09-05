@@ -5,7 +5,7 @@ import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-// TODO sub data: can we make this better??
+// TODO sub: can we make this better??
 struct CoreRegisterArgs {
     // 0x0 for root domains
     bytes32 parentHash;
