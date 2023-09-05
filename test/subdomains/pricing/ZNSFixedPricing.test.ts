@@ -19,7 +19,6 @@ describe("ZNSFixedPricing", () => {
   let user : SignerWithAddress;
   let random : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let mockRegistrar : SignerWithAddress;
 
   let zns : ZNSContracts;
   let domainHash : string;
@@ -27,7 +26,7 @@ describe("ZNSFixedPricing", () => {
   let parentFeePercentage : BigNumber;
 
   before(async () => {
-    [deployer, admin, user, zeroVault, random, mockRegistrar] = await hre.ethers.getSigners();
+    [deployer, admin, user, zeroVault, random] = await hre.ethers.getSigners();
     parentPrice = ethers.utils.parseEther("2223");
     parentFeePercentage = BigNumber.from(2310);
 
@@ -44,13 +43,13 @@ describe("ZNSFixedPricing", () => {
 
     const fullConfig = {
       distrConfig: {
-        paymentConfig: {
-          paymentType: PaymentType.DIRECT,
-          token: zns.zeroToken.address,
-          beneficiary: user.address,
-        },
+        paymentType: PaymentType.DIRECT,
         pricingContract: zns.fixedPricing.address,
         accessType: 1,
+      },
+      paymentConfig: {
+        token: zns.zeroToken.address,
+        beneficiary: user.address,
       },
       priceConfig: {
         price: parentPrice,
@@ -109,27 +108,6 @@ describe("ZNSFixedPricing", () => {
       zns.fixedPricing.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
     ).to.be.revertedWith(
       NOT_AUTHORIZED_REG_WIRED_ERR
-    );
-  });
-
-  // eslint-disable-next-line max-len
-  it("#revokePrice() should only be callable by REGISTRAR_ROLE, make price 0 and fire #PriceRevoked event", async () => {
-    const priceBefore = await zns.fixedPricing.getPrice(domainHash, "testname");
-    expect(priceBefore).to.not.equal(0);
-
-    await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
-
-    const tx = await zns.fixedPricing.connect(mockRegistrar).revokePrice(domainHash);
-    // check event
-    await expect(tx).to.emit(zns.fixedPricing, "PriceRevoked").withArgs(domainHash);
-
-    const priceAfter = await zns.fixedPricing.getPrice(domainHash, "testname");
-    expect(priceAfter).to.equal(0);
-
-    await expect(
-      zns.fixedPricing.connect(user).revokePrice(domainHash)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(user.address, REGISTRAR_ROLE)
     );
   });
 
