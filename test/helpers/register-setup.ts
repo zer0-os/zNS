@@ -1,9 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
-import { BigNumber, ContractReceipt } from "ethers";
+import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
 import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
+
+const { AddressZero } = ethers.constants;
+
 
 export const defaultRootRegistration = async ({
   user,
@@ -159,11 +162,13 @@ export const registrationWithSetup = async ({
     );
   }
 
-  // set up payment config
-  await zns.treasury.connect(user).setPaymentConfig(
-    domainHash,
-    fullConfig.paymentConfig,
-  );
+  if (fullConfig.paymentConfig.beneficiary !== AddressZero) {
+    // set up payment config
+    await zns.treasury.connect(user).setPaymentConfig(
+      domainHash,
+      fullConfig.paymentConfig,
+    );
+  }
 
   return domainHash;
 };

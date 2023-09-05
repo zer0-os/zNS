@@ -42,7 +42,7 @@ export const registerDomainPath = async ({
       beneficiary = ethers.constants.AddressZero;
     } else {
       // grab all the important data of the parent
-      const { paymentConfig } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+      const paymentConfig = await zns.treasury.paymentConfigs(parentHash);
       const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
@@ -127,10 +127,11 @@ export const validatePathRegistration = async ({
       baseLength: oracleBaseLength,
       precisionMultiplier: oraclePrecisionMultiplier,
       feePercentage: oracleFeePercentage,
-    } = await zns.priceOracle.rootDomainPriceConfig();
+    } = await zns.priceOracle.priceConfigs(ethers.constants.HashZero);
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
+    let paymentType;
     if (parentHashFound === ethers.constants.HashZero) {
       ({
         expectedPrice,
@@ -148,10 +149,11 @@ export const validatePathRegistration = async ({
       expParentBalDiff = BigNumber.from(0);
       expTreasuryBalDiff = expectedPrice;
     } else {
+      const config = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
       const {
         pricingContract,
-        paymentConfig,
-      } = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
+      } = config;
+      ({ paymentType } = config);
 
       if (pricingContract === zns.fixedPricing.address) {
         ({
@@ -166,7 +168,7 @@ export const validatePathRegistration = async ({
           baseLength,
           precisionMultiplier,
           feePercentage,
-        } = await zns.asPricing.priceConfigs(parentHashFound);
+        } = await zns.priceOracle.priceConfigs(parentHashFound);
 
         ({
           expectedPrice,
@@ -185,14 +187,14 @@ export const validatePathRegistration = async ({
       }
 
       // if parent's payment is staking, then beneficiary only gets the fee
-      if (paymentConfig?.paymentType === PaymentType.STAKE) {
+      if (paymentType === PaymentType.STAKE) {
         expParentBalDiff = stakeFee;
       } else {
         stakeFee = BigNumber.from(0);
         expParentBalDiff = expectedPrice;
       }
 
-      expTreasuryBalDiff = paymentConfig?.paymentType === PaymentType.STAKE
+      expTreasuryBalDiff = paymentType === PaymentType.STAKE
         ? expectedPrice : BigNumber.from(0);
     }
 

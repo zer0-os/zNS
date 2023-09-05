@@ -26,7 +26,6 @@ import { getDomainHashFromEvent } from "../helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
-// TODO sub data: fix these tests and all other!
 describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
@@ -413,7 +412,7 @@ describe("ZNSSubdomainRegistrar", () => {
       }
 
       // make sure the child's stake is still there
-      const childStakedAmt = await zns.treasury.stakedForDomain(lvl3Hash);
+      const { amount: childStakedAmt } = await zns.treasury.stakedForDomain(lvl3Hash);
       const { expectedPrice } = getPriceObject(domainConfigs[2].domainLabel);
 
       expect(childStakedAmt).to.eq(expectedPrice);
@@ -432,7 +431,7 @@ describe("ZNSSubdomainRegistrar", () => {
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
 
-      const stakedAfterRevoke = await zns.treasury.stakedForDomain(lvl3Hash);
+      const { amount: stakedAfterRevoke } = await zns.treasury.stakedForDomain(lvl3Hash);
       expect(stakedAfterRevoke).to.eq(0);
 
       const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
@@ -468,6 +467,7 @@ describe("ZNSSubdomainRegistrar", () => {
           parentHash,
           domainLabel: domainConfigs[1].domainLabel,
           isRootDomain: false,
+          fullConfig: domainConfigs[1].fullConfig,
         });
 
         expect(newHash).to.eq(lvl2Hash);
@@ -1600,15 +1600,15 @@ describe("ZNSSubdomainRegistrar", () => {
     });
 
     // eslint-disable-next-line max-len
-    it("should ONLY allow whitelisted addresses and NOT allow other ones to register a domain when parent's accessType is WHITELIST", async () => {
+    it("should ONLY allow mintlisted addresses and NOT allow other ones to register a domain when parent's accessType is WHITELIST", async () => {
       // approve direct payment
       await zns.zeroToken.connect(lvl3SubOwner).approve(zns.treasury.address, fixedPrice);
-      // register parent with whitelisted access
+      // register parent with mintlisted access
       const parentHash = await registrationWithSetup({
         zns,
         user: lvl3SubOwner,
         parentHash: regResults[1].domainHash,
-        domainLabel: "whitelistparent",
+        domainLabel: "mintlistparent",
         isRootDomain: false,
         fullConfig: {
           distrConfig: {
@@ -1624,7 +1624,7 @@ describe("ZNSSubdomainRegistrar", () => {
         },
       });
 
-      // whitelist potential child user
+      // mintlist potential child user
       await zns.subdomainRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
@@ -1636,7 +1636,7 @@ describe("ZNSSubdomainRegistrar", () => {
         zns,
         user: lvl4SubOwner,
         parentHash,
-        domainLabel: "whitelisted",
+        domainLabel: "mintlisted",
         isRootDomain: false,
       });
 
@@ -1650,19 +1650,19 @@ describe("ZNSSubdomainRegistrar", () => {
       const tokenOwner = await zns.domainToken.ownerOf(tokenId);
       expect(tokenOwner).to.eq(lvl4SubOwner.address);
 
-      // try to register child with non-whitelisted user
+      // try to register child with non-mintlisted user
       await expect(
         zns.subdomainRegistrar.connect(lvl5SubOwner).registerSubdomain(
           parentHash,
-          "notwhitelisted",
+          "notmintlisted",
           ethers.constants.AddressZero,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Sender is not whitelisted"
+        "ZNSSubdomainRegistrar: Sender is not approved for purchase"
       );
 
-      // remove user from whitelist
+      // remove user from mintlist
       await zns.subdomainRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
@@ -1673,7 +1673,7 @@ describe("ZNSSubdomainRegistrar", () => {
       await expect(
         zns.subdomainRegistrar.connect(lvl4SubOwner).registerSubdomain(
           parentHash,
-          "notwhitelistednow",
+          "notmintlistednow",
           ethers.constants.AddressZero,
           distrConfigEmpty
         )
@@ -1699,11 +1699,11 @@ describe("ZNSSubdomainRegistrar", () => {
         [true],
       );
 
-      const whitelisted = await zns.subdomainRegistrar.mintlist(
+      const mintlisted = await zns.subdomainRegistrar.mintlist(
         domainHash,
         lvl5SubOwner.address
       );
-      assert.ok(whitelisted, "User did NOT get whitelisted, but should've");
+      assert.ok(mintlisted, "User did NOT get mintlisted, but should've");
 
       // try with non-authorized
       await expect(
@@ -1734,13 +1734,13 @@ describe("ZNSSubdomainRegistrar", () => {
         DISTRIBUTION_LOCKED_ERR
       );
 
-      // switch to whitelist
+      // switch to mintlist
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
         regResults[1].domainHash,
         AccessType.WHITELIST
       );
 
-      // add to whitelist
+      // add to mintlist
       await zns.subdomainRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
         regResults[1].domainHash,
         [lvl5SubOwner.address],
@@ -2112,7 +2112,7 @@ describe("ZNSSubdomainRegistrar", () => {
     it("should TRANSFER ownership of a subdomain and let the receiver RECLAIM and then revoke with REFUND", async () => {
       const tokenId = BigNumber.from(regResults[1].domainHash).toString();
 
-      const stakedBefore = await zns.treasury.stakedForDomain(regResults[1].domainHash);
+      const { amount: stakedBefore } = await zns.treasury.stakedForDomain(regResults[1].domainHash);
 
       await zns.domainToken.connect(lvl2SubOwner).transferFrom(
         lvl2SubOwner.address,
@@ -2138,7 +2138,7 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(dataFromRegAfter.owner).to.eq(lvl3SubOwner.address);
 
       // verify stake still existing
-      const stakedAfter = await zns.treasury.stakedForDomain(regResults[1].domainHash);
+      const { amount: stakedAfter } = await zns.treasury.stakedForDomain(regResults[1].domainHash);
       expect(stakedAfter).to.eq(stakedBefore);
 
       const userBalbefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
