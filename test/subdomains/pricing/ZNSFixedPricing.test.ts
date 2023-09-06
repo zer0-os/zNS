@@ -1,6 +1,6 @@
 import {
   ADMIN_ROLE,
-  deployFixedPricing,
+  deployFixedPricer,
   deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType,
   priceConfigDefault, REGISTRAR_ROLE,
 } from "../../helpers";
@@ -13,7 +13,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 
 
-describe("ZNSFixedPricing", () => {
+describe("ZNSFixedPricer", () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
@@ -44,7 +44,7 @@ describe("ZNSFixedPricing", () => {
     const fullConfig = {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
-        pricingContract: zns.fixedPricing.address,
+        pricerContract: zns.fixedPricer.address,
         accessType: 1,
       },
       paymentConfig: {
@@ -67,13 +67,13 @@ describe("ZNSFixedPricing", () => {
   });
 
   it("should deploy with correct parameters", async () => {
-    expect(await zns.fixedPricing.getAccessController()).to.equal(zns.accessController.address);
-    expect(await zns.fixedPricing.registry()).to.equal(zns.registry.address);
+    expect(await zns.fixedPricer.getAccessController()).to.equal(zns.accessController.address);
+    expect(await zns.fixedPricer.registry()).to.equal(zns.registry.address);
   });
 
   it("should not allow to be deployed by anyone other than ADMIN_ROLE", async () => {
     await expect(
-      deployFixedPricing({
+      deployFixedPricer({
         deployer: random,
         acAddress: zns.accessController.address,
         regAddress: zns.registry.address,
@@ -85,46 +85,46 @@ describe("ZNSFixedPricing", () => {
 
   it("#setPrice() should work correctly and emit #PriceSet event", async () => {
     const newPrice = ethers.utils.parseEther("1823");
-    const tx = zns.fixedPricing.connect(user).setPrice(domainHash, newPrice);
+    const tx = zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
-    await expect(tx).to.emit(zns.fixedPricing, "PriceSet").withArgs(domainHash, newPrice);
+    await expect(tx).to.emit(zns.fixedPricer, "PriceSet").withArgs(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricing.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname")
     ).to.equal(newPrice);
   });
 
   it("#getPrice should return the correct price", async () => {
     const newPrice = ethers.utils.parseEther("3213");
-    await zns.fixedPricing.connect(user).setPrice(domainHash, newPrice);
+    await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricing.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname")
     ).to.equal(newPrice);
   });
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
     await expect(
-      zns.fixedPricing.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
+      zns.fixedPricer.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
     ).to.be.revertedWith(
       NOT_AUTHORIZED_REG_WIRED_ERR
     );
   });
 
   it("#setRegistry() should set the correct address", async () => {
-    await zns.fixedPricing.connect(admin).setRegistry(random.address);
+    await zns.fixedPricer.connect(admin).setRegistry(random.address);
 
     expect(
-      await zns.fixedPricing.registry()
+      await zns.fixedPricer.registry()
     ).to.equal(random.address);
 
     // set back for other tests
-    await zns.fixedPricing.connect(admin).setRegistry(zns.registry.address);
+    await zns.fixedPricer.connect(admin).setRegistry(zns.registry.address);
   });
 
   it("#setRegistry() should revert if called by anyone other than ADMIN_ROLE", async () => {
     await expect(
-      zns.fixedPricing.connect(random).setRegistry(random.address)
+      zns.fixedPricer.connect(random).setRegistry(random.address)
     ).to.be.revertedWith(
       getAccessRevertMsg(random.address, ADMIN_ROLE)
     );
@@ -132,7 +132,7 @@ describe("ZNSFixedPricing", () => {
 
   it("#setAccessController() should revert if called by anyone other than ADMIN_ROLE", async () => {
     await expect(
-      zns.fixedPricing.connect(random).setAccessController(random.address)
+      zns.fixedPricer.connect(random).setAccessController(random.address)
     ).to.be.revertedWith(
       getAccessRevertMsg(random.address, ADMIN_ROLE)
     );
@@ -140,10 +140,10 @@ describe("ZNSFixedPricing", () => {
 
   // keep this as the last test
   it("#setAccessController() should set the correct address", async () => {
-    await zns.fixedPricing.connect(admin).setAccessController(random.address);
+    await zns.fixedPricer.connect(admin).setAccessController(random.address);
 
     expect(
-      await zns.fixedPricing.getAccessController()
+      await zns.fixedPricer.getAccessController()
     ).to.equal(random.address);
   });
 });

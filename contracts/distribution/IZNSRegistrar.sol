@@ -72,10 +72,10 @@ interface IZNSRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `priceOracle` address is set in state.
-     * @param priceOracle The new address of the PriceOracle contract
+     * @notice Emitted when the `curvePricer` address is set in state.
+     * @param curvePricer The new address of the CurvePricer contract
      */
-    event PriceOracleSet(address priceOracle);
+    event CurvePricerSet(address curvePricer);
 
     /**
      * @notice Emitted when the `treasury` address is set in state.
@@ -104,7 +104,7 @@ interface IZNSRegistrar is IDistributionConfig {
     function initialize(
         address accessController_,
         address registry_,
-        address priceOracle_,
+        address curvePricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
@@ -130,7 +130,7 @@ interface IZNSRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setPriceOracle(address priceOracle_) external;
+    function setCurvePricer(address curvePricer_) external;
 
     function setTreasury(address treasury_) external;
 

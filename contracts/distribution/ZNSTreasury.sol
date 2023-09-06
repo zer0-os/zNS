@@ -11,10 +11,10 @@ import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
 
 /**
- * @title Contract responsible for all staking operations in ZNS and communication with `ZNSPriceOracle`.
+ * @title Contract responsible for all staking operations in ZNS and communication with `ZNSCurvePricer`.
  * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
  * It stores all data regarding user stakes for domains, and it's also the only contract
- * that is aware of the `ZNSPriceOracle` which it uses to get pricing data for domains.
+ * that is aware of the `ZNSCurvePricer` which it uses to get pricing data for domains.
  */
 contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
@@ -74,7 +74,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * Note that a user has to approve the correct amount of `domainPrice + registrationFee`
      * for this function to not revert.
      *
-     * Calls `ZNSPriceOracle` to get the price for the domain name based on it's length,
+     * Calls `ZNSCurvePricer.sol` to get the price for the domain name based on it's length,
      * and to get a proper `registrationFee` as a percentage of the price.
      * In order to avoid needing 2 different approvals, it withdraws `domainPrice + registrationFee`
      * to this contract and then transfers the `registrationFee` to the Zero Vault.

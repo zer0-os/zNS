@@ -257,7 +257,7 @@ describe("ZNSRegistrar", () => {
 
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
       const distrConfig = {
-        pricingContract: zns.fixedPricing.address,
+        pricerContract: zns.fixedPricer.address,
         accessType: AccessType.OPEN,
         paymentType: PaymentType.DIRECT,
       };
@@ -273,12 +273,12 @@ describe("ZNSRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(receipt);
 
       const {
-        pricingContract,
+        pricerContract,
         accessType,
         paymentType,
       } = await zns.subdomainRegistrar.distrConfigs(domainHash);
 
-      expect(pricingContract).to.eq(distrConfig.pricingContract);
+      expect(pricerContract).to.eq(distrConfig.pricerContract);
       expect(paymentType).to.eq(distrConfig.paymentType);
       expect(accessType).to.eq(distrConfig.accessType);
     });
@@ -443,9 +443,9 @@ describe("ZNSRegistrar", () => {
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
-      // set config on PriceOracle for the price to be 0
-      await zns.priceOracle.connect(deployer).setMaxPrice(ethers.constants.HashZero, "0");
-      await zns.priceOracle.connect(deployer).setMinPrice(ethers.constants.HashZero, "0");
+      // set config on CurvePricer for the price to be 0
+      await zns.curvePricer.connect(deployer).setMaxPrice(ethers.constants.HashZero, "0");
+      await zns.curvePricer.connect(deployer).setMinPrice(ethers.constants.HashZero, "0");
 
       const userBalanceBefore = await zns.zeroToken.balanceOf(user.address);
       const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
@@ -639,7 +639,7 @@ describe("ZNSRegistrar", () => {
         zns,
         domainName: defaultDomain,
         distrConfig: {
-          pricingContract: zns.fixedPricing.address,
+          pricerContract: zns.fixedPricer.address,
           paymentType: PaymentType.DIRECT,
           accessType: AccessType.OPEN,
         },
@@ -648,8 +648,8 @@ describe("ZNSRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
 
       const ogPrice = BigNumber.from(135);
-      await zns.fixedPricing.connect(user).setPrice(domainHash, ogPrice);
-      expect(await zns.fixedPricing.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
+      await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
+      expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
 
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
@@ -979,7 +979,7 @@ describe("ZNSRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.priceOracle.getPrice(ethers.constants.HashZero, domainName),
+        zns.curvePricer.getPrice(ethers.constants.HashZero, domainName),
       ];
 
       await validateUpgrade(deployer, zns.registrar, registrar, registrarFactory, contractCalls);

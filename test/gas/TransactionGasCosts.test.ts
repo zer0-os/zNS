@@ -48,10 +48,10 @@ describe("Transaction Gas Costs Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.priceOracle.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
 
     config = {
-      pricingContract: zns.fixedPricing.address,
+      pricerContract: zns.fixedPricer.address,
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
@@ -74,7 +74,7 @@ describe("Transaction Gas Costs Test", () => {
         distrConfig: {
           accessType: AccessType.OPEN,
           // TODO sub data: change naming everywhere
-          pricingContract: zns.priceOracle.address,
+          pricerContract: zns.curvePricer.address,
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
@@ -93,7 +93,7 @@ describe("Transaction Gas Costs Test", () => {
     //   fullConfig: {
     //     distrConfig: {
     //       accessType: AccessType.OPEN,
-    //       pricingContract: zns.asPricing.address,
+    //       pricerContract: zns.curvePricer.address,
     //       paymentConfig: {
     //         token: zns.zeroToken.address,
     //         beneficiary: rootOwner.address,

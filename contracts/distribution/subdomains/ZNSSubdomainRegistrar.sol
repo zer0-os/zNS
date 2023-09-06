@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSPricing } from "./abstractions/IZNSPricing.sol";
+import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
@@ -85,13 +85,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
             if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricing(address(parentConfig.pricingContract))
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                coreRegisterArgs.price = IZNSPricing(address(parentConfig.pricingContract))
+                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
                         parentHash,
                         label
@@ -101,7 +101,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        if (address(distrConfig.pricingContract) != address(0)) {
+        if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
@@ -142,25 +142,25 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(
-            address(config.pricingContract) != address(0),
-            "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
+            address(config.pricerContract) != address(0),
+            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
         );
 
         distrConfigs[domainHash] = config;
 
         emit DistributionConfigSet(
             domainHash,
-            config.pricingContract,
+            config.pricerContract,
             config.paymentType,
             config.accessType
         );
     }
 
-    function setPricingContractForDomain(
+    function setPricerContractForDomain(
         bytes32 domainHash,
         // TODO sub: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
-        IZNSPricing pricingContract
+        IZNSPricer pricerContract
     ) public override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
@@ -168,13 +168,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         );
 
         require(
-            address(pricingContract) != address(0),
-            "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
+            address(pricerContract) != address(0),
+            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
         );
 
-        distrConfigs[domainHash].pricingContract = pricingContract;
+        distrConfigs[domainHash].pricerContract = pricerContract;
 
-        emit PricingContractSet(domainHash, address(pricingContract));
+        emit PricerContractSet(domainHash, address(pricerContract));
     }
 
     function setPaymentTypeForDomain(

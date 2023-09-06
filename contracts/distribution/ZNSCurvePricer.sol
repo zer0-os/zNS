@@ -2,18 +2,17 @@
 pragma solidity ^0.8.18;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
 
 /**
- * @title Implementation of the Price Oracle, module that calculates the price of a domain
+ * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
  */
-// TODO sub data: rename this contract !
-contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSPriceOracle {
+contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
     using StringUtils for string;
 
     /**
@@ -211,8 +210,8 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 multiplier
     ) public override onlyOwnerOrOperator(domainHash) {
-        require(multiplier != 0, "ZNSPriceOracle: precisionMultiplier cannot be 0");
-        require(multiplier <= 10**18, "ZNSPriceOracle: precisionMultiplier cannot be greater than 10^18");
+        require(multiplier != 0, "ZNSCurvePricer: precisionMultiplier cannot be 0");
+        require(multiplier <= 10**18, "ZNSCurvePricer: precisionMultiplier cannot be greater than 10^18");
         priceConfigs[domainHash].precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(domainHash, multiplier);
@@ -233,7 +232,7 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
-    function setRegistry(address registry_) external override(ARegistryWired, IZNSPriceOracle) onlyAdmin {
+    function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
         _setRegistry(registry_);
     }
 
@@ -245,7 +244,7 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function setAccessController(address accessController_)
     external
-    override(AAccessControlled, IZNSPriceOracle)
+    override(AAccessControlled, IZNSCurvePricer)
     onlyAdmin {
         _setAccessController(accessController_);
     }
@@ -253,7 +252,7 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Getter for ZNSAccessController address stored on this contract.
      */
-    function getAccessController() external view override(AAccessControlled, IZNSPriceOracle) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSCurvePricer) returns (address) {
         return address(accessController);
     }
 
@@ -298,13 +297,12 @@ contract ZNSPriceOracle is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * which can occur if some of the config values are not properly chosen and set.
      */
     // TODO sub fee: figure out these this logic! it doesn't work when we try and set the price to 0 !!!
-    // TODO sub fee: HERE and in AsymptoticPricing !!!
     // TODO sub fee: currently it fails if we set maxPrice + baseLength as 0s
     function _validateConfig(bytes32 domainHash) internal view {
         uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
-            "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."
+            "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
         );
     }
 

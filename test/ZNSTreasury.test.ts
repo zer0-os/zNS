@@ -88,11 +88,11 @@ describe("ZNSTreasury", () => {
         const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
         const zeroVaultBalanceBeforeStake = await zns.zeroToken.balanceOf(zeroVault.address);
 
-        const expectedStake = await zns.priceOracle.getPrice(
+        const expectedStake = await zns.curvePricer.getPrice(
           ethers.constants.HashZero,
           domain
         );
-        const fee = await zns.priceOracle.getProtocolFee(expectedStake);
+        const fee = await zns.curvePricer.getProtocolFee(expectedStake);
 
         await zns.treasury.connect(mockRegistrar).stakeForDomain(
           ethers.constants.HashZero,

@@ -3,10 +3,10 @@ pragma solidity ^0.8.18;
 
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
-import { IZNSFixedPricing } from "./IZNSFixedPricing.sol";
+import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 
 
-contract ZNSFixedPricing is AAccessControlled, ARegistryWired, IZNSFixedPricing {
+contract ZNSFixedPricer is AAccessControlled, ARegistryWired, IZNSFixedPricer {
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
@@ -62,18 +62,18 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, IZNSFixedPricing 
     }
 
     // TODO sub: rework these for abstracts to hold this function there and remove these from here if possible!
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricing) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricer) onlyAdmin {
         _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)
     external
-    override(AAccessControlled, IZNSFixedPricing)
+    override(AAccessControlled, IZNSFixedPricer)
     onlyAdmin {
         _setAccessController(accessController_);
     }
 
-    function getAccessController() external view override(AAccessControlled, IZNSFixedPricing) returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSFixedPricer) returns (address) {
         return address(accessController);
     }
 }

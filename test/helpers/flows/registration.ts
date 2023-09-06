@@ -121,13 +121,13 @@ export const validatePathRegistration = async ({
     }
 
     const {
-      maxPrice: oracleMaxPrice,
-      minPrice: oracleMinPrice,
-      maxLength: oracleMaxLength,
-      baseLength: oracleBaseLength,
-      precisionMultiplier: oraclePrecisionMultiplier,
-      feePercentage: oracleFeePercentage,
-    } = await zns.priceOracle.priceConfigs(ethers.constants.HashZero);
+      maxPrice: curveMaxPrice,
+      minPrice: curveMinPrice,
+      maxLength: curveMaxLength,
+      baseLength: curveBaseLength,
+      precisionMultiplier: curvePrecisionMultiplier,
+      feePercentage: curveFeePercentage,
+    } = await zns.curvePricer.priceConfigs(ethers.constants.HashZero);
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
@@ -138,12 +138,12 @@ export const validatePathRegistration = async ({
       } = getPriceObject(
         domainLabel,
         {
-          maxPrice: oracleMaxPrice,
-          minPrice: oracleMinPrice,
-          maxLength: oracleMaxLength,
-          baseLength: oracleBaseLength,
-          precisionMultiplier: oraclePrecisionMultiplier,
-          feePercentage: oracleFeePercentage,
+          maxPrice: curveMaxPrice,
+          minPrice: curveMinPrice,
+          maxLength: curveMaxLength,
+          baseLength: curveBaseLength,
+          precisionMultiplier: curvePrecisionMultiplier,
+          feePercentage: curveFeePercentage,
         },
       ));
       expParentBalDiff = BigNumber.from(0);
@@ -151,15 +151,15 @@ export const validatePathRegistration = async ({
     } else {
       const config = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
       const {
-        pricingContract,
+        pricerContract,
       } = config;
       ({ paymentType } = config);
 
-      if (pricingContract === zns.fixedPricing.address) {
+      if (pricerContract === zns.fixedPricer.address) {
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricing.getPriceAndFee(parentHashFound, domainLabel));
+        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel));
       } else {
         const {
           maxPrice,
@@ -168,7 +168,7 @@ export const validatePathRegistration = async ({
           baseLength,
           precisionMultiplier,
           feePercentage,
-        } = await zns.priceOracle.priceConfigs(parentHashFound);
+        } = await zns.curvePricer.priceConfigs(parentHashFound);
 
         ({
           expectedPrice,
@@ -200,7 +200,7 @@ export const validatePathRegistration = async ({
 
     const protocolFee = getStakingOrProtocolFee(
       expectedPrice.add(stakeFee),
-      oracleFeePercentage
+      curveFeePercentage
     );
 
     const {

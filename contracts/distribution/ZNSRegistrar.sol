@@ -9,7 +9,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
+import {IZNSCurvePricer} from "./IZNSCurvePricer.sol";
 
 
 /**
@@ -30,8 +30,8 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    // TODO sub data: rename all mentions of priceOracle to a new name that a contract will get !
-    IZNSPriceOracle public priceOracle;
+    // TODO sub data: can this be changes to an IZNSPricer.sol type ?
+    IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -51,14 +51,14 @@ contract ZNSRegistrar is
     function initialize(
         address accessController_,
         address registry_,
-        address priceOracle_,
+        address curvePricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
     ) public override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setPriceOracle(priceOracle_);
+        setCurvePricer(curvePricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
         setAddressResolver(addressResolver_);
@@ -95,7 +95,7 @@ contract ZNSRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = priceOracle.getPrice(0x0, name);
+        uint256 domainPrice = curvePricer.getPrice(0x0, name);
 
         _coreRegister(
             CoreRegisterArgs(
@@ -110,7 +110,7 @@ contract ZNSRegistrar is
             )
         );
 
-        if (address(distributionConfig.pricingContract) != address(0)) {
+        if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds roughly 100k gas to the register tx
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
@@ -163,7 +163,7 @@ contract ZNSRegistrar is
 
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = priceOracle.getProtocolFee(args.price + args.stakeFee);
+        uint256 protocolFee = curvePricer.getProtocolFee(args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -285,14 +285,14 @@ contract ZNSRegistrar is
         _setRegistry(registry_);
     }
 
-    function setPriceOracle(address priceOracle_) public override onlyAdmin {
+    function setCurvePricer(address curvePricer_) public override onlyAdmin {
         require(
-            priceOracle_ != address(0),
-            "ZNSRegistrar: priceOracle_ is 0x0 address"
+            curvePricer_ != address(0),
+            "ZNSRegistrar: curvePricer_ is 0x0 address"
         );
-        priceOracle = IZNSPriceOracle(priceOracle_);
+        curvePricer = IZNSCurvePricer(curvePricer_);
 
-        emit PriceOracleSet(priceOracle_);
+        emit CurvePricerSet(curvePricer_);
     }
 
     /**

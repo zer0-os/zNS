@@ -41,16 +41,16 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricingContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  const { pricerContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
-  if (pricingContract === zns.priceOracle.address) {
-    [price, parentFee] = await zns.priceOracle.getPriceAndFee(parentHash, domainLabel);
-  } else if (pricingContract === zns.fixedPricing.address) {
-    [price, parentFee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
+  if (pricerContract === zns.curvePricer.address) {
+    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel);
+  } else if (pricerContract === zns.fixedPricer.address) {
+    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel);
   }
 
-  const protocolFee = await zns.priceOracle.getProtocolFee(price.add(parentFee));
+  const protocolFee = await zns.curvePricer.getProtocolFee(price.add(parentFee));
   const toApprove = price.add(parentFee).add(protocolFee);
   // TODO sub: add support for any kind of token
   await zns.zeroToken.connect(user).approve(zns.treasury.address, toApprove);
@@ -150,13 +150,13 @@ export const registrationWithSetup = async ({
   //  optimize for the best UX!
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
-  if (fullConfig.distrConfig.pricingContract === zns.fixedPricing.address) {
-    await zns.fixedPricing.connect(user).setPriceConfig(
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address) {
+    await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IFixedPriceConfig,
     );
-  } else if (fullConfig.distrConfig.pricingContract === zns.priceOracle.address) {
-    await zns.priceOracle.connect(user).setPriceConfig(
+  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address) {
+    await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IASPriceConfig,
     );

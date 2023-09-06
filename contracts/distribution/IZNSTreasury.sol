@@ -58,10 +58,10 @@ interface IZNSTreasury {
     );
 
     /**
-     * @notice Emitted when `priceOracle` is set in state.
-     * @param priceOracle The new address of the price oracle contract
+     * @notice Emitted when `curvePricer` is set in state.
+     * @param curvePricer The new address of the CurvePricer contract
      */
-    event PriceOracleSet(address priceOracle);
+    event CurvePricerSet(address curvePricer);
 
     /**
      * @notice Emitted when `stakingToken` is set in state.
@@ -126,7 +126,7 @@ interface IZNSTreasury {
 
     function initialize(
         address accessController_,
-        address priceOracle_,
+        address curvePricer_,
         address stakingToken_,
         address zeroVault_
     ) external;

@@ -19,7 +19,7 @@ interface IDomainPriceConfig {
  * @notice Struct for each configurable variable for price calculations.
      * Does NOT include variables for calcs of registration fees.
      */
-    // TODO sub: rename this since another PriceConfig exists on FixedPricing
+    // TODO sub: rename this since another PriceConfig exists on FixedPricer
     struct DomainPriceConfig {
         /**
          * @notice Maximum price for a domain returned at <= `baseLength`
