@@ -3,12 +3,12 @@ import {
   deployFixedPricer,
   deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType,
   priceConfigDefault, REGISTRAR_ROLE,
-} from "../../helpers";
+} from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContracts } from "../../helpers/types";
+import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
-import { registrationWithSetup } from "../../helpers/register-setup";
+import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 

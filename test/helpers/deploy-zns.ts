@@ -287,14 +287,21 @@ export const deployCurvePricer = async ({
   return curvePricer;
 };
 
-export const deployTreasury = async (
-  deployer : SignerWithAddress,
-  accessControllerAddress : string,
-  registryAddress : string,
-  zTokenMockAddress : string,
-  zeroVaultAddress : string,
-  isTenderlyRun : boolean
-) : Promise<ZNSTreasury> => {
+export const deployTreasury = async ({
+  deployer,
+  accessControllerAddress,
+  registryAddress,
+  zTokenMockAddress,
+  zeroVaultAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  accessControllerAddress : string;
+  registryAddress : string;
+  zTokenMockAddress : string;
+  zeroVaultAddress : string;
+  isTenderlyRun : boolean;
+}) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
   const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
     [
@@ -546,14 +553,14 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
-  const treasury = await deployTreasury(
+  const treasury = await deployTreasury({
     deployer,
-    accessController.address,
-    registry.address,
-    zeroTokenMock.address,
+    accessControllerAddress: accessController.address,
+    registryAddress: registry.address,
+    zTokenMockAddress: zeroTokenMock.address,
     zeroVaultAddress,
-    isTenderlyRun
-  );
+    isTenderlyRun,
+  });
 
   const config : RegistrarConfig = {
     treasury,

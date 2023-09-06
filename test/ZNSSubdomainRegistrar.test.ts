@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "../helpers/types";
+import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -14,15 +14,15 @@ import {
   ONLY_NAME_OWNER_REG_ERR,
   PaymentType,
   priceConfigDefault,
-} from "../helpers";
+} from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { expect } from "chai";
-import { registerDomainPath, validatePathRegistration } from "../helpers/flows/registration";
+import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
-import { registrationWithSetup } from "../helpers/register-setup";
-import { getDomainHashFromEvent } from "../helpers/events";
+import { registrationWithSetup } from "./helpers/register-setup";
+import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
