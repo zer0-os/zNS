@@ -10,7 +10,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, IZNSFixedPricer {
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
-    mapping(bytes32 domainHash => PriceConfig config) internal priceConfigs;
+    mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
     // TODO sub: test that we can set our own config at 0x0 if we need to !
     constructor(address _accessController, address _registry) {
