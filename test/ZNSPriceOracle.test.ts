@@ -26,7 +26,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 const { HashZero } = ethers.constants;
 
-describe.only("ZNSPriceOracle", () => {
+describe("ZNSPriceOracle", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
@@ -331,9 +331,9 @@ describe.only("ZNSPriceOracle", () => {
     it("Should emit PriceConfigSet event with correct parameters", async () => {
       const newConfig = {
         baseLength: BigNumber.from("6"),
-        maxLength: BigNumber.from("20"),
-        maxPrice: parseEther("10"),
-        minPrice: parseEther("6"),
+        maxLength: BigNumber.from("35"),
+        maxPrice: parseEther("150"),
+        minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
       };
