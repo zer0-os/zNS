@@ -103,10 +103,10 @@ describe("ZNSTreasury", () => {
     };
 
     await Object.keys(args).reduce(
-      async (acc, key, idx, arr) => {
+      async (acc, key) => {
         await acc;
 
-        if (idx !== 0 || idx !== arr.length - 1) {
+        if (key !== "deployer" && key !== "isTenderlyRun") {
           await expect(
             deployTreasury({
               ...args,
@@ -251,28 +251,35 @@ describe("ZNSTreasury", () => {
 
   describe("#processDirectPayment()", () => {
     it("should process payment correctly with paymentConfig set", async () => {
+      const randomHash = hashDomainLabel("randommmmmmmm2342342");
       const config = {
         token: zns.zeroToken.address,
         beneficiary: user.address,
       };
 
-      await zns.treasury.connect(deployer).setPaymentConfig(
-        ethers.constants.HashZero,
+      await zns.registry.connect(mockRegistrar).createDomainRecord(
+        randomHash,
+        user.address,
+        ethers.constants.AddressZero,
+      );
+
+      await zns.treasury.connect(user).setPaymentConfig(
+        randomHash,
         config
       );
 
       const paymentAmt = parseEther("1000");
       const protocolFee = parseEther("10");
       // give tokens to mock registrar
-      await zns.zeroToken.connect(user).transfer(mockRegistrar.address, paymentAmt);
-      await zns.zeroToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt);
+      await zns.zeroToken.connect(user).transfer(mockRegistrar.address, paymentAmt.add(protocolFee));
+      await zns.zeroToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt.add(protocolFee));
 
       const userBalanceBefore = await zns.zeroToken.balanceOf(user.address);
       const payerBalanceBefore = await zns.zeroToken.balanceOf(mockRegistrar.address);
       const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
 
       await zns.treasury.connect(mockRegistrar).processDirectPayment(
-        ethers.constants.HashZero,
+        randomHash,
         domainHash,
         mockRegistrar.address,
         paymentAmt,
@@ -332,6 +339,9 @@ describe("ZNSTreasury", () => {
     it("should emit DirectPaymentProcessed event with correct params", async () => {
       const paymentAmt = parseEther("100");
       const protocolFee = parseEther("7");
+      // give tokens to mock registrar
+      await zns.zeroToken.connect(user).transfer(mockRegistrar.address, paymentAmt.add(protocolFee));
+      await zns.zeroToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt.add(protocolFee));
 
       await expect(
         zns.treasury.connect(mockRegistrar).processDirectPayment(
@@ -345,7 +355,7 @@ describe("ZNSTreasury", () => {
         ethers.constants.HashZero,
         domainHash,
         mockRegistrar.address,
-        ethers.constants.AddressZero,
+        zeroVault.address,
         paymentAmt,
         protocolFee
       );
@@ -462,7 +472,7 @@ describe("ZNSTreasury", () => {
         mockRegistrar.address
       );
       await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
+        NOT_AUTHORIZED_REG_WIRED_ERR
       );
     });
 
@@ -471,7 +481,7 @@ describe("ZNSTreasury", () => {
         ethers.constants.HashZero,
         ethers.constants.AddressZero
       );
-      await expect(tx).to.be.revertedWith("ZNSTreasury: zeroVault passed as 0x0 address");
+      await expect(tx).to.be.revertedWith("ZNSTreasury: beneficiary passed as 0x0 address");
     });
   });
 
@@ -480,12 +490,12 @@ describe("ZNSTreasury", () => {
       const { token: currentStakingToken } = await zns.treasury.paymentConfigs(domainHash);
       expect(currentStakingToken).to.not.eq(randomAcc.address);
 
-      const tx = await zns.treasury.setPaymentToken(
+      const tx = await zns.treasury.connect(user).setPaymentToken(
         domainHash,
         randomAcc.address
       );
 
-      const newStakingToken = await zns.treasury.paymentConfigs(domainHash);
+      const { token: newStakingToken } = await zns.treasury.paymentConfigs(domainHash);
       expect(newStakingToken).to.eq(randomAcc.address);
 
       await expect(tx).to.emit(zns.treasury, "PaymentTokenSet").withArgs(
@@ -500,13 +510,13 @@ describe("ZNSTreasury", () => {
         randomAcc.address
       );
       await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
+        NOT_AUTHORIZED_REG_WIRED_ERR
       );
     });
 
-    it("Should revert when stakingToken is address 0", async () => {
+    it("Should revert when paymentToken is address 0", async () => {
       const tx = zns.treasury.connect(user).setPaymentToken(domainHash, ethers.constants.AddressZero);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: stakingToken_ passed as 0x0 address");
+      await expect(tx).to.be.revertedWith("ZNSTreasury: paymentToken passed as 0x0 address");
     });
   });
 
