@@ -1,7 +1,7 @@
 import {
   ADMIN_ROLE,
   deployFixedPricer,
-  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType,
+  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType, PERCENTAGE_BASIS,
   priceConfigDefault, REGISTRAR_ROLE,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -103,9 +103,81 @@ describe("ZNSFixedPricer", () => {
     ).to.equal(newPrice);
   });
 
+  it("#getPriceAndFee() should return the correct price and fee", async () => {
+    const newPrice = ethers.utils.parseEther("3213");
+    const newFee = BigNumber.from(1234);
+    await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
+    await zns.fixedPricer.connect(user).setFeePercentage(domainHash, newFee);
+
+    const {
+      price,
+      fee,
+    } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname");
+
+    expect(price).to.equal(newPrice);
+    expect(fee).to.equal(newPrice.mul(newFee).div(PERCENTAGE_BASIS));
+  });
+
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
     await expect(
       zns.fixedPricer.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
+    ).to.be.revertedWith(
+      NOT_AUTHORIZED_REG_WIRED_ERR
+    );
+  });
+
+  it("#setFeePercentage() should set the fee correctly and emit #FeePercentageSet event", async () => {
+    const newFee = BigNumber.from(1234);
+    const tx = zns.fixedPricer.connect(user).setFeePercentage(domainHash, newFee);
+
+    await expect(tx).to.emit(zns.fixedPricer, "FeePercentageSet").withArgs(domainHash, newFee);
+
+    const {
+      feePercentage,
+    } = await zns.fixedPricer.priceConfigs(domainHash);
+    expect(feePercentage).to.equal(newFee);
+  });
+
+  it("#setFeePercentage() should revert if called by anyone other than domain owner", async () => {
+    await expect(
+      zns.fixedPricer.connect(random).setFeePercentage(domainHash, BigNumber.from(1))
+    ).to.be.revertedWith(
+      NOT_AUTHORIZED_REG_WIRED_ERR
+    );
+  });
+
+  // eslint-disable-next-line max-len
+  it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
+    const newPrice = ethers.utils.parseEther("1823");
+    const newFee = BigNumber.from("12");
+    const tx = zns.fixedPricer.connect(user).setPriceConfig(
+      domainHash,
+      {
+        price: newPrice,
+        feePercentage: newFee,
+      }
+    );
+
+    await expect(tx).to.emit(zns.fixedPricer, "PriceSet").withArgs(domainHash, newPrice);
+    await expect(tx).to.emit(zns.fixedPricer, "FeePercentageSet").withArgs(domainHash, newFee);
+
+    const {
+      price,
+      feePercentage,
+    } = await zns.fixedPricer.priceConfigs(domainHash);
+    expect(price).to.equal(newPrice);
+    expect(feePercentage).to.equal(newFee);
+  });
+
+  it("#setPriceConfig() should revert if called by anyone other than domain owner or operator", async () => {
+    await expect(
+      zns.fixedPricer.connect(random).setPriceConfig(
+        domainHash,
+        {
+          price: BigNumber.from(1),
+          feePercentage: BigNumber.from(1),
+        }
+      )
     ).to.be.revertedWith(
       NOT_AUTHORIZED_REG_WIRED_ERR
     );

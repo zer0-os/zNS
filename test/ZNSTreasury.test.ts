@@ -546,6 +546,32 @@ describe("ZNSTreasury", () => {
     });
   });
 
+  describe("#setRegistry() and RegistrySet event", () => {
+    it("Should set the correct address of Registry", async () => {
+      const currentRegistry = await zns.treasury.registry();
+      expect(currentRegistry).to.not.eq(randomAcc.address);
+
+      const tx = await zns.treasury.setRegistry(randomAcc.address);
+
+      const newRegistry = await zns.treasury.registry();
+      expect(newRegistry).to.eq(randomAcc.address);
+
+      await expect(tx).to.emit(zns.treasury, "RegistrySet").withArgs(randomAcc.address);
+    });
+
+    it("Should revert when called from any address without ADMIN_ROLE", async () => {
+      const tx = zns.treasury.connect(user).setRegistry(randomAcc.address);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      );
+    });
+
+    it("Should revert when registry is address 0", async () => {
+      const tx = zns.treasury.setRegistry(ethers.constants.AddressZero);
+      await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user can upgrade the contract", async () => {
       // Confirm deployer has the correct role first

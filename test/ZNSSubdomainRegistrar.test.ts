@@ -26,10 +26,6 @@ import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 
-// TODO sub data: renaming list:
-//  1. pricing - pricer
-//  2. FixedPricer - FixedPricer
-//  3. CurvePricer - CurvePricer
 describe("ZNSSubdomainRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
@@ -1898,6 +1894,22 @@ describe("ZNSSubdomainRegistrar", () => {
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
+        {
+          user: lvl3SubOwner,
+          domainLabel: "lvlthree",
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.curvePricer.address,
+              paymentType: PaymentType.DIRECT,
+              accessType: AccessType.OPEN,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: lvl3SubOwner.address,
+            },
+            priceConfig: priceConfigDefault,
+          },
+        },
       ];
 
       regResults = await registerDomainPath({
@@ -1990,126 +2002,204 @@ describe("ZNSSubdomainRegistrar", () => {
       expect(dataFromRegAfterReclaim.resolver).to.eq(ethers.constants.AddressZero);
     });
 
-    it("#setDistributionConfigForDomain() should re-set distribution config for an existing subdomain", async () => {
-      const domainHash = regResults[1].domainHash;
+    describe("#setDistributionConfigForDomain()", () => {
+      it("should re-set distribution config for an existing subdomain", async () => {
+        const domainHash = regResults[2].domainHash;
 
-      const distrConfigBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(distrConfigBefore.accessType).to.eq(domainConfigs[1].fullConfig.distrConfig.accessType);
-      expect(distrConfigBefore.pricerContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricerContract);
-      expect(
-        distrConfigBefore.paymentType
-      ).to.eq(
-        domainConfigs[1].fullConfig.distrConfig.paymentType
-      );
+        const distrConfigBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(distrConfigBefore.accessType).to.not.eq(AccessType.WHITELIST);
+        expect(distrConfigBefore.pricerContract).to.not.eq(zns.fixedPricer.address);
+        expect(
+          distrConfigBefore.paymentType
+        ).to.not.eq(
+          PaymentType.STAKE
+        );
 
-      const newConfig = {
-        pricerContract: zns.curvePricer.address,
-        paymentType: PaymentType.STAKE,
-        accessType: AccessType.WHITELIST,
-      };
+        const newConfig = {
+          pricerContract: zns.fixedPricer.address,
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.WHITELIST,
+        };
 
-      await zns.subdomainRegistrar.connect(lvl2SubOwner).setDistributionConfigForDomain(
-        domainHash,
-        newConfig,
-      );
-
-      const distrConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(distrConfigAfter.accessType).to.eq(newConfig.accessType);
-      expect(distrConfigAfter.pricerContract).to.eq(newConfig.pricerContract);
-      expect(distrConfigAfter.paymentType).to.eq(newConfig.paymentType);
-
-      // assign operator in registry
-      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
-        operator.address,
-        true,
-      );
-
-      // reset it back
-      await zns.subdomainRegistrar.connect(operator).setDistributionConfigForDomain(
-        domainHash,
-        domainConfigs[1].fullConfig.distrConfig,
-      );
-      const origConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(origConfigAfter.accessType).to.eq(domainConfigs[1].fullConfig.distrConfig.accessType);
-      expect(origConfigAfter.pricerContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricerContract);
-      expect(
-        origConfigAfter.paymentType
-      ).to.eq(
-        domainConfigs[1].fullConfig.distrConfig.paymentType
-      );
-
-      // remove operator
-      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
-        operator.address,
-        false,
-      );
-    });
-
-    // eslint-disable-next-line max-len
-    it("#setDistributionConfigForDomain() should NOT allow to set distribution config for a non-authorized account", async () => {
-      const domainHash = regResults[1].domainHash;
-
-      const newConfig = {
-        pricerContract: zns.curvePricer.address,
-        paymentType: PaymentType.STAKE,
-        accessType: AccessType.WHITELIST,
-      };
-
-      await expect(
-        zns.subdomainRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
           domainHash,
           newConfig,
-        )
-      ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Not authorized"
-      );
+        );
+
+        const distrConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(distrConfigAfter.accessType).to.eq(newConfig.accessType);
+        expect(distrConfigAfter.pricerContract).to.eq(newConfig.pricerContract);
+        expect(distrConfigAfter.paymentType).to.eq(newConfig.paymentType);
+
+        // assign operator in registry
+        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+          operator.address,
+          true,
+        );
+
+        // reset it back
+        await zns.subdomainRegistrar.connect(operator).setDistributionConfigForDomain(
+          domainHash,
+          domainConfigs[2].fullConfig.distrConfig,
+        );
+        const origConfigAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(origConfigAfter.accessType).to.eq(domainConfigs[2].fullConfig.distrConfig.accessType);
+        expect(origConfigAfter.pricerContract).to.eq(domainConfigs[2].fullConfig.distrConfig.pricerContract);
+        expect(
+          origConfigAfter.paymentType
+        ).to.eq(
+          domainConfigs[2].fullConfig.distrConfig.paymentType
+        );
+
+        // remove operator
+        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+          operator.address,
+          false,
+        );
+      });
+
+      it("should NOT allow to set distribution config for a non-authorized account", async () => {
+        const domainHash = regResults[1].domainHash;
+
+        const newConfig = {
+          pricerContract: zns.curvePricer.address,
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.WHITELIST,
+        };
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
+            domainHash,
+            newConfig,
+          )
+        ).to.be.revertedWith(
+          "ZNSSubdomainRegistrar: Not authorized"
+        );
+      });
+
+      it("should revert if pricerContract is passed as 0x0 address", async () => {
+        const domainHash = regResults[2].domainHash;
+
+        const newConfig = {
+          pricerContract: ethers.constants.AddressZero,
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.WHITELIST,
+        };
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
+            domainHash,
+            newConfig,
+          )
+        ).to.be.revertedWith(
+          "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
+        );
+      });
     });
 
-    it("#setPricerContractForDomain() should re-set pricer contract for an existing subdomain", async () => {
-      const domainHash = regResults[1].domainHash;
+    describe("#setPricerContractForDomain()", () => {
+      it("should re-set pricer contract for an existing subdomain", async () => {
+        const domainHash = regResults[2].domainHash;
 
-      const pricerContractBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(pricerContractBefore.pricerContract).to.eq(domainConfigs[1].fullConfig.distrConfig.pricerContract);
+        const pricerContractBefore = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(pricerContractBefore.pricerContract).to.eq(domainConfigs[2].fullConfig.distrConfig.pricerContract);
 
-      await zns.subdomainRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
-        domainHash,
-        zns.curvePricer.address,
-      );
-
-      const pricerContractAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
-      expect(pricerContractAfter.pricerContract).to.eq(zns.curvePricer.address);
-
-      // reset it back
-      await zns.subdomainRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
-        domainHash,
-        domainConfigs[1].fullConfig.distrConfig.pricerContract,
-      );
-    });
-
-    it("#setPricerContractForDomain() should NOT allow setting for non-authorized account", async () => {
-      const domainHash = regResults[1].domainHash;
-
-      await expect(
-        zns.subdomainRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
           domainHash,
           zns.curvePricer.address,
-        )
-      ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: Not authorized"
-      );
+        );
+
+        const pricerContractAfter = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(pricerContractAfter.pricerContract).to.eq(zns.curvePricer.address);
+
+        // reset it back
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
+          domainHash,
+          domainConfigs[2].fullConfig.distrConfig.pricerContract,
+        );
+      });
+
+      it("should NOT allow setting for non-authorized account", async () => {
+        const domainHash = regResults[2].domainHash;
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
+            domainHash,
+            zns.curvePricer.address,
+          )
+        ).to.be.revertedWith(
+          "ZNSSubdomainRegistrar: Not authorized"
+        );
+      });
+
+      it("should NOT set pricerContract to 0x0 address", async () => {
+        const domainHash = regResults[2].domainHash;
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
+            domainHash,
+            ethers.constants.AddressZero,
+          )
+        ).to.be.revertedWith(
+          "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
+        );
+      });
     });
 
-    it("#setPricerContractForDomain() should NOT set pricerContract to 0x0 address", async () => {
-      const domainHash = regResults[1].domainHash;
+    describe("#setPaymentTypeForDomain()", () => {
+      it("should re-set payment type for an existing subdomain", async () => {
+        const domainHash = regResults[2].domainHash;
 
-      await expect(
-        zns.subdomainRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
+        const { paymentType: paymentTypeBefore } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(paymentTypeBefore).to.eq(domainConfigs[2].fullConfig.distrConfig.paymentType);
+
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentTypeForDomain(
           domainHash,
-          ethers.constants.AddressZero,
-        )
-      ).to.be.revertedWith(
-        "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
-      );
+          PaymentType.STAKE,
+        );
+
+        const { paymentType: paymentTypeAfter } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+        expect(paymentTypeAfter).to.eq(PaymentType.STAKE);
+
+        // reset it back
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentTypeForDomain(
+          domainHash,
+          domainConfigs[2].fullConfig.distrConfig.paymentType,
+        );
+      });
+
+      it("should NOT allow setting for non-authorized account", async () => {
+        const domainHash = regResults[2].domainHash;
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl2SubOwner).setPaymentTypeForDomain(
+            domainHash,
+            PaymentType.STAKE,
+          )
+        ).to.be.revertedWith(
+          "ZNSSubdomainRegistrar: Not authorized"
+        );
+      });
+
+      it("should emit #PaymentTypeSet event with correct params", async () => {
+        const domainHash = regResults[2].domainHash;
+
+        await expect(
+          zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentTypeForDomain(
+            domainHash,
+            PaymentType.STAKE,
+          )
+        ).to.emit(zns.subdomainRegistrar, "PaymentTypeSet").withArgs(
+          domainHash,
+          PaymentType.STAKE,
+        );
+
+        // reset back
+        await zns.subdomainRegistrar.connect(lvl3SubOwner).setPaymentTypeForDomain(
+          domainHash,
+          domainConfigs[2].fullConfig.distrConfig.paymentType,
+        );
+      });
     });
 
     // eslint-disable-next-line max-len
