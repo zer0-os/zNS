@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AAccessControlled } from "../../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
-import { IZNSPricer } from "./subdomains/abstractions/IZNSPricer.sol";
+import { IDomainPriceConfig } from "../types/IDomainPriceConfig.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {

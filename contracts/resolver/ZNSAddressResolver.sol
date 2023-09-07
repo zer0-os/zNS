@@ -6,7 +6,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**

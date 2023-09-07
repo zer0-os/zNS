@@ -7,7 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { PaymentConfig } from "./IZNSTreasury.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**

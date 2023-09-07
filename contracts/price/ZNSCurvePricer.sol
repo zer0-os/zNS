@@ -5,7 +5,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**

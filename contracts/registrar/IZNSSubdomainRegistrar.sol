@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDistributionConfig } from "./IDistributionConfig.sol";
-import { PaymentConfig } from "../IZNSTreasury.sol";
-import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
+import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 

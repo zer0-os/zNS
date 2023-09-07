@@ -2,14 +2,14 @@
 pragma solidity ^0.8.18;
 
 import { IZNSRegistrar, CoreRegisterArgs } from "./IZNSRegistrar.sol";
-import { IZNSTreasury } from "./IZNSTreasury.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
-import {IZNSCurvePricer} from "./IZNSCurvePricer.sol";
+import { IZNSSubdomainRegistrar } from "../registrar/IZNSSubdomainRegistrar.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
 
 
 /**
