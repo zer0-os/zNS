@@ -228,6 +228,43 @@ describe("ZNSFixedPricer", () => {
   });
 
   describe("UUPS", () => {
+    before(async () => {
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, deployer.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
+
+      await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+
+      const fullConfig = {
+        distrConfig: {
+          paymentType: PaymentType.DIRECT,
+          pricerContract: zns.fixedPricer.address,
+          accessType: 1,
+        },
+        paymentConfig: {
+          token: zns.zeroToken.address,
+          beneficiary: user.address,
+        },
+        priceConfig: {
+          price: parentPrice,
+          feePercentage: parentFeePercentage,
+        },
+      };
+
+      domainHash = await registrationWithSetup({
+        zns,
+        user,
+        domainLabel: "test",
+        fullConfig,
+        isRootDomain: true,
+      });
+    });
+
     it("Allows an authorized user to upgrade the contract", async () => {
       // FixedPricer to upgrade to
       // TODO sub proxy: should this be a regular factory or UpgradeMock ??
