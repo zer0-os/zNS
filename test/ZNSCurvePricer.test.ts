@@ -214,7 +214,6 @@ describe("ZNSCurvePricer", () => {
       expect(domainPrice).to.eq(expectedPrice);
     });
 
-    // TODO ora: decide what to do with this one. unblock if needed
     // eslint-disable-next-line max-len
     it.skip("Doesn't create price spikes with any valid combination of values (SLOW TEST, ONLY RUN LOCALLY)", async () => {
       // Start by expanding the search space to allow for domains that are up to 1000 characters

@@ -36,7 +36,6 @@ export const calcAsymptoticPrice = (
 
   const base = baseLength.mul(maxPrice).div(name.length);
 
-  // TODO ora: test that the calcs here and on contract are correct!!!
   return base.div(precisionMultiplier).mul(precisionMultiplier);
 };
 

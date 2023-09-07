@@ -15,7 +15,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
-    // TODO sub: when adding proxies test that more fields can be added to struct with upgrade !
+    // TODO proxy: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
     mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
@@ -193,8 +193,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
     function _setAccessTypeForDomain(
         bytes32 domainHash,
-        // TODO sub: test that we can not set the value larger
-        //  than possible values for the enum
         AccessType accessType
     ) internal {
         distrConfigs[domainHash].accessType = accessType;
@@ -208,7 +206,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    // TODO sub: iron this out and make this function to accept an array of addresses !!
     function setMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,

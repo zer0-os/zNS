@@ -8,7 +8,7 @@ import { IERC20__factory } from "../../../typechain";
 import { PaymentType } from "../constants";
 
 
-// TODO sub: make these messy helpers better or no one will be able to maintain this
+// TODO sub: make these helpers better
 export const registerDomainPath = async ({
   zns,
   domainConfigs,
