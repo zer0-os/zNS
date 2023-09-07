@@ -74,7 +74,6 @@ describe("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          // TODO sub data: change naming everywhere
           pricerContract: zns.curvePricer.address,
           paymentType: PaymentType.DIRECT,
         },

@@ -30,7 +30,7 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    // TODO sub data: can this be changes to an IZNSPricer.sol type ?
+    // TODO sub data: can this be changes to an IZNSPricer type ?
     IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;

@@ -585,7 +585,6 @@ describe("ZNSRegistrar", () => {
       expect(registryOwner).to.equal(deployer.address);
 
       // Verify same amount is staked
-      // TODO sub data: fix all calls to stakedForDomain() !!!
       const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
       expect(tokenAfterReclaim).to.equal(zns.zeroToken.address);
