@@ -12,10 +12,8 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 
 
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
-    // TODO sub: change name of Registrar contract
     IZNSRootRegistrar public rootRegistrar;
 
-    // TODO sub: make better name AND for the setter function !
     // TODO proxy: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 

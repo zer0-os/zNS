@@ -23,7 +23,6 @@ import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
  * but the relationship is one-sided, where other modules do not need to know about the ZNSRootRegistrar.sol,
  * they only check REGISTRAR_ROLE that can, in theory, be assigned to any other address.
  */
-// TODO sub: change name to ZNSRootRegistrar possibly !
 contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,

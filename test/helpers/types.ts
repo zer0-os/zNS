@@ -20,7 +20,11 @@ import {
   ZNSTreasuryUpgradeMock__factory,
   ZeroToken,
   ZNSSubRegistrar,
-  ZNSCurvePricer, ZNSFixedPricer,
+  ZNSCurvePricer,
+  ZNSFixedPricer,
+  ZNSFixedPricerUpgradeMock,
+  ZNSSubRegistrarUpgradeMock,
+  ZNSSubRegistrarUpgradeMock__factory, ZNSFixedPricerUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
@@ -41,7 +45,9 @@ string
 
 export type ZNSContractMockFactory =
   ZNSRootRegistrarUpgradeMock__factory |
+  ZNSSubRegistrarUpgradeMock__factory |
   ZNSCurvePricerUpgradeMock__factory |
+  ZNSFixedPricerUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
@@ -49,7 +55,9 @@ export type ZNSContractMockFactory =
 
 export type ZNSContractMock =
   ZNSRootRegistrarUpgradeMock |
+  ZNSSubRegistrarUpgradeMock |
   ZNSCurvePricerUpgradeMock |
+  ZNSFixedPricerUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
@@ -57,7 +65,9 @@ export type ZNSContractMock =
 
 export type ZNSContract =
   ZNSRootRegistrar |
+  ZNSSubRegistrar |
   ZNSCurvePricer |
+  ZNSFixedPricer |
   ZNSTreasury |
   ZNSRegistry |
   ZNSAddressResolver |

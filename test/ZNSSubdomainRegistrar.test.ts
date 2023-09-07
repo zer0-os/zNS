@@ -9,11 +9,11 @@ import {
   fullDistrConfigEmpty,
   getAccessRevertMsg,
   getPriceObject,
-  getStakingOrProtocolFee,
+  getStakingOrProtocolFee, GOVERNOR_ROLE, hashDomainLabel, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   PaymentType,
-  priceConfigDefault,
+  priceConfigDefault, validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -24,6 +24,12 @@ import assert from "assert";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import {
+  ZNSFixedPricerUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSSubRegistrarUpgradeMock__factory,
+} from "../typechain";
+import { parseEther } from "ethers/lib/utils";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -2324,6 +2330,145 @@ describe("ZNSSubRegistrar", () => {
       await expect(tx).to.emit(zns.subRegistrar, "AccessControllerSet").withArgs(random.address);
 
       expect(await zns.subRegistrar.getAccessController()).to.equal(random.address);
+    });
+  });
+
+  describe("UUPS", () => {
+    let fixedPrice : BigNumber;
+    let rootHash : string;
+
+    before(async () => {
+      [
+        deployer,
+        zeroVault,
+        governor,
+        admin,
+        rootOwner,
+        lvl2SubOwner,
+      ] = await hre.ethers.getSigners();
+      // zeroVault address is used to hold the fee charged to the user when registering
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, governor.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
+
+      // Give funds to users
+      await Promise.all(
+        [
+          rootOwner,
+          lvl2SubOwner,
+        ].map(async ({ address }) =>
+          zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+      );
+      await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      fixedPrice = ethers.utils.parseEther("397.13");
+      // register root domain
+      rootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "root",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: {
+            price: fixedPrice,
+            feePercentage: BigNumber.from(0),
+          },
+        },
+      });
+    });
+
+    it("Allows an authorized user to upgrade the contract", async () => {
+      // SubRegistrar to upgrade to
+      const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
+      const newRegistrar = await factory.deploy();
+      await newRegistrar.deployed();
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const tx = zns.subRegistrar.connect(deployer).upgradeTo(newRegistrar.address);
+      await expect(tx).to.not.be.reverted;
+
+      await expect(
+        zns.subRegistrar.connect(deployer).initialize(
+          zns.accessController.address,
+          zns.registry.address,
+          zns.rootRegistrar.address,
+        )
+      ).to.be.revertedWith(INITIALIZED_ERR);
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      // SubRegistrar to upgrade to
+      const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
+      const newRegistrar = await factory.deploy();
+      await newRegistrar.deployed();
+
+      // Confirm the account is not a governor
+      await expect(zns.accessController.checkGovernor(lvl2SubOwner.address)).to.be.reverted;
+
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeTo(newRegistrar.address);
+
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(lvl2SubOwner.address, GOVERNOR_ROLE)
+      );
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      // Confirm deployer has the correct role first
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const registrarFactory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
+      const registrar = await registrarFactory.deploy();
+      await registrar.deployed();
+
+      const domainLabel = "world";
+
+      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(lvl2SubOwner.address, parseEther("1000000"));
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        rootHash,
+        domainLabel,
+        lvl2SubOwner.address,
+        {
+          accessType: AccessType.OPEN,
+          pricerContract: zns.fixedPricer.address,
+          paymentType: PaymentType.DIRECT,
+        }
+      );
+
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: lvl2SubOwner,
+      });
+
+      await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
+
+      const contractCalls = [
+        zns.subRegistrar.getAccessController(),
+        zns.subRegistrar.registry(),
+        zns.subRegistrar.rootRegistrar(),
+        zns.registry.exists(domainHash),
+        zns.treasury.stakedForDomain(domainHash),
+        zns.domainToken.name(),
+        zns.domainToken.symbol(),
+        zns.fixedPricer.getPrice(ethers.constants.HashZero, domainLabel),
+      ];
+
+      await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);
     });
   });
 });
