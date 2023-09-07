@@ -18,7 +18,7 @@ import {
   ZNSRegistry__factory,
   ZNSSubRegistrar__factory,
   ZNSTreasury,
-  ZNSTreasury__factory,
+  ZNSTreasury__factory, ZNSFixedPricer,
 } from "../../typechain";
 import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
 import * as hre from "hardhat";
@@ -419,7 +419,17 @@ export const deployFixedPricer = async ({
   isTenderlyRun ?: boolean;
 }) => {
   const pricerFactory = new ZNSFixedPricer__factory(deployer);
-  const fixedPricer = await pricerFactory.deploy(acAddress, regAddress);
+  const fixedPricer = await upgrades.deployProxy(
+    pricerFactory,
+    [
+      acAddress,
+      regAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSFixedPricer;
+
   await fixedPricer.deployed();
 
   if (isTenderlyRun) {

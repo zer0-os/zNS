@@ -55,7 +55,7 @@ contract ZNSRootRegistrar is
         address treasury_,
         address domainToken_,
         address addressResolver_
-    ) public override initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
         setCurvePricer(curvePricer_);

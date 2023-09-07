@@ -4,16 +4,17 @@ pragma solidity ^0.8.18;
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSFixedPricer is AAccessControlled, ARegistryWired, IZNSFixedPricer {
+contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSFixedPricer {
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
     // TODO sub: test that we can set our own config at 0x0 if we need to !
-    constructor(address _accessController, address _registry) {
+    function initialize(address _accessController, address _registry) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
     }
@@ -75,5 +76,14 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, IZNSFixedPricer {
 
     function getAccessController() external view override(AAccessControlled, IZNSFixedPricer) returns (address) {
         return address(accessController);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The new implementation contract to upgrade to.
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }

@@ -15,6 +15,8 @@ interface IZNSFixedPricer is IZNSPricer {
 
     function priceConfigs(bytes32 domainHash) external view returns (uint256 price, uint256 feePercentage);
 
+    function initialize(address _accessController, address _registry) external;
+
     function setPrice(bytes32 domainHash, uint256 _price) external;
 
     function getPrice(bytes32 parentHash, string calldata label) external view returns (uint256);

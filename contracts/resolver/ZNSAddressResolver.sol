@@ -34,7 +34,7 @@ contract ZNSAddressResolver is
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param registry_ The address of the `ZNSRegistry` contract
      */
-    function initialize(address accessController_, address registry_) public override initializer {
+    function initialize(address accessController_, address registry_) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
     }

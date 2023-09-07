@@ -37,7 +37,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         address accessController_,
         address registry_,
         DomainPriceConfig calldata zeroPriceConfig_
-    ) public override initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
