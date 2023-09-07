@@ -32,7 +32,7 @@ abstract contract AAccessControlled {
     }
 
     /**
-     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
+     * @notice Revert if `msg.sender` is not the `ZNSRootRegistrar.sol` contract
      * or an address holding REGISTRAR_ROLE.
      */
     modifier onlyRegistrar {

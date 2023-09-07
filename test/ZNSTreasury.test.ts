@@ -61,7 +61,7 @@ describe("ZNSTreasury", () => {
     await zns.zeroToken.mint(user.address, ethers.utils.parseEther("50000"));
 
     // register random domain
-    await zns.registrar.connect(user).registerDomain(
+    await zns.rootRegistrar.connect(user).registerDomain(
       domainName,
       user.address,
       distrConfigEmpty

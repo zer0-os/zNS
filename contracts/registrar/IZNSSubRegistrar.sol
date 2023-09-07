@@ -7,7 +7,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-interface IZNSSubdomainRegistrar is IDistributionConfig {
+interface IZNSSubRegistrar is IDistributionConfig {
     event PricerContractSet(bytes32 indexed domainHash, address indexed priceContract);
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);

@@ -114,7 +114,7 @@ describe("Transaction Gas Costs Test", () => {
     // approve
     await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register root domain
-    const tx = await zns.registrar.connect(rootOwner).registerDomain(
+    const tx = await zns.rootRegistrar.connect(rootOwner).registerDomain(
       "root",
       rootOwner.address,
       config
@@ -156,7 +156,7 @@ describe("Transaction Gas Costs Test", () => {
     // approve
     await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register subdomain
-    const tx = await zns.subdomainRegistrar.connect(lvl2SubOwner).registerSubdomain(
+    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       rootHashDirect,
       "subdomain",
       lvl2SubOwner.address,

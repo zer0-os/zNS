@@ -51,7 +51,7 @@ contract ZNSAddressResolver is
 
     /**
      * @dev Sets the address for a domain name hash. This function can only
-     * be called by the owner, operator of the domain OR by the `ZNSRegistrar`
+     * be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
      * as a part of the Register flow.
      * Emits an `AddressSet` event.
      * @param domainHash The identifying hash of a domain's name
@@ -62,7 +62,7 @@ contract ZNSAddressResolver is
         address newAddress
     ) external override {
         // only owner or operator of the current domain can set the address
-        // also, ZNSRegistrar can set the address as part of the registration process
+        // also, ZNSRootRegistrar.sol can set the address as part of the registration process
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender) ||
             accessController.isRegistrar(msg.sender),

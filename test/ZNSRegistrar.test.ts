@@ -25,12 +25,12 @@ import { calcAsymptoticPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSRegistrar__factory, ZNSRegistrarUpgradeMock__factory } from "../typechain";
+import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-describe("ZNSRegistrar", () => {
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -72,7 +72,7 @@ describe("ZNSRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSRegistrar__factory(deployer);
+    const registrarFactory = new ZNSRootRegistrar__factory(deployer);
     const registrar = await registrarFactory.connect(user).deploy();
     await registrar.deployed();
 
@@ -89,7 +89,7 @@ describe("ZNSRegistrar", () => {
   });
 
   it("Should NOT initialize twice", async () => {
-    const tx = zns.registrar.connect(deployer).initialize(
+    const tx = zns.rootRegistrar.connect(deployer).initialize(
       zns.accessController.address,
       randomUser.address,
       randomUser.address,
@@ -107,7 +107,7 @@ describe("ZNSRegistrar", () => {
       expect(isRegistrar).to.be.false;
 
       await expect(
-        zns.registrar.connect(randomUser).coreRegister({
+        zns.rootRegistrar.connect(randomUser).coreRegister({
           parentHash: ethers.constants.HashZero,
           domainHash: ethers.constants.HashZero,
           label: "randomname",
@@ -127,7 +127,7 @@ describe("ZNSRegistrar", () => {
       expect(isRegistrar).to.be.false;
 
       await expect(
-        zns.registrar.connect(randomUser).coreRevoke(
+        zns.rootRegistrar.connect(randomUser).coreRevoke(
           ethers.constants.HashZero,
           ethers.constants.AddressZero,
         )
@@ -145,14 +145,14 @@ describe("ZNSRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
       const tokenId = BigNumber.from(domainHash);
 
-      const isOwnerOfBothUser = await zns.registrar.isOwnerOf(
+      const isOwnerOfBothUser = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         user.address,
         OwnerOf.BOTH
       );
       expect(isOwnerOfBothUser).to.be.true;
 
-      const isOwnerOfBothRandom = await zns.registrar.isOwnerOf(
+      const isOwnerOfBothRandom = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         randomUser.address,
         OwnerOf.BOTH
@@ -161,28 +161,28 @@ describe("ZNSRegistrar", () => {
 
       // transfer token
       await zns.domainToken.connect(user).transferFrom(user.address, randomUser.address, tokenId);
-      const isOwnerOfTokenUser = await zns.registrar.isOwnerOf(
+      const isOwnerOfTokenUser = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         user.address,
         OwnerOf.TOKEN
       );
       expect(isOwnerOfTokenUser).to.be.false;
 
-      const isOwnerOfTokenRandom = await zns.registrar.isOwnerOf(
+      const isOwnerOfTokenRandom = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         randomUser.address,
         OwnerOf.TOKEN
       );
       expect(isOwnerOfTokenRandom).to.be.true;
 
-      const isOwnerOfNameUser = await zns.registrar.isOwnerOf(
+      const isOwnerOfNameUser = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         user.address,
         OwnerOf.NAME
       );
       expect(isOwnerOfNameUser).to.be.true;
 
-      const isOwnerOfNameRandom = await zns.registrar.isOwnerOf(
+      const isOwnerOfNameRandom = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         randomUser.address,
         OwnerOf.NAME
@@ -190,34 +190,34 @@ describe("ZNSRegistrar", () => {
       expect(isOwnerOfNameRandom).to.be.false;
 
       await expect(
-        zns.registrar.isOwnerOf(domainHash, user.address, 3)
+        zns.rootRegistrar.isOwnerOf(domainHash, user.address, 3)
       ).to.be.reverted;
     });
 
-    it("#setSubdomainRegistrar() should revert if called by address without ADMIN_ROLE", async () => {
+    it("#setSubRegistrar() should revert if called by address without ADMIN_ROLE", async () => {
       const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
       expect(isAdmin).to.be.false;
 
       await expect(
-        zns.registrar.connect(randomUser).setSubdomainRegistrar(randomUser.address)
+        zns.rootRegistrar.connect(randomUser).setSubRegistrar(randomUser.address)
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
       );
     });
 
-    it("#setSubdomainRegistrar() should set the correct address", async () => {
-      await zns.registrar.connect(admin).setSubdomainRegistrar(randomUser.address);
+    it("#setSubRegistrar() should set the correct address", async () => {
+      await zns.rootRegistrar.connect(admin).setSubRegistrar(randomUser.address);
 
       expect(
-        await zns.registrar.subdomainRegistrar()
+        await zns.rootRegistrar.subRegistrar()
       ).to.equal(randomUser.address);
     });
 
-    it("#setSubdomainRegistrar() should NOT set the address to zero address", async () => {
+    it("#setSubRegistrar() should NOT set the address to zero address", async () => {
       await expect(
-        zns.registrar.connect(admin).setSubdomainRegistrar(ethers.constants.AddressZero)
+        zns.rootRegistrar.connect(admin).setSubRegistrar(ethers.constants.AddressZero)
       ).to.be.revertedWith(
-        "ZNSRegistrar: subdomainRegistrar_ is 0x0 address"
+        "ZNSRootRegistrar: subRegistrar_ is 0x0 address"
       );
     });
   });
@@ -232,12 +232,12 @@ describe("ZNSRegistrar", () => {
           zns,
           domainName: emptyName,
         })
-      ).to.be.revertedWith("ZNSRegistrar: Domain Name not provided");
+      ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
     });
 
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
-      const tx = await zns.registrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -245,7 +245,7 @@ describe("ZNSRegistrar", () => {
 
       const hashFromTS = hashDomainLabel(defaultDomain);
 
-      await expect(tx).to.emit(zns.registrar, "DomainRegistered").withArgs(
+      await expect(tx).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.constants.HashZero,
         hashFromTS,
         BigNumber.from(hashFromTS),
@@ -262,7 +262,7 @@ describe("ZNSRegistrar", () => {
         paymentType: PaymentType.DIRECT,
       };
 
-      const tx = await zns.registrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfig
@@ -276,7 +276,7 @@ describe("ZNSRegistrar", () => {
         pricerContract,
         accessType,
         paymentType,
-      } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      } = await zns.subRegistrar.distrConfigs(domainHash);
 
       expect(pricerContract).to.eq(distrConfig.pricerContract);
       expect(paymentType).to.eq(distrConfig.paymentType);
@@ -390,11 +390,11 @@ describe("ZNSRegistrar", () => {
         domainName: defaultDomain,
       });
 
-      await expect(failTx).to.be.revertedWith("ZNSRegistrar: Domain already exists");
+      await expect(failTx).to.be.revertedWith("ZNSRootRegistrar: Domain already exists");
     });
 
     it("Successfully registers a domain without resolver content", async () => {
-      const tx = zns.registrar.connect(user).registerDomain(
+      const tx = zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -434,12 +434,12 @@ describe("ZNSRegistrar", () => {
         user,
         zns,
         domainName: defaultDomain,
-        domainContent: zns.registrar.address,
+        domainContent: zns.rootRegistrar.address,
       });
       const domainHash = await getDomainHashFromReceipt(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
-      expect(resolvedAddress).to.eq(zns.registrar.address);
+      expect(resolvedAddress).to.eq(zns.rootRegistrar.address);
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
@@ -451,7 +451,7 @@ describe("ZNSRegistrar", () => {
       const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
 
       // register a domain
-      await zns.registrar.connect(user).registerDomain(
+      await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -493,7 +493,7 @@ describe("ZNSRegistrar", () => {
       expect(originalOwner).to.equal(deployer.address);
 
       // Reclaim the Domain
-      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Verify domain token is still owned
       const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
@@ -518,7 +518,7 @@ describe("ZNSRegistrar", () => {
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
       // Reclaim the Domain
-      const tx = await zns.registrar.connect(user).reclaimDomain(domainHash);
+      const tx = await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
       const receipt = await tx.wait(0);
 
       // Verify Transfer event is emitted
@@ -535,7 +535,7 @@ describe("ZNSRegistrar", () => {
       const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
       // Reclaim the Domain
-      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+      const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
       await expect(tx).to.be.revertedWith(NOT_TOKEN_OWNER_RAR_ERR);
@@ -548,7 +548,7 @@ describe("ZNSRegistrar", () => {
     it("Cannot reclaim if domain does not exist", async () => {
       const domainHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
       // Reclaim the Domain
-      const tx = zns.registrar.connect(user).reclaimDomain(domainHash);
+      const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
       await expect(tx).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
@@ -565,7 +565,7 @@ describe("ZNSRegistrar", () => {
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
 
       // Reclaim the Domain
-      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
       // Verify domain token is still owned
       let owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
       expect(owner).to.equal(user.address);
@@ -574,7 +574,7 @@ describe("ZNSRegistrar", () => {
       await zns.domainToken.connect(user).transferFrom(user.address, deployer.address, tokenId);
 
       // Reclaim the Domain again
-      await zns.registrar.connect(deployer).reclaimDomain(domainHash);
+      await zns.rootRegistrar.connect(deployer).reclaimDomain(domainHash);
 
       // Verify domain token is owned
       owner  = await zns.domainToken.connect(deployer).ownerOf(tokenId);
@@ -613,10 +613,10 @@ describe("ZNSRegistrar", () => {
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
 
       // Reclaim the Domain
-      await zns.registrar.connect(user).reclaimDomain(domainHash);
+      await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Revoke the Domain
-      await zns.registrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
@@ -653,7 +653,7 @@ describe("ZNSRegistrar", () => {
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
       // Revoke the domain and then verify
-      await zns.registrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
@@ -666,7 +666,7 @@ describe("ZNSRegistrar", () => {
       expect(exists).to.be.false;
 
       // validate access type has been set to LOCKED
-      const { accessType } = await zns.subdomainRegistrar.distrConfigs(domainHash);
+      const { accessType } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessType).to.eq(AccessType.LOCKED);
     });
 
@@ -677,7 +677,7 @@ describe("ZNSRegistrar", () => {
       expect(exists).to.be.false;
 
       // Verify transaction is reverted
-      const tx = zns.registrar.connect(user).revokeDomain(fakeHash);
+      const tx = zns.rootRegistrar.connect(user).revokeDomain(fakeHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -703,7 +703,7 @@ describe("ZNSRegistrar", () => {
       const balanceAfterStaking = await zns.zeroToken.balanceOf(user.address);
 
       // Revoke the domain
-      await zns.registrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
@@ -726,7 +726,7 @@ describe("ZNSRegistrar", () => {
       expect(owner).to.not.equal(user.address);
 
       // Try to revoke domain
-      const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -742,10 +742,10 @@ describe("ZNSRegistrar", () => {
       await zns.domainToken.transferFrom(deployer.address, user.address, tokenId);
 
       // Try to revoke domain as a new owner of the token
-      const tx = zns.registrar.connect(user).revokeDomain(parentDomainHash);
+      const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
 
-      const tx2 = zns.registrar.connect(deployer).revokeDomain(parentDomainHash);
+      const tx2 = zns.rootRegistrar.connect(deployer).revokeDomain(parentDomainHash);
       await expect(tx2).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -758,7 +758,7 @@ describe("ZNSRegistrar", () => {
       await zns.registry.connect(user).setOwnerOperator(operator.address, true);
 
       // Revoke the domain
-      await zns.registrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
       // check operator access to the revoked domain
       const tx2 = zns.registry
@@ -797,126 +797,126 @@ describe("ZNSRegistrar", () => {
   describe("State Setters", () => {
     describe("#setAccessController", () => {
       it("Should set AccessController and fire AccessControllerSet event", async () => {
-        const currentAC = await zns.registrar.getAccessController();
-        const tx = await zns.registrar.connect(deployer).setAccessController(randomUser.address);
-        const newAC = await zns.registrar.getAccessController();
+        const currentAC = await zns.rootRegistrar.getAccessController();
+        const tx = await zns.rootRegistrar.connect(deployer).setAccessController(randomUser.address);
+        const newAC = await zns.rootRegistrar.getAccessController();
 
-        await expect(tx).to.emit(zns.registrar, "AccessControllerSet").withArgs(randomUser.address);
+        await expect(tx).to.emit(zns.rootRegistrar, "AccessControllerSet").withArgs(randomUser.address);
 
         expect(newAC).to.equal(randomUser.address);
         expect(currentAC).to.not.equal(newAC);
       });
 
       it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.registrar.connect(user).setAccessController(randomUser.address);
+        const tx = zns.rootRegistrar.connect(user).setAccessController(randomUser.address);
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
 
       it("Should revert if new AccessController is address zero", async () => {
-        const tx = zns.registrar.connect(deployer).setAccessController(ethers.constants.AddressZero);
+        const tx = zns.rootRegistrar.connect(deployer).setAccessController(ethers.constants.AddressZero);
         await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
       });
     });
 
     describe("#setZnsRegistry", () => {
       it("Should set ZNSRegistry and fire RegistrySet event", async () => {
-        const currentRegistry = await zns.registrar.registry();
-        const tx = await zns.registrar.connect(deployer).setRegistry(randomUser.address);
-        const newRegistry = await zns.registrar.registry();
+        const currentRegistry = await zns.rootRegistrar.registry();
+        const tx = await zns.rootRegistrar.connect(deployer).setRegistry(randomUser.address);
+        const newRegistry = await zns.rootRegistrar.registry();
 
-        await expect(tx).to.emit(zns.registrar, "RegistrySet").withArgs(randomUser.address);
+        await expect(tx).to.emit(zns.rootRegistrar, "RegistrySet").withArgs(randomUser.address);
 
         expect(newRegistry).to.equal(randomUser.address);
         expect(currentRegistry).to.not.equal(newRegistry);
       });
 
       it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.registrar.connect(user).setRegistry(randomUser.address);
+        const tx = zns.rootRegistrar.connect(user).setRegistry(randomUser.address);
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
 
       it("Should revert if ZNSRegistry is address zero", async () => {
-        const tx = zns.registrar.connect(deployer).setRegistry(ethers.constants.AddressZero);
+        const tx = zns.rootRegistrar.connect(deployer).setRegistry(ethers.constants.AddressZero);
         await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
       });
     });
 
     describe("#setTreasury", () => {
       it("Should set Treasury and fire TreasurySet event", async () => {
-        const currentTreasury = await zns.registrar.treasury();
-        const tx = await zns.registrar.connect(deployer).setTreasury(randomUser.address);
-        const newTreasury = await zns.registrar.treasury();
+        const currentTreasury = await zns.rootRegistrar.treasury();
+        const tx = await zns.rootRegistrar.connect(deployer).setTreasury(randomUser.address);
+        const newTreasury = await zns.rootRegistrar.treasury();
 
-        await expect(tx).to.emit(zns.registrar, "TreasurySet").withArgs(randomUser.address);
+        await expect(tx).to.emit(zns.rootRegistrar, "TreasurySet").withArgs(randomUser.address);
 
         expect(newTreasury).to.equal(randomUser.address);
         expect(currentTreasury).to.not.equal(newTreasury);
       });
 
       it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.registrar.connect(user).setTreasury(randomUser.address);
+        const tx = zns.rootRegistrar.connect(user).setTreasury(randomUser.address);
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
 
       it("Should revert if Treasury is address zero", async () => {
-        const tx = zns.registrar.connect(deployer).setTreasury(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSRegistrar: treasury_ is 0x0 address");
+        const tx = zns.rootRegistrar.connect(deployer).setTreasury(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: treasury_ is 0x0 address");
       });
     });
 
     describe("#setDomainToken", () => {
       it("Should set DomainToken and fire DomainTokenSet event", async () => {
-        const currentToken = await zns.registrar.domainToken();
-        const tx = await zns.registrar.connect(deployer).setDomainToken(randomUser.address);
-        const newToken = await zns.registrar.domainToken();
+        const currentToken = await zns.rootRegistrar.domainToken();
+        const tx = await zns.rootRegistrar.connect(deployer).setDomainToken(randomUser.address);
+        const newToken = await zns.rootRegistrar.domainToken();
 
-        await expect(tx).to.emit(zns.registrar, "DomainTokenSet").withArgs(randomUser.address);
+        await expect(tx).to.emit(zns.rootRegistrar, "DomainTokenSet").withArgs(randomUser.address);
 
         expect(newToken).to.equal(randomUser.address);
         expect(currentToken).to.not.equal(newToken);
       });
 
       it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.registrar.connect(user).setDomainToken(randomUser.address);
+        const tx = zns.rootRegistrar.connect(user).setDomainToken(randomUser.address);
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
 
       it("Should revert if DomainToken is address zero", async () => {
-        const tx = zns.registrar.connect(deployer).setDomainToken(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSRegistrar: domainToken_ is 0x0 address");
+        const tx = zns.rootRegistrar.connect(deployer).setDomainToken(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: domainToken_ is 0x0 address");
       });
     });
 
     describe("#setAddressResolver", () => {
       it("Should set AddressResolver and fire AddressResolverSet event", async () => {
-        const currentResolver = await zns.registrar.addressResolver();
-        const tx = await zns.registrar.connect(deployer).setAddressResolver(randomUser.address);
-        const newResolver = await zns.registrar.addressResolver();
+        const currentResolver = await zns.rootRegistrar.addressResolver();
+        const tx = await zns.rootRegistrar.connect(deployer).setAddressResolver(randomUser.address);
+        const newResolver = await zns.rootRegistrar.addressResolver();
 
-        await expect(tx).to.emit(zns.registrar, "AddressResolverSet").withArgs(randomUser.address);
+        await expect(tx).to.emit(zns.rootRegistrar, "AddressResolverSet").withArgs(randomUser.address);
 
         expect(newResolver).to.equal(randomUser.address);
         expect(currentResolver).to.not.equal(newResolver);
       });
 
       it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.registrar.connect(user).setAddressResolver(randomUser.address);
+        const tx = zns.rootRegistrar.connect(user).setAddressResolver(randomUser.address);
         await expect(tx).to.be.revertedWith(
           getAccessRevertMsg(user.address, ADMIN_ROLE)
         );
       });
 
       it("Should revert if AddressResolver is address zero", async () => {
-        const tx = zns.registrar.connect(deployer).setAddressResolver(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSRegistrar: addressResolver_ is 0x0 address");
+        const tx = zns.rootRegistrar.connect(deployer).setAddressResolver(ethers.constants.AddressZero);
+        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: addressResolver_ is 0x0 address");
       });
     });
   });
@@ -926,20 +926,20 @@ describe("ZNSRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 
-      const upgradeTx = zns.registrar.connect(deployer).upgradeTo(registrar.address);
+      const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeTo(registrar.address);
       await expect(upgradeTx).to.not.be.reverted;
     });
 
     it("Fails to upgrade when an unauthorized users calls", async () => {
-      const registrarFactory = new ZNSRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 
-      const tx = zns.registrar.connect(randomUser).upgradeTo(registrar.address);
+      const tx = zns.rootRegistrar.connect(randomUser).upgradeTo(registrar.address);
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE)
@@ -950,7 +950,7 @@ describe("ZNSRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSRegistrarUpgradeMock__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrarUpgradeMock__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.deployed();
 
@@ -960,20 +960,20 @@ describe("ZNSRegistrar", () => {
       await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(randomUser.address, priceConfigDefault.maxPrice);
 
-      await zns.registrar.connect(randomUser).registerDomain(
+      await zns.rootRegistrar.connect(randomUser).registerDomain(
         domainName,
         randomUser.address,
         distrConfigEmpty
       );
 
-      await zns.registrar.setAddressResolver(randomUser.address);
+      await zns.rootRegistrar.setAddressResolver(randomUser.address);
 
       const contractCalls = [
-        zns.registrar.getAccessController(),
-        zns.registrar.registry(),
-        zns.registrar.treasury(),
-        zns.registrar.domainToken(),
-        zns.registrar.addressResolver(),
+        zns.rootRegistrar.getAccessController(),
+        zns.rootRegistrar.registry(),
+        zns.rootRegistrar.treasury(),
+        zns.rootRegistrar.domainToken(),
+        zns.rootRegistrar.addressResolver(),
         zns.registry.exists(domainHash),
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
@@ -981,7 +981,7 @@ describe("ZNSRegistrar", () => {
         zns.curvePricer.getPrice(ethers.constants.HashZero, domainName),
       ];
 
-      await validateUpgrade(deployer, zns.registrar, registrar, registrarFactory, contractCalls);
+      await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);
     });
   });
 

@@ -13,7 +13,7 @@ import { ZNSRoles } from "./ZNSRoles.sol";
  * - GOVERNOR: The highest rank, assigns Admins, new roles and Role Admins
  * - ADMIN: The main maintainer role, that gets access to all system functions (managed by Governor)
  * - EXECUTOR: Can be here to future proof, if we need a new role (managed by Governor)
- * - REGISTRAR: This role is here specifically for the ZNSRegistrar contract (managed by Admin)
+ * - REGISTRAR: This role is here specifically for the ZNSRootRegistrar.sol contract (managed by Admin)
  *
  * > This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
  * and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.

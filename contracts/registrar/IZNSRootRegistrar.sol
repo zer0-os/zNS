@@ -19,7 +19,7 @@ struct CoreRegisterArgs {
     bool isStakePayment;
 }
 
-interface IZNSRegistrar is IDistributionConfig {
+interface IZNSRootRegistrar is IDistributionConfig {
 
     enum OwnerOf {
         NAME,
@@ -37,7 +37,7 @@ interface IZNSRegistrar is IDistributionConfig {
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
-     * @param registrant The address that called `ZNSRegistrar.registerDomain()`
+     * @param registrant The address that called `ZNSRootRegistrar.sol.registerDomain()`
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
@@ -52,7 +52,7 @@ interface IZNSRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a domain is revoked.
      * @param domainHash The hash of the domain revoked
-     * @param owner The address that called `ZNSRegistrar.revokeDomain()` and domain owner
+     * @param owner The address that called `ZNSRootRegistrar.sol.revokeDomain()` and domain owner
      * @param stakeRefunded A flag for whether the stake was refunded or not
      */
     event DomainRevoked(
@@ -64,7 +64,7 @@ interface IZNSRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
      * @param domainHash The hash of the domain reclaimed
-     * @param registrant The address that called `ZNSRegistrar.reclaimDomain()`
+     * @param registrant The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
      */
     event DomainReclaimed(
         bytes32 indexed domainHash,
@@ -90,10 +90,10 @@ interface IZNSRegistrar is IDistributionConfig {
     event DomainTokenSet(address domainToken);
 
     /**
-     * @notice Emitted when the `subdomainRegistrar` address is set in state.
-     * @param subdomainRegistrar The new address of the SubdomainRegistrar contract
+     * @notice Emitted when the `subRegistrar` address is set in state.
+     * @param subRegistrar The new address of the SubRegistrar contract
      */
-    event SubdomainRegistrarSet(address subdomainRegistrar);
+    event SubRegistrarSet(address subRegistrar);
 
     /**
      * @notice Emitted when the `addressResolver` address is set in state.
@@ -136,7 +136,7 @@ interface IZNSRegistrar is IDistributionConfig {
 
     function setDomainToken(address domainToken_) external;
 
-    function setSubdomainRegistrar(address subdomainRegistrar_) external;
+    function setSubRegistrar(address subRegistrar_) external;
 
     function setAddressResolver(address addressResolver_) external;
 

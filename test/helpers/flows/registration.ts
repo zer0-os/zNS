@@ -149,7 +149,7 @@ export const validatePathRegistration = async ({
       expParentBalDiff = BigNumber.from(0);
       expTreasuryBalDiff = expectedPrice;
     } else {
-      const config = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
+      const config = await zns.subRegistrar.distrConfigs(parentHashFound);
       const {
         pricerContract,
       } = config;

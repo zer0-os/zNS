@@ -11,7 +11,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  * @title A contract for tokenizing domains under ZNS. Every domain in ZNS has a corresponding token
  * minted at Register time. This token is also an NFT that is fully ERC-721 compliant.
  * @dev Note that all ZNS related functions on this contract can ONLY be called by either
- * the `ZNSRegistrar` contract or any address holding a REGISTRAR_ROLE.
+ * the `ZNSRootRegistrar.sol` contract or any address holding a REGISTRAR_ROLE.
  */
 contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
     /**
@@ -32,7 +32,7 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
-     * Used ONLY as a part of the Register flow that starts from ``ZNSRegistrar.registerDomain()``!
+     * Used ONLY as a part of the Register flow that starts from ``ZNSRootRegistrar.sol.registerDomain()``!
      * > TokenId is created as a hash of the domain name casted to uint256.
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.
@@ -43,7 +43,7 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
 
     /**
      * @notice Burns the token with the specified tokenId.
-     * Used ONLY as a part of the Revoke flow that starts from ``ZNSRegistrar.revokeDomain()``!
+     * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`!
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
     function revoke(uint256 tokenId) external override onlyRegistrar {

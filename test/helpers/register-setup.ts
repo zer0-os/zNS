@@ -21,7 +21,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
-  const tx = await zns.registrar.connect(user).registerDomain(
+  const tx = await zns.rootRegistrar.connect(user).registerDomain(
     domainName,
     domainContent, // Arbitrary address value
     distrConfig
@@ -41,7 +41,7 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricerContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
   if (pricerContract === zns.curvePricer.address) {
@@ -77,7 +77,7 @@ export const defaultSubdomainRegistration = async ({
   domainContent ?: string;
   distrConfig : IDistributionConfig;
 }) => {
-  const tx = await zns.subdomainRegistrar.connect(user).registerSubdomain(
+  const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
     domainContent, // Arbitrary address value

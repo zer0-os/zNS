@@ -12,7 +12,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 /**
  * @title Contract responsible for all staking operations in ZNS and communication with `ZNSCurvePricer`.
- * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
+ * @notice This contract it called by `ZNSRootRegistrar.sol` every time a staking operation is needed.
  * It stores all data regarding user stakes for domains, and it's also the only contract
  * that is aware of the `ZNSCurvePricer` which it uses to get pricing data for domains.
  */
@@ -68,7 +68,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Deposits the stake for a domain. This function is called by `ZNSRegistrar`
+     * @notice Deposits the stake for a domain. This function is called by `ZNSRootRegistrar.sol`
      * when a user wants to Register a domain. It transfers the stake amount and the registration fee
      * to the contract from the user, and records the staked amount for the domain.
      * Note that a user has to approve the correct amount of `domainPrice + registrationFee`
@@ -131,7 +131,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Withdraws the stake for a domain. This function is called by `ZNSRegistrar`
+     * @notice Withdraws the stake for a domain. This function is called by `ZNSRootRegistrar.sol`
      * when a user wants to Revoke a domain. It transfers the stake amount from the contract back to the user,
      * and deletes the staked amount for the domain in state.
      * Emits a `StakeWithdrawn` event.

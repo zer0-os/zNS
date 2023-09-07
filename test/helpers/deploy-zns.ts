@@ -12,11 +12,11 @@ import {
   ZNSDomainToken__factory,
   ZNSFixedPricer__factory,
   ZNSCurvePricer__factory,
-  ZNSRegistrar,
-  ZNSRegistrar__factory,
+  ZNSRootRegistrar,
+  ZNSRootRegistrar__factory,
   ZNSRegistry,
   ZNSRegistry__factory,
-  ZNSSubdomainRegistrar__factory,
+  ZNSSubRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
 } from "../../typechain";
@@ -34,7 +34,7 @@ import {
   curvePricerName,
   registrarName,
   registryName,
-  subdomainRegistrarName,
+  subRegistrarName,
   transparentProxyName,
   treasuryName,
   zeroTokenMockName,
@@ -338,13 +338,13 @@ export const deployTreasury = async ({
   return treasury;
 };
 
-export const deployRegistrar = async (
+export const deployRootRegistrar = async (
   deployer : SignerWithAddress,
   accessController : ZNSAccessController,
   config : RegistrarConfig,
   isTenderlyRun : boolean
-) : Promise<ZNSRegistrar> => {
-  const registrarFactory = new ZNSRegistrar__factory(deployer);
+) : Promise<ZNSRootRegistrar> => {
+  const registrarFactory = new ZNSRootRegistrar__factory(deployer);
 
   const registrar = await upgrades.deployProxy(
     registrarFactory,
@@ -359,7 +359,7 @@ export const deployRegistrar = async (
     {
       kind: "uups",
     }
-  ) as ZNSRegistrar;
+  ) as ZNSRootRegistrar;
 
   await registrar.deployed();
 
@@ -378,7 +378,7 @@ export const deployRegistrar = async (
       address: impl,
     });
 
-    console.log(`ZNSRegistrar deployed at:
+    console.log(`ZNSRootRegistrar deployed at:
                 proxy: ${registrar.address}
                 implementation: ${impl}`);
   }
@@ -443,7 +443,7 @@ export const deployFixedPricer = async ({
   return fixedPricer;
 };
 
-export const deploySubdomainRegistrar = async ({
+export const deploySubRegistrar = async ({
   deployer,
   accessController,
   registry,
@@ -454,11 +454,11 @@ export const deploySubdomainRegistrar = async ({
   deployer : SignerWithAddress;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
-  registrar : ZNSRegistrar;
+  registrar : ZNSRootRegistrar;
   admin : SignerWithAddress;
   isTenderlyRun ?: boolean;
 }) => {
-  const subRegistrarFactory = new ZNSSubdomainRegistrar__factory(deployer);
+  const subRegistrarFactory = new ZNSSubRegistrar__factory(deployer);
   const subRegistrar = await subRegistrarFactory.deploy(
     accessController.address,
     registry.address,
@@ -466,26 +466,26 @@ export const deploySubdomainRegistrar = async ({
   );
   await subRegistrar.deployed();
 
-  // set SubdomainRegistrar on MainRegistrar
-  await registrar.setSubdomainRegistrar(subRegistrar.address);
+  // set SubRegistrar on MainRegistrar
+  await registrar.setSubRegistrar(subRegistrar.address);
 
   // give SubRegistrar REGISTRAR_ROLE
   await accessController.connect(admin).grantRole(REGISTRAR_ROLE, subRegistrar.address);
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: subdomainRegistrarName,
+      name: subRegistrarName,
       address: subRegistrar.address,
     });
 
     const impl = await getProxyImplAddress(subRegistrar.address);
 
     await hre.tenderly.verify({
-      name: subdomainRegistrarName,
+      name: subRegistrarName,
       address: impl,
     });
 
-    console.log(`${subdomainRegistrarName} deployed at:
+    console.log(`${subRegistrarName} deployed at:
                 proxy: ${subRegistrar.address}
                 implementation: ${impl}`);
   }
@@ -570,7 +570,7 @@ export const deployZNS = async ({
     addressResolverAddress: addressResolver.address,
   };
 
-  const registrar = await deployRegistrar(
+  const rootRegistrar = await deployRootRegistrar(
     deployer,
     accessController,
     config,
@@ -586,11 +586,11 @@ export const deployZNS = async ({
 
   const fixedPricer = await deployFixedPricer(subModuleDeployArgs);
 
-  const subdomainRegistrar = await deploySubdomainRegistrar({
+  const subRegistrar = await deploySubRegistrar({
     deployer,
     accessController,
     registry,
-    registrar,
+    registrar: rootRegistrar,
     admin: deployer,
   });
 
@@ -602,9 +602,9 @@ export const deployZNS = async ({
     addressResolver,
     curvePricer,
     treasury,
-    registrar,
+    rootRegistrar,
     fixedPricer,
-    subdomainRegistrar,
+    subRegistrar,
     zeroVaultAddress,
   };
 

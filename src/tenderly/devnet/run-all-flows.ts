@@ -92,10 +92,10 @@ export const runAllFlows = async () => {
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
 
   // Reclaim Domain
-  await zns.registrar.connect(user).reclaimDomain(domainHash);
+  await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
   // Revoke Domain
-  await zns.registrar.connect(user).revokeDomain(domainHash);
+  await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 };
 
 
