@@ -37,6 +37,12 @@ interface IZNSSubRegistrar is IDistributionConfig {
         address candidate
     ) external view returns (bool);
 
+    function initialize(
+        address _accessController,
+        address _registry,
+        address _rootRegistrar
+    ) external;
+
     function registerSubdomain(
         bytes32 parentHash,
         string calldata label,

@@ -18,7 +18,7 @@ import {
   ZNSRegistry__factory,
   ZNSSubRegistrar__factory,
   ZNSTreasury,
-  ZNSTreasury__factory, ZNSFixedPricer,
+  ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
 } from "../../typechain";
 import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
 import * as hre from "hardhat";
@@ -434,7 +434,7 @@ export const deployFixedPricer = async ({
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: fixedPricerName,
+      name: erc1967ProxyName,
       address: fixedPricer.address,
     });
 
@@ -469,14 +469,21 @@ export const deploySubRegistrar = async ({
   isTenderlyRun ?: boolean;
 }) => {
   const subRegistrarFactory = new ZNSSubRegistrar__factory(deployer);
-  const subRegistrar = await subRegistrarFactory.deploy(
-    accessController.address,
-    registry.address,
-    registrar.address,
-  );
+  const subRegistrar = await upgrades.deployProxy(
+    subRegistrarFactory,
+    [
+      accessController.address,
+      registry.address,
+      registrar.address,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as ZNSSubRegistrar;
+
   await subRegistrar.deployed();
 
-  // set SubRegistrar on MainRegistrar
+  // set SubRegistrar on RootRegistrar
   await registrar.setSubRegistrar(subRegistrar.address);
 
   // give SubRegistrar REGISTRAR_ROLE
@@ -484,7 +491,7 @@ export const deploySubRegistrar = async ({
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: subRegistrarName,
+      name: erc1967ProxyName,
       address: subRegistrar.address,
     });
 

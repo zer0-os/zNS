@@ -8,9 +8,10 @@ import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, IZNSSubRegistrar {
+contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
     // TODO sub: change name of Registrar contract
     IZNSRootRegistrar public rootRegistrar;
 
@@ -29,12 +30,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, IZNSSubRegistrar 
         _;
     }
 
-    // TODO sub: proxy ??
-    constructor(
+    function initialize(
         address _accessController,
         address _registry,
         address _rootRegistrar
-    ) {
+    ) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
@@ -244,5 +244,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, IZNSSubRegistrar 
     override(AAccessControlled, IZNSSubRegistrar)
     onlyAdmin {
         _setAccessController(accessController_);
+    }
+
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }
