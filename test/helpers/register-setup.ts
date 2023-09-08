@@ -107,7 +107,7 @@ export const registrationWithSetup = async ({
     : distrConfigEmpty;
 
   // register domain
-  if (!parentHash) {
+  if (!parentHash || parentHash === ethers.constants.HashZero) {
     await defaultRootRegistration({
       user,
       zns,
