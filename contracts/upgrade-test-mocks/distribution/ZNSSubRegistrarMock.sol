@@ -232,17 +232,6 @@ contract ZNSSubRegistrarUpgradeMock is
         rootRegistrar = IZNSRootRegistrar(registrar_);
     }
 
-    function getAccessController() external view override returns (address) {
-        return address(accessController);
-    }
-
-    function setAccessController(address accessController_)
-    external
-    override
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to

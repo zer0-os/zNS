@@ -233,31 +233,18 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         emit PaymentTokenSet(domainHash, paymentToken);
     }
 
-    /**
-     * @notice Setter function for the `accessController` state variable.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param accessController_ The address of the new `ZNSAccessController` contract.
-     */
-    function setAccessController(address accessController_)
-    public
-    override(AAccessControlled, IZNSTreasury)
-    onlyAdmin
-    {
-        _setAccessController(accessController_);
-    }
-
     function setRegistry(
         address registry_
     ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
         _setRegistry(registry_);
     }
 
-    /**
-     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
-        return address(accessController);
-    }
+//    /**
+//     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
+//     */
+//    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
+//        return address(accessController);
+//    }
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized

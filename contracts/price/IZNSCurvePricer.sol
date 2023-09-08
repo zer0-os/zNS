@@ -105,8 +105,4 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
 
     function setRegistry(address registry_) external;
-
-    function setAccessController(address accessController) external;
-
-    function getAccessController() external view returns (address);
 }

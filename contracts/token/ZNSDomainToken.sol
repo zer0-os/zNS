@@ -51,26 +51,6 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
     }
 
     /**
-     * @dev Sets the address of the `ZNSAccessController` contract.
-     * Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
-     * @param accessController_ The address of the `ZNSAccessController` contract
-     */
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSDomainToken)
-    onlyAdmin
-    {
-        _setAccessController(accessController_);
-    }
-
-    /**
-     * @dev Returns the address of the `ZNSAccessController` contract saved in state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSDomainToken) returns (address) {
-        return address(accessController);
-    }
-
-    /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */

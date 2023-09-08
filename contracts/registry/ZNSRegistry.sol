@@ -219,23 +219,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Sets the `accessController` contract
-     * @param accessController The new access controller
-     */
-    function setAccessController(
-        address accessController
-    ) external override(AAccessControlled, IZNSRegistry) onlyAdmin {
-        _setAccessController(accessController);
-    }
-
-    /**
-     * @notice Gets the `accessController` from state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSRegistry) returns (address) {
-        return address(accessController);
-    }
-
-    /**
      * @notice Check if a domain exists. True if the owner is not `0x0`
      * @param domainHash the hash of a domain's name
      */

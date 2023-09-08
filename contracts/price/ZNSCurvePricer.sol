@@ -237,26 +237,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Sets the access controller for the contract.
-     * Only ADMIN can call this function.
-     * Fires `AccessControllerSet` event.
-     * @param accessController_ The address of the new access controller
-     */
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSCurvePricer)
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
-    /**
-     * @notice Getter for ZNSAccessController address stored on this contract.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSCurvePricer) returns (address) {
-        return address(accessController);
-    }
-
-    /**
      * @notice Internal function to calculate price based on the config set,
      * and the length of the domain label.
      * @dev Before we calculate the price, 3 different cases are possible:

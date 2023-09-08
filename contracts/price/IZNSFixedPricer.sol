@@ -42,8 +42,4 @@ interface IZNSFixedPricer is IZNSPricer {
     ) external;
 
     function setRegistry(address registry_) external;
-
-    function setAccessController(address accessController_) external;
-
-    function getAccessController() external view returns (address);
 }

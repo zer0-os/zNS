@@ -69,17 +69,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         _setRegistry(registry_);
     }
 
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSFixedPricer)
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
-    function getAccessController() external view override(AAccessControlled, IZNSFixedPricer) returns (address) {
-        return address(accessController);
-    }
-
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.

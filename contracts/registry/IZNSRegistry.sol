@@ -158,15 +158,4 @@ interface IZNSRegistry {
      * @param domainHash The hash of the domain name
      */
     function deleteRecord(bytes32 domainHash) external;
-
-    /**
-     * @notice Set the access controller contract
-     * @param accessController The new access controller
-     */
-    function setAccessController(address accessController) external;
-
-    /**
-     * @notice Get the access controller contract
-     */
-    function getAccessController() external view returns(address);
 }

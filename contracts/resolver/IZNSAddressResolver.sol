@@ -37,10 +37,6 @@ interface IZNSAddressResolver {
 
     function setRegistry(address _registry) external;
 
-    function setAccessController(address accessController) external;
-
-    function getAccessController() external view returns (address);
-
     /**
      * @notice Initialize an instance of the ZNSAddressResolver
      * @param _accessController The access controller

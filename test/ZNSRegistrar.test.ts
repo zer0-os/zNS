@@ -820,7 +820,7 @@ describe("ZNSRootRegistrar", () => {
       });
     });
 
-    describe("#setZnsRegistry", () => {
+    describe("#setRegistry", () => {
       it("Should set ZNSRegistry and fire RegistrySet event", async () => {
         const currentRegistry = await zns.rootRegistrar.registry();
         const tx = await zns.rootRegistrar.connect(deployer).setRegistry(randomUser.address);

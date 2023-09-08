@@ -347,25 +347,6 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice Setter function for the `ZNSAccessController` address in state.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param accessController_ Address of the `ZNSAccessController` contract
-     */
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSRootRegistrar)
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
-    /**
-     * @notice Getter function for the `ZNSAccessController` address in state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSRootRegistrar) returns (address) {
-        return address(accessController);
-    }
-
-    /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */

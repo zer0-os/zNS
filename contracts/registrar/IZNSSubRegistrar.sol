@@ -86,8 +86,4 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
-
-    function getAccessController() external view returns (address);
-
-    function setAccessController(address accessController_) external;
 }

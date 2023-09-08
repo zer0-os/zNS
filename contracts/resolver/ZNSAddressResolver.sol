@@ -105,24 +105,6 @@ contract ZNSAddressResolver is
     }
 
     /**
-     * @dev Sets the address of the `ZNSAccessController` contract.
-     * Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
-     * @param accessController The address of the `ZNSAccessController` contract
-     */
-    function setAccessController(
-        address accessController
-    ) external override(AAccessControlled, IZNSAddressResolver) onlyAdmin {
-        _setAccessController(accessController);
-    }
-
-    /**
-     * @dev Returns the address of the `ZNSAccessController` contract saved in state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSAddressResolver) returns (address) {
-        return address(accessController);
-    }
-
-    /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
