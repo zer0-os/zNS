@@ -21,7 +21,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
-    mapping(bytes32 => DomainPriceConfig) public priceConfigs;
+    mapping(bytes32 domainHash => DomainPriceConfig config) public priceConfigs;
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.

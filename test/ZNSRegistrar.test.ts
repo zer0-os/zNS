@@ -18,7 +18,7 @@ import {
 import { ZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
-import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { priceConfigDefault } from "./helpers/constants";
 import { calcAsymptoticPrice, getPriceObject } from "./helpers/pricing";

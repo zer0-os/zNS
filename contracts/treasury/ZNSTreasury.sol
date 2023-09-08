@@ -19,7 +19,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
-    mapping(bytes32 => PaymentConfig) public override paymentConfigs;
+    mapping(bytes32 domainHash => PaymentConfig config) public override paymentConfigs;
 
     /**
      * @notice The main mapping of the contract. It stores the amount staked for each domain

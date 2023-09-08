@@ -20,12 +20,13 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     // TODO sub: should we add onlyProxy modifiers for every function ??
-    function setPrice(bytes32 domainHash, uint256 _price) public onlyOwnerOrOperator(domainHash) {
+    function setPrice(bytes32 domainHash, uint256 _price) public override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].price = _price;
 
         emit PriceSet(domainHash, _price);
     }
 
+    // solhint-disable-next-line no-unused-vars
     function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
         return priceConfigs[parentHash].price;
     }
@@ -33,7 +34,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setFeePercentage(
         bytes32 domainHash,
         uint256 feePercentage
-    ) public onlyOwnerOrOperator(domainHash) {
+    ) public override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
@@ -58,7 +59,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setPriceConfig(
         bytes32 domainHash,
         PriceConfig calldata priceConfig
-    ) external {
+    ) external override {
         setPrice(domainHash, priceConfig.price);
         setFeePercentage(domainHash, priceConfig.feePercentage);
     }

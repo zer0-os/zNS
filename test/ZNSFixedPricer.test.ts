@@ -70,7 +70,6 @@ describe("ZNSFixedPricer", () => {
       user,
       domainLabel: "test",
       fullConfig,
-      isRootDomain: true,
     });
   });
 
@@ -261,7 +260,6 @@ describe("ZNSFixedPricer", () => {
         user,
         domainLabel: "test",
         fullConfig,
-        isRootDomain: true,
       });
     });
 

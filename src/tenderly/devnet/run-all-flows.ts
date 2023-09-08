@@ -54,7 +54,6 @@ export const runAllFlows = async () => {
     user: governor,
     domainLabel: domainName,
     fullConfig: fullRootConfig,
-    isRootDomain: true,
   });
 
   const subdomainLabel = "subdomain";
@@ -80,7 +79,6 @@ export const runAllFlows = async () => {
     parentHash: rootHash,
     domainLabel: subdomainLabel,
     fullConfig: fullSubConfig,
-    isRootDomain: false,
   });
 
   // TODO sub:
