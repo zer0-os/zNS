@@ -2310,7 +2310,7 @@ describe("ZNSSubRegistrar", () => {
     let fixedPrice : BigNumber;
     let rootHash : string;
 
-    before(async () => {
+    beforeEach(async () => {
       [
         deployer,
         zeroVault,
