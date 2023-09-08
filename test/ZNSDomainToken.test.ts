@@ -43,7 +43,7 @@ describe("ZNSDomainToken:", () => {
   });
 
   it("should initialize correctly", async () => {
-    expect(await zns.domainToken.getAccessController()).to.equal(deployer.address);
+    expect(await zns.domainToken.getAccessController()).to.equal(zns.accessController.address);
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
   });
