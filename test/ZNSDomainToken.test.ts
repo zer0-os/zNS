@@ -15,7 +15,7 @@ import {
   deployZNS,
   validateUpgrade,
   ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL,
+  ZNS_DOMAIN_TOKEN_SYMBOL, domainTokenName, INITIALIZED_ERR,
 } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
 
@@ -40,6 +40,20 @@ describe("ZNSDomainToken:", () => {
     );
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
+  });
+
+  it("should initialize correctly", async () => {
+    expect(await zns.domainToken.getAccessController()).to.equal(deployer.address);
+    expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
+    expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
+  });
+
+  it("should NOT initialize twice", async () => {
+    await expect(zns.domainToken.initialize(
+      deployer.address,
+      ZNS_DOMAIN_TOKEN_NAME,
+      ZNS_DOMAIN_TOKEN_SYMBOL
+    )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   describe("External functions", () => {
