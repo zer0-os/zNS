@@ -15,7 +15,7 @@ export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(
 export enum AccessType {
   LOCKED,
   OPEN,
-  WHITELIST,
+  MINTLIST,
 }
 
 // eslint-disable-next-line no-shadow

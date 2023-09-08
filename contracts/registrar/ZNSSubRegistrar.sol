@@ -2,12 +2,10 @@
 pragma solidity ^0.8.18;
 
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 

@@ -267,7 +267,6 @@ describe("ZNSFixedPricer", () => {
 
     it("Allows an authorized user to upgrade the contract", async () => {
       // FixedPricer to upgrade to
-      // TODO sub proxy: should this be a regular factory or UpgradeMock ??
       const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
       const newFixedPricer = await factory.deploy();
       await newFixedPricer.deployed();
