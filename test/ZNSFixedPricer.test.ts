@@ -78,6 +78,43 @@ describe("ZNSFixedPricer", () => {
     expect(await zns.fixedPricer.registry()).to.equal(zns.registry.address);
   });
 
+  it("should NOT initialize twice", async () => {
+    await expect(zns.fixedPricer.initialize(
+      zns.accessController.address,
+      zns.registry.address,
+    )).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
+  it("should set config for 0x0 hash", async () => {
+    const {
+      price,
+      feePercentage,
+    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+
+    expect(price).to.equal(0);
+    expect(feePercentage).to.equal(0);
+
+    const newPrice = ethers.utils.parseEther("9182263");
+    const newFee = BigNumber.from(2359);
+
+    // deployer owns 0x0 hash at initialization time
+    await zns.fixedPricer.connect(deployer).setPriceConfig(
+      ethers.constants.HashZero,
+      {
+        price: newPrice,
+        feePercentage: newFee,
+      }
+    );
+
+    const {
+      price: newPriceAfter,
+      feePercentage: newFeeAfter,
+    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+
+    expect(newPriceAfter).to.equal(newPrice);
+    expect(newFeeAfter).to.equal(newFee);
+  });
+
   it("should not allow to be deployed by anyone other than ADMIN_ROLE", async () => {
     await expect(
       deployFixedPricer({
