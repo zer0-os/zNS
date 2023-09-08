@@ -114,7 +114,7 @@ describe("Transaction Gas Costs Test", () => {
     // approve
     await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register root domain
-    const tx = await zns.rootRegistrar.connect(rootOwner).registerDomain(
+    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
       rootOwner.address,
       config

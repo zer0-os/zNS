@@ -32,7 +32,7 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
-     * Used ONLY as a part of the Register flow that starts from ``ZNSRootRegistrar.sol.registerDomain()``!
+     * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`!
      * > TokenId is created as a hash of the domain name casted to uint256.
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.

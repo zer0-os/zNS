@@ -29,7 +29,10 @@ contract ZNSRootRegistrar is
     ARegistryWired,
     IZNSRootRegistrar {
 
-    // TODO sub data: can this be changes to an IZNSPricer type ?
+    // TODO sub data: can (and should) we make a new primitive
+    //  interface that inherits IZNSPricer and adds getProtocolFee()
+    //  so that we don't have to upgrade this contract every time we
+    //  want to switch a pricing contract for Zero?
     IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -74,7 +77,7 @@ contract ZNSRootRegistrar is
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      */
-    function registerDomain(
+    function registerRootDomain(
         // TODO sub: change "name" to "label" everywhere in this and other contracts ??
         string calldata name,
         address domainAddress,

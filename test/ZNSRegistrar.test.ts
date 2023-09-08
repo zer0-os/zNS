@@ -237,7 +237,7 @@ describe("ZNSRootRegistrar", () => {
 
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
-      const tx = await zns.rootRegistrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -262,7 +262,7 @@ describe("ZNSRootRegistrar", () => {
         paymentType: PaymentType.DIRECT,
       };
 
-      const tx = await zns.rootRegistrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfig
@@ -394,7 +394,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Successfully registers a domain without resolver content", async () => {
-      const tx = zns.rootRegistrar.connect(user).registerDomain(
+      const tx = zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -451,7 +451,7 @@ describe("ZNSRootRegistrar", () => {
       const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
 
       // register a domain
-      await zns.rootRegistrar.connect(user).registerDomain(
+      await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         distrConfigEmpty
@@ -960,7 +960,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(randomUser.address, priceConfigDefault.maxPrice);
 
-      await zns.rootRegistrar.connect(randomUser).registerDomain(
+      await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,
         randomUser.address,
         distrConfigEmpty

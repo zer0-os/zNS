@@ -20,7 +20,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
-  const tx = await zns.rootRegistrar.connect(user).registerDomain(
+  const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
     distrConfig
