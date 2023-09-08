@@ -9,7 +9,7 @@ import {
   fullDistrConfigEmpty,
   getAccessRevertMsg,
   getPriceObject,
-  getStakingOrProtocolFee, GOVERNOR_ROLE, hashDomainLabel, INITIALIZED_ERR,
+  getStakingOrProtocolFee, GOVERNOR_ROLE, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   PaymentType,
@@ -25,8 +25,6 @@ import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import {
-  ZNSFixedPricerUpgradeMock__factory,
-  ZNSRootRegistrarUpgradeMock__factory,
   ZNSSubRegistrarUpgradeMock__factory,
 } from "../typechain";
 import { parseEther } from "ethers/lib/utils";
@@ -472,7 +470,6 @@ describe("ZNSSubRegistrar", () => {
           user: lvl2SubOwner,
           parentHash,
           domainLabel: domainConfigs[1].domainLabel,
-          isRootDomain: false,
           fullConfig: domainConfigs[1].fullConfig,
         });
 
@@ -641,7 +638,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "fixedstake",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.fixedPricer.address,
@@ -668,7 +664,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
         fullConfig: fullDistrConfigEmpty,
       });
 
@@ -713,7 +708,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "fixedstakenofee",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.fixedPricer.address,
@@ -740,7 +734,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -784,7 +777,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "fixeddirectnofee",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             paymentType: PaymentType.DIRECT,
@@ -811,7 +803,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
         fullConfig: fullDistrConfigEmpty,
       });
 
@@ -856,7 +847,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "asympstake",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             paymentType: PaymentType.STAKE,
@@ -883,7 +873,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
         fullConfig: fullDistrConfigEmpty,
       });
 
@@ -928,7 +917,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "asstakenofee",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.curvePricer.address,
@@ -955,7 +943,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
@@ -999,7 +986,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "curvedirectnofee",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.curvePricer.address,
@@ -1026,7 +1012,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -1070,7 +1055,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "zeroprice",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.fixedPricer.address,
@@ -1096,7 +1080,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -1155,7 +1138,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "zeropricead",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.curvePricer.address,
@@ -1181,7 +1163,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -1240,7 +1221,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "zeropriceas",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.curvePricer.address,
@@ -1266,7 +1246,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -1326,7 +1305,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: rootHash,
         domainLabel: "zeropricefs",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.fixedPricer.address,
@@ -1352,7 +1330,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        isRootDomain: false,
       });
 
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
@@ -1500,7 +1477,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         parentHash: regResults[1].domainHash,
         domainLabel: "ownercheck",
-        isRootDomain: false,
       });
 
       const latestBlock = await time.latestBlock();
@@ -1615,12 +1591,11 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: regResults[1].domainHash,
         domainLabel: "mintlistparent",
-        isRootDomain: false,
         fullConfig: {
           distrConfig: {
             pricerContract: zns.fixedPricer.address,
             paymentType: PaymentType.DIRECT,
-            accessType: AccessType.WHITELIST,
+            accessType: AccessType.MINTLIST,
           },
           paymentConfig: {
             token: zns.zeroToken.address,
@@ -1643,7 +1618,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl4SubOwner,
         parentHash,
         domainLabel: "mintlisted",
-        isRootDomain: false,
       });
 
       // check registry
@@ -1743,7 +1717,7 @@ describe("ZNSSubRegistrar", () => {
       // switch to mintlist
       await zns.subRegistrar.connect(lvl2SubOwner).setAccessTypeForDomain(
         regResults[1].domainHash,
-        AccessType.WHITELIST
+        AccessType.MINTLIST
       );
 
       // add to mintlist
@@ -1804,7 +1778,6 @@ describe("ZNSSubRegistrar", () => {
         user: lvl3SubOwner,
         parentHash: regResults[1].domainHash,
         domainLabel: "parentnoconfig",
-        isRootDomain: false,
         fullConfig: fullDistrConfigEmpty, // accessType is 0 when supplying empty config
       });
 
@@ -2013,7 +1986,7 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         const distrConfigBefore = await zns.subRegistrar.distrConfigs(domainHash);
-        expect(distrConfigBefore.accessType).to.not.eq(AccessType.WHITELIST);
+        expect(distrConfigBefore.accessType).to.not.eq(AccessType.MINTLIST);
         expect(distrConfigBefore.pricerContract).to.not.eq(zns.fixedPricer.address);
         expect(
           distrConfigBefore.paymentType
@@ -2024,7 +1997,7 @@ describe("ZNSSubRegistrar", () => {
         const newConfig = {
           pricerContract: zns.fixedPricer.address,
           paymentType: PaymentType.STAKE,
-          accessType: AccessType.WHITELIST,
+          accessType: AccessType.MINTLIST,
         };
 
         await zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
@@ -2070,7 +2043,7 @@ describe("ZNSSubRegistrar", () => {
         const newConfig = {
           pricerContract: zns.curvePricer.address,
           paymentType: PaymentType.STAKE,
-          accessType: AccessType.WHITELIST,
+          accessType: AccessType.MINTLIST,
         };
 
         await expect(
@@ -2089,7 +2062,7 @@ describe("ZNSSubRegistrar", () => {
         const newConfig = {
           pricerContract: ethers.constants.AddressZero,
           paymentType: PaymentType.STAKE,
-          accessType: AccessType.WHITELIST,
+          accessType: AccessType.MINTLIST,
         };
 
         await expect(
@@ -2469,6 +2442,92 @@ describe("ZNSSubRegistrar", () => {
       ];
 
       await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);
+    });
+
+    it("Allows to add more fields to the existing struct in a mapping", async () => {
+      // SubRegistrar to upgrade to
+      const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
+      const newRegistrar = await factory.deploy();
+      await newRegistrar.deployed();
+
+      const tx = zns.subRegistrar.connect(deployer).upgradeTo(newRegistrar.address);
+      await expect(tx).to.not.be.reverted;
+
+      // create new proxy object
+      const newRegistrarProxy = factory.attach(zns.subRegistrar.address);
+
+      // check values in storage
+      const rootConfigBefore = await newRegistrarProxy.distrConfigs(rootHash);
+      expect(rootConfigBefore.accessType).to.eq(AccessType.OPEN);
+      expect(rootConfigBefore.pricerContract).to.eq(zns.fixedPricer.address);
+      expect(rootConfigBefore.paymentType).to.eq(PaymentType.DIRECT);
+
+      await zns.zeroToken.mint(lvl2SubOwner.address, parseEther("1000000"));
+      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, parseEther("1000000"));
+
+      const subConfigToSet = {
+        accessType: AccessType.MINTLIST,
+        pricerContract: zns.curvePricer.address,
+        paymentType: PaymentType.STAKE,
+        newAddress: lvl2SubOwner.address,
+        newUint: BigNumber.from(1912171236),
+      };
+
+      // register a subdomain with new logic
+      await newRegistrarProxy.connect(lvl2SubOwner).registerSubdomain(
+        rootHash,
+        "subbb",
+        lvl2SubOwner.address,
+        subConfigToSet
+      );
+
+      const subHash = await getDomainHashFromEvent({
+        zns,
+        user: lvl2SubOwner,
+      });
+
+      const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);
+      expect(rootConfigAfter.accessType).to.eq(rootConfigBefore.accessType);
+      expect(rootConfigAfter.pricerContract).to.eq(rootConfigBefore.pricerContract);
+      expect(rootConfigAfter.paymentType).to.eq(rootConfigBefore.paymentType);
+      expect(rootConfigAfter.length).to.eq(3);
+
+      const updatedStructConfig = {
+        accessType: AccessType.OPEN,
+        pricerContract: zns.fixedPricer.address,
+        paymentType: PaymentType.DIRECT,
+        newAddress: lvl2SubOwner.address,
+        newUint: BigNumber.from(123),
+      };
+
+      // try setting new fields to the new struct
+      await newRegistrarProxy.connect(rootOwner).setDistributionConfigForDomain(
+        rootHash,
+        updatedStructConfig
+      );
+
+      // check what we got for new
+      const rootConfigFinal = await newRegistrarProxy.distrConfigs(rootHash);
+      const subConfigAfter = await newRegistrarProxy.distrConfigs(subHash);
+
+      // validate the new config has been set correctly
+      expect(subConfigAfter.accessType).to.eq(subConfigToSet.accessType);
+      expect(subConfigAfter.pricerContract).to.eq(subConfigToSet.pricerContract);
+      expect(subConfigAfter.paymentType).to.eq(subConfigToSet.paymentType);
+      expect(subConfigAfter.newAddress).to.eq(subConfigToSet.newAddress);
+      expect(subConfigAfter.newUint).to.eq(subConfigToSet.newUint);
+
+      // validate the old values stayed the same and new values been added
+      expect(rootConfigFinal.accessType).to.eq(rootConfigBefore.accessType);
+      expect(rootConfigFinal.pricerContract).to.eq(rootConfigBefore.pricerContract);
+      expect(rootConfigFinal.paymentType).to.eq(rootConfigBefore.paymentType);
+      expect(rootConfigFinal.newAddress).to.eq(updatedStructConfig.newAddress);
+      expect(rootConfigFinal.newUint).to.eq(updatedStructConfig.newUint);
+
+      // check that crucial state vars stayed the same
+      expect(await newRegistrarProxy.getAccessController()).to.eq(zns.accessController.address);
+      expect(await newRegistrarProxy.registry()).to.eq(zns.registry.address);
+      expect(await newRegistrarProxy.rootRegistrar()).to.eq(zns.rootRegistrar.address);
     });
   });
 });

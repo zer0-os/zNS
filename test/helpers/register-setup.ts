@@ -2,7 +2,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import assert from "assert";
 import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
 
 const { AddressZero } = ethers.constants;
@@ -94,7 +93,6 @@ export const registrationWithSetup = async ({
   domainLabel,
   domainContent = user.address,
   fullConfig = fullDistrConfigEmpty,
-  isRootDomain = true,
 } : {
   zns : ZNSContracts;
   user : SignerWithAddress;
@@ -102,7 +100,6 @@ export const registrationWithSetup = async ({
   domainLabel : string;
   domainContent ?: string;
   fullConfig ?: IFullDistributionConfig;
-  isRootDomain ?: boolean;
 }) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
@@ -110,7 +107,7 @@ export const registrationWithSetup = async ({
     : distrConfigEmpty;
 
   // register domain
-  if (isRootDomain) {
+  if (!parentHash) {
     await defaultRootRegistration({
       user,
       zns,
@@ -119,8 +116,6 @@ export const registrationWithSetup = async ({
       distrConfig,
     });
   } else {
-    assert.ok(parentHash, "Parent hash must be provided for subdomain registration");
-
     await approveForParent({
       zns,
       parentHash,

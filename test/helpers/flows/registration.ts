@@ -64,7 +64,6 @@ export const registerDomainPath = async ({
     const domainHash = await registrationWithSetup({
       zns,
       parentHash,
-      isRootDomain,
       ...config,
     });
 
