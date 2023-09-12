@@ -1,7 +1,7 @@
 module.exports = {
   skipFiles: [
-    'contracts/utility/StringUtils.sol',
-    'contracts/token/mocks/ZeroTokenMock.sol',
-    'contracts/upgrade-test-mocks/distribution/ZNSSubRegistrarMock.sol'
+    'utils/StringUtils.sol',
+    'token/mocks',
+    'upgrade-test-mocks'
   ]
 };
