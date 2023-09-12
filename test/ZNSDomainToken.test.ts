@@ -170,6 +170,14 @@ describe("ZNSDomainToken:", () => {
       const symbol = await zns.domainToken.symbol();
       expect(symbol).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
     });
+
+    it("Verify accessController", async () => {
+      expect(
+        await zns.domainToken.getAccessController()
+      ).to.equal(
+        zns.accessController.address
+      );
+    });
   });
 
   describe("UUPS", () => {
