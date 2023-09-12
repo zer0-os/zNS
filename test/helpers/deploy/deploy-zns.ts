@@ -19,8 +19,8 @@ import {
   ZNSSubRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
-} from "../../typechain";
-import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
+} from "../../../typechain";
+import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -40,9 +40,9 @@ import {
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
-} from "./constants";
-import { REGISTRAR_ROLE } from "./access";
-import { getProxyImplAddress } from "./utils";
+} from "../constants";
+import { REGISTRAR_ROLE } from "../access";
+import { getProxyImplAddress } from "../utils";
 
 
 export const deployAccessController = async ({

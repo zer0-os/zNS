@@ -3,6 +3,7 @@ import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributi
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
+import { getTokenContract } from "./tokens";
 
 const { AddressZero } = ethers.constants;
 
@@ -49,10 +50,13 @@ export const approveForParent = async ({
     [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel);
   }
 
+  const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
+  const tokenContract = getTokenContract(tokenAddress, user);
+
   const protocolFee = await zns.curvePricer.getProtocolFee(price.add(parentFee));
   const toApprove = price.add(parentFee).add(protocolFee);
-  // TODO sub: add support for any kind of token
-  await zns.zeroToken.connect(user).approve(zns.treasury.address, toApprove);
+
+  return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
 };
 
 /**
