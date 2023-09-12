@@ -12,8 +12,8 @@ import {
   getStakingOrProtocolFee, GOVERNOR_ROLE, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  PaymentType,
-  priceConfigDefault, validateUpgrade,
+  PaymentType, precisionDefault, precisionMultiDefault,
+  priceConfigDefault, registrationFeePercDefault, toTokenValue, validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -25,9 +25,11 @@ import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import {
+  CustomDecimalTokenMock,
   ZNSSubRegistrarUpgradeMock__factory,
 } from "../typechain";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther, parseUnits } from "ethers/lib/utils";
+import { deployCustomDecToken } from "./helpers/deploy/mocks";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -557,10 +559,23 @@ describe("ZNSSubRegistrar", () => {
     });
   });
 
-  describe("Token transfers for different distr configs", () => {
+  describe("Token movements with different distr setups", () => {
     let rootHash : string;
     let fixedPrice : BigNumber;
     let feePercentage : BigNumber;
+    let token2 : CustomDecimalTokenMock;
+    let token5 : CustomDecimalTokenMock;
+    let token8 : CustomDecimalTokenMock;
+    let token13 : CustomDecimalTokenMock;
+    let token18 : CustomDecimalTokenMock;
+
+    const decimalValues = {
+      two: BigNumber.from(2),
+      five: BigNumber.from(5),
+      eight: BigNumber.from(8),
+      thirteen: BigNumber.from(13),
+      eighteen: BigNumber.from(18),
+    };
 
     before(async () => {
       [
@@ -586,7 +601,24 @@ describe("ZNSSubRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
+      ([
+        token2,
+        token5,
+        token8,
+        token13,
+        token18,
+      ] = await Object.values(decimalValues).reduce(
+        async (acc : Promise<Array<CustomDecimalTokenMock>>, decimals) => {
+          const newAcc = await acc;
+
+          const token = await deployCustomDecToken(deployer, decimals);
+
+          return [...newAcc, token];
+        }, Promise.resolve([])
+      ));
+
       // Give funds to users
+      // TODO sub tokens: rework this when tests updated !
       await Promise.all(
         [
           rootOwner,
@@ -602,8 +634,6 @@ describe("ZNSSubRegistrar", () => {
       );
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
-      fixedPrice = ethers.utils.parseEther("397.13");
-      feePercentage = BigNumber.from(200);
       // register root domain
       rootHash = await registrationWithSetup({
         zns,
@@ -620,14 +650,20 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: rootOwner.address,
           },
           priceConfig: {
-            price: fixedPrice,
+            price: ethers.utils.parseEther("1375.612"),
             feePercentage: BigNumber.from(0),
           },
         },
       });
     });
 
-    it("FixedPricer + StakePayment with stake fee", async () => {
+    it("FixedPricer - StakePayment - stake fee - 5 decimals", async () => {
+      const decimals = await token5.decimals();
+      expect(decimals).to.eq(decimalValues.five);
+
+      fixedPrice = parseUnits("1375.17", decimalValues.five);
+      feePercentage = BigNumber.from(200);
+
       const priceConfig = {
         price: fixedPrice,
         feePercentage,
@@ -645,19 +681,30 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: zns.zeroToken.address,
+            token: token5.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
         },
       });
 
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
       const label = "fixedstakechild";
+
+      const {
+        expectedPrice,
+        stakeFee: stakeFee,
+      } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(
+        expectedPrice.add(stakeFee)
+      );
+
+      // send future child some tokens
+      await token5.connect(deployer).transfer(lvl3SubOwner.address, expectedPrice.add(stakeFee).add(protocolFee));
+
+      const contractBalBefore = await token5.balanceOf(zns.treasury.address);
+      const parentBalBefore = await token5.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await token5.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceBefore = await token5.balanceOf(zeroVault.address);
 
       const childHash = await registrationWithSetup({
         zns,
@@ -667,13 +714,10 @@ describe("ZNSSubRegistrar", () => {
         fullConfig: fullDistrConfigEmpty,
       });
 
-      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
-
-      const { expectedPrice, stakeFee: stakeFee } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(expectedPrice.add(stakeFee), priceConfigDefault.feePercentage);
+      const parentBalAfter = await token5.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await token5.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await token5.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfter = await token5.balanceOf(zeroVault.address);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(stakeFee);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(stakeFee).add(protocolFee));
@@ -686,10 +730,10 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // should offer refund !
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
+      const contractBalAfterRevoke = await token5.balanceOf(zns.treasury.address);
+      const childBalAfterRevoke = await token5.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await token5.balanceOf(lvl2SubOwner.address);
+      const zeroVaultBalanceAfterRevoke = await token5.balanceOf(zeroVault.address);
 
       expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
@@ -697,9 +741,9 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
-    it("FixedPricer + StakePayment no fee", async () => {
+    it("FixedPricer - StakePayment - no fee - 18 decimals", async () => {
       const priceConfig = {
-        price: fixedPrice,
+        price: parseUnits("397.77", decimalValues.eighteen),
         feePercentage: BigNumber.from(0),
       };
 
@@ -715,19 +759,28 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            token: zns.zeroToken.address,
+            token: token18.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
         },
       });
 
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
       const label = "fixedstakenofeechild";
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice);
+
+      // send future child some tokens
+      await token18.connect(deployer).transfer(
+        lvl3SubOwner.address,
+        expectedPrice.add(protocolFee)
+      );
+
+      const contractBalBefore = await token18.balanceOf(zns.treasury.address);
+      const parentBalBefore = await token18.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await token18.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceBefore = await token18.balanceOf(zeroVault.address);
 
       const childHash = await registrationWithSetup({
         zns,
@@ -736,13 +789,10 @@ describe("ZNSSubRegistrar", () => {
         domainLabel: label,
       });
 
-      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
-
-      const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const parentBalAfter = await token18.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await token18.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await token18.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfter = await token18.balanceOf(zeroVault.address);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -755,20 +805,21 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // should offer refund !
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
+      const contractBalAfterRevoke = await token18.balanceOf(zns.treasury.address);
+      const childBalAfterRevoke = await token18.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await token18.balanceOf(lvl2SubOwner.address);
+      const zeroVaultBalanceAfterRevoke = await token18.balanceOf(zeroVault.address);
 
       expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
       expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
+    // TODO sub tokens: add tests for wrong data and calls!
 
-    it("FixedPricer + DirectPayment no fee", async () => {
+    it("FixedPricer - DirectPayment - no fee - 8 decimals", async () => {
       const priceConfig = {
-        price: fixedPrice,
+        price: parseUnits("11.371", decimalValues.eight),
         feePercentage: BigNumber.from(0),
       };
 
@@ -784,19 +835,28 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: zns.zeroToken.address,
+            token: token8.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
         },
       });
 
-      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
       const label = "fixeddirectnofeechild";
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice);
+
+      // send future child some tokens
+      await token8.connect(deployer).transfer(
+        lvl3SubOwner.address,
+        expectedPrice.add(protocolFee)
+      );
+
+      const parentBalBefore = await token8.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await token8.balanceOf(lvl3SubOwner.address);
+      const contractBalBefore = await token8.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceBefore = await token8.balanceOf(zeroVault.address);
+
 
       const childHash = await registrationWithSetup({
         zns,
@@ -806,16 +866,11 @@ describe("ZNSSubRegistrar", () => {
         fullConfig: fullDistrConfigEmpty,
       });
 
-      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
+      const parentBalAfter = await token8.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await token8.balanceOf(lvl3SubOwner.address);
+      const contractBalAfter = await token8.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfter = await token8.balanceOf(zeroVault.address);
 
-      const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(
-        expectedPrice,
-        priceConfigDefault.feePercentage
-      );
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -828,10 +883,10 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // should NOT offer refund !
-      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
+      const parentBalAfterRevoke = await token8.balanceOf(lvl2SubOwner.address);
+      const childBalAfterRevoke = await token8.balanceOf(lvl3SubOwner.address);
+      const contractBalAfterRevoke = await token8.balanceOf(zns.treasury.address);
+      const zeroVaultBalanceAfterRevoke = await token8.balanceOf(zeroVault.address);
 
       expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
@@ -839,8 +894,18 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
-    it("CurvePricer + StakePayment with stake fee", async () => {
-      const priceConfig = priceConfigDefault;
+    it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
+      const priceConfig = {
+        maxPrice: parseUnits("25000.93", decimalValues.thirteen),
+        minPrice: parseUnits("2000.11", decimalValues.thirteen),
+        maxLength: BigNumber.from(50),
+        baseLength: BigNumber.from(4),
+        precisionMultiplier: BigNumber.from(10).pow(
+          decimalValues.thirteen
+            .sub(precisionDefault)
+        ),
+        feePercentage: BigNumber.from(185),
+      };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
@@ -854,19 +919,33 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: zns.zeroToken.address,
+            token: token13.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
         },
       });
 
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
       const label = "curvestakechild";
+
+      const {
+        expectedPrice,
+        stakeFee: stakeFee,
+      } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(
+        expectedPrice.add(stakeFee)
+      );
+
+      // send future child some tokens
+      await token13.connect(deployer).transfer(
+        lvl3SubOwner.address,
+        expectedPrice.add(stakeFee).add(protocolFee)
+      );
+
+      const contractBalBefore = await token13.balanceOf(zns.treasury.address);
+      const parentBalBefore = await token13.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await token13.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceBefore = await token13.balanceOf(zeroVault.address);
 
       const childHash = await registrationWithSetup({
         zns,
@@ -876,13 +955,10 @@ describe("ZNSSubRegistrar", () => {
         fullConfig: fullDistrConfigEmpty,
       });
 
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
-
-      const { expectedPrice, stakeFee: stakeFee } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(expectedPrice.add(stakeFee), priceConfigDefault.feePercentage);
+      const contractBalAfter = await token13.balanceOf(zns.treasury.address);
+      const parentBalAfter = await token13.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await token13.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceAfter = await token13.balanceOf(zeroVault.address);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(stakeFee);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee).add(stakeFee));
@@ -895,10 +971,10 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // should offer refund !
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
+      const contractBalAfterRevoke = await token13.balanceOf(zns.treasury.address);
+      const childBalAfterRevoke = await token13.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await token13.balanceOf(lvl2SubOwner.address);
+      const zeroVaultBalanceAfterRevoke = await token13.balanceOf(zeroVault.address);
 
       expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
@@ -906,9 +982,13 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
-    it("CurvePricer + StakePayment no fee", async () => {
+    it("CurvePricer - StakePayment - no fee - 2 decimals", async () => {
       const priceConfig = {
-        ...priceConfigDefault,
+        maxPrice: parseUnits("234.46", decimalValues.two),
+        minPrice: parseUnits("3.37", decimalValues.two),
+        maxLength: BigNumber.from(20),
+        baseLength: BigNumber.from(2),
+        precisionMultiplier: BigNumber.from(1),
         feePercentage: BigNumber.from(0),
       };
 
@@ -916,7 +996,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         parentHash: rootHash,
-        domainLabel: "asstakenofee",
+        domainLabel: "curvestakenofee",
         fullConfig: {
           distrConfig: {
             pricerContract: zns.curvePricer.address,
@@ -924,19 +1004,28 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            token: zns.zeroToken.address,
+            token: token2.address,
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
         },
       });
 
-      const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
       const label = "curvestakenofeechild";
+
+      const { expectedPrice } = getPriceObject(label, priceConfig);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice);
+
+      // send future child some tokens
+      await token2.connect(deployer).transfer(
+        lvl3SubOwner.address,
+        expectedPrice.add(protocolFee)
+      );
+
+      const contractBalBefore = await token2.balanceOf(zns.treasury.address);
+      const parentBalBefore = await token2.balanceOf(lvl2SubOwner.address);
+      const childBalBefore = await token2.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceBefore = await token2.balanceOf(zeroVault.address);
 
       const childHash = await registrationWithSetup({
         zns,
@@ -945,13 +1034,10 @@ describe("ZNSSubRegistrar", () => {
         domainLabel: label,
       });
 
-      const contractBalAfter = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const parentBalAfter = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const childBalAfter = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
-
-      const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const contractBalAfter = await token2.balanceOf(zns.treasury.address);
+      const parentBalAfter = await token2.balanceOf(lvl2SubOwner.address);
+      const childBalAfter = await token2.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalanceAfter = await token2.balanceOf(zeroVault.address);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(0);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -964,10 +1050,10 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // should offer refund !
-      const contractBalAfterRevoke = await zns.zeroToken.balanceOf(zns.treasury.address);
-      const childBalAfterRevoke = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
-      const parentBalAfterRevoke = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
-      const zeroVaultBalanceAfterRevoke = await zns.zeroToken.balanceOf(zeroVault.address);
+      const contractBalAfterRevoke = await token2.balanceOf(zns.treasury.address);
+      const childBalAfterRevoke = await token2.balanceOf(lvl3SubOwner.address);
+      const parentBalAfterRevoke = await token2.balanceOf(lvl2SubOwner.address);
+      const zeroVaultBalanceAfterRevoke = await token2.balanceOf(zeroVault.address);
 
       expect(contractBalAfter.sub(contractBalAfterRevoke)).to.eq(expectedPrice);
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(expectedPrice);
@@ -975,7 +1061,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
-    it("CurvePricer + DirectPayment no fee", async () => {
+    it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
       const priceConfig = {
         ...priceConfigDefault,
         feePercentage: BigNumber.from(0),
@@ -993,6 +1079,7 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
+            // zero has 18 decimals
             token: zns.zeroToken.address,
             beneficiary: lvl2SubOwner.address,
           },
@@ -1000,12 +1087,12 @@ describe("ZNSSubRegistrar", () => {
         },
       });
 
+      const label = "asdirectnofeechild";
+
       const contractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const childBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
       const zeroVaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
-
-      const label = "asdirectnofeechild";
 
       const childHash = await registrationWithSetup({
         zns,
@@ -1020,7 +1107,7 @@ describe("ZNSSubRegistrar", () => {
       const zeroVaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(label, priceConfig);
-      const protocolFee = getStakingOrProtocolFee(expectedPrice, priceConfigDefault.feePercentage);
+      const protocolFee = getStakingOrProtocolFee(expectedPrice);
 
       expect(parentBalAfter.sub(parentBalBefore)).to.eq(expectedPrice);
       expect(childBalBefore.sub(childBalAfter)).to.eq(expectedPrice.add(protocolFee));
@@ -1374,6 +1461,125 @@ describe("ZNSSubRegistrar", () => {
       expect(childBalAfterRevoke.sub(childBalAfter)).to.eq(0);
       expect(contractBalAfterRevoke.sub(contractBalAfter)).to.eq(0);
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
+    });
+
+    it("Setting price config in incorrect decimals triggers incorrect pricing", async () => {
+      // we will use token with 5 decimals, but set prices in 18 decimals
+      const priceConfigIncorrect = {
+        maxPrice: parseUnits("234.46", decimalValues.eighteen),
+        minPrice: parseUnits("3.37", decimalValues.eighteen),
+        maxLength: BigNumber.from(20),
+        baseLength: BigNumber.from(2),
+        precisionMultiplier: BigNumber.from(1),
+        feePercentage: BigNumber.from(111),
+      };
+
+      // see `token` in paymentConfig
+      const subdomainParentHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: rootHash,
+        domainLabel: "incorrectparent",
+        fullConfig: {
+          distrConfig: {
+            pricerContract: zns.curvePricer.address,
+            accessType: AccessType.OPEN,
+            paymentType: PaymentType.STAKE,
+          },
+          paymentConfig: {
+            // ! this token has 5 decimals !
+            token: token5.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+          priceConfig: priceConfigIncorrect,
+        },
+      });
+
+      const label = "incorrectchild";
+
+      const priceConfigCorrect = {
+        ...priceConfigIncorrect,
+        maxPrice: parseUnits("234.46", decimalValues.five),
+        minPrice: parseUnits("3.37", decimalValues.five),
+      };
+
+      // calc prices off-chain
+      const {
+        expectedPrice: priceIncorrect,
+        stakeFee: stakeFeeIncorrect,
+      } = getPriceObject(label, priceConfigIncorrect);
+      const protocolFeeIncorrect = getStakingOrProtocolFee(priceIncorrect.add(stakeFeeIncorrect));
+
+      const {
+        expectedPrice: priceCorrect,
+        stakeFee: stakeFeeCorrect,
+      } = getPriceObject(label, priceConfigCorrect);
+      const protocolFeeCorrect = getStakingOrProtocolFee(priceCorrect.add(stakeFeeCorrect));
+
+      // get prices from SC
+      const {
+        price: priceFromSC,
+        stakeFee: feeFromSC,
+      } = await zns.curvePricer.getPriceAndFee(
+        subdomainParentHash,
+        label
+      );
+      const protocolFeeFromSC = await zns.curvePricer.getProtocolFee(
+        priceFromSC.add(feeFromSC)
+      );
+
+      expect(priceFromSC).to.not.eq(priceCorrect);
+      expect(priceFromSC).to.eq(priceIncorrect);
+      expect(feeFromSC).to.not.eq(stakeFeeCorrect);
+      expect(feeFromSC).to.eq(stakeFeeIncorrect);
+      expect(protocolFeeFromSC).to.not.eq(protocolFeeCorrect);
+      expect(protocolFeeFromSC).to.eq(protocolFeeIncorrect);
+
+      const priceDiff = priceIncorrect.sub(priceCorrect);
+      // the difference should be very large
+      expect(priceDiff).to.be.gt(
+        BigNumber.from(10).pow(decimalValues.eighteen)
+      );
+
+      // let's see how much a user actually paid
+
+      // we sending him 10^20 tokens
+      await token5.connect(deployer).transfer(
+        lvl3SubOwner.address,
+        parseUnits("10000000000000000000", decimalValues.five)
+      );
+
+      // client tx approving the correct price will fail
+      await token5.connect(lvl3SubOwner).approve(
+        zns.treasury.address,
+        priceCorrect.add(stakeFeeCorrect).add(protocolFeeCorrect)
+      );
+
+      await expect(
+        zns.subRegistrar.registerSubdomain(
+          subdomainParentHash,
+          label,
+          lvl3SubOwner.address,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith("ERC20: insufficient allowance");
+
+      // let's try to buy with the incorrect price
+      const userBalanceBefore = await token5.balanceOf(lvl3SubOwner.address);
+
+      await registrationWithSetup({
+        zns,
+        user: lvl3SubOwner,
+        parentHash: subdomainParentHash,
+        domainLabel: label,
+      });
+
+      const userBalanceAfter = await token5.balanceOf(lvl3SubOwner.address);
+
+      // user should have paid the incorrect price
+      expect(userBalanceBefore.sub(userBalanceAfter)).to.eq(
+        priceIncorrect.add(stakeFeeIncorrect).add(protocolFeeIncorrect)
+      );
     });
   });
 

@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers/deploy-zns";
+import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistryUpgradeMock__factory } from "../typechain";
