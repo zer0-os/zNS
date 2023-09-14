@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -13,7 +14,13 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  * @dev Note that all ZNS related functions on this contract can ONLY be called by either
  * the `ZNSRootRegistrar.sol` contract or any address holding a REGISTRAR_ROLE.
  */
-contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable, IZNSDomainToken {
+contract ZNSDomainToken is
+    AAccessControlled,
+    UUPSUpgradeable,
+    ERC2981Upgradeable,
+    ERC721Upgradeable,
+    IZNSDomainToken {
+
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
      * Note that this function does NOT have role protection enforced!
@@ -22,6 +29,7 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
      * @param symbol_ The symbol of the token
      */
     function initialize(
+    // TODO sub royalities: add address receiver, uint96 royaltyFraction !!!
         address accessController_,
         string memory name_,
         string memory symbol_
@@ -46,8 +54,35 @@ contract ZNSDomainToken is AAccessControlled, UUPSUpgradeable, ERC721Upgradeable
      * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`!
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
+    // TODO sub: change to "burn" ???!!!
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
+        _resetTokenRoyalty(tokenId);
+    }
+
+    function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {
+        _setDefaultRoyalty(receiver, royaltyFraction);
+
+        emit DefaultRoyaltySet(royaltyFraction);
+    }
+
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 royaltyFraction
+    ) external override onlyAdmin {
+        _setTokenRoyalty(tokenId, receiver, royaltyFraction);
+
+        emit TokenRoyaltySet(tokenId, royaltyFraction);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override(ERC721Upgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
     /**
