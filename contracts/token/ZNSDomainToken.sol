@@ -29,13 +29,15 @@ contract ZNSDomainToken is
      * @param symbol_ The symbol of the token
      */
     function initialize(
-    // TODO sub royalities: add address receiver, uint96 royaltyFraction !!!
         address accessController_,
         string memory name_,
-        string memory symbol_
+        string memory symbol_,
+        address defaultRoyaltyReceiver,
+        uint96 defaultRoyaltyFraction
     ) external override initializer {
         __ERC721_init(name_, symbol_);
         _setAccessController(accessController_);
+        _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
     }
 
     /**

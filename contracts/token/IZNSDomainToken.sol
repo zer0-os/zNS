@@ -9,7 +9,13 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
     event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
     event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
 
-    function initialize(address accessController, string calldata tokenName, string calldata tokenSymbol) external;
+    function initialize(
+        address accessController,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        address defaultRoyaltyReceiver,
+        uint96 defaultRoyaltyFraction
+    ) external;
 
     function register(address to, uint256 tokenId) external;
 
