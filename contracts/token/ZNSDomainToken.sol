@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
+import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -16,10 +17,13 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  */
 contract ZNSDomainToken is
     AAccessControlled,
-    UUPSUpgradeable,
-    ERC2981Upgradeable,
     ERC721Upgradeable,
+    ERC2981Upgradeable,
+    ERC721URIStorageUpgradeable,
+    UUPSUpgradeable,
     IZNSDomainToken {
+
+    string private baseURI;
 
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
@@ -47,8 +51,9 @@ contract ZNSDomainToken is
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.
      */
-    function register(address to, uint256 tokenId) external override onlyRegistrar {
+    function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
         _safeMint(to, tokenId);
+        _setTokenURI(tokenId, _tokenURI);
     }
 
     /**
@@ -60,6 +65,26 @@ contract ZNSDomainToken is
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
         _resetTokenRoyalty(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId)
+    public
+    view
+    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, IZNSDomainToken)
+    returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    // TODO sub uri: when do we call this ?! what should be the proper AC on this function ?
+    // TODO sub uri: do we even need this external function ?!
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) external override onlyAdmin {
+        _setTokenURI(tokenId, _tokenURI);
+    }
+
+    function setBaseURI(string memory _baseURI) external onlyAdmin {
+        baseURI = _baseURI;
+        emit BaseURISet(_baseURI);
     }
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {
@@ -85,6 +110,17 @@ contract ZNSDomainToken is
     override(ERC721Upgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function _burn(uint256 tokenId)
+    internal
+    override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+    {
+        super._burn(tokenId);
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     /**
