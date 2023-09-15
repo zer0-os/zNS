@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
   AccessType,
-  ADMIN_ROLE,
+  ADMIN_ROLE, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_ERR,
@@ -236,6 +236,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -299,6 +300,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -530,6 +532,7 @@ describe("ZNSSubRegistrar", () => {
           lvl1Hash,
           "newsubdomain",
           branchLvl1Owner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
@@ -551,6 +554,7 @@ describe("ZNSSubRegistrar", () => {
           lvl4Hash,
           "newsubdomain",
           branchLvl2Owner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
@@ -1533,6 +1537,7 @@ describe("ZNSSubRegistrar", () => {
           res[0].domainHash,
           "tobedenied",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1562,6 +1567,7 @@ describe("ZNSSubRegistrar", () => {
         parentHash,
         domainLabel,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -1636,6 +1642,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlisted",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1655,6 +1662,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlistednow",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1708,6 +1716,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[1].domainHash,
           "notallowed",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1752,6 +1761,7 @@ describe("ZNSSubRegistrar", () => {
         regResults[1].domainHash,
         "alloweddddd",
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -1786,6 +1796,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notallowed",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1903,6 +1914,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[0].domainHash,
           domainConfigs[1].domainLabel,
           lvl2SubOwner.address,
+          defaultTokenURI,
           domainConfigs[1].fullConfig.distrConfig
         )
       ).to.be.revertedWith(
@@ -2416,6 +2428,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         domainLabel,
         lvl2SubOwner.address,
+        defaultTokenURI,
         {
           accessType: AccessType.OPEN,
           pricerContract: zns.fixedPricer.address,
@@ -2478,6 +2491,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         "subbb",
         lvl2SubOwner.address,
+        defaultTokenURI,
         subConfigToSet
       );
 

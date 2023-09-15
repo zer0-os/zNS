@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType,
+  AccessType, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
   hashDomainLabel,
@@ -115,6 +115,7 @@ describe("ZNSRootRegistrar", () => {
           price: "0",
           stakeFee: "0",
           domainAddress: ethers.constants.AddressZero,
+          tokenURI: "",
           isStakePayment: false,
         })
       ).to.be.revertedWith(
@@ -240,6 +241,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -265,6 +267,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfig
       );
 
@@ -397,6 +400,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -454,6 +458,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -963,6 +968,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(randomUser).registerDomain(
         domainName,
         randomUser.address,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
