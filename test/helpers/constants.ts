@@ -5,6 +5,8 @@ import { ethers } from "hardhat";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
+export const defaultTokenURI = "https://www.zns.domains/7c654a5f";
+
 export const registrationFeePercDefault = BigNumber.from("222");
 export const PERCENTAGE_BASIS = BigNumber.from("10000");
 export const decimalsDefault = BigNumber.from(18);

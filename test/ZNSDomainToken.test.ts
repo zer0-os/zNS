@@ -32,6 +32,8 @@ describe("ZNSDomainToken", () => {
   let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
+  const randomTokenURI = "https://www.zNS.domains/1a3c2f5";
+
   beforeEach(async () => {
     [deployer, caller, mockRegistrar, beneficiary] = await hre.ethers.getSigners();
     deployParams = {
@@ -70,7 +72,7 @@ describe("ZNSDomainToken", () => {
       const tokenId = ethers.BigNumber.from("1");
       const tx = zns.domainToken
         .connect(mockRegistrar)
-        .register(caller.address, tokenId);
+        .register(caller.address, tokenId, randomTokenURI);
 
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
         ethers.constants.AddressZero,
@@ -87,7 +89,7 @@ describe("ZNSDomainToken", () => {
       await expect(
         zns.domainToken
           .connect(caller)
-          .register(caller.address, tokenId)
+          .register(caller.address, tokenId, randomTokenURI)
       ).to.be.revertedWith(
         getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
       );
@@ -98,7 +100,7 @@ describe("ZNSDomainToken", () => {
       const tokenId = ethers.BigNumber.from("1");
       await zns.domainToken
         .connect(mockRegistrar)
-        .register(caller.address, tokenId);
+        .register(caller.address, tokenId, randomTokenURI);
       // Verify caller owns tokenId
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(
         caller.address
@@ -124,7 +126,7 @@ describe("ZNSDomainToken", () => {
       const tokenId = ethers.BigNumber.from("1");
       const registerTx = zns.domainToken
         .connect(caller)
-        .register(caller.address, tokenId);
+        .register(caller.address, tokenId, randomTokenURI);
 
       await expect(registerTx).to.be.revertedWith(
         getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
@@ -136,7 +138,7 @@ describe("ZNSDomainToken", () => {
       // Mint domain
       await zns.domainToken
         .connect(mockRegistrar)
-        .register(caller.address, tokenId);
+        .register(caller.address, tokenId, randomTokenURI);
       // Verify caller owns tokenId
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(
         caller.address
@@ -197,7 +199,7 @@ describe("ZNSDomainToken", () => {
 
       // mint token
       const tokenId = ethers.BigNumber.from("1326548");
-      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
       const royaltyPerc = BigNumber.from("237"); // 2.37%
 
@@ -225,7 +227,7 @@ describe("ZNSDomainToken", () => {
     it("should set and correctly retrieve royalty for a specific token", async () => {
       // mint token
       const tokenId = ethers.BigNumber.from("777356");
-      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
       const assetPrice = parseEther("19");
       const royaltyPerc = BigNumber.from("1013"); // 2.37%
@@ -244,6 +246,127 @@ describe("ZNSDomainToken", () => {
       const royaltyInfo = await zns.domainToken.royaltyInfo(tokenId, assetPrice);
       expect(royaltyInfo[0]).to.equal(beneficiary.address);
       expect(royaltyInfo[1]).to.equal(royaltyAmountExp);
+    });
+  });
+
+  describe("Token URIs", () => {
+    it("should support individual tokenURIs", async () => {
+      // mint a token
+      const tokenId = ethers.BigNumber.from("13354684");
+      const tokenURI = "https://www.zNS.domains/1a3c2f5";
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(tokenURI);
+    });
+
+    it("should support baseURI method with tokenURI as 0", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("13354684");
+      const baseURI = "https://www.zNS.domains/";
+      const emptyTokenURI = "";
+
+      await zns.domainToken.connect(deployer).setBaseURI(baseURI);
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, emptyTokenURI);
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(baseURI + tokenId.toString());
+    });
+
+    it("should support baseURI + tokenURI concatenation if both are set correctly", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("35226748");
+      const baseURI = "https://www.zNS.domains/";
+      const tokenURI = "1a3c2f5";
+
+      await zns.domainToken.connect(deployer).setBaseURI(baseURI);
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const fullURIExp = baseURI + tokenURI;
+      expect(fullURIExp).to.equal("https://www.zNS.domains/1a3c2f5");
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(fullURIExp);
+    });
+
+    // ! proper checks should be added to the app to not let this happen !
+    it("should return WRONG URI if both baseURI and tokenURI are set as separate links", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("777777");
+      const baseURI = "https://www.zNS.domains/";
+      const tokenURI = "https://www.wilderworld.io/1a3c2f5";
+
+      await zns.domainToken.connect(deployer).setBaseURI(baseURI);
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const wrongURIExp = baseURI + tokenURI;
+      expect(wrongURIExp).to.equal("https://www.zNS.domains/https://www.wilderworld.io/1a3c2f5");
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(wrongURIExp);
+    });
+
+    it("should be able to switch from tokenURI to baseURI if tokenURI is deleted", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("333355");
+      const baseURI = "https://www.zNS.domains/";
+      const tokenURI = "https://www.wilderworld.io/1a3c2f5";
+
+      await zns.domainToken.connect(deployer).setBaseURI(baseURI);
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const wrongURIExp = baseURI + tokenURI;
+      expect(wrongURIExp).to.equal("https://www.zNS.domains/https://www.wilderworld.io/1a3c2f5");
+
+      let uriFromSC = await zns.domainToken.tokenURI(tokenId);
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(wrongURIExp);
+
+      // now delete the tokenURI
+      await zns.domainToken.connect(deployer).setTokenURI(tokenId, "");
+
+      uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      // verify the tokenURI is correct
+      expect(uriFromSC).to.equal(baseURI + tokenId.toString());
+    });
+
+    it("#setTokenURI() should set tokenURI correctly", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("333355");
+      const tokenURI = "https://www.wilderworld.io/1a3c2f5";
+      const newTokenURI = "https://www.zNS.domains/33fa57cd8";
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      expect(uriFromSC).to.equal(tokenURI);
+
+      await zns.domainToken.connect(deployer).setTokenURI(tokenId, newTokenURI);
+
+      const uriFromSC2 = await zns.domainToken.tokenURI(tokenId);
+
+      expect(uriFromSC2).to.equal(newTokenURI);
+
+      // set to empty string
+      await zns.domainToken.connect(deployer).setTokenURI(tokenId, "");
+
+      const uriFromSC3 = await zns.domainToken.tokenURI(tokenId);
+      expect(uriFromSC3).to.equal("");
     });
   });
 
@@ -293,7 +416,7 @@ describe("ZNSDomainToken", () => {
 
       // Call to register a token
       const tokenId = ethers.BigNumber.from("1");
-      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
       await zns.domainToken.connect(deployer).approve(caller.address, tokenId);
 
       const contractCalls = [

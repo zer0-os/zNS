@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty, defaultTokenURI } from "./constants";
 import { getTokenContract } from "./tokens";
 
 const { AddressZero } = ethers.constants;
@@ -13,17 +13,20 @@ export const defaultRootRegistration = async ({
   zns,
   domainName,
   domainContent = user.address,
+  tokenURI = defaultTokenURI,
   distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
   zns : ZNSContracts;
   domainName : string;
   domainContent ?: string;
+  tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
+    tokenURI,
     distrConfig
   );
 
@@ -71,6 +74,7 @@ export const defaultSubdomainRegistration = async ({
   parentHash,
   subdomainLabel,
   domainContent = user.address,
+  tokenURI = defaultTokenURI,
   distrConfig,
 } : {
   user : SignerWithAddress;
@@ -78,12 +82,14 @@ export const defaultSubdomainRegistration = async ({
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
+  tokenURI ?: string;
   distrConfig : IDistributionConfig;
 }) => {
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
     domainContent, // Arbitrary address value
+    tokenURI,
     distrConfig
   );
 
@@ -96,6 +102,7 @@ export const registrationWithSetup = async ({
   parentHash,
   domainLabel,
   domainContent = user.address,
+  tokenURI = defaultTokenURI,
   fullConfig = fullDistrConfigEmpty,
 } : {
   zns : ZNSContracts;
@@ -103,6 +110,7 @@ export const registrationWithSetup = async ({
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;
+  tokenURI ?: string;
   fullConfig ?: IFullDistributionConfig;
 }) => {
   const hasConfig = !!fullConfig;
@@ -117,6 +125,7 @@ export const registrationWithSetup = async ({
       zns,
       domainName: domainLabel,
       domainContent,
+      tokenURI,
       distrConfig,
     });
   } else {
@@ -133,6 +142,7 @@ export const registrationWithSetup = async ({
       parentHash,
       subdomainLabel: domainLabel,
       domainContent,
+      tokenURI,
       distrConfig,
     });
   }

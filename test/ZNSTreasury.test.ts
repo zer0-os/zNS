@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  checkBalance, deployTreasury,
+  checkBalance, defaultTokenURI, deployTreasury,
   deployZNS,
   distrConfigEmpty,
   getPriceObject, NOT_AUTHORIZED_REG_WIRED_ERR,
@@ -64,6 +64,7 @@ describe("ZNSTreasury", () => {
     await zns.rootRegistrar.connect(user).registerRootDomain(
       domainName,
       user.address,
+      defaultTokenURI,
       distrConfigEmpty
     );
   });
