@@ -4,7 +4,8 @@ pragma solidity ^0.8.18;
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
-import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { ERC721URIStorageUpgradeable }
+    from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -80,7 +81,7 @@ contract ZNSDomainToken is
         _setTokenURI(tokenId, _tokenURI);
     }
 
-    function setBaseURI(string memory _baseURI) external onlyAdmin {
+    function setBaseURI(string memory _baseURI) external override onlyAdmin {
         baseURI = _baseURI;
         emit BaseURISet(_baseURI);
     }
