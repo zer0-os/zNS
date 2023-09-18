@@ -81,9 +81,9 @@ contract ZNSDomainToken is
         _setTokenURI(tokenId, _tokenURI);
     }
 
-    function setBaseURI(string memory _baseURI) external override onlyAdmin {
-        baseURI = _baseURI;
-        emit BaseURISet(_baseURI);
+    function setBaseURI(string memory baseURI_) external override onlyAdmin {
+        baseURI = baseURI_;
+        emit BaseURISet(baseURI_);
     }
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {
