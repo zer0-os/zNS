@@ -12,8 +12,8 @@ import {
   getStakingOrProtocolFee, GOVERNOR_ROLE, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  PaymentType, precisionDefault, precisionMultiDefault,
-  priceConfigDefault, registrationFeePercDefault, toTokenValue, validateUpgrade,
+  PaymentType, precisionDefault,
+  priceConfigDefault, validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -1564,6 +1564,7 @@ describe("ZNSSubRegistrar", () => {
           subdomainParentHash,
           label,
           lvl3SubOwner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith("ERC20: insufficient allowance");
