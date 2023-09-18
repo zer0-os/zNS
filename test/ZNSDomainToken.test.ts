@@ -241,7 +241,6 @@ describe("ZNSDomainToken", () => {
     });
   });
 
-  // TODO sub uri: add tests for using both tokenURI and baseURI and explore all the problems that might arise !
   describe("Token URIs", () => {
     it("should support individual tokenURIs", async () => {
       // mint a token
@@ -250,8 +249,10 @@ describe("ZNSDomainToken", () => {
 
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
 
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(tokenURI);
+      expect(uriFromSC).to.equal(tokenURI);
     });
 
     it("should support baseURI method with tokenURI as 0", async () => {
@@ -264,8 +265,10 @@ describe("ZNSDomainToken", () => {
 
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, emptyTokenURI);
 
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(baseURI + tokenId.toString());
+      expect(uriFromSC).to.equal(baseURI + tokenId.toString());
     });
 
     it("should support baseURI + tokenURI concatenation if both are set correctly", async () => {
@@ -280,8 +283,11 @@ describe("ZNSDomainToken", () => {
 
       const fullURIExp = baseURI + tokenURI;
       expect(fullURIExp).to.equal("https://www.zNS.domains/1a3c2f5");
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(fullURIExp);
+      expect(uriFromSC).to.equal(fullURIExp);
     });
 
     // ! proper checks should be added to the app to not let this happen !
@@ -297,8 +303,11 @@ describe("ZNSDomainToken", () => {
 
       const wrongURIExp = baseURI + tokenURI;
       expect(wrongURIExp).to.equal("https://www.zNS.domains/https://www.wilderworld.io/1a3c2f5");
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(wrongURIExp);
+      expect(uriFromSC).to.equal(wrongURIExp);
     });
 
     it("should be able to switch from tokenURI to baseURI if tokenURI is deleted", async () => {
@@ -313,14 +322,43 @@ describe("ZNSDomainToken", () => {
 
       const wrongURIExp = baseURI + tokenURI;
       expect(wrongURIExp).to.equal("https://www.zNS.domains/https://www.wilderworld.io/1a3c2f5");
+
+      let uriFromSC = await zns.domainToken.tokenURI(tokenId);
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(wrongURIExp);
+      expect(uriFromSC).to.equal(wrongURIExp);
 
       // now delete the tokenURI
       await zns.domainToken.connect(deployer).setTokenURI(tokenId, "");
 
+      uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
       // verify the tokenURI is correct
-      expect(await zns.domainToken.tokenURI(tokenId)).to.equal(baseURI + tokenId.toString());
+      expect(uriFromSC).to.equal(baseURI + tokenId.toString());
+    });
+
+    it("#setTokenURI() should set tokenURI correctly", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("333355");
+      const tokenURI = "https://www.wilderworld.io/1a3c2f5";
+      const newTokenURI = "https://www.zNS.domains/33fa57cd8";
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      const uriFromSC = await zns.domainToken.tokenURI(tokenId);
+
+      expect(uriFromSC).to.equal(tokenURI);
+
+      await zns.domainToken.connect(deployer).setTokenURI(tokenId, newTokenURI);
+
+      const uriFromSC2 = await zns.domainToken.tokenURI(tokenId);
+
+      expect(uriFromSC2).to.equal(newTokenURI);
+
+      // set to empty string
+      await zns.domainToken.connect(deployer).setTokenURI(tokenId, "");
+
+      const uriFromSC3 = await zns.domainToken.tokenURI(tokenId);
+      expect(uriFromSC3).to.equal("");
     });
   });
 

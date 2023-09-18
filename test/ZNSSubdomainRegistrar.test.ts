@@ -1870,7 +1870,8 @@ describe("ZNSSubRegistrar", () => {
         },
         {
           user: lvl2SubOwner,
-          domainLabel: "levelone",
+          domainLabel: "leveltwo",
+          tokenURI: "http://example.com/leveltwo",
           fullConfig: {
             distrConfig: {
               pricerContract: zns.fixedPricer.address,
@@ -1887,6 +1888,7 @@ describe("ZNSSubRegistrar", () => {
         {
           user: lvl3SubOwner,
           domainLabel: "lvlthree",
+          tokenURI: "http://example.com/lvlthree",
           fullConfig: {
             distrConfig: {
               pricerContract: zns.curvePricer.address,
@@ -1906,6 +1908,20 @@ describe("ZNSSubRegistrar", () => {
         zns,
         domainConfigs,
       });
+    });
+
+    it("should register subdomain with the correct tokenURI assigned to the domain token minted", async () => {
+      const tokenId1 = BigNumber.from(regResults[0].domainHash).toString();
+      const tokenURI1 = await zns.domainToken.tokenURI(tokenId1);
+      expect(tokenURI1).to.eq(defaultTokenURI);
+
+      const tokenId2 = BigNumber.from(regResults[1].domainHash).toString();
+      const tokenURI2 = await zns.domainToken.tokenURI(tokenId2);
+      expect(tokenURI2).to.eq(domainConfigs[1].tokenURI);
+
+      const tokenId3 = BigNumber.from(regResults[2].domainHash).toString();
+      const tokenURI3 = await zns.domainToken.tokenURI(tokenId3);
+      expect(tokenURI3).to.eq(domainConfigs[2].tokenURI);
     });
 
     it("should NOT allow to register an existing subdomain that has not been revoked", async () => {
