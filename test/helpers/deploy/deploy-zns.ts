@@ -40,9 +40,11 @@ import {
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
+  defaultRoyaltyFraction,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../access";
 import { getProxyImplAddress } from "../utils";
+import { BigNumber } from "ethers";
 
 
 export const deployAccessController = async ({
@@ -114,6 +116,8 @@ export const deployRegistry = async (
 export const deployDomainToken = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
+  royaltyReceiverAddress : string,
+  royaltyFraction : BigNumber,
   isTenderlyRun : boolean
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
@@ -123,6 +127,8 @@ export const deployDomainToken = async (
       accessControllerAddress,
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
+      royaltyReceiverAddress,
+      royaltyFraction,
     ],
     {
       kind: "uups",
@@ -547,6 +553,8 @@ export const deployZNS = async ({
   const domainToken = await deployDomainToken(
     deployer,
     accessController.address,
+    zeroVaultAddress,
+    defaultRoyaltyFraction,
     isTenderlyRun
   );
 
