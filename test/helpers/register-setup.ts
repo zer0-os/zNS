@@ -98,6 +98,7 @@ export const registrationWithSetup = async ({
   parentHash,
   domainLabel,
   domainContent = user.address,
+  tokenURI = defaultTokenURI,
   fullConfig = fullDistrConfigEmpty,
 } : {
   zns : ZNSContracts;
@@ -105,6 +106,7 @@ export const registrationWithSetup = async ({
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;
+  tokenURI ?: string;
   fullConfig ?: IFullDistributionConfig;
 }) => {
   const hasConfig = !!fullConfig;
@@ -119,6 +121,7 @@ export const registrationWithSetup = async ({
       zns,
       domainName: domainLabel,
       domainContent,
+      tokenURI,
       distrConfig,
     });
   } else {
@@ -135,6 +138,7 @@ export const registrationWithSetup = async ({
       parentHash,
       subdomainLabel: domainLabel,
       domainContent,
+      tokenURI,
       distrConfig,
     });
   }

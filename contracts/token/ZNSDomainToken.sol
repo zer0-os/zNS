@@ -76,8 +76,6 @@ contract ZNSDomainToken is
         return super.tokenURI(tokenId);
     }
 
-    // TODO sub uri: when do we call this ?! what should be the proper AC on this function ?
-    // TODO sub uri: do we even need this external function ?!
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external override onlyAdmin {
         _setTokenURI(tokenId, _tokenURI);
     }

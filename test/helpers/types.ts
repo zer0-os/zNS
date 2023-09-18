@@ -143,6 +143,7 @@ export interface IDomainConfigForTest {
   domainContent ?: string;
   parentHash ?: string;
   fullConfig : IFullDistributionConfig;
+  tokenURI ?: string;
 }
 
 export interface IPathRegResult {
