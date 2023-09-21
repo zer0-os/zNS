@@ -1,9 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
-import { BigNumber, ContractReceipt } from "ethers";
+import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import assert from "assert";
-import { distrConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
+
+const { AddressZero } = ethers.constants;
+
 
 export const defaultRootRegistration = async ({
   user,
@@ -38,16 +41,16 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricingContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  const { pricerContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
-  if (pricingContract === zns.asPricing.address) {
-    [price, parentFee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
-  } else if (pricingContract === zns.fixedPricing.address) {
-    [price, parentFee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
+  if (pricerContract === zns.curvePricer.address) {
+    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel);
+  } else if (pricerContract === zns.fixedPricer.address) {
+    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel);
   }
 
-  const protocolFee = await zns.priceOracle.getProtocolFee(price.add(parentFee));
+  const protocolFee = await zns.curvePricer.getProtocolFee(price.add(parentFee));
   const toApprove = price.add(parentFee).add(protocolFee);
   // TODO sub: add support for any kind of token
   await zns.zeroToken.connect(user).approve(zns.treasury.address, toApprove);
@@ -90,7 +93,7 @@ export const registrationWithSetup = async ({
   parentHash,
   domainLabel,
   domainContent = user.address,
-  fullConfig,
+  fullConfig = fullDistrConfigEmpty,
   isRootDomain = true,
 } : {
   zns : ZNSContracts;
@@ -147,15 +150,23 @@ export const registrationWithSetup = async ({
   //  optimize for the best UX!
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
-  if (fullConfig.distrConfig.pricingContract === zns.fixedPricing.address) {
-    await zns.fixedPricing.connect(user).setPriceConfig(
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address) {
+    await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IFixedPriceConfig,
     );
-  } else if (fullConfig.distrConfig.pricingContract === zns.asPricing.address) {
-    await zns.asPricing.connect(user).setPriceConfig(
+  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address) {
+    await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IASPriceConfig,
+    );
+  }
+
+  if (fullConfig.paymentConfig.beneficiary !== AddressZero) {
+    // set up payment config
+    await zns.treasury.connect(user).setPaymentConfig(
+      domainHash,
+      fullConfig.paymentConfig,
     );
   }
 

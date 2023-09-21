@@ -3,12 +3,11 @@ import {
   ZNSAddressResolver,
   ZNSDomainToken,
   ZNSRegistrar,
-  ZNSPriceOracle,
   ZNSRegistry,
   ZNSTreasury,
   ZNSAccessController,
   ZNSRegistrarUpgradeMock,
-  ZNSPriceOracleUpgradeMock,
+  ZNSCurvePricerUpgradeMock,
   ZNSAddressResolverUpgradeMock,
   ZNSDomainTokenUpgradeMock,
   ZNSRegistryUpgradeMock,
@@ -16,24 +15,33 @@ import {
   ZNSAddressResolverUpgradeMock__factory,
   ZNSDomainTokenUpgradeMock__factory,
   ZNSRegistrarUpgradeMock__factory,
-  ZNSPriceOracleUpgradeMock__factory,
+  ZNSCurvePricerUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
   ZNSTreasuryUpgradeMock__factory,
   ZeroToken,
-  ZNSFixedPricing,
   ZNSSubdomainRegistrar,
-  ZNSAsymptoticPricing,
+  ZNSCurvePricer, ZNSFixedPricer,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
 
+
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
+export type GeneralContractGetter = Promise<
+string
+| boolean
+| BigNumber
+| Array<BigNumber>
+| [string, BigNumber]
+& { token : string; amount : BigNumber; }
+|[string, string]
+& { token : string; beneficiary : string; }
+>;
 
 export type ZNSContractMockFactory =
   ZNSRegistrarUpgradeMock__factory |
-  ZNSPriceOracleUpgradeMock__factory |
+  ZNSCurvePricerUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
@@ -41,7 +49,7 @@ export type ZNSContractMockFactory =
 
 export type ZNSContractMock =
   ZNSRegistrarUpgradeMock |
-  ZNSPriceOracleUpgradeMock |
+  ZNSCurvePricerUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
@@ -49,7 +57,7 @@ export type ZNSContractMock =
 
 export type ZNSContract =
   ZNSRegistrar |
-  ZNSPriceOracle |
+  ZNSCurvePricer |
   ZNSTreasury |
   ZNSRegistry |
   ZNSAddressResolver |
@@ -72,7 +80,7 @@ export interface IFixedPriceConfig {
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
-  priceOracleAddress : string;
+  curvePricerAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
 }
@@ -84,11 +92,10 @@ export interface ZNSContracts {
   domainToken : ZNSDomainToken;
   zeroToken : ZeroToken;
   addressResolver : ZNSAddressResolver;
-  priceOracle : ZNSPriceOracle;
+  curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   registrar : ZNSRegistrar;
-  fixedPricing : ZNSFixedPricing;
-  asPricing : ZNSAsymptoticPricing;
+  fixedPricer : ZNSFixedPricer;
   subdomainRegistrar : ZNSSubdomainRegistrar;
   zeroVaultAddress : string;
 }
@@ -104,18 +111,18 @@ export interface DeployZNSParams {
 }
 
 export interface IDistributionConfig {
-  pricingContract : string;
-  paymentConfig : IPaymentConfig;
+  pricerContract : string;
+  paymentType : PaymentType;
   accessType : AccessType;
 }
 
 export interface IPaymentConfig {
-  paymentToken : string;
+  token : string;
   beneficiary : string;
-  paymentType : PaymentType;
 }
 
 export interface IFullDistributionConfig {
+  paymentConfig : IPaymentConfig;
   distrConfig : IDistributionConfig;
   priceConfig : IASPriceConfig | IFixedPriceConfig | undefined;
 }

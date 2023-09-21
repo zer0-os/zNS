@@ -2,7 +2,6 @@
 pragma solidity ^0.8.18;
 
 import { IZNSRegistrar, CoreRegisterArgs } from "./IZNSRegistrar.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
@@ -10,9 +9,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
 import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
-import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IZNSCurvePricer} from "./IZNSCurvePricer.sol";
 
 
 /**
@@ -33,7 +30,8 @@ contract ZNSRegistrar is
     ARegistryWired,
     IZNSRegistrar {
 
-    IZNSPriceOracle public priceOracle;
+    // TODO sub data: can this be changes to an IZNSPricer type ?
+    IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -53,14 +51,14 @@ contract ZNSRegistrar is
     function initialize(
         address accessController_,
         address registry_,
-        address priceOracle_,
+        address curvePricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
     ) public override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setPriceOracle(priceOracle_);
+        setCurvePricer(curvePricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
         setAddressResolver(addressResolver_);
@@ -97,7 +95,7 @@ contract ZNSRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = priceOracle.getPrice(name);
+        uint256 domainPrice = curvePricer.getPrice(0x0, name);
 
         _coreRegister(
             CoreRegisterArgs(
@@ -105,8 +103,6 @@ contract ZNSRegistrar is
                 domainHash,
                 name,
                 msg.sender,
-                address(0),
-                IERC20(address(0)),
                 domainPrice,
                 0,
                 domainAddress,
@@ -114,7 +110,7 @@ contract ZNSRegistrar is
             )
         );
 
-        if (address(distributionConfig.pricingContract) != address(0)) {
+        if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds roughly 100k gas to the register tx
             subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
@@ -166,28 +162,24 @@ contract ZNSRegistrar is
     }
 
     function _processPayment(CoreRegisterArgs memory args) internal {
-        // parentHash == bytes32(0) means we are registering a root domain
-        uint256 protocolFee = args.parentHash == bytes32(0)
-            ? priceOracle.getProtocolFee(args.price)
-            : priceOracle.getProtocolFee(args.price + args.stakeFee);
+        // args.stakeFee can be 0
+        uint256 protocolFee = curvePricer.getProtocolFee(args.price + args.stakeFee);
 
-        if (args.parentHash != bytes32(0) && !args.isStakePayment) { // direct payment for subdomains
-            treasury.processDirectPayment(
-                args.registrant,
-                args.beneficiary,
-                args.paymentToken,
-                args.price,
-                protocolFee
-            );
-        } else { // for all root domains or subdomains with stake payment
+        if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
+                args.parentHash,
                 args.domainHash,
-                args.label,
                 args.registrant,
-                args.beneficiary,
-                args.paymentToken,
                 args.price,
                 args.stakeFee,
+                protocolFee
+            );
+        } else { // direct payment for subdomains
+            treasury.processDirectPayment(
+                args.parentHash,
+                args.domainHash,
+                args.registrant,
+                args.price,
                 protocolFee
             );
         }
@@ -234,13 +226,15 @@ contract ZNSRegistrar is
         registry.deleteRecord(domainHash);
 
         // check if user registered a domain with the stake
-        uint256 stakedAmount = treasury.stakedForDomain(domainHash);
+        (, uint256 stakedAmount) = treasury.stakedForDomain(domainHash);
+        bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
             treasury.unstakeForDomain(domainHash, owner);
+            stakeRefunded = true;
         }
 
-        emit DomainRevoked(domainHash, owner);
+        emit DomainRevoked(domainHash, owner, stakeRefunded);
     }
 
     /**
@@ -291,14 +285,14 @@ contract ZNSRegistrar is
         _setRegistry(registry_);
     }
 
-    function setPriceOracle(address priceOracle_) public override onlyAdmin {
+    function setCurvePricer(address curvePricer_) public override onlyAdmin {
         require(
-            priceOracle_ != address(0),
-            "ZNSRegistrar: priceOracle_ is 0x0 address"
+            curvePricer_ != address(0),
+            "ZNSRegistrar: curvePricer_ is 0x0 address"
         );
-        priceOracle = IZNSPriceOracle(priceOracle_);
+        curvePricer = IZNSCurvePricer(curvePricer_);
 
-        emit PriceOracleSet(priceOracle_);
+        emit CurvePricerSet(curvePricer_);
     }
 
     /**

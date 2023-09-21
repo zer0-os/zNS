@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
-import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPricingWithFee } from "./abstractions/AZNSPricingWithFee.sol";
-import { AZNSRefundablePayment } from "./abstractions/AZNSRefundablePayment.sol";
+import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
 import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
 import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
 import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
@@ -18,13 +15,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     IZNSRegistrar public rootRegistrar;
 
     // TODO sub: make better name AND for the setter function !
-    // TODO sub fee: should we move PaymentConfigs to Treasury ???!!! test gas usage!
-    // TODO sub: when adding proxies test that more fields can be added to struct with upgrade !
-    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
+    // TODO proxy: when adding proxies test that more fields can be added to struct with upgrade !
+    mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
-    mapping(bytes32 domainHash =>
-        mapping(address registrant => bool allowed)
-    ) public distributionWhitelist;
+    mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
@@ -58,13 +52,14 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
+            // TODO sub: consider getting rid of large revert messages
             "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
         );
 
-        if (parentConfig.accessType == AccessType.WHITELIST) {
+        if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
-                distributionWhitelist[parentHash][msg.sender],
-                "ZNSSubdomainRegistrar: Sender is not whitelisted"
+                mintlist[parentHash][msg.sender],
+                "ZNSSubdomainRegistrar: Sender is not approved for purchase"
             );
         }
 
@@ -73,12 +68,10 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             domainHash: hashWithParent(parentHash, label),
             label: label,
             registrant: msg.sender,
-            beneficiary: address(0),
-            paymentToken: IERC20(address(0)),
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
-            isStakePayment: parentConfig.paymentConfig.paymentType == PaymentType.STAKE
+            isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 
         require(
@@ -91,29 +84,24 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
             // TODO sub: should we eliminate Pricing with not fee abstract at all??
             //  what are the downsides of this?? We can just make fees 0 in any contract
             //  would that make us pay more gas for txes with no fees?
-            if (parentConfig.paymentConfig.paymentType == PaymentType.STAKE) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = AZNSPricingWithFee(address(parentConfig.pricingContract))
+            if (coreRegisterArgs.isStakePayment) {
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                //  stakeFee is not taken into account for direct payment even if set on pricing contract
-                coreRegisterArgs.price = parentConfig.pricingContract.getPrice(parentHash, label);
+                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                    .getPrice(
+                        parentHash,
+                        label
+                    );
             }
-
-            (
-                coreRegisterArgs.paymentToken,
-                coreRegisterArgs.beneficiary
-            ) = (
-                parentConfig.paymentConfig.paymentToken,
-                parentConfig.paymentConfig.beneficiary
-            );
         }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        if (address(distrConfig.pricingContract) != address(0)) {
+        if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
@@ -146,108 +134,65 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         );
     }
 
+    // TODO sub: should we setting pricing contracts here to any address?
+    // TODO sub: what problems could we face if we let users set their own contracts??
+    // TODO sub: test if we have enough time, otherwise consider limiting
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(address(config.pricingContract) != address(0), "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address");
         require(
-            address(config.paymentConfig.paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
+            address(config.pricerContract) != address(0),
+            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
         );
-        require(
-            config.paymentConfig.beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-        );
+
         distrConfigs[domainHash] = config;
 
-        // TODO sub: figure out how to optimize all these setters !!!
-//        setPricingContractForDomain(domainHash, config.pricingContract);
-//        setPaymentConfigForDomain(domainHash, config.paymentConfig);
-//        _setAccessTypeForDomain(domainHash, config.accessType);
+        emit DistributionConfigSet(
+            domainHash,
+            config.pricerContract,
+            config.paymentType,
+            config.accessType
+        );
     }
 
-    function setPricingContractForDomain(
+    function setPricerContractForDomain(
         bytes32 domainHash,
         // TODO sub: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
-        AZNSPricing pricingContract
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        IZNSPricer pricerContract
+    ) public override {
         require(
-            address(pricingContract) != address(0),
-            "ZNSSubdomainRegistrar: pricingContract can not be 0x0 address"
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
         );
 
-        distrConfigs[domainHash].pricingContract = pricingContract;
-
-        emit PricingContractSet(domainHash, address(pricingContract));
-    }
-
-    function setPaymentConfigForDomain(
-        bytes32 domainHash,
-        PaymentConfig calldata config
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(
-            address(config.paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-        );
-        require(
-            config.beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
+            address(pricerContract) != address(0),
+            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
         );
 
-        distrConfigs[domainHash].paymentConfig = config;
+        distrConfigs[domainHash].pricerContract = pricerContract;
 
-        emit PaymentConfigSet(
-            domainHash,
-            config.paymentToken,
-            config.beneficiary,
-            config.paymentType
-        );
-    }
-
-    function setPaymentTokenForDomain(
-        bytes32 domainHash,
-        IERC20 paymentToken
-    // TODO sub fee: do we need these for all setters ??
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            address(paymentToken) != address(0),
-            "ZNSSubdomainRegistrar: paymentToken can not be 0x0 address"
-        );
-
-        distrConfigs[domainHash].paymentConfig.paymentToken = paymentToken;
-
-        emit PaymentTokenSet(domainHash, address(paymentToken));
-    }
-
-    function setBeneficiaryForDomain(
-        bytes32 domainHash,
-        address beneficiary
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            beneficiary != address(0),
-            "ZNSSubdomainRegistrar: beneficiary can not be 0x0 address"
-        );
-
-        distrConfigs[domainHash].paymentConfig.beneficiary = beneficiary;
-
-        emit PaymentBeneficiarySet(domainHash, beneficiary);
+        emit PricerContractSet(domainHash, address(pricerContract));
     }
 
     function setPaymentTypeForDomain(
         bytes32 domainHash,
         PaymentType paymentType
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        distrConfigs[domainHash].paymentConfig.paymentType = paymentType;
+    ) public override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
+        );
+
+        distrConfigs[domainHash].paymentType = paymentType;
 
         emit PaymentTypeSet(domainHash, paymentType);
     }
 
     function _setAccessTypeForDomain(
         bytes32 domainHash,
-        // TODO sub: test that we can not set the value larger
-        //  than possible values for the enum
         AccessType accessType
     ) internal {
         distrConfigs[domainHash].accessType = accessType;
@@ -261,18 +206,22 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    // TODO sub: iron this out !!
-    function setWhitelistForDomain(
+    function setMintlistForDomain(
         bytes32 domainHash,
-        address registrant,
-        bool allowed
-        // TODO sub: should we allow Registrar role to call this ??
-        //  if so - why ?? what can we call from there ??
-        //  should we cut Registrar out of this and other methods ??
-    ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
-        distributionWhitelist[domainHash][registrant] = allowed;
+        address[] calldata candidates,
+        bool[] calldata allowed
+    ) external override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubdomainRegistrar: Not authorized"
+        );
 
-        emit WhitelistUpdated(domainHash, registrant, allowed);
+        for (uint256 i; i < candidates.length; i++) {
+            mintlist[domainHash][candidates[i]] = allowed[i];
+        }
+
+        // TODO sub: test this returns proper arrays
+        emit WhitelistUpdated(domainHash, candidates, allowed);
     }
 
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubdomainRegistrar) onlyAdmin {
@@ -284,15 +233,6 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         rootRegistrar = IZNSRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
-    }
-
-    // TODO sub fee: do we need these getters ???
-    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing) {
-        return distrConfigs[domainHash].pricingContract;
-    }
-
-    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType) {
-        return distrConfigs[domainHash].accessType;
     }
 
     function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {

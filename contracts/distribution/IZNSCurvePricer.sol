@@ -2,45 +2,46 @@
 pragma solidity ^0.8.18;
 
 import { IDomainPriceConfig } from "../abstractions/IDomainPriceConfig.sol";
+import { IZNSPricer } from "./subdomains/abstractions/IZNSPricer.sol";
 
 
-interface IZNSPriceOracle is IDomainPriceConfig {
+interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
 
     /**
      * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`
      * @param price The new maxPrice value
      */
-    event MaxPriceSet(uint256 price);
+    event MaxPriceSet(bytes32 domainHash, uint256 price);
 
     /**
      * @notice Emitted when the `minPrice` is set in `rootDomainPriceConfig`
      * @param price The new minPrice value
      */
-    event MinPriceSet(uint256 price);
+    event MinPriceSet(bytes32 domainHash, uint256 price);
 
     /**
      * @notice Emitted when the `baseLength` is set in `rootDomainPriceConfig`
      * @param length The new baseLength value
      */
-    event BaseLengthSet(uint256 length);
+    event BaseLengthSet(bytes32 domainHash, uint256 length);
 
     /**
      * @notice Emitted when the `maxLength` is set in `rootDomainPriceConfig`
      * @param length The new maxLength value
      */
-    event MaxLengthSet(uint256 length);
+    event MaxLengthSet(bytes32 domainHash, uint256 length);
 
     /**
      * @notice Emitted when the `precisionMultiplier` is set in `rootDomainPriceConfig`
      * @param precision The new precisionMultiplier value
      */
-    event PrecisionMultiplierSet(uint256 precision);
+    event PrecisionMultiplierSet(bytes32 domainHash, uint256 precision);
 
     /**
      * @notice Emitted when the `feePercentage` is set in state
      * @param feePercentage The new feePercentage value
      */
-    event FeePercentageSet(uint256 feePercentage);
+    event FeePercentageSet(bytes32 domainHash, uint256 feePercentage);
 
     /**
      * @notice Emitted when the full `rootDomainPriceConfig` is set in state
@@ -51,6 +52,7 @@ interface IZNSPriceOracle is IDomainPriceConfig {
      * @param precisionMultiplier The new `precisionMultiplier` value
      */
     event PriceConfigSet(
+        bytes32 domainHash,
         uint256 maxPrice,
         uint256 minPrice,
         uint256 maxLength,
@@ -61,28 +63,48 @@ interface IZNSPriceOracle is IDomainPriceConfig {
 
     function initialize(
         address accessController_,
-        DomainPriceConfig calldata priceConfig_
+        address registry_,
+        DomainPriceConfig calldata zeroPriceConfig_
     ) external;
 
     function getPrice(
-        string calldata name
+        bytes32 parentHash,
+        string calldata label
     ) external view returns (uint256);
 
     function getProtocolFee(uint256 domainPrice) external view returns (uint256);
 
-    function setPriceConfig(DomainPriceConfig calldata priceConfig) external;
+    function getFeeForPrice(
+        bytes32 parentHash,
+        uint256 price
+    ) external view returns (uint256);
 
-    function setMaxPrice(uint256 maxPrice) external;
+    function getPriceAndFee(
+        bytes32 parentHash,
+        string calldata label
+    ) external view returns (
+        uint256 price,
+        uint256 stakeFee
+    );
 
-    function setMinPrice(uint256 minPrice) external;
+    function setPriceConfig(
+        bytes32 domainHash,
+        DomainPriceConfig calldata priceConfig
+    ) external;
 
-    function setBaseLength(uint256 length) external;
+    function setMaxPrice(bytes32 domainHash, uint256 maxPrice) external;
 
-    function setMaxLength(uint256 length) external;
+    function setMinPrice(bytes32 domainHash, uint256 minPrice) external;
 
-    function setPrecisionMultiplier(uint256 multiplier) external;
+    function setBaseLength(bytes32 domainHash, uint256 length) external;
 
-    function setRegistrationFeePercentage(uint256 regFeePercentage) external;
+    function setMaxLength(bytes32 domainHash, uint256 length) external;
+
+    function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
+
+    function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
+
+    function setRegistry(address registry_) external;
 
     function setAccessController(address accessController) external;
 

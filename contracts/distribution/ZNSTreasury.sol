@@ -2,38 +2,24 @@
 pragma solidity ^0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
-import { IZNSPriceOracle } from "./IZNSPriceOracle.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { PaymentConfig } from "./IZNSTreasury.sol";
+import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
 
-// TODO sub: should we convert this to AZNSPayment ??
+
 /**
- * @title Contract responsible for all staking operations in ZNS and communication with `ZNSPriceOracle`.
+ * @title Contract responsible for all staking operations in ZNS and communication with `ZNSCurvePricer`.
  * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
  * It stores all data regarding user stakes for domains, and it's also the only contract
- * that is aware of the `ZNSPriceOracle` which it uses to get pricing data for domains.
+ * that is aware of the `ZNSCurvePricer` which it uses to get pricing data for domains.
  */
-contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
+contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
-    /**
-     * @notice The address of the `ZNSPriceOracle` contract.
-     */
-    // TODO sub fee: remove this if not used in this contract !!!
-    // TODO sub fee: move tests for deleted functions to RootRegistrar
-    IZNSPriceOracle public priceOracle;
-
-    /**
-     * @notice The address of the payment/staking token. Will be set to $ZERO.
-     */
-    IERC20 public stakingToken;
-
-    /**
-     * @notice Address of the Zero Vault, a wallet or contract which gathers all the registration fees.
-     */
-    address public zeroVault;
+    mapping(bytes32 => PaymentConfig) public override paymentConfigs;
 
     /**
      * @notice The main mapping of the contract. It stores the amount staked for each domain
@@ -44,7 +30,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
      * > Stake is owned by the owner of the Name in `ZNSRegistry`!
      */
-    mapping(bytes32 domainHash => uint256 amountStaked) public override stakedForDomain;
+    mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
 
     /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
@@ -53,20 +39,32 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * For this also, it is important that `ZNSAccessController` is deployed and initialized with role data
      * before this contract is deployed.
      * @param accessController_ The address of the `ZNSAccessController` contract.
-     * @param priceOracle_ The address of the `ZNSPriceOracle` contract.
-     * @param stakingToken_ The address of the staking token (currently $ZERO).
+     * @param registry_ The address of the `ZNSRegistry` contract.
+     * @param paymentToken_ The address of the staking token (currently $ZERO).
      * @param zeroVault_ The address of the Zero Vault - the wallet or contract to collect all the registration fees.
      */
     function initialize(
         address accessController_,
-        address priceOracle_,
-        address stakingToken_,
+        address registry_,
+        address paymentToken_,
         address zeroVault_
     ) external override initializer {
         _setAccessController(accessController_);
-        setZeroVaultAddress(zeroVault_);
-        setStakingToken(stakingToken_);
-        setPriceOracle(priceOracle_);
+        _setRegistry(registry_);
+
+        require(
+            paymentToken_ != address(0),
+            "ZNSTreasury: paymentToken_ passed as 0x0 address"
+        );
+        require(
+            zeroVault_ != address(0),
+            "ZNSTreasury: zeroVault_ passed as 0x0 address"
+        );
+
+        paymentConfigs[0x0] = PaymentConfig({
+            token: IERC20(paymentToken_),
+            beneficiary : zeroVault_
+        });
     }
 
     /**
@@ -76,54 +74,56 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * Note that a user has to approve the correct amount of `domainPrice + registrationFee`
      * for this function to not revert.
      *
-     * Calls `ZNSPriceOracle` to get the price for the domain name based on it's length,
+     * Calls `ZNSCurvePricer.sol` to get the price for the domain name based on it's length,
      * and to get a proper `registrationFee` as a percentage of the price.
      * In order to avoid needing 2 different approvals, it withdraws `domainPrice + registrationFee`
      * to this contract and then transfers the `registrationFee` to the Zero Vault.
      * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a `StakeDeposited` event.
      * @param domainHash The hash of the domain for which the stake is being deposited.
-     * @param domainLabel The label (last part after ".") of the domain for which the stake is being deposited.
      * @param depositor The address of the user who is depositing the stake.
      */
     function stakeForDomain(
+        bytes32 parentHash,
         bytes32 domainHash,
-        string calldata domainLabel,
         address depositor,
-        address stakeFeeBeneficiary,
-        IERC20 paymentToken,
         uint256 stakeAmount,
         uint256 stakeFee,
         uint256 protocolFee
     ) external override onlyRegistrar {
-        // paymentToken should NOT be specified for root domains !!
-        IERC20 token = paymentToken == IERC20(address(0)) ? stakingToken : paymentToken;
+        PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer stake amount and fee to this address
-        token.safeTransferFrom(
+        parentConfig.token.safeTransferFrom(
             depositor,
             address(this),
             stakeAmount + stakeFee + protocolFee
         );
 
         // Transfer registration fee to the Zero Vault from this address
-        token.safeTransfer(zeroVault, protocolFee);
+        parentConfig.token.safeTransfer(
+            paymentConfigs[0x0].beneficiary,
+            protocolFee
+        );
 
         // transfer parent fee to the parent owner if it's not 0
         if (stakeFee != 0) {
-            token.safeTransfer(
-                stakeFeeBeneficiary,
+            parentConfig.token.safeTransfer(
+                parentConfig.beneficiary,
                 stakeFee
             );
         }
 
         // Record staked amount for this domain
-        stakedForDomain[domainHash] = stakeAmount;
+        stakedForDomain[domainHash] = Stake({
+            token: parentConfig.token,
+            amount: stakeAmount
+        });
 
         emit StakeDeposited(
+            parentHash,
             domainHash,
-            domainLabel,
             depositor,
-            address(token),
+            address(parentConfig.token),
             stakeAmount,
             stakeFee,
             protocolFee
@@ -143,80 +143,92 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         bytes32 domainHash,
         address owner
     ) external override onlyRegistrar {
-        uint256 stakeAmount = stakedForDomain[domainHash];
-        require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
+        Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
 
-        // TODO sub data: error here!!! we need to get this token dynamically !!!
-        // tODO sub data: how do we do this if parent has changed the PaymentConfig ?!?!?
-        // TODO sub data: possibly add stakingToken to the stakedForDomain[domainHash] mapping !!!
-        stakingToken.safeTransfer(owner, stakeAmount);
+        stakeData.token.safeTransfer(owner, stakeData.amount);
 
-        emit StakeWithdrawn(domainHash, owner, stakeAmount);
+        emit StakeWithdrawn(
+            domainHash,
+            owner,
+            address(stakeData.token),
+            stakeData.amount
+        );
     }
 
     function processDirectPayment(
+        bytes32 parentHash,
+        bytes32 domainHash,
         address payer,
-        address paymentBeneficiary,
-        IERC20 paymentToken,
         uint256 paymentAmount,
         uint256 protocolFee
     ) external override onlyRegistrar {
+        PaymentConfig memory parentConfig = paymentConfigs[parentHash];
+
         // Transfer payment to parent beneficiary from payer
-        paymentToken.safeTransferFrom(
+        parentConfig.token.safeTransferFrom(
             payer,
-            paymentBeneficiary,
+            parentConfig.beneficiary,
             paymentAmount
         );
 
         // Transfer registration fee to the Zero Vault from payer
-        paymentToken.safeTransferFrom(payer, zeroVault, protocolFee);
+        parentConfig.token.safeTransferFrom(
+            payer,
+            paymentConfigs[0x0].beneficiary,
+            protocolFee
+        );
 
         emit DirectPaymentProcessed(
+            parentHash,
+            domainHash,
             payer,
-            paymentBeneficiary,
+            parentConfig.beneficiary,
             paymentAmount,
             protocolFee
         );
     }
 
-    /**
-     * @notice Setter function for the `zeroVault` state variable.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param zeroVault_ The address of the new Zero Vault - the wallet or contract to collect all the fees.
-     */
-    function setZeroVaultAddress(address zeroVault_) public override onlyAdmin {
-        require(zeroVault_ != address(0), "ZNSTreasury: zeroVault passed as 0x0 address");
-
-        zeroVault = zeroVault_;
-        emit ZeroVaultAddressSet(zeroVault_);
+    // TODO sub: can we refactor this as in other contracts,
+    //  so that we don't call 2 functions for 1 config ??
+    function setPaymentConfig(
+        bytes32 domainHash,
+        PaymentConfig memory paymentConfig
+    ) external override {
+        setBeneficiary(domainHash, paymentConfig.beneficiary);
+        setPaymentToken(domainHash, address(paymentConfig.token));
     }
 
     /**
-     * @notice Setter function for the `priceOracle` state variable.
+     * @notice Setter function for the `beneficiary` address chosen by domain owner.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param priceOracle_ The address of the new `ZNSPriceOracle` contract.
+     * @param domainHash The hash of the domain to set beneficiary for
+     * @param beneficiary The address of the new beneficiary
+     *  - the wallet or contract to collect all payments for the domain.
      */
-    function setPriceOracle(address priceOracle_) public override onlyAdmin {
-        require(
-            priceOracle_ != address(0),
-            "ZNSTreasury: priceOracle_ passed as 0x0 address"
-        );
+    function setBeneficiary(
+        bytes32 domainHash,
+        address beneficiary
+    ) public override onlyOwnerOrOperator(domainHash) {
+        require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
 
-        priceOracle = IZNSPriceOracle(priceOracle_);
-        emit PriceOracleSet(priceOracle_);
+        paymentConfigs[domainHash].beneficiary = beneficiary;
+        emit BeneficiarySet(domainHash, beneficiary);
     }
 
     /**
-     * @notice Setter function for the `stakingToken` state variable.
+     * @notice Setter function for the `paymentToken` chosen by the domain owner.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param stakingToken_ The address of the new staking token (currently $ZERO).
+     * @param paymentToken The address of the new payment/staking token (currently $ZERO).
      */
-    function setStakingToken(address stakingToken_) public override onlyAdmin {
-        require(stakingToken_ != address(0), "ZNSTreasury: stakingToken_ passed as 0x0 address");
+    function setPaymentToken(
+        bytes32 domainHash,
+        address paymentToken
+    ) public override onlyOwnerOrOperator(domainHash) {
+        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
 
-        stakingToken = IERC20(stakingToken_);
-        emit StakingTokenSet(stakingToken_);
+        paymentConfigs[domainHash].token = IERC20(paymentToken);
+        emit PaymentTokenSet(domainHash, paymentToken);
     }
 
     /**
@@ -230,6 +242,12 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     onlyAdmin
     {
         _setAccessController(accessController_);
+    }
+
+    function setRegistry(
+        address registry_
+    ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
+        _setRegistry(registry_);
     }
 
     /**

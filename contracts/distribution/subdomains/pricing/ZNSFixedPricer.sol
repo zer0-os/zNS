@@ -1,27 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSRegistry } from "../../../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
-import { AZNSPricingWithFee } from "../abstractions/AZNSPricingWithFee.sol";
+import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 
 
-contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee {
-
-    event PriceSet(bytes32 indexed parentHash, uint256 indexed newPrice);
-    event FeePercentageSet(bytes32 indexed parentHash, uint256 indexed feePercentage);
-
-    struct PriceConfig {
-        uint256 price;
-        uint256 feePercentage;
-    }
+contract ZNSFixedPricer is AAccessControlled, ARegistryWired, IZNSFixedPricer {
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
+    mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
-    mapping(bytes32 domainHash => PriceConfig config) internal priceConfigs;
-
+    // TODO sub: test that we can set our own config at 0x0 if we need to !
     constructor(address _accessController, address _registry) {
         _setAccessController(_accessController);
         setRegistry(_registry);
@@ -35,15 +26,6 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFe
 
     function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
         return priceConfigs[parentHash].price;
-    }
-
-    // TODO sub: is this a viable solution to not pay for subdomains
-    //  of a revoked parent ?? this lets us wipe the price at any time for the parent
-    // TODO sub: do we need this now since we're not wiping the price ??!!
-    function revokePrice(bytes32 domainHash) external override onlyRegistrar {
-        priceConfigs[domainHash].price = 0;
-        priceConfigs[domainHash].feePercentage = 0;
-        emit PriceRevoked(domainHash);
     }
 
     function setFeePercentage(
@@ -79,18 +61,19 @@ contract ZNSFixedPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFe
         setFeePercentage(domainHash, priceConfig.feePercentage);
     }
 
-    function setRegistry(address registry_) public override onlyAdmin {
+    // TODO sub: rework these for abstracts to hold this function there and remove these from here if possible!
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricer) onlyAdmin {
         _setRegistry(registry_);
     }
 
     function setAccessController(address accessController_)
     external
-    override
+    override(AAccessControlled, IZNSFixedPricer)
     onlyAdmin {
         _setAccessController(accessController_);
     }
 
-    function getAccessController() external view override returns (address) {
+    function getAccessController() external view override(AAccessControlled, IZNSFixedPricer) returns (address) {
         return address(accessController);
     }
 }

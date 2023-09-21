@@ -2,25 +2,40 @@
 pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./IDistributionConfig.sol";
-import { AZNSPricing } from "./abstractions/AZNSPricing.sol";
-import { AZNSPayment } from "./abstractions/AZNSPayment.sol";
+import { PaymentConfig } from "../IZNSTreasury.sol";
+import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 interface IZNSSubdomainRegistrar is IDistributionConfig {
-    event PricingContractSet(bytes32 indexed domainHash, address indexed priceContract);
-    event PaymentConfigSet(
-        bytes32 indexed domainHash,
-        IERC20 indexed paymentToken,
-        address indexed beneficiary,
-        PaymentType paymentType
-    );
-    event PaymentTokenSet(bytes32 indexed domainHash, address indexed paymentToken);
-    event PaymentBeneficiarySet(bytes32 indexed domainHash, address indexed beneficiary);
+    event PricerContractSet(bytes32 indexed domainHash, address indexed priceContract);
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
-    event WhitelistUpdated(bytes32 indexed domainHash, address indexed registrant, bool allowed);
+    event DistributionConfigSet(
+        bytes32 indexed domainHash,
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
+    event WhitelistUpdated(
+        bytes32 indexed domainHash,
+        address[] indexed candidates,
+        bool[] allowed
+    );
     event RootRegistrarSet(address registrar);
+
+    function distrConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
+
+    function mintlist(
+        bytes32 domainHash,
+        address candidate
+    ) external view returns (bool);
 
     function registerSubdomain(
         bytes32 parentHash,
@@ -41,24 +56,9 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         DistributionConfig calldata config
     ) external;
 
-    function setPricingContractForDomain(
+    function setPricerContractForDomain(
         bytes32 domainHash,
-        AZNSPricing pricingContract
-    ) external;
-
-    function setPaymentConfigForDomain(
-        bytes32 domainHash,
-        PaymentConfig calldata config
-    ) external;
-
-    function setPaymentTokenForDomain(
-        bytes32 domainHash,
-        IERC20 paymentToken
-    ) external;
-
-    function setBeneficiaryForDomain(
-        bytes32 domainHash,
-        address beneficiary
+        IZNSPricer pricerContract
     ) external;
 
     function setPaymentTypeForDomain(
@@ -71,19 +71,15 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function setWhitelistForDomain(
+    function setMintlistForDomain(
         bytes32 domainHash,
-        address registrant,
-        bool allowed
+        address[] calldata candidates,
+        bool[] calldata allowed
     ) external;
 
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
-
-    function getPricingContractForDomain(bytes32 domainHash) external view returns (AZNSPricing);
-
-    function getAccessTypeForDomain(bytes32 domainHash) external view returns (AccessType);
 
     function getAccessController() external view returns (address);
 

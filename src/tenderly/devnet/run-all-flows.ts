@@ -32,13 +32,13 @@ export const runAllFlows = async () => {
 
   const fullRootConfig = {
     distrConfig: {
-      pricingContract: zns.fixedPricing.address,
-      paymentConfig: {
-        paymentType: PaymentType.STAKE,
-        paymentToken: zns.zeroToken.address,
-        beneficiary: governor.address,
-      },
+      pricerContract: zns.fixedPricer.address,
+      paymentType: PaymentType.STAKE,
       accessType: 1,
+    },
+    paymentConfig: {
+      token: zns.zeroToken.address,
+      beneficiary: governor.address,
     },
     priceConfig: {
       price: rootPrice,
@@ -60,13 +60,13 @@ export const runAllFlows = async () => {
   const subdomainLabel = "subdomain";
   const fullSubConfig = {
     distrConfig: {
-      pricingContract: zns.asPricing.address,
-      paymentConfig: {
-        paymentType: PaymentType.DIRECT,
-        paymentToken: zns.zeroToken.address,
-        beneficiary: user.address,
-      },
+      pricerContract: zns.curvePricer.address,
+      paymentType: PaymentType.DIRECT,
       accessType: 1,
+    },
+    paymentConfig: {
+      token: zns.zeroToken.address,
+      beneficiary: user.address,
     },
     priceConfig: priceConfigDefault,
   };

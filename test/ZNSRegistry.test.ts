@@ -67,6 +67,29 @@ describe("ZNSRegistry", () => {
     );
   });
 
+  // eslint-disable-next-line max-len
+  it("Should initialize correctly with deployer owning the 0x0 hash domain and should allow to change the ownership later", async () => {
+    // get the data of the 0x0 hash domain
+    const {
+      owner,
+      resolver,
+    } = await zns.registry.getDomainRecord(ethers.constants.HashZero);
+
+    // check that the owner is the deployer
+    expect(owner).to.eq(deployer.address);
+    expect(resolver).to.eq(ethers.constants.AddressZero);
+
+    // change the owner as deployer
+    await zns.registry.connect(deployer).updateDomainOwner(
+      ethers.constants.HashZero,
+      randomUser.address
+    );
+
+    // validate
+    const newOwner = await zns.registry.getDomainOwner(ethers.constants.HashZero);
+    expect(newOwner).to.eq(randomUser.address);
+  });
+
   it("Should set access controller correctly with ADMIN_ROLE", async () => {
     const currentAC = await zns.registry.getAccessController();
 

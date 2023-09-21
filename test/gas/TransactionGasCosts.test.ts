@@ -11,6 +11,10 @@ import fs from "fs";
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 
+// TODO sub data:
+//  current saved gas costs (Treasury + Oracle merge proto): root = -74461, sub = -77937
+//  end of implementation in PR: root = -43941, sub = -69243
+
 // TODO sub: add more tests here for each tx with different configs
 //  so we can track gas changes better when developing
 describe("Transaction Gas Costs Test", () => {
@@ -45,13 +49,11 @@ describe("Transaction Gas Costs Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
+
     config = {
-      pricingContract: zns.fixedPricing.address,
-      paymentConfig: {
-        paymentType: PaymentType.DIRECT,
-        paymentToken: zns.zeroToken.address,
-        beneficiary: rootOwner.address,
-      },
+      pricerContract: zns.fixedPricer.address,
+      paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
 
@@ -72,12 +74,12 @@ describe("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          pricingContract: zns.asPricing.address,
-          paymentConfig: {
-            paymentToken: zns.zeroToken.address,
-            beneficiary: rootOwner.address,
-            paymentType: PaymentType.DIRECT,
-          },
+          pricerContract: zns.curvePricer.address,
+          paymentType: PaymentType.DIRECT,
+        },
+        paymentConfig: {
+          token: zns.zeroToken.address,
+          beneficiary: rootOwner.address,
         },
         priceConfig: priceConfigDefault,
       },
@@ -91,9 +93,9 @@ describe("Transaction Gas Costs Test", () => {
     //   fullConfig: {
     //     distrConfig: {
     //       accessType: AccessType.OPEN,
-    //       pricingContract: zns.asPricing.address,
+    //       pricerContract: zns.curvePricer.address,
     //       paymentConfig: {
-    //         paymentToken: zns.zeroToken.address,
+    //         token: zns.zeroToken.address,
     //         beneficiary: rootOwner.address,
     //         paymentType: PaymentType.STAKE,
     //       },

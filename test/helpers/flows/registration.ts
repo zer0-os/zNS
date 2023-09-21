@@ -8,7 +8,7 @@ import { IERC20__factory } from "../../../typechain";
 import { PaymentType } from "../constants";
 
 
-// TODO sub: make these messy helpers better or no one will be able to maintain this
+// TODO sub: make these helpers better
 export const registerDomainPath = async ({
   zns,
   domainConfigs,
@@ -42,8 +42,8 @@ export const registerDomainPath = async ({
       beneficiary = ethers.constants.AddressZero;
     } else {
       // grab all the important data of the parent
-      const { paymentConfig } = await zns.subdomainRegistrar.distrConfigs(parentHash);
-      const { paymentToken: paymentTokenAddress } = paymentConfig;
+      const paymentConfig = await zns.treasury.paymentConfigs(parentHash);
+      const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
       if (paymentTokenAddress === zns.zeroToken.address) {
@@ -121,43 +121,45 @@ export const validatePathRegistration = async ({
     }
 
     const {
-      maxPrice: oracleMaxPrice,
-      minPrice: oracleMinPrice,
-      maxLength: oracleMaxLength,
-      baseLength: oracleBaseLength,
-      precisionMultiplier: oraclePrecisionMultiplier,
-      feePercentage: oracleFeePercentage,
-    } = await zns.priceOracle.rootDomainPriceConfig();
+      maxPrice: curveMaxPrice,
+      minPrice: curveMinPrice,
+      maxLength: curveMaxLength,
+      baseLength: curveBaseLength,
+      precisionMultiplier: curvePrecisionMultiplier,
+      feePercentage: curveFeePercentage,
+    } = await zns.curvePricer.priceConfigs(ethers.constants.HashZero);
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
+    let paymentType;
     if (parentHashFound === ethers.constants.HashZero) {
       ({
         expectedPrice,
       } = getPriceObject(
         domainLabel,
         {
-          maxPrice: oracleMaxPrice,
-          minPrice: oracleMinPrice,
-          maxLength: oracleMaxLength,
-          baseLength: oracleBaseLength,
-          precisionMultiplier: oraclePrecisionMultiplier,
-          feePercentage: oracleFeePercentage,
+          maxPrice: curveMaxPrice,
+          minPrice: curveMinPrice,
+          maxLength: curveMaxLength,
+          baseLength: curveBaseLength,
+          precisionMultiplier: curvePrecisionMultiplier,
+          feePercentage: curveFeePercentage,
         },
       ));
       expParentBalDiff = BigNumber.from(0);
       expTreasuryBalDiff = expectedPrice;
     } else {
+      const config = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
       const {
-        pricingContract,
-        paymentConfig,
-      } = await zns.subdomainRegistrar.distrConfigs(parentHashFound);
+        pricerContract,
+      } = config;
+      ({ paymentType } = config);
 
-      if (pricingContract === zns.fixedPricing.address) {
+      if (pricerContract === zns.fixedPricer.address) {
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricing.getPriceAndFee(parentHashFound, domainLabel));
+        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel));
       } else {
         const {
           maxPrice,
@@ -166,7 +168,7 @@ export const validatePathRegistration = async ({
           baseLength,
           precisionMultiplier,
           feePercentage,
-        } = await zns.asPricing.priceConfigs(parentHashFound);
+        } = await zns.curvePricer.priceConfigs(parentHashFound);
 
         ({
           expectedPrice,
@@ -185,20 +187,20 @@ export const validatePathRegistration = async ({
       }
 
       // if parent's payment is staking, then beneficiary only gets the fee
-      if (paymentConfig?.paymentType === PaymentType.STAKE) {
+      if (paymentType === PaymentType.STAKE) {
         expParentBalDiff = stakeFee;
       } else {
         stakeFee = BigNumber.from(0);
         expParentBalDiff = expectedPrice;
       }
 
-      expTreasuryBalDiff = paymentConfig?.paymentType === PaymentType.STAKE
+      expTreasuryBalDiff = paymentType === PaymentType.STAKE
         ? expectedPrice : BigNumber.from(0);
     }
 
     const protocolFee = getStakingOrProtocolFee(
       expectedPrice.add(stakeFee),
-      oracleFeePercentage
+      curveFeePercentage
     );
 
     const {

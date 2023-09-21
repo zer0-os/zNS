@@ -2,20 +2,16 @@
 pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
-import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+// TODO sub: can we make this better??
 struct CoreRegisterArgs {
     // 0x0 for root domains
     bytes32 parentHash;
     bytes32 domainHash;
     string label;
     address registrant;
-    // 0x0 for root domains
-    address beneficiary;
-    // 0x0 for root domains
-    IERC20 paymentToken;
     uint256 price;
     // 0x0 for anything other than subdomain under a parent with Stake Payment
     uint256 stakeFee;
@@ -56,9 +52,14 @@ interface IZNSRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a domain is revoked.
      * @param domainHash The hash of the domain revoked
-     * @param registrant The address that called `ZNSRegistrar.revokeDomain()`
+     * @param owner The address that called `ZNSRegistrar.revokeDomain()` and domain owner
+     * @param stakeRefunded A flag for whether the stake was refunded or not
      */
-    event DomainRevoked(bytes32 indexed domainHash, address indexed registrant);
+    event DomainRevoked(
+        bytes32 indexed domainHash,
+        address indexed owner,
+        bool indexed stakeRefunded
+    );
 
     /**
      * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
@@ -71,10 +72,10 @@ interface IZNSRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `priceOracle` address is set in state.
-     * @param priceOracle The new address of the PriceOracle contract
+     * @notice Emitted when the `curvePricer` address is set in state.
+     * @param curvePricer The new address of the CurvePricer contract
      */
-    event PriceOracleSet(address priceOracle);
+    event CurvePricerSet(address curvePricer);
 
     /**
      * @notice Emitted when the `treasury` address is set in state.
@@ -103,7 +104,7 @@ interface IZNSRegistrar is IDistributionConfig {
     function initialize(
         address accessController_,
         address registry_,
-        address priceOracle_,
+        address curvePricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
@@ -129,7 +130,7 @@ interface IZNSRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setPriceOracle(address priceOracle_) external;
+    function setCurvePricer(address curvePricer_) external;
 
     function setTreasury(address treasury_) external;
 

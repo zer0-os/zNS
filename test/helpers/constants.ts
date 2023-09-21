@@ -41,20 +41,21 @@ export const priceConfigDefault : IASPriceConfig = {
 };
 
 export const paymentConfigEmpty = {
-  paymentToken: ethers.constants.AddressZero,
+  token: ethers.constants.AddressZero,
   beneficiary: ethers.constants.AddressZero,
   paymentType: PaymentType.DIRECT,
 };
 
 export const distrConfigEmpty = {
-  pricingContract: ethers.constants.AddressZero,
-  paymentConfig: paymentConfigEmpty,
+  pricerContract: ethers.constants.AddressZero,
+  paymentType: 0,
   accessType: 0,
 };
 
 export const fullDistrConfigEmpty = {
   distrConfig: distrConfigEmpty,
   priceConfig: undefined,
+  paymentConfig: paymentConfigEmpty,
 };
 
 export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -65,11 +66,10 @@ export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
 export const zeroTokenMockName = "ZeroToken";
 export const addressResolverName = "ZNSAddressResolver";
-export const priceOracleName = "ZNSPriceOracle";
+export const curvePricerName = "ZNSCurvePricer";
+export const fixedPricerName = "ZNSFixedPricer";
 export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
-export const fixedPricingName = "ZNSFixedPricing";
-export const asymptoticPricingName = "ZNSAsymptoticPricing";
 export const subdomainRegistrarName = "ZNSSubdomainRegistrar";

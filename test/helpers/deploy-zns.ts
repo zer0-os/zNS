@@ -7,12 +7,11 @@ import {
   ZNSAccessController__factory,
   ZNSAddressResolver,
   ZNSAddressResolver__factory,
-  ZNSAsymptoticPricing__factory,
+  ZNSCurvePricer,
   ZNSDomainToken,
   ZNSDomainToken__factory,
-  ZNSFixedPricing__factory,
-  ZNSPriceOracle,
-  ZNSPriceOracle__factory,
+  ZNSFixedPricer__factory,
+  ZNSCurvePricer__factory,
   ZNSRegistrar,
   ZNSRegistrar__factory,
   ZNSRegistry,
@@ -28,12 +27,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   accessControllerName,
   addressResolverName,
-  asymptoticPricingName,
   domainTokenName,
   erc1967ProxyName,
-  fixedPricingName,
+  fixedPricerName,
   priceConfigDefault,
-  priceOracleName,
+  curvePricerName,
   registrarName,
   registryName,
   subdomainRegistrarName,
@@ -239,66 +237,76 @@ export const deployAddressResolver = async (
   return resolver;
 };
 
-export const deployPriceOracle = async ({
+export const deployCurvePricer = async ({
   deployer,
   accessControllerAddress,
+  registryAddress,
   priceConfig,
   isTenderlyRun,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
+  registryAddress : string;
   priceConfig : IASPriceConfig;
   isTenderlyRun : boolean;
-}) : Promise<ZNSPriceOracle> => {
-  const priceOracleFactory = new ZNSPriceOracle__factory(deployer);
+}) : Promise<ZNSCurvePricer> => {
+  const curveFactory = new ZNSCurvePricer__factory(deployer);
 
-  const priceOracle = await upgrades.deployProxy(
-    priceOracleFactory,
+  const curvePricer = await upgrades.deployProxy(
+    curveFactory,
     [
       accessControllerAddress,
+      registryAddress,
       priceConfig,
     ],
     {
       kind: "uups",
     }
-  ) as ZNSPriceOracle;
+  ) as ZNSCurvePricer;
 
-  await priceOracle.deployed();
+  await curvePricer.deployed();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address: priceOracle.address,
+      address: curvePricer.address,
     });
 
-    const impl = await getProxyImplAddress(priceOracle.address);
+    const impl = await getProxyImplAddress(curvePricer.address);
 
     await hre.tenderly.verify({
-      name: priceOracleName,
+      name: curvePricerName,
       address: impl,
     });
 
-    console.log(`ZNSPriceOracle deployed at:
-                proxy: ${priceOracle.address}
+    console.log(`${curvePricerName} deployed at:
+                proxy: ${curvePricer.address}
                 implementation: ${impl}`);
   }
 
-  return priceOracle;
+  return curvePricer;
 };
 
-export const deployTreasury = async (
-  deployer : SignerWithAddress,
-  accessControllerAddress : string,
-  priceOracleAddress : string,
-  zTokenMockAddress : string,
-  zeroVaultAddress : string,
-  isTenderlyRun : boolean
-) : Promise<ZNSTreasury> => {
+export const deployTreasury = async ({
+  deployer,
+  accessControllerAddress,
+  registryAddress,
+  zTokenMockAddress,
+  zeroVaultAddress,
+  isTenderlyRun = false,
+} : {
+  deployer : SignerWithAddress;
+  accessControllerAddress : string;
+  registryAddress : string;
+  zTokenMockAddress : string;
+  zeroVaultAddress : string;
+  isTenderlyRun : boolean;
+}) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
   const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
     [
       accessControllerAddress,
-      priceOracleAddress,
+      registryAddress,
       zTokenMockAddress,
       zeroVaultAddress,
     ],
@@ -343,7 +351,7 @@ export const deployRegistrar = async (
     [
       accessController.address,
       config.registryAddress,
-      config.priceOracleAddress,
+      config.curvePricerAddress,
       config.treasury.address,
       config.domainTokenAddress,
       config.addressResolverAddress,
@@ -399,7 +407,7 @@ export const deployZeroTokenMock = async (
   return token;
 };
 
-export const deployFixedPricing = async ({
+export const deployFixedPricer = async ({
   deployer,
   acAddress,
   regAddress,
@@ -410,68 +418,29 @@ export const deployFixedPricing = async ({
   regAddress : string;
   isTenderlyRun ?: boolean;
 }) => {
-  const pricingFactory = new ZNSFixedPricing__factory(deployer);
-  const fixedPricing = await pricingFactory.deploy(acAddress, regAddress);
-  await fixedPricing.deployed();
+  const pricerFactory = new ZNSFixedPricer__factory(deployer);
+  const fixedPricer = await pricerFactory.deploy(acAddress, regAddress);
+  await fixedPricer.deployed();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: fixedPricingName,
-      address: fixedPricing.address,
+      name: fixedPricerName,
+      address: fixedPricer.address,
     });
 
-    const impl = await getProxyImplAddress(fixedPricing.address);
+    const impl = await getProxyImplAddress(fixedPricer.address);
 
     await hre.tenderly.verify({
-      name: fixedPricingName,
+      name: fixedPricerName,
       address: impl,
     });
 
-    console.log(`${fixedPricingName} deployed at:
-                proxy: ${fixedPricing.address}
+    console.log(`${fixedPricerName} deployed at:
+                proxy: ${fixedPricer.address}
                 implementation: ${impl}`);
   }
 
-  return fixedPricing;
-};
-
-export const deployAsymptoticPricing = async ({
-  deployer,
-  acAddress,
-  regAddress,
-  isTenderlyRun = false,
-} : {
-  deployer : SignerWithAddress;
-  acAddress : string;
-  regAddress : string;
-  isTenderlyRun ?: boolean;
-}) => {
-  const factory = new ZNSAsymptoticPricing__factory(deployer);
-  const asPricing = await factory.deploy(
-    acAddress,
-    regAddress
-  );
-  await asPricing.deployed();
-
-  if (isTenderlyRun) {
-    await hre.tenderly.verify({
-      name: asymptoticPricingName,
-      address: asPricing.address,
-    });
-
-    const impl = await getProxyImplAddress(asPricing.address);
-
-    await hre.tenderly.verify({
-      name: asymptoticPricingName,
-      address: impl,
-    });
-
-    console.log(`${asymptoticPricingName} deployed at:
-                proxy: ${asPricing.address}
-                implementation: ${impl}`);
-  }
-
-  return asPricing;
+  return fixedPricer;
 };
 
 export const deploySubdomainRegistrar = async ({
@@ -576,26 +545,27 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
-  const priceOracle = await deployPriceOracle({
+  const curvePricer = await deployCurvePricer({
     deployer,
     accessControllerAddress: accessController.address,
+    registryAddress: registry.address,
     priceConfig,
     isTenderlyRun,
   });
 
-  const treasury = await deployTreasury(
+  const treasury = await deployTreasury({
     deployer,
-    accessController.address,
-    priceOracle.address,
-    zeroTokenMock.address,
+    accessControllerAddress: accessController.address,
+    registryAddress: registry.address,
+    zTokenMockAddress: zeroTokenMock.address,
     zeroVaultAddress,
-    isTenderlyRun
-  );
+    isTenderlyRun,
+  });
 
   const config : RegistrarConfig = {
     treasury,
     registryAddress: registry.address,
-    priceOracleAddress: priceOracle.address,
+    curvePricerAddress: curvePricer.address,
     domainTokenAddress: domainToken.address,
     addressResolverAddress: addressResolver.address,
   };
@@ -614,8 +584,7 @@ export const deployZNS = async ({
     isTenderlyRun,
   };
 
-  const fixedPricing = await deployFixedPricing(subModuleDeployArgs);
-  const asPricing = await deployAsymptoticPricing(subModuleDeployArgs);
+  const fixedPricer = await deployFixedPricer(subModuleDeployArgs);
 
   const subdomainRegistrar = await deploySubdomainRegistrar({
     deployer,
@@ -631,11 +600,10 @@ export const deployZNS = async ({
     domainToken,
     zeroToken: zeroTokenMock,
     addressResolver,
-    priceOracle,
+    curvePricer,
     treasury,
     registrar,
-    fixedPricing,
-    asPricing,
+    fixedPricer,
     subdomainRegistrar,
     zeroVaultAddress,
   };
