@@ -133,6 +133,12 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
+        // TODO sub: figure out if this is needed !!!
+        require(
+            _isValidString(args.label),
+            "ZNSRootRegistrar: Invalid domain name"
+        );
+
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
@@ -349,6 +355,21 @@ contract ZNSRootRegistrar is
         addressResolver = IZNSAddressResolver(addressResolver_);
 
         emit AddressResolverSet(addressResolver_);
+    }
+
+    // TODO audit: Do we need to check this on the contract?! This costs extra gas and only checks
+    //  a couple of specific cases. Technically, someone is still able to directly register
+    //  an incorrect name. Getting to this hash from any other layer should be problematic,
+    //  so even if they did register the name on the contract, they should not be able to actually
+    //  use it since they can't arrive at their own hash (or can they?).
+    //  How much of a problem would it be if we don't check this?
+    //  Should we keep this, does it make sense to keep this, should we add more validations ???!
+    function _isValidString(string memory str) internal pure returns (bool) {
+        bytes memory strBytes = bytes(str);
+        bool isValid = strBytes.length != 0;
+        isValid = isValid && (strBytes[0] != 0x20); // first char is not 0x20
+
+        return isValid;
     }
 
     /**
