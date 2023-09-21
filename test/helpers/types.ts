@@ -2,11 +2,11 @@ import { BigNumber } from "ethers";
 import {
   ZNSAddressResolver,
   ZNSDomainToken,
-  ZNSRegistrar,
+  ZNSRootRegistrar,
   ZNSRegistry,
   ZNSTreasury,
   ZNSAccessController,
-  ZNSRegistrarUpgradeMock,
+  ZNSRootRegistrarUpgradeMock,
   ZNSCurvePricerUpgradeMock,
   ZNSAddressResolverUpgradeMock,
   ZNSDomainTokenUpgradeMock,
@@ -14,13 +14,17 @@ import {
   ZNSTreasuryUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSRegistrarUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory,
   ZNSCurvePricerUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
   ZNSTreasuryUpgradeMock__factory,
   ZeroToken,
-  ZNSSubdomainRegistrar,
-  ZNSCurvePricer, ZNSFixedPricer,
+  ZNSSubRegistrar,
+  ZNSCurvePricer,
+  ZNSFixedPricer,
+  ZNSFixedPricerUpgradeMock,
+  ZNSSubRegistrarUpgradeMock,
+  ZNSSubRegistrarUpgradeMock__factory, ZNSFixedPricerUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
@@ -40,24 +44,30 @@ string
 >;
 
 export type ZNSContractMockFactory =
-  ZNSRegistrarUpgradeMock__factory |
+  ZNSRootRegistrarUpgradeMock__factory |
+  ZNSSubRegistrarUpgradeMock__factory |
   ZNSCurvePricerUpgradeMock__factory |
+  ZNSFixedPricerUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
   ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
-  ZNSRegistrarUpgradeMock |
+  ZNSRootRegistrarUpgradeMock |
+  ZNSSubRegistrarUpgradeMock |
   ZNSCurvePricerUpgradeMock |
+  ZNSFixedPricerUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
-  ZNSRegistrar |
+  ZNSRootRegistrar |
+  ZNSSubRegistrar |
   ZNSCurvePricer |
+  ZNSFixedPricer |
   ZNSTreasury |
   ZNSRegistry |
   ZNSAddressResolver |
@@ -94,9 +104,9 @@ export interface ZNSContracts {
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
-  registrar : ZNSRegistrar;
+  rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
-  subdomainRegistrar : ZNSSubdomainRegistrar;
+  subRegistrar : ZNSSubRegistrar;
   zeroVaultAddress : string;
 }
 

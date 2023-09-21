@@ -7,19 +7,19 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { PaymentConfig } from "./IZNSTreasury.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**
  * @title Contract responsible for all staking operations in ZNS and communication with `ZNSCurvePricer`.
- * @notice This contract it called by `ZNSRegistrar` every time a staking operation is needed.
+ * @notice This contract it called by `ZNSRootRegistrar.sol` every time a staking operation is needed.
  * It stores all data regarding user stakes for domains, and it's also the only contract
  * that is aware of the `ZNSCurvePricer` which it uses to get pricing data for domains.
  */
 contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
-    mapping(bytes32 => PaymentConfig) public override paymentConfigs;
+    mapping(bytes32 domainHash => PaymentConfig config) public override paymentConfigs;
 
     /**
      * @notice The main mapping of the contract. It stores the amount staked for each domain
@@ -68,7 +68,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Deposits the stake for a domain. This function is called by `ZNSRegistrar`
+     * @notice Deposits the stake for a domain. This function is called by `ZNSRootRegistrar.sol`
      * when a user wants to Register a domain. It transfers the stake amount and the registration fee
      * to the contract from the user, and records the staked amount for the domain.
      * Note that a user has to approve the correct amount of `domainPrice + registrationFee`
@@ -131,7 +131,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
-     * @notice Withdraws the stake for a domain. This function is called by `ZNSRegistrar`
+     * @notice Withdraws the stake for a domain. This function is called by `ZNSRootRegistrar.sol`
      * when a user wants to Revoke a domain. It transfers the stake amount from the contract back to the user,
      * and deletes the staked amount for the domain in state.
      * Emits a `StakeWithdrawn` event.
@@ -231,31 +231,18 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         emit PaymentTokenSet(domainHash, paymentToken);
     }
 
-    /**
-     * @notice Setter function for the `accessController` state variable.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param accessController_ The address of the new `ZNSAccessController` contract.
-     */
-    function setAccessController(address accessController_)
-    public
-    override(AAccessControlled, IZNSTreasury)
-    onlyAdmin
-    {
-        _setAccessController(accessController_);
-    }
-
     function setRegistry(
         address registry_
     ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
         _setRegistry(registry_);
     }
 
-    /**
-     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
-        return address(accessController);
-    }
+//    /**
+//     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
+//     */
+//    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
+//        return address(accessController);
+//    }
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized

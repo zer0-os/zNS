@@ -55,7 +55,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
      */
-    function initialize(address accessController_) public override initializer {
+    function initialize(address accessController_) external override initializer {
         records[0x0].owner = msg.sender;
         _setAccessController(accessController_);
     }
@@ -127,9 +127,9 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @notice Creates a new domain record. Only callable by the `ZNSRegistrar`
+     * @notice Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
      * or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
-     * flow that starts from `ZNSRegistrar.registerDomain()`. Calls 2 internal functions to set
+     * flow that starts from `ZNSRootRegistrar.sol.registerDomain()`. Calls 2 internal functions to set
      * the owner and resolver of the domain separately.
      * Can be called with `resolver` param as 0, which will exclude the call to set resolver.
      * Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.
@@ -153,7 +153,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Updates an existing domain record's owner and resolver.
      * Note that this function can ONLY be called by the Name owner of the domain.
-     * This is NOT used by the `ZNSRegistrar` contract and serves as a user facing function
+     * This is NOT used by the `ZNSRootRegistrar.sol` contract and serves as a user facing function
      * for the owners of existing domains to change their data on this contract. A domain
      * `operator` can NOT call this, since he is not allowed to change the owner.
      * Emits `DomainOwnerSet` and `DomainResolverSet` events.
@@ -173,8 +173,8 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Updates the owner of an existing domain. Can be called by either the Name owner
-     * on this contract OR the `ZNSRegistrar` contract as part of the Reclaim flow
-     * that starts at `ZNSRegistrar.reclaim()`. Emits an `DomainOwnerSet` event.
+     * on this contract OR the `ZNSRootRegistrar.sol` contract as part of the Reclaim flow
+     * that starts at `ZNSRootRegistrar.sol.reclaim()`. Emits an `DomainOwnerSet` event.
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -208,7 +208,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Deletes a domain's record from this contract's state.
-     * This can ONLY be called by the `ZNSRegistrar` contract as part of the Revoke flow
+     * This can ONLY be called by the `ZNSRootRegistrar.sol` contract as part of the Revoke flow
      * or any address holding the `REGISTRAR_ROLE`. Emits a `DomainRecordDeleted` event.
      * @param domainHash The hash of the domain name
      */
@@ -216,23 +216,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);
-    }
-
-    /**
-     * @notice Sets the `accessController` contract
-     * @param accessController The new access controller
-     */
-    function setAccessController(
-        address accessController
-    ) external override(AAccessControlled, IZNSRegistry) onlyAdmin {
-        _setAccessController(accessController);
-    }
-
-    /**
-     * @notice Gets the `accessController` from state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSRegistry) returns (address) {
-        return address(accessController);
     }
 
     /**

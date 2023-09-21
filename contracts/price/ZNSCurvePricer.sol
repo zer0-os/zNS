@@ -5,7 +5,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**
@@ -21,7 +21,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
-    mapping(bytes32 => DomainPriceConfig) public priceConfigs;
+    mapping(bytes32 domainHash => DomainPriceConfig config) public priceConfigs;
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
@@ -37,7 +37,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         address accessController_,
         address registry_,
         DomainPriceConfig calldata zeroPriceConfig_
-    ) public override initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
@@ -234,26 +234,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
         _setRegistry(registry_);
-    }
-
-    /**
-     * @notice Sets the access controller for the contract.
-     * Only ADMIN can call this function.
-     * Fires `AccessControllerSet` event.
-     * @param accessController_ The address of the new access controller
-     */
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSCurvePricer)
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
-    /**
-     * @notice Getter for ZNSAccessController address stored on this contract.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSCurvePricer) returns (address) {
-        return address(accessController);
     }
 
     /**

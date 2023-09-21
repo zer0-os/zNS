@@ -18,13 +18,13 @@ export const NOT_AUTHORIZED_REG_WIRED_ERR = "ARegistryWired: Not authorized. Onl
 export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
 export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
 
-// ZNSRegistrar
-export const NOT_NAME_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Name";
-export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of the Token";
-export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRegistrar: Not the owner of both Name and Token";
+// ZNSRootRegistrar.sol
+export const NOT_NAME_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of the Name";
+export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of the Token";
+export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both Name and Token";
 
 // Subdomain Registrar
-export const DISTRIBUTION_LOCKED_ERR = "ZNSSubdomainRegistrar: Parent domain's distribution is locked";
+export const DISTRIBUTION_LOCKED_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked";
 
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";

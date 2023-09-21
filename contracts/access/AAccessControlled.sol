@@ -32,7 +32,7 @@ abstract contract AAccessControlled {
     }
 
     /**
-     * @notice Revert if `msg.sender` is not the `ZNSRegistrar` contract
+     * @notice Revert if `msg.sender` is not the `ZNSRootRegistrar.sol` contract
      * or an address holding REGISTRAR_ROLE.
      */
     modifier onlyRegistrar {
@@ -41,17 +41,25 @@ abstract contract AAccessControlled {
     }
 
     /**
-     * @notice Virtual function to make sure the getter is always implemented in children,
-     * otherwise we will not be able to read the AC address in children
+     * @notice Universal getter for `accessController` address on any contract that
+     * inherits from `AAccessControlled`.
      */
-    function getAccessController() external view virtual returns (address);
+    function getAccessController() external view returns (address) {
+        return address(accessController);
+    }
 
-    // TODO sub: can we make this an actual function ?? why implement this in every child ??
     /**
-     * @notice Virtual function to make sure the setter is always implemented in children,
-     * otherwise we will not be able to reset the AC address in children
+     * @notice Universal setter for `accessController` address on any contract that
+     * inherits from `AAccessControlled`.
+     * Only ADMIN can call this function.
+     * Fires `AccessControllerSet` event.
+     * @param accessController_ The address of the new access controller
      */
-    function setAccessController(address _accessController) external virtual;
+    function setAccessController(address accessController_)
+    external
+    onlyAdmin {
+        _setAccessController(accessController_);
+    }
 
     /**
      * @notice Internal function to set the access controller address.

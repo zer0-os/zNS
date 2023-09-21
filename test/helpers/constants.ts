@@ -15,7 +15,7 @@ export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(
 export enum AccessType {
   LOCKED,
   OPEN,
-  WHITELIST,
+  MINTLIST,
 }
 
 // eslint-disable-next-line no-shadow
@@ -69,7 +69,7 @@ export const addressResolverName = "ZNSAddressResolver";
 export const curvePricerName = "ZNSCurvePricer";
 export const fixedPricerName = "ZNSFixedPricer";
 export const treasuryName = "ZNSTreasury";
-export const registrarName = "ZNSRegistrar";
+export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
-export const subdomainRegistrarName = "ZNSSubdomainRegistrar";
+export const subRegistrarName = "ZNSSubRegistrar";

@@ -2,7 +2,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import assert from "assert";
 import { distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
 
 const { AddressZero } = ethers.constants;
@@ -21,7 +20,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
-  const tx = await zns.registrar.connect(user).registerDomain(
+  const tx = await zns.rootRegistrar.connect(user).registerDomain(
     domainName,
     domainContent, // Arbitrary address value
     distrConfig
@@ -41,7 +40,7 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricerContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
   if (pricerContract === zns.curvePricer.address) {
@@ -77,7 +76,7 @@ export const defaultSubdomainRegistration = async ({
   domainContent ?: string;
   distrConfig : IDistributionConfig;
 }) => {
-  const tx = await zns.subdomainRegistrar.connect(user).registerSubdomain(
+  const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
     domainContent, // Arbitrary address value
@@ -94,7 +93,6 @@ export const registrationWithSetup = async ({
   domainLabel,
   domainContent = user.address,
   fullConfig = fullDistrConfigEmpty,
-  isRootDomain = true,
 } : {
   zns : ZNSContracts;
   user : SignerWithAddress;
@@ -102,7 +100,6 @@ export const registrationWithSetup = async ({
   domainLabel : string;
   domainContent ?: string;
   fullConfig ?: IFullDistributionConfig;
-  isRootDomain ?: boolean;
 }) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
@@ -110,7 +107,7 @@ export const registrationWithSetup = async ({
     : distrConfigEmpty;
 
   // register domain
-  if (isRootDomain) {
+  if (!parentHash || parentHash === ethers.constants.HashZero) {
     await defaultRootRegistration({
       user,
       zns,
@@ -119,8 +116,6 @@ export const registrationWithSetup = async ({
       distrConfig,
     });
   } else {
-    assert.ok(parentHash, "Parent hash must be provided for subdomain registration");
-
     await approveForParent({
       zns,
       parentHash,

@@ -118,11 +118,7 @@ interface IZNSTreasury {
         address paymentToken
     ) external;
 
-    function setAccessController(address accessController) external;
-
     function setRegistry(address registry_) external;
-
-    function getAccessController() external view returns (address);
 
     function initialize(
         address accessController_,

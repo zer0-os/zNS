@@ -6,7 +6,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**
@@ -34,7 +34,7 @@ contract ZNSAddressResolver is
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param registry_ The address of the `ZNSRegistry` contract
      */
-    function initialize(address accessController_, address registry_) public override initializer {
+    function initialize(address accessController_, address registry_) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
     }
@@ -51,7 +51,7 @@ contract ZNSAddressResolver is
 
     /**
      * @dev Sets the address for a domain name hash. This function can only
-     * be called by the owner, operator of the domain OR by the `ZNSRegistrar`
+     * be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
      * as a part of the Register flow.
      * Emits an `AddressSet` event.
      * @param domainHash The identifying hash of a domain's name
@@ -62,7 +62,7 @@ contract ZNSAddressResolver is
         address newAddress
     ) external override {
         // only owner or operator of the current domain can set the address
-        // also, ZNSRegistrar can set the address as part of the registration process
+        // also, ZNSRootRegistrar.sol can set the address as part of the registration process
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender) ||
             accessController.isRegistrar(msg.sender),
@@ -102,24 +102,6 @@ contract ZNSAddressResolver is
      */
     function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolver) onlyAdmin {
         _setRegistry(_registry);
-    }
-
-    /**
-     * @dev Sets the address of the `ZNSAccessController` contract.
-     * Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
-     * @param accessController The address of the `ZNSAccessController` contract
-     */
-    function setAccessController(
-        address accessController
-    ) external override(AAccessControlled, IZNSAddressResolver) onlyAdmin {
-        _setAccessController(accessController);
-    }
-
-    /**
-     * @dev Returns the address of the `ZNSAccessController` contract saved in state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSAddressResolver) returns (address) {
-        return address(accessController);
     }
 
     /**

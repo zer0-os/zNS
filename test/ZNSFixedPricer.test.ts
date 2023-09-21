@@ -1,8 +1,15 @@
 import {
   ADMIN_ROLE,
   deployFixedPricer,
-  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType, PERCENTAGE_BASIS,
-  priceConfigDefault, REGISTRAR_ROLE,
+  deployZNS,
+  getAccessRevertMsg,
+  GOVERNOR_ROLE,
+  INITIALIZED_ERR,
+  NOT_AUTHORIZED_REG_WIRED_ERR,
+  PaymentType,
+  PERCENTAGE_BASIS,
+  priceConfigDefault,
+  validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -11,6 +18,7 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
+import { ZNSFixedPricerUpgradeMock__factory } from "../typechain";
 
 
 describe("ZNSFixedPricer", () => {
@@ -62,7 +70,6 @@ describe("ZNSFixedPricer", () => {
       user,
       domainLabel: "test",
       fullConfig,
-      isRootDomain: true,
     });
   });
 
@@ -217,5 +224,100 @@ describe("ZNSFixedPricer", () => {
     expect(
       await zns.fixedPricer.getAccessController()
     ).to.equal(random.address);
+  });
+
+  describe("UUPS", () => {
+    before(async () => {
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, deployer.address],
+        adminAddresses: [admin.address],
+        priceConfig: priceConfigDefault,
+        zeroVaultAddress: zeroVault.address,
+      });
+
+      await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+
+      const fullConfig = {
+        distrConfig: {
+          paymentType: PaymentType.DIRECT,
+          pricerContract: zns.fixedPricer.address,
+          accessType: 1,
+        },
+        paymentConfig: {
+          token: zns.zeroToken.address,
+          beneficiary: user.address,
+        },
+        priceConfig: {
+          price: parentPrice,
+          feePercentage: parentFeePercentage,
+        },
+      };
+
+      domainHash = await registrationWithSetup({
+        zns,
+        user,
+        domainLabel: "test",
+        fullConfig,
+      });
+    });
+
+    it("Allows an authorized user to upgrade the contract", async () => {
+      // FixedPricer to upgrade to
+      const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
+      const newFixedPricer = await factory.deploy();
+      await newFixedPricer.deployed();
+
+      // Confirm the deployer is a governor, as set in `deployZNS` helper
+      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
+
+      const tx = zns.fixedPricer.connect(deployer).upgradeTo(newFixedPricer.address);
+      await expect(tx).to.not.be.reverted;
+
+      await expect(
+        zns.fixedPricer.connect(deployer).initialize(
+          zns.accessController.address,
+          zns.registry.address,
+        )
+      ).to.be.revertedWith(INITIALIZED_ERR);
+    });
+
+    it("Fails to upgrade if the caller is not authorized", async () => {
+      // FixedPricer to upgrade to
+      const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
+      const newFixedPricer = await factory.deploy();
+      await newFixedPricer.deployed();
+
+      // Confirm the account is not a governor
+      await expect(zns.accessController.checkGovernor(random.address)).to.be.reverted;
+
+      const tx = zns.fixedPricer.connect(random).upgradeTo(newFixedPricer.address);
+
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
+      );
+    });
+
+    it("Verifies that variable values are not changed in the upgrade process", async () => {
+      const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
+      const newFixedPricer = await factory.deploy();
+      await newFixedPricer.deployed();
+
+      await zns.fixedPricer.connect(user).setPrice(domainHash, "7");
+      await zns.fixedPricer.connect(user).setFeePercentage(
+        domainHash,
+        BigNumber.from(12)
+      );
+
+      const contractCalls = [
+        zns.fixedPricer.registry(),
+        zns.fixedPricer.getAccessController(),
+        zns.fixedPricer.priceConfigs(domainHash),
+        zns.fixedPricer.getPrice(domainHash, "wilder"),
+      ];
+
+      await validateUpgrade(deployer, zns.fixedPricer, newFixedPricer, factory, contractCalls);
+    });
   });
 });

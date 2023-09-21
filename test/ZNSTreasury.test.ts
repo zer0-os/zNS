@@ -61,7 +61,7 @@ describe("ZNSTreasury", () => {
     await zns.zeroToken.mint(user.address, ethers.utils.parseEther("50000"));
 
     // register random domain
-    await zns.registrar.connect(user).registerDomain(
+    await zns.rootRegistrar.connect(user).registerDomain(
       domainName,
       user.address,
       distrConfigEmpty
@@ -120,15 +120,12 @@ describe("ZNSTreasury", () => {
 
   describe("#stakeForDomain()", () => {
     it("Stakes the correct amount", async () => {
-      const domain = "wilder";
-      const domainHash = hashDomainLabel(domain);
-
       const balanceBeforeStake = await zns.zeroToken.balanceOf(user.address);
       const zeroVaultBalanceBeforeStake = await zns.zeroToken.balanceOf(zeroVault.address);
 
       const expectedStake = await zns.curvePricer.getPrice(
         ethers.constants.HashZero,
-        domain
+        domainName
       );
       const fee = await zns.curvePricer.getProtocolFee(expectedStake);
 
@@ -172,14 +169,11 @@ describe("ZNSTreasury", () => {
     });
 
     it("Should fire StakeDeposited event with correct params", async () => {
-      const domain = "wilder";
-      const domainHash = hashDomainLabel(domain);
-
       const {
         expectedPrice,
         stakeFee: protocolFee,
       } = getPriceObject(
-        domain,
+        domainName,
         priceConfigDefault
       );
 
@@ -208,8 +202,6 @@ describe("ZNSTreasury", () => {
 
   describe("#unstakeForDomain()", () => {
     it("Unstakes the correct amount and saves the correct token", async () => {
-      const domain = "wilder";
-      const domainHash = hashDomainLabel(domain);
       const stakeAmt = ethers.utils.parseEther("173");
       const protocolFee = ethers.utils.parseEther("3.112");
 
@@ -607,13 +599,13 @@ describe("ZNSTreasury", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const domainName = "world";
-      const domainHash = hashSubdomainName(domainName);
-      const { expectedPrice, stakeFee } = getPriceObject(domainName, priceConfigDefault);
+      const newLabel = "world";
+      const newHash = hashSubdomainName(newLabel);
+      const { expectedPrice, stakeFee } = getPriceObject(newLabel, priceConfigDefault);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.constants.HashZero,
-        domainHash,
+        newHash,
         deployer.address,
         expectedPrice,
         ethers.constants.Zero,
@@ -624,7 +616,7 @@ describe("ZNSTreasury", () => {
         treasury.registry(),
         treasury.getAccessController(),
         treasury.paymentConfigs(ethers.constants.HashZero),
-        treasury.stakedForDomain(domainHash),
+        treasury.stakedForDomain(newHash),
       ];
 
       await validateUpgrade(deployer, zns.treasury, treasury, treasuryFactory, calls);

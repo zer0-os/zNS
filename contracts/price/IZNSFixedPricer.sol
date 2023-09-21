@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSPricer } from "../abstractions/IZNSPricer.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 interface IZNSFixedPricer is IZNSPricer {
@@ -14,6 +14,8 @@ interface IZNSFixedPricer is IZNSPricer {
     }
 
     function priceConfigs(bytes32 domainHash) external view returns (uint256 price, uint256 feePercentage);
+
+    function initialize(address _accessController, address _registry) external;
 
     function setPrice(bytes32 domainHash, uint256 _price) external;
 
@@ -40,8 +42,4 @@ interface IZNSFixedPricer is IZNSPricer {
     ) external;
 
     function setRegistry(address registry_) external;
-
-    function setAccessController(address accessController_) external;
-
-    function getAccessController() external view returns (address);
 }

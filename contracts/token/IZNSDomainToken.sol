@@ -10,8 +10,4 @@ interface IZNSDomainToken is IERC721Upgradeable {
     function register(address to, uint256 tokenId) external;
 
     function revoke(uint256 tokenId) external;
-
-    function setAccessController(address accessController) external;
-
-    function getAccessController() external view returns (address);
 }

@@ -72,7 +72,6 @@ describe("ZNSCurvePricer", () => {
       user,
       domainLabel: "testdomain",
       fullConfig,
-      isRootDomain: true,
     });
   });
 

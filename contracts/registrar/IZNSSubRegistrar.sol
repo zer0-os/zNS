@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDistributionConfig } from "./IDistributionConfig.sol";
-import { PaymentConfig } from "../IZNSTreasury.sol";
-import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
+import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-interface IZNSSubdomainRegistrar is IDistributionConfig {
+interface IZNSSubRegistrar is IDistributionConfig {
     event PricerContractSet(bytes32 indexed domainHash, address indexed priceContract);
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
@@ -36,6 +36,12 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
         bytes32 domainHash,
         address candidate
     ) external view returns (bool);
+
+    function initialize(
+        address _accessController,
+        address _registry,
+        address _rootRegistrar
+    ) external;
 
     function registerSubdomain(
         bytes32 parentHash,
@@ -80,8 +86,4 @@ interface IZNSSubdomainRegistrar is IDistributionConfig {
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
-
-    function getAccessController() external view returns (address);
-
-    function setAccessController(address accessController_) external;
 }

@@ -54,7 +54,6 @@ export const runAllFlows = async () => {
     user: governor,
     domainLabel: domainName,
     fullConfig: fullRootConfig,
-    isRootDomain: true,
   });
 
   const subdomainLabel = "subdomain";
@@ -80,7 +79,6 @@ export const runAllFlows = async () => {
     parentHash: rootHash,
     domainLabel: subdomainLabel,
     fullConfig: fullSubConfig,
-    isRootDomain: false,
   });
 
   // TODO sub:
@@ -92,10 +90,10 @@ export const runAllFlows = async () => {
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
 
   // Reclaim Domain
-  await zns.registrar.connect(user).reclaimDomain(domainHash);
+  await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
   // Revoke Domain
-  await zns.registrar.connect(user).revokeDomain(domainHash);
+  await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 };
 
 

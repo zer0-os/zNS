@@ -24,7 +24,7 @@ abstract contract ZNSRoles {
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
     /**
-     * @notice This role is here specifically for the ZNSRegistrar contract
+     * @notice This role is here specifically for the ZNSRootRegistrar.sol contract
      */
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
 }

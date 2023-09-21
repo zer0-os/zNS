@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSPricer } from "./abstractions/IZNSPricer.sol";
-import { IZNSRegistry } from "../../registry/IZNSRegistry.sol";
-import { IZNSRegistrar, CoreRegisterArgs } from "../IZNSRegistrar.sol";
-import { IZNSSubdomainRegistrar } from "./IZNSSubdomainRegistrar.sol";
-import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../abstractions/ARegistryWired.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
+import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
-contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdomainRegistrar {
-    // TODO sub: change name of Registrar contract
-    IZNSRegistrar public rootRegistrar;
+contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+    IZNSRootRegistrar public rootRegistrar;
 
-    // TODO sub: make better name AND for the setter function !
     // TODO proxy: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
@@ -24,17 +21,16 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender)
             || accessController.isRegistrar(msg.sender),
-            "ZNSSubdomainRegistrar: Not authorized"
+            "ZNSSubRegistrar: Not authorized"
         );
         _;
     }
 
-    // TODO sub: proxy ??
-    constructor(
+    function initialize(
         address _accessController,
         address _registry,
         address _rootRegistrar
-    ) {
+    ) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
@@ -53,13 +49,13 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
             // TODO sub: consider getting rid of large revert messages
-            "ZNSSubdomainRegistrar: Parent domain's distribution is locked"
+            "ZNSSubRegistrar: Parent domain's distribution is locked"
         );
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
                 mintlist[parentHash][msg.sender],
-                "ZNSSubdomainRegistrar: Sender is not approved for purchase"
+                "ZNSSubRegistrar: Sender is not approved for purchase"
             );
         }
 
@@ -76,7 +72,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
 
         require(
             !registry.exists(coreRegisterArgs.domainHash),
-            "ZNSSubdomainRegistrar: Subdomain already exists"
+            "ZNSSubRegistrar: Subdomain already exists"
         );
 
         if (!isOwnerOrOperator) {
@@ -111,8 +107,8 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     function revokeSubdomain(bytes32 subdomainHash) external override {
         // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRegistrar.OwnerOf.BOTH),
-            "ZNSSubdomainRegistrar: Not the owner of both Name and Token"
+            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
+            "ZNSSubRegistrar: Not the owner of both Name and Token"
         );
 
         _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
@@ -143,7 +139,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         require(
             address(config.pricerContract) != address(0),
-            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
+            "ZNSSubRegistrar: pricerContract can not be 0x0 address"
         );
 
         distrConfigs[domainHash] = config;
@@ -164,12 +160,12 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) public override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubdomainRegistrar: Not authorized"
+            "ZNSSubRegistrar: Not authorized"
         );
 
         require(
             address(pricerContract) != address(0),
-            "ZNSSubdomainRegistrar: pricerContract can not be 0x0 address"
+            "ZNSSubRegistrar: pricerContract can not be 0x0 address"
         );
 
         distrConfigs[domainHash].pricerContract = pricerContract;
@@ -183,7 +179,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) public override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubdomainRegistrar: Not authorized"
+            "ZNSSubRegistrar: Not authorized"
         );
 
         distrConfigs[domainHash].paymentType = paymentType;
@@ -213,7 +209,7 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
     ) external override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubdomainRegistrar: Not authorized"
+            "ZNSSubRegistrar: Not authorized"
         );
 
         for (uint256 i; i < candidates.length; i++) {
@@ -224,25 +220,23 @@ contract ZNSSubdomainRegistrar is AAccessControlled, ARegistryWired, IZNSSubdoma
         emit WhitelistUpdated(domainHash, candidates, allowed);
     }
 
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubdomainRegistrar) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
         _setRegistry(registry_);
     }
 
     function setRootRegistrar(address registrar_) public override onlyAdmin {
-        require(registrar_ != address(0), "ZNSSubdomainRegistrar: _registrar can not be 0x0 address");
-        rootRegistrar = IZNSRegistrar(registrar_);
+        require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
+        rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
     }
 
-    function getAccessController() external view override(AAccessControlled, IZNSSubdomainRegistrar) returns (address) {
-        return address(accessController);
-    }
-
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSSubdomainRegistrar)
-    onlyAdmin {
-        _setAccessController(accessController_);
+    /**
+     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     * @param newImplementation The implementation contract to upgrade to
+     */
+    // solhint-disable-next-line
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        accessController.checkGovernor(msg.sender);
     }
 }

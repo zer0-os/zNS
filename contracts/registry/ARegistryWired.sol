@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+import { IZNSRegistry } from "./IZNSRegistry.sol";
 
 
 abstract contract ARegistryWired {
@@ -28,6 +28,5 @@ abstract contract ARegistryWired {
      * otherwise we will not be able to reset the ZNSRegistry address in children
      */
     // TODO sub: can we make it here instead, so we don't have to add it to every child??
-    // TODO subL try the same for AccessControlled
     function setRegistry(address registry_) external virtual;
 }

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSRegistrar, CoreRegisterArgs } from "./IZNSRegistrar.sol";
-import { IZNSTreasury } from "./IZNSTreasury.sol";
+import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IZNSSubdomainRegistrar } from "./subdomains/IZNSSubdomainRegistrar.sol";
-import { ARegistryWired } from "../abstractions/ARegistryWired.sol";
-import {IZNSCurvePricer} from "./IZNSCurvePricer.sol";
+import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
 
 
 /**
@@ -19,26 +19,25 @@ import {IZNSCurvePricer} from "./IZNSCurvePricer.sol";
  * and proper logic for the ZNS flows. You can see functions in other modules that are only allowed
  * to be called by this contract to ensure proper management of ZNS data in multiple places.
  * RRR - Register, Reclaim, Revoke start here and then call other modules to complete the flow.
- * ZNSRegistrar stores most of the other contract addresses and can communicate with other modules,
- * but the relationship is one-sided, where other modules do not need to know about the ZNSRegistrar,
+ * ZNSRootRegistrar.sol stores most of the other contract addresses and can communicate with other modules,
+ * but the relationship is one-sided, where other modules do not need to know about the ZNSRootRegistrar.sol,
  * they only check REGISTRAR_ROLE that can, in theory, be assigned to any other address.
  */
-// TODO sub: change name to ZNSRootRegistrar possibly !
-contract ZNSRegistrar is
+contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
-    IZNSRegistrar {
+    IZNSRootRegistrar {
 
     // TODO sub data: can this be changes to an IZNSPricer type ?
     IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
-    IZNSSubdomainRegistrar public subdomainRegistrar;
+    IZNSSubRegistrar public subRegistrar;
 
     /**
-     * @notice Create an instance of the ZNSRegistrar
+     * @notice Create an instance of the ZNSRootRegistrar.sol
      * for registering, reclaiming and revoking ZNS domains
      * @dev Instead of direct assignments, we are calling the setter functions
      * to apply Access Control and ensure only the ADMIN can set the addresses.
@@ -55,7 +54,7 @@ contract ZNSRegistrar is
         address treasury_,
         address domainToken_,
         address addressResolver_
-    ) public override initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
         setCurvePricer(curvePricer_);
@@ -83,7 +82,7 @@ contract ZNSRegistrar is
     ) external override returns (bytes32) {
         require(
             bytes(name).length != 0,
-            "ZNSRegistrar: Domain Name not provided"
+            "ZNSRootRegistrar: Domain Name not provided"
         );
 
         // Create hash for given domain name
@@ -91,7 +90,7 @@ contract ZNSRegistrar is
 
         require(
             !registry.exists(domainHash),
-            "ZNSRegistrar: Domain already exists"
+            "ZNSRootRegistrar: Domain already exists"
         );
 
         // Get price for the domain
@@ -112,7 +111,7 @@ contract ZNSRegistrar is
 
         if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds roughly 100k gas to the register tx
-            subdomainRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
 
         return domainHash;
@@ -209,10 +208,10 @@ contract ZNSRegistrar is
     {
         require(
             isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
-            "ZNSRegistrar: Not the owner of both Name and Token"
+            "ZNSRootRegistrar: Not the owner of both Name and Token"
         );
 
-        subdomainRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        subRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
         _coreRevoke(domainHash, msg.sender);
     }
 
@@ -256,7 +255,7 @@ contract ZNSRegistrar is
     {
         require(
             isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN),
-            "ZNSRegistrar: Not the owner of the Token"
+            "ZNSRootRegistrar: Not the owner of the Token"
         );
         registry.updateDomainOwner(domainHash, msg.sender);
 
@@ -281,14 +280,14 @@ contract ZNSRegistrar is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param registry_ Address of the `ZNSRegistry` contract
      */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSRegistrar) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
         _setRegistry(registry_);
     }
 
     function setCurvePricer(address curvePricer_) public override onlyAdmin {
         require(
             curvePricer_ != address(0),
-            "ZNSRegistrar: curvePricer_ is 0x0 address"
+            "ZNSRootRegistrar: curvePricer_ is 0x0 address"
         );
         curvePricer = IZNSCurvePricer(curvePricer_);
 
@@ -303,7 +302,7 @@ contract ZNSRegistrar is
     function setTreasury(address treasury_) public override onlyAdmin {
         require(
             treasury_ != address(0),
-            "ZNSRegistrar: treasury_ is 0x0 address"
+            "ZNSRootRegistrar: treasury_ is 0x0 address"
         );
         treasury = IZNSTreasury(treasury_);
 
@@ -318,18 +317,18 @@ contract ZNSRegistrar is
     function setDomainToken(address domainToken_) public override onlyAdmin {
         require(
             domainToken_ != address(0),
-            "ZNSRegistrar: domainToken_ is 0x0 address"
+            "ZNSRootRegistrar: domainToken_ is 0x0 address"
         );
         domainToken = IZNSDomainToken(domainToken_);
 
         emit DomainTokenSet(domainToken_);
     }
 
-    function setSubdomainRegistrar(address subdomainRegistrar_) external override onlyAdmin {
-        require(subdomainRegistrar_ != address(0), "ZNSRegistrar: subdomainRegistrar_ is 0x0 address");
+    function setSubRegistrar(address subRegistrar_) external override onlyAdmin {
+        require(subRegistrar_ != address(0), "ZNSRootRegistrar: subRegistrar_ is 0x0 address");
 
-        subdomainRegistrar = IZNSSubdomainRegistrar(subdomainRegistrar_);
-        emit SubdomainRegistrarSet(subdomainRegistrar_);
+        subRegistrar = IZNSSubRegistrar(subRegistrar_);
+        emit SubRegistrarSet(subRegistrar_);
     }
 
     /**
@@ -340,30 +339,11 @@ contract ZNSRegistrar is
     function setAddressResolver(address addressResolver_) public override onlyAdmin {
         require(
             addressResolver_ != address(0),
-            "ZNSRegistrar: addressResolver_ is 0x0 address"
+            "ZNSRootRegistrar: addressResolver_ is 0x0 address"
         );
         addressResolver = IZNSAddressResolver(addressResolver_);
 
         emit AddressResolverSet(addressResolver_);
-    }
-
-    /**
-     * @notice Setter function for the `ZNSAccessController` address in state.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param accessController_ Address of the `ZNSAccessController` contract
-     */
-    function setAccessController(address accessController_)
-    external
-    override(AAccessControlled, IZNSRegistrar)
-    onlyAdmin {
-        _setAccessController(accessController_);
-    }
-
-    /**
-     * @notice Getter function for the `ZNSAccessController` address in state.
-     */
-    function getAccessController() external view override(AAccessControlled, IZNSRegistrar) returns (address) {
-        return address(accessController);
     }
 
     /**
