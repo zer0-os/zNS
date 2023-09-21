@@ -224,7 +224,8 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("should revert when user has insufficient funds", async () => {
-      const { expectedPrice } = getPriceObject("sub", rootPriceConfig);
+      const label = "subinsufficientfunds";
+      const { expectedPrice } = getPriceObject(label, rootPriceConfig);
       const userBalanceBefore = await zns.zeroToken.balanceOf(lvl2SubOwner.address);
       const userBalanceAfter = userBalanceBefore.sub(expectedPrice);
       await zns.zeroToken.connect(lvl2SubOwner).transfer(deployer.address, userBalanceAfter);
@@ -235,7 +236,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           rootHash,
-          "sub",
+          label,
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
@@ -246,7 +247,8 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("should revert when user has insufficient allowance", async () => {
-      const { expectedPrice } = getPriceObject("sub", rootPriceConfig);
+      const label = "subinsufficientallowance";
+      const { expectedPrice } = getPriceObject(label, rootPriceConfig);
 
       // add allowance
       await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, expectedPrice.sub(1));
@@ -254,7 +256,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           rootHash,
-          "sub",
+          label,
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
@@ -461,6 +463,189 @@ describe("ZNSSubRegistrar", () => {
         domainConfigs,
         regResults,
       });
+    });
+
+    it("should be able to register multiple domains under multiple levels for the same owner", async () => {
+      const configs = [
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomone",
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.fixedPricer.address,
+              accessType: AccessType.OPEN,
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: multiOwner.address,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomtwo",
+          parentHash: regResults[0].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.curvePricer.address,
+              accessType: AccessType.LOCKED,
+              paymentType: PaymentType.STAKE,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: zeroVault.address,
+            },
+            priceConfig: priceConfigDefault,
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomthree",
+          parentHash: regResults[1].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.curvePricer.address,
+              accessType: AccessType.MINTLIST,
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: multiOwner.address,
+            },
+            priceConfig: priceConfigDefault,
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomfour",
+          parentHash: regResults[2].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.fixedPricer.address,
+              accessType: AccessType.OPEN,
+              paymentType: PaymentType.STAKE,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: zeroVault.address,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomfive",
+          parentHash: regResults[3].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.curvePricer.address,
+              accessType: AccessType.OPEN,
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: multiOwner.address,
+            },
+            priceConfig: priceConfigDefault,
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomsix",
+          parentHash: regResults[4].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.curvePricer.address,
+              accessType: AccessType.OPEN,
+              paymentType: PaymentType.STAKE,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: zeroVault.address,
+            },
+            priceConfig: priceConfigDefault,
+          },
+        },
+        {
+          user: multiOwner,
+          domainLabel: "multiownerdomseven",
+          parentHash: regResults[5].domainHash,
+          fullConfig: {
+            distrConfig: {
+              pricerContract: zns.fixedPricer.address,
+              accessType: AccessType.OPEN,
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: zns.zeroToken.address,
+              beneficiary: multiOwner.address,
+            },
+            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
+          },
+        },
+      ];
+
+      // prep
+      await zns.zeroToken.connect(multiOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      // register
+      const domainHashes = await configs.reduce(
+        async (
+          acc : Promise<Array<string>>,
+          {
+            user,
+            parentHash,
+            domainLabel,
+            fullConfig,
+          }) : Promise<Array<string>> => {
+          const newAcc = await acc;
+
+          const newHash = await registrationWithSetup({
+            zns,
+            user,
+            parentHash,
+            domainLabel,
+            fullConfig,
+          });
+
+          return [...newAcc, newHash];
+        }, Promise.resolve([])
+      );
+
+      // check
+      await domainHashes.reduce(
+        async (acc, domainHash, idx) => {
+          await acc;
+          const { owner, resolver } = await zns.registry.getDomainRecord(domainHash);
+          expect(owner).to.eq(multiOwner.address);
+          expect(resolver).to.eq(zns.addressResolver.address);
+
+          const tokenId = BigNumber.from(domainHash).toString();
+          const tokenOwner = await zns.domainToken.ownerOf(tokenId);
+          expect(tokenOwner).to.eq(multiOwner.address);
+
+          const {
+            pricerContract,
+            accessType,
+            paymentType,
+          } = await zns.subRegistrar.distrConfigs(domainHash);
+          expect(pricerContract).to.eq(configs[idx].fullConfig.distrConfig.pricerContract);
+          expect(accessType).to.eq(configs[idx].fullConfig.distrConfig.accessType);
+          expect(paymentType).to.eq(configs[idx].fullConfig.distrConfig.paymentType);
+
+          const {
+            token,
+            beneficiary,
+          } = await zns.treasury.paymentConfigs(domainHash);
+          expect(token).to.eq(configs[idx].fullConfig.paymentConfig.token);
+          expect(beneficiary).to.eq(configs[idx].fullConfig.paymentConfig.beneficiary);
+
+          const domainAddress = await zns.addressResolver.getAddress(domainHash);
+          expect(domainAddress).to.eq(multiOwner.address);
+        }, Promise.resolve()
+      );
     });
 
     it("should revoke lvl 6 domain without refund and lock registration", async () => {
@@ -808,189 +993,6 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
-    });
-
-    it("should be able to register multiple domains under multiple levels for the same owner", async () => {
-      const configs = [
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomone",
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.fixedPricer.address,
-              accessType: AccessType.OPEN,
-              paymentType: PaymentType.DIRECT,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: multiOwner.address,
-            },
-            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomtwo",
-          parentHash: regResults[0].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.curvePricer.address,
-              accessType: AccessType.LOCKED,
-              paymentType: PaymentType.STAKE,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: zeroVault.address,
-            },
-            priceConfig: priceConfigDefault,
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomthree",
-          parentHash: regResults[1].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.curvePricer.address,
-              accessType: AccessType.MINTLIST,
-              paymentType: PaymentType.DIRECT,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: multiOwner.address,
-            },
-            priceConfig: priceConfigDefault,
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomfour",
-          parentHash: regResults[2].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.fixedPricer.address,
-              accessType: AccessType.OPEN,
-              paymentType: PaymentType.STAKE,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: zeroVault.address,
-            },
-            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomfive",
-          parentHash: regResults[3].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.curvePricer.address,
-              accessType: AccessType.OPEN,
-              paymentType: PaymentType.DIRECT,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: multiOwner.address,
-            },
-            priceConfig: priceConfigDefault,
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomsix",
-          parentHash: regResults[4].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.curvePricer.address,
-              accessType: AccessType.OPEN,
-              paymentType: PaymentType.STAKE,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: zeroVault.address,
-            },
-            priceConfig: priceConfigDefault,
-          },
-        },
-        {
-          user: multiOwner,
-          domainLabel: "multiownerdomseven",
-          parentHash: regResults[5].domainHash,
-          fullConfig: {
-            distrConfig: {
-              pricerContract: zns.fixedPricer.address,
-              accessType: AccessType.OPEN,
-              paymentType: PaymentType.DIRECT,
-            },
-            paymentConfig: {
-              token: zns.zeroToken.address,
-              beneficiary: multiOwner.address,
-            },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
-          },
-        },
-      ];
-
-      // prep
-      await zns.zeroToken.connect(multiOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-
-      // register
-      const domainHashes = await configs.reduce(
-        async (
-          acc : Promise<Array<string>>,
-          {
-            user,
-            parentHash,
-            domainLabel,
-            fullConfig,
-          }) : Promise<Array<string>> => {
-          const newAcc = await acc;
-
-          const newHash = await registrationWithSetup({
-            zns,
-            user,
-            parentHash,
-            domainLabel,
-            fullConfig,
-          });
-
-          return [...newAcc, newHash];
-        }, Promise.resolve([])
-      );
-
-      // check
-      await domainHashes.reduce(
-        async (acc, domainHash, idx) => {
-          await acc;
-          const { owner, resolver } = await zns.registry.getDomainRecord(domainHash);
-          expect(owner).to.eq(multiOwner.address);
-          expect(resolver).to.eq(zns.addressResolver.address);
-
-          const tokenId = BigNumber.from(domainHash).toString();
-          const tokenOwner = await zns.domainToken.ownerOf(tokenId);
-          expect(tokenOwner).to.eq(multiOwner.address);
-
-          const {
-            pricerContract,
-            accessType,
-            paymentType,
-          } = await zns.subRegistrar.distrConfigs(domainHash);
-          expect(pricerContract).to.eq(configs[idx].fullConfig.distrConfig.pricerContract);
-          expect(accessType).to.eq(configs[idx].fullConfig.distrConfig.accessType);
-          expect(paymentType).to.eq(configs[idx].fullConfig.distrConfig.paymentType);
-
-          const {
-            token,
-            beneficiary,
-          } = await zns.treasury.paymentConfigs(domainHash);
-          expect(token).to.eq(configs[idx].fullConfig.paymentConfig.token);
-          expect(beneficiary).to.eq(configs[idx].fullConfig.paymentConfig.beneficiary);
-
-          const domainAddress = await zns.addressResolver.getAddress(domainHash);
-          expect(domainAddress).to.eq(multiOwner.address);
-        }, Promise.resolve()
-      );
     });
   });
 
