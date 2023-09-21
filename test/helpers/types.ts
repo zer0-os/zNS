@@ -21,13 +21,11 @@ import {
   ZNSTreasuryUpgradeMock__factory,
   ZeroToken,
   ZNSFixedPricing,
-  ZNSDirectPayment,
   ZNSSubdomainRegistrar,
-  ZNSStakePayment,
   ZNSAsymptoticPricing,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { AccessType } from "./constants";
+import { AccessType, PaymentType } from "./constants";
 
 export type Maybe<T> = T | undefined;
 
@@ -74,6 +72,7 @@ export interface IFixedPriceConfig {
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
+  priceOracleAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
 }
@@ -90,8 +89,6 @@ export interface ZNSContracts {
   registrar : ZNSRegistrar;
   fixedPricing : ZNSFixedPricing;
   asPricing : ZNSAsymptoticPricing;
-  directPayment : ZNSDirectPayment;
-  stakePayment : ZNSStakePayment;
   subdomainRegistrar : ZNSSubdomainRegistrar;
   zeroVaultAddress : string;
 }
@@ -108,19 +105,19 @@ export interface DeployZNSParams {
 
 export interface IDistributionConfig {
   pricingContract : string;
-  paymentContract : string;
+  paymentConfig : IPaymentConfig;
   accessType : AccessType;
 }
 
 export interface IPaymentConfig {
   paymentToken : string;
   beneficiary : string;
+  paymentType : PaymentType;
 }
 
 export interface IFullDistributionConfig {
   distrConfig : IDistributionConfig;
   priceConfig : IASPriceConfig | IFixedPriceConfig | undefined;
-  paymentConfig : IPaymentConfig;
 }
 
 export interface IDomainConfigForTest {
@@ -137,4 +134,8 @@ export interface IPathRegResult {
   userBalanceAfter : BigNumber;
   parentBalanceBefore : BigNumber;
   parentBalanceAfter : BigNumber;
+  treasuryBalanceBefore : BigNumber;
+  treasuryBalanceAfter : BigNumber;
+  zeroVaultBalanceBefore : BigNumber;
+  zeroVaultBalanceAfter : BigNumber;
 }

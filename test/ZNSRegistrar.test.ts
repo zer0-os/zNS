@@ -12,7 +12,7 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, REGISTRAR_ROLE,
+  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
 import { ZNSContracts } from "./helpers/types";
@@ -80,6 +80,7 @@ describe("ZNSRegistrar", () => {
       randomUser.address,
       randomUser.address,
       randomUser.address,
+      randomUser.address,
     );
 
     await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
@@ -88,6 +89,7 @@ describe("ZNSRegistrar", () => {
   it("Should NOT initialize twice", async () => {
     const tx = zns.registrar.connect(deployer).initialize(
       zns.accessController.address,
+      randomUser.address,
       randomUser.address,
       randomUser.address,
       randomUser.address,
@@ -103,13 +105,18 @@ describe("ZNSRegistrar", () => {
       expect(isRegistrar).to.be.false;
 
       await expect(
-        zns.registrar.connect(randomUser).coreRegister(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          "randomname",
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-        )
+        zns.registrar.connect(randomUser).coreRegister({
+          parentHash: ethers.constants.HashZero,
+          domainHash: ethers.constants.HashZero,
+          label: "randomname",
+          registrant: ethers.constants.AddressZero,
+          beneficiary: ethers.constants.AddressZero,
+          paymentToken: ethers.constants.AddressZero,
+          price: "0",
+          stakeFee: "0",
+          domainAddress: ethers.constants.AddressZero,
+          isStakePayment: false,
+        })
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
       );
@@ -122,6 +129,7 @@ describe("ZNSRegistrar", () => {
       await expect(
         zns.registrar.connect(randomUser).coreRevoke(
           ethers.constants.HashZero,
+          ethers.constants.AddressZero,
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
@@ -250,8 +258,12 @@ describe("ZNSRegistrar", () => {
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
       const distrConfig = {
         pricingContract: zns.fixedPricing.address,
-        paymentContract: zns.directPayment.address,
         accessType: AccessType.OPEN,
+        paymentConfig: {
+          paymentToken: zns.zeroToken.address,
+          beneficiary: user.address,
+          paymentType: PaymentType.DIRECT,
+        },
       };
 
       const tx = await zns.registrar.connect(user).registerDomain(
@@ -266,12 +278,14 @@ describe("ZNSRegistrar", () => {
 
       const {
         pricingContract,
-        paymentContract,
+        paymentConfig,
         accessType,
       } = await zns.subdomainRegistrar.distrConfigs(domainHash);
 
       expect(pricingContract).to.eq(distrConfig.pricingContract);
-      expect(paymentContract).to.eq(distrConfig.paymentContract);
+      expect(paymentConfig.paymentToken).to.eq(distrConfig.paymentConfig.paymentToken);
+      expect(paymentConfig.beneficiary).to.eq(distrConfig.paymentConfig.beneficiary);
+      expect(paymentConfig.paymentType).to.eq(distrConfig.paymentConfig.paymentType);
       expect(accessType).to.eq(distrConfig.accessType);
     });
 
@@ -289,7 +303,7 @@ describe("ZNSRegistrar", () => {
       const {
         totalPrice,
         expectedPrice,
-        fee,
+        stakeFee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
 
       await checkBalance({
@@ -303,7 +317,7 @@ describe("ZNSRegistrar", () => {
         token: zns.zeroToken,
         balanceBefore: balanceBeforeVault,
         userAddress: zeroVault.address,
-        target: fee,
+        target: stakeFee,
         shouldDecrease: false,
       });
 
@@ -430,6 +444,40 @@ describe("ZNSRegistrar", () => {
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.registrar.address);
+    });
+
+    it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
+      // set config on PriceOracle for the price to be 0
+      await zns.priceOracle.connect(admin).setMaxPrice("0");
+      await zns.priceOracle.connect(admin).setMinPrice("0");
+
+      const userBalanceBefore = await zns.zeroToken.balanceOf(user.address);
+      const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
+
+      // register a domain
+      await zns.registrar.connect(user).registerDomain(
+        defaultDomain,
+        ethers.constants.AddressZero,
+        distrConfigEmpty
+      );
+
+      const userBalanceAfter = await zns.zeroToken.balanceOf(user.address);
+      const vaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
+
+      expect(userBalanceBefore).to.eq(userBalanceAfter);
+      expect(vaultBalanceBefore).to.eq(vaultBalanceAfter);
+
+      // check existence in Registry
+      const domainHash = hashDomainLabel(defaultDomain);
+      const exists = await zns.registry.exists(domainHash);
+      expect(exists).to.be.true;
+
+      // make sure no transfers happened
+      const transferEventFilter = zns.zeroToken.filters.Transfer(
+        user.address,
+      );
+      const events = await zns.zeroToken.queryFilter(transferEventFilter);
+      expect(events.length).to.eq(0);
     });
   });
 
@@ -590,7 +638,11 @@ describe("ZNSRegistrar", () => {
         domainName: defaultDomain,
         distrConfig: {
           pricingContract: zns.fixedPricing.address,
-          paymentContract: zns.directPayment.address,
+          paymentConfig: {
+            paymentToken: zns.zeroToken.address,
+            beneficiary: user.address,
+            paymentType: PaymentType.DIRECT,
+          },
           accessType: AccessType.OPEN,
         },
       });
@@ -644,7 +696,7 @@ describe("ZNSRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-        fee: expectedStakeFee,
+        stakeFee: expectedStakeFee,
       } = await getPriceObject(defaultDomain, priceConfigDefault);
       const staked = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);

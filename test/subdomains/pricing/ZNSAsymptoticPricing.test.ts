@@ -10,7 +10,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   precisionMultiDefault,
   PRICING_CONFIG_ERR,
-  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE,
+  PRICING_NO_ZERO_PRECISION_MULTIPLIER_ERR, REGISTRAR_ROLE, PaymentType,
 } from "../../helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "../../helpers/constants";
 import {
@@ -54,15 +54,15 @@ describe("ZNSAsymptoticPricing", () => {
 
     const fullConfig = {
       distrConfig: {
+        paymentConfig: {
+          paymentType: PaymentType.DIRECT,
+          paymentToken: zns.zeroToken.address,
+          beneficiary: user.address,
+        },
         pricingContract: zns.asPricing.address,
-        paymentContract: zns.directPayment.address,
         accessType: 1,
       },
       priceConfig: priceConfigDefault,
-      paymentConfig: {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: user.address,
-      },
     };
 
     domainHash = await registrationWithSetup({
@@ -96,10 +96,10 @@ describe("ZNSAsymptoticPricing", () => {
     it("Returns 0 price for a root name with no length", async () => {
       const {
         price,
-        fee,
+        stakeFee,
       } = await zns.asPricing.getPriceAndFee(domainHash, "");
       expect(price).to.eq(0);
-      expect(fee).to.eq(0);
+      expect(stakeFee).to.eq(0);
     });
 
     it("Returns the base price for domains that are equal to the base length", async () => {

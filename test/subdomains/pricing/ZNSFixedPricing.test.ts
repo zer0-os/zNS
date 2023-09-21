@@ -1,7 +1,7 @@
 import {
   ADMIN_ROLE,
   deployFixedPricing,
-  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR,
+  deployZNS, getAccessRevertMsg, NOT_AUTHORIZED_REG_WIRED_ERR, PaymentType,
   priceConfigDefault, REGISTRAR_ROLE,
 } from "../../helpers";
 import * as hre from "hardhat";
@@ -44,17 +44,17 @@ describe("ZNSFixedPricing", () => {
 
     const fullConfig = {
       distrConfig: {
+        paymentConfig: {
+          paymentType: PaymentType.DIRECT,
+          paymentToken: zns.zeroToken.address,
+          beneficiary: user.address,
+        },
         pricingContract: zns.fixedPricing.address,
-        paymentContract: zns.directPayment.address,
         accessType: 1,
       },
       priceConfig: {
         price: parentPrice,
         feePercentage: parentFeePercentage,
-      },
-      paymentConfig: {
-        paymentToken: zns.zeroToken.address,
-        beneficiary: user.address,
       },
     };
 

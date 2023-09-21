@@ -52,19 +52,12 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      */
     function getPrice(
         string calldata name
-    ) external view override returns (
-        uint256 totalPrice,
-        uint256 domainPrice,
-        uint256 fee
-    ) {
+    ) external view override returns (uint256) {
         uint256 length = name.strlen();
         // No pricing is set for 0 length domains
-        if (length == 0) return (0, 0, 0);
+        if (length == 0) return 0;
 
-        domainPrice = _getPrice(length);
-        fee = getRegistrationFee(domainPrice);
-
-        totalPrice = domainPrice + fee;
+        return _getPrice(length);
     }
 
     /**
@@ -72,7 +65,7 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * as `domainPrice * rootDomainPriceConfig.feePercentage / PERCENTAGE_BASIS`.
      * @param domainPrice The price of the domain
      */
-    function getRegistrationFee(uint256 domainPrice) public view override returns (uint256) {
+    function getProtocolFee(uint256 domainPrice) public view override returns (uint256) {
         return (domainPrice * rootDomainPriceConfig.feePercentage) / PERCENTAGE_BASIS;
     }
 
@@ -272,10 +265,13 @@ contract ZNSPriceOracle is AAccessControlled, UUPSUpgradeable, IZNSPriceOracle {
      * @dev We are checking here for possible price spike at `maxLength`
      * which can occur if some of the config values are not properly chosen and set.
      */
+    // TODO sub fee: figure out these this logic! it doesn't work when we try and set the price to 0 !!!
+    // TODO sub fee: HERE and in AsymptoticPricing !!!
+    // TODO sub fee: currently it fails if we set maxPrice + baseLength as 0s
     function _validateConfig() internal view {
         uint256 prevToMinPrice = _getPrice(rootDomainPriceConfig.maxLength - 1);
         require(
-            rootDomainPriceConfig.minPrice < prevToMinPrice,
+            rootDomainPriceConfig.minPrice <= prevToMinPrice,
             "ZNSPriceOracle: incorrect value set causes the price spike at maxLength."
         );
     }

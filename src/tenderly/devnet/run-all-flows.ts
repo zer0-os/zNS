@@ -3,7 +3,7 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import {
   deployZNS,
-  hashDomainLabel,
+  hashDomainLabel, PaymentType,
   priceConfigDefault,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
@@ -33,16 +33,16 @@ export const runAllFlows = async () => {
   const fullRootConfig = {
     distrConfig: {
       pricingContract: zns.fixedPricing.address,
-      paymentContract: zns.directPayment.address,
+      paymentConfig: {
+        paymentType: PaymentType.STAKE,
+        paymentToken: zns.zeroToken.address,
+        beneficiary: governor.address,
+      },
       accessType: 1,
     },
     priceConfig: {
       price: rootPrice,
       feePercentage: rootFeePercentage,
-    },
-    paymentConfig: {
-      paymentToken: zns.zeroToken.address,
-      beneficiary: governor.address,
     },
   };
 
@@ -61,18 +61,18 @@ export const runAllFlows = async () => {
   const fullSubConfig = {
     distrConfig: {
       pricingContract: zns.asPricing.address,
-      paymentContract: zns.stakePayment.address,
+      paymentConfig: {
+        paymentType: PaymentType.DIRECT,
+        paymentToken: zns.zeroToken.address,
+        beneficiary: user.address,
+      },
       accessType: 1,
     },
     priceConfig: priceConfigDefault,
-    paymentConfig: {
-      paymentToken: zns.zeroToken.address,
-      beneficiary: user.address,
-    },
   };
 
   await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("10000"));
-  await zns.zeroToken.connect(user).approve(fullRootConfig.distrConfig.paymentContract, ethers.constants.MaxUint256);
+  await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   await registrationWithSetup({
     zns,
@@ -85,8 +85,8 @@ export const runAllFlows = async () => {
 
   // TODO sub:
   // - original root reg: 339,104 gas
-  // - current root reg: 405,831 gas (with config set) - 339,235 gas (without config)
-  // - current sub reg: 341,144 gas (with config)
+  // - current root reg: 405,831 gas (with config set) - 408,489 (with new payment logic) - 339,235 gas (without config)
+  // - current sub reg: 341,144 gas (with config) - 412,897 gas (with new payment logic)
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);

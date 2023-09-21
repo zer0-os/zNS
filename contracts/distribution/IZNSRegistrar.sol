@@ -3,7 +3,25 @@ pragma solidity ^0.8.18;
 
 import { IDistributionConfig } from "./subdomains/IDistributionConfig.sol";
 import { AZNSPricing } from "./subdomains/abstractions/AZNSPricing.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+
+struct CoreRegisterArgs {
+    // 0x0 for root domains
+    bytes32 parentHash;
+    bytes32 domainHash;
+    string label;
+    address registrant;
+    // 0x0 for root domains
+    address beneficiary;
+    // 0x0 for root domains
+    IERC20 paymentToken;
+    uint256 price;
+    // 0x0 for anything other than subdomain under a parent with Stake Payment
+    uint256 stakeFee;
+    address domainAddress;
+    bool isStakePayment;
+}
 
 interface IZNSRegistrar is IDistributionConfig {
 
@@ -53,28 +71,43 @@ interface IZNSRegistrar is IDistributionConfig {
     );
 
     /**
+     * @notice Emitted when the `priceOracle` address is set in state.
+     * @param priceOracle The new address of the PriceOracle contract
+     */
+    event PriceOracleSet(address priceOracle);
+
+    /**
      * @notice Emitted when the `treasury` address is set in state.
-     * @param treasury The new address of the treasury contract
+     * @param treasury The new address of the Treasury contract
      */
     event TreasurySet(address treasury);
 
     /**
      * @notice Emitted when the `domainToken` address is set in state.
-     * @param domainToken The new address of the domainToken contract
+     * @param domainToken The new address of the DomainToken contract
      */
     event DomainTokenSet(address domainToken);
 
     /**
      * @notice Emitted when the `subdomainRegistrar` address is set in state.
-     * @param subdomainRegistrar The new address of the subdomainRegistrar contract
+     * @param subdomainRegistrar The new address of the SubdomainRegistrar contract
      */
     event SubdomainRegistrarSet(address subdomainRegistrar);
 
     /**
      * @notice Emitted when the `addressResolver` address is set in state.
-     * @param addressResolver The new address of the addressResolver contract
+     * @param addressResolver The new address of the AddressResolver contract
      */
     event AddressResolverSet(address addressResolver);
+
+    function initialize(
+        address accessController_,
+        address registry_,
+        address priceOracle_,
+        address treasury_,
+        address domainToken_,
+        address addressResolver_
+    ) external;
 
     function registerDomain(
         string calldata name,
@@ -83,14 +116,10 @@ interface IZNSRegistrar is IDistributionConfig {
     ) external returns (bytes32);
 
     function coreRegister(
-        bytes32 parentHash,
-        bytes32 domainHash,
-        string memory name,
-        address owner,
-        address domainAddress
+        CoreRegisterArgs memory args
     ) external;
 
-    function coreRevoke(bytes32 domainHash) external;
+    function coreRevoke(bytes32 domainHash, address owner) external;
 
     function revokeDomain(bytes32 domainHash) external;
 
@@ -99,6 +128,8 @@ interface IZNSRegistrar is IDistributionConfig {
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
     function setRegistry(address registry_) external;
+
+    function setPriceOracle(address priceOracle_) external;
 
     function setTreasury(address treasury_) external;
 
@@ -111,12 +142,4 @@ interface IZNSRegistrar is IDistributionConfig {
     function setAccessController(address accessController_) external;
 
     function getAccessController() external view returns (address);
-
-    function initialize(
-        address accessController_,
-        address registry_,
-        address treasury_,
-        address domainToken_,
-        address addressResolver_
-    ) external;
 }

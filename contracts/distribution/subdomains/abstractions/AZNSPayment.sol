@@ -5,6 +5,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 // TODO sub: add ERC-165 inteface checking? how to validate that a contract inherited this?
+// TODO sub fee: possibly remove this !
 abstract contract AZNSPayment {
 
     event PaymentTokenChanged(bytes32 indexed domainHash, address newPaymentToken);
@@ -22,7 +23,7 @@ abstract contract AZNSPayment {
         address beneficiary;
     }
 
-    mapping(bytes32 domainHash => PaymentConfig config) internal paymentConfigs;
+    mapping(bytes32 domainHash => PaymentConfig config) public paymentConfigs;
 
     // TODO sub: should we add setters and getters here? mb just virtual ??
 
@@ -31,7 +32,7 @@ abstract contract AZNSPayment {
         bytes32 domainHash,
         address payer,
         uint256 amount,
-        uint256 fee
+        uint256 stakeFee
     ) external virtual;
 
     function refundsOnRevoke() external pure virtual returns (bool) {

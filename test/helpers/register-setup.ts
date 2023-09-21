@@ -38,18 +38,19 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricingContract, paymentContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
+  const { pricingContract } = await zns.subdomainRegistrar.distrConfigs(parentHash);
   let price = BigNumber.from(0);
-  let fee = BigNumber.from(0);
+  let parentFee = BigNumber.from(0);
   if (pricingContract === zns.asPricing.address) {
-    [price, fee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
+    [price, parentFee] = await zns.asPricing.getPriceAndFee(parentHash, domainLabel);
   } else if (pricingContract === zns.fixedPricing.address) {
-    [price, fee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
+    [price, parentFee] = await zns.fixedPricing.getPriceAndFee(parentHash, domainLabel);
   }
 
-  const toApprove = price.add(fee);
+  const protocolFee = await zns.priceOracle.getProtocolFee(price.add(parentFee));
+  const toApprove = price.add(parentFee).add(protocolFee);
   // TODO sub: add support for any kind of token
-  await zns.zeroToken.connect(user).approve(paymentContract, toApprove);
+  await zns.zeroToken.connect(user).approve(zns.treasury.address, toApprove);
 };
 
 /**
@@ -155,19 +156,6 @@ export const registrationWithSetup = async ({
     await zns.asPricing.connect(user).setPriceConfig(
       domainHash,
       fullConfig.priceConfig as IASPriceConfig,
-    );
-  }
-
-  // set up payment
-  if (fullConfig.distrConfig.paymentContract === zns.directPayment.address) {
-    await zns.directPayment.connect(user).setPaymentConfig(
-      domainHash,
-      fullConfig.paymentConfig,
-    );
-  } else if (fullConfig.distrConfig.paymentContract === zns.stakePayment.address) {
-    await zns.stakePayment.connect(user).setPaymentConfig(
-      domainHash,
-      fullConfig.paymentConfig,
     );
   }
 

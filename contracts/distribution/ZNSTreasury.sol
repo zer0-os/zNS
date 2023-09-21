@@ -21,6 +21,8 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
     /**
      * @notice The address of the `ZNSPriceOracle` contract.
      */
+    // TODO sub fee: remove this if not used in this contract !!!
+    // TODO sub fee: move tests for deleted functions to RootRegistrar
     IZNSPriceOracle public priceOracle;
 
     /**
@@ -42,7 +44,7 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
      * > Stake is owned by the owner of the Name in `ZNSRegistry`!
      */
-    mapping(bytes32 domainHash => uint256 amountStaked) public stakedForDomain;
+    mapping(bytes32 domainHash => uint256 amountStaked) public override stakedForDomain;
 
     /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used
@@ -80,37 +82,51 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
      * to this contract and then transfers the `registrationFee` to the Zero Vault.
      * Sets the `stakedForDomain` mapping for the domain to the `stakeAmount` and emits a `StakeDeposited` event.
      * @param domainHash The hash of the domain for which the stake is being deposited.
-     * @param domainName The name of the domain for which the stake is being deposited.
+     * @param domainLabel The label (last part after ".") of the domain for which the stake is being deposited.
      * @param depositor The address of the user who is depositing the stake.
      */
     function stakeForDomain(
         bytes32 domainHash,
-        string calldata domainName,
-        address depositor
+        string calldata domainLabel,
+        address depositor,
+        address stakeFeeBeneficiary,
+        IERC20 paymentToken,
+        uint256 stakeAmount,
+        uint256 stakeFee,
+        uint256 protocolFee
     ) external override onlyRegistrar {
-        // Get price and fee for the domain
-        (
-            uint256 totalPrice,
-            uint256 stakeAmount,
-            uint256 registrationFee
-        ) = priceOracle.getPrice(
-            domainName
-        );
+        // paymentToken should NOT be specified for root domains !!
+        IERC20 token = paymentToken == IERC20(address(0)) ? stakingToken : paymentToken;
 
         // Transfer stake amount and fee to this address
-        stakingToken.safeTransferFrom(depositor, address(this), totalPrice);
+        token.safeTransferFrom(
+            depositor,
+            address(this),
+            stakeAmount + stakeFee + protocolFee
+        );
+
         // Transfer registration fee to the Zero Vault from this address
-        stakingToken.safeTransfer(zeroVault, registrationFee);
+        token.safeTransfer(zeroVault, protocolFee);
+
+        // transfer parent fee to the parent owner if it's not 0
+        if (stakeFee != 0) {
+            token.safeTransfer(
+                stakeFeeBeneficiary,
+                stakeFee
+            );
+        }
 
         // Record staked amount for this domain
         stakedForDomain[domainHash] = stakeAmount;
 
         emit StakeDeposited(
             domainHash,
-            domainName,
+            domainLabel,
             depositor,
+            address(token),
             stakeAmount,
-            registrationFee
+            stakeFee,
+            protocolFee
         );
     }
 
@@ -131,9 +147,37 @@ contract ZNSTreasury is AAccessControlled, UUPSUpgradeable, IZNSTreasury {
         require(stakeAmount > 0, "ZNSTreasury: No stake for domain");
         delete stakedForDomain[domainHash];
 
+        // TODO sub data: error here!!! we need to get this token dynamically !!!
+        // tODO sub data: how do we do this if parent has changed the PaymentConfig ?!?!?
+        // TODO sub data: possibly add stakingToken to the stakedForDomain[domainHash] mapping !!!
         stakingToken.safeTransfer(owner, stakeAmount);
 
         emit StakeWithdrawn(domainHash, owner, stakeAmount);
+    }
+
+    function processDirectPayment(
+        address payer,
+        address paymentBeneficiary,
+        IERC20 paymentToken,
+        uint256 paymentAmount,
+        uint256 protocolFee
+    ) external override onlyRegistrar {
+        // Transfer payment to parent beneficiary from payer
+        paymentToken.safeTransferFrom(
+            payer,
+            paymentBeneficiary,
+            paymentAmount
+        );
+
+        // Transfer registration fee to the Zero Vault from payer
+        paymentToken.safeTransferFrom(payer, zeroVault, protocolFee);
+
+        emit DirectPaymentProcessed(
+            payer,
+            paymentBeneficiary,
+            paymentAmount,
+            protocolFee
+        );
     }
 
     /**

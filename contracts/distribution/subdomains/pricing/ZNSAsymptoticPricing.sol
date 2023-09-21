@@ -12,6 +12,8 @@ import { ARegistryWired } from "../../../abstractions/ARegistryWired.sol";
 
 
 // TODO sub: figure out how to interface here with the abstract and PriceConfig struct !!
+// TODO sub: can we turn this into a single contract of PriceOracle ??
+// TODO sub: should we rename PriceOracle into this contract and use a single one where we map root to 0x0 hash as parent ???
 contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingWithFee, IDomainPriceConfig {
     using StringUtils for string;
 
@@ -56,10 +58,10 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function getPriceAndFee(
         bytes32 parentHash,
         string calldata label
-    ) external view override returns (uint256 price, uint256 fee) {
+    ) external view override returns (uint256 price, uint256 stakeFee) {
         price = getPrice(parentHash, label);
-        fee = getFeeForPrice(parentHash, price);
-        return (price, fee);
+        stakeFee = getFeeForPrice(parentHash, price);
+        return (price, stakeFee);
     }
 
     // TODO sub: is this function needed ??
@@ -79,7 +81,6 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function setPriceConfig(
         bytes32 domainHash,
         DomainPriceConfig calldata priceConfig
-    // TODO sub: do we need a modifier here since it checks in the function inside ??
     ) external {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
@@ -207,7 +208,7 @@ contract ZNSAsymptoticPricing is AAccessControlled, ARegistryWired, AZNSPricingW
     function _validateConfig(bytes32 domainHash) internal view {
         uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
         require(
-            priceConfigs[domainHash].minPrice < prevToMinPrice,
+            priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSAsymptoticPricing: incorrect value set causes the price spike at maxLength."
         );
     }

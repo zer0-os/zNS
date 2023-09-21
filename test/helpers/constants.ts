@@ -11,32 +11,6 @@ export const decimalsDefault = BigNumber.from(18);
 export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
 
-export const priceConfigDefault : IASPriceConfig = {
-  maxPrice: ethers.utils.parseEther("25000"),
-  minPrice: ethers.utils.parseEther("2000"),
-  maxLength: BigNumber.from(50),
-  baseLength: BigNumber.from(4),
-  precisionMultiplier: precisionMultiDefault,
-  feePercentage: registrationFeePercDefault,
-};
-
-export const distrConfigEmpty = {
-  pricingContract: ethers.constants.AddressZero,
-  paymentContract: ethers.constants.AddressZero,
-  accessType: 0,
-};
-
-export const paymentConfigEmpty = {
-  paymentToken: ethers.constants.AddressZero,
-  beneficiary: ethers.constants.AddressZero,
-};
-
-export const fullDistrConfigEmpty = {
-  distrConfig: distrConfigEmpty,
-  priceConfig: undefined,
-  paymentConfig: paymentConfigEmpty,
-};
-
 // eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,
@@ -50,6 +24,38 @@ export enum OwnerOf {
   TOKEN,
   BOTH,
 }
+
+// eslint-disable-next-line no-shadow
+export enum PaymentType {
+  DIRECT,
+  STAKE,
+}
+
+export const priceConfigDefault : IASPriceConfig = {
+  maxPrice: ethers.utils.parseEther("25000"),
+  minPrice: ethers.utils.parseEther("2000"),
+  maxLength: BigNumber.from(50),
+  baseLength: BigNumber.from(4),
+  precisionMultiplier: precisionMultiDefault,
+  feePercentage: registrationFeePercDefault,
+};
+
+export const paymentConfigEmpty = {
+  paymentToken: ethers.constants.AddressZero,
+  beneficiary: ethers.constants.AddressZero,
+  paymentType: PaymentType.DIRECT,
+};
+
+export const distrConfigEmpty = {
+  pricingContract: ethers.constants.AddressZero,
+  paymentConfig: paymentConfigEmpty,
+  accessType: 0,
+};
+
+export const fullDistrConfigEmpty = {
+  distrConfig: distrConfigEmpty,
+  priceConfig: undefined,
+};
 
 export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
@@ -66,6 +72,4 @@ export const erc1967ProxyName = "ERC1967Proxy";
 export const transparentProxyName = "TransparentUpgradeableProxy";
 export const fixedPricingName = "ZNSFixedPricing";
 export const asymptoticPricingName = "ZNSAsymptoticPricing";
-export const directPaymentName = "ZNSDirectPayment";
-export const stakePaymentName = "ZNSStakePayment";
 export const subdomainRegistrarName = "ZNSSubdomainRegistrar";

@@ -1,22 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 interface IZNSTreasury {
     /**
      * @notice Emitted when a new stake is deposited upon registration of a new domain.
      * @param domainHash The hash of the domain name
-     * @param domainName The domain name as a string
+     * @param domainLabel The domain name as a string
      * @param depositor The address of the depositing user / new domain owner
      * @param stakeAmount The amount they are depositing / price of the domain based on name length
-     * @param registrationFee The registration fee paid by the user on top of the staked amount
+     * @param stakeFee The registration fee paid by the user on top of the staked amount
      */
     event StakeDeposited(
         bytes32 indexed domainHash,
-        string domainName,
+        string domainLabel,
         address indexed depositor,
+        address stakingToken,
         uint256 indexed stakeAmount,
-        uint256 registrationFee
+        uint256 stakeFee,
+        uint256 protocolFee
     );
 
     /**
@@ -29,6 +33,13 @@ interface IZNSTreasury {
         bytes32 indexed domainHash,
         address indexed owner,
         uint256 indexed stakeAmount
+    );
+
+    event DirectPaymentProcessed(
+        address indexed payer,
+        address indexed beneficiary,
+        uint256 indexed amount,
+        uint256 protocolFee
     );
 
     /**
@@ -52,10 +63,25 @@ interface IZNSTreasury {
     function stakeForDomain(
         bytes32 domainHash,
         string calldata domainName,
-        address depositor
+        address depositor,
+        address stakeFeeBeneficiary,
+        IERC20 paymentToken,
+        uint256 stakeAmount,
+        uint256 stakeFee,
+        uint256 protocolFee
     ) external;
 
     function unstakeForDomain(bytes32 domainHash, address owner) external;
+
+    function processDirectPayment(
+        address payer,
+        address paymentBeneficiary,
+        IERC20 paymentToken,
+        uint256 paymentAmount,
+        uint256 protocolFee
+    ) external;
+
+    function stakedForDomain(bytes32 domainHash) external view returns (uint256);
 
     function setZeroVaultAddress(address zeroVaultAddress) external;
 
