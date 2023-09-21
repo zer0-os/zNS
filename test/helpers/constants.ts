@@ -11,6 +11,7 @@ export const decimalsDefault = BigNumber.from(18);
 export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
 
+export const defaultRoyaltyFraction = BigNumber.from("200");
 // eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,

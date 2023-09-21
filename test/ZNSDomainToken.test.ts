@@ -1,11 +1,11 @@
 import * as hre from "hardhat";
 import {
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSDomainToken__factory,
+  ZNSDomainToken__factory, ERC165__factory,
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
@@ -15,21 +15,25 @@ import {
   deployZNS,
   validateUpgrade,
   ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL, domainTokenName, INITIALIZED_ERR,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+  INITIALIZED_ERR,
+  PERCENTAGE_BASIS, defaultRoyaltyFraction,
 } from "./helpers";
 import { DeployZNSParams, ZNSContracts } from "./helpers/types";
+import { parseEther } from "ethers/lib/utils";
 
 
-describe("ZNSDomainToken:", () => {
+describe("ZNSDomainToken", () => {
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
+  let beneficiary : SignerWithAddress;
 
   let zns : ZNSContracts;
   let deployParams : DeployZNSParams;
 
   beforeEach(async () => {
-    [deployer, caller, mockRegistrar] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar, beneficiary] = await hre.ethers.getSigners();
     deployParams = {
       deployer,
       governorAddresses: [deployer.address],
@@ -46,13 +50,18 @@ describe("ZNSDomainToken:", () => {
     expect(await zns.domainToken.getAccessController()).to.equal(zns.accessController.address);
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
+    const royaltyInfo = await zns.domainToken.royaltyInfo("0", parseEther("100"));
+    expect(royaltyInfo[0]).to.equal(zns.zeroVaultAddress);
+    expect(royaltyInfo[1]).to.equal(parseEther("2"));
   });
 
   it("should NOT initialize twice", async () => {
     await expect(zns.domainToken.initialize(
       deployer.address,
       ZNS_DOMAIN_TOKEN_NAME,
-      ZNS_DOMAIN_TOKEN_SYMBOL
+      ZNS_DOMAIN_TOKEN_SYMBOL,
+      zns.zeroVaultAddress,
+      defaultRoyaltyFraction
     )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
@@ -169,6 +178,85 @@ describe("ZNSDomainToken:", () => {
     it("Verify token symbol", async () => {
       const symbol = await zns.domainToken.symbol();
       expect(symbol).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
+    });
+  });
+
+  describe("Royalties", () => {
+    it("should set and correctly retrieve default royalty", async () => {
+      const assetPrice = parseEther("164");
+
+      const initialRoyaltyInfo = await zns.domainToken.royaltyInfo("0", assetPrice);
+
+      // mint token
+      const tokenId = ethers.BigNumber.from("1326548");
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+
+      const royaltyPerc = BigNumber.from("237"); // 2.37%
+
+      await zns.domainToken.connect(deployer).setDefaultRoyalty(beneficiary.address, royaltyPerc);
+
+      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(PERCENTAGE_BASIS);
+
+      // try pulling with incorrect tokenID - should still return the correct amount
+      const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
+
+      // make sure the new value is set
+      expect(royaltyInfoNoID[0]).to.not.equal(initialRoyaltyInfo[0]);
+      expect(royaltyInfoNoID[1]).to.not.equal(initialRoyaltyInfo[1]);
+
+      // make sure the new value is correct
+      expect(royaltyInfoNoID[0]).to.equal(beneficiary.address);
+      expect(royaltyInfoNoID[1]).to.equal(royaltyAmountExp);
+
+      // try pulling with correct tokenID - should still be the same
+      const royaltyInfo = await zns.domainToken.royaltyInfo(tokenId, assetPrice);
+      expect(royaltyInfo[0]).to.equal(beneficiary.address);
+      expect(royaltyInfo[1]).to.equal(royaltyAmountExp);
+    });
+
+    it("should set and correctly retrieve royalty for a specific token", async () => {
+      // mint token
+      const tokenId = ethers.BigNumber.from("777356");
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId);
+
+      const assetPrice = parseEther("19");
+      const royaltyPerc = BigNumber.from("1013"); // 2.37%
+
+      await zns.domainToken.connect(deployer).setTokenRoyalty(tokenId, beneficiary.address, royaltyPerc);
+
+      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(PERCENTAGE_BASIS);
+
+      // try pulling with incorrect tokenID - should return default values from initizlize()
+      const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
+
+      expect(royaltyInfoNoID[0]).to.equal(zns.zeroVaultAddress);
+      expect(royaltyInfoNoID[1]).to.equal(assetPrice.mul(defaultRoyaltyFraction).div(PERCENTAGE_BASIS));
+
+      // try pulling with correct tokenID - should return correct amount
+      const royaltyInfo = await zns.domainToken.royaltyInfo(tokenId, assetPrice);
+      expect(royaltyInfo[0]).to.equal(beneficiary.address);
+      expect(royaltyInfo[1]).to.equal(royaltyAmountExp);
+    });
+  });
+
+  describe("ERC-165", () => {
+    it("should support IERC721", async () => {
+      expect(await zns.domainToken.supportsInterface("0x80ac58cd")).to.be.true;
+    });
+
+    it("should support IERC2981", async () => {
+      expect(await zns.domainToken.supportsInterface("0x2a55205a")).to.be.true;
+    });
+
+    it("should support IERC165", async () => {
+      const erc165Interface = ERC165__factory.createInterface();
+      const interfaceId = erc165Interface.getSighash(erc165Interface.functions["supportsInterface(bytes4)"]);
+
+      expect(await zns.domainToken.supportsInterface(interfaceId)).to.be.true;
+    });
+
+    it("should not support random interface", async () => {
+      expect(await zns.domainToken.supportsInterface("0x12345678")).to.be.false;
     });
   });
 
