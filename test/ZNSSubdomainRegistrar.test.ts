@@ -264,7 +264,7 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it.only("should revert when registering a subdomain with an empty label or whitespace", async () => {
+    it("should revert when registering a subdomain with an empty label or whitespace", async () => {
       // add allowance
       await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
