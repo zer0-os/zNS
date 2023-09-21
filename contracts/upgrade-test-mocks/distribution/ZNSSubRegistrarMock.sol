@@ -77,7 +77,7 @@ contract ZNSSubRegistrarUpgradeMock is
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            "ZNSSubRegistrar: Parent domain's distribution is locked"
+            "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
         if (parentConfig.accessType == AccessType.MINTLIST) {

@@ -24,7 +24,8 @@ export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of the T
 export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both Name and Token";
 
 // Subdomain Registrar
-export const DISTRIBUTION_LOCKED_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked";
+// eslint-disable-next-line max-len
+export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist";
 
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";

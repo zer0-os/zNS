@@ -50,7 +50,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
             // TODO sub: consider getting rid of large revert messages
-            "ZNSSubRegistrar: Parent domain's distribution is locked"
+            "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
