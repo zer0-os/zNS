@@ -40,6 +40,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 parentHash,
         string calldata label,
         address domainAddress,
+        string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
         // TODO sub: make the order of ops better
@@ -67,6 +68,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
+            tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 
@@ -76,10 +78,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
 
         if (!isOwnerOrOperator) {
-            // TODO sub: can we make this abstract switching better ??
-            // TODO sub: should we eliminate Pricing with not fee abstract at all??
-            //  what are the downsides of this?? We can just make fees 0 in any contract
-            //  would that make us pay more gas for txes with no fees?
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(

@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType,
+  AccessType, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
   hashDomainLabel,
@@ -115,6 +115,7 @@ describe("ZNSRootRegistrar", () => {
           price: "0",
           stakeFee: "0",
           domainAddress: ethers.constants.AddressZero,
+          tokenURI: "",
           isStakePayment: false,
         })
       ).to.be.revertedWith(
@@ -222,7 +223,7 @@ describe("ZNSRootRegistrar", () => {
     });
   });
 
-  describe("Registers a top level domain", () => {
+  describe("Registers a root domain", () => {
     it("Can NOT register a TLD with an empty name", async () => {
       const emptyName = "";
 
@@ -237,9 +238,11 @@ describe("ZNSRootRegistrar", () => {
 
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
+      const tokenURI = "https://example.com/817c64af";
       const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        tokenURI,
         distrConfigEmpty
       );
 
@@ -253,6 +256,9 @@ describe("ZNSRootRegistrar", () => {
         user.address,
         ethers.constants.AddressZero,
       );
+
+      const tokenURISC = await zns.domainToken.tokenURI(hashFromTS);
+      expect(tokenURISC).to.eq(tokenURI);
     });
 
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
@@ -261,10 +267,12 @@ describe("ZNSRootRegistrar", () => {
         accessType: AccessType.OPEN,
         paymentType: PaymentType.DIRECT,
       };
+      const tokenURI = "https://example.com/817c64af";
 
       const tx = await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        tokenURI,
         distrConfig
       );
 
@@ -281,6 +289,9 @@ describe("ZNSRootRegistrar", () => {
       expect(pricerContract).to.eq(distrConfig.pricerContract);
       expect(paymentType).to.eq(distrConfig.paymentType);
       expect(accessType).to.eq(distrConfig.accessType);
+
+      const tokenURISC = await zns.domainToken.tokenURI(domainHash);
+      expect(tokenURISC).to.eq(tokenURI);
     });
 
     it("Stakes and saves the correct amount and token, takes the correct fee and sends fee to Zero Vault", async () => {
@@ -397,6 +408,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -454,6 +466,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(user).registerDomain(
         defaultDomain,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -963,6 +976,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(randomUser).registerDomain(
         domainName,
         randomUser.address,
+        defaultTokenURI,
         distrConfigEmpty
       );
 

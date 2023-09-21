@@ -47,6 +47,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes32 parentHash,
         string calldata label,
         address domainAddress,
+        string calldata tokenURI,
         DistributionConfig calldata configForSubdomains
     ) external returns (bytes32);
 

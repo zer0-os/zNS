@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IDomainConfigForTest, IPathRegResult, ZNSContracts } from "./helpers/types";
 import {
   AccessType,
-  ADMIN_ROLE,
+  ADMIN_ROLE, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_ERR,
@@ -236,6 +236,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -299,6 +300,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -530,6 +532,7 @@ describe("ZNSSubRegistrar", () => {
           lvl1Hash,
           "newsubdomain",
           branchLvl1Owner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
@@ -551,6 +554,7 @@ describe("ZNSSubRegistrar", () => {
           lvl4Hash,
           "newsubdomain",
           branchLvl2Owner.address,
+          defaultTokenURI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_ERR);
@@ -1533,6 +1537,7 @@ describe("ZNSSubRegistrar", () => {
           res[0].domainHash,
           "tobedenied",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1562,6 +1567,7 @@ describe("ZNSSubRegistrar", () => {
         parentHash,
         domainLabel,
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -1636,6 +1642,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlisted",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1655,6 +1662,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlistednow",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1708,6 +1716,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[1].domainHash,
           "notallowed",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1752,6 +1761,7 @@ describe("ZNSSubRegistrar", () => {
         regResults[1].domainHash,
         "alloweddddd",
         ethers.constants.AddressZero,
+        defaultTokenURI,
         distrConfigEmpty
       );
 
@@ -1786,6 +1796,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notallowed",
           ethers.constants.AddressZero,
+          defaultTokenURI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -1859,7 +1870,8 @@ describe("ZNSSubRegistrar", () => {
         },
         {
           user: lvl2SubOwner,
-          domainLabel: "levelone",
+          domainLabel: "leveltwo",
+          tokenURI: "http://example.com/leveltwo",
           fullConfig: {
             distrConfig: {
               pricerContract: zns.fixedPricer.address,
@@ -1876,6 +1888,7 @@ describe("ZNSSubRegistrar", () => {
         {
           user: lvl3SubOwner,
           domainLabel: "lvlthree",
+          tokenURI: "http://example.com/lvlthree",
           fullConfig: {
             distrConfig: {
               pricerContract: zns.curvePricer.address,
@@ -1897,12 +1910,27 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
+    it("should register subdomain with the correct tokenURI assigned to the domain token minted", async () => {
+      const tokenId1 = BigNumber.from(regResults[0].domainHash).toString();
+      const tokenURI1 = await zns.domainToken.tokenURI(tokenId1);
+      expect(tokenURI1).to.eq(defaultTokenURI);
+
+      const tokenId2 = BigNumber.from(regResults[1].domainHash).toString();
+      const tokenURI2 = await zns.domainToken.tokenURI(tokenId2);
+      expect(tokenURI2).to.eq(domainConfigs[1].tokenURI);
+
+      const tokenId3 = BigNumber.from(regResults[2].domainHash).toString();
+      const tokenURI3 = await zns.domainToken.tokenURI(tokenId3);
+      expect(tokenURI3).to.eq(domainConfigs[2].tokenURI);
+    });
+
     it("should NOT allow to register an existing subdomain that has not been revoked", async () => {
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           regResults[0].domainHash,
           domainConfigs[1].domainLabel,
           lvl2SubOwner.address,
+          defaultTokenURI,
           domainConfigs[1].fullConfig.distrConfig
         )
       ).to.be.revertedWith(
@@ -2416,6 +2444,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         domainLabel,
         lvl2SubOwner.address,
+        defaultTokenURI,
         {
           accessType: AccessType.OPEN,
           pricerContract: zns.fixedPricer.address,
@@ -2478,6 +2507,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         "subbb",
         lvl2SubOwner.address,
+        defaultTokenURI,
         subConfigToSet
       );
 

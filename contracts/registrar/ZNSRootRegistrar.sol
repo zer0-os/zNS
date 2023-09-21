@@ -78,6 +78,7 @@ contract ZNSRootRegistrar is
         // TODO sub: change "name" to "label" everywhere in this and other contracts ??
         string calldata name,
         address domainAddress,
+        string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
         require(
@@ -105,6 +106,7 @@ contract ZNSRootRegistrar is
                 domainPrice,
                 0,
                 domainAddress,
+                tokenURI,
                 true
             )
         );
@@ -136,7 +138,7 @@ contract ZNSRootRegistrar is
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);
         // mint token
-        domainToken.register(args.registrant, tokenId);
+        domainToken.register(args.registrant, tokenId, args.tokenURI);
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise

@@ -68,6 +68,7 @@ contract ZNSSubRegistrarUpgradeMock is
         bytes32 parentHash,
         string calldata label,
         address domainAddress,
+        string memory tokenURI,
         DistributionConfig calldata distrConfig
     ) external returns (bytes32) {
         // TODO sub: make the order of ops better
@@ -94,6 +95,7 @@ contract ZNSSubRegistrarUpgradeMock is
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
+            tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 

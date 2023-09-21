@@ -16,6 +16,7 @@ struct CoreRegisterArgs {
     // 0x0 for anything other than subdomain under a parent with Stake Payment
     uint256 stakeFee;
     address domainAddress;
+    string tokenURI;
     bool isStakePayment;
 }
 
@@ -113,6 +114,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function registerDomain(
         string calldata name,
         address domainAddress,
+        string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external returns (bytes32);
 

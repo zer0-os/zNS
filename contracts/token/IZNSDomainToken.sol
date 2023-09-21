@@ -8,6 +8,7 @@ import { IERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/interfa
 interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
     event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
     event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
+    event BaseURISet(string indexed baseURI);
 
     function initialize(
         address accessController,
@@ -17,9 +18,20 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
         uint96 defaultRoyaltyFraction
     ) external;
 
-    function register(address to, uint256 tokenId) external;
+    function register(
+        address to,
+        uint256 tokenId,
+        string memory _tokenURI
+    ) external;
 
     function revoke(uint256 tokenId) external;
+
+    function tokenURI(uint256 tokenId)
+    external
+    view
+    returns (string memory);
+
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) external;
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
 
