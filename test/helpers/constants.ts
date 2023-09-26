@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { IASPriceConfig } from "./types";
+import { ICurvePriceConfig } from "./types";
 import { ethers } from "hardhat";
 
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
@@ -34,7 +34,7 @@ export enum PaymentType {
   STAKE,
 }
 
-export const priceConfigDefault : IASPriceConfig = {
+export const priceConfigDefault : ICurvePriceConfig = {
   maxPrice: ethers.utils.parseEther("25000"),
   minPrice: ethers.utils.parseEther("2000"),
   maxLength: BigNumber.from(50),
