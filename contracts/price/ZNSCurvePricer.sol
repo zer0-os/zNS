@@ -59,15 +59,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         return _getPrice(parentHash, length);
     }
 
-    /**
-     * @notice Get the protocol fee amount in `paymentToken` of Zero for a specific domain price
-     * as `domainPrice * rootDomainPriceConfig.feePercentage / PERCENTAGE_BASIS`.
-     * @param domainPrice The price of the domain
-     */
-    function getProtocolFee(uint256 domainPrice) external view override returns (uint256) {
-        return getFeeForPrice(0x0, domainPrice);
-    }
-
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price

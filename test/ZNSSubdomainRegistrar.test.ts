@@ -2034,7 +2034,8 @@ describe("ZNSSubRegistrar", () => {
         subdomainParentHash,
         label
       );
-      const protocolFeeFromSC = await zns.curvePricer.getProtocolFee(
+      const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
+        ethers.constants.HashZero,
         priceFromSC.add(feeFromSC)
       );
 

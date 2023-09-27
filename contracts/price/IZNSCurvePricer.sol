@@ -72,8 +72,6 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
         string calldata label
     ) external view returns (uint256);
 
-    function getProtocolFee(uint256 domainPrice) external view returns (uint256);
-
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price

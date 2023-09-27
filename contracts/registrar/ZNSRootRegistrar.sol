@@ -9,7 +9,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 /**
@@ -29,11 +29,7 @@ contract ZNSRootRegistrar is
     ARegistryWired,
     IZNSRootRegistrar {
 
-    // TODO sub data: can (and should) we make a new primitive
-    //  interface that inherits IZNSPricer and adds getProtocolFee()
-    //  so that we don't have to upgrade this contract every time we
-    //  want to switch a pricing contract for Zero?
-    IZNSCurvePricer public curvePricer;
+    IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -53,14 +49,14 @@ contract ZNSRootRegistrar is
     function initialize(
         address accessController_,
         address registry_,
-        address curvePricer_,
+        address rootPricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setCurvePricer(curvePricer_);
+        setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
         setAddressResolver(addressResolver_);
@@ -97,7 +93,7 @@ contract ZNSRootRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = curvePricer.getPrice(0x0, name);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name);
 
         _coreRegister(
             CoreRegisterArgs(
@@ -172,7 +168,7 @@ contract ZNSRootRegistrar is
 
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = curvePricer.getProtocolFee(args.price + args.stakeFee);
+        uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -292,14 +288,14 @@ contract ZNSRootRegistrar is
         _setRegistry(registry_);
     }
 
-    function setCurvePricer(address curvePricer_) public override onlyAdmin {
+    function setRootPricer(address rootPricer_) public override onlyAdmin {
         require(
-            curvePricer_ != address(0),
-            "ZNSRootRegistrar: curvePricer_ is 0x0 address"
+            rootPricer_ != address(0),
+            "ZNSRootRegistrar: rootPricer_ is 0x0 address"
         );
-        curvePricer = IZNSCurvePricer(curvePricer_);
+        rootPricer = IZNSPricer(rootPricer_);
 
-        emit CurvePricerSet(curvePricer_);
+        emit RootPricerSet(rootPricer_);
     }
 
     /**

@@ -128,7 +128,7 @@ describe("ZNSTreasury", () => {
         ethers.constants.HashZero,
         domainName
       );
-      const fee = await zns.curvePricer.getProtocolFee(expectedStake);
+      const fee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, expectedStake);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.constants.HashZero,
