@@ -20,12 +20,15 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { priceConfigDefault } from "./helpers/constants";
+import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { calcAsymptoticPrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
+import { IDomainPriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
+import { parseEther } from "ethers/lib/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -58,6 +61,47 @@ describe("ZNSRootRegistrar", () => {
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.mint(user.address, userBalanceInitial);
+  });
+
+  it("Allows transfer of 0x0 domain ownership after deployment", async () => {
+    await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
+    expect(await zns.registry.getDomainOwner(ethers.constants.HashZero)).to.equal(user.address);
+  });
+
+  it("Confirms a new 0x0 owner can modify the configs in the treasury and curve pricer", async () => {
+    await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
+
+    const newTreasuryConfig: PaymentConfigStruct = {
+      token: zeroVault.address, // Just needs to be a different address
+      beneficiary: user.address
+    };
+
+    // Modify the treasury
+    const treasuryTx = await zns.treasury.connect(user).setPaymentConfig(ethers.constants.HashZero, newTreasuryConfig);
+
+    expect(treasuryTx).to.emit(zns.treasury, "BeneficiarySet").withArgs(ethers.constants.HashZero, user.address);
+    expect(treasuryTx).to.emit(zns.treasury, "PaymentTokenSet").withArgs(ethers.constants.HashZero, zeroVault.address);
+
+    // Modify the curve pricer
+    const newPricerConfig: IDomainPriceConfig.DomainPriceConfigStruct = {
+      baseLength: BigNumber.from("6"),
+      maxLength: BigNumber.from("35"),
+      maxPrice: parseEther("150"),
+      minPrice: parseEther("10"),
+      precisionMultiplier: precisionMultiDefault,
+      feePercentage: registrationFeePercDefault,
+    };
+
+    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
+    
+    expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
+      newPricerConfig.baseLength,
+      newPricerConfig.maxLength,
+      newPricerConfig.maxPrice,
+      newPricerConfig.minPrice,
+      newPricerConfig.precisionMultiplier,
+      newPricerConfig.feePercentage,
+    );
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
