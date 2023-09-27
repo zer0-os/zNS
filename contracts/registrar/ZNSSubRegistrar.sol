@@ -109,9 +109,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
         rootRegistrar.coreRevoke(subdomainHash, msg.sender);
-
-        // TODO sub: should we clear the data from all other contracts (configs, etc.) ??
-        //  can we even do this?
     }
 
     function hashWithParent(
@@ -147,8 +144,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     function setPricerContractForDomain(
         bytes32 domainHash,
-        // TODO audit: is this a problem that we expect the simplest interface
+        // TODO audit question: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
+        //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
         require(
