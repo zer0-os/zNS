@@ -2,10 +2,10 @@
 pragma solidity ^0.8.18;
 
 import { IDomainPriceConfig } from "../types/IDomainPriceConfig.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricerCommon } from "../types/IZNSPricerCommon.sol";
 
 
-interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
+interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricerCommon {
 
     /**
      * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`

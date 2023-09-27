@@ -3,10 +3,10 @@ pragma solidity ^0.8.18;
 
 
 /**
- * @title IZNSPricer.sol
+ * @title IZNSPricerCommon.sol
  * @notice Base interface required to be inherited by all Pricing contracts to work with zNS
  */
-interface IZNSPricer {
+interface IZNSPricerCommon {
     /**
      * @dev `parentHash` param is here to allow pricer contracts
      *  to have different price configs for different subdomains

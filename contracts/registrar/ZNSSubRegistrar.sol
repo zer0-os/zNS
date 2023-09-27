@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricerCommon } from "../types/IZNSPricerCommon.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -78,13 +78,13 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricerCommon(address(parentConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
                         label
                     );
             } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                coreRegisterArgs.price = IZNSPricerCommon(address(parentConfig.pricerContract))
                     .getPrice(
                         parentHash,
                         label
@@ -149,7 +149,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         // TODO audit: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
-        IZNSPricer pricerContract
+        IZNSPricerCommon pricerContract
     ) public override {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),

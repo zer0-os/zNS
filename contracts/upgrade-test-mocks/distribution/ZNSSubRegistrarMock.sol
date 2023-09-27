@@ -3,11 +3,12 @@ pragma solidity ^0.8.18;
 
 import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
-import { IZNSPricer } from "../../types/IZNSPricer.sol";
+import { IZNSPricerCommon } from "../../types/IZNSPricerCommon.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 
 enum AccessType {
     LOCKED,
@@ -21,7 +22,7 @@ enum PaymentType {
 }
 
 struct DistributionConfig {
-    IZNSPricer pricerContract;
+    IZNSPricerCommon pricerContract;
     PaymentType paymentType;
     AccessType accessType;
     address newAddress;
@@ -29,7 +30,7 @@ struct DistributionConfig {
 }
 
 
-contract ZNSSubRegistrarMainState {
+contract ZNSSubRegistrarMainStateMock {
     IZNSRootRegistrar public rootRegistrar;
 
     mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
@@ -42,7 +43,7 @@ contract ZNSSubRegistrarUpgradeMock is
     AAccessControlled,
     ARegistryWired,
     UUPSUpgradeable,
-    ZNSSubRegistrarMainState,
+    ZNSSubRegistrarMainStateMock,
     UpgradeMock {
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
@@ -105,13 +106,13 @@ contract ZNSSubRegistrarUpgradeMock is
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricerCommon(address(parentConfig.pricerContract))
                 .getPriceAndFee(
                     parentHash,
                     label
                 );
             } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                coreRegisterArgs.price = IZNSPricerCommon(address(parentConfig.pricerContract))
                     .getPrice(
                     parentHash,
                     label
@@ -164,7 +165,7 @@ contract ZNSSubRegistrarUpgradeMock is
 
     function setPricerContractForDomain(
         bytes32 domainHash,
-        IZNSPricer pricerContract
+        IZNSPricerCommon pricerContract
     ) public {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender),
