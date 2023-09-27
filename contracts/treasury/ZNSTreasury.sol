@@ -231,6 +231,12 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         emit PaymentTokenSet(domainHash, paymentToken);
     }
 
+    function setRegistry(
+        address registry_
+    ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
+        _setRegistry(registry_);
+    }
+
 //    /**
 //     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
 //     */

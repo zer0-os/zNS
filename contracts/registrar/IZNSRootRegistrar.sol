@@ -129,6 +129,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
+    function setRegistry(address registry_) external;
+
     function setRootPricer(address rootPricer_) external;
 
     function setTreasury(address treasury_) external;

@@ -27,7 +27,5 @@ abstract contract ARegistryWired {
      * @notice Virtual function to make sure the setter is always implemented in children,
      * otherwise we will not be able to reset the ZNSRegistry address in children
      */
-    function setRegistry(address registry_) public {
-        _setRegistry(registry_);
-    }
+    function setRegistry(address registry_) external virtual;
 }

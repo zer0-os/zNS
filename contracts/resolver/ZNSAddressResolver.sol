@@ -95,6 +95,16 @@ contract ZNSAddressResolver is
     }
 
     /**
+     * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
+     * for every domain in the system. This function can only be called by the ADMIN.
+     * Emits a `RegistrySet` event.
+     * @param _registry The address of the `ZNSRegistry` contract
+     */
+    function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolver) onlyAdmin {
+        _setRegistry(_registry);
+    }
+
+    /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */

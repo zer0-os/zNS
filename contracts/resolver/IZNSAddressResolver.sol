@@ -35,6 +35,8 @@ interface IZNSAddressResolver {
 
     function getInterfaceId() external pure returns (bytes4);
 
+    function setRegistry(address _registry) external;
+
     /**
      * @notice Initialize an instance of the ZNSAddressResolver
      * @param _accessController The access controller

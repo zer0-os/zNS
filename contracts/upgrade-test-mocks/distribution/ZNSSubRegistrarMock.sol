@@ -220,6 +220,10 @@ contract ZNSSubRegistrarUpgradeMock is
         }
     }
 
+    function setRegistry(address registry_) public override onlyAdmin {
+        _setRegistry(registry_);
+    }
+
     function setRootRegistrar(address registrar_) public onlyAdmin {
         require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
         rootRegistrar = IZNSRootRegistrar(registrar_);

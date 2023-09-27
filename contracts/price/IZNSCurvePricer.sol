@@ -101,4 +101,6 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
     function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
 
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
+
+    function setRegistry(address registry_) external;
 }

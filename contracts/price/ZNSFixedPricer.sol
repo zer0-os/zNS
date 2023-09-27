@@ -62,6 +62,10 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setFeePercentage(domainHash, priceConfig.feePercentage);
     }
 
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricer) onlyAdmin {
+        _setRegistry(registry_);
+    }
+
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.

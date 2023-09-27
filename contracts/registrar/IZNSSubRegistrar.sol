@@ -84,5 +84,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bool[] calldata allowed
     ) external;
 
+    function setRegistry(address registry_) external;
+
     function setRootRegistrar(address registrar_) external;
 }

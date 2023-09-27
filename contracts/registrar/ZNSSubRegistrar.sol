@@ -210,6 +210,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit MintlistUpdated(domainHash, candidates, allowed);
     }
 
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
+        _setRegistry(registry_);
+    }
+
     function setRootRegistrar(address registrar_) public override onlyAdmin {
         require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
         rootRegistrar = IZNSRootRegistrar(registrar_);

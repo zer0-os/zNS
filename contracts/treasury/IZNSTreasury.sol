@@ -118,6 +118,8 @@ interface IZNSTreasury {
         address paymentToken
     ) external;
 
+    function setRegistry(address registry_) external;
+
     function initialize(
         address accessController_,
         address curvePricer_,
