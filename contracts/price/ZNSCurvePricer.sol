@@ -257,6 +257,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) internal view returns (uint256) {
         DomainPriceConfig memory config = priceConfigs[parentHash];
 
+        // We use maxPrice == 0 to signal all domains are free
+        if (config.maxPrice == 0) return 0;
+
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
         // e.g. promotions or sales

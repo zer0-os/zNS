@@ -348,6 +348,21 @@ describe("ZNSCurvePricer", () => {
         newConfig.feePercentage,
       );
     });
+
+    it("Fails validation when maxPrice < minPrice", async () => {
+      const newConfig = {
+        baseLength: BigNumber.from("3"),
+        maxLength: BigNumber.from("35"),
+        maxPrice: parseEther("1"),
+        minPrice: parseEther("2"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
+      };
+
+      const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
+
+      await expect(tx).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
   });
 
   describe("#setMaxPrice", () => {
