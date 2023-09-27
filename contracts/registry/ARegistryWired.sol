@@ -28,5 +28,7 @@ abstract contract ARegistryWired {
      * otherwise we will not be able to reset the ZNSRegistry address in children
      */
     // TODO sub: can we make it here instead, so we don't have to add it to every child??
-    function setRegistry(address registry_) external virtual;
+    function setRegistry(address registry_) public {
+        _setRegistry(registry_);
+    }
 }

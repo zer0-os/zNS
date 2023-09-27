@@ -279,15 +279,6 @@ contract ZNSRootRegistrar is
         revert("Wrong enum value for `ownerOf`");
     }
 
-    /**
-     * @notice Setter function for the `ZNSRegistry` address in state.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param registry_ Address of the `ZNSRegistry` contract
-     */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
-        _setRegistry(registry_);
-    }
-
     function setRootPricer(address rootPricer_) public override onlyAdmin {
         require(
             rootPricer_ != address(0),

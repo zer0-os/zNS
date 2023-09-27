@@ -221,10 +221,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
-    function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
-        _setRegistry(registry_);
-    }
-
     /**
      * @notice Internal function to calculate price based on the config set,
      * and the length of the domain label.

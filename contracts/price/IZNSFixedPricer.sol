@@ -40,6 +40,4 @@ interface IZNSFixedPricer is IZNSPricer {
         bytes32 domainHash,
         PriceConfig calldata priceConfig
     ) external;
-
-    function setRegistry(address registry_) external;
 }
