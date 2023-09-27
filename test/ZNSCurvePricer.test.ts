@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { ZNSContracts } from "./helpers/types";
+import { IZNSContracts } from "./helpers/types";
 import {
   deployZNS,
   calcAsymptoticPrice,
@@ -32,7 +32,7 @@ describe("ZNSCurvePricer", () => {
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let domainHash : string;
 
   const defaultDomain = "wilder";

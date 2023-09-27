@@ -95,8 +95,7 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
-// TODO sub: rename to IZNS
-export interface ZNSContracts {
+export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;

@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
-import { DeployZNSParams, ZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
@@ -22,7 +22,7 @@ describe("ZNSAddressResolver", () => {
   let operator : SignerWithAddress;
   let wilderDomainHash : string;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
 
   beforeEach(async () => {
     [

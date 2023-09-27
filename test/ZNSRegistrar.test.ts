@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { ZNSContracts } from "./helpers/types";
+import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -37,7 +37,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   const defaultDomain = normalizeName("wilder");

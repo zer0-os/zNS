@@ -1,5 +1,5 @@
 import { BigNumber, ContractReceipt, Event } from "ethers";
-import { ZNSContracts } from "./types";
+import { IZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
@@ -57,7 +57,7 @@ export const getDomainRegisteredEvents = async ({
   registrant = null,
   blockRange = 50,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainHash ?: string | null;
   tokenId ?: BigNumber | null;
   registrant ?: string | null;
@@ -79,7 +79,7 @@ export const getDomainHashFromEvent = async ({
   zns,
   user,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   user : SignerWithAddress;
 }) : Promise<string> => {
   const latestBlock = await time.latestBlock();

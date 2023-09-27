@@ -71,7 +71,6 @@ contract ZNSSubRegistrarUpgradeMock is
         string memory tokenURI,
         DistributionConfig calldata distrConfig
     ) external returns (bytes32) {
-        // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
@@ -105,10 +104,6 @@ contract ZNSSubRegistrarUpgradeMock is
         );
 
         if (!isOwnerOrOperator) {
-            // TODO sub: can we make this abstract switching better ??
-            // TODO sub: should we eliminate Pricing with not fee abstract at all??
-            //  what are the downsides of this?? We can just make fees 0 in any contract
-            //  would that make us pay more gas for txes with no fees?
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(

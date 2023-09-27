@@ -1,4 +1,4 @@
-import { IDomainConfigForTest, ZNSContracts, IPathRegResult } from "../types";
+import { IDomainConfigForTest, IZNSContracts, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { BigNumber, ethers } from "ethers";
 import { getPriceObject, getStakingOrProtocolFee } from "../pricing";
@@ -13,7 +13,7 @@ export const registerDomainPath = async ({
   zns,
   domainConfigs,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
 }) => domainConfigs.reduce(
   async (
@@ -94,7 +94,7 @@ export const validatePathRegistration = async ({
   domainConfigs,
   regResults,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
   regResults : Array<IPathRegResult>;
 }) => domainConfigs.reduce(

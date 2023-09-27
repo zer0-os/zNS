@@ -4,7 +4,7 @@ import {
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig,
-  ZNSContracts,
+  IZNSContracts,
 } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -23,7 +23,7 @@ export const defaultRootRegistration = async ({
   distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainName : string;
   domainContent ?: string;
   tokenURI ?: string;
@@ -45,7 +45,7 @@ export const approveForParent = async ({
   user,
   domainLabel,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -84,7 +84,7 @@ export const defaultSubdomainRegistration = async ({
   distrConfig,
 } : {
   user : SignerWithAddress;
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
@@ -111,7 +111,7 @@ export const registrationWithSetup = async ({
   tokenURI = defaultTokenURI,
   fullConfig = fullDistrConfigEmpty,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;

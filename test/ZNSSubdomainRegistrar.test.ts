@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, ZNSContracts } from "./helpers/types";
+import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContracts } from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -50,7 +50,7 @@ describe("ZNSSubRegistrar", () => {
   let operator : SignerWithAddress;
   let multiOwner : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
 
   describe("Single Subdomain Registration", () => {
@@ -890,9 +890,6 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
     });
 
-    // TODO sub: add more tests here:
-    //  1. reregister a revoked domain and set your own config and distribute subs
-    //  3. After a new owner came in on revoked domain, people can register as usual
     it("should let anyone register a previously revoked domain", async () => {
       const lvl2Hash = regResults[1].domainHash;
       const parentHash = regResults[0].domainHash;
@@ -1133,7 +1130,6 @@ describe("ZNSSubRegistrar", () => {
       ));
 
       // Give funds to users
-      // TODO sub tokens: rework this when tests updated !
       await Promise.all(
         [
           rootOwner,
@@ -1330,7 +1326,6 @@ describe("ZNSSubRegistrar", () => {
       expect(parentBalAfterRevoke.sub(parentBalAfter)).to.eq(0);
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
-    // TODO sub tokens: add tests for wrong data and calls!
 
     it("FixedPricer - DirectPayment - no fee - 8 decimals", async () => {
       const priceConfig = {

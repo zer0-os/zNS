@@ -20,7 +20,7 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
 } from "../../../typechain";
-import { DeployZNSParams, ICurvePriceConfig, RegistrarConfig, ZNSContracts } from "../types";
+import { DeployZNSParams, ICurvePriceConfig, RegistrarConfig, IZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -529,7 +529,7 @@ export const deployZNS = async ({
   priceConfig = priceConfigDefault,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
-} : DeployZNSParams) : Promise<ZNSContracts> => {
+} : DeployZNSParams) : Promise<IZNSContracts> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -619,7 +619,7 @@ export const deployZNS = async ({
     admin: deployer,
   });
 
-  const znsContracts : ZNSContracts = {
+  const znsContracts : IZNSContracts = {
     accessController,
     registry,
     domainToken,

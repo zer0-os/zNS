@@ -19,7 +19,7 @@ import {
   INITIALIZED_ERR,
   PERCENTAGE_BASIS, defaultRoyaltyFraction,
 } from "./helpers";
-import { DeployZNSParams, ZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { parseEther } from "ethers/lib/utils";
 
 
@@ -29,7 +29,7 @@ describe("ZNSDomainToken", () => {
   let mockRegistrar : SignerWithAddress;
   let beneficiary : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let deployParams : DeployZNSParams;
 
   const randomTokenURI = "https://www.zNS.domains/1a3c2f5";
