@@ -390,7 +390,6 @@ describe("ZNSSubRegistrar", () => {
               accessType: AccessType.OPEN,
             },
             paymentConfig: {
-              // TODO sub: test with different ERC20 tokens as tokens
               token: zns.zeroToken.address,
               beneficiary: lvl3SubOwner.address,
             },
@@ -893,9 +892,7 @@ describe("ZNSSubRegistrar", () => {
 
     // TODO sub: add more tests here:
     //  1. reregister a revoked domain and set your own config and distribute subs
-    //  2. after revocation NOONE can register!
     //  3. After a new owner came in on revoked domain, people can register as usual
-    //  4. find more cases !
     it("should let anyone register a previously revoked domain", async () => {
       const lvl2Hash = regResults[1].domainHash;
       const parentHash = regResults[0].domainHash;
@@ -993,6 +990,78 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+    });
+
+    // eslint-disable-next-line max-len
+    it("should allow setting a new config and start distributing subdomain when registering a previously revoked parent", async () => {
+      if (!await zns.registry.exists(regResults[1].domainHash)) {
+        await registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: regResults[0].domainHash,
+          domainLabel: domainConfigs[1].domainLabel,
+          fullConfig: domainConfigs[1].fullConfig,
+        });
+      }
+
+      // revoke parent
+      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(regResults[1].domainHash);
+
+      expect(await zns.registry.exists(regResults[1].domainHash)).to.eq(false);
+
+      // register again with new owner and config
+      const newHash = await registrationWithSetup({
+        zns,
+        user: branchLvl1Owner,
+        parentHash: regResults[0].domainHash,
+        domainLabel: domainConfigs[1].domainLabel,
+        fullConfig: {
+          distrConfig: {
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+            accessType: AccessType.MINTLIST,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: branchLvl1Owner.address,
+          },
+          priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+        },
+      });
+
+      expect(newHash).to.eq(regResults[1].domainHash);
+
+      // add new child owner to mintlist
+      await zns.subRegistrar.connect(branchLvl1Owner).setMintlistForDomain(
+        newHash,
+        [ branchLvl2Owner.address ],
+        [ true ],
+      );
+
+      const parentOwnerFromReg = await zns.registry.getDomainOwner(newHash);
+      expect(parentOwnerFromReg).to.eq(branchLvl1Owner.address);
+
+      const childBalBefore = await zns.zeroToken.balanceOf(branchLvl2Owner.address);
+
+      // try register a new child under the new parent
+      const newChildHash = await registrationWithSetup({
+        zns,
+        user: branchLvl2Owner,
+        parentHash: newHash,
+        domainLabel: "newchildddd",
+        fullConfig: fullDistrConfigEmpty,
+      });
+
+      const childBalAfter = await zns.zeroToken.balanceOf(branchLvl2Owner.address);
+
+      // check that the new child has been registered
+      const childOwnerFromReg = await zns.registry.getDomainOwner(newChildHash);
+      expect(childOwnerFromReg).to.eq(branchLvl2Owner.address);
+
+      const protocolFee = getStakingOrProtocolFee(fixedPrice);
+
+      // make sure child payed based on the new parent config
+      expect(childBalBefore.sub(childBalAfter)).to.eq(fixedPrice.add(protocolFee));
     });
   });
 
@@ -2228,7 +2297,7 @@ describe("ZNSSubRegistrar", () => {
     });
 
     // eslint-disable-next-line max-len
-    it("should ONLY allow mintlisted addresses and NOT allow other ones to register a domain when parent's accessType is WHITELIST", async () => {
+    it("should ONLY allow mintlisted addresses and NOT allow other ones to register a domain when parent's accessType is MINTLIST", async () => {
       // approve direct payment
       await zns.zeroToken.connect(lvl3SubOwner).approve(zns.treasury.address, fixedPrice);
       // register parent with mintlisted access
@@ -2310,7 +2379,8 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("#setMintlistForDomain should NOT allow setting if called by non-authorized account or registrar", async () => {
+    // eslint-disable-next-line max-len
+    it("#setMintlistForDomain() should NOT allow setting if called by non-authorized account or registrar", async () => {
       const { domainHash } = regResults[1];
 
       // assign operator in registry
@@ -2343,6 +2413,42 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ZNSSubRegistrar: Not authorized"
       );
+    });
+
+    it("#setMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
+      const { domainHash } = regResults[1];
+
+      const candidatesArr = [
+        lvl5SubOwner.address,
+        lvl6SubOwner.address,
+        lvl3SubOwner.address,
+        lvl4SubOwner.address,
+      ];
+
+      const allowedArr = [
+        true,
+        true,
+        false,
+        true,
+      ];
+
+      const tx = await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+        domainHash,
+        candidatesArr,
+        allowedArr
+      );
+
+      const latestBlock = await time.latestBlock();
+      const filter = zns.subRegistrar.filters.MintlistUpdated(domainHash);
+      const [ event ] = await zns.subRegistrar.queryFilter(
+        filter,
+        latestBlock - 3,
+        latestBlock
+      );
+
+      expect(event.args?.domainHash).to.eq(domainHash);
+      expect(event.args?.candidates).to.deep.eq(candidatesArr);
+      expect(event.args?.allowed).to.deep.eq(allowedArr);
     });
 
     it("should switch accessType for existing parent domain", async () => {
@@ -3187,12 +3293,3 @@ describe("ZNSSubRegistrar", () => {
     });
   });
 });
-
-// TODO sub: Some tests to do:
-// -  domain registration with invalid input (e.g., empty name, invalid characters)
-
-// -  scenarios where payment fails (insufficient funds, wrong token, incorrect permissions, allowances etc.)
-// -  using different ERC-20 tokens for payments.
-// -  using tokens with varying decimal places.
-// -  boundary values for pricing tiers and other numeric parameters.
-// -  upgrading the contract while maintaining data integrity.
