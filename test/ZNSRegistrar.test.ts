@@ -998,6 +998,4 @@ describe("ZNSRootRegistrar", () => {
       await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);
     });
   });
-
-  // TODO sub: add tests for the new config setter flow
 });

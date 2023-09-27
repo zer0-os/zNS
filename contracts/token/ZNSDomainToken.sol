@@ -62,7 +62,6 @@ contract ZNSDomainToken is
      * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`!
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
-    // TODO sub: change to "burn" ???!!!
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
         _resetTokenRoyalty(tokenId);

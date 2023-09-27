@@ -78,7 +78,6 @@ contract ZNSRootRegistrar is
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      */
     function registerRootDomain(
-        // TODO sub: change "name" to "label" everywhere in this and other contracts ??
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
@@ -258,8 +257,6 @@ contract ZNSRootRegistrar is
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
-    // TODO: should this function be on the DomainToken ??
-    //  what are the benefits of having it there + adding Registry as a state var just for this call ??
     function reclaimDomain(bytes32 domainHash)
     external
     override
