@@ -27,7 +27,6 @@ abstract contract ARegistryWired {
      * @notice Virtual function to make sure the setter is always implemented in children,
      * otherwise we will not be able to reset the ZNSRegistry address in children
      */
-    // TODO sub: can we make it here instead, so we don't have to add it to every child??
     function setRegistry(address registry_) public {
         _setRegistry(registry_);
     }
