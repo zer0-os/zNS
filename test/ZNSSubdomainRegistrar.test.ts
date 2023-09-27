@@ -968,6 +968,15 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+
+      // register root back for other tests
+      await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        parentHash: ethers.constants.HashZero,
+        domainLabel: domainConfigs[0].domainLabel,
+        fullConfig: domainConfigs[0].fullConfig,
+      });
     });
 
     it("should NOT register a child (subdomain) under a parent (subdomain) that has been revoked", async () => {
@@ -2432,7 +2441,7 @@ describe("ZNSSubRegistrar", () => {
         true,
       ];
 
-      const tx = await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
         domainHash,
         candidatesArr,
         allowedArr
@@ -2440,11 +2449,12 @@ describe("ZNSSubRegistrar", () => {
 
       const latestBlock = await time.latestBlock();
       const filter = zns.subRegistrar.filters.MintlistUpdated(domainHash);
-      const [ event ] = await zns.subRegistrar.queryFilter(
+      const events = await zns.subRegistrar.queryFilter(
         filter,
         latestBlock - 3,
         latestBlock
       );
+      const event = events[events.length - 1];
 
       expect(event.args?.domainHash).to.eq(domainHash);
       expect(event.args?.candidates).to.deep.eq(candidatesArr);
