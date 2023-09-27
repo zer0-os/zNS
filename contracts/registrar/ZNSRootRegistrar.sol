@@ -350,13 +350,14 @@ contract ZNSRootRegistrar is
         emit AddressResolverSet(addressResolver_);
     }
 
-    // TODO audit: Do we need to check this on the contract?! This costs extra gas and only checks
+    // TODO audit question: Do we need to check this on the contract?! This costs extra gas and only checks
     //  a couple of specific cases. Technically, someone is still able to directly register
-    //  an incorrect name. Getting to this hash from any other layer should be problematic,
+    //  an incorrect name (capitalized or having whitespaces in the middle, etc.).
+    //  Getting to this hash from any other layer should be problematic,
     //  so even if they did register the name on the contract, they should not be able to actually
-    //  use it since they can't arrive at their own hash (or can they?).
+    //  use it since they can't arrive at their own hash through any app that supports our rules for
+    //  string normalization and hashing (or can they?).
     //  How much of a problem would it be if we don't check this?
-    //  Should we keep this, does it make sense to keep this, should we add more validations ???!
     function _isValidString(string memory str) internal pure returns (bool) {
         bytes memory strBytes = bytes(str);
         bool isValid = strBytes.length != 0;

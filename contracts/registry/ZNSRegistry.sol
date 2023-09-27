@@ -54,6 +54,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
+     * @dev ! The owner of the 0x0 hash should be a multisig !
      */
     function initialize(address accessController_) external override initializer {
         records[0x0].owner = msg.sender;
