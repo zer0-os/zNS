@@ -30,7 +30,7 @@ contract ZNSRootRegistrar is
     IZNSRootRegistrar {
 
     // TODO sub data: can (and should) we make a new primitive
-    //  interface that inherits IZNSPricerCommon.sol and adds getProtocolFee()
+    //  interface that inherits IZNSPricer and adds getProtocolFee()
     //  so that we don't have to upgrade this contract every time we
     //  want to switch a pricing contract for Zero?
     IZNSCurvePricer public curvePricer;

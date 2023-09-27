@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IZNSPricerCommon } from "../types/IZNSPricerCommon.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
-interface IZNSFixedPricer is IZNSPricerCommon {
+interface IZNSFixedPricer is IZNSPricer {
     event PriceSet(bytes32 indexed parentHash, uint256 indexed newPrice);
     event FeePercentageSet(bytes32 indexed parentHash, uint256 indexed feePercentage);
 

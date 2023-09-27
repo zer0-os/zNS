@@ -18,7 +18,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setRegistry(_registry);
     }
 
-    // TODO audit question: should we add onlyProxy modifiers for every function ??
+    // TODO sub: should we add onlyProxy modifiers for every function ??
     function setPrice(bytes32 domainHash, uint256 _price) public override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].price = _price;
 
