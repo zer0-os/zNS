@@ -12,7 +12,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
     IZNSRootRegistrar public rootRegistrar;
 
-    // TODO proxy: when adding proxies test that more fields can be added to struct with upgrade !
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
     mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
@@ -103,7 +102,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     function revokeSubdomain(bytes32 subdomainHash) external override {
-        // TODO sub: can this be combined with the same check in the Main Registrar ??
         require(
             rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
             "ZNSSubRegistrar: Not the owner of both Name and Token"
@@ -128,9 +126,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
     }
 
-    // TODO sub: should we setting pricing contracts here to any address?
-    // TODO sub: what problems could we face if we let users set their own contracts??
-    // TODO sub: test if we have enough time, otherwise consider limiting
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
@@ -152,7 +147,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     function setPricerContractForDomain(
         bytes32 domainHash,
-        // TODO sub: is this a problem that we expect the simplest interface
+        // TODO audit: is this a problem that we expect the simplest interface
         //  but can set any of the derived ones ??
         IZNSPricer pricerContract
     ) public override {
@@ -214,8 +209,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             mintlist[domainHash][candidates[i]] = allowed[i];
         }
 
-        // TODO sub: test this returns proper arrays
-        emit WhitelistUpdated(domainHash, candidates, allowed);
+        emit MintlistUpdated(domainHash, candidates, allowed);
     }
 
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
