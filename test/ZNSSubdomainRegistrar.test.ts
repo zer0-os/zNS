@@ -3192,8 +3192,6 @@ describe("ZNSSubRegistrar", () => {
 // -  domain registration with invalid input (e.g., empty name, invalid characters)
 
 // -  scenarios where payment fails (insufficient funds, wrong token, incorrect permissions, allowances etc.)
-// -  registering domains with long names (max length).
-// -  registering domains with very short names.
 // -  using different ERC-20 tokens for payments.
 // -  using tokens with varying decimal places.
 // -  boundary values for pricing tiers and other numeric parameters.

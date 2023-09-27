@@ -20,7 +20,7 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
 } from "../../../typechain";
-import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "../types";
+import { DeployZNSParams, ICurvePriceConfig, RegistrarConfig, ZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -253,7 +253,7 @@ export const deployCurvePricer = async ({
   deployer : SignerWithAddress;
   accessControllerAddress : string;
   registryAddress : string;
-  priceConfig : IASPriceConfig;
+  priceConfig : ICurvePriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSCurvePricer> => {
   const curveFactory = new ZNSCurvePricer__factory(deployer);

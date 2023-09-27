@@ -1,5 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
+import {
+  ICurvePriceConfig,
+  IDistributionConfig,
+  IFixedPriceConfig,
+  IFullDistributionConfig,
+  ZNSContracts,
+} from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, defaultTokenURI } from "./constants";
@@ -167,7 +173,7 @@ export const registrationWithSetup = async ({
   } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as IASPriceConfig,
+      fullConfig.priceConfig as ICurvePriceConfig,
     );
   }
 
