@@ -67,6 +67,10 @@ contract ZNSDomainToken is
         _resetTokenRoyalty(tokenId);
     }
 
+    /**
+     * @notice Get the `tokenURI` value for a token
+     * @param tokenId The uint256 ID value of that token
+     */
     function tokenURI(uint256 tokenId)
     public
     view
@@ -76,10 +80,19 @@ contract ZNSDomainToken is
         return super.tokenURI(tokenId);
     }
 
+    /**
+     * @notice Set the `tokenURI` value for a token
+     * @param tokenId The token to change the `tokenURI` for
+     * @param _tokenURI The new URI value
+     */
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external override onlyAdmin {
         _setTokenURI(tokenId, _tokenURI);
     }
 
+    /**
+     * @notice Modify the base URI value for a collection of domains
+     * @param baseURI_ The new base URI
+     */
     function setBaseURI(string memory baseURI_) external override onlyAdmin {
         baseURI = baseURI_;
         emit BaseURISet(baseURI_);

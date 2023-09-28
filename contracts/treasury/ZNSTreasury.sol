@@ -220,11 +220,25 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address beneficiary
     ) public override onlyOwnerOrOperator(domainHash) {
-        // require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
-
-        // paymentConfigs[domainHash].beneficiary = beneficiary;
-        // emit BeneficiarySet(domainHash, beneficiary);
         _setBeneficiary(domainHash, beneficiary);
+    }
+
+    /**
+     * @notice Setter function for the `paymentToken` chosen by the domain owner.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param paymentToken The address of the new payment/staking token (currently $ZERO).
+     */
+    function setPaymentToken(
+        bytes32 domainHash,
+        address paymentToken
+    ) public override onlyOwnerOrOperator(domainHash) {
+        _setPaymentToken(domainHash, paymentToken);
+    }
+
+    function setRegistry(
+        address registry_
+    ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
+        _setRegistry(registry_);
     }
 
     function _setBeneficiary(bytes32 domainHash, address beneficiary) internal {
@@ -239,28 +253,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         paymentConfigs[domainHash].token = IERC20(paymentToken);
         emit PaymentTokenSet(domainHash, paymentToken);
-    }
-
-    /**
-     * @notice Setter function for the `paymentToken` chosen by the domain owner.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param paymentToken The address of the new payment/staking token (currently $ZERO).
-     */
-    function setPaymentToken(
-        bytes32 domainHash,
-        address paymentToken
-    ) public override onlyOwnerOrOperator(domainHash) {
-        // require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
-
-        // paymentConfigs[domainHash].token = IERC20(paymentToken);
-        // emit PaymentTokenSet(domainHash, paymentToken);
-        _setPaymentToken(domainHash, paymentToken);
-    }
-
-    function setRegistry(
-        address registry_
-    ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
-        _setRegistry(registry_);
     }
 
 //    /**
