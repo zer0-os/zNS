@@ -42,7 +42,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
-        // TODO sub: make the order of ops better
+        bytes32 domainHash = hashWithParent(parentHash, label);
+        require(
+            !registry.exists(domainHash),
+            "ZNSSubRegistrar: Subdomain already exists"
+        );
+
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
@@ -61,7 +66,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: parentHash,
-            domainHash: hashWithParent(parentHash, label),
+            domainHash: domainHash,
             label: label,
             registrant: msg.sender,
             price: 0,
@@ -71,34 +76,31 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 
-        require(
-            !registry.exists(coreRegisterArgs.domainHash),
-            "ZNSSubRegistrar: Subdomain already exists"
-        );
-
-        if (!isOwnerOrOperator) {
-            if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPriceAndFee(
-                        parentHash,
-                        label
-                    );
-            } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPrice(
-                        parentHash,
-                        label
-                    );
-            }
-        }
-
         rootRegistrar.coreRegister(coreRegisterArgs);
+        
+        if (isOwnerOrOperator) {
+            if (address(distrConfig.pricerContract) != address(0)) {
+                setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+            }
 
-        if (address(distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+            return domainHash;
         }
 
-        return coreRegisterArgs.domainHash;
+        if (coreRegisterArgs.isStakePayment) {
+            (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                .getPriceAndFee(
+                    parentHash,
+                    label
+                );
+        } else {
+            coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                .getPrice(
+                    parentHash,
+                    label
+                );
+        }
+
+        return domainHash;
     }
 
     function revokeSubdomain(bytes32 subdomainHash) external override {

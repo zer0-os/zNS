@@ -10,6 +10,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
+import "hardhat-gas-reporter";
 
 // This call is needed to initialize Tenderly with Hardhat,
 // the automatic verifications, though, don't seem to work,
@@ -68,6 +69,9 @@ const config : HardhatUserConfig = {
   },
   mocha: {
     timeout: 5000000,
+  },
+  gasReporter: {
+    enabled: true
   },
   networks: {
     mainnet: {

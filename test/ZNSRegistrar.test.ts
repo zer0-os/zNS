@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { IZNSContracts } from "./helpers/types";
+import { IDistributionConfig, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -61,6 +61,37 @@ describe("ZNSRootRegistrar", () => {
     // Give funds to user
     await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.zeroToken.mint(user.address, userBalanceInitial);
+  });
+
+  it("Gas tests", async () => {
+    const tokenURI = "https://example.com/817c64af";
+    const distrConfig: IDistributionConfig = {
+      pricerContract: zns.curvePricer.address,
+      paymentType: 1,
+      accessType: 1
+    }
+    
+    const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
+      defaultDomain,
+      deployer.address,
+      tokenURI,
+      distrConfig
+    );
+    
+    const receipt = await tx.wait();
+
+    const domainHash = await getDomainHashFromReceipt(receipt);
+    
+    console.log(await zns.registry.isOwnerOrOperator(domainHash, user.address));
+    
+    // Registering as deployer (owner of parent) and user is different gas values
+    await zns.subRegistrar.connect(user).registerSubdomain(
+      domainHash,
+      "subdomain",
+      deployer.address,
+      tokenURI,
+      distrConfigEmpty
+    );
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
