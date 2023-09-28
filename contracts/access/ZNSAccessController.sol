@@ -36,6 +36,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     }
 
     // ** Access Validators **
+    // "check...()" functions revert with a specific message
     function checkGovernor(address account) external view override {
         _checkRole(GOVERNOR_ROLE, account);
     }
@@ -52,6 +53,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _checkRole(REGISTRAR_ROLE, account);
     }
 
+    // "is...()" functions return a boolean
     function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
     }
