@@ -156,6 +156,16 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
     }
 
+    /**
+     * @notice Handles directly paying for a domain through a transfer, rather than staking
+     * continually for ownership of the domain.
+     * 
+     * @param parentHash The hash of the parent domain
+     * @param domainHash The hash of the domain being paid for
+     * @param payer The address of the user paying for this domain
+     * @param paymentAmount The integer quantity of token they are paying
+     * @param protocolFee The additional fee they will pay for the protocol
+     */
     function processDirectPayment(
         bytes32 parentHash,
         bytes32 domainHash,
@@ -195,8 +205,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
     ) external override {
-        setBeneficiary(domainHash, paymentConfig.beneficiary);
-        setPaymentToken(domainHash, address(paymentConfig.token));
+        _setBeneficiary(domainHash, paymentConfig.beneficiary);
+        _setPaymentToken(domainHash, address(paymentConfig.token));
     }
 
     /**
@@ -210,10 +220,25 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address beneficiary
     ) public override onlyOwnerOrOperator(domainHash) {
+        // require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
+
+        // paymentConfigs[domainHash].beneficiary = beneficiary;
+        // emit BeneficiarySet(domainHash, beneficiary);
+        _setBeneficiary(domainHash, beneficiary);
+    }
+
+    function _setBeneficiary(bytes32 domainHash, address beneficiary) internal {
         require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
 
         paymentConfigs[domainHash].beneficiary = beneficiary;
         emit BeneficiarySet(domainHash, beneficiary);
+    }
+
+    function _setPaymentToken(bytes32 domainHash, address paymentToken) internal {
+        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
+
+        paymentConfigs[domainHash].token = IERC20(paymentToken);
+        emit PaymentTokenSet(domainHash, paymentToken);
     }
 
     /**
@@ -225,10 +250,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address paymentToken
     ) public override onlyOwnerOrOperator(domainHash) {
-        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
+        // require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
 
-        paymentConfigs[domainHash].token = IERC20(paymentToken);
-        emit PaymentTokenSet(domainHash, paymentToken);
+        // paymentConfigs[domainHash].token = IERC20(paymentToken);
+        // emit PaymentTokenSet(domainHash, paymentToken);
+        _setPaymentToken(domainHash, paymentToken);
     }
 
     function setRegistry(
