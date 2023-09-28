@@ -83,13 +83,22 @@ describe("ZNSRootRegistrar", () => {
     const domainHash = await getDomainHashFromReceipt(receipt);
 
     // Registering as deployer (owner of parent) and user is different gas values
-    await zns.subRegistrar.connect(user).registerSubdomain(
+    await zns.subRegistrar.connect(deployer).registerSubdomain(
       domainHash,
       "subdomain",
       deployer.address,
       tokenURI,
       distrConfigEmpty
     );
+  });
+
+  it.only("Gas - Treasury", async () => {
+    const newTreasuryConfig: PaymentConfigStruct = {
+      token: zeroVault.address, // Just needs to be a different address
+      beneficiary: user.address
+    };
+
+    await zns.treasury.connect(deployer).setPaymentConfig(ethers.constants.HashZero, newTreasuryConfig);
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
