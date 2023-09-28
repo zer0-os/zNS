@@ -107,10 +107,11 @@ describe("ZNSRootRegistrar", () => {
     const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
 
     await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
-      newPricerConfig.baseLength,
-      newPricerConfig.maxLength,
+      ethers.constants.HashZero,
       newPricerConfig.maxPrice,
       newPricerConfig.minPrice,
+      newPricerConfig.maxLength,
+      newPricerConfig.baseLength,
       newPricerConfig.precisionMultiplier,
       newPricerConfig.feePercentage,
     );

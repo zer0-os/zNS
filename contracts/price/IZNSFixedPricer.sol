@@ -6,8 +6,8 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 /**
  * @title IZNSFixedPricer.sol Below is the doc for PriceConfig struct.
  * @notice Struct for price configurations per domainHash that is used in the `priceConfigs` mapping
- * @param price The value determining how much a subdomain under a particular parent would cost
- * @param feePercentage The value determining how much fee is charged for a subdomain registration
+ *  - price The value determining how much a subdomain under a particular parent would cost
+ *  - feePercentage The value determining how much fee is charged for a subdomain registration
  * @dev Please note that the `feePercentage` is set in the basis of 10,000 where 1% = 100
  *  and feePercentage is NOT being read when used with PaymentType.DIRECT. This value is only
  *  used when PaymentType.STAKE is set in ZNSSubRegistrar.
@@ -22,7 +22,7 @@ interface IZNSFixedPricer is IZNSPricer {
 
     /**
      * @notice Emitted when the `PriceConfig.feePercentage` is set in state for a specific `domainHash`
-     * @param parentHash The hash of the domain who sets the feePercentage for subdomains
+     * @param domainHash The hash of the domain who sets the feePercentage for subdomains
      * @param feePercentage The new feePercentage value set
     */
     event FeePercentageSet(bytes32 indexed domainHash, uint256 indexed feePercentage);
