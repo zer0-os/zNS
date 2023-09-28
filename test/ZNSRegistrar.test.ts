@@ -63,7 +63,7 @@ describe("ZNSRootRegistrar", () => {
     await zns.zeroToken.mint(user.address, userBalanceInitial);
   });
 
-  it("Gas tests", async () => {
+  it.only("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig: IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
@@ -81,9 +81,7 @@ describe("ZNSRootRegistrar", () => {
     const receipt = await tx.wait();
 
     const domainHash = await getDomainHashFromReceipt(receipt);
-    
-    console.log(await zns.registry.isOwnerOrOperator(domainHash, user.address));
-    
+
     // Registering as deployer (owner of parent) and user is different gas values
     await zns.subRegistrar.connect(user).registerSubdomain(
       domainHash,
