@@ -255,13 +255,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         emit PaymentTokenSet(domainHash, paymentToken);
     }
 
-//    /**
-//     * @notice Getter function for the `accessController` state variable inherited from `AAccessControlled.sol`.
-//     */
-//    function getAccessController() external view override(AAccessControlled, IZNSTreasury) returns (address) {
-//        return address(accessController);
-//    }
-
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to

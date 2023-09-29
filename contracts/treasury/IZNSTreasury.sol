@@ -3,7 +3,11 @@ pragma solidity ^0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
+/** 
+ * @notice The `PaymentConfig` struct describes the two pieces of information
+ * needed to create a payment configuration for a domain. The address of the
+ * user to send funds to in a sale, and what token those funds are in.
+ */
 struct PaymentConfig {
     IERC20 token;
     // feeBeneficiary if STAKE, paymentBeneficiary if DIRECT
@@ -13,6 +17,11 @@ struct PaymentConfig {
 
 interface IZNSTreasury {
 
+    /**
+     * @notice Describe a stake for a domain. This could be 
+     * in any ERC20 token so the address of the specific token
+     * as well as the amount is required.
+     */
     struct Stake {
         IERC20 token;
         uint256 amount;
@@ -48,6 +57,15 @@ interface IZNSTreasury {
         uint256 stakeAmount
     );
 
+    /**
+     * @notice Emitted when a payment is made directly for a domain
+     * @param parentHash The hash of the parent domain
+     * @param domainHash The hash of the domain
+     * @param payer The user that paid for the domain
+     * @param beneficiary The address where payment is sent
+     * @param amount How much the user paid for this domain
+     * @param protocolFee The fee for the protocol
+     */
     event DirectPaymentProcessed(
         bytes32 indexed parentHash,
         bytes32 indexed domainHash,

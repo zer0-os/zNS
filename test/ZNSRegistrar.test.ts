@@ -90,6 +90,28 @@ describe("ZNSRootRegistrar", () => {
       tokenURI,
       distrConfigEmpty
     );
+
+    const candidates = [
+      deployer.address,
+      user.address,
+      governor.address,
+      admin.address,
+      randomUser.address
+    ]
+
+    const allowed = [
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+
+    await zns.subRegistrar.setMintlistForDomain(
+        domainHash,
+        candidates,
+        allowed
+      );
   });
 
   it.only("Gas - Treasury", async () => {

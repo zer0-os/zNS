@@ -12,8 +12,15 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
     IZNSRootRegistrar public rootRegistrar;
 
+    /**
+     * @notice Mapping to keep track of each domain's distribution configuration
+     */
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
+    /**
+     * @notice Mapping to keep track of each domain's mintlisted users and their current allowed status
+     * Only applies to domains that use mintlists as part of their distribution configuration
+     */
     mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
@@ -182,14 +189,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit PaymentTypeSet(domainHash, paymentType);
     }
 
-    function _setAccessTypeForDomain(
-        bytes32 domainHash,
-        AccessType accessType
-    ) internal {
-        distrConfigs[domainHash].accessType = accessType;
-        emit AccessTypeSet(domainHash, accessType);
-    }
-
     function setAccessTypeForDomain(
         bytes32 domainHash,
         AccessType accessType
@@ -197,6 +196,13 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
+    /**
+     * @notice Set the list of allowed/disallowed users for minting under
+     * a specific domain
+     * @param domainHash The hash of the domain that uses a mintlist
+     * @param candidates An array of addresses to add
+     * @param allowed Boolean to define allowed or disallowed per address
+     */
     function setMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
@@ -207,22 +213,42 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             "ZNSSubRegistrar: Not authorized"
         );
 
-        for (uint256 i; i < candidates.length; i++) {
+        uint256 length = candidates.length;
+        for (uint256 i; i < length;) {
             mintlist[domainHash][candidates[i]] = allowed[i];
+            unchecked {
+                i++;
+            }
         }
 
         emit MintlistUpdated(domainHash, candidates, allowed);
     }
 
+    /**
+     * @notice Set the value of the registry
+     * @param registry_ The new registry
+     */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
         _setRegistry(registry_);
     }
 
+    /**
+     * @notice Set the value of the root registrar
+     * @param registrar_ The new root registrar
+     */
     function setRootRegistrar(address registrar_) public override onlyAdmin {
         require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    function _setAccessTypeForDomain(
+        bytes32 domainHash,
+        AccessType accessType
+    ) internal {
+        distrConfigs[domainHash].accessType = accessType;
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**
