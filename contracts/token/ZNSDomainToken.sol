@@ -90,7 +90,7 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Modify the base URI value for a collection of domains
+     * @notice Set the `baseURI` value
      * @param baseURI_ The new base URI
      */
     function setBaseURI(string memory baseURI_) external override onlyAdmin {
@@ -98,12 +98,24 @@ contract ZNSDomainToken is
         emit BaseURISet(baseURI_);
     }
 
+    /**
+     * @notice Set the default royalty amount used in a domain sale
+     * @param receiver What address receives the royalty
+     * @param royaltyFraction The fraction of the sale the royalty should be
+     */
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {
         _setDefaultRoyalty(receiver, royaltyFraction);
 
         emit DefaultRoyaltySet(royaltyFraction);
     }
 
+    /**
+     * @notice Set the token royalty, different from the default royalty,
+     * that applies directly to this specific token
+     * @param tokenId The token the change applies to
+     * @param receiver What address receives the royalty
+     * @param royaltyFraction The fraction of the sale the royalty should be
+     */
     function setTokenRoyalty(
         uint256 tokenId,
         address receiver,
@@ -114,6 +126,11 @@ contract ZNSDomainToken is
         emit TokenRoyaltySet(tokenId, royaltyFraction);
     }
 
+    /**
+     * @notice To allow for user extension of the protocol we have to 
+     * enable checking acceptance of new interfaces to ensure they are supported
+     * @param interfaceId The interface ID
+     */
     function supportsInterface(bytes4 interfaceId)
     public
     view
@@ -123,6 +140,10 @@ contract ZNSDomainToken is
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @notice ERC721 `_burn` function
+     * @param tokenId The ID of the token to burn
+     */
     function _burn(uint256 tokenId)
     internal
     override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
@@ -130,6 +151,9 @@ contract ZNSDomainToken is
         super._burn(tokenId);
     }
 
+    /**
+     * @notice Return the baseURI
+     */
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
