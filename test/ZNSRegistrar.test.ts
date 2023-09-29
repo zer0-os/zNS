@@ -63,7 +63,7 @@ describe("ZNSRootRegistrar", () => {
     await zns.zeroToken.mint(user.address, userBalanceInitial);
   });
 
-  it.only("Gas tests", async () => {
+  it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig: IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
@@ -112,15 +112,6 @@ describe("ZNSRootRegistrar", () => {
         candidates,
         allowed
       );
-  });
-
-  it.only("Gas - Treasury", async () => {
-    const newTreasuryConfig: PaymentConfigStruct = {
-      token: zeroVault.address, // Just needs to be a different address
-      beneficiary: user.address
-    };
-
-    await zns.treasury.connect(deployer).setPaymentConfig(ethers.constants.HashZero, newTreasuryConfig);
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
