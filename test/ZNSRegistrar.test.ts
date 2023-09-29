@@ -107,7 +107,7 @@ describe("ZNSRootRegistrar", () => {
       true
     ]
 
-    await zns.subRegistrar.setMintlistForDomain(
+    await zns.subRegistrar.updateMintlistForDomain(
         domainHash,
         candidates,
         allowed
