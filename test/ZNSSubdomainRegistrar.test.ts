@@ -1038,7 +1038,7 @@ describe("ZNSSubRegistrar", () => {
       expect(newHash).to.eq(regResults[1].domainHash);
 
       // add new child owner to mintlist
-      await zns.subRegistrar.connect(branchLvl1Owner).setMintlistForDomain(
+      await zns.subRegistrar.connect(branchLvl1Owner).updateMintlistForDomain(
         newHash,
         [ branchLvl2Owner.address ],
         [ true ],
@@ -2326,7 +2326,7 @@ describe("ZNSSubRegistrar", () => {
       });
 
       // mintlist potential child user
-      await zns.subRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl3SubOwner).updateMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
         [true],
@@ -2364,7 +2364,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // remove user from mintlist
-      await zns.subRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl3SubOwner).updateMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
         [false],
@@ -2385,7 +2385,7 @@ describe("ZNSSubRegistrar", () => {
     });
 
     // eslint-disable-next-line max-len
-    it("#setMintlistForDomain() should NOT allow setting if called by non-authorized account or registrar", async () => {
+    it("#updateMintlistForDomain() should NOT allow setting if called by non-authorized account or registrar", async () => {
       const { domainHash } = regResults[1];
 
       // assign operator in registry
@@ -2396,7 +2396,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // try with operator
-      await zns.subRegistrar.connect(operator).setMintlistForDomain(
+      await zns.subRegistrar.connect(operator).updateMintlistForDomain(
         domainHash,
         [lvl5SubOwner.address],
         [true],
@@ -2410,7 +2410,7 @@ describe("ZNSSubRegistrar", () => {
 
       // try with non-authorized
       await expect(
-        zns.subRegistrar.connect(lvl5SubOwner).setMintlistForDomain(
+        zns.subRegistrar.connect(lvl5SubOwner).updateMintlistForDomain(
           domainHash,
           [lvl5SubOwner.address],
           [true],
@@ -2420,7 +2420,7 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("#setMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
+    it("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
       const { domainHash } = regResults[1];
 
       const candidatesArr = [
@@ -2437,7 +2437,7 @@ describe("ZNSSubRegistrar", () => {
         true,
       ];
 
-      await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl2SubOwner).updateMintlistForDomain(
         domainHash,
         candidatesArr,
         allowedArr
@@ -2482,7 +2482,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // add to mintlist
-      await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl2SubOwner).updateMintlistForDomain(
         regResults[1].domainHash,
         [lvl5SubOwner.address],
         [true],

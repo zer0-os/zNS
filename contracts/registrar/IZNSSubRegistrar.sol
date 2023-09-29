@@ -7,21 +7,48 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+/**
+ * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
+*/
 interface IZNSSubRegistrar is IDistributionConfig {
-    event PricerContractSet(bytes32 indexed domainHash, address indexed priceContract);
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
+    */
+    event PricerContractSet(bytes32 indexed domainHash, address indexed pricerContract);
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
+    */
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.accessType` is set for a domain.
+    */
     event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+
+    /**
+     * @notice Emitted when a new full `DistributionConfig` is set for a domain at once.
+    */
     event DistributionConfigSet(
         bytes32 indexed domainHash,
         IZNSPricer pricerContract,
         PaymentType paymentType,
         AccessType accessType
     );
+
+    /**
+     * @notice Emitted when a `mintlist` is updated for a domain.
+    */
     event MintlistUpdated(
         bytes32 indexed domainHash,
         address[] candidates,
         bool[] allowed
     );
+
+    /**
+     * @notice Emitted when the ZNSRootRegistrar address is set in state.
+    */
     event RootRegistrarSet(address registrar);
 
     function distrConfigs(
@@ -78,7 +105,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function setMintlistForDomain(
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed

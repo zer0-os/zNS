@@ -12,7 +12,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 /**
  * @title A contract for tokenizing domains under ZNS. Every domain in ZNS has a corresponding token
- * minted at Register time. This token is also an NFT that is fully ERC-721 compliant.
+ * minted at register time. This token is also an NFT that is fully ERC-721 compliant.
  * @dev Note that all ZNS related functions on this contract can ONLY be called by either
  * the `ZNSRootRegistrar.sol` contract or any address holding a REGISTRAR_ROLE.
  */
@@ -24,6 +24,9 @@ contract ZNSDomainToken is
     UUPSUpgradeable,
     IZNSDomainToken {
 
+    /**
+     * @notice Base URI used for ALL tokens. Can be empty if individual URIs are set.
+    */
     string private baseURI;
 
     /**
@@ -32,6 +35,8 @@ contract ZNSDomainToken is
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param name_ The name of the token
      * @param symbol_ The symbol of the token
+     * @param defaultRoyaltyReceiver The address that will receive default royalties
+     * @param defaultRoyaltyFraction The default royalty fraction (as a base of 10,000)
      */
     function initialize(
         address accessController_,
@@ -47,10 +52,12 @@ contract ZNSDomainToken is
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
-     * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`!
+     * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`
+     * or `ZNSSubRegistrar.registerSubdomain()` and sets the individual tokenURI for the token minted.
      * > TokenId is created as a hash of the domain name casted to uint256.
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.
+     * @param _tokenURI The tokenURI to be set for the token minted.
      */
     function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
         _safeMint(to, tokenId);
@@ -58,8 +65,9 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Burns the token with the specified tokenId.
-     * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`!
+     * @notice Burns the token with the specified tokenId and removes the royalty information for this tokenID.
+     * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`
+     * or `ZNSSubRegistrar.revokeSubdomain()`.
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
     function revoke(uint256 tokenId) external override onlyRegistrar {
@@ -68,9 +76,8 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Get the `tokenURI` value for a token
-     * @param tokenId The uint256 ID value of that token
-     */
+     * @notice Returns the tokenURI for the given tokenId.
+    */
     function tokenURI(uint256 tokenId)
     public
     view
@@ -81,28 +88,38 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Set the `tokenURI` value for a token
-     * @param tokenId The token to change the `tokenURI` for
-     * @param _tokenURI The new URI value
-     */
+     * @notice Sets the tokenURI for the given tokenId. This is an external setter that can only
+     * be called by the ADMIN_ROLE of zNS. This functions is not a part of any flows and is here
+     * only to change faulty or outdated token URIs in case of corrupted metadata or other problems.
+     * Fires the `TokenURISet` event, which is NOT fired when tokenURI is set during the registration process.
+     * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to set the tokenURI for
+     * @param _tokenURI The tokenURI to be set for the token with the given tokenId
+    */
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external override onlyAdmin {
         _setTokenURI(tokenId, _tokenURI);
+        emit TokenURISet(tokenId, _tokenURI);
     }
 
     /**
-     * @notice Set the `baseURI` value
-     * @param baseURI_ The new base URI
-     */
+     * @notice Sets the baseURI for ALL tokens. Can only be called by the ADMIN_ROLE of zNS.
+     * Fires the `BaseURISet` event.
+     * @dev This contract supports both, baseURI and individual tokenURI that can be used
+     * interchangeably.
+     * > Note that if `baseURI` and `tokenURI` are set, the `tokenURI` will be appended to the `baseURI`!
+     * @param baseURI_ The baseURI to be set for all tokens
+    */
     function setBaseURI(string memory baseURI_) external override onlyAdmin {
         baseURI = baseURI_;
         emit BaseURISet(baseURI_);
     }
 
     /**
-     * @notice Set the default royalty amount used in a domain sale
-     * @param receiver What address receives the royalty
-     * @param royaltyFraction The fraction of the sale the royalty should be
-     */
+     * @notice Sets the default royalty for ALL tokens. Can only be called by the ADMIN_ROLE of zNS.
+     * Fires the `DefaultRoyaltySet` event.
+     * @dev This contract supports both, default royalties and individual token royalties per tokenID.
+     * @param receiver The address that will receive default royalties
+     * @param royaltyFraction The default royalty fraction (as a base of 10,000)
+    */
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {
         _setDefaultRoyalty(receiver, royaltyFraction);
 
@@ -110,12 +127,13 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Set the token royalty, different from the default royalty,
-     * that applies directly to this specific token
-     * @param tokenId The token the change applies to
-     * @param receiver What address receives the royalty
-     * @param royaltyFraction The fraction of the sale the royalty should be
-     */
+     * @notice Sets the royalty for the given tokenId. Can only be called by the ADMIN_ROLE of zNS.
+     * Fires the `TokenRoyaltySet` event.
+     * @dev This contract supports both, default royalties and individual token royalties per tokenID.
+     * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to set the royalty for
+     * @param receiver The address that will receive royalties for the given tokenId
+     * @param royaltyFraction The royalty fraction (as a base of 10,000) for the given tokenId
+    */
     function setTokenRoyalty(
         uint256 tokenId,
         address receiver,

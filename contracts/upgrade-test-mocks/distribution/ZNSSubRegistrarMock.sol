@@ -205,7 +205,7 @@ contract ZNSSubRegistrarUpgradeMock is
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    function setMintlistForDomain(
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed

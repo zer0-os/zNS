@@ -6,9 +6,25 @@ import { IERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/interfa
 
 
 interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
+
+    /**
+     * @notice Emitted when a Default Royalty (for all tokens) is set.
+    */
     event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
+    /**
+     * @notice Emitted when Token Royalty is set for individual tokens per tokenID.
+    */
     event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
+    /**
+     * @notice Emitted when a Base URI is set for all tokens.
+    */
     event BaseURISet(string indexed baseURI);
+    /**
+     * @notice Emitted when a Token URI is set for individual tokens per tokenID.
+     * @dev Note that this event is fired ONLY when the tokenURI is set externally
+     * through an external setter and NOT during the registration.
+    */
+    event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
     function initialize(
         address accessController,

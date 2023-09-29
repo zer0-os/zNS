@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IDomainPriceConfig } from "../types/IDomainPriceConfig.sol";
+import { ICurvePriceConfig } from "../types/ICurvePriceConfig.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
-interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
+interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     /**
-     * @notice Emitted when the `maxPrice` is set in `rootDomainPriceConfig`
+     * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
      * @param price The new maxPrice value
      */
     event MaxPriceSet(bytes32 domainHash, uint256 price);
 
     /**
-     * @notice Emitted when the `minPrice` is set in `rootDomainPriceConfig`
+     * @notice Emitted when the `minPrice` is set in `CurvePriceConfig`
      * @param price The new minPrice value
      */
     event MinPriceSet(bytes32 domainHash, uint256 price);
 
     /**
-     * @notice Emitted when the `baseLength` is set in `rootDomainPriceConfig`
+     * @notice Emitted when the `baseLength` is set in `CurvePriceConfig`
      * @param length The new baseLength value
      */
     event BaseLengthSet(bytes32 domainHash, uint256 length);
 
     /**
-     * @notice Emitted when the `maxLength` is set in `rootDomainPriceConfig`
+     * @notice Emitted when the `maxLength` is set in `CurvePriceConfig`
      * @param length The new maxLength value
      */
     event MaxLengthSet(bytes32 domainHash, uint256 length);
 
     /**
-     * @notice Emitted when the `precisionMultiplier` is set in `rootDomainPriceConfig`
+     * @notice Emitted when the `precisionMultiplier` is set in `CurvePriceConfig`
      * @param precision The new precisionMultiplier value
      */
     event PrecisionMultiplierSet(bytes32 domainHash, uint256 precision);
@@ -44,7 +44,7 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
     event FeePercentageSet(bytes32 domainHash, uint256 feePercentage);
 
     /**
-     * @notice Emitted when the full `rootDomainPriceConfig` is set in state
+     * @notice Emitted when the full `CurvePriceConfig` is set in state
      * @param maxPrice The new `maxPrice` value
      * @param minPrice The new `minPrice` value
      * @param maxLength The new `maxLength` value
@@ -64,7 +64,7 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
     function initialize(
         address accessController_,
         address registry_,
-        DomainPriceConfig calldata zeroPriceConfig_
+        CurvePriceConfig calldata zeroPriceConfig_
     ) external;
 
     function getPrice(
@@ -87,7 +87,7 @@ interface IZNSCurvePricer is IDomainPriceConfig, IZNSPricer {
 
     function setPriceConfig(
         bytes32 domainHash,
-        DomainPriceConfig calldata priceConfig
+        CurvePriceConfig calldata priceConfig
     ) external;
 
     function setMaxPrice(bytes32 domainHash, uint256 maxPrice) external;

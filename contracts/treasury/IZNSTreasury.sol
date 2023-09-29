@@ -15,6 +15,16 @@ struct PaymentConfig {
 }
 
 
+/**
+ * @title IZNSTreasury.sol - Interface for the ZNSTreasury contract responsible for managing payments and staking.
+ * @dev Below are docs for the types in this file:
+ *  - `PaymentConfig`: Struct containing data for the payment configuration of the parent distributing subdomains:
+ *      + `token`: The address of the ERC-20 compliant payment token contract chosen by the parent
+ *      + `beneficiary`: The address of the beneficiary contract or wallet that will receive payments or fees
+ *  - `Stake`: Struct containing data for the staking of a domain written at the time of staking:
+ *      + `token`: The address of the ERC-20 compliant staking token used to deposit a specific stake for domain
+ *      + `amount`: The amount of the staking token above deposited by the user
+*/
 interface IZNSTreasury {
 
     /**
@@ -58,14 +68,14 @@ interface IZNSTreasury {
     );
 
     /**
-     * @notice Emitted when a payment is made directly for a domain
+     * @notice Emitted when a direct payment is processed upon registration of a new domain.
      * @param parentHash The hash of the parent domain
-     * @param domainHash The hash of the domain
-     * @param payer The user that paid for the domain
-     * @param beneficiary The address where payment is sent
-     * @param amount How much the user paid for this domain
-     * @param protocolFee The fee for the protocol
-     */
+     * @param domainHash The full namehash of the domain registered
+     * @param payer The address of the user who paid for the domain
+     * @param beneficiary The address of the beneficiary contract or wallet that received the payment
+     * @param amount The amount paid by the user
+     * @param protocolFee The protocol fee paid by the user to Zero
+    */
     event DirectPaymentProcessed(
         bytes32 indexed parentHash,
         bytes32 indexed domainHash,

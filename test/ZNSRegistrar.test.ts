@@ -27,7 +27,7 @@ import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-import { IDomainPriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
+// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -131,19 +131,31 @@ describe("ZNSRootRegistrar", () => {
   it("Confirms a new 0x0 owner can modify the configs in the treasury and curve pricer", async () => {
     await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
 
-    const newTreasuryConfig: PaymentConfigStruct = {
+    const newTreasuryConfig : PaymentConfigStruct = {
       token: zeroVault.address, // Just needs to be a different address
-      beneficiary: user.address
+      beneficiary: user.address,
     };
 
     // Modify the treasury
     const treasuryTx = await zns.treasury.connect(user).setPaymentConfig(ethers.constants.HashZero, newTreasuryConfig);
 
-    expect(treasuryTx).to.emit(zns.treasury, "BeneficiarySet").withArgs(ethers.constants.HashZero, user.address);
-    expect(treasuryTx).to.emit(zns.treasury, "PaymentTokenSet").withArgs(ethers.constants.HashZero, zeroVault.address);
+    await expect(treasuryTx).to.emit(
+      zns.treasury,
+      "BeneficiarySet"
+    ).withArgs(
+      ethers.constants.HashZero,
+      user.address
+    );
+    await expect(treasuryTx).to.emit(
+      zns.treasury,
+      "PaymentTokenSet"
+    ).withArgs(
+      ethers.constants.HashZero,
+      zeroVault.address
+    );
 
     // Modify the curve pricer
-    const newPricerConfig: IDomainPriceConfig.DomainPriceConfigStruct = {
+    const newPricerConfig = {
       baseLength: BigNumber.from("6"),
       maxLength: BigNumber.from("35"),
       maxPrice: parseEther("150"),
@@ -153,12 +165,13 @@ describe("ZNSRootRegistrar", () => {
     };
 
     const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
-    
-    expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
-      newPricerConfig.baseLength,
-      newPricerConfig.maxLength,
+
+    await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
+      ethers.constants.HashZero,
       newPricerConfig.maxPrice,
       newPricerConfig.minPrice,
+      newPricerConfig.maxLength,
+      newPricerConfig.baseLength,
       newPricerConfig.precisionMultiplier,
       newPricerConfig.feePercentage,
     );
