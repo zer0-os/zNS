@@ -204,7 +204,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
-    ) external override {
+    ) external override onlyOwnerOrOperator(domainHash) {
         _setBeneficiary(domainHash, paymentConfig.beneficiary);
         _setPaymentToken(domainHash, address(paymentConfig.token));
     }
