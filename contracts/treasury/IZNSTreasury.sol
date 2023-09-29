@@ -60,7 +60,7 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when a direct payment is processed upon registration of a new domain.
-     * @oaram parentHash The hash of the parent domain
+     * @param parentHash The hash of the parent domain
      * @param domainHash The full namehash of the domain registered
      * @param payer The address of the user who paid for the domain
      * @param beneficiary The address of the beneficiary contract or wallet that received the payment
