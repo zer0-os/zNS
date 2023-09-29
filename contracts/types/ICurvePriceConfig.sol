@@ -3,7 +3,7 @@ pragma solidity ^0.8.18;
 
 
 /**
- * @dev **`DomainPriceConfig` struct properties:**
+ * @dev **`CurvePriceConfig` struct properties:**
  *
  * - `maxPrice` (uint256): Maximum price for a domain returned at <= `baseLength`
  * - `minPrice` (uint256): Minimum price for a domain returned at > `maxLength`
@@ -14,12 +14,12 @@ pragma solidity ^0.8.18;
  * e.g. if we use a token with 18 decimals, and want precision of 2,
  * our precision multiplier will be equal 10^18 - 10^2 = 10^16
  */
-interface IDomainPriceConfig {
+interface ICurvePriceConfig {
 /**
  * @notice Struct for each configurable variable for price calculations.
      * Does NOT include variables for calcs of registration fees.
      */
-    struct DomainPriceConfig {
+    struct CurvePriceConfig {
         /**
          * @notice Maximum price for a domain returned at <= `baseLength`
         */

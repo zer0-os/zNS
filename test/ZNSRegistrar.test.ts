@@ -27,7 +27,7 @@ import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-import { IDomainPriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
+import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -95,7 +95,7 @@ describe("ZNSRootRegistrar", () => {
     );
 
     // Modify the curve pricer
-    const newPricerConfig : IDomainPriceConfig.DomainPriceConfigStruct = {
+    const newPricerConfig : ICurvePriceConfig.CurvePriceConfigStruct = {
       baseLength: BigNumber.from("6"),
       maxLength: BigNumber.from("35"),
       maxPrice: parseEther("150"),

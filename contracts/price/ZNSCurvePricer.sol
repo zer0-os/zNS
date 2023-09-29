@@ -28,7 +28,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
      * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
     */
-    mapping(bytes32 domainHash => DomainPriceConfig config) public priceConfigs;
+    mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
@@ -44,7 +44,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function initialize(
         address accessController_,
         address registry_,
-        DomainPriceConfig calldata zeroPriceConfig_
+        CurvePriceConfig calldata zeroPriceConfig_
     ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
@@ -108,7 +108,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function setPriceConfig(
         bytes32 domainHash,
-        DomainPriceConfig calldata priceConfig
+        CurvePriceConfig calldata priceConfig
     ) public override {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
@@ -278,7 +278,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         uint256 length
     ) internal view returns (uint256) {
-        DomainPriceConfig memory config = priceConfigs[parentHash];
+        CurvePriceConfig memory config = priceConfigs[parentHash];
 
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
