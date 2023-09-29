@@ -105,7 +105,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function setMintlistForDomain(
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed

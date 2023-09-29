@@ -281,7 +281,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param candidates The array of candidates to add/remove
      * @param allowed The array of booleans indicating whether to add or remove the candidate
     */
-    function setMintlistForDomain(
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed
