@@ -11,9 +11,9 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
- * This module uses an asymptotic curve that starts from `maxPrice` and decreases in price
- * until it reaches `minPrice` at `maxLength` length of the domain name. Price after `maxLength`
- * is fixed and always equal to `minPrice`.
+ * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
+ * It then decreases in price, using the calculated price function below, until it reaches `minPrice` 
+ * at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
     using StringUtils for string;
@@ -279,6 +279,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 length
     ) internal view returns (uint256) {
         CurvePriceConfig memory config = priceConfigs[parentHash];
+
+        // We use `maxPrice` as 0 to indicate free domains
+        if (config.maxPrice == 0) return 0;
 
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
