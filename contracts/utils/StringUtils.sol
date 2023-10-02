@@ -15,7 +15,7 @@ library StringUtils {
         uint256 len;
         uint256 i = 0;
         uint256 byteLength = bytes(s).length;
-        for (len = 0; i < byteLength;) {
+        for (len = 0; i < byteLength; ++i) {
             bytes1 b = bytes(s)[i];
             if (b < 0x80) {
                 i += 1;
@@ -29,10 +29,6 @@ library StringUtils {
                 i += 5;
             } else {
                 i += 6;
-            }
-
-            unchecked {
-                len++;
             }
         }
         return len;

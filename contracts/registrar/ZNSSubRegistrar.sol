@@ -283,11 +283,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
 
         uint256 length = candidates.length;
-        for (uint256 i; i < length;) {
+        for (uint256 i; i < length; ++i) {
             mintlist[domainHash][candidates[i]] = allowed[i];
-            unchecked {
-                i++;
-            }
         }
 
         emit MintlistUpdated(domainHash, candidates, allowed);
