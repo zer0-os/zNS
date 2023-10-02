@@ -80,6 +80,11 @@ interface IZNSRegistry {
         address candidate
     ) external view returns (bool);
 
+    function isOperatorFor(
+        address operator,
+        address owner
+    ) external view returns (bool);
+
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by `msg.sender`

@@ -84,6 +84,18 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
+     * @notice External function that checks if provided address is an operator for the provided owner.
+     * @param operator The address for which we are checking access
+     * @param owner The owner of the domain(-s) in question
+    */
+    function isOperatorFor(
+        address operator,
+        address owner
+    ) external view override returns (bool) {
+        return operators[owner][operator];
+    }
+
+    /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for ALL
      * domains owned by the owner `msg.sender`.
      * Emits an `OperatorPermissionSet` event.
@@ -190,7 +202,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
             "ZNSRegistry: Only Name Owner or Registrar allowed to call"
         );
 
-        // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
     }
 
