@@ -67,28 +67,17 @@ Revert if `msg.sender` is not the owner. Used for owner restricted functions.
 
 
 
-### onlyRegistrar
-
-```solidity
-modifier onlyRegistrar()
-```
-
-
-Revert if `msg.sender` is not the `ZNSRegistrar` contract
-or an address holding REGISTRAR_ROLE.
-
-
-
-
 ### initialize
 
 ```solidity
-function initialize(address accessController_) public
+function initialize(address accessController_) external
 ```
 
 
 Initializer for the `ZNSRegistry` proxy.
 
+! The owner of the 0x0 hash should be a multisig !
+> Admin account deploying the contract will be the owner of the 0x0 hash !
 
 #### Parameters
 
@@ -132,10 +121,28 @@ Checks if provided address is an owner or an operator of the provided domain
 | candidate | address | The address for which we are checking access |
 
 
-### setOwnerOperator
+### isOperatorFor
 
 ```solidity
-function setOwnerOperator(address operator, bool allowed) external
+function isOperatorFor(address operator, address owner) external view returns (bool)
+```
+
+
+External function that checks if provided address is an operator for the provided owner.
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| operator | address | The address for which we are checking access |
+| owner | address | The owner of the domain(-s) in question |
+
+
+### setOwnersOperator
+
+```solidity
+function setOwnersOperator(address operator, bool allowed) external
 ```
 
 
@@ -212,9 +219,9 @@ function createDomainRecord(bytes32 domainHash, address owner, address resolver)
 ```
 
 
-Creates a new domain record. Only callable by the `ZNSRegistrar`
+Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
 or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
-flow that starts from `ZNSRegistrar.registerDomain()`. Calls 2 internal functions to set
+flow that starts from `ZNSRootRegistrar.registerRootDomain()`. Calls 2 internal functions to set
 the owner and resolver of the domain separately.
 Can be called with `resolver` param as 0, which will exclude the call to set resolver.
 Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.
@@ -238,7 +245,7 @@ function updateDomainRecord(bytes32 domainHash, address owner, address resolver)
 
 Updates an existing domain record's owner and resolver.
 Note that this function can ONLY be called by the Name owner of the domain.
-This is NOT used by the `ZNSRegistrar` contract and serves as a user facing function
+This is NOT used by the `ZNSRootRegistrar.sol` contract and serves as a user facing function
 for the owners of existing domains to change their data on this contract. A domain
 `operator` can NOT call this, since he is not allowed to change the owner.
 Emits `DomainOwnerSet` and `DomainResolverSet` events.
@@ -261,8 +268,8 @@ function updateDomainOwner(bytes32 domainHash, address owner) external
 
 
 Updates the owner of an existing domain. Can be called by either the Name owner
-on this contract OR the `ZNSRegistrar` contract as part of the Reclaim flow
-that starts at `ZNSRegistrar.reclaim()`. Emits an `DomainOwnerSet` event.
+on this contract OR the `ZNSRootRegistrar.sol` contract as part of the Reclaim flow
+that starts at `ZNSRootRegistrar.sol.reclaim()`. Emits an `DomainOwnerSet` event.
 
 
 #### Parameters
@@ -300,7 +307,7 @@ function deleteRecord(bytes32 domainHash) external
 
 
 Deletes a domain's record from this contract's state.
-This can ONLY be called by the `ZNSRegistrar` contract as part of the Revoke flow
+This can ONLY be called by the `ZNSRootRegistrar.sol` contract as part of the Revoke flow
 or any address holding the `REGISTRAR_ROLE`. Emits a `DomainRecordDeleted` event.
 
 
@@ -309,35 +316,6 @@ or any address holding the `REGISTRAR_ROLE`. Emits a `DomainRecordDeleted` event
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The hash of the domain name |
-
-
-### setAccessController
-
-```solidity
-function setAccessController(address accessController) external
-```
-
-
-Sets the `accessController` contract
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| accessController | address | The new access controller |
-
-
-### getAccessController
-
-```solidity
-function getAccessController() external view returns (address)
-```
-
-
-Gets the `accessController` from state.
-
-
 
 
 ### _exists
