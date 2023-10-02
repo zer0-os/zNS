@@ -242,7 +242,7 @@ contract ZNSRootRegistrar is
      * Name (in `ZNSRegistry`) and Token (in `ZNSDomainToken`).
      * @param domainHash Hash of the domain to revoke
      */
-    function revokeRootDomain(bytes32 domainHash)
+    function revokeDomain(bytes32 domainHash)
     external
     override
     {

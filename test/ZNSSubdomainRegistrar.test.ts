@@ -949,7 +949,7 @@ describe("ZNSSubRegistrar", () => {
       const lvl1Hash = regResults[0].domainHash;
 
       // revoke parent
-      await zns.rootRegistrar.connect(rootOwner).revokeRootDomain(
+      await zns.rootRegistrar.connect(rootOwner).revokeDomain(
         lvl1Hash
       );
 
