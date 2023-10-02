@@ -14,8 +14,8 @@ library StringUtils {
     function strlen(string memory s) internal pure returns (uint256) {
         uint256 len;
         uint256 i = 0;
-        uint256 bytelength = bytes(s).length;
-        for (len = 0; i < bytelength;) {
+        uint256 byteLength = bytes(s).length;
+        for (len = 0; i < byteLength;) {
             bytes1 b = bytes(s)[i];
             if (b < 0x80) {
                 i += 1;
