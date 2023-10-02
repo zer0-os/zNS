@@ -825,7 +825,7 @@ describe("ZNSRootRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(tx);
 
       // assign an operator
-      await zns.registry.connect(user).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(user).setOwnersOperator(operator.address, true);
 
       // Revoke the domain
       await zns.rootRegistrar.connect(user).revokeDomain(domainHash);

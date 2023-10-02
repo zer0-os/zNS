@@ -55,6 +55,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @dev ! The owner of the 0x0 hash should be a multisig !
+     * > Admin account deploying the contract will be the owner of the 0x0 hash !
      */
     function initialize(address accessController_) external override initializer {
         records[0x0].owner = msg.sender;
@@ -89,7 +90,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    function setOwnerOperator(address operator, bool allowed) external override {
+    function setOwnersOperator(address operator, bool allowed) external override {
         operators[msg.sender][operator] = allowed;
 
         emit OperatorPermissionSet(msg.sender, operator, allowed);

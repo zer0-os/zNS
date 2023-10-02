@@ -86,7 +86,7 @@ interface IZNSRegistry {
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    function setOwnerOperator(address operator, bool allowed) external;
+    function setOwnersOperator(address operator, bool allowed) external;
 
     /**
      * @notice Get a record for a domain

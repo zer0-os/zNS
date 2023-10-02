@@ -2390,7 +2390,7 @@ describe("ZNSSubRegistrar", () => {
 
       // assign operator in registry
       // to see that he CAN do it
-      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
+      await zns.registry.connect(lvl2SubOwner).setOwnersOperator(
         operator.address,
         true,
       );
@@ -2777,7 +2777,7 @@ describe("ZNSSubRegistrar", () => {
         expect(distrConfigAfter.paymentType).to.eq(newConfig.paymentType);
 
         // assign operator in registry
-        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+        await zns.registry.connect(lvl3SubOwner).setOwnersOperator(
           operator.address,
           true,
         );
@@ -2797,7 +2797,7 @@ describe("ZNSSubRegistrar", () => {
         );
 
         // remove operator
-        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+        await zns.registry.connect(lvl3SubOwner).setOwnersOperator(
           operator.address,
           false,
         );
