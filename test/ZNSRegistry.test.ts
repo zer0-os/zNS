@@ -160,8 +160,8 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
 
       const isOperator = await zns.registry.isOperatorFor(
+        operator.address,
         deployer.address,
-        operator.address
       );
       expect(isOperator).to.be.true;
     });

@@ -197,7 +197,8 @@ describe("ZNSAccessController", () => {
 
     it("#isExecutor() should return true for EXECUTOR_ROLE", async () => {
       const [ executor ] = randomAccs;
-      await accessController.connect(adminAccs[0]).grantRole(EXECUTOR_ROLE, executor.address);
+      await accessController.connect(governorAccs[0]).setRoleAdmin(EXECUTOR_ROLE, GOVERNOR_ROLE);
+      await accessController.connect(governorAccs[0]).grantRole(EXECUTOR_ROLE, executor.address);
       const isExecutor = await accessController.isExecutor(executor.address);
       expect(isExecutor).to.be.true;
     });
