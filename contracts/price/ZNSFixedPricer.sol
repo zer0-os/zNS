@@ -25,7 +25,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setRegistry(_registry);
     }
 
-    // TODO audit question: should we add onlyProxy modifiers for every function ??
+    // TODO audit question: should we add onlyProxy modifiers for every function in proxied contracts ??
     /**
      * @notice Sets the price for a domain. Only callable by domain owner/operator. Emits a `PriceSet` event.
      * @param domainHash The hash of the domain who sets the price for subdomains
@@ -62,6 +62,21 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
+     * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
+     * @dev Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
+     * and `FeePercentageSet` events.
+     * @param domainHash The domain hash to set the price config for
+     * @param priceConfig The new price config to set
+     */
+    function setPriceConfig(
+        bytes32 domainHash,
+        PriceConfig calldata priceConfig
+    ) external override {
+        setPrice(domainHash, priceConfig.price);
+        setFeePercentage(domainHash, priceConfig.feePercentage);
+    }
+
+    /**
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. It returns fee for a given price
      * based on the value set by the owner of the parent domain.
@@ -89,21 +104,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         price = getPrice(parentHash, label);
         fee = getFeeForPrice(parentHash, price);
         return (price, fee);
-    }
-
-    /**
-     * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
-     * @dev Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
-     * and `FeePercentageSet` events.
-     * @param domainHash The domain hash to set the price config for
-     * @param priceConfig The new price config to set
-     */
-    function setPriceConfig(
-        bytes32 domainHash,
-        PriceConfig calldata priceConfig
-    ) external override {
-        setPrice(domainHash, priceConfig.price);
-        setFeePercentage(domainHash, priceConfig.feePercentage);
     }
 
     /**
