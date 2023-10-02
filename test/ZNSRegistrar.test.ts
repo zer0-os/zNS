@@ -65,19 +65,19 @@ describe("ZNSRootRegistrar", () => {
 
   it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
-    const distrConfig: IDistributionConfig = {
+    const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
       paymentType: 1,
-      accessType: 1
-    }
-    
+      accessType: 1,
+    };
+
     const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
       defaultDomain,
       deployer.address,
       tokenURI,
       distrConfig
     );
-    
+
     const receipt = await tx.wait();
 
     const domainHash = await getDomainHashFromReceipt(receipt);
@@ -96,22 +96,22 @@ describe("ZNSRootRegistrar", () => {
       user.address,
       governor.address,
       admin.address,
-      randomUser.address
-    ]
+      randomUser.address,
+    ];
 
     const allowed = [
       true,
       true,
       true,
       true,
-      true
-    ]
+      true,
+    ];
 
     await zns.subRegistrar.updateMintlistForDomain(
-        domainHash,
-        candidates,
-        allowed
-      );
+      domainHash,
+      candidates,
+      allowed
+    );
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+// solhint-disable
 import { ZeroToken } from "@zero-tech/ztoken/contracts/ZeroToken.sol";
 import { IZeroTokenMock } from "./IZeroTokenMock.sol";
 

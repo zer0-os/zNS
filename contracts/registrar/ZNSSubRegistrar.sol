@@ -168,7 +168,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @notice Setter for `distrConfigs[domainHash]`. Only domain owner/operator or ZNSRootRegistrar can call this function.
+     * @notice Setter for `distrConfigs[domainHash]`. 
+     * Only domain owner/operator or ZNSRootRegistrar can call this function.
      * @dev This config can be changed by the domain owner/operator at any time or be set
      * after registration if the config was not provided during the registration.
      * Fires `DistributionConfigSet` event.

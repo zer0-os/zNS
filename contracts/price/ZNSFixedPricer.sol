@@ -46,7 +46,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Sets the feePercentage for a domain. Only callable by domain owner/operator. Emits a `FeePercentageSet` event.
+     * @notice Sets the feePercentage for a domain. Only callable by domain owner/operator. 
+     * Emits a `FeePercentageSet` event.
      * @dev `feePercentage` is set as a part of the `PERCENTAGE_BASIS` of 10,000 where 1% = 100
      * @param domainHash The hash of the domain who sets the feePercentage for subdomains
      * @param feePercentage The new feePercentage value set
