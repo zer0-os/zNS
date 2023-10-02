@@ -155,6 +155,16 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
     });
+
+    it("#isOperatorFor() should return true for an operator", async () => {
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
+
+      const isOperator = await zns.registry.isOperatorFor(
+        deployer.address,
+        operator.address
+      );
+      expect(isOperator).to.be.true;
+    });
   });
 
   describe("Domain records", async () => {

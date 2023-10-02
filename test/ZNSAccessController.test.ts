@@ -176,17 +176,30 @@ describe("ZNSAccessController", () => {
   });
 
   describe("Role Validator Functions", () => {
-    it("Should return true for ADMIN_ROLE", async () => {
+    it("#isAdmin() should return true for ADMIN_ROLE", async () => {
       const [ admin ] = adminAccs;
       const isAdmin = await accessController.isAdmin(admin.address);
       expect(isAdmin).to.be.true;
     });
 
-    it("Should return true for REGISTRAR_ROLE", async () => {
+    it("#isRegistrar() should return true for REGISTRAR_ROLE", async () => {
       const [ registrar ] = randomAccs;
       await accessController.connect(adminAccs[0]).grantRole(REGISTRAR_ROLE, registrar.address);
       const isRegistrar = await accessController.isRegistrar(registrar.address);
       expect(isRegistrar).to.be.true;
+    });
+
+    it("#isGovernor() should return true for GOVERNOR_ROLE", async () => {
+      const [ governor ] = governorAccs;
+      const isGovernor = await accessController.isGovernor(governor.address);
+      expect(isGovernor).to.be.true;
+    });
+
+    it("#isExecutor() should return true for EXECUTOR_ROLE", async () => {
+      const [ executor ] = randomAccs;
+      await accessController.connect(adminAccs[0]).grantRole(EXECUTOR_ROLE, executor.address);
+      const isExecutor = await accessController.isExecutor(executor.address);
+      expect(isExecutor).to.be.true;
     });
 
     it("Should revert if account does not have GOVERNOR_ROLE", async () => {
