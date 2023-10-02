@@ -2689,7 +2689,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
-        "ZNSSubRegistrar: Not the owner of both Name and Token"
+        "ZNSRootRegistrar: Not the owner of both Name and Token"
       );
 
       // change owner back
@@ -2711,7 +2711,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
-        "ZNSSubRegistrar: Not the owner of both Name and Token"
+        "ZNSRootRegistrar: Not the owner of both Name and Token"
       );
 
       // give token back
