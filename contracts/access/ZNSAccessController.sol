@@ -62,6 +62,14 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         return hasRole(REGISTRAR_ROLE, account);
     }
 
+    function isGovernor(address account) external view override returns (bool) {
+        return hasRole(GOVERNOR_ROLE, account);
+    }
+
+    function isExecutor(address account) external view override returns (bool) {
+        return hasRole(EXECUTOR_ROLE, account);
+    }
+
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {
         _setRoleAdmin(role, adminRole);
     }
