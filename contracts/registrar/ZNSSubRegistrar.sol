@@ -74,13 +74,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
-        // TODO sub: make the order of ops better
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            // TODO sub: consider getting rid of large revert messages
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
@@ -126,6 +124,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
+        // ! note that the config is set ONLY if ALL values in it are set, specifically,
+        // without pricerContract being specified, the config will NOT be set
         if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
@@ -186,7 +186,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setPricerContractForDomain(
         bytes32 domainHash,
         // TODO audit question: is this a problem that we expect the simplest interface
-        //  but can set any of the derived ones ??
+        //  but are able set any of the derived ones ??
         //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
