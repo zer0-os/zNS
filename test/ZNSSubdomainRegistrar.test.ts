@@ -652,7 +652,7 @@ describe("ZNSSubRegistrar", () => {
 
       const userBalBefore = await zns.zeroToken.balanceOf(lvl6SubOwner.address);
 
-      await zns.subRegistrar.connect(lvl6SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl6SubOwner).revokeDomain(
         domainHash,
       );
 
@@ -700,7 +700,7 @@ describe("ZNSSubRegistrar", () => {
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
 
-      await zns.subRegistrar.connect(lvl5SubOwner).revokeSubdomain(domainHash);
+      await zns.rootRegistrar.connect(lvl5SubOwner).revokeDomain(domainHash);
 
       const userBalAfter = await zns.zeroToken.balanceOf(lvl5SubOwner.address);
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
@@ -814,7 +814,7 @@ describe("ZNSSubRegistrar", () => {
       assert.ok(childExists);
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
         lvl2Hash,
       );
 
@@ -860,7 +860,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
       // revoke child
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         lvl3Hash,
       );
 
@@ -908,7 +908,7 @@ describe("ZNSSubRegistrar", () => {
       }
 
       // revoke subdomain
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
         lvl2Hash,
       );
 
@@ -980,7 +980,7 @@ describe("ZNSSubRegistrar", () => {
       const lvl4Hash = regResults[3].domainHash;
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl4SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl4SubOwner).revokeDomain(
         lvl4Hash,
       );
 
@@ -1011,7 +1011,7 @@ describe("ZNSSubRegistrar", () => {
       }
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(regResults[1].domainHash);
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(regResults[1].domainHash);
 
       expect(await zns.registry.exists(regResults[1].domainHash)).to.eq(false);
 
@@ -1236,7 +1236,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1311,7 +1311,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1388,7 +1388,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1476,7 +1476,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1555,7 +1555,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1625,7 +1625,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1707,7 +1707,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1790,7 +1790,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1873,7 +1873,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1957,7 +1957,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -2685,7 +2685,7 @@ describe("ZNSSubRegistrar", () => {
 
       // fail
       await expect(
-        zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
@@ -2707,7 +2707,7 @@ describe("ZNSSubRegistrar", () => {
 
       // fail again
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
@@ -2983,7 +2983,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalbefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
       // try revoking
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         regResults[1].domainHash,
       );
 

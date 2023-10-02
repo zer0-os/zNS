@@ -134,23 +134,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @notice Entry point to revoke a subdomain of zNS.
-     * @dev This function is finalized in the `ZNSRootRegistrar.coreRevoke()`.
-     * Here it checks if the sender is the owner of both the Name and the Token,
-     * to be able to revoke, locks distribution of subdomains and calls the `ZNSRootRegistrar.coreRevoke()`.
-     * @param subdomainHash The hash of the subdomain to be revoked
-    */
-    function revokeSubdomain(bytes32 subdomainHash) external override {
-        require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
-            "ZNSSubRegistrar: Not the owner of both Name and Token"
-        );
-
-        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
-    }
-
-    /**
      * @notice Helper function to hash a child label with a parent domain hash.
     */
     function hashWithParent(

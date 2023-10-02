@@ -128,16 +128,6 @@ contract ZNSSubRegistrarUpgradeMock is
         return coreRegisterArgs.domainHash;
     }
 
-    function revokeSubdomain(bytes32 subdomainHash) external {
-        require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
-            "ZNSSubRegistrar: Not the owner of both Name and Token"
-        );
-
-        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
-    }
-
     function hashWithParent(
         bytes32 parentHash,
         string calldata label
