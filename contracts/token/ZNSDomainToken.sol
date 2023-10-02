@@ -66,7 +66,7 @@ contract ZNSDomainToken is
 
     /**
      * @notice Burns the token with the specified tokenId and removes the royalty information for this tokenID.
-     * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`
+     * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeRootDomain()`
      * or `ZNSSubRegistrar.revokeSubdomain()`.
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */

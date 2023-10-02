@@ -71,7 +71,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a domain is revoked.
      * @param domainHash The hash of the domain revoked
-     * @param owner The address that called `ZNSRootRegistrar.sol.revokeDomain()` and domain owner
+     * @param owner The address that called `ZNSRootRegistrar.sol.revokeRootDomain()` and domain owner
      * @param stakeRefunded A flag for whether the stake was refunded or not
      */
     event DomainRevoked(
@@ -142,7 +142,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function coreRevoke(bytes32 domainHash, address owner) external;
 
-    function revokeDomain(bytes32 domainHash) external;
+    function revokeRootDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
 

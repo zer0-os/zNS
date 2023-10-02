@@ -686,7 +686,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Revoke the Domain
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeRootDomain(domainHash);
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
@@ -723,7 +723,7 @@ describe("ZNSRootRegistrar", () => {
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
       // Revoke the domain and then verify
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeRootDomain(domainHash);
 
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
@@ -747,7 +747,7 @@ describe("ZNSRootRegistrar", () => {
       expect(exists).to.be.false;
 
       // Verify transaction is reverted
-      const tx = zns.rootRegistrar.connect(user).revokeDomain(fakeHash);
+      const tx = zns.rootRegistrar.connect(user).revokeRootDomain(fakeHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -773,7 +773,7 @@ describe("ZNSRootRegistrar", () => {
       const balanceAfterStaking = await zns.zeroToken.balanceOf(user.address);
 
       // Revoke the domain
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeRootDomain(domainHash);
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
@@ -796,7 +796,7 @@ describe("ZNSRootRegistrar", () => {
       expect(owner).to.not.equal(user.address);
 
       // Try to revoke domain
-      const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
+      const tx = zns.rootRegistrar.connect(user).revokeRootDomain(parentDomainHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -812,10 +812,10 @@ describe("ZNSRootRegistrar", () => {
       await zns.domainToken.transferFrom(deployer.address, user.address, tokenId);
 
       // Try to revoke domain as a new owner of the token
-      const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
+      const tx = zns.rootRegistrar.connect(user).revokeRootDomain(parentDomainHash);
       await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
 
-      const tx2 = zns.rootRegistrar.connect(deployer).revokeDomain(parentDomainHash);
+      const tx2 = zns.rootRegistrar.connect(deployer).revokeRootDomain(parentDomainHash);
       await expect(tx2).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
     });
 
@@ -828,7 +828,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.registry.connect(user).setOwnersOperator(operator.address, true);
 
       // Revoke the domain
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await zns.rootRegistrar.connect(user).revokeRootDomain(domainHash);
 
       // check operator access to the revoked domain
       const tx2 = zns.registry
