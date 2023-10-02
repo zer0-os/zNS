@@ -120,7 +120,7 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should allow operator to setAddress and emit event", async () => {
-    await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
+    await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
 
     await expect(
       zns.addressResolver.connect(operator)

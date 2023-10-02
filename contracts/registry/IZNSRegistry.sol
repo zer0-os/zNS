@@ -72,7 +72,18 @@ interface IZNSRegistry {
         address candidate
     ) external view returns (bool);
 
-    function setOwnerOperator(address operator, bool allowed) external;
+    function isOperatorFor(
+        address operator,
+        address owner
+    ) external view returns (bool);
+
+    /**
+     * @notice Set an `operator` as `allowed` to give or remove permissions for all
+     * domains owned by `msg.sender`
+     * @param operator The account to allow/disallow
+     * @param allowed The true/false value to set
+     */
+    function setOwnersOperator(address operator, bool allowed) external;
 
     function getDomainRecord(
         bytes32 domainHash
