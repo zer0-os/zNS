@@ -256,18 +256,7 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice External function that finalizes last steps of the Revoke flow.
-     * Called ONLY by ZNSSubRegistrar.
-     * @param domainHash Hash of the domain to revoke
-     * @param owner Owner of the domain to revoke
-    */
-    function coreRevoke(bytes32 domainHash, address owner) external override onlyRegistrar {
-        _coreRevoke(domainHash, owner);
-    }
-
-    /**
-     * @dev Internal part of the `coreRevoke()`. Called by this contract to finalize the Revoke flow of Root domains
-     * and by the external `coreRevoke()` function as a part of the Revoke flow of subdomains.
+     * @dev Internal part of the `revokeDomain()`. Called by this contract to finalize the Revoke flow of all domains.
      * It calls `ZNSDomainToken` to burn the token, deletes the domain data from the `ZNSRegistry` and
      * calls `ZNSTreasury` to unstake and withdraw funds user staked for the domain. Also emits
      * a `DomainRevoked` event.

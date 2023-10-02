@@ -140,8 +140,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
         CoreRegisterArgs memory args
     ) external;
 
-    function coreRevoke(bytes32 domainHash, address owner) external;
-
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
