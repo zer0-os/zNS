@@ -125,8 +125,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setMaxPrice(
         bytes32 domainHash,
         uint256 maxPrice
-    // TODO sub data: how do we handle AC of our own wallets?
-    // TODO sub data: is having a single owner of the 0x0 hash a good idea? should it be a multisig?
     ) external override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxPrice = maxPrice;
 
@@ -256,6 +254,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 length
     ) internal view returns (uint256) {
         DomainPriceConfig memory config = priceConfigs[parentHash];
+
+        // We use maxPrice == 0 to signal all domains are free
+        if (config.maxPrice == 0) return 0;
 
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains

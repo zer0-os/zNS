@@ -13,7 +13,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
-    // TODO sub: test that we can set our own config at 0x0 if we need to !
     function initialize(address _accessController, address _registry) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
@@ -39,7 +38,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
-    // TODO sub: do we need both of these functions ??
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
@@ -64,7 +62,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setFeePercentage(domainHash, priceConfig.feePercentage);
     }
 
-    // TODO sub: rework these for abstracts to hold this function there and remove these from here if possible!
     function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricer) onlyAdmin {
         _setRegistry(registry_);
     }

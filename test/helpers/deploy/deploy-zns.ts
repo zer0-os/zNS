@@ -19,8 +19,8 @@ import {
   ZNSSubRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
-} from "../../typechain";
-import { DeployZNSParams, IASPriceConfig, RegistrarConfig, ZNSContracts } from "./types";
+} from "../../../typechain";
+import { DeployZNSParams, ICurvePriceConfig, RegistrarConfig, IZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -39,10 +39,11 @@ import {
   treasuryName,
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL, defaultRoyaltyFraction,
-} from "./constants";
-import { REGISTRAR_ROLE } from "./access";
-import { getProxyImplAddress } from "./utils";
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+  defaultRoyaltyFraction,
+} from "../constants";
+import { REGISTRAR_ROLE } from "../access";
+import { getProxyImplAddress } from "../utils";
 import { BigNumber } from "ethers";
 
 
@@ -252,7 +253,7 @@ export const deployCurvePricer = async ({
   deployer : SignerWithAddress;
   accessControllerAddress : string;
   registryAddress : string;
-  priceConfig : IASPriceConfig;
+  priceConfig : ICurvePriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSCurvePricer> => {
   const curveFactory = new ZNSCurvePricer__factory(deployer);
@@ -528,7 +529,7 @@ export const deployZNS = async ({
   priceConfig = priceConfigDefault,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
-} : DeployZNSParams) : Promise<ZNSContracts> => {
+} : DeployZNSParams) : Promise<IZNSContracts> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -618,7 +619,7 @@ export const deployZNS = async ({
     admin: deployer,
   });
 
-  const znsContracts : ZNSContracts = {
+  const znsContracts : IZNSContracts = {
     accessController,
     registry,
     domainToken,

@@ -9,7 +9,7 @@ import {
   priceConfigDefault,
   validateUpgrade,
 } from "./helpers";
-import { DeployZNSParams, ZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
@@ -28,7 +28,7 @@ describe("ZNSTreasury", () => {
   let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let randomAcc : SignerWithAddress;
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
 
   const domainName = "wilderrr";
   const domainHash = hashDomainLabel(domainName);
@@ -61,7 +61,7 @@ describe("ZNSTreasury", () => {
     await zns.zeroToken.mint(user.address, ethers.utils.parseEther("50000"));
 
     // register random domain
-    await zns.rootRegistrar.connect(user).registerDomain(
+    await zns.rootRegistrar.connect(user).registerRootDomain(
       domainName,
       user.address,
       defaultTokenURI,

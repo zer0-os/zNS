@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { ZNSContracts } from "./helpers/types";
+import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -37,7 +37,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   const defaultDomain = normalizeName("wilder");
@@ -239,7 +239,7 @@ describe("ZNSRootRegistrar", () => {
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
       const tokenURI = "https://example.com/817c64af";
-      const tx = await zns.rootRegistrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         tokenURI,
@@ -269,7 +269,7 @@ describe("ZNSRootRegistrar", () => {
       };
       const tokenURI = "https://example.com/817c64af";
 
-      const tx = await zns.rootRegistrar.connect(user).registerDomain(
+      const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         tokenURI,
@@ -405,7 +405,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Successfully registers a domain without resolver content", async () => {
-      const tx = zns.rootRegistrar.connect(user).registerDomain(
+      const tx = zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         defaultTokenURI,
@@ -463,7 +463,7 @@ describe("ZNSRootRegistrar", () => {
       const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
 
       // register a domain
-      await zns.rootRegistrar.connect(user).registerDomain(
+      await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
         defaultTokenURI,
@@ -973,7 +973,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(randomUser.address, priceConfigDefault.maxPrice);
 
-      await zns.rootRegistrar.connect(randomUser).registerDomain(
+      await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,
         randomUser.address,
         defaultTokenURI,
@@ -998,6 +998,4 @@ describe("ZNSRootRegistrar", () => {
       await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);
     });
   });
-
-  // TODO sub: add tests for the new config setter flow
 });

@@ -1,5 +1,5 @@
-export * from "./deploy-zns";
-export * from "./to-token-values";
+export * from "./deploy/deploy-zns";
+export * from "./tokens";
 export * from "./pricing";
 export * from "./hashing";
 export * from "./constants";

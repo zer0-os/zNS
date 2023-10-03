@@ -5,7 +5,6 @@ import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
-// TODO sub: can we make this better??
 struct CoreRegisterArgs {
     // 0x0 for root domains
     bytes32 parentHash;
@@ -38,7 +37,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param name The name as string of the domain registered
-     * @param registrant The address that called `ZNSRootRegistrar.sol.registerDomain()`
+     * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
@@ -111,7 +110,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address addressResolver_
     ) external;
 
-    function registerDomain(
+    function registerRootDomain(
         string calldata name,
         address domainAddress,
         string calldata tokenURI,

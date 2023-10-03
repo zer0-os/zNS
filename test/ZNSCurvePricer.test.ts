@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
-import { ZNSContracts } from "./helpers/types";
+import { IZNSContracts } from "./helpers/types";
 import {
   deployZNS,
   calcAsymptoticPrice,
@@ -32,7 +32,7 @@ describe("ZNSCurvePricer", () => {
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let domainHash : string;
 
   const defaultDomain = "wilder";
@@ -347,6 +347,21 @@ describe("ZNSCurvePricer", () => {
         newConfig.precisionMultiplier,
         newConfig.feePercentage,
       );
+    });
+
+    it("Fails validation when maxPrice < minPrice", async () => {
+      const newConfig = {
+        baseLength: BigNumber.from("3"),
+        maxLength: BigNumber.from("35"),
+        maxPrice: parseEther("1"),
+        minPrice: parseEther("2"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
+      };
+
+      const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
+
+      await expect(tx).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
     });
   });
 

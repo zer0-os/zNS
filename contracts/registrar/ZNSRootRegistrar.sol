@@ -29,7 +29,10 @@ contract ZNSRootRegistrar is
     ARegistryWired,
     IZNSRootRegistrar {
 
-    // TODO sub data: can this be changes to an IZNSPricer type ?
+    // TODO sub data: can (and should) we make a new primitive
+    //  interface that inherits IZNSPricer and adds getProtocolFee()
+    //  so that we don't have to upgrade this contract every time we
+    //  want to switch a pricing contract for Zero?
     IZNSCurvePricer public curvePricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
@@ -74,8 +77,7 @@ contract ZNSRootRegistrar is
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      */
-    function registerDomain(
-        // TODO sub: change "name" to "label" everywhere in this and other contracts ??
+    function registerRootDomain(
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
@@ -130,6 +132,12 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
+        // TODO sub: figure out if this is needed !!!
+        require(
+            _isValidString(args.label),
+            "ZNSRootRegistrar: Invalid domain name"
+        );
+
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
@@ -249,8 +257,6 @@ contract ZNSRootRegistrar is
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
-    // TODO: should this function be on the DomainToken ??
-    //  what are the benefits of having it there + adding Registry as a state var just for this call ??
     function reclaimDomain(bytes32 domainHash)
     external
     override
@@ -346,6 +352,21 @@ contract ZNSRootRegistrar is
         addressResolver = IZNSAddressResolver(addressResolver_);
 
         emit AddressResolverSet(addressResolver_);
+    }
+
+    // TODO audit: Do we need to check this on the contract?! This costs extra gas and only checks
+    //  a couple of specific cases. Technically, someone is still able to directly register
+    //  an incorrect name. Getting to this hash from any other layer should be problematic,
+    //  so even if they did register the name on the contract, they should not be able to actually
+    //  use it since they can't arrive at their own hash (or can they?).
+    //  How much of a problem would it be if we don't check this?
+    //  Should we keep this, does it make sense to keep this, should we add more validations ???!
+    function _isValidString(string memory str) internal pure returns (bool) {
+        bytes memory strBytes = bytes(str);
+        bool isValid = strBytes.length != 0;
+        isValid = isValid && (strBytes[0] != 0x20); // first char is not 0x20
+
+        return isValid;
     }
 
     /**

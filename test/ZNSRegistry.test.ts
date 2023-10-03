@@ -1,9 +1,9 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers/deploy-zns";
+import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
-import { ZNSContracts, DeployZNSParams } from "./helpers/types";
+import { IZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
@@ -32,7 +32,7 @@ describe("ZNSRegistry", () => {
   let mockResolver : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let wilderDomainHash : string;
 
   beforeEach(async () => {

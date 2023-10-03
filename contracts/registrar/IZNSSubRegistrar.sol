@@ -17,9 +17,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
         PaymentType paymentType,
         AccessType accessType
     );
-    event WhitelistUpdated(
+    event MintlistUpdated(
         bytes32 indexed domainHash,
-        address[] indexed candidates,
+        address[] candidates,
         bool[] allowed
     );
     event RootRegistrarSet(address registrar);

@@ -73,7 +73,7 @@ export type ZNSContract =
   ZNSAddressResolver |
   ZNSDomainToken;
 
-export interface IASPriceConfig {
+export interface ICurvePriceConfig {
   maxPrice : BigNumber;
   minPrice : BigNumber;
   maxLength : BigNumber;
@@ -95,8 +95,7 @@ export interface RegistrarConfig {
   addressResolverAddress : string;
 }
 
-// TODO sub: rename to IZNS
-export interface ZNSContracts {
+export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
@@ -114,7 +113,7 @@ export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: IASPriceConfig;
+  priceConfig ?: ICurvePriceConfig;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
@@ -134,7 +133,7 @@ export interface IPaymentConfig {
 export interface IFullDistributionConfig {
   paymentConfig : IPaymentConfig;
   distrConfig : IDistributionConfig;
-  priceConfig : IASPriceConfig | IFixedPriceConfig | undefined;
+  priceConfig : ICurvePriceConfig | IFixedPriceConfig | undefined;
 }
 
 export interface IDomainConfigForTest {

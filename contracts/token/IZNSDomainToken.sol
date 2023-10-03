@@ -31,6 +31,8 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
     view
     returns (string memory);
 
+    function setBaseURI(string memory baseURI_) external;
+
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external;
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;

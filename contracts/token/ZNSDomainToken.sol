@@ -4,7 +4,8 @@ pragma solidity ^0.8.18;
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
-import { ERC721URIStorageUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { ERC721URIStorageUpgradeable }
+    from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -46,7 +47,7 @@ contract ZNSDomainToken is
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
-     * Used ONLY as a part of the Register flow that starts from ``ZNSRootRegistrar.sol.registerDomain()``!
+     * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`!
      * > TokenId is created as a hash of the domain name casted to uint256.
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.
@@ -61,7 +62,6 @@ contract ZNSDomainToken is
      * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`!
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
-    // TODO sub: change to "burn" ???!!!
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
         _resetTokenRoyalty(tokenId);
@@ -80,9 +80,9 @@ contract ZNSDomainToken is
         _setTokenURI(tokenId, _tokenURI);
     }
 
-    function setBaseURI(string memory _baseURI) external onlyAdmin {
-        baseURI = _baseURI;
-        emit BaseURISet(_baseURI);
+    function setBaseURI(string memory baseURI_) external override onlyAdmin {
+        baseURI = baseURI_;
+        emit BaseURISet(baseURI_);
     }
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external override onlyAdmin {

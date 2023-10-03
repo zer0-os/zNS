@@ -1,11 +1,11 @@
-import { IDomainConfigForTest, ZNSContracts, IPathRegResult } from "../types";
+import { IDomainConfigForTest, IZNSContracts, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { BigNumber, ethers } from "ethers";
 import { getPriceObject, getStakingOrProtocolFee } from "../pricing";
 import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
-import { IERC20__factory } from "../../../typechain";
 import { PaymentType } from "../constants";
+import { getTokenContract } from "../tokens";
 
 
 // TODO sub: make these helpers better
@@ -13,7 +13,7 @@ export const registerDomainPath = async ({
   zns,
   domainConfigs,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
 }) => domainConfigs.reduce(
   async (
@@ -49,8 +49,7 @@ export const registerDomainPath = async ({
       if (paymentTokenAddress === zns.zeroToken.address) {
         paymentTokenContract = zns.zeroToken;
       } else {
-        const ierc20 = IERC20__factory.connect(paymentTokenAddress, config.user);
-        paymentTokenContract = ierc20.attach(paymentTokenAddress);
+        paymentTokenContract = getTokenContract(paymentTokenAddress, config.user);
       }
     }
 
@@ -95,7 +94,7 @@ export const validatePathRegistration = async ({
   domainConfigs,
   regResults,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
   regResults : Array<IPathRegResult>;
 }) => domainConfigs.reduce(

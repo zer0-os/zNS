@@ -129,7 +129,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
      * or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
-     * flow that starts from `ZNSRootRegistrar.sol.registerDomain()`. Calls 2 internal functions to set
+     * flow that starts from `ZNSRootRegistrar.registerRootDomain()`. Calls 2 internal functions to set
      * the owner and resolver of the domain separately.
      * Can be called with `resolver` param as 0, which will exclude the call to set resolver.
      * Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.

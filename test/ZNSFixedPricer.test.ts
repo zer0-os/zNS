@@ -13,7 +13,7 @@ import {
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContracts } from "./helpers/types";
+import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
@@ -28,7 +28,7 @@ describe("ZNSFixedPricer", () => {
   let random : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let domainHash : string;
   let parentPrice : BigNumber;
   let parentFeePercentage : BigNumber;
@@ -76,6 +76,43 @@ describe("ZNSFixedPricer", () => {
   it("should deploy with correct parameters", async () => {
     expect(await zns.fixedPricer.getAccessController()).to.equal(zns.accessController.address);
     expect(await zns.fixedPricer.registry()).to.equal(zns.registry.address);
+  });
+
+  it("should NOT initialize twice", async () => {
+    await expect(zns.fixedPricer.initialize(
+      zns.accessController.address,
+      zns.registry.address,
+    )).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
+  it("should set config for 0x0 hash", async () => {
+    const {
+      price,
+      feePercentage,
+    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+
+    expect(price).to.equal(0);
+    expect(feePercentage).to.equal(0);
+
+    const newPrice = ethers.utils.parseEther("9182263");
+    const newFee = BigNumber.from(2359);
+
+    // deployer owns 0x0 hash at initialization time
+    await zns.fixedPricer.connect(deployer).setPriceConfig(
+      ethers.constants.HashZero,
+      {
+        price: newPrice,
+        feePercentage: newFee,
+      }
+    );
+
+    const {
+      price: newPriceAfter,
+      feePercentage: newFeeAfter,
+    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+
+    expect(newPriceAfter).to.equal(newPrice);
+    expect(newFeeAfter).to.equal(newFee);
   });
 
   it("should not allow to be deployed by anyone other than ADMIN_ROLE", async () => {

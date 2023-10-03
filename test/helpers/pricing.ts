@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
-import { IASPriceConfig, IFixedPriceConfig } from "./types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
 
 
 /**
@@ -56,7 +56,7 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : IASPriceConfig | IFixedPriceConfig = priceConfigDefault,
+  priceConfig : ICurvePriceConfig | IFixedPriceConfig = priceConfigDefault,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
@@ -64,7 +64,7 @@ export const getPriceObject = (
 } => {
   let expectedPrice;
   if (Object.keys(priceConfig).length === 6) {
-    expectedPrice = calcAsymptoticPrice(name, priceConfig as IASPriceConfig);
+    expectedPrice = calcAsymptoticPrice(name, priceConfig as ICurvePriceConfig);
   } else if (Object.keys(priceConfig).length === 2) {
     ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
   } else {

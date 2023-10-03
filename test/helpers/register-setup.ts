@@ -1,8 +1,15 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IASPriceConfig, IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, ZNSContracts } from "./types";
+import {
+  ICurvePriceConfig,
+  IDistributionConfig,
+  IFixedPriceConfig,
+  IFullDistributionConfig,
+  IZNSContracts,
+} from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { defaultTokenURI, distrConfigEmpty, fullDistrConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty, defaultTokenURI } from "./constants";
+import { getTokenContract } from "./tokens";
 
 const { AddressZero } = ethers.constants;
 
@@ -16,13 +23,13 @@ export const defaultRootRegistration = async ({
   distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   domainName : string;
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractReceipt> => {
-  const tx = await zns.rootRegistrar.connect(user).registerDomain(
+  const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
     tokenURI,
@@ -38,7 +45,7 @@ export const approveForParent = async ({
   user,
   domainLabel,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -52,10 +59,13 @@ export const approveForParent = async ({
     [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel);
   }
 
+  const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
+  const tokenContract = getTokenContract(tokenAddress, user);
+
   const protocolFee = await zns.curvePricer.getProtocolFee(price.add(parentFee));
   const toApprove = price.add(parentFee).add(protocolFee);
-  // TODO sub: add support for any kind of token
-  await zns.zeroToken.connect(user).approve(zns.treasury.address, toApprove);
+
+  return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
 };
 
 /**
@@ -74,7 +84,7 @@ export const defaultSubdomainRegistration = async ({
   distrConfig,
 } : {
   user : SignerWithAddress;
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
@@ -101,7 +111,7 @@ export const registrationWithSetup = async ({
   tokenURI = defaultTokenURI,
   fullConfig = fullDistrConfigEmpty,
 } : {
-  zns : ZNSContracts;
+  zns : IZNSContracts;
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;
@@ -163,7 +173,7 @@ export const registrationWithSetup = async ({
   } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as IASPriceConfig,
+      fullConfig.priceConfig as ICurvePriceConfig,
     );
   }
 
