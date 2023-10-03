@@ -283,6 +283,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         // We use `maxPrice` as 0 to indicate free domains
         if (config.maxPrice == 0) return 0;
 
+        // We use maxPrice == 0 to signal all domains are free
+        if (config.maxPrice == 0) return 0;
+
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
         // e.g. promotions or sales
