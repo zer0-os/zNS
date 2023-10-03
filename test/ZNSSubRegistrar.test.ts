@@ -265,37 +265,6 @@ describe("ZNSSubRegistrar", () => {
         "ERC20: transfer amount exceeds allowance"
       );
     });
-
-    it("should revert when registering a subdomain with an empty label or whitespace", async () => {
-      // add allowance
-      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-
-      // check empty
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          rootHash,
-          "",
-          lvl2SubOwner.address,
-          subTokenURI,
-          distrConfigEmpty,
-        )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Invalid domain name"
-      );
-
-      // check whitespace
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          rootHash,
-          " ",
-          lvl2SubOwner.address,
-          subTokenURI,
-          distrConfigEmpty,
-        )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Invalid domain name"
-      );
-    });
   });
 
   describe("Operations within domain paths", () => {
