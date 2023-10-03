@@ -9,11 +9,11 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 /**
- * @title Main entry point for the three main flows of ZNS - Register, Reclaim and Revoke a domain.
+ * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
  * @notice This contract serves as the "umbrella" for many ZNS operations, it is given REGISTRAR_ROLE
  * to combine multiple calls/operations between different modules to achieve atomic state changes
  * and proper logic for the ZNS flows. You can see functions in other modules that are only allowed
@@ -22,6 +22,8 @@ import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
  * ZNSRootRegistrar.sol stores most of the other contract addresses and can communicate with other modules,
  * but the relationship is one-sided, where other modules do not need to know about the ZNSRootRegistrar.sol,
  * they only check REGISTRAR_ROLE that can, in theory, be assigned to any other address.
+ * @dev This contract is also called at the last stage of registering subdomains, since it has the common
+ * logic required to be performed for any level domains.
  */
 contract ZNSRootRegistrar is
     UUPSUpgradeable,
@@ -29,11 +31,7 @@ contract ZNSRootRegistrar is
     ARegistryWired,
     IZNSRootRegistrar {
 
-    // TODO sub data: can (and should) we make a new primitive
-    //  interface that inherits IZNSPricer and adds getProtocolFee()
-    //  so that we don't have to upgrade this contract every time we
-    //  want to switch a pricing contract for Zero?
-    IZNSCurvePricer public curvePricer;
+    IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
@@ -46,6 +44,7 @@ contract ZNSRootRegistrar is
      * to apply Access Control and ensure only the ADMIN can set the addresses.
      * @param accessController_ Address of the ZNSAccessController contract
      * @param registry_ Address of the ZNSRegistry contract
+     * @param rootPricer_ Address of the IZNSPricer type contract that Zero chose to use for the root domains
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
      * @param addressResolver_ Address of the ZNSAddressResolver contract
@@ -53,22 +52,22 @@ contract ZNSRootRegistrar is
     function initialize(
         address accessController_,
         address registry_,
-        address curvePricer_,
+        address rootPricer_,
         address treasury_,
         address domainToken_,
         address addressResolver_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setCurvePricer(curvePricer_);
+        setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
         setAddressResolver(addressResolver_);
     }
 
     /**
-     * @notice This function is the main entry point for the Register flow.
-     * Registers a new domain such as `0://wilder`.
+     * @notice This function is the main entry point for the Register Root Domain flow.
+     * Registers a new root domain such as `0://wilder`.
      * Gets domain hash as a keccak256 hash of the domain label string casted to bytes32,
      * checks existence of the domain in the registry and reverts if it exists.
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
@@ -76,6 +75,11 @@ contract ZNSRootRegistrar is
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
+     * @param tokenURI URI to assign to the Domain Token issued for the domain
+     * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
+     *     > Please note that passing distribution config will add more gas to the tx and most importantly -
+     *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
+     *      but all the parameters inside are required.
      */
     function registerRootDomain(
         string calldata name,
@@ -97,7 +101,7 @@ contract ZNSRootRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = curvePricer.getPrice(0x0, name);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name);
 
         _coreRegister(
             CoreRegisterArgs(
@@ -114,13 +118,27 @@ contract ZNSRootRegistrar is
         );
 
         if (address(distributionConfig.pricerContract) != address(0)) {
-            // this adds roughly 100k gas to the register tx
+            // this adds roughly 100k gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
 
         return domainHash;
     }
 
+    /**
+     * @notice External function used by `ZNSSubRegistrar` for the final stage of registering subdomains.
+     * @param args `CoreRegisterArgs`: Struct containing all the arguments required to register a domain
+     *  with ZNSRootRegistrar.coreRegister():
+     *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
+     *      + `domainHash`: The hash of the domain to be registered
+     *      + `label`: The label of the domain to be registered
+     *      + `registrant`: The address of the user who is registering the domain
+     *      + `price`: The determined price for the domain to be registered based on parent rules
+     *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
+     *      + `domainAddress`: The address to which the domain will be resolved to
+     *      + `tokenURI`: The tokenURI for the domain to be registered
+     *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
+    */
     function coreRegister(
         CoreRegisterArgs memory args
     ) external override onlyRegistrar {
@@ -129,15 +147,17 @@ contract ZNSRootRegistrar is
         );
     }
 
+    /**
+     * @dev Internal function that is called by this contract to finalize the registration of a domain.
+     * This function as also called by the external `coreRegister()` function as a part of
+     * registration of subdomains.
+     * This function kicks off payment processing logic, mints the token, sets the domain data in the `ZNSRegistry`
+     * and fires a `DomainRegistered` event.
+     * For params see external `coreRegister()` docs.
+    */
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
-        // TODO sub: figure out if this is needed !!!
-        require(
-            _isValidString(args.label),
-            "ZNSRootRegistrar: Invalid domain name"
-        );
-
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
@@ -170,9 +190,13 @@ contract ZNSRootRegistrar is
         );
     }
 
+    /**
+     * @dev Internal function that is called by this contract to finalize the payment for a domain.
+     * Once the specific case is determined and `protocolFee` calculated, it calls ZNSTreasury to perform transfers.
+    */
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = curvePricer.getProtocolFee(args.price + args.stakeFee);
+        uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -225,10 +249,12 @@ contract ZNSRootRegistrar is
         _coreRevoke(domainHash, msg.sender);
     }
 
-    function coreRevoke(bytes32 domainHash, address owner) external override onlyRegistrar {
-        _coreRevoke(domainHash, owner);
-    }
-
+    /**
+     * @dev Internal part of the `revokeDomain()`. Called by this contract to finalize the Revoke flow of all domains.
+     * It calls `ZNSDomainToken` to burn the token, deletes the domain data from the `ZNSRegistry` and
+     * calls `ZNSTreasury` to unstake and withdraw funds user staked for the domain. Also emits
+     * a `DomainRevoked` event.
+    */
     function _coreRevoke(bytes32 domainHash, address owner) internal {
         uint256 tokenId = uint256(domainHash);
         domainToken.revoke(tokenId);
@@ -270,6 +296,12 @@ contract ZNSRootRegistrar is
         emit DomainReclaimed(domainHash, msg.sender);
     }
 
+    /**
+     * @notice Function to validate that a given candidate is the owner of his Name, Token or both.
+     * @param domainHash Hash of the domain to check
+     * @param candidate Address of the candidate to check for ownership of the above domain's properties
+     * @param ownerOf Enum value to determine which ownership to check for: NAME, TOKEN, BOTH
+    */
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) public view override returns (bool) {
         if (ownerOf == OwnerOf.NAME) {
             return candidate == registry.getDomainOwner(domainHash);
@@ -292,14 +324,19 @@ contract ZNSRootRegistrar is
         _setRegistry(registry_);
     }
 
-    function setCurvePricer(address curvePricer_) public override onlyAdmin {
+    /**
+     * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
+    */
+    function setRootPricer(address rootPricer_) public override onlyAdmin {
         require(
-            curvePricer_ != address(0),
-            "ZNSRootRegistrar: curvePricer_ is 0x0 address"
+            rootPricer_ != address(0),
+            "ZNSRootRegistrar: rootPricer_ is 0x0 address"
         );
-        curvePricer = IZNSCurvePricer(curvePricer_);
+        rootPricer = IZNSPricer(rootPricer_);
 
-        emit CurvePricerSet(curvePricer_);
+        emit RootPricerSet(rootPricer_);
     }
 
     /**
@@ -332,6 +369,10 @@ contract ZNSRootRegistrar is
         emit DomainTokenSet(domainToken_);
     }
 
+    /**
+     * @notice Setter for `ZNSSubRegistrar` contract. Only ADMIN in `ZNSAccessController` can call this function.
+     * @param subRegistrar_ Address of the `ZNSSubRegistrar` contract
+    */
     function setSubRegistrar(address subRegistrar_) external override onlyAdmin {
         require(subRegistrar_ != address(0), "ZNSRootRegistrar: subRegistrar_ is 0x0 address");
 
@@ -352,21 +393,6 @@ contract ZNSRootRegistrar is
         addressResolver = IZNSAddressResolver(addressResolver_);
 
         emit AddressResolverSet(addressResolver_);
-    }
-
-    // TODO audit: Do we need to check this on the contract?! This costs extra gas and only checks
-    //  a couple of specific cases. Technically, someone is still able to directly register
-    //  an incorrect name. Getting to this hash from any other layer should be problematic,
-    //  so even if they did register the name on the contract, they should not be able to actually
-    //  use it since they can't arrive at their own hash (or can they?).
-    //  How much of a problem would it be if we don't check this?
-    //  Should we keep this, does it make sense to keep this, should we add more validations ???!
-    function _isValidString(string memory str) internal pure returns (bool) {
-        bytes memory strBytes = bytes(str);
-        bool isValid = strBytes.length != 0;
-        isValid = isValid && (strBytes[0] != 0x20); // first char is not 0x20
-
-        return isValid;
     }
 
     /**

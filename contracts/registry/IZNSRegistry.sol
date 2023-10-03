@@ -13,6 +13,11 @@ pragma solidity 0.8.18;
  */
 interface IZNSRegistry {
 
+    /**
+     * @notice Description of a domain record, pointing to the 
+     * owner address of that record as well as the address of
+     * its resolver
+     */
     struct DomainRecord {
         address owner;
         address resolver;
@@ -58,26 +63,18 @@ interface IZNSRegistry {
         bool allowed
     );
 
-    /**
-     * @notice Create an instance of the ZNSRegistry contract
-     * @param accessController The addrss of the access controller
-     */
     function initialize(address accessController) external;
 
-    /**
-     * @notice Check if a given domain exists
-     * @param domainHash The hash of a domain's name
-     */
     function exists(bytes32 domainHash) external view returns (bool);
 
-    /**
-     * @notice Checks if provided address is an owner or an operator of the provided domain
-     * @param domainHash The hash of a domain's name
-     * @param candidate The address for which we are checking access
-     */
     function isOwnerOrOperator(
         bytes32 domainHash,
         address candidate
+    ) external view returns (bool);
+
+    function isOperatorFor(
+        address operator,
+        address owner
     ) external view returns (bool);
 
     /**
@@ -86,76 +83,38 @@ interface IZNSRegistry {
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    function setOwnerOperator(address operator, bool allowed) external;
+    function setOwnersOperator(address operator, bool allowed) external;
 
-    /**
-     * @notice Get a record for a domain
-     * @param domainHash the hash of a domain's name
-     */
     function getDomainRecord(
         bytes32 domainHash
     ) external view returns (DomainRecord memory);
 
-    /**
-     * @notice Get the owner of the given domain
-     * @param domainHash the hash of a domain's name
-     */
     function getDomainOwner(
         bytes32 domainHash
     ) external view returns (address);
 
-    /**
-     * @notice Get the default resolver for the given domain
-     * @param domainHash The hash of a domain's name
-     */
     function getDomainResolver(
         bytes32 domainHash
     ) external view returns (address);
 
-    /**
-     * @notice Create a new domain record
-     * @param domainHash The hash of the domain name
-     * @param owner The owner of the new domain
-     * @param resolver The resolver of the new domain
-     */
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
         address resolver
     ) external;
 
-    /**
-     * @notice Update an existing domain record's owner or resolver
-     * @param domainHash The hash of the domain
-     * @param owner The owner or an allowed operator of that domain
-     * @param resolver The resolver for the domain
-     */
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
         address resolver
     ) external;
 
-    /**
-     * @notice Update a domain's owner
-     * @param domainHash the hash of a domain's name
-     * @param owner The account to transfer ownership to
-     */
     function updateDomainOwner(bytes32 domainHash, address owner) external;
 
-    /**
-     * @notice Update the domain's default resolver
-     * @param domainHash the hash of a domain's name
-     * @param resolver The new default resolver
-     */
     function updateDomainResolver(
         bytes32 domainHash,
         address resolver
     ) external;
 
-    /**
-     * @notice Delete a domain's record
-     * @param domainHash The hash of the domain name
-     */
     function deleteRecord(bytes32 domainHash) external;
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+// solhint-disable
 import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 import { IZNSPricer } from "../../types/IZNSPricer.sol";
@@ -128,16 +129,6 @@ contract ZNSSubRegistrarUpgradeMock is
         return coreRegisterArgs.domainHash;
     }
 
-    function revokeSubdomain(bytes32 subdomainHash) external {
-        require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
-            "ZNSSubRegistrar: Not the owner of both Name and Token"
-        );
-
-        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
-    }
-
     function hashWithParent(
         bytes32 parentHash,
         string calldata label
@@ -205,7 +196,7 @@ contract ZNSSubRegistrarUpgradeMock is
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    function setMintlistForDomain(
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed

@@ -265,37 +265,6 @@ describe("ZNSSubRegistrar", () => {
         "ERC20: transfer amount exceeds allowance"
       );
     });
-
-    it("should revert when registering a subdomain with an empty label or whitespace", async () => {
-      // add allowance
-      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-
-      // check empty
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          rootHash,
-          "",
-          lvl2SubOwner.address,
-          subTokenURI,
-          distrConfigEmpty,
-        )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Invalid domain name"
-      );
-
-      // check whitespace
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          rootHash,
-          " ",
-          lvl2SubOwner.address,
-          subTokenURI,
-          distrConfigEmpty,
-        )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Invalid domain name"
-      );
-    });
   });
 
   describe("Operations within domain paths", () => {
@@ -652,7 +621,7 @@ describe("ZNSSubRegistrar", () => {
 
       const userBalBefore = await zns.zeroToken.balanceOf(lvl6SubOwner.address);
 
-      await zns.subRegistrar.connect(lvl6SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl6SubOwner).revokeDomain(
         domainHash,
       );
 
@@ -700,7 +669,7 @@ describe("ZNSSubRegistrar", () => {
       const parentBalBefore = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalBefore = await zns.zeroToken.balanceOf(zns.treasury.address);
 
-      await zns.subRegistrar.connect(lvl5SubOwner).revokeSubdomain(domainHash);
+      await zns.rootRegistrar.connect(lvl5SubOwner).revokeDomain(domainHash);
 
       const userBalAfter = await zns.zeroToken.balanceOf(lvl5SubOwner.address);
       const parentBalAfter = await zns.zeroToken.balanceOf(lvl4SubOwner.address);
@@ -814,7 +783,7 @@ describe("ZNSSubRegistrar", () => {
       assert.ok(childExists);
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
         lvl2Hash,
       );
 
@@ -860,7 +829,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalBefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
       // revoke child
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         lvl3Hash,
       );
 
@@ -908,7 +877,7 @@ describe("ZNSSubRegistrar", () => {
       }
 
       // revoke subdomain
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
         lvl2Hash,
       );
 
@@ -980,7 +949,7 @@ describe("ZNSSubRegistrar", () => {
       const lvl4Hash = regResults[3].domainHash;
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl4SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl4SubOwner).revokeDomain(
         lvl4Hash,
       );
 
@@ -1011,7 +980,7 @@ describe("ZNSSubRegistrar", () => {
       }
 
       // revoke parent
-      await zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(regResults[1].domainHash);
+      await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(regResults[1].domainHash);
 
       expect(await zns.registry.exists(regResults[1].domainHash)).to.eq(false);
 
@@ -1038,7 +1007,7 @@ describe("ZNSSubRegistrar", () => {
       expect(newHash).to.eq(regResults[1].domainHash);
 
       // add new child owner to mintlist
-      await zns.subRegistrar.connect(branchLvl1Owner).setMintlistForDomain(
+      await zns.subRegistrar.connect(branchLvl1Owner).updateMintlistForDomain(
         newHash,
         [ branchLvl2Owner.address ],
         [ true ],
@@ -1236,7 +1205,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1311,7 +1280,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1388,7 +1357,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1476,7 +1445,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1555,7 +1524,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1625,7 +1594,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1707,7 +1676,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1790,7 +1759,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1873,7 +1842,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -1957,7 +1926,7 @@ describe("ZNSSubRegistrar", () => {
       expect(transfersToTreasury.length).to.eq(0);
 
       // revoke
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
       );
 
@@ -2034,7 +2003,8 @@ describe("ZNSSubRegistrar", () => {
         subdomainParentHash,
         label
       );
-      const protocolFeeFromSC = await zns.curvePricer.getProtocolFee(
+      const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
+        ethers.constants.HashZero,
         priceFromSC.add(feeFromSC)
       );
 
@@ -2325,7 +2295,7 @@ describe("ZNSSubRegistrar", () => {
       });
 
       // mintlist potential child user
-      await zns.subRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl3SubOwner).updateMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
         [true],
@@ -2363,7 +2333,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // remove user from mintlist
-      await zns.subRegistrar.connect(lvl3SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl3SubOwner).updateMintlistForDomain(
         parentHash,
         [lvl4SubOwner.address],
         [false],
@@ -2384,18 +2354,18 @@ describe("ZNSSubRegistrar", () => {
     });
 
     // eslint-disable-next-line max-len
-    it("#setMintlistForDomain() should NOT allow setting if called by non-authorized account or registrar", async () => {
+    it("#updateMintlistForDomain() should NOT allow setting if called by non-authorized account or registrar", async () => {
       const { domainHash } = regResults[1];
 
       // assign operator in registry
       // to see that he CAN do it
-      await zns.registry.connect(lvl2SubOwner).setOwnerOperator(
+      await zns.registry.connect(lvl2SubOwner).setOwnersOperator(
         operator.address,
         true,
       );
 
       // try with operator
-      await zns.subRegistrar.connect(operator).setMintlistForDomain(
+      await zns.subRegistrar.connect(operator).updateMintlistForDomain(
         domainHash,
         [lvl5SubOwner.address],
         [true],
@@ -2409,7 +2379,7 @@ describe("ZNSSubRegistrar", () => {
 
       // try with non-authorized
       await expect(
-        zns.subRegistrar.connect(lvl5SubOwner).setMintlistForDomain(
+        zns.subRegistrar.connect(lvl5SubOwner).updateMintlistForDomain(
           domainHash,
           [lvl5SubOwner.address],
           [true],
@@ -2419,7 +2389,7 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("#setMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
+    it("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
       const { domainHash } = regResults[1];
 
       const candidatesArr = [
@@ -2436,7 +2406,7 @@ describe("ZNSSubRegistrar", () => {
         true,
       ];
 
-      await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl2SubOwner).updateMintlistForDomain(
         domainHash,
         candidatesArr,
         allowedArr
@@ -2481,7 +2451,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // add to mintlist
-      await zns.subRegistrar.connect(lvl2SubOwner).setMintlistForDomain(
+      await zns.subRegistrar.connect(lvl2SubOwner).updateMintlistForDomain(
         regResults[1].domainHash,
         [lvl5SubOwner.address],
         [true],
@@ -2684,11 +2654,11 @@ describe("ZNSSubRegistrar", () => {
 
       // fail
       await expect(
-        zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+        zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
-        "ZNSSubRegistrar: Not the owner of both Name and Token"
+        "ZNSRootRegistrar: Not the owner of both Name and Token"
       );
 
       // change owner back
@@ -2706,11 +2676,11 @@ describe("ZNSSubRegistrar", () => {
 
       // fail again
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).revokeSubdomain(
+        zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
           regResults[1].domainHash,
         )
       ).to.be.revertedWith(
-        "ZNSSubRegistrar: Not the owner of both Name and Token"
+        "ZNSRootRegistrar: Not the owner of both Name and Token"
       );
 
       // give token back
@@ -2776,7 +2746,7 @@ describe("ZNSSubRegistrar", () => {
         expect(distrConfigAfter.paymentType).to.eq(newConfig.paymentType);
 
         // assign operator in registry
-        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+        await zns.registry.connect(lvl3SubOwner).setOwnersOperator(
           operator.address,
           true,
         );
@@ -2796,7 +2766,7 @@ describe("ZNSSubRegistrar", () => {
         );
 
         // remove operator
-        await zns.registry.connect(lvl3SubOwner).setOwnerOperator(
+        await zns.registry.connect(lvl3SubOwner).setOwnersOperator(
           operator.address,
           false,
         );
@@ -2982,7 +2952,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalbefore = await zns.zeroToken.balanceOf(lvl3SubOwner.address);
 
       // try revoking
-      await zns.subRegistrar.connect(lvl3SubOwner).revokeSubdomain(
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         regResults[1].domainHash,
       );
 

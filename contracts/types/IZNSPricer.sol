@@ -25,4 +25,13 @@ interface IZNSPricer {
         bytes32 parentHash,
         string calldata label
     ) external view returns (uint256 price, uint256 fee);
+
+    /**
+     * @notice Returns the fee for a given price.
+     * @dev Fees are only supported for PaymentType.STAKE !
+    */
+    function getFeeForPrice(
+        bytes32 parentHash,
+        uint256 price
+    ) external view returns (uint256);
 }

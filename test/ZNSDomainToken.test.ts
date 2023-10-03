@@ -247,6 +247,26 @@ describe("ZNSDomainToken", () => {
       expect(royaltyInfo[0]).to.equal(beneficiary.address);
       expect(royaltyInfo[1]).to.equal(royaltyAmountExp);
     });
+
+    it("#setDefaultRoyalty() should revert if called by anyone other than ADMIN_ROLE", async () => {
+      await expect(
+        zns.domainToken.connect(caller).setDefaultRoyalty(beneficiary.address, 100)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
+    });
+
+    it("#setTokenRoyalty() should revert if called by anyone other than ADMIN_ROLE", async () => {
+      // mint token
+      const tokenId = ethers.BigNumber.from("777356");
+      await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
+
+      await expect(
+        zns.domainToken.connect(caller).setTokenRoyalty(tokenId, beneficiary.address, 100)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
+    });
   });
 
   describe("Token URIs", () => {
@@ -367,6 +387,31 @@ describe("ZNSDomainToken", () => {
 
       const uriFromSC3 = await zns.domainToken.tokenURI(tokenId);
       expect(uriFromSC3).to.equal("");
+    });
+
+    it("#setTokenURI() should revert if called by anyone other than ADMIN_ROLE", async () => {
+      // mint a token
+      const tokenId = BigNumber.from("333355");
+      const tokenURI = "https://www.wilderworld.io/1a3c2f5";
+      const newTokenURI = "https://www.zNS.domains/33fa57cd8";
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
+
+      await expect(
+        zns.domainToken.connect(caller).setTokenURI(tokenId, newTokenURI)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
+    });
+
+    it("#setBaseURI() should revert when called by anyone other than ADMIN_ROLE", async () => {
+      const baseURI = "https://www.zNS.domains/";
+
+      await expect(
+        zns.domainToken.connect(caller).setBaseURI(baseURI)
+      ).to.be.revertedWith(
+        getAccessRevertMsg(caller.address, ADMIN_ROLE)
+      );
     });
   });
 

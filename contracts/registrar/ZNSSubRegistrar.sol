@@ -9,11 +9,31 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
+/**
+ * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
+ * @dev This contract has the entry point for registering subdomains, but calls
+ * the ZNSRootRegistrar back to finalize registration. Common logic for domains
+ * of any level is in the `ZNSRootRegistrar.coreRegister()`.
+*/
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+
+    /**
+     * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
+    */
     IZNSRootRegistrar public rootRegistrar;
 
+    /**
+     * @notice Mapping of domainHash to distribution config set by the domain owner/operator.
+     * These configs are used to determine how subdomains are distributed for every parent.
+     * @dev Note that the rules outlined in the DistributionConfig are only applied to direct children!
+    */
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
+    /**
+     * @notice Mapping of domainHash to mintlist set by the domain owner/operator.
+     * These configs are used to determine who can register subdomains for every parent
+     * in the case where parent's DistributionConfig.AccessType is set to AccessType.MINTLIST.
+    */
     mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
@@ -35,6 +55,18 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         setRootRegistrar(_rootRegistrar);
     }
 
+    /**
+     * @notice Entry point to register a subdomain under a parent domain specified.
+     * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
+     * checks if the sender is allowed to register, check if subdomain is available,
+     * acquires the price and other data needed to finalize the registration
+     * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
+     * @param parentHash The hash of the parent domain to register the subdomain under
+     * @param label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
+     * @param domainAddress (optional) The address to which the subdomain will be resolved to
+     * @param tokenURI (required) The tokenURI for the subdomain to be registered
+     * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
+    */
     function registerSubdomain(
         bytes32 parentHash,
         string calldata label,
@@ -42,13 +74,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
-        // TODO sub: make the order of ops better
+        bytes32 domainHash = hashWithParent(parentHash, label);
+        require(
+            !registry.exists(domainHash),
+            "ZNSSubRegistrar: Subdomain already exists"
+        );
+
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            // TODO sub: consider getting rid of large revert messages
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
@@ -61,7 +97,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: parentHash,
-            domainHash: hashWithParent(parentHash, label),
+            domainHash: domainHash,
             label: label,
             registrant: msg.sender,
             price: 0,
@@ -70,11 +106,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
-
-        require(
-            !registry.exists(coreRegisterArgs.domainHash),
-            "ZNSSubRegistrar: Subdomain already exists"
-        );
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
@@ -94,26 +125,18 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
+        // ! note that the config is set ONLY if ALL values in it are set, specifically,
+        // without pricerContract being specified, the config will NOT be set
         if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
-        return coreRegisterArgs.domainHash;
+        return domainHash;
     }
 
-    function revokeSubdomain(bytes32 subdomainHash) external override {
-        require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
-            "ZNSSubRegistrar: Not the owner of both Name and Token"
-        );
-
-        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
-
-        // TODO sub: should we clear the data from all other contracts (configs, etc.) ??
-        //  can we even do this?
-    }
-
+    /**
+     * @notice Helper function to hash a child label with a parent domain hash.
+    */
     function hashWithParent(
         bytes32 parentHash,
         string calldata label
@@ -126,6 +149,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
     }
 
+    /**
+     * @notice Setter for `distrConfigs[domainHash]`.
+     * Only domain owner/operator or ZNSRootRegistrar can call this function.
+     * @dev This config can be changed by the domain owner/operator at any time or be set
+     * after registration if the config was not provided during the registration.
+     * Fires `DistributionConfigSet` event.
+     * @param domainHash The domain hash to set the distribution config for
+     * @param config The new distribution config to set (for config fields see `IDistributionConfig.sol`)
+    */
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
@@ -145,10 +177,19 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
     }
 
+    /**
+     * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `pricerContract` field of the struct.
+     * Made to be able to set the pricer contract for a domain without setting the whole config.
+     * Only domain owner/operator can call this function.
+     * Fires `PricerContractSet` event.
+     * @param domainHash The domain hash to set the pricer contract for
+     * @param pricerContract The new pricer contract to set
+    */
     function setPricerContractForDomain(
         bytes32 domainHash,
-        // TODO audit: is this a problem that we expect the simplest interface
-        //  but can set any of the derived ones ??
+        // TODO audit question: is this a problem that we expect the simplest interface
+        //  but are able set any of the derived ones ??
+        //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
         require(
@@ -166,6 +207,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit PricerContractSet(domainHash, address(pricerContract));
     }
 
+    /**
+     * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `paymentType` field of the struct.
+     * Made to be able to set the payment type for a domain without setting the whole config.
+     * Only domain owner/operator can call this function.
+     * Fires `PaymentTypeSet` event.
+     * @param domainHash The domain hash to set the payment type for
+     * @param paymentType The new payment type to set
+    */
     function setPaymentTypeForDomain(
         bytes32 domainHash,
         PaymentType paymentType
@@ -180,14 +229,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit PaymentTypeSet(domainHash, paymentType);
     }
 
-    function _setAccessTypeForDomain(
-        bytes32 domainHash,
-        AccessType accessType
-    ) internal {
-        distrConfigs[domainHash].accessType = accessType;
-        emit AccessTypeSet(domainHash, accessType);
-    }
-
+    /**
+     * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `accessType` field of the struct.
+     * Made to be able to set the access type for a domain without setting the whole config.
+     * Only domain owner/operator or ZNSRootRegistrar can call this function.
+     * Fires `AccessTypeSet` event.
+     * @param domainHash The domain hash to set the access type for
+     * @param accessType The new access type to set
+    */
     function setAccessTypeForDomain(
         bytes32 domainHash,
         AccessType accessType
@@ -195,7 +244,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    function setMintlistForDomain(
+    /**
+     * @notice Setter for `mintlist[domainHash][candidate]`. Only domain owner/operator can call this function.
+     * Adds or removes candidates from the mintlist for a domain. Should only be used when the domain's owner
+     * wants to limit subdomain registration to a specific set of addresses.
+     * Can be used to add/remove multiple candidates at once. Can only be called by the domain owner/operator.
+     * Fires `MintlistUpdated` event.
+     * @param domainHash The domain hash to set the mintlist for
+     * @param candidates The array of candidates to add/remove
+     * @param allowed The array of booleans indicating whether to add or remove the candidate
+    */
+    function updateMintlistForDomain(
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed
@@ -212,15 +271,36 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit MintlistUpdated(domainHash, candidates, allowed);
     }
 
+    /**
+     * @notice Sets the registry address in state.
+     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+    */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
         _setRegistry(registry_);
     }
 
+    /**
+     * @notice Setter for `rootRegistrar`. Only admin can call this function.
+     * Fires `RootRegistrarSet` event.
+     * @param registrar_ The new address of the ZNSRootRegistrar contract
+    */
     function setRootRegistrar(address registrar_) public override onlyAdmin {
         require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    /**
+     * @dev Internal function used by this contract to set the access type for a subdomain
+     * during revocation process.
+    */
+    function _setAccessTypeForDomain(
+        bytes32 domainHash,
+        AccessType accessType
+    ) internal {
+        distrConfigs[domainHash].accessType = accessType;
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**

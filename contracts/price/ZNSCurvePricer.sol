@@ -11,6 +11,9 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
+ * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
+ * It then decreases in price, using the calculated price function below, until it reaches `minPrice` 
+ * at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
     using StringUtils for string;
@@ -21,22 +24,27 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
-    mapping(bytes32 domainHash => DomainPriceConfig config) public priceConfigs;
+    /**
+     * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
+     * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
+    */
+    mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
-     * Only ADMIN can call this function.
-     * @dev > Note the for DomainPriceConfig we set each value individually and calling
+     * Only Owner of the 0x0 hash (Zero owned address) can call this function.
+     * @dev > Note the for PriceConfig we set each value individually and calling
      * 2 important functions that validate all of the config's values against the formula:
      * - `setPrecisionMultiplier()` to validate precision multiplier
      * - `_validateConfig()` to validate the whole config in order to avoid price spikes
      * @param accessController_ the address of the ZNSAccessController contract.
-     * @param zeroPriceConfig_ a number of variables that participate in the price calculation for Zero.
+     * @param registry_ the address of the ZNSRegistry contract.
+     * @param zeroPriceConfig_ a number of variables that participate in the price calculation for subdomains.
      */
     function initialize(
         address accessController_,
         address registry_,
-        DomainPriceConfig calldata zeroPriceConfig_
+        CurvePriceConfig calldata zeroPriceConfig_
     ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
@@ -46,7 +54,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Get the price of a given domain name
-     * @param label The name of the domain to check
+     * @param parentHash The hash of the parent domain under which price is determined
+     * @param label The label of the subdomain candidate to get the price for before/during registration
      */
     function getPrice(
         bytes32 parentHash,
@@ -60,14 +69,12 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Get the protocol fee amount in `paymentToken` of Zero for a specific domain price
-     * as `domainPrice * rootDomainPriceConfig.feePercentage / PERCENTAGE_BASIS`.
-     * @param domainPrice The price of the domain
-     */
-    function getProtocolFee(uint256 domainPrice) external view override returns (uint256) {
-        return getFeeForPrice(0x0, domainPrice);
-    }
-
+     * @notice Part of the IZNSPricer interface - one of the functions required
+     * for any pricing contracts used with ZNS. It returns fee for a given price
+     * based on the value set by the owner of the parent domain.
+     * @param parentHash The hash of the parent domain under which fee is determined
+     * @param price The price to get the fee for
+    */
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
@@ -75,6 +82,13 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
     }
 
+    /**
+     * @notice Part of the IZNSPricer interface - one of the functions required
+     * for any pricing contracts used with ZNS. Returns both price and fee for a given label
+     * under the given parent.
+     * @param parentHash The hash of the parent domain under which price and fee are determined
+     * @param label The label of the subdomain candidate to get the price and fee for before/during registration
+    */
     function getPriceAndFee(
         bytes32 parentHash,
         string calldata label
@@ -85,15 +99,16 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Setter for `priceConfigs[domainHash]`. Only ADMIN can call this function.
+     * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
      * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
      * fires `PriceConfigSet` event.
      * Only ADMIN can call this function.
+     * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
     function setPriceConfig(
         bytes32 domainHash,
-        DomainPriceConfig calldata priceConfig
+        CurvePriceConfig calldata priceConfig
     ) public override {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
@@ -118,9 +133,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Sets the max price for domains. Validates the config with the new price.
      * Fires `MaxPriceSet` event.
-     * Only ADMIN can call this function.
+     * Only domain owner can call this function.
      * > `maxPrice` can be set to 0 along with `baseLength` or `minPrice` to make all domains free!
-     * @param maxPrice The maximum price to set in $ZERO
+     * @dev We are checking here for possible price spike at `maxLength` if the `maxPrice` values is NOT 0.
+     * In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
+     * @param maxPrice The maximum price to set
      */
     function setMaxPrice(
         bytes32 domainHash,
@@ -136,7 +153,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Sets the minimum price for domains. Validates the config with the new price.
      * Fires `MinPriceSet` event.
-     * Only ADMIN can call this function.
+     * Only domain owner/operator can call this function.
+     * @param domainHash The domain hash to set the `minPrice` for
      * @param minPrice The minimum price to set in $ZERO
      */
     function setMinPrice(
@@ -154,11 +172,12 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Set the value of the domain name length boundary where the `maxPrice` applies
      * e.g. A value of '5' means all domains <= 5 in length cost the `maxPrice` price
      * Validates the config with the new length. Fires `BaseLengthSet` event.
-     * Only ADMIN can call this function.
+     * Only domain owner/operator can call this function.
      * > `baseLength` can be set to 0 to make all domains cost `maxPrice`!
      * > This indicates to the system that we are
      * > currently in a special phase where we define an exact price for all domains
      * > e.g. promotions or sales
+     * @param domainHash The domain hash to set the `baseLength` for
      * @param length Boundary to set
      */
     function setBaseLength(
@@ -178,8 +197,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * and the pricing formula will not apply to them.
      * Validates the config with the new length.
      * Fires `MaxLengthSet` event.
-     * Only ADMIN can call this function.
+     * Only domain owner/operator can call this function.
      * > `maxLength` can be set to 0 to make all domains cost `minPrice`!
+     * @param domainHash The domain hash to set the `maxLength` for
      * @param length The maximum length to set
      */
     function setMaxLength(
@@ -200,7 +220,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * e.g. if we use a token with 18 decimals, and want precision of 2,
      * our precision multiplier will be equal to `10^(18 - 2) = 10^16`
      * Fires `PrecisionMultiplierSet` event.
-     * Only ADMIN can call this function.
+     * Only domain owner/operator can call this function.
      * > Multiplier should be less or equal to 10^18 and greater than 0!
      * @param multiplier The multiplier to set
      */
@@ -217,9 +237,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Sets the fee percentage for domain registration.
-     * @dev Fee percentage is set according to the basis of 10000, outlined in ``PERCENTAGE_BASIS``.
-     * Fires ``FeePercentageSet`` event.
-     * Only ADMIN can call this function.
+     * @dev Fee percentage is set according to the basis of 10000, outlined in `PERCENTAGE_BASIS`.
+     * Fires `FeePercentageSet` event.
+     * Only domain owner/operator can call this function.
+     * @param domainHash The domain hash to set the fee percentage for
      * @param feePercentage The fee percentage to set
      */
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
@@ -230,6 +251,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
+    /**
+     * @notice Sets the registry address in state.
+     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+    */
     function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
         _setRegistry(registry_);
     }
@@ -253,7 +278,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         uint256 length
     ) internal view returns (uint256) {
-        DomainPriceConfig memory config = priceConfigs[parentHash];
+        CurvePriceConfig memory config = priceConfigs[parentHash];
+
+        // We use `maxPrice` as 0 to indicate free domains
+        if (config.maxPrice == 0) return 0;
 
         // We use maxPrice == 0 to signal all domains are free
         if (config.maxPrice == 0) return 0;
@@ -273,12 +301,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Internal function called every time we set props of `priceConfigs[domainHash]`
      * to make sure that values being set can not disrupt the price curve or zero out prices
-     * for domains. If this validation fails, function will revert.
+     * for domains. If this validation fails, the parent function will revert.
      * @dev We are checking here for possible price spike at `maxLength`
      * which can occur if some of the config values are not properly chosen and set.
      */
-    // TODO sub fee: figure out these this logic! it doesn't work when we try and set the price to 0 !!!
-    // TODO sub fee: currently it fails if we set maxPrice + baseLength as 0s
     function _validateConfig(bytes32 domainHash) internal view {
         uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
         require(

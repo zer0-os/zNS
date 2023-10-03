@@ -26,24 +26,6 @@ Emit when ownership of a domain is modified
 | newAddress | address | The new domain owner |
 
 
-### RegistrySet
-
-```solidity
-event RegistrySet(address registry)
-```
-
-
-
-
-Emit when the registry is set
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| registry | address | The address of the registry |
-
-
 ### supportsInterface
 
 ```solidity
@@ -116,30 +98,6 @@ function getInterfaceId() external pure returns (bytes4)
 
 ```solidity
 function setRegistry(address _registry) external
-```
-
-
-
-
-
-
-
-### setAccessController
-
-```solidity
-function setAccessController(address accessController) external
-```
-
-
-
-
-
-
-
-### getAccessController
-
-```solidity
-function getAccessController() external view returns (address)
 ```
 
 

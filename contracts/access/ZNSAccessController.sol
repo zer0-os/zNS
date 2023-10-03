@@ -36,6 +36,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     }
 
     // ** Access Validators **
+    // "check...()" functions revert with a specific message
     function checkGovernor(address account) external view override {
         _checkRole(GOVERNOR_ROLE, account);
     }
@@ -52,6 +53,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _checkRole(REGISTRAR_ROLE, account);
     }
 
+    // "is...()" functions return a boolean
     function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
     }
@@ -60,12 +62,21 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         return hasRole(REGISTRAR_ROLE, account);
     }
 
+    function isGovernor(address account) external view override returns (bool) {
+        return hasRole(GOVERNOR_ROLE, account);
+    }
+
+    function isExecutor(address account) external view override returns (bool) {
+        return hasRole(EXECUTOR_ROLE, account);
+    }
+
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {
         _setRoleAdmin(role, adminRole);
     }
 
     function _grantRoleToMany(bytes32 role, address[] memory addresses) internal {
-        for (uint256 i = 0; i < addresses.length; i++) {
+        uint256 length = addresses.length;
+        for (uint256 i = 0; i < length; ++i) {
             _grantRole(role, addresses[i]);
         }
     }
