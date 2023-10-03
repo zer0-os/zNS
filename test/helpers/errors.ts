@@ -10,6 +10,7 @@ export const MULTIPLIER_BELOW_MIN_ERR = "ZNSCurvePricer: Multiplier must be >= b
 export const NO_ZERO_MULTIPLIER_ERR = "ZNSCurvePricer: Multiplier cannot be 0";
 export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSCurvePricer: Multiplier out of range";
 export const CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSCurvePricer: precisionMultiplier cannot be 0";
+export const CURVE_PRICE_CONFIG_ERR = "ZNSCurvePricer: incorrect value set causes the price spike at maxLength.";
 
 // ZNSRegistry
 export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
@@ -30,4 +31,3 @@ export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ZNSSubRegistrar: Parent domain
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";
-export const CURVE_PRICE_CONFIG_ERR = "ZNSCurvePricer: incorrect value set causes the price spike at maxLength.";
