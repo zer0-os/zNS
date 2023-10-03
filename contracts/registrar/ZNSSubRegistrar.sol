@@ -108,28 +108,26 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
 
-        rootRegistrar.coreRegister(coreRegisterArgs);
-        
-        if (isOwnerOrOperator) {
-            if (address(distrConfig.pricerContract) != address(0)) {
-                setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+        if (!isOwnerOrOperator) {
+            if (coreRegisterArgs.isStakePayment) {
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                    .getPriceAndFee(
+                        parentHash,
+                        label
+                    );
+            } else {
+                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                    .getPrice(
+                        parentHash,
+                        label
+                    );
             }
-
-            return domainHash;
         }
 
-        if (coreRegisterArgs.isStakePayment) {
-            (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-                .getPriceAndFee(
-                    parentHash,
-                    label
-                );
-        } else {
-            coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
-                .getPrice(
-                    parentHash,
-                    label
-                );
+        rootRegistrar.coreRegister(coreRegisterArgs);
+
+        if (address(distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
         return domainHash;
