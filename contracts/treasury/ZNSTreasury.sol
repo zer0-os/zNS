@@ -100,7 +100,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     ) external override onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
-        // Transfer stake amount and fee to this address
+        // Transfer stake amount and fees to this address
         parentConfig.token.safeTransferFrom(
             depositor,
             address(this),
@@ -113,8 +113,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
             protocolFee
         );
 
-        // transfer parent fee to the parent owner if it's not 0
-        if (stakeFee != 0) {
+        // transfer stake fee to the parent beneficiary if it's > 0
+        if (stakeFee > 0) {
             parentConfig.token.safeTransfer(
                 parentConfig.beneficiary,
                 stakeFee
@@ -210,8 +210,6 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
     }
 
-    // TODO sub: can we refactor this as in other contracts,
-    //  so that we don't call 2 functions for 1 config ??
     /**
      * @notice Setter function for the `paymentConfig` chosen by domain owner.
      * Only domain owner/operator can call this.

@@ -231,20 +231,6 @@ describe("ZNSRootRegistrar", () => {
       );
     });
 
-    it("#coreRevoke() should revert if called by address without REGISTRAR_ROLE", async () => {
-      const isRegistrar = await zns.accessController.hasRole(REGISTRAR_ROLE, randomUser.address);
-      expect(isRegistrar).to.be.false;
-
-      await expect(
-        zns.rootRegistrar.connect(randomUser).coreRevoke(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
-      );
-    });
-
     it("#isOwnerOf() returns correct bools", async () => {
       const topLevelTx = await defaultRootRegistration({
         user,

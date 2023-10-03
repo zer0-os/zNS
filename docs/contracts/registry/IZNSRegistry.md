@@ -153,10 +153,22 @@ Checks if provided address is an owner or an operator of the provided domain
 | candidate | address | The address for which we are checking access |
 
 
-### setOwnerOperator
+### isOperatorFor
 
 ```solidity
-function setOwnerOperator(address operator, bool allowed) external
+function isOperatorFor(address operator, address owner) external view returns (bool)
+```
+
+
+
+
+
+
+
+### setOwnersOperator
+
+```solidity
+function setOwnersOperator(address operator, bool allowed) external
 ```
 
 
@@ -312,35 +324,6 @@ Delete a domain's record
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The hash of the domain name |
-
-
-### setAccessController
-
-```solidity
-function setAccessController(address accessController) external
-```
-
-
-Set the access controller contract
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| accessController | address | The new access controller |
-
-
-### getAccessController
-
-```solidity
-function getAccessController() external view returns (address)
-```
-
-
-Get the access controller contract
-
-
 
 
 

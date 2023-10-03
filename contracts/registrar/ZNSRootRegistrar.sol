@@ -158,40 +158,9 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
-        // TODO audit: Do we need to check this on the contract?! This costs extra gas and only checks
-        //  a couple of specific cases. Technically, someone is still able to directly register
-        //  an incorrect name. Getting to this hash from any other layer should be problematic,
-        //  so even if they did register the name on the contract, they should not be able to actually
-        //  use it since they can't arrive at their own hash (or can they?).
-        //  How much of a problem would it be if we don't check this?
-        //  Should we keep this, does it make sense to keep this, should we add more validations ???!
-        require(
-            bytes(args.label).length != 0 && bytes(args.label)[0] != 0x20,
-            "ZNSRootRegistrar: Invalid domain name"
-        );
-
         // payment part of the logic
         if (args.price > 0) {
-            uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
-
-            if (args.isStakePayment) { // for all root domains or subdomains with stake payment
-                treasury.stakeForDomain(
-                    args.parentHash,
-                    args.domainHash,
-                    args.registrant,
-                    args.price,
-                    args.stakeFee,
-                    protocolFee
-                );
-            } else { // direct payment for subdomains
-                treasury.processDirectPayment(
-                    args.parentHash,
-                    args.domainHash,
-                    args.registrant,
-                    args.price,
-                    protocolFee
-                );
-            }
+            _processPayment(args);
         }
 
         // Get tokenId for the new token to be minted for the new domain
@@ -281,18 +250,7 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice External function that finalizes last steps of the Revoke flow.
-     * Called ONLY by ZNSSubRegistrar.
-     * @param domainHash Hash of the domain to revoke
-     * @param owner Owner of the domain to revoke
-    */
-    function coreRevoke(bytes32 domainHash, address owner) external override onlyRegistrar {
-        _coreRevoke(domainHash, owner);
-    }
-
-    /**
-     * @dev Internal part of the `coreRevoke()`. Called by this contract to finalize the Revoke flow of Root domains
-     * and by the external `coreRevoke()` function as a part of the Revoke flow of subdomains.
+     * @dev Internal part of the `revokeDomain()`. Called by this contract to finalize the Revoke flow of all domains.
      * It calls `ZNSDomainToken` to burn the token, deletes the domain data from the `ZNSRegistry` and
      * calls `ZNSTreasury` to unstake and withdraw funds user staked for the domain. Also emits
      * a `DomainRevoked` event.
@@ -435,22 +393,6 @@ contract ZNSRootRegistrar is
         addressResolver = IZNSAddressResolver(addressResolver_);
 
         emit AddressResolverSet(addressResolver_);
-    }
-
-    // TODO audit question: Do we need to check this on the contract?! This costs extra gas and only checks
-    //  a couple of specific cases. Technically, someone is still able to directly register
-    //  an incorrect name (capitalized or having whitespaces in the middle, etc.).
-    //  Getting to this hash from any other layer should be problematic,
-    //  so even if they did register the name on the contract, they should not be able to actually
-    //  use it since they can't arrive at their own hash through any app that supports our rules for
-    //  string normalization and hashing (or can they?).
-    //  How much of a problem would it be if we don't check this?
-    function _isValidString(string memory str) internal pure returns (bool) {
-        bytes memory strBytes = bytes(str);
-        bool isValid = strBytes.length != 0;
-        isValid = isValid && (strBytes[0] != 0x20); // first char is not 0x20
-
-        return isValid;
     }
 
     /**

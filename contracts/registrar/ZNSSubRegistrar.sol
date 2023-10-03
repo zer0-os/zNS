@@ -85,7 +85,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            // TODO sub: consider getting rid of large revert messages
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
@@ -126,28 +125,13 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
+        // ! note that the config is set ONLY if ALL values in it are set, specifically,
+        // without pricerContract being specified, the config will NOT be set
         if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
         return domainHash;
-    }
-
-    /**
-     * @notice Entry point to revoke a subdomain of zNS.
-     * @dev This function is finalized in the `ZNSRootRegistrar.coreRevoke()`.
-     * Here it checks if the sender is the owner of both the Name and the Token,
-     * to be able to revoke, locks distribution of subdomains and calls the `ZNSRootRegistrar.coreRevoke()`.
-     * @param subdomainHash The hash of the subdomain to be revoked
-    */
-    function revokeSubdomain(bytes32 subdomainHash) external override {
-        require(
-            rootRegistrar.isOwnerOf(subdomainHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH),
-            "ZNSSubRegistrar: Not the owner of both Name and Token"
-        );
-
-        _setAccessTypeForDomain(subdomainHash, AccessType.LOCKED);
-        rootRegistrar.coreRevoke(subdomainHash, msg.sender);
     }
 
     /**
@@ -166,7 +150,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @notice Setter for `distrConfigs[domainHash]`. 
+     * @notice Setter for `distrConfigs[domainHash]`.
      * Only domain owner/operator or ZNSRootRegistrar can call this function.
      * @dev This config can be changed by the domain owner/operator at any time or be set
      * after registration if the config was not provided during the registration.
@@ -204,7 +188,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setPricerContractForDomain(
         bytes32 domainHash,
         // TODO audit question: is this a problem that we expect the simplest interface
-        //  but can set any of the derived ones ??
+        //  but are able set any of the derived ones ??
         //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
@@ -280,8 +264,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             "ZNSSubRegistrar: Not authorized"
         );
 
-        uint256 length = candidates.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < candidates.length; i++) {
             mintlist[domainHash][candidates[i]] = allowed[i];
         }
 

@@ -9,19 +9,6 @@ will have a corresponding record in this Resolver.
 
 
 
-### registry
-
-```solidity
-contract IZNSRegistry registry
-```
-
-
-Address of the `ZNSRegistry` contract that holds all crucial data
-for every domain in the system
-
-
-
-
 ### domainAddresses
 
 ```solidity
@@ -38,7 +25,7 @@ to Ethereum wallets or contracts registered in ZNS.
 ### initialize
 
 ```solidity
-function initialize(address accessController_, address registry_) public
+function initialize(address accessController_, address registry_) external
 ```
 
 
@@ -83,7 +70,7 @@ function setAddress(bytes32 domainHash, address newAddress) external
 
 
 Sets the address for a domain name hash. This function can only
-be called by the owner, operator of the domain OR by the `ZNSRegistrar`
+be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
 as a part of the Register flow.
 Emits an `AddressSet` event.
 
@@ -145,38 +132,6 @@ Emits a `RegistrySet` event.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _registry | address | The address of the `ZNSRegistry` contract |
-
-
-### setAccessController
-
-```solidity
-function setAccessController(address accessController) external
-```
-
-
-
-
-Sets the address of the `ZNSAccessController` contract.
-Can only be called by the ADMIN. Emits an `AccessControllerSet` event.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| accessController | address | The address of the `ZNSAccessController` contract |
-
-
-### getAccessController
-
-```solidity
-function getAccessController() external view returns (address)
-```
-
-
-
-
-Returns the address of the `ZNSAccessController` contract saved in state.
-
 
 
 ### _authorizeUpgrade
