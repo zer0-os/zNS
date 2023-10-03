@@ -28,11 +28,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     mapping(bytes32 domainHash => PaymentConfig config) public override paymentConfigs;
 
     /**
-     * @notice The mapping that stores `Stake` struct mapped by domainHash. It stores the staking data for each domain in zNS.
-     * Note that there is no owner address to which the stake is tied to. Instead, the owner data from `ZNSRegistry`
-     * is used to identify a user who owns the stake. So the staking data is tied to the owner of the Name.
-     * This should be taken into account, since any transfer of the Token to another address,
-     * and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
+     * @notice The mapping that stores `Stake` struct mapped by domainHash. It stores the staking data for 
+     * each domain in zNS. Note that there is no owner address to which the stake is tied to. Instead, the
+     * owner data from `ZNSRegistry` is used to identify a user who owns the stake. So the staking data is
+     * tied to the owner of the Name. This should be taken into account, since any transfer of the Token to
+     * another address, and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
      * > Stake is owned by the owner of the Name in `ZNSRegistry` which the owner of the Token can reclaim!
      */
     mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
@@ -168,8 +168,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * @notice An alternative to `stakeForDomain()` for cases when a parent domain is using PaymentType.DIRECT.
      * @dev Note that `stakeFee` transfers are NOT present here, since a fee on top of the price is ONLY supported
      * for STAKE payment type. This function is called by `ZNSRootRegistrar.sol` when a user wants to register a domain.
-     * This function uses a different approach than `stakeForDomain()` as it performs 2 transfers from the user's wallet.
-     * Is uses `paymentConfigs[parentHash]` to get the token and beneficiary for the parent domain.
+     * This function uses a different approach than `stakeForDomain()` as it performs 2 transfers from the user's 
+     * wallet. Is uses `paymentConfigs[parentHash]` to get the token and beneficiary for the parent domain.
      * Can be called ONLY by the REGISTRAR_ROLE. Fires a `DirectPaymentProcessed` event.
      * @param parentHash The hash of the parent domain.
      * @param domainHash The hash of the domain for which the stake is being deposited.
@@ -219,9 +219,9 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
-    ) external override {
-        setBeneficiary(domainHash, paymentConfig.beneficiary);
-        setPaymentToken(domainHash, address(paymentConfig.token));
+    ) external override onlyOwnerOrOperator(domainHash) {
+        _setBeneficiary(domainHash, paymentConfig.beneficiary);
+        _setPaymentToken(domainHash, address(paymentConfig.token));
     }
 
     /**
@@ -235,10 +235,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address beneficiary
     ) public override onlyOwnerOrOperator(domainHash) {
-        require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
-
-        paymentConfigs[domainHash].beneficiary = beneficiary;
-        emit BeneficiarySet(domainHash, beneficiary);
+        _setBeneficiary(domainHash, beneficiary);
     }
 
     /**
@@ -251,10 +248,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address paymentToken
     ) public override onlyOwnerOrOperator(domainHash) {
-        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
-
-        paymentConfigs[domainHash].token = IERC20(paymentToken);
-        emit PaymentTokenSet(domainHash, paymentToken);
+        _setPaymentToken(domainHash, paymentToken);
     }
 
     /**
@@ -265,6 +259,20 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         address registry_
     ) external override(ARegistryWired, IZNSTreasury) onlyAdmin {
         _setRegistry(registry_);
+    }
+
+    function _setBeneficiary(bytes32 domainHash, address beneficiary) internal {
+        require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
+
+        paymentConfigs[domainHash].beneficiary = beneficiary;
+        emit BeneficiarySet(domainHash, beneficiary);
+    }
+
+    function _setPaymentToken(bytes32 domainHash, address paymentToken) internal {
+        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
+
+        paymentConfigs[domainHash].token = IERC20(paymentToken);
+        emit PaymentTokenSet(domainHash, paymentToken);
     }
 
     /**

@@ -75,7 +75,8 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     }
 
     function _grantRoleToMany(bytes32 role, address[] memory addresses) internal {
-        for (uint256 i = 0; i < addresses.length; i++) {
+        uint256 length = addresses.length;
+        for (uint256 i = 0; i < length; ++i) {
             _grantRole(role, addresses[i]);
         }
     }

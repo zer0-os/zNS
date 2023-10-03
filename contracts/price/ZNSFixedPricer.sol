@@ -32,9 +32,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param _price The new price value set
     */
     function setPrice(bytes32 domainHash, uint256 _price) public override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].price = _price;
-
-        emit PriceSet(domainHash, _price);
+        _setPrice(domainHash, _price);
     }
 
     /**
@@ -48,7 +46,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Sets the feePercentage for a domain. Only callable by domain owner/operator. Emits a `FeePercentageSet` event.
+     * @notice Sets the feePercentage for a domain. Only callable by domain owner/operator. 
+     * Emits a `FeePercentageSet` event.
      * @dev `feePercentage` is set as a part of the `PERCENTAGE_BASIS` of 10,000 where 1% = 100
      * @param domainHash The hash of the domain who sets the feePercentage for subdomains
      * @param feePercentage The new feePercentage value set
@@ -57,8 +56,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 feePercentage
     ) public override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].feePercentage = feePercentage;
-        emit FeePercentageSet(domainHash, feePercentage);
+        _setFeePercentage(domainHash, feePercentage);
     }
 
     /**
@@ -114,6 +112,25 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         _setRegistry(registry_);
     }
 
+    /**
+     * @notice Internal function for set price
+     * @param domainHash The hash of the domain
+     * @param price The new price
+     */
+    function _setPrice(bytes32 domainHash, uint256 price) internal {
+        priceConfigs[domainHash].price = price;
+        emit PriceSet(domainHash, price);
+    }
+
+    /**
+     * @notice Internal function for setFeePercentage
+     * @param domainHash The hash of the domain
+     * @param feePercentage The new feePercentage
+     */
+    function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
+        priceConfigs[domainHash].feePercentage = feePercentage;
+        emit FeePercentageSet(domainHash, feePercentage);
+    }
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.

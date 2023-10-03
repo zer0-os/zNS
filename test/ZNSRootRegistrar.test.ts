@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { IZNSContracts } from "./helpers/types";
+import { IDistributionConfig, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -27,7 +27,7 @@ import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
+// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -63,6 +63,57 @@ describe("ZNSRootRegistrar", () => {
     await zns.zeroToken.mint(user.address, userBalanceInitial);
   });
 
+  it("Gas tests", async () => {
+    const tokenURI = "https://example.com/817c64af";
+    const distrConfig : IDistributionConfig = {
+      pricerContract: zns.curvePricer.address,
+      paymentType: 1,
+      accessType: 1,
+    };
+
+    const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
+      defaultDomain,
+      deployer.address,
+      tokenURI,
+      distrConfig
+    );
+
+    const receipt = await tx.wait();
+
+    const domainHash = await getDomainHashFromReceipt(receipt);
+
+    // Registering as deployer (owner of parent) and user is different gas values
+    await zns.subRegistrar.connect(deployer).registerSubdomain(
+      domainHash,
+      "subdomain",
+      deployer.address,
+      tokenURI,
+      distrConfigEmpty
+    );
+
+    const candidates = [
+      deployer.address,
+      user.address,
+      governor.address,
+      admin.address,
+      randomUser.address,
+    ];
+
+    const allowed = [
+      true,
+      true,
+      true,
+      true,
+      true,
+    ];
+
+    await zns.subRegistrar.updateMintlistForDomain(
+      domainHash,
+      candidates,
+      allowed
+    );
+  });
+
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
     await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
     expect(await zns.registry.getDomainOwner(ethers.constants.HashZero)).to.equal(user.address);
@@ -95,7 +146,7 @@ describe("ZNSRootRegistrar", () => {
     );
 
     // Modify the curve pricer
-    const newPricerConfig : ICurvePriceConfig.CurvePriceConfigStruct = {
+    const newPricerConfig = {
       baseLength: BigNumber.from("6"),
       maxLength: BigNumber.from("35"),
       maxPrice: parseEther("150"),

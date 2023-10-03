@@ -29,7 +29,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
-     *
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
@@ -42,6 +41,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Revert if `msg.sender` is not the owner. Used for owner restricted functions.
+     * @param domainHash the hash of a domain's name
      */
     modifier onlyOwner(bytes32 domainHash) {
         require(

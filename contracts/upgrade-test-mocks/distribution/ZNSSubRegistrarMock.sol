@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+// solhint-disable
 import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 import { IZNSPricer } from "../../types/IZNSPricer.sol";

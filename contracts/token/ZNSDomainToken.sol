@@ -143,6 +143,11 @@ contract ZNSDomainToken is
         emit TokenRoyaltySet(tokenId, royaltyFraction);
     }
 
+    /**
+     * @notice To allow for user extension of the protocol we have to 
+     * enable checking acceptance of new interfaces to ensure they are supported
+     * @param interfaceId The interface ID
+     */
     function supportsInterface(bytes4 interfaceId)
     public
     view
@@ -152,6 +157,10 @@ contract ZNSDomainToken is
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @notice ERC721 `_burn` function
+     * @param tokenId The ID of the token to burn
+     */
     function _burn(uint256 tokenId)
     internal
     override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
@@ -159,6 +168,9 @@ contract ZNSDomainToken is
         super._burn(tokenId);
     }
 
+    /**
+     * @notice Return the baseURI
+     */
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }

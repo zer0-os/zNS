@@ -74,6 +74,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
+        bytes32 domainHash = hashWithParent(parentHash, label);
+        require(
+            !registry.exists(domainHash),
+            "ZNSSubRegistrar: Subdomain already exists"
+        );
+
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
@@ -91,7 +97,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: parentHash,
-            domainHash: hashWithParent(parentHash, label),
+            domainHash: domainHash,
             label: label,
             registrant: msg.sender,
             price: 0,
@@ -100,11 +106,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });
-
-        require(
-            !registry.exists(coreRegisterArgs.domainHash),
-            "ZNSSubRegistrar: Subdomain already exists"
-        );
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
@@ -130,7 +131,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
-        return coreRegisterArgs.domainHash;
+        return domainHash;
     }
 
     /**
@@ -149,7 +150,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @notice Setter for `distrConfigs[domainHash]`. Only domain owner/operator or ZNSRootRegistrar can call this function.
+     * @notice Setter for `distrConfigs[domainHash]`.
+     * Only domain owner/operator or ZNSRootRegistrar can call this function.
      * @dev This config can be changed by the domain owner/operator at any time or be set
      * after registration if the config was not provided during the registration.
      * Fires `DistributionConfigSet` event.
@@ -228,18 +230,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @dev Internal function used by this contract to set the access type for a subdomain
-     * during revocation process.
-    */
-    function _setAccessTypeForDomain(
-        bytes32 domainHash,
-        AccessType accessType
-    ) internal {
-        distrConfigs[domainHash].accessType = accessType;
-        emit AccessTypeSet(domainHash, accessType);
-    }
-
-    /**
      * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `accessType` field of the struct.
      * Made to be able to set the access type for a domain without setting the whole config.
      * Only domain owner/operator or ZNSRootRegistrar can call this function.
@@ -299,6 +289,18 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    /**
+     * @dev Internal function used by this contract to set the access type for a subdomain
+     * during revocation process.
+    */
+    function _setAccessTypeForDomain(
+        bytes32 domainHash,
+        AccessType accessType
+    ) internal {
+        distrConfigs[domainHash].accessType = accessType;
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
+// solhint-disable
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
 
 contract CustomDecimalTokenMock is ERC20 {
     uint8 private _decimals;
