@@ -5,15 +5,15 @@
 
 
 
-ZNS Business Logic Contract access to this module is outlined in `AccessControlled`.
+ZNS Business Logic Contract access to this module is outlined in `AAccessControlled.sol`.
 Uses a role-based access control scheme with levels:
 - GOVERNOR: The highest rank, assigns Admins, new roles and Role Admins
 - ADMIN: The main maintainer role, that gets access to all system functions (managed by Governor)
 - EXECUTOR: Can be here to future proof, if we need a new role (managed by Governor)
-- REGISTRAR: This role is here specifically for the ZNSRegistrar contract (managed by Admin)
+- REGISTRAR: This role is here specifically for the ZNSRootRegistrar.sol contract (managed by Admin)
 
 > This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
-and all modules will be updated to use the new address, since they all inherit from `AccessControlled`.
+and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.
 
 
 
@@ -93,6 +93,30 @@ function isAdmin(address account) external view returns (bool)
 
 ```solidity
 function isRegistrar(address account) external view returns (bool)
+```
+
+
+
+
+
+
+
+### isGovernor
+
+```solidity
+function isGovernor(address account) external view returns (bool)
+```
+
+
+
+
+
+
+
+### isExecutor
+
+```solidity
+function isExecutor(address account) external view returns (bool)
 ```
 
 

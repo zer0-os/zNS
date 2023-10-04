@@ -1,19 +1,20 @@
-import { ZNSPriceOracle } from "../../typechain";
 import { BigNumber } from "ethers";
+import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
+
 
 /**
  * Get the domain name price base on its length when given
  * an already deployed contract
  *
  * @param name Length of the domain name
- * @param contract The deployer ZNSPriceOracle contract
- * @param isRootDomain Flag if this is root or subdomain
+ * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const getPrice = async (
+export const calcCurvePrice = (
   name : string,
-  contract : ZNSPriceOracle
-) : Promise<BigNumber> => {
+  priceConfig = priceConfigDefault,
+) : BigNumber => {
   // Get price configuration for contract
   const {
     maxPrice,
@@ -21,7 +22,7 @@ export const getPrice = async (
     baseLength,
     maxLength,
     precisionMultiplier,
-  } = await contract.rootDomainPriceConfig();
+  } = priceConfig;
 
   if (baseLength.eq(0)) return maxPrice;
 
@@ -35,34 +36,50 @@ export const getPrice = async (
 
   const base = baseLength.mul(maxPrice).div(name.length);
 
-  // TODO ora: test that the calcs here and on contract are correct!!!
   return base.div(precisionMultiplier).mul(precisionMultiplier);
 };
+
+export const getStakingOrProtocolFee = (
+  forAmount : BigNumber,
+  feePercentage : BigNumber = priceConfigDefault.feePercentage,
+) => forAmount
+  .mul(feePercentage)
+  .div(PERCENTAGE_BASIS);
 
 /**
  * Get the domain name price, the registration fee and the total
  * based on name length when given an already deployed contract
  *
  * @param name Length of the domain name
- * @param contract The deployer ZNSPriceOracle contract
+ * @param priceConfig Object with all the pricing props
  * @returns The full expected price object for that domain
  */
-export const getPriceObject = async (
+export const getPriceObject = (
   name : string,
-  contract : ZNSPriceOracle,
-) : Promise<{
+  priceConfig : ICurvePriceConfig | IFixedPriceConfig = priceConfigDefault,
+) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
-  fee : BigNumber;
-}> => {
-  const expectedPrice = await getPrice(name, contract);
+  stakeFee : BigNumber;
+} => {
+  let expectedPrice;
+  if (Object.keys(priceConfig).length === 6) {
+    expectedPrice = calcCurvePrice(name, priceConfig as ICurvePriceConfig);
+  } else if (Object.keys(priceConfig).length === 2) {
+    ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
+  } else {
+    throw new Error("Invalid price config");
+  }
 
-  const fee = await contract.getRegistrationFee(expectedPrice);
-  const totalPrice = expectedPrice.add(fee);
+  const { feePercentage } = priceConfig;
+
+  const stakeFee = getStakingOrProtocolFee(expectedPrice, feePercentage);
+
+  const totalPrice = expectedPrice.add(stakeFee);
 
   return {
     totalPrice,
     expectedPrice,
-    fee,
+    stakeFee,
   };
 };

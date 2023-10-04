@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ZNSContract, ZNSContractMock, ZNSContractMockFactory, GetterFunction } from "./types";
+import { ZNSContract, ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
 import { BigNumber } from "ethers";
 
 
@@ -9,7 +9,7 @@ export const validateUpgrade = async (
   contract : ZNSContract,
   upgradeContract : ZNSContractMock,
   upgradeContractFactory : ZNSContractMockFactory,
-  getters : Array<GetterFunction>
+  getters : Array<GeneralContractGetter>
 ) => {
   const preVals = await Promise.all(getters);
 

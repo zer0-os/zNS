@@ -1,9 +1,9 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deployZNS } from "./helpers/deployZNS";
+import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
-import { ZNSContracts, DeployZNSParams } from "./helpers/types";
+import { IZNSContracts, DeployZNSParams } from "./helpers/types";
 import { ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
@@ -12,11 +12,10 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   getAccessRevertMsg,
-  validateUpgrade,
+  validateUpgrade, NOT_AUTHORIZED_REG_ERR,
 } from "./helpers";
 import {
   ONLY_NAME_OWNER_REG_ERR,
-  NOT_AUTHORIZED_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";
@@ -33,7 +32,7 @@ describe("ZNSRegistry", () => {
   let mockResolver : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let zns : ZNSContracts;
+  let zns : IZNSContracts;
   let wilderDomainHash : string;
 
   beforeEach(async () => {
@@ -68,6 +67,29 @@ describe("ZNSRegistry", () => {
     );
   });
 
+  // eslint-disable-next-line max-len
+  it("Should initialize correctly with deployer owning the 0x0 hash domain and should allow to change the ownership later", async () => {
+    // get the data of the 0x0 hash domain
+    const {
+      owner,
+      resolver,
+    } = await zns.registry.getDomainRecord(ethers.constants.HashZero);
+
+    // check that the owner is the deployer
+    expect(owner).to.eq(deployer.address);
+    expect(resolver).to.eq(ethers.constants.AddressZero);
+
+    // change the owner as deployer
+    await zns.registry.connect(deployer).updateDomainOwner(
+      ethers.constants.HashZero,
+      randomUser.address
+    );
+
+    // validate
+    const newOwner = await zns.registry.getDomainOwner(ethers.constants.HashZero);
+    expect(newOwner).to.eq(randomUser.address);
+  });
+
   it("Should set access controller correctly with ADMIN_ROLE", async () => {
     const currentAC = await zns.registry.getAccessController();
 
@@ -88,7 +110,7 @@ describe("ZNSRegistry", () => {
 
   describe("Operator functionality", () => {
     it("Returns false when an operator is not allowed by an owner", async () => {
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, false);
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, false);
 
       const allowed = await zns.registry.isOwnerOrOperator(
         wilderDomainHash,
@@ -98,7 +120,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Returns true when an operator is allowed by an owner", async () => {
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
 
       const allowed = await zns.registry.isOwnerOrOperator(
         wilderDomainHash,
@@ -114,7 +136,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Permits an allowed operator to update a domain record", async () => {
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
 
       const tx = zns.registry
         .connect(operator)
@@ -123,7 +145,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Does not permit a disallowed operator to update a domain record", async () => {
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, false);
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, false);
 
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
@@ -132,6 +154,16 @@ describe("ZNSRegistry", () => {
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
       await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+    });
+
+    it("#isOperatorFor() should return true for an operator", async () => {
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
+
+      const isOperator = await zns.registry.isOperatorFor(
+        operator.address,
+        deployer.address,
+      );
+      expect(isOperator).to.be.true;
     });
   });
 
@@ -376,7 +408,7 @@ describe("ZNSRegistry", () => {
 
   describe("Event emitters", () => {
     it("Emits an event when an operator is set", async () => {
-      const tx = zns.registry.connect(deployer).setOwnerOperator(randomUser.address, true);
+      const tx = zns.registry.connect(deployer).setOwnersOperator(randomUser.address, true);
 
       await expect(tx).to.emit(zns.registry, "OperatorPermissionSet").withArgs(
         deployer.address,
@@ -495,7 +527,7 @@ describe("ZNSRegistry", () => {
       const domainHash = hashSubdomainName("world");
 
       // Add an operator
-      await zns.registry.connect(deployer).setOwnerOperator(operator.address, true);
+      await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
 
       // Create a domain record
       await zns.registry.connect(mockRegistrar).createDomainRecord(

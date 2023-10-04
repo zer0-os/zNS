@@ -13,7 +13,7 @@
     "compile": "hardhat compile",
     "lint-sol": "yarn solhint ./contracts/**/*.sol",
     "lint-ts": "yarn eslint ./test/** ./src/**",
-    "lint": "yarn lint-sol & yarn lint-ts",
+    "lint": "yarn lint-sol & yarn lint-ts --no-error-on-unmatched-pattern",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",
     "typechain": "hardhat typechain",

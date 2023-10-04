@@ -91,4 +91,28 @@ function isRegistrar(address account) external view returns (bool)
 
 
 
+### isGovernor
+
+```solidity
+function isGovernor(address account) external view returns (bool)
+```
+
+
+
+
+
+
+
+### isExecutor
+
+```solidity
+function isExecutor(address account) external view returns (bool)
+```
+
+
+
+
+
+
+
 

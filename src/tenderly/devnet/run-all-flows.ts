@@ -3,8 +3,10 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import {
   deployZNS,
-  hashDomainLabel,
+  hashDomainLabel, PaymentType,
+  priceConfigDefault,
 } from "../../../test/helpers";
+import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
 
 const domainName = "wilder";
@@ -25,24 +27,68 @@ export const runAllFlows = async () => {
     isTenderlyRun: true,
   });
 
-  // get some funds for the user
-  await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-  await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("15"));
+  const rootPrice = BigNumber.from(ethers.utils.parseEther("200"));
+  const rootFeePercentage = BigNumber.from(250);
 
-  // Register Domain
-  await zns.registrar.connect(governor).registerDomain(
-    domainName,
-    user.address,
-  );
+  const fullRootConfig = {
+    distrConfig: {
+      pricerContract: zns.fixedPricer.address,
+      paymentType: PaymentType.STAKE,
+      accessType: 1,
+    },
+    paymentConfig: {
+      token: zns.zeroToken.address,
+      beneficiary: governor.address,
+    },
+    priceConfig: {
+      price: rootPrice,
+      feePercentage: rootFeePercentage,
+    },
+  };
+
+  // get some funds and approve funds for treasury
+  await zns.zeroToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+  const rootHash = await registrationWithSetup({
+    zns,
+    user: governor,
+    domainLabel: domainName,
+    fullConfig: fullRootConfig,
+  });
+
+  const subdomainLabel = "subdomain";
+  const fullSubConfig = {
+    distrConfig: {
+      pricerContract: zns.curvePricer.address,
+      paymentType: PaymentType.DIRECT,
+      accessType: 1,
+    },
+    paymentConfig: {
+      token: zns.zeroToken.address,
+      beneficiary: user.address,
+    },
+    priceConfig: priceConfigDefault,
+  };
+
+  await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("10000"));
+  await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+  await registrationWithSetup({
+    zns,
+    user,
+    parentHash: rootHash,
+    domainLabel: subdomainLabel,
+    fullConfig: fullSubConfig,
+  });
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
 
   // Reclaim Domain
-  await zns.registrar.connect(user).reclaimDomain(domainHash);
+  await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
   // Revoke Domain
-  await zns.registrar.connect(user).revokeDomain(domainHash);
+  await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 };
 
 

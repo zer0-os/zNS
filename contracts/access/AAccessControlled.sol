@@ -10,7 +10,7 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
  * @dev In order to connect an arbitrary module to `ZNSAccessController` and it's functionality,
  * this contract needs to be inherited by the module.
  */
-abstract contract AccessControlled {
+abstract contract AAccessControlled {
 
     /**
      * @notice Emitted when the access controller contract address is set.
@@ -32,16 +32,34 @@ abstract contract AccessControlled {
     }
 
     /**
-     * @notice Virtual function to make sure the getter is always implemented in children,
-     * otherwise we will not be able to read the AC address in children
+     * @notice Revert if `msg.sender` is not the `ZNSRootRegistrar.sol` contract
+     * or an address holding REGISTRAR_ROLE.
      */
-    function getAccessController() external view virtual returns (address);
+    modifier onlyRegistrar {
+        accessController.checkRegistrar(msg.sender);
+        _;
+    }
 
     /**
-     * @notice Virtual function to make sure the setter is always implemented in children,
-     * otherwise we will not be able to reset the AC address in children
+     * @notice Universal getter for `accessController` address on any contract that
+     * inherits from `AAccessControlled`.
      */
-    function setAccessController(address _accessController) external virtual;
+    function getAccessController() external view returns (address) {
+        return address(accessController);
+    }
+
+    /**
+     * @notice Universal setter for `accessController` address on any contract that
+     * inherits from `AAccessControlled`.
+     * Only ADMIN can call this function.
+     * Fires `AccessControllerSet` event.
+     * @param accessController_ The address of the new access controller
+     */
+    function setAccessController(address accessController_)
+    external
+    onlyAdmin {
+        _setAccessController(accessController_);
+    }
 
     /**
      * @notice Internal function to set the access controller address.
