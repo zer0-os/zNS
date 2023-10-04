@@ -6,7 +6,7 @@ import { parseEther } from "ethers/lib/utils";
 import { IZNSContracts } from "./helpers/types";
 import {
   deployZNS,
-  calcAsymptoticPrice,
+  calcCurvePrice,
   precisionMultiDefault,
   CURVE_PRICE_CONFIG_ERR,
   validateUpgrade,
@@ -141,8 +141,8 @@ describe("ZNSCurvePricer", () => {
       const domainOneRefValue = BigNumber.from("4545450000000000000000");
       const domainTwoRefValue = BigNumber.from("7692300000000000000000");
 
-      const domainOneExpPrice = await calcAsymptoticPrice(domainOne, priceConfigDefault);
-      const domainTwoExpPrice = await calcAsymptoticPrice(domainTwo, priceConfigDefault);
+      const domainOneExpPrice = await calcCurvePrice(domainOne, priceConfigDefault);
+      const domainTwoExpPrice = await calcCurvePrice(domainTwo, priceConfigDefault);
 
       const domainOnePriceSC = await zns.curvePricer.getPrice(domainHash, domainOne);
       const domainTwoPriceSC = await zns.curvePricer.getPrice(domainHash, domainTwo);
@@ -162,7 +162,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
-      const expectedPrice = await calcAsymptoticPrice(domain, priceConfigDefault);
+      const expectedPrice = await calcCurvePrice(domain, priceConfigDefault);
       const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
 
       expect(domainPrice).to.eq(expectedPrice);
@@ -175,15 +175,15 @@ describe("ZNSCurvePricer", () => {
       const medium = "wilderworld";
       const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
 
-      const expectedShortPrice = await calcAsymptoticPrice(short, priceConfigDefault);
+      const expectedShortPrice = await calcCurvePrice(short, priceConfigDefault);
       const shortPrice = await zns.curvePricer.getPrice(domainHash, short);
       expect(expectedShortPrice).to.eq(shortPrice);
 
-      const expectedMediumPrice = await calcAsymptoticPrice(medium, priceConfigDefault);
+      const expectedMediumPrice = await calcCurvePrice(medium, priceConfigDefault);
       const mediumPrice = await zns.curvePricer.getPrice(domainHash, medium);
       expect(expectedMediumPrice).to.eq(mediumPrice);
 
-      const expectedLongPrice = await calcAsymptoticPrice(long, priceConfigDefault);
+      const expectedLongPrice = await calcCurvePrice(long, priceConfigDefault);
       const longPrice = await zns.curvePricer.getPrice(domainHash, long);
       expect(expectedLongPrice).to.eq(longPrice);
     });
@@ -192,7 +192,7 @@ describe("ZNSCurvePricer", () => {
       const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
       const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
       const domainWithoutSpecials = "abcdef";
-      const expectedPrice = calcAsymptoticPrice(domainWithoutSpecials, priceConfigDefault);
+      const expectedPrice = calcCurvePrice(domainWithoutSpecials, priceConfigDefault);
       let domainPrice = await zns.curvePricer.getPrice(domainHash, domainSpecialCharacterSet1);
       expect(domainPrice).to.eq(expectedPrice);
 
@@ -208,7 +208,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "a";
-      const expectedPrice = calcAsymptoticPrice(domain, priceConfigDefault);
+      const expectedPrice = calcCurvePrice(domain, priceConfigDefault);
       const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
       expect(domainPrice).to.eq(expectedPrice);
     });
@@ -424,7 +424,7 @@ describe("ZNSCurvePricer", () => {
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
       const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("9"));
 
-      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcCurvePrice(defaultDomain, priceConfigDefault);
       const priceBefore= await zns.curvePricer.getPrice(domainHash, defaultDomain);
 
       expect(expectedPriceBefore).to.eq(priceBefore);
@@ -436,7 +436,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: newMaxPrice,
       };
 
-      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig);
       const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
 
       expect(expectedPriceAfter).to.eq(priceAfter);
@@ -659,7 +659,7 @@ describe("ZNSCurvePricer", () => {
       const newLength = 8;
       const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
 
-      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, priceConfigDefault);
+      const expectedPriceBefore = await calcCurvePrice(defaultDomain, priceConfigDefault);
       const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.not.eq(paramsBefore.maxPrice);
@@ -673,7 +673,7 @@ describe("ZNSCurvePricer", () => {
         baseLength: BigNumber.from(newLength),
       };
 
-      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig);
+      const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig);
       const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
@@ -690,7 +690,7 @@ describe("ZNSCurvePricer", () => {
 
       const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
 
-      const expectedPriceBefore = await calcAsymptoticPrice(defaultDomain, newConfig1);
+      const expectedPriceBefore = await calcCurvePrice(defaultDomain, newConfig1);
       const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.eq(paramsBefore.maxPrice);
@@ -705,7 +705,7 @@ describe("ZNSCurvePricer", () => {
 
       const paramsAfter = await zns.curvePricer.priceConfigs(domainHash);
 
-      const expectedPriceAfter = await calcAsymptoticPrice(defaultDomain, newConfig2);
+      const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig2);
       const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.not.eq(paramsAfter.maxPrice);
@@ -740,7 +740,7 @@ describe("ZNSCurvePricer", () => {
         baseLength: BigNumber.from(newRootLength),
       };
 
-      const expectedRootPrice = await calcAsymptoticPrice(defaultDomain, newConfig);
+      const expectedRootPrice = await calcCurvePrice(defaultDomain, newConfig);
       const rootPrice = await zns.curvePricer.getPrice(domainHash, defaultDomain);
 
       expect(rootPrice).to.eq(expectedRootPrice);

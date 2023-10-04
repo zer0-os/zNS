@@ -11,7 +11,7 @@ import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
  * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const calcAsymptoticPrice = (
+export const calcCurvePrice = (
   name : string,
   priceConfig = priceConfigDefault,
 ) : BigNumber => {
@@ -64,7 +64,7 @@ export const getPriceObject = (
 } => {
   let expectedPrice;
   if (Object.keys(priceConfig).length === 6) {
-    expectedPrice = calcAsymptoticPrice(name, priceConfig as ICurvePriceConfig);
+    expectedPrice = calcCurvePrice(name, priceConfig as ICurvePriceConfig);
   } else if (Object.keys(priceConfig).length === 2) {
     ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
   } else {
