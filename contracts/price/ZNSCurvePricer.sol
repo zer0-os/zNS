@@ -12,7 +12,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
  * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
- * It then decreases in price, using the calculated price function below, until it reaches `minPrice` 
+ * It then decreases in price, using the calculated price function below, until it reaches `minPrice`
  * at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
@@ -262,10 +262,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Internal function to calculate price based on the config set,
      * and the length of the domain label.
-     * @dev Before we calculate the price, 3 different cases are possible:
-     * 1. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
-     * 2. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
-     * 3. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
+     * @dev Before we calculate the price, 4 different cases are possible:
+     * 1. `maxPrice` is 0, which means all subdomains under this parent are free
+     * 2. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
+     * 3. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
+     * 4. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
      *
      * The formula itself creates an asymptotic curve that decreases in pricing based on domain name length,
      * base length and max price, the result is divided by the precision multiplier to remove numbers beyond
@@ -281,9 +282,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         CurvePriceConfig memory config = priceConfigs[parentHash];
 
         // We use `maxPrice` as 0 to indicate free domains
-        if (config.maxPrice == 0) return 0;
-
-        // We use maxPrice == 0 to signal all domains are free
         if (config.maxPrice == 0) return 0;
 
         // Setting baseLength to 0 indicates to the system that we are
