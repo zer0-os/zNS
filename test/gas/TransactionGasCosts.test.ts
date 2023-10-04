@@ -11,12 +11,9 @@ import fs from "fs";
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 
-// TODO sub data:
-//  current saved gas costs (Treasury + Oracle merge proto): root = -74461, sub = -77937
-//  end of implementation in PR: root = -43941, sub = -69243
-
 // TODO sub: add more tests here for each tx with different configs
 //  so we can track gas changes better when developing
+//  OR just use hardhat gas profiler and remove these tests
 describe("Transaction Gas Costs Test", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;

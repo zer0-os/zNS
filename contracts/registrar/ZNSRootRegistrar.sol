@@ -118,7 +118,7 @@ contract ZNSRootRegistrar is
         );
 
         if (address(distributionConfig.pricerContract) != address(0)) {
-            // this adds roughly 100k gas to the register tx if passed
+            // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
 

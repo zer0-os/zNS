@@ -81,11 +81,6 @@ export const runAllFlows = async () => {
     fullConfig: fullSubConfig,
   });
 
-  // TODO sub:
-  // - original root reg: 339,104 gas
-  // - current root reg: 405,831 gas (with config set) - 408,489 (with new payment logic) - 339,235 gas (without config)
-  // - current sub reg: 341,144 gas (with config) - 412,897 gas (with new payment logic)
-
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
 
