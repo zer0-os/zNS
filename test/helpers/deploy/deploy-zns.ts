@@ -617,6 +617,7 @@ export const deployZNS = async ({
     registry,
     registrar: rootRegistrar,
     admin: deployer,
+    isTenderlyRun,
   });
 
   const znsContracts : IZNSContracts = {
