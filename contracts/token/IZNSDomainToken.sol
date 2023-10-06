@@ -2,33 +2,62 @@
 pragma solidity ^0.8.18;
 
 import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import { IERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
 
 
-interface IZNSDomainToken is IERC721Upgradeable {
-    event SetAccessAuthorization(address indexed account);
-    
-    /**
-     * @notice Initialize the ERC721 ZNSDomainToken contract with the given values
-     * @param accessController The access controller contract address
-     * @param tokenName The ZNS token name
-     * @param tokenSymbol The ZNS token symbol
-     */
-    function initialize(address accessController, string calldata tokenName, string calldata tokenSymbol) external;
+interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
 
     /**
-     * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address
-     * @param to The address that will recieve the newly minted domain token
-     * @param tokenId The TokenId that the caller wishes to mint/register
-     */
-    function register(address to, uint256 tokenId) external;
-
+     * @notice Emitted when a Default Royalty (for all tokens) is set.
+    */
+    event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
     /**
-     * @notice Burns the token with the specified tokenId
-     * @param tokenId The tokenId that the caller wishes to burn/revoke
-     */
+     * @notice Emitted when Token Royalty is set for individual tokens per tokenID.
+    */
+    event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
+    /**
+     * @notice Emitted when a Base URI is set for all tokens.
+    */
+    event BaseURISet(string indexed baseURI);
+    /**
+     * @notice Emitted when a Token URI is set for individual tokens per tokenID.
+     * @dev Note that this event is fired ONLY when the tokenURI is set externally
+     * through an external setter and NOT during the registration.
+    */
+    event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
+
+    function initialize(
+        address accessController,
+        string calldata tokenName,
+        string calldata tokenSymbol,
+        address defaultRoyaltyReceiver,
+        uint96 defaultRoyaltyFraction
+    ) external;
+
+    function register(
+        address to,
+        uint256 tokenId,
+        string memory _tokenURI
+    ) external;
+
     function revoke(uint256 tokenId) external;
 
-    function setAccessController(address accessController) external;
+    function tokenURI(uint256 tokenId)
+    external
+    view
+    returns (string memory);
 
-    function getAccessController() external view returns (address);
+    function setBaseURI(string memory baseURI_) external;
+
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) external;
+
+    function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
+
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 royaltyFraction
+    ) external;
+
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

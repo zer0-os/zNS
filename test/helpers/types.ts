@@ -1,84 +1,160 @@
 import { BigNumber } from "ethers";
 import {
-  ZeroToken,
-  ZNSAccessController,
   ZNSAddressResolver,
+  ZNSDomainToken,
+  ZNSRootRegistrar,
+  ZNSRegistry,
+  ZNSTreasury,
+  ZNSAccessController,
+  ZNSRootRegistrarUpgradeMock,
+  ZNSCurvePricerUpgradeMock,
   ZNSAddressResolverUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
-  ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSPriceOracle,
-  ZNSPriceOracleUpgradeMock,
-  ZNSPriceOracleUpgradeMock__factory,
-  ZNSRegistrar,
-  ZNSRegistrarUpgradeMock,
-  ZNSRegistrarUpgradeMock__factory,
-  ZNSRegistry,
-  ZNSRegistryUpgradeMock,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSCurvePricerUpgradeMock__factory,
   ZNSRegistryUpgradeMock__factory,
-  ZNSTreasury,
-  ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock,
+  ZNSRegistryUpgradeMock,
+  ZeroToken,
+  ZNSSubRegistrar,
+  ZNSCurvePricer,
+  ZNSFixedPricer,
+  ZNSFixedPricerUpgradeMock,
+  ZNSSubRegistrarUpgradeMock,
+  ZNSSubRegistrarUpgradeMock__factory, ZNSFixedPricerUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IPriceParams } from "../../src/deploy/missions/types";
+import { AccessType, PaymentType } from "./constants";
 import { IContractState } from "../../src/deploy/campaign/types";
 
 export type Maybe<T> = T | undefined;
 
-export type GetterFunction = Promise<string | boolean | BigNumber | Array<BigNumber>>;
+export type GeneralContractGetter = Promise<
+string
+| boolean
+| BigNumber
+| Array<BigNumber>
+| [string, BigNumber]
+& { token : string; amount : BigNumber; }
+|[string, string]
+& { token : string; beneficiary : string; }
+>;
 
 export type ZNSContractMockFactory =
-  ZNSRegistrarUpgradeMock__factory |
-  ZNSPriceOracleUpgradeMock__factory |
+  ZNSRootRegistrarUpgradeMock__factory |
+  ZNSSubRegistrarUpgradeMock__factory |
+  ZNSCurvePricerUpgradeMock__factory |
+  ZNSFixedPricerUpgradeMock__factory |
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
   ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
-  ZNSRegistrarUpgradeMock |
-  ZNSPriceOracleUpgradeMock |
+  ZNSRootRegistrarUpgradeMock |
+  ZNSSubRegistrarUpgradeMock |
+  ZNSCurvePricerUpgradeMock |
+  ZNSFixedPricerUpgradeMock |
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
-  ZNSRegistrar |
-  ZNSPriceOracle |
+  ZNSRootRegistrar |
+  ZNSSubRegistrar |
+  ZNSCurvePricer |
+  ZNSFixedPricer |
   ZNSTreasury |
   ZNSRegistry |
   ZNSAddressResolver |
   ZNSDomainToken;
 
+export interface ICurvePriceConfig {
+  maxPrice : BigNumber;
+  minPrice : BigNumber;
+  maxLength : BigNumber;
+  baseLength : BigNumber;
+  precisionMultiplier : BigNumber;
+  feePercentage : BigNumber;
+}
+
+export interface IFixedPriceConfig {
+  price : BigNumber;
+  feePercentage : BigNumber;
+}
+
 export interface RegistrarConfig {
   treasury : ZNSTreasury;
   registryAddress : string;
+  curvePricerAddress : string;
   domainTokenAddress : string;
   addressResolverAddress : string;
 }
 
-export interface ZNSContracts {
+export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
   zeroToken : ZeroToken;
   addressResolver : ZNSAddressResolver;
-  priceOracle : ZNSPriceOracle;
+  curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
-  registrar : ZNSRegistrar;
+  rootRegistrar : ZNSRootRegistrar;
+  fixedPricer : ZNSFixedPricer;
+  subRegistrar : ZNSSubRegistrar;
+  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: IPriceParams;
+  priceConfig ?: ICurvePriceConfig;
   registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
-  logAddresses ?: boolean;
+  isTenderlyRun ?: boolean;
 }
 
-export type TZNSContractState = IContractState & ZNSContracts;
+export interface IDistributionConfig {
+  pricerContract : string;
+  paymentType : PaymentType;
+  accessType : AccessType;
+}
+
+export interface IPaymentConfig {
+  token : string;
+  beneficiary : string;
+}
+
+export interface IFullDistributionConfig {
+  paymentConfig : IPaymentConfig;
+  distrConfig : IDistributionConfig;
+  priceConfig : ICurvePriceConfig | IFixedPriceConfig | undefined;
+}
+
+export interface IDomainConfigForTest {
+  user : SignerWithAddress;
+  domainLabel : string;
+  domainContent ?: string;
+  parentHash ?: string;
+  fullConfig : IFullDistributionConfig;
+  tokenURI ?: string;
+}
+
+export interface IPathRegResult {
+  domainHash : string;
+  userBalanceBefore : BigNumber;
+  userBalanceAfter : BigNumber;
+  parentBalanceBefore : BigNumber;
+  parentBalanceAfter : BigNumber;
+  treasuryBalanceBefore : BigNumber;
+  treasuryBalanceAfter : BigNumber;
+  zeroVaultBalanceBefore : BigNumber;
+  zeroVaultBalanceAfter : BigNumber;
+}
+
+export type TZNSContractState = IContractState & IZNSContracts;

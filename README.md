@@ -3,3 +3,7 @@
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/zer0-os/zNS/tree/development.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/zer0-os/zNS/tree/development)
 
 # zNS
+
+### [System Architecture](./docs/architecture.md)
+### [Smart Contract Docs](./docs/contracts)
+### [Flow Diagrams](./docs/flows.md)

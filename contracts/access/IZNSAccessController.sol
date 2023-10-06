@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import { IAccessControlUpgradeable } from "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 
-interface IZNSAccessController is IAccessControlUpgradeable {
-    function initialize(
-        address[] calldata governorAddresses,
-        address[] calldata operatorAddresses
-    ) external;
-
+interface IZNSAccessController is IAccessControl {
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external;
 
     function checkGovernor(address account) external view;
@@ -23,4 +18,8 @@ interface IZNSAccessController is IAccessControlUpgradeable {
     function isAdmin(address account) external view returns (bool);
 
     function isRegistrar(address account) external view returns (bool);
+
+    function isGovernor(address account) external view returns (bool);
+
+    function isExecutor(address account) external view returns (bool);
 }
