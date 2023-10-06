@@ -24,10 +24,9 @@ import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault }
 import { calcCurvePrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");

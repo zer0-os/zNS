@@ -1,6 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  ICurvePriceConfig,
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig,
@@ -10,6 +9,7 @@ import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, defaultTokenURI } from "./constants";
 import { getTokenContract } from "./tokens";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 const { AddressZero } = ethers.constants;
 

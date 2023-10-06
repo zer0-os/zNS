@@ -18,7 +18,7 @@ import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from 
 import {
   getAccessRevertMsg,
 } from "./helpers/errors";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 

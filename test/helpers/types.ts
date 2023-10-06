@@ -1,34 +1,36 @@
 import { BigNumber } from "ethers";
 import {
-  ZNSAddressResolver,
-  ZNSDomainToken,
-  ZNSRootRegistrar,
-  ZNSRegistry,
-  ZNSTreasury,
+  ZeroToken,
   ZNSAccessController,
-  ZNSRootRegistrarUpgradeMock,
-  ZNSCurvePricerUpgradeMock,
+  ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
+  ZNSCurvePricer,
+  ZNSCurvePricerUpgradeMock,
+  ZNSCurvePricerUpgradeMock__factory,
+  ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSRootRegistrarUpgradeMock__factory,
-  ZNSCurvePricerUpgradeMock__factory,
-  ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock,
-  ZNSRegistryUpgradeMock,
-  ZeroToken,
-  ZNSSubRegistrar,
-  ZNSCurvePricer,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
+  ZNSFixedPricerUpgradeMock__factory,
+  ZNSRegistry,
+  ZNSRegistryUpgradeMock,
+  ZNSRegistryUpgradeMock__factory,
+  ZNSRootRegistrar,
+  ZNSRootRegistrarUpgradeMock,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
-  ZNSSubRegistrarUpgradeMock__factory, ZNSFixedPricerUpgradeMock__factory,
+  ZNSSubRegistrarUpgradeMock__factory,
+  ZNSTreasury,
+  ZNSTreasuryUpgradeMock,
+  ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
 import { IContractState } from "../../src/deploy/campaign/types";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export type Maybe<T> = T | undefined;
 
@@ -72,15 +74,6 @@ export type ZNSContract =
   ZNSRegistry |
   ZNSAddressResolver |
   ZNSDomainToken;
-
-export interface ICurvePriceConfig {
-  maxPrice : BigNumber;
-  minPrice : BigNumber;
-  maxLength : BigNumber;
-  baseLength : BigNumber;
-  precisionMultiplier : BigNumber;
-  feePercentage : BigNumber;
-}
 
 export interface IFixedPriceConfig {
   price : BigNumber;

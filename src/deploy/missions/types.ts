@@ -30,11 +30,11 @@ export interface IProxyData {
   proxyKind ?: TProxyKind;
 }
 
-export interface IPriceParams {
+export interface ICurvePriceConfig {
   maxPrice : BigNumber;
   minPrice : BigNumber;
   maxLength : BigNumber;
   baseLength : BigNumber;
-  priceMultiplier : BigNumber;
   precisionMultiplier : BigNumber;
+  feePercentage : BigNumber;
 }

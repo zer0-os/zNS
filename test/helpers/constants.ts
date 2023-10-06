@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
-import { ICurvePriceConfig } from "./types";
 import { ethers } from "hardhat";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 // TODO: what is our official Domain Token name?
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";

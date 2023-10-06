@@ -1,6 +1,6 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { BigNumber, Contract } from "ethers";
-import { IPriceParams, TDeployMissionCtor } from "../missions/types";
+import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -14,7 +14,7 @@ export interface IDeployCampaignConfig {
     name : string;
     symbol : string;
   };
-  priceConfig : IPriceParams;
+  priceConfig : ICurvePriceConfig;
   registrationFee : BigNumber;
   stakingTokenAddress ?: string;
   zeroVaultAddress : string;

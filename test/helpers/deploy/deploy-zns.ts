@@ -20,7 +20,7 @@ import {
   ZNSTreasury,
   ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
 } from "../../../typechain";
-import { DeployZNSParams, ICurvePriceConfig, RegistrarConfig, IZNSContracts } from "../types";
+import { DeployZNSParams, RegistrarConfig, IZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -42,9 +42,10 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   defaultRoyaltyFraction,
 } from "../constants";
-import { REGISTRAR_ROLE } from "../access";
+import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { BigNumber } from "ethers";
+import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 
 
 export const deployAccessController = async ({
