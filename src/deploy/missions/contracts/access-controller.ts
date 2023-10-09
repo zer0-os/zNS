@@ -11,14 +11,12 @@ export class ZNSAccessControllerDM extends BaseDeployMission {
   contractName = znsNames.accessController.contract;
   instanceName = znsNames.accessController.instance;
 
-  // TODO: remove this when initialize is removed from AccessController
-  async postDeploy () {
+  deployArgs () {
     const {
       governorAddresses,
       adminAddresses,
     } = this.config;
-    const { accessController } = this.campaign;
 
-    await accessController.initialize(governorAddresses, adminAddresses);
+    return [ governorAddresses, adminAddresses ];
   }
 }
