@@ -3,24 +3,24 @@ import { ProxyKinds, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-export class ZNSPriceOracleDM extends BaseDeployMission {
+export class ZNSCurvePricerDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
   };
 
-  contractName = znsNames.priceOracle.contract;
-  instanceName = znsNames.priceOracle.instance;
+  contractName = znsNames.curvePricer.contract;
+  instanceName = znsNames.curvePricer.instance;
 
   deployArgs () : TDeployArgs {
     const {
       accessController,
+      registry,
       config: {
-        priceConfig,
-        registrationFee,
+        rootPriceConfig,
       },
     } = this.campaign;
 
-    return [ accessController.address, priceConfig, registrationFee ];
+    return [ accessController.address, registry.address, rootPriceConfig ];
   }
 }

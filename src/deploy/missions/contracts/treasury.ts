@@ -2,7 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds, znsNames } from "../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
-import { ZeroTokenMockDM } from "./mocks/zero-token-mock";
+import { MeowTokenMockDM } from "./mocks/zero-token-mock";
 
 
 export class ZNSTreasuryDM extends BaseDeployMission {
@@ -13,7 +13,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
 
   // bool for determining token setup behaviour
   // determined in constructor
-  isMockedZeroToken : boolean;
+  isMockedMeowToken : boolean;
   contractName = znsNames.treasury.contract;
   instanceName = znsNames.treasury.instance;
 
@@ -27,49 +27,50 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     } = this.campaign;
 
     if (!!stakingTokenAddress) {
-      this.isMockedZeroToken = false;
+      this.isMockedMeowToken = false;
     } else {
       // TODO dep: is this a correct check?
-      if (!this.campaign.state.missions.includes(ZeroTokenMockDM)) throw new Error(
+      if (!this.campaign.state.missions.includes(MeowTokenMockDM)) throw new Error(
         `No staking token found!
         Please make sure to provide 'stakingTokenAddress' to the config
         or add mocked token to the Deploy Campaign if this is a test.`
       );
 
-      this.isMockedZeroToken = true;
+      this.isMockedMeowToken = true;
     }
   }
 
   deployArgs () : TDeployArgs {
     const {
       accessController,
-      priceOracle,
-      zeroToken,
+      registry,
+      meowToken,
       config: {
         stakingTokenAddress,
         zeroVaultAddress,
       },
     } = this.campaign;
 
-    const stakingToken = !this.isMockedZeroToken
+    const stakingToken = !this.isMockedMeowToken
       ? stakingTokenAddress
-      : zeroToken.address;
+      : meowToken.address;
 
     return [
       accessController.address,
-      priceOracle.address,
+      registry.address,
       stakingToken,
       zeroVaultAddress,
     ];
   }
 
   async needsPostDeploy () : Promise<boolean> {
-    return this.isMockedZeroToken;
+    return this.isMockedMeowToken;
   }
 
+  // this should launch ONLY if the Meow Token was mocked in test !
   async postDeploy () {
     const {
-      zeroToken,
+      meowToken,
       treasury,
       config: {
         deployAdmin,
@@ -77,7 +78,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     } = this.campaign;
 
     // Give allowance to the treasury
-    await zeroToken.connect(deployAdmin).approve(
+    await meowToken.connect(deployAdmin).approve(
       treasury.address,
       ethers.constants.MaxUint256
     );

@@ -13,9 +13,10 @@ export interface IDeployCampaignConfig {
   domainToken : {
     name : string;
     symbol : string;
+    defaultRoyaltyReceiver : string;
+    defaultRoyaltyFraction : BigNumber;
   };
-  priceConfig : ICurvePriceConfig;
-  registrationFee : BigNumber;
+  rootPriceConfig : ICurvePriceConfig;
   stakingTokenAddress ?: string;
   zeroVaultAddress : string;
   // TODO dep: add more props when opts expanded

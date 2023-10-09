@@ -21,25 +21,25 @@ export const znsNames = {
     contract: "ZNSDomainToken",
     instance: "domainToken",
   },
-  zeroToken: {
-    contract: "ZeroToken",
-    instance: "zeroToken",
+  meowToken: {
+    contract: "MeowToken",
+    instance: "meowToken",
   },
   addressResolver: {
     contract: "ZNSAddressResolver",
     instance: "addressResolver",
   },
-  priceOracle: {
-    contract: "ZNSPriceOracle",
-    instance: "priceOracle",
+  curvePricer: {
+    contract: "ZNSCurvePricer",
+    instance: "curvePricer",
   },
   treasury: {
     contract: "ZNSTreasury",
     instance: "treasury",
   },
-  registrar: {
-    contract: "ZNSRegistrar",
-    instance: "registrar",
+  rootRegistrar: {
+    contract: "ZNSRootRegistrar",
+    instance: "rootRegistrar",
   },
   erc1967Proxy: {
     contract: erc1967ProxyName,

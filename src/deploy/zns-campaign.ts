@@ -3,10 +3,10 @@ import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { FileStorageAdapter } from "./storage/file-storage";
 import { DeployCampaign } from "./campaign/deploy-campaign";
 import {
-  ZeroTokenMockDM,
+  MeowTokenMockDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
-  ZNSDomainTokenDM, ZNSPriceOracleDM, ZNSRegistrarDM,
+  ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM,
 } from "./missions/contracts";
 
@@ -26,11 +26,16 @@ export const runZnsCampaign = async ({
       ZNSAccessControllerDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
-      ZeroTokenMockDM,
+      // TODO dep: add proper class for MeowToken in prod,
+      //  that is able to determine to deploy a mock for test
+      //  or use the data for existing Meow on mainnet to create and object and save to state
+      // TODO dep !IMPORTANT: make sure we publish the new MeowToken version properly
+      //  and updated it in this repo!!!!
+      MeowTokenMockDM,
       ZNSAddressResolverDM,
-      ZNSPriceOracleDM,
+      ZNSCurvePricerDM,
       ZNSTreasuryDM,
-      ZNSRegistrarDM,
+      ZNSRootRegistrarDM,
     ],
     deployer,
     dbAdapter: dbAdapterIn,

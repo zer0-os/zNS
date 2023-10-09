@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import {
-  ZeroToken,
+  Meow,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -92,7 +92,7 @@ export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : ZeroToken;
+  zeroToken : Meow;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;

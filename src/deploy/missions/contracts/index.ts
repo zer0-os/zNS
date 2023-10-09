@@ -3,6 +3,6 @@ export * from "./registry";
 export * from "./registrar";
 export * from "./domain-token";
 export * from "./treasury";
-export * from "./price-oracle";
+export * from "./curve-pricer";
 export * from "./access-controller";
 export * from "./mocks/zero-token-mock";

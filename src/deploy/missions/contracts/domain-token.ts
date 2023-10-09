@@ -13,8 +13,15 @@ export class ZNSDomainTokenDM extends BaseDeployMission {
 
   deployArgs () : TDeployArgs {
     const { accessController: { address: acAddress } } = this.campaign;
-    const { domainToken: { name, symbol } } = this.config;
+    const {
+      domainToken: {
+        name,
+        symbol,
+        defaultRoyaltyReceiver,
+        defaultRoyaltyFraction,
+      },
+    } = this.config;
 
-    return [ acAddress, name, symbol ];
+    return [ acAddress, name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
   }
 }

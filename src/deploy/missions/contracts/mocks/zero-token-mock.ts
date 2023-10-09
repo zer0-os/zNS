@@ -8,17 +8,17 @@ const zeroTokenName = "Zero Token";
 const zeroTokenSymbol = "ZERO";
 
 
-// TODO dep: refine this to create an object if using
-//  the actual deployed ZERO, so that we have it's full object present
+// TODO dep !IMPORTANT!: refine this to create an object if using
+//  the actual deployed MEOW, so that we have it's full object present
 //  here for easy access and to make sure we get it's ABI and bytecode for the DB
-export class ZeroTokenMockDM extends BaseDeployMission {
+export class MeowTokenMockDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.transparent,
   };
 
-  contractName = znsNames.zeroToken.contract;
-  instanceName = znsNames.zeroToken.instance;
+  contractName = znsNames.meowToken.contract;
+  instanceName = znsNames.meowToken.instance;
 
   deployArgs () : TDeployArgs {
     return [zeroTokenName, zeroTokenSymbol];
@@ -26,14 +26,14 @@ export class ZeroTokenMockDM extends BaseDeployMission {
 
   async postDeploy () {
     const {
-      zeroToken,
+      meowToken,
       config: {
         deployAdmin,
       },
     } = this.campaign;
 
     // Mint 10,000 ZERO to the deployer
-    await zeroToken.connect(deployAdmin).mint(
+    await meowToken.connect(deployAdmin).mint(
       deployAdmin.address,
       ethers.utils.parseEther("100000")
     );

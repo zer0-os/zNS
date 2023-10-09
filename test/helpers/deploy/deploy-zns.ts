@@ -1,5 +1,5 @@
 import {
-  ZeroToken,
+  Meow,
   ZeroToken__factory,
   ZeroTokenMock,
   ZeroTokenMock__factory,
@@ -174,7 +174,7 @@ export const deployZeroToken = async (
     {
       kind: "transparent",
     }
-  ) as ZeroToken;
+  ) as Meow;
 
   await zeroToken.deployed();
 
@@ -464,14 +464,14 @@ export const deploySubRegistrar = async ({
   deployer,
   accessController,
   registry,
-  registrar,
+  rootRegistrar,
   admin,
   isTenderlyRun = false,
 } : {
   deployer : SignerWithAddress;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
-  registrar : ZNSRootRegistrar;
+  rootRegistrar : ZNSRootRegistrar;
   admin : SignerWithAddress;
   isTenderlyRun ?: boolean;
 }) => {
@@ -481,7 +481,7 @@ export const deploySubRegistrar = async ({
     [
       accessController.address,
       registry.address,
-      registrar.address,
+      rootRegistrar.address,
     ],
     {
       kind: "uups",
@@ -491,7 +491,7 @@ export const deploySubRegistrar = async ({
   await subRegistrar.deployed();
 
   // set SubRegistrar on RootRegistrar
-  await registrar.setSubRegistrar(subRegistrar.address);
+  await rootRegistrar.setSubRegistrar(subRegistrar.address);
 
   // give SubRegistrar REGISTRAR_ROLE
   await accessController.connect(admin).grantRole(REGISTRAR_ROLE, subRegistrar.address);
@@ -603,20 +603,18 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
-  const subModuleDeployArgs = {
+  const fixedPricer = await deployFixedPricer({
     deployer,
     acAddress: accessController.address,
     regAddress: registry.address,
     isTenderlyRun,
-  };
-
-  const fixedPricer = await deployFixedPricer(subModuleDeployArgs);
+  });
 
   const subRegistrar = await deploySubRegistrar({
     deployer,
     accessController,
     registry,
-    registrar: rootRegistrar,
+    rootRegistrar,
     admin: deployer,
     isTenderlyRun,
   });

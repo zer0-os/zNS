@@ -3,19 +3,20 @@ import { ProxyKinds, REGISTRAR_ROLE, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
-export class ZNSRegistrarDM extends BaseDeployMission {
+export class ZNSRootRegistrarDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
   };
 
-  contractName = znsNames.registrar.contract;
-  instanceName = znsNames.registrar.instance;
+  contractName = znsNames.rootRegistrar.contract;
+  instanceName = znsNames.rootRegistrar.instance;
 
   deployArgs () : TDeployArgs {
     const {
       accessController,
       registry,
+      curvePricer,
       treasury,
       domainToken,
       addressResolver,
@@ -24,6 +25,8 @@ export class ZNSRegistrarDM extends BaseDeployMission {
     return [
       accessController.address,
       registry.address,
+      // we use CurvePricer as the IZNSPricer for root domains
+      curvePricer.address,
       treasury.address,
       domainToken.address,
       addressResolver.address,
