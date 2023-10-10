@@ -2,8 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType, defaultTokenURI,
-  deployZNS,
+  AccessType, defaultRoyaltyFraction, defaultTokenURI,
   distrConfigEmpty,
   hashDomainLabel,
   INVALID_TOKENID_ERC_ERR,
@@ -14,8 +13,9 @@ import {
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
+  ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
-import { IDistributionConfig, IZNSContracts } from "./helpers/types";
+import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -25,21 +25,24 @@ import { calcCurvePrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
+import { runZnsCampaign } from "../src/deploy/zns-campaign";
+import { loggerMock } from "./helpers/utils";
+import { TZNSContractState } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-describe("ZNSRootRegistrar", () => {
+describe.only("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : TZNSContractState;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   const defaultDomain = normalizeName("wilder");
@@ -48,18 +51,36 @@ describe("ZNSRootRegistrar", () => {
   beforeEach(async () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
     // zeroVault address is used to hold the fee charged to the user when registering
-    zns = await deployZNS({
-      deployer,
-      governorAddresses: [deployer.address, governor.address],
-      adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
+
+    // TODO dep: this whole config should be passed safely through ENV var injection
+    const config = {
+      deployAdmin: deployer,
+      governorAddresses: [ deployer.address ],
+      adminAddresses: [ deployer.address, admin.address ],
+      domainToken: {
+        name: ZNS_DOMAIN_TOKEN_NAME,
+        symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+        defaultRoyaltyReceiver: deployer.address,
+        defaultRoyaltyFraction,
+      },
+      rootPriceConfig: priceConfigDefault,
+      registrationFee: registrationFeePercDefault,
       zeroVaultAddress: zeroVault.address,
+    };
+
+    const campaign = await runZnsCampaign({
+      config,
+      logger: loggerMock,
+      writeLocal: false,
     });
+
+    // TODO dep: figure out typing here so we don't have to cast each time
+    zns = campaign.state.contracts;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, userBalanceInitial);
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
   it("Gas tests", async () => {
@@ -168,10 +189,10 @@ describe("ZNSRootRegistrar", () => {
   });
 
   it("Confirms a user has funds and allowance for the Registrar", async () => {
-    const balance = await zns.zeroToken.balanceOf(user.address);
+    const balance = await zns.meowToken.balanceOf(user.address);
     expect(balance).to.eq(userBalanceInitial);
 
-    const allowance = await zns.zeroToken.allowance(user.address, zns.treasury.address);
+    const allowance = await zns.meowToken.allowance(user.address, zns.treasury.address);
     expect(allowance).to.eq(ethers.constants.MaxUint256);
   });
 
@@ -388,8 +409,8 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Stakes and saves the correct amount and token, takes the correct fee and sends fee to Zero Vault", async () => {
-      const balanceBeforeUser = await zns.zeroToken.balanceOf(user.address);
-      const balanceBeforeVault = await zns.zeroToken.balanceOf(zeroVault.address);
+      const balanceBeforeUser = await zns.meowToken.balanceOf(user.address);
+      const balanceBeforeVault = await zns.meowToken.balanceOf(zeroVault.address);
 
       // Deploy "wilder" with default configuration
       const tx = await defaultRootRegistration({
@@ -405,14 +426,14 @@ describe("ZNSRootRegistrar", () => {
       } = await getPriceObject(defaultDomain, priceConfigDefault);
 
       await checkBalance({
-        token: zns.zeroToken,
+        token: zns.meowToken as IERC20,
         balanceBefore: balanceBeforeUser,
         userAddress: user.address,
         target: totalPrice,
       });
 
       await checkBalance({
-        token: zns.zeroToken,
+        token: zns.meowToken as IERC20,
         balanceBefore: balanceBeforeVault,
         userAddress: zeroVault.address,
         target: stakeFee,
@@ -422,7 +443,7 @@ describe("ZNSRootRegistrar", () => {
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
 
       expect(staked).to.eq(expectedPrice);
-      expect(token).to.eq(zns.zeroToken.address);
+      expect(token).to.eq(zns.meowToken.address);
     });
 
     it("Sets the correct data in Registry", async () => {
@@ -446,8 +467,8 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Fails when the user does not have enough funds", async () => {
-      const balance = await zns.zeroToken.balanceOf(user.address);
-      await zns.zeroToken.connect(user).transfer(randomUser.address, balance);
+      const balance = await zns.meowToken.balanceOf(user.address);
+      await zns.meowToken.connect(user).transfer(randomUser.address, balance);
 
       const tx = defaultRootRegistration({
         user,
@@ -552,8 +573,8 @@ describe("ZNSRootRegistrar", () => {
       await zns.curvePricer.connect(deployer).setMaxPrice(ethers.constants.HashZero, "0");
       await zns.curvePricer.connect(deployer).setMinPrice(ethers.constants.HashZero, "0");
 
-      const userBalanceBefore = await zns.zeroToken.balanceOf(user.address);
-      const vaultBalanceBefore = await zns.zeroToken.balanceOf(zeroVault.address);
+      const userBalanceBefore = await zns.meowToken.balanceOf(user.address);
+      const vaultBalanceBefore = await zns.meowToken.balanceOf(zeroVault.address);
 
       // register a domain
       await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -563,8 +584,8 @@ describe("ZNSRootRegistrar", () => {
         distrConfigEmpty
       );
 
-      const userBalanceAfter = await zns.zeroToken.balanceOf(user.address);
-      const vaultBalanceAfter = await zns.zeroToken.balanceOf(zeroVault.address);
+      const userBalanceAfter = await zns.meowToken.balanceOf(user.address);
+      const vaultBalanceAfter = await zns.meowToken.balanceOf(zeroVault.address);
 
       expect(userBalanceBefore).to.eq(userBalanceAfter);
       expect(vaultBalanceBefore).to.eq(vaultBalanceAfter);
@@ -575,10 +596,10 @@ describe("ZNSRootRegistrar", () => {
       expect(exists).to.be.true;
 
       // make sure no transfers happened
-      const transferEventFilter = zns.zeroToken.filters.Transfer(
+      const transferEventFilter = zns.meowToken.filters.Transfer(
         user.address,
       );
-      const events = await zns.zeroToken.queryFilter(transferEventFilter);
+      const events = await zns.meowToken.queryFilter(transferEventFilter);
       expect(events.length).to.eq(0);
     });
   });
@@ -612,7 +633,7 @@ describe("ZNSRootRegistrar", () => {
       // Verify same amount is staked
       const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-      expect(tokenAfterReclaim).to.equal(zns.zeroToken.address);
+      expect(tokenAfterReclaim).to.equal(zns.meowToken.address);
       expect(token).to.equal(tokenAfterReclaim);
     });
 
@@ -693,13 +714,13 @@ describe("ZNSRootRegistrar", () => {
       // Verify same amount is staked
       const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-      expect(tokenAfterReclaim).to.equal(zns.zeroToken.address);
+      expect(tokenAfterReclaim).to.equal(zns.meowToken.address);
       expect(token).to.equal(tokenAfterReclaim);
     });
 
     it("Can revoke and unstake after reclaiming", async () => {
       // Verify Balance
-      const balance = await zns.zeroToken.balanceOf(user.address);
+      const balance = await zns.meowToken.balanceOf(user.address);
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level
@@ -713,7 +734,7 @@ describe("ZNSRootRegistrar", () => {
       } = await getPriceObject(defaultDomain, priceConfigDefault);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
-      expect(token).to.eq(zns.zeroToken.address);
+      expect(token).to.eq(zns.meowToken.address);
 
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
@@ -731,7 +752,7 @@ describe("ZNSRootRegistrar", () => {
 
       // Verify final balances
       const computedFinalBalance = balance.add(staked);
-      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedFinalBalance).to.equal(finalBalance);
     });
   });
@@ -789,7 +810,7 @@ describe("ZNSRootRegistrar", () => {
 
     it("Revoking domain unstakes", async () => {
     // Verify Balance
-      const balance = await zns.zeroToken.balanceOf(user.address);
+      const balance = await zns.meowToken.balanceOf(user.address);
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level
@@ -803,10 +824,10 @@ describe("ZNSRootRegistrar", () => {
       } = await getPriceObject(defaultDomain, priceConfigDefault);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
-      expect(token).to.eq(zns.zeroToken.address);
+      expect(token).to.eq(zns.meowToken.address);
 
       // Get balance after staking
-      const balanceAfterStaking = await zns.zeroToken.balanceOf(user.address);
+      const balanceAfterStaking = await zns.meowToken.balanceOf(user.address);
 
       // Revoke the domain
       await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
@@ -820,7 +841,7 @@ describe("ZNSRootRegistrar", () => {
       const computedBalanceAfterStaking = balanceAfterStaking.add(staked);
       const balanceMinusFee = balance.sub(expectedStakeFee);
       expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
-      const finalBalance = await zns.zeroToken.balanceOf(user.address);
+      const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedBalanceAfterStaking).to.equal(finalBalance);
     });
 
@@ -1063,8 +1084,8 @@ describe("ZNSRootRegistrar", () => {
       const domainName = "world";
       const domainHash = hashDomainLabel(domainName);
 
-      await zns.zeroToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(randomUser.address, priceConfigDefault.maxPrice);
+      await zns.meowToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.mint(randomUser.address, priceConfigDefault.maxPrice);
 
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,
