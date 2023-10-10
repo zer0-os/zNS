@@ -36,13 +36,13 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
   async needsPostDeploy () {
     const {
       accessController,
-      registrar,
+      rootRegistrar,
       config: { deployAdmin },
     } = this.campaign;
 
     const isRegistrar = await accessController
       .connect(deployAdmin)
-      .isRegistrar(registrar.address);
+      .isRegistrar(rootRegistrar.address);
 
     return !isRegistrar;
   }
@@ -50,7 +50,7 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
   async postDeploy () {
     const {
       accessController,
-      registrar,
+      rootRegistrar,
       config: {
         deployAdmin,
       },
@@ -58,6 +58,6 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
 
     await accessController
       .connect(deployAdmin)
-      .grantRole(REGISTRAR_ROLE, registrar.address);
+      .grantRole(REGISTRAR_ROLE, rootRegistrar.address);
   }
 }

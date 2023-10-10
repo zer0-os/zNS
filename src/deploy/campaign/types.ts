@@ -4,6 +4,7 @@ import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { IZNSContracts } from "../../../test/helpers/types";
 
 
 export interface IDeployCampaignConfig {
@@ -31,7 +32,7 @@ export interface IContractState {
 export interface ICampaignState {
   missions : Array<TDeployMissionCtor>;
   instances : Array<BaseDeployMission>;
-  contracts : IContractState;
+  contracts : TZNSContractState;
 }
 
 export interface ICampaignArgs {
@@ -41,3 +42,5 @@ export interface ICampaignArgs {
   logger : Logger;
   config : IDeployCampaignConfig;
 }
+
+export type TZNSContractState = IContractState & IZNSContracts;

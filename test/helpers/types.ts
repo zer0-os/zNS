@@ -29,7 +29,6 @@ import {
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
-import { IContractState } from "../../src/deploy/campaign/types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export type Maybe<T> = T | undefined;
@@ -150,4 +149,3 @@ export interface IPathRegResult {
   zeroVaultBalanceAfter : BigNumber;
 }
 
-export type TZNSContractState = IContractState & IZNSContracts;
