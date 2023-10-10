@@ -1,4 +1,4 @@
-import { ICampaignArgs, ICampaignState, IDeployCampaignConfig, Logger } from "./types";
+import { ICampaignArgs, ICampaignState, IDeployCampaignConfig, Logger, TZNSContractState } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
@@ -41,7 +41,7 @@ export class DeployCampaign {
     this.state = {
       missions,
       instances: [],
-      contracts: {},
+      contracts: {} as TZNSContractState,
     };
     this.deployer = deployer;
     this.dbAdapter = dbAdapter;

@@ -74,7 +74,6 @@ describe.only("ZNSRootRegistrar", () => {
       writeLocal: false,
     });
 
-    // TODO dep: figure out typing here so we don't have to cast each time
     zns = campaign.state.contracts;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
