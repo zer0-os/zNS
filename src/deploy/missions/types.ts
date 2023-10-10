@@ -21,7 +21,7 @@ export interface IContractDbObject {
   version : string;
 }
 
-export type TDeployArgs = Array<string | Array<string>>;
+export type TDeployArgs = Array<string | Array<string> | BigNumber>;
 
 export type TProxyKind = "uups" | "transparent" | "beacon" | undefined;
 

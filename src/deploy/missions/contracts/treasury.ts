@@ -36,6 +36,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
         or add mocked token to the Deploy Campaign if this is a test.`
       );
 
+      // TODO dep: possibly make an ENV var out of this so that it is known before we get here
       this.isMockedMeowToken = true;
     }
   }

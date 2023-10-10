@@ -21,10 +21,10 @@ export class FileStorageAdapter extends BaseStorageAdapter {
     if (!this.writeLocal) return;
 
     if (!fs.existsSync(fileStoragePath)) {
-      this.logger.log("Creating temp db directory.");
+      this.logger.info("Creating temp db directory.");
       fs.mkdirSync(fileStoragePath);
     } else {
-      this.logger.log(`Temp db directory exists and will be used at: ${fileStoragePath}.`);
+      this.logger.info(`Temp db directory exists and will be used at: ${fileStoragePath}.`);
     }
   }
 
@@ -36,14 +36,14 @@ export class FileStorageAdapter extends BaseStorageAdapter {
 
     fs.writeFileSync(filePath, fileData);
 
-    this.logger.log(`Contract data for ${contractDbName} saved to file: ${filePath}.`);
+    this.logger.info(`Contract data for ${contractDbName} saved to file: ${filePath}.`);
   }
 
   async getContract (contractDbName : string) : Promise<IContractDbObject | null> {
     const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
 
     if (!fs.existsSync(filePath)) {
-      this.logger.log(`Contract data for ${contractDbName} not found at: ${filePath}.`);
+      this.logger.info(`Contract data for ${contractDbName} not found at: ${filePath}.`);
       return null;
     }
 
