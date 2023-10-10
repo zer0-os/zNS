@@ -2,14 +2,18 @@ import winston from "winston";
 
 
 // TODO dep: refine this helper and configurability of this logger
-export const createLogger = (logLevel : string) => winston.createLogger({
+export const createLogger = (logLevel ?: string) => winston.createLogger({
   level: logLevel,
+  format: winston.format.combine(
+    // TODO dep: adjust the format to what we need
+    winston.format.json(),
+    winston.format.timestamp(),
+    winston.format.prettyPrint(),
+  ),
   transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    }
-    )],
+    // TODO dep: figure out where to transport this in production
+    new winston.transports.Console(),
+  ],
+  // TODO dep: make sure we need this to be set!
+  exitOnError: false,
 });

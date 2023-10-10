@@ -12,6 +12,7 @@ import {
 import * as hre from "hardhat";
 
 
+// TODO dep: add configs for ENV vars in this repo
 export const runZnsCampaign = async ({
   config,
   logger,
