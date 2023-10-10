@@ -33,6 +33,10 @@ export const znsNames = {
     contract: "ZNSCurvePricer",
     instance: "curvePricer",
   },
+  fixedPricer: {
+    contract: "ZNSFixedPricer",
+    instance: "fixedPricer",
+  },
   treasury: {
     contract: "ZNSTreasury",
     instance: "treasury",
@@ -40,6 +44,10 @@ export const znsNames = {
   rootRegistrar: {
     contract: "ZNSRootRegistrar",
     instance: "rootRegistrar",
+  },
+  subRegistrar: {
+    contract: "ZNSSubRegistrar",
+    instance: "subRegistrar",
   },
   erc1967Proxy: {
     contract: erc1967ProxyName,

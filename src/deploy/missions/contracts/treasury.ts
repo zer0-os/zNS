@@ -2,7 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds, znsNames } from "../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
-import { MeowTokenMockDM } from "./mocks/zero-token-mock";
+import { MeowTokenMockDM } from "./mocks/meow-token-mock";
 
 
 export class ZNSTreasuryDM extends BaseDeployMission {

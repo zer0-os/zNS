@@ -7,7 +7,7 @@ import {
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
-  ZNSRegistryDM, ZNSTreasuryDM,
+  ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 
 
@@ -36,6 +36,8 @@ export const runZnsCampaign = async ({
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,
+      ZNSFixedPricerDM,
+      ZNSSubRegistrarDM,
     ],
     deployer,
     dbAdapter: dbAdapterIn,
