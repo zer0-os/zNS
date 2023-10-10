@@ -11,8 +11,14 @@ export const fileStoragePath = path.join(process.cwd(), "./db");
 
 
 export class FileStorageAdapter extends BaseStorageAdapter {
-  constructor (logger : Logger) {
+  private writeLocal : boolean;
+
+  constructor (logger : Logger, writeLocal  = true) {
     super(logger);
+
+    this.writeLocal = writeLocal;
+
+    if (!this.writeLocal) return;
 
     if (!fs.existsSync(fileStoragePath)) {
       this.logger.log("Creating temp db directory.");
@@ -23,6 +29,8 @@ export class FileStorageAdapter extends BaseStorageAdapter {
   }
 
   async writeContract (contractDbName : string, data : IContractDbObject) {
+    if (!this.writeLocal) return;
+
     const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
     const fileData = JSON.stringify(data, null,  "\t");
 

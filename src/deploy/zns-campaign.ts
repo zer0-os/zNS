@@ -9,17 +9,23 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
+import * as hre from "hardhat";
 
 
 export const runZnsCampaign = async ({
   config,
   logger,
+  writeLocal,
 } : {
   config : IDeployCampaignConfig;
   logger : Logger;
+  writeLocal ?: boolean;
 }) => {
+  // TODO dep: figure out the best place to put this at!
+  hre.upgrades.silenceWarnings();
+
   const deployer = new HardhatDeployer();
-  const dbAdapterIn = new FileStorageAdapter(logger);
+  const dbAdapterIn = new FileStorageAdapter(logger, writeLocal);
 
   const campaign = new DeployCampaign({
     missions: [
