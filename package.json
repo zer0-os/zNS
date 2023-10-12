@@ -23,7 +23,8 @@
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
     "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts",
     "gas-cost": "ts-node src/utils/gas-costs.ts",
-    "docgen": "hardhat docgen"
+    "docgen": "hardhat docgen",
+    "mongo:start": "docker-compose up"
   },
   "pre-commit": [
     "lint"
@@ -53,7 +54,6 @@
     "ethers": "5.5.1",
     "hardhat": "2.13.0",
     "hardhat-gas-reporter": "1.0.8",
-    "logdown": "3.3.1",
     "semantic-release": "^21.0.1",
     "solhint": "^3.4.1",
     "solidity-coverage": "^0.8.2",
@@ -65,6 +65,7 @@
   "dependencies": {
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
+    "mongodb": "^6.1.0",
     "winston": "^3.11.0"
   },
   "resolutions": {

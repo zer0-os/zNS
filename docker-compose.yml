@@ -1,0 +1,10 @@
+version: "2"
+services:
+  mongo:
+    image: mongo:7.0.0-rc5-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+volumes:
+  mongo-data:
