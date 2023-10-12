@@ -7,7 +7,7 @@ import {
   TDeployArg,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig, Logger } from "../campaign/types";
+import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 
 
 // TODO dep:
@@ -18,7 +18,7 @@ export class BaseDeployMission {
   instanceName! : string;
   proxyData! : IProxyData;
   campaign : DeployCampaign;
-  logger : Logger;
+  logger : TLogger;
   config : IDeployCampaignConfig;
 
   constructor ({

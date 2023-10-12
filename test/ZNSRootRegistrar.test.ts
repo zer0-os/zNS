@@ -29,13 +29,15 @@ import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { loggerMock } from "./helpers/utils";
 import { TZNSContractState } from "../src/deploy/campaign/types";
+import { createLogger } from "../src/deploy/logger/create-logger";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-describe.only("ZNSRootRegistrar", () => {
+// TODO dep: this is the only test converted to use the new Campaign
+//  others need to be converted once the Campaign is ready in full
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -68,9 +70,11 @@ describe.only("ZNSRootRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     };
 
+    const logger = createLogger("debug");
+
     const campaign = await runZnsCampaign({
       config,
-      logger: loggerMock,
+      logger,
       writeLocal: false,
     });
 
@@ -422,7 +426,7 @@ describe.only("ZNSRootRegistrar", () => {
         totalPrice,
         expectedPrice,
         stakeFee,
-      } = await getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, priceConfigDefault);
 
       await checkBalance({
         token: zns.meowToken as IERC20,
@@ -497,7 +501,7 @@ describe.only("ZNSRootRegistrar", () => {
       expect(domainHash).to.eq(namehashRef);
       expect(await zns.registry.exists(domainHash)).to.be.true;
 
-      const expectedStaked = await calcCurvePrice(normalizedDomainLabel, priceConfigDefault);
+      const expectedStaked = calcCurvePrice(normalizedDomainLabel, priceConfigDefault);
       const { amount: staked } = await zns.treasury.stakedForDomain(domainHash);
       expect(expectedStaked).to.eq(staked);
     });
@@ -730,7 +734,7 @@ describe.only("ZNSRootRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-      } = await getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, priceConfigDefault);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
       expect(token).to.eq(zns.meowToken.address);
@@ -820,7 +824,7 @@ describe.only("ZNSRootRegistrar", () => {
       const {
         expectedPrice: expectedStaked,
         stakeFee: expectedStakeFee,
-      } = await getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, priceConfigDefault);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
       expect(token).to.eq(zns.meowToken.address);

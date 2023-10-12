@@ -1,4 +1,4 @@
-import { ICampaignArgs, ICampaignState, IDeployCampaignConfig, Logger, TZNSContractState } from "./types";
+import { ICampaignArgs, ICampaignState, IDeployCampaignConfig, TLogger, TZNSContractState } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
@@ -10,7 +10,7 @@ export class DeployCampaign {
   state : ICampaignState;
   deployer : HardhatDeployer;
   dbAdapter : BaseStorageAdapter;
-  logger : Logger;
+  logger : TLogger;
   config : IDeployCampaignConfig;
   version : string;
 

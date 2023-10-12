@@ -3,6 +3,7 @@ import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
+  defaultRoyaltyFraction,
   GOVERNOR_ROLE,
   priceConfigDefault, registrationFeePercDefault,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -12,14 +13,15 @@ import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
 import { znsNames } from "../src/deploy/constants";
 import {
-  ZeroTokenMockDM,
+  MeowTokenMockDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
-  ZNSDomainTokenDM, ZNSPriceOracleDM, ZNSRegistrarDM,
+  ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
 
 
+// TODO dep: possibly remove this whole test. it was added as a first check when prototyping
 describe("Deploy Campaign Smoke Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
@@ -38,8 +40,10 @@ describe("Deploy Campaign Smoke Test", () => {
       domainToken: {
         name: ZNS_DOMAIN_TOKEN_NAME,
         symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+        defaultRoyaltyReceiver: deployAdmin.address,
+        defaultRoyaltyFraction,
       },
-      priceConfig: priceConfigDefault,
+      rootPriceConfig: priceConfigDefault,
       registrationFee: registrationFeePercDefault,
       zeroVaultAddress: zeroVault.address,
     };
@@ -49,11 +53,11 @@ describe("Deploy Campaign Smoke Test", () => {
         ZNSAccessControllerDM,
         ZNSRegistryDM,
         ZNSDomainTokenDM,
-        ZeroTokenMockDM,
+        MeowTokenMockDM,
         ZNSAddressResolverDM,
-        ZNSPriceOracleDM,
+        ZNSCurvePricerDM,
         ZNSTreasuryDM,
-        ZNSRegistrarDM,
+        ZNSRootRegistrarDM,
       ],
       deployer,
       dbAdapter: dbAdapterIn,

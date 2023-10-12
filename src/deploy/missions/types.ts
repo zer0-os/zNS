@@ -1,12 +1,12 @@
 import { BaseDeployMission } from "./base-deploy-mission";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig, Logger } from "../campaign/types";
+import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { BigNumber } from "ethers";
 
 
 export interface IDeployMissionArgs {
   campaign : DeployCampaign;
-  logger : Logger;
+  logger : TLogger;
   config : IDeployCampaignConfig;
 }
 

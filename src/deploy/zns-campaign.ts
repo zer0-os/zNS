@@ -1,4 +1,4 @@
-import { IDeployCampaignConfig, Logger } from "./campaign/types";
+import { IDeployCampaignConfig, TLogger } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { FileStorageAdapter } from "./storage/file-storage";
 import { DeployCampaign } from "./campaign/deploy-campaign";
@@ -19,7 +19,7 @@ export const runZnsCampaign = async ({
   writeLocal,
 } : {
   config : IDeployCampaignConfig;
-  logger : Logger;
+  logger : TLogger;
   writeLocal ?: boolean;
 }) => {
   // TODO dep: figure out the best place to put this at!

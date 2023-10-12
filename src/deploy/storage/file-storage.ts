@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { IContractDbObject } from "../missions/types";
 import { BaseStorageAdapter } from "./base-storage-adapter";
-import { Logger } from "../campaign/types";
+import { TLogger } from "../campaign/types";
 
 
 // TODO dep: remove temp db folder and possibly add to .gitignore
@@ -13,7 +13,7 @@ export const fileStoragePath = path.join(process.cwd(), "./db");
 export class FileStorageAdapter extends BaseStorageAdapter {
   private writeLocal : boolean;
 
-  constructor (logger : Logger, writeLocal  = true) {
+  constructor (logger : TLogger, writeLocal  = true) {
     super(logger);
 
     this.writeLocal = writeLocal;

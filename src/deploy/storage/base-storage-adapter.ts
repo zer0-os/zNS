@@ -1,11 +1,11 @@
 import { IContractDbObject } from "../missions/types";
-import { Logger } from "../campaign/types";
+import { TLogger } from "../campaign/types";
 
 
 export class BaseStorageAdapter {
-  logger : Logger;
+  logger : TLogger;
 
-  constructor (logger : Logger) {
+  constructor (logger : TLogger) {
     this.logger = logger;
   }
 
