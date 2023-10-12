@@ -1,5 +1,11 @@
-import { Contract } from "ethers";
-import { TDeployArgs, IContractDbObject, IProxyData, IDeployMissionArgs } from "./types";
+import { BigNumber, Contract } from "ethers";
+import {
+  TDeployArgs,
+  IContractDbObject,
+  IProxyData,
+  IDeployMissionArgs,
+  TDeployArg,
+} from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, Logger } from "../campaign/types";
 
@@ -29,7 +35,9 @@ export class BaseDeployMission {
     return this.campaign.dbAdapter.getContract(this.contractName);
   }
 
-  async pushToDB (contract : Contract) {
+  async saveToDB (contract : Contract) {
+    this.logger.debug(`Writing ${this.contractName} to DB...`);
+
     const implAddress = this.proxyData.isProxy
       ? await this.campaign.deployer.getProxyImplAddress(contract.address)
       : null;
@@ -45,6 +53,14 @@ export class BaseDeployMission {
 
   async needsDeploy () {
     const dbContract = await this.getFromDB();
+
+    // TODO dep: refine these
+    if (!dbContract) {
+      this.logger.debug(`${this.contractName} not found in DB, proceeding to deploy...`);
+    } else {
+      this.logger.debug(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
+    }
+
     return !dbContract;
   }
 
@@ -70,7 +86,7 @@ export class BaseDeployMission {
 
   async deploy () {
     const deployArgs = this.deployArgs();
-    this.logger.info(`Deploying ${this.contractName} with arguments: ${JSON.stringify(deployArgs)}`);
+    this.logger.info(`Deploying ${this.contractName} with arguments: ${this.deployArgs()}`);
 
     let contract;
     if (this.proxyData.isProxy) {
@@ -83,11 +99,11 @@ export class BaseDeployMission {
       contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
 
-    await this.pushToDB(contract);
+    await this.saveToDB(contract);
 
-    await this.campaign.updateStateContract(this.instanceName, contract);
+    this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deploy success for ${this.contractName} at ${contract.address}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${contract.address}`);
   }
 
   async needsPostDeploy () {

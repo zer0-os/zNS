@@ -43,7 +43,7 @@ export class FileStorageAdapter extends BaseStorageAdapter {
     const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
 
     if (!fs.existsSync(filePath)) {
-      this.logger.info(`Contract data for ${contractDbName} not found at: ${filePath}.`);
+      this.logger.debug(`Contract data for ${contractDbName} not found at: ${filePath}.`);
       return null;
     }
 

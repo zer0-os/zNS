@@ -1,7 +1,7 @@
 import winston from "winston";
 
 
-// TODO dep: refine this helper and configurability of this logger
+// TODO dep: refine this function and configurability of this logger
 export const createLogger = (logLevel ?: string) => winston.createLogger({
   level: logLevel,
   format: winston.format.combine(

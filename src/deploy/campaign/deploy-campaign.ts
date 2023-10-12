@@ -66,7 +66,9 @@ export class DeployCampaign {
   }
 
   async execute () {
-    return this.state.instances.reduce(
+    this.logger.debug("Deploy Campaign execution started.");
+
+    await this.state.instances.reduce(
       async (
         acc : Promise<void>,
         mission : BaseDeployMission,
@@ -76,11 +78,13 @@ export class DeployCampaign {
       },
       Promise.resolve()
     );
+
+    this.logger.debug("Deploy Campaign execution finished successfully.");
   }
 
-  updateStateContract (instanceName : string, contract : Contract) {
+  updateStateContract (instanceName : string, contractName : string, contract : Contract) {
     this.state.contracts[instanceName] = contract;
     // TODO dep: make better logger and decide which levels to call where
-    this.logger.debug(`Data of deployed contract '${instanceName}' is added to Campaign state.`);
+    this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
   }
 }
