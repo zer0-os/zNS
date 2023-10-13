@@ -1,13 +1,13 @@
 import { BigNumber, Contract } from "ethers";
 import {
   TDeployArgs,
-  IContractDbObject,
   IProxyData,
   IDeployMissionArgs,
   TDeployArg,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
+import { IContractDbData } from "../db/types";
 
 
 // TODO dep:
@@ -72,14 +72,17 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  buildDbObject (hhContract : Contract, implAddress : string | null) : IContractDbObject {
+  buildDbObject (hhContract : Contract, implAddress : string | null) : IContractDbData {
     const { abi, bytecode } = this.getArtifact();
     return {
+      name: this.contractName,
       address: hhContract.address,
       abi: JSON.stringify(abi),
       bytecode,
       args: JSON.stringify(this.deployArgs()),
       implementation: implAddress,
+      // TODO dep: this might not be needed here since MongoAdapter will add it
+      //  upon writing to DB
       version: this.campaign.version,
     };
   }

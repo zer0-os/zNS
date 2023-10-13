@@ -1,6 +1,8 @@
 import { TLogger } from "../../campaign/types";
-import { Db, MongoClient } from "mongodb";
-import { IMongoDBAdapterArgs } from "./types";
+import { Collection, Db, MongoClient } from "mongodb";
+import { IDBVersion, IMongoDBAdapterArgs } from "./types";
+import { COLL_NAMES, VERSION_TYPES } from "./constants";
+import { IContractDbData } from "../types";
 
 
 export class MongoDBConnector {
@@ -8,7 +10,11 @@ export class MongoDBConnector {
   client : MongoClient;
   dbUri : string;
   dbName : string;
-  db ?: Db;
+  db : Db;
+
+  // Collection pointers
+  contracts : Collection<IContractDbData>;
+  versions : Collection<IDBVersion>;
 
   constructor ({
     logger,
@@ -21,8 +27,12 @@ export class MongoDBConnector {
     this.client = new MongoClient(dbUri, clientOpts);
     this.dbUri = dbUri;
     this.dbName = dbName;
+    this.db = {} as Db;
+    this.contracts = {} as Collection<IContractDbData>;
+    this.versions = {} as Collection<IDBVersion>;
   }
 
+  // TODO dep: possibly refactor into initialize() async constructor
   async connect () {
     try {
       await this.client.connect();
@@ -31,8 +41,6 @@ export class MongoDBConnector {
       this.logger.info({
         message: `MongoDB connected at ${this.dbUri}`,
       });
-
-      return this.db;
     } catch (e) {
       this.logger.error({
         message: `MongoDB connection failed at ${this.dbUri}`,
@@ -40,6 +48,11 @@ export class MongoDBConnector {
       });
       throw e;
     }
+
+    this.contracts = this.db.collection(COLL_NAMES.contracts);
+    this.versions = this.db.collection(COLL_NAMES.versions);
+
+    return this.db;
   }
 
   async close (forceClose = false) {
@@ -53,5 +66,59 @@ export class MongoDBConnector {
       });
       throw e;
     }
+  }
+
+  async getCheckLatestVersion () {
+    const v = await this.getLatestVersion();
+
+    if (!v) throw new Error("No version found in DB!");
+
+    return v;
+  }
+
+  async getContract (contractName : string, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.findOne({
+      contractName,
+      version,
+    });
+  }
+
+  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.insertOne({
+      ...data,
+      version,
+    });
+  }
+
+  async getTempVersion () : Promise<string | null> {
+    const v = await this.versions.findOne({
+      type: VERSION_TYPES.temp,
+    });
+
+    if (!v) return null;
+
+    return v.version;
+  }
+
+  async getDeployedVersion () : Promise<string | null> {
+    const v = await this.versions.findOne({
+      type: VERSION_TYPES.deployed,
+    });
+
+    if (!v) return null;
+
+    return v.version;
+  }
+
+  async getLatestVersion () : Promise<string | null> {
+    const v = await this.getTempVersion();
+
+    if (v) return v;
+
+    return this.getDeployedVersion();
   }
 }

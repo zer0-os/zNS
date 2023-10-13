@@ -12,15 +12,6 @@ export interface IDeployMissionArgs {
 
 export type TDeployMissionCtor = new (args : IDeployMissionArgs) => BaseDeployMission;
 
-export interface IContractDbObject {
-  address : string;
-  abi : string;
-  bytecode : string;
-  args : string;
-  implementation : string | null;
-  version : string;
-}
-
 export type TDeployArg = string | Array<string> | BigNumber | ICurvePriceConfig;
 
 export type TDeployArgs = Array<TDeployArg>;
