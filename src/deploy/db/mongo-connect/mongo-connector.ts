@@ -11,6 +11,7 @@ export class MongoDBConnector {
   dbUri : string;
   dbName : string;
   db : Db;
+  curVersion : string;
 
   // Collection pointers
   contracts : Collection<IContractDbData>;
@@ -30,10 +31,11 @@ export class MongoDBConnector {
     this.db = {} as Db;
     this.contracts = {} as Collection<IContractDbData>;
     this.versions = {} as Collection<IDBVersion>;
+    this.curVersion = "0";
   }
 
   // TODO dep: possibly refactor into initialize() async constructor
-  async connect () {
+  async initialize (version ?: string) {
     try {
       await this.client.connect();
       this.db = this.client.db(this.dbName);
@@ -53,6 +55,25 @@ export class MongoDBConnector {
     this.versions = this.db.collection(COLL_NAMES.versions);
 
     return this.db;
+  }
+
+  async configureVersioning (version : string) {
+    // TODO dep: add archiving logic once determined on how to handle it
+
+    const tempV = await this.getTempVersion();
+    const deployedV = await this.getDeployedVersion();
+
+    if (!tempV && !deployedV) {
+      this.logger.info("No version provided to MongoDBConnector, using current timestamp as version");
+      this.curVersion = Date.now().toString();
+      await this.createUpdateTempVersion();
+    } else if (!deployedV) {
+      this.curVersion = tempV as string;
+    } else {
+      this.curVersion = deployedV;
+    }
+
+    return this.curVersion;
   }
 
   async close (forceClose = false) {
@@ -120,5 +141,17 @@ export class MongoDBConnector {
     if (v) return v;
 
     return this.getDeployedVersion();
+  }
+
+  async createUpdateTempVersion () {
+    return this.versions.updateOne({
+      type: VERSION_TYPES.temp,
+    }, {
+      $set: {
+        version: this.curVersion,
+      },
+    }, {
+      upsert: true,
+    });
   }
 }

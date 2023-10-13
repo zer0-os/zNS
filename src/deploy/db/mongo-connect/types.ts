@@ -5,6 +5,7 @@ export interface IMongoDBAdapterArgs {
   logger : TLogger;
   dbUri : string;
   dbName : string;
+  version ?: string;
   clientOpts ?: Record<string, unknown>;
 }
 

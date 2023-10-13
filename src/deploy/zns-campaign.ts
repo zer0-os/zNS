@@ -10,6 +10,7 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import * as hre from "hardhat";
+import { MongoDBConnector } from "./db/mongo-connect/mongo-connector";
 
 
 // TODO dep: add configs for ENV vars in this repo
@@ -26,7 +27,17 @@ export const runZnsCampaign = async ({
   hre.upgrades.silenceWarnings();
 
   const deployer = new HardhatDeployer();
-  const dbAdapterIn = new FileStorageAdapter(logger, writeLocal);
+
+  const dbAdapterIn = new MongoDBConnector({
+    logger,
+    dbUri: "mongodb://localhost:27017",
+    dbName: "zns-campaign",
+  });
+
+  await dbAdapterIn.initialize();
+
+  // TODO dep: remove this when MongoDB works properly
+  // const dbAdapterIn = new FileStorageAdapter(logger, writeLocal);
 
   const campaign = new DeployCampaign({
     missions: [
@@ -47,6 +58,7 @@ export const runZnsCampaign = async ({
       ZNSSubRegistrarDM,
     ],
     deployer,
+    // TODO dep: fix this typing!
     dbAdapter: dbAdapterIn,
     logger,
     config,
