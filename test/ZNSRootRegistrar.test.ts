@@ -75,7 +75,7 @@ describe("ZNSRootRegistrar", () => {
     const campaign = await runZnsCampaign({
       config,
       logger,
-      writeLocal: false,
+      isLocalTest: true,
     });
 
     zns = campaign.state.contracts;

@@ -183,10 +183,6 @@ export class MongoDBConnector {
 
     if (!v) return null;
 
-    // TODO dep: code for tests remove this !!
-    const res = await this.contracts.find({});
-    const rezz = await res.toArray();
-
     return v.version;
   }
 
