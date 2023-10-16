@@ -11,6 +11,5 @@ export interface IMongoDBAdapterArgs {
 
 export interface IDBVersion {
   version : string;
-  date : Date;
   type : string;
 }

@@ -54,26 +54,87 @@ export class MongoDBConnector {
     this.contracts = this.db.collection(COLL_NAMES.contracts);
     this.versions = this.db.collection(COLL_NAMES.versions);
 
+    // TODO dep: can we use this prop in all the contract getters to not
+    //  have to determine them dynamically every time ?? is this reliable enough?
+    this.curVersion = await this.configureVersioning(version);
+
     return this.db;
   }
 
-  async configureVersioning (version : string) {
+  // TODO dep: add logging to all versioning stages and methods !!
+  async configureVersioning (version ?: string) {
     // TODO dep: add archiving logic once determined on how to handle it
-
     const tempV = await this.getTempVersion();
     const deployedV = await this.getDeployedVersion();
 
-    if (!tempV && !deployedV) {
-      this.logger.info("No version provided to MongoDBConnector, using current timestamp as version");
-      this.curVersion = Date.now().toString();
-      await this.createUpdateTempVersion();
-    } else if (!deployedV) {
-      this.curVersion = tempV as string;
+    let finalVersion : string;
+    if (version) {
+      finalVersion = version;
+
+      if (version !== deployedV || !deployedV) {
+        // we should only have a single TEMP version at any given time
+        if (version !== tempV) {
+          await this.clearDBForVersion(tempV);
+        }
+
+        await this.createUpdateTempVersion(finalVersion);
+      }
     } else {
-      this.curVersion = deployedV;
+      if (!tempV && !deployedV) {
+        this.logger.info("No version provided to MongoDBConnector, using current timestamp as version");
+        finalVersion = Date.now().toString();
+        await this.createUpdateTempVersion(finalVersion);
+      } else if (!deployedV) {
+        finalVersion = tempV as string;
+      } else {
+        finalVersion = deployedV;
+      }
     }
 
-    return this.curVersion;
+    return finalVersion;
+  }
+
+  async finalizeDeployedVersion (version ?: string) {
+    const finalV = version || await this.getTempVersion();
+
+    if (!finalV) return;
+
+    const deployedV = await this.getDeployedVersion();
+    if (finalV !== deployedV) {
+      // archive the current DEPLOYED version
+      await this.versions.updateOne(
+        {
+          type: VERSION_TYPES.deployed,
+        },
+        {
+          $set: {
+            type: VERSION_TYPES.archived,
+          },
+        });
+
+      // create new DEPLOYED version
+      await this.versions.insertOne({
+        type: VERSION_TYPES.deployed,
+        version: finalV,
+      });
+
+      // now remove the TEMP version
+      await this.versions.deleteOne({
+        type: VERSION_TYPES.temp,
+        version: finalV,
+      });
+    }
+
+    // archive the current TEMP version if any
+    return this.versions.updateOne(
+      {
+        type: VERSION_TYPES.temp,
+      },
+      {
+        $set: {
+          type: VERSION_TYPES.archived,
+        },
+      });
   }
 
   async close (forceClose = false) {
@@ -101,7 +162,7 @@ export class MongoDBConnector {
     if (!version) version = await this.getCheckLatestVersion();
 
     return this.contracts.findOne({
-      contractName,
+      name: contractName,
       version,
     });
   }
@@ -121,6 +182,10 @@ export class MongoDBConnector {
     });
 
     if (!v) return null;
+
+    // TODO dep: code for tests remove this !!
+    const res = await this.contracts.find({});
+    const rezz = await res.toArray();
 
     return v.version;
   }
@@ -143,15 +208,30 @@ export class MongoDBConnector {
     return this.getDeployedVersion();
   }
 
-  async createUpdateTempVersion () {
+  async createUpdateTempVersion (version : string) {
     return this.versions.updateOne({
       type: VERSION_TYPES.temp,
     }, {
       $set: {
-        version: this.curVersion,
+        version,
       },
     }, {
       upsert: true,
     });
+  }
+
+  async clearDBForVersion (version : string) {
+    // TODO dep: add more collections here when added
+    await this.contracts.deleteMany({
+      version,
+    });
+
+    return this.versions.deleteMany({
+      version,
+    });
+  }
+
+  async dropDB () {
+    return this.db.dropDatabase();
   }
 }
