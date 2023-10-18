@@ -6,7 +6,6 @@ export interface IContractDbData {
   address : string;
   abi : string;
   bytecode : string;
-  args : string;
   implementation : string | null;
   version : string;
 }

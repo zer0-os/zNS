@@ -79,7 +79,6 @@ export class BaseDeployMission {
       address: hhContract.address,
       abi: JSON.stringify(abi),
       bytecode,
-      args: JSON.stringify(this.deployArgs()),
       implementation: implAddress,
       // TODO dep: this might not be needed here since MongoAdapter will add it
       //  upon writing to DB

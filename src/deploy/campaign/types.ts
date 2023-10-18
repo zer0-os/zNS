@@ -6,6 +6,7 @@ import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
+import { MongoDBAdapter } from "../db/mongo-connect/mongo-adapter";
 
 
 export interface IDeployCampaignConfig {
@@ -39,7 +40,8 @@ export interface ICampaignState {
 export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
   deployer : HardhatDeployer;
-  dbAdapter : BaseStorageAdapter;
+  // TODO dep: is this the correct type?
+  dbAdapter : MongoDBAdapter | typeof BaseStorageAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
 }
