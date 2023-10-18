@@ -94,7 +94,7 @@ export class MongoDBAdapter {
       }
     } else {
       if (!tempV && !deployedV) {
-        this.logger.info("No version provided to MongoDBConnector, using current timestamp as version");
+        this.logger.info("No version provided to MongoDBAdapter, using current timestamp as version");
         finalVersion = Date.now().toString();
         await this.createUpdateTempVersion(finalVersion);
       } else if (!deployedV) {
@@ -263,7 +263,7 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
   };
 
   if (!checkParams.dbUri && !checkParams.dbName)
-    throw new Error("Not all ENV vars are set to create MongoDBConnector!");
+    throw new Error("Not all ENV vars are set to create MongoDBAdapter!");
 
   let createNew = false;
   if (mongoAdapter) {
