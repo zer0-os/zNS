@@ -24,7 +24,8 @@
     "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts",
     "gas-cost": "ts-node src/utils/gas-costs.ts",
     "docgen": "hardhat docgen",
-    "mongo:start": "docker-compose up"
+    "mongo:start": "docker-compose up",
+    "mongo:stop": "docker-compose stop"
   },
   "pre-commit": [
     "lint"

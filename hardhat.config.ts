@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
+
+import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
+
 require("dotenv").config();
 
-import { HardhatUserConfig } from "hardhat/config";
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
@@ -11,6 +13,16 @@ import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
 import "hardhat-gas-reporter";
+import { HardhatUserConfig, subtask } from "hardhat/config";
+import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
+
+
+subtask(TASK_TEST_RUN_MOCHA_TESTS)
+  .setAction(async (args, hre, runSuper) => {
+    await mochaGlobalSetup();
+    await runSuper(args);
+    await mochaGlobalTeardown();
+  });
 
 // This call is needed to initialize Tenderly with Hardhat,
 // the automatic verifications, though, don't seem to work,
@@ -71,7 +83,7 @@ const config : HardhatUserConfig = {
     timeout: 5000000,
   },
   gasReporter: {
-    enabled: true
+    enabled: true,
   },
   networks: {
     mainnet: {
