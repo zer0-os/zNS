@@ -10,7 +10,7 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import * as hre from "hardhat";
-import { MongoDBConnector } from "./db/mongo-connect/mongo-connector";
+import { getMongoAdapter, MongoDBAdapter } from "./db/mongo-connect/mongo-adapter";
 import { spawnTestMongo } from "./db/test-mongo";
 
 
@@ -19,31 +19,18 @@ export const runZnsCampaign = async ({
   config,
   logger,
   dbVersion,
-  isLocalTest = false,
 } : {
   config : IDeployCampaignConfig;
   logger : TLogger;
   dbVersion ?: string;
-  isLocalTest ?: boolean; // TODO dep: try turn into ENV var
 }) => {
   // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
 
-  if (isLocalTest) await spawnTestMongo(logger);
-
   const deployer = new HardhatDeployer();
 
   // TODO dep: remove all hardcoded stuff and turn into constants or ENV vars!
-  const dbAdapterIn = new MongoDBConnector({
-    logger,
-    dbUri: "mongodb://localhost:27018",
-    dbName: "zns-campaign",
-  });
-
-  await dbAdapterIn.initialize(dbVersion);
-
-  // TODO dep: remove this when MongoDB works properly
-  // const dbAdapterIn = new FileStorageAdapter(logger, writeLocal);
+  const dbAdapterIn = await getMongoAdapter();
 
   const campaign = new DeployCampaign({
     missions: [
@@ -74,7 +61,6 @@ export const runZnsCampaign = async ({
 
   // TODO dep: find the best place to call these !
   await dbAdapterIn.finalizeDeployedVersion(dbVersion);
-  await dbAdapterIn.close();
 
   return campaign;
 };

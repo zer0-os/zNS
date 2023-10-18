@@ -30,7 +30,7 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { parseEther } from "ethers/lib/utils";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { TZNSContractState } from "../src/deploy/campaign/types";
-import { createLogger } from "../src/deploy/logger/create-logger";
+import { getLogger } from "../src/deploy/logger/create-logger";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -70,12 +70,11 @@ describe("ZNSRootRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     };
 
-    const logger = createLogger("debug");
+    const logger = getLogger();
 
     const campaign = await runZnsCampaign({
       config,
       logger,
-      isLocalTest: true,
     });
 
     zns = campaign.state.contracts;
