@@ -1,37 +1,50 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { TLogger } from "../../campaign/types";
-import { Collection, Db, MongoClient } from "mongodb";
+import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
 import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
+import { getLogger } from "../../logger/create-logger";
+import { logger } from "ethers";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require("dotenv").config();
 
 
-export class MongoDBConnector {
+export class MongoDBAdapter {
   logger : TLogger;
   client : MongoClient;
   dbUri : string;
   dbName : string;
   db : Db;
   curVersion : string;
+  clientOpts ?: MongoClientOptions;
 
   // Collection pointers
   contracts : Collection<IContractDbData>;
   versions : Collection<IDBVersion>;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [name : string | symbol] : any;
+
   constructor ({
     logger,
     dbUri,
     dbName,
-    clientOpts = {},
+    clientOpts,
   } : IMongoDBAdapterArgs) {
     // TODO dep: add a way to get these from ENV
     this.logger = logger;
     this.client = new MongoClient(dbUri, clientOpts);
+    this.clientOpts = clientOpts;
     this.dbUri = dbUri;
     this.dbName = dbName;
     this.db = {} as Db;
     this.contracts = {} as Collection<IContractDbData>;
     this.versions = {} as Collection<IDBVersion>;
     this.curVersion = "0";
+
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    mongoAdapter = this;
   }
 
   // TODO dep: possibly refactor into initialize() async constructor
@@ -73,7 +86,7 @@ export class MongoDBConnector {
 
       if (version !== deployedV || !deployedV) {
         // we should only have a single TEMP version at any given time
-        if (version !== tempV) {
+        if (version !== tempV && tempV) {
           await this.clearDBForVersion(tempV);
         }
 
@@ -231,3 +244,52 @@ export class MongoDBConnector {
     return this.db.dropDatabase();
   }
 }
+
+let mongoAdapter : MongoDBAdapter | null = null;
+
+export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
+  const checkParams = {
+    dbUri: process.env.MONGO_DB_URI!,
+    dbName: process.env.MONGO_DB_NAME!,
+  };
+
+  const params = {
+    logger: getLogger(),
+    clientOpts: !!process.env.MONGO_DB_CLIENT_OPTS
+      ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
+      : undefined,
+    // TODO dep: add better way to set version ENV var is not the best !
+    version: process.env.MONGO_DB_VERSION,
+  };
+
+  if (!checkParams.dbUri && !checkParams.dbName)
+    throw new Error("Not all ENV vars are set to create MongoDBConnector!");
+
+  let createNew = false;
+  if (mongoAdapter) {
+    Object.values(checkParams).forEach(
+      ([ key, value ]) => {
+        if (key === "version") key = "curVersion";
+
+        if (JSON.stringify(mongoAdapter?.[key]) !== JSON.stringify(value)) {
+          createNew = true;
+          return;
+        }
+      }
+    );
+  } else {
+    createNew = true;
+  }
+
+  if (createNew) {
+    logger.debug("Creating new MongoDBAdapter instance");
+    mongoAdapter = new MongoDBAdapter({
+      ...checkParams,
+      ...params,
+    });
+    await mongoAdapter.initialize(params.version);
+  }
+
+  logger.debug("Returning existing MongoDBAdapter instance");
+  return mongoAdapter as MongoDBAdapter;
+};
