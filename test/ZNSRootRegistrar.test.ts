@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { IDistributionConfig, IFixedPriceConfig, IZNSContracts } from "./helpers/types";
+import { IDistributionConfig, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
