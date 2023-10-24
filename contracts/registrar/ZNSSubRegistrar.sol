@@ -240,8 +240,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setAccessTypeForDomain(
         bytes32 domainHash,
         AccessType accessType
-    ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
-        _setAccessTypeForDomain(domainHash, accessType);
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        distrConfigs[domainHash].accessType = accessType;
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**
@@ -271,6 +272,30 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         emit MintlistUpdated(domainHash, candidates, allowed);
     }
 
+    /*
+     * @notice Function to completely clear/remove the whole mintlist set for a given domain.
+     * Can only be called by the owner/operator of the domain or by `ZNSRootRegistrar` as a part of the
+     * `revokeDomain()` flow.
+     * Emits `MintlistCleared` event.
+     * @param domainHash The domain hash to clear the mintlist for
+     */
+    function clearMintlistForDomain(bytes32 domainHash)
+    public
+    override
+    onlyOwnerOperatorOrRegistrar(domainHash) {
+        delete mintlist[domainHash];
+
+        emit MintlistCleared(domainHash);
+    }
+
+    function clearMintlistAndLock(bytes32 domainHash)
+    external
+    override
+    onlyOwnerOperatorOrRegistrar(domainHash) {
+        setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        clearMintlistForDomain(domainHash);
+    }
+
     /**
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWired`.
@@ -289,18 +314,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
-    }
-
-    /**
-     * @dev Internal function used by this contract to set the access type for a subdomain
-     * during revocation process.
-    */
-    function _setAccessTypeForDomain(
-        bytes32 domainHash,
-        AccessType accessType
-    ) internal {
-        distrConfigs[domainHash].accessType = accessType;
-        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**

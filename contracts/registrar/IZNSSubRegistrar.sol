@@ -46,6 +46,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bool[] allowed
     );
 
+    /*
+     * @notice Emitted when a `mintlist` is removed for a domain by the owner or through `ZNSRootRegistrar.revokeDomain()`.
+     */
+    event MintlistCleared(bytes32 indexed domainHash);
+
     /**
      * @notice Emitted when the ZNSRootRegistrar address is set in state.
     */
@@ -108,6 +113,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
         address[] calldata candidates,
         bool[] calldata allowed
     ) external;
+
+    function clearMintlistForDomain(bytes32 domainHash) external;
+
+    function clearMintlistAndLock(bytes32 domainHash) external;
 
     function setRegistry(address registry_) external;
 
