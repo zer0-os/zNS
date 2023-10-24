@@ -1457,6 +1457,7 @@ describe("ZNSSubRegistrar", () => {
             .sub(precisionDefault)
         ),
         feePercentage: BigNumber.from(185),
+        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1542,6 +1543,7 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigNumber.from(2),
         precisionMultiplier: BigNumber.from(1),
         feePercentage: BigNumber.from(0),
+        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2024,6 +2026,7 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigNumber.from(2),
         precisionMultiplier: BigNumber.from(1),
         feePercentage: BigNumber.from(111),
+        isSet: true,
       };
 
       // see `token` in paymentConfig

@@ -103,6 +103,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -199,6 +200,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -220,6 +222,7 @@ describe("ZNSFixedPricer", () => {
         {
           price: BigNumber.from(1),
           feePercentage: BigNumber.from(1),
+          isSet: true,
         }
       )
     ).to.be.revertedWith(

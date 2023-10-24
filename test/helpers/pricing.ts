@@ -56,7 +56,7 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : ICurvePriceConfig | IFixedPriceConfig = priceConfigDefault,
+  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = priceConfigDefault,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;

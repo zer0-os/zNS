@@ -15,7 +15,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
-import { IDistributionConfig, IZNSContracts } from "./helpers/types";
+import { IDistributionConfig, IFixedPriceConfig, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -153,9 +153,13 @@ describe("ZNSRootRegistrar", () => {
       minPrice: parseEther("10"),
       precisionMultiplier: precisionMultiDefault,
       feePercentage: registrationFeePercDefault,
+      isSet: true,
     };
 
-    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
+    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(
+      ethers.constants.HashZero,
+      newPricerConfig,
+    );
 
     await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
       ethers.constants.HashZero,
@@ -759,8 +763,7 @@ describe("ZNSRootRegistrar", () => {
         {
           price: ogPrice,
           feePercentage: BigNumber.from(0),
-          // TODO zns-6: figure out how to deal with types here, since we do NOT pass `isSet`
-          isSet: false,
+          isSet: true,
         }
       );
       expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);

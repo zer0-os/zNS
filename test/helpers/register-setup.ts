@@ -170,12 +170,18 @@ export const registrationWithSetup = async ({
   if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address && setConfigs) {
     await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as IFixedPriceConfig,
+      {
+        ...fullConfig.priceConfig as IFixedPriceConfig,
+        isSet: true,
+      },
     );
   } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address && setConfigs) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as ICurvePriceConfig,
+      {
+        ...fullConfig.priceConfig as ICurvePriceConfig,
+        isSet: true,
+      },
     );
   }
 

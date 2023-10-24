@@ -39,8 +39,10 @@ string
 | Array<BigNumber>
 | [string, BigNumber]
 & { token : string; amount : BigNumber; }
-|[string, string]
+| [string, string]
 & { token : string; beneficiary : string; }
+| ICurvePriceConfig
+| IFixedPriceConfig
 >;
 
 export type ZNSContractMockFactory =
@@ -80,6 +82,7 @@ export interface ICurvePriceConfig {
   baseLength : BigNumber;
   precisionMultiplier : BigNumber;
   feePercentage : BigNumber;
+  isSet : boolean;
 }
 
 export interface IFixedPriceConfig {
