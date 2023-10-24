@@ -63,7 +63,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) public view override returns (uint256) {
         require(
             priceConfigs[parentHash].isSet,
-            "ZNSCurvePricer: parent's price config is not yet set"
+            "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
         );
 
         uint256 length = label.strlen();

@@ -754,7 +754,15 @@ describe("ZNSRootRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
 
       const ogPrice = BigNumber.from(135);
-      await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
+      await zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          price: ogPrice,
+          feePercentage: BigNumber.from(0),
+          // TODO zns-6: figure out how to deal with types here, since we do NOT pass `isSet`
+          isSet: false,
+        }
+      );
       expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
 
       const tokenId = await getTokenIdFromReceipt(topLevelTx);

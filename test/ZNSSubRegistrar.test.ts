@@ -144,7 +144,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
-        "ZNSFixedPricer: parent's price config is not yet set"
+        "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
       );
     });
 
@@ -179,7 +179,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
-        "ZNSCurvePricer: parent's price config is not yet set"
+        "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
       );
     });
 
@@ -3220,21 +3220,26 @@ describe("ZNSSubRegistrar", () => {
       await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(lvl2SubOwner.address, parseEther("1000000"));
 
-      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-        rootHash,
-        domainLabel,
-        lvl2SubOwner.address,
-        defaultTokenURI,
-        {
-          accessType: AccessType.OPEN,
-          pricerContract: zns.fixedPricer.address,
-          paymentType: PaymentType.DIRECT,
-        }
-      );
-
-      const domainHash = await getDomainHashFromEvent({
+      const domainHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        domainLabel,
+        parentHash: rootHash,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          priceConfig: {
+            price: fixedPrice,
+            feePercentage: BigNumber.from(0),
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
       });
 
       await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
@@ -3247,7 +3252,7 @@ describe("ZNSSubRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.fixedPricer.getPrice(ethers.constants.HashZero, domainLabel),
+        zns.fixedPricer.getPrice(rootHash, domainLabel),
       ];
 
       await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);

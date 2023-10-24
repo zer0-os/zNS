@@ -44,7 +44,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
         require(
             priceConfigs[parentHash].isSet,
-            "ZNSFixedPricer: parent's price config is not yet set"
+            "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
         );
         return priceConfigs[parentHash].price;
     }
