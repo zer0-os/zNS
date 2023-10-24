@@ -257,6 +257,27 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#setPriceConfig", () => {
+    // it.only("Specific scenario from the audit", async () => {
+    //   const newConfig = {
+    //     baseLength: BigNumber.from("5"),
+    //     maxLength: BigNumber.from("10"),
+    //     maxPrice: parseEther("10"),
+    //     minPrice: parseEther("5.5"),
+    //     precisionMultiplier: precisionMultiDefault,
+    //     feePercentage: registrationFeePercDefault,
+    //   };
+
+    //   await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
+
+    //   const nineLength = "abcdefghi";
+    //   const tenLength = "abcdefghij";
+
+    //   const nPrice = await zns.curvePricer.getPrice(domainHash, nineLength);
+    //   const tPrice = await zns.curvePricer.getPrice(domainHash, tenLength);
+
+    //   console.log(nPrice.toString());
+    //   console.log(tPrice.toString());
+    // });
     it("Should set the config for any existing domain hash, including 0x0", async () => {
       const newConfig = {
         baseLength: BigNumber.from("6"),

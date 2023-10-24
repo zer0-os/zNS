@@ -330,6 +330,25 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
     });
 
+    it.only("Can only register a TLD with characters [a-z]", async () => {
+      const longname = "wilderwilderwilderwilderwilderwilderwilderwilderwilder";
+      const shortname = "dwidler";
+
+      let tx1 = await defaultRootRegistration({
+        user: deployer,
+        zns,
+        domainName: shortname,
+      });
+      console.log(`short: ${tx1.gasUsed.toString()}`);
+
+      let tx2 = await defaultRootRegistration({
+        user: deployer,
+        zns,
+        domainName: longname,
+      });
+      console.log(`long: ${tx2.gasUsed.toString()}`);
+    });
+
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
       const tokenURI = "https://example.com/817c64af";

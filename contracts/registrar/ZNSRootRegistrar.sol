@@ -10,6 +10,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 
 /**
@@ -36,6 +37,8 @@ contract ZNSRootRegistrar is
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
+
+    using StringUtils for string;
 
     /**
      * @notice Create an instance of the ZNSRootRegistrar.sol
@@ -82,18 +85,39 @@ contract ZNSRootRegistrar is
      *      but all the parameters inside are required.
      */
     function registerRootDomain(
-        string calldata name,
+        string memory name,
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
+        // Confirms string values are only [a-z0-9]
+        name.validate();
+        bytes memory nameBytes = bytes(name);
+        // uint256 length = nameBytes.length;
+        // // if length < max int, do unchecked math on increment
+        // // only does the above check once instead of every increment
+        // uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        // require(length < MAX_INT, "ZNSRootRegistrar: Domain name too long");
+
+        // for(uint256 i; i < length;) {
+        //     require(
+        //         nameBytes[i] > 0x60 && nameBytes[i] < 0x7B,
+        //         "ZNSRootRegistrar: Invalid domain name"
+        //     );
+        //     unchecked {
+        //         ++i;
+        //     }
+        // }
+
+        // perform validation of the name
+        // no capitals or . characters
         require(
-            bytes(name).length != 0,
+            nameBytes.length != 0,
             "ZNSRootRegistrar: Domain Name not provided"
         );
 
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(name));
+        bytes32 domainHash = keccak256(nameBytes);
 
         require(
             !registry.exists(domainHash),
