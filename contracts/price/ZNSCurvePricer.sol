@@ -61,6 +61,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         string calldata label
     ) public view override returns (uint256) {
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSCurvePricer: parent's price config is not yet set"
+        );
+
         uint256 length = label.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
@@ -103,6 +108,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
      * fires `PriceConfigSet` event.
      * Only ADMIN can call this function.
+     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+     * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
@@ -116,6 +123,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
         priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
+        priceConfigs[domainHash].isSet = true;
 
         _validateConfig(domainHash);
 

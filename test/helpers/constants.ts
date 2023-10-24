@@ -43,6 +43,15 @@ export const priceConfigDefault : ICurvePriceConfig = {
   feePercentage: registrationFeePercDefault,
 };
 
+export const curvePriceConfigEmpty : ICurvePriceConfig = {
+  maxPrice: ethers.constants.Zero,
+  minPrice: ethers.constants.Zero,
+  maxLength: BigNumber.from(0),
+  baseLength: BigNumber.from(0),
+  precisionMultiplier: BigNumber.from(0),
+  feePercentage: BigNumber.from(0),
+};
+
 export const paymentConfigEmpty = {
   token: ethers.constants.AddressZero,
   beneficiary: ethers.constants.AddressZero,

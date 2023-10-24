@@ -17,7 +17,7 @@ import {
   ONLY_NAME_OWNER_REG_ERR,
   PaymentType,
   precisionDefault,
-  priceConfigDefault,
+  priceConfigDefault, curvePriceConfigEmpty,
   validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -108,6 +108,79 @@ describe("ZNSSubRegistrar", () => {
           priceConfig: rootPriceConfig,
         },
       });
+    });
+
+    // eslint-disable-next-line max-len
+    it("should revert when trying to register a subdomain before parent has set it's config with FixedPricer", async () => {
+      // register a new root domain
+      const newRootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "rootunsetfixed",
+        setConfigs: false,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: {
+            price: BigNumber.from(0),
+            feePercentage: BigNumber.from(0),
+          },
+        },
+      });
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          newRootHash,
+          "subunset",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        "ZNSFixedPricer: parent's price config is not yet set"
+      );
+    });
+
+    // eslint-disable-next-line max-len
+    it("should revert when trying to register a subdomain before parent has set it's config with CurvePricer", async () => {
+      // register a new root domain
+      const newRootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "rootunsetcurve",
+        setConfigs: false,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.curvePricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: curvePriceConfigEmpty,
+        },
+      });
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          newRootHash,
+          "subunset",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        "ZNSCurvePricer: parent's price config is not yet set"
+      );
     });
 
     it("should register subdomain with the correct tokenURI assigned to the domain token minted", async () => {
