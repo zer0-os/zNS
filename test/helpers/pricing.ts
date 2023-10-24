@@ -63,9 +63,9 @@ export const getPriceObject = (
   stakeFee : BigNumber;
 } => {
   let expectedPrice;
-  if (Object.keys(priceConfig).length === 6) {
+  if (Object.keys(priceConfig).length === 7) {
     expectedPrice = calcCurvePrice(name, priceConfig as ICurvePriceConfig);
-  } else if (Object.keys(priceConfig).length === 2) {
+  } else if (Object.keys(priceConfig).length === 3) {
     ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
   } else {
     throw new Error("Invalid price config");
