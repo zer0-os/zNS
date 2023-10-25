@@ -29,6 +29,7 @@ contract ZNSDomainToken is
     */
     string private baseURI;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }

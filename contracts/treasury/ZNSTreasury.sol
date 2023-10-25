@@ -37,6 +37,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      */
     mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }

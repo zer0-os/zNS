@@ -27,6 +27,7 @@ contract ZNSAddressResolver is
     mapping(bytes32 domainHash => address resolvedAddress)
         internal domainAddresses;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }

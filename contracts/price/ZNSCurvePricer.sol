@@ -30,6 +30,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
