@@ -330,7 +330,7 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
     });
 
-    it.only("Can register a TLD with characters [a-z0-9-]", async () => {
+    it("Can register a TLD with characters [a-z0-9-]", async () => {
       const letters = "world";
       const lettersHash = hashDomainLabel(letters);
 
