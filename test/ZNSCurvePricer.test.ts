@@ -100,24 +100,6 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#getPrice", async () => {
-    it("Cannot go below the set minPrice", async () => {
-      const newConfig = {
-        baseLength: BigNumber.from("5"),
-        maxLength: BigNumber.from("10"),
-        maxPrice: parseEther("10"),
-        minPrice: parseEther("5.5"),
-        precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
-      };
-
-      // as a user of "domainHash" that's not 0x0
-      await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
-
-      let name = "abcdefghij" // length 10
-      const price = await zns.curvePricer.getPrice(domainHash, name);
-      expect(price).to.eq(newConfig.minPrice);
-    });
-
     it("Returns 0 price for a root name with no length", async () => {
       const {
         price,
@@ -316,6 +298,22 @@ describe("ZNSCurvePricer", () => {
         maxLength: BigNumber.from("20"),
         maxPrice: parseEther("10"),
         minPrice: parseEther("6"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
+      };
+
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+      ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
+
+    it("Cannot go below the set minPrice", async () => {
+      // Using config numbers from audit
+      const newConfig = {
+        baseLength: BigNumber.from("5"),
+        maxLength: BigNumber.from("10"),
+        maxPrice: parseEther("10"),
+        minPrice: parseEther("5.5"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
       };

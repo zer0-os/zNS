@@ -307,7 +307,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * which can occur if some of the config values are not properly chosen and set.
      */
     function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
+        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
