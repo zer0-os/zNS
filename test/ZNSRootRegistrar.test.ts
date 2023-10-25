@@ -5,7 +5,7 @@ import {
   AccessType, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
-  hashDomainLabel,
+  hashDomainLabel, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
   NOT_AUTHORIZED_REG_ERR,
@@ -27,8 +27,8 @@ import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
+import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -112,6 +112,23 @@ describe("ZNSRootRegistrar", () => {
       candidates,
       allowed
     );
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSRootRegistrar__factory(deployer);
+    const impl = await getProxyImplAddress(zns.rootRegistrar.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {

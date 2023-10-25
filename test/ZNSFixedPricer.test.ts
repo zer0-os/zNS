@@ -18,7 +18,8 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { ZNSFixedPricer__factory, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSFixedPricer", () => {
@@ -83,6 +84,19 @@ describe("ZNSFixedPricer", () => {
       zns.accessController.address,
       zns.registry.address,
     )).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSFixedPricer__factory(deployer);
+    const impl = await getProxyImplAddress(zns.fixedPricer.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        deployer.address,
+        random.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("should set config for 0x0 hash", async () => {

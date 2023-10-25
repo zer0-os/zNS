@@ -12,7 +12,7 @@ import {
   validateUpgrade,
   PaymentType,
   NOT_AUTHORIZED_REG_WIRED_ERR,
-  CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR, INITIALIZED_ERR,
 } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
@@ -21,6 +21,7 @@ import {
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
+import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -73,6 +74,20 @@ describe("ZNSCurvePricer", () => {
       domainLabel: "testdomain",
       fullConfig,
     });
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSCurvePricer__factory(deployer);
+    const impl = await getProxyImplAddress(zns.curvePricer.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        zns.accessController.address,
+        zns.registry.address,
+        priceConfigDefault
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Confirms values were initially set correctly", async () => {
