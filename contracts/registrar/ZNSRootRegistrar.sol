@@ -85,7 +85,7 @@ contract ZNSRootRegistrar is
      *      but all the parameters inside are required.
      */
     function registerRootDomain(
-        string memory name,
+        string calldata name,
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig
