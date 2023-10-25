@@ -81,7 +81,7 @@ describe("ZNSSubRegistrar", () => {
           rootOwner,
           lvl2SubOwner,
         ].map(async ({ address }) =>
-          zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.zeroToken.mint(address, ethers.utils.parseEther("100000000000")))
       );
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -244,6 +244,9 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds balance"
       );
+
+      // transfer back for other tests
+      await zns.zeroToken.connect(deployer).transfer(lvl2SubOwner.address, userBalanceAfter);
     });
 
     it("should revert when user has insufficient allowance", async () => {
