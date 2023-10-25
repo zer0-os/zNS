@@ -811,7 +811,7 @@ describe("ZNSCurvePricer", () => {
     });
   });
 
-  describe("#setRegistrationFeePercentage", () => {
+  describe("#setFeePercentage", () => {
     it("Successfully sets the fee percentage", async () => {
       const newFeePerc = BigNumber.from(222);
       await zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc);
@@ -825,6 +825,13 @@ describe("ZNSCurvePricer", () => {
       const tx = zns.curvePricer.connect(admin)
         .setFeePercentage(domainHash, newFeePerc);
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
+    });
+
+    it("should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+      const newFeePerc = BigNumber.from(10001);
+      await expect(
+        zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc)
+      ).to.be.revertedWith("ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS");
     });
   });
 
