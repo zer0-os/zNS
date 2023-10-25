@@ -115,7 +115,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
-        priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
+        setFeePercentage(domainHash, priceConfig.feePercentage);
 
         _validateConfig(domainHash);
 
@@ -244,9 +244,14 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The fee percentage to set
      */
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
-    external
+    public
     override
     onlyOwnerOrOperator(domainHash) {
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
