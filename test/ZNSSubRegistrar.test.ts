@@ -2382,7 +2382,7 @@ describe("ZNSSubRegistrar", () => {
         [true],
       );
 
-      const mintlisted = await zns.subRegistrar.mintlist(
+      const mintlisted = await zns.subRegistrar.isMintlistedForDomain(
         domainHash,
         lvl5SubOwner.address
       );
