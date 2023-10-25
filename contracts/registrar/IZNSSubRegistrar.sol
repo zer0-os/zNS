@@ -64,7 +64,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     );
 
-    function mintlist(
+    function isMintlistedForDomain(
         bytes32 domainHash,
         address candidate
     ) external view returns (bool);
