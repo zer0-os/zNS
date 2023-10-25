@@ -298,8 +298,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             / config.precisionMultiplier * config.precisionMultiplier;
 
         return price;
-        // To avoid an issue where the config might return less than the min price at a point,
-        // if (price < config.minPrice) return config.minPrice;
     }
 
     /**
