@@ -13,6 +13,7 @@ import {
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
   INITIALIZED_ERR,
+  INVALID_NAME_ERR,
   INVALID_TOKENID_ERC_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   PaymentType,
@@ -26,7 +27,7 @@ import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
-import { registrationWithSetup } from "./helpers/register-setup";
+import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { CustomDecimalTokenMock, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
@@ -137,6 +138,83 @@ describe("ZNSSubRegistrar", () => {
       const tokenId = BigNumber.from(subHash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
+    });
+
+    it("Can register a subdomain with characters [a-z0-9]", async () => {
+      const alphaNumeric = "0x0dwidler0x0";
+
+      // Add allowance
+      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      // While "to.not.be.reverted" isn't really a full "test"
+      // we don't emit a custom event here, only in the `rootRegistrar.coreRegister`
+      // call. So we can't use the `.to.emit` syntax
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: alphaNumeric,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.not.be.reverted;
+    });
+
+    it("Fails for a subdomain that uses any invalid characters", async () => {
+      const nameA = "WILDER";
+      const nameB = "!?w1Id3r!?";
+      const nameC = "!%$#^*?!#👍3^29";
+      const nameD = "wo.rld";
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameA,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameB,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameC,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameD,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
     it("should revert when trying to register a subdomain under a non-existent parent", async () => {

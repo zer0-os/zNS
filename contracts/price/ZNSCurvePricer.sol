@@ -61,6 +61,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         string calldata label
     ) public view override returns (uint256) {
+        // Confirms string values are only [a-z0-9]
+        label.validate();
+
         uint256 length = label.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;

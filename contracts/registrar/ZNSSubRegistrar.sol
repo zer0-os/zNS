@@ -6,6 +6,7 @@ import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -16,6 +17,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+    using StringUtils for string;
 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
@@ -74,6 +76,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
+        // Confirms string values are only [a-z0-9]
+        label.validate();
+
         bytes32 domainHash = hashWithParent(parentHash, label);
         require(
             !registry.exists(domainHash),

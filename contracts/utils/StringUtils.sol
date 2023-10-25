@@ -49,7 +49,7 @@ library StringUtils {
             bytes1 b = nameBytes[i];
             require(
                 (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A),
-                "ZNSRootRegistrar: Invalid domain name"
+                "StringUtils: Invalid domain name"
             );
             unchecked {
                 ++i;

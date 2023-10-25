@@ -16,6 +16,7 @@ import {
 } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
+  INVALID_NAME_ERR,
   getAccessRevertMsg,
 } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
@@ -173,7 +174,7 @@ describe("ZNSCurvePricer", () => {
       // domains that are greater than base length + 1
       const short = "wild";
       const medium = "wilderworld";
-      const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
+      const long = "wilderworldbeastspetsnftscatscalicosteve";
 
       const expectedShortPrice = await calcCurvePrice(short, priceConfigDefault);
       const shortPrice = await zns.curvePricer.getPrice(domainHash, short);
@@ -186,18 +187,6 @@ describe("ZNSCurvePricer", () => {
       const expectedLongPrice = await calcCurvePrice(long, priceConfigDefault);
       const longPrice = await zns.curvePricer.getPrice(domainHash, long);
       expect(expectedLongPrice).to.eq(longPrice);
-    });
-
-    it("Prices Special Characters Accurately", async () => {
-      const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
-      const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
-      const domainWithoutSpecials = "abcdef";
-      const expectedPrice = calcCurvePrice(domainWithoutSpecials, priceConfigDefault);
-      let domainPrice = await zns.curvePricer.getPrice(domainHash, domainSpecialCharacterSet1);
-      expect(domainPrice).to.eq(expectedPrice);
-
-      (domainPrice = await zns.curvePricer.getPrice(domainHash, domainSpecialCharacterSet2));
-      expect(domainPrice).to.eq(expectedPrice);
     });
 
     it("Can Price Names Longer Than 255 Characters", async () => {
@@ -257,27 +246,19 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#setPriceConfig", () => {
-    // it.only("Specific scenario from the audit", async () => {
-    //   const newConfig = {
-    //     baseLength: BigNumber.from("5"),
-    //     maxLength: BigNumber.from("10"),
-    //     maxPrice: parseEther("10"),
-    //     minPrice: parseEther("5.5"),
-    //     precisionMultiplier: precisionMultiDefault,
-    //     feePercentage: registrationFeePercDefault,
-    //   };
+    it("Can't price a name that has invalid characters", async () => {
+      // Valid names must match the pattern [a-z0-9]
+      const labelA = "WILDER";
+      const labelB = "!?w1Id3r!?";
+      const labelC = "!%$#^*?!#👍3^29";
+      const labelD = "wo.rld";
 
-    //   await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
+      await expect(zns.curvePricer.getPrice(domainHash, labelA)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelB)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelC)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelD)).to.be.revertedWith(INVALID_NAME_ERR);
+    });
 
-    //   const nineLength = "abcdefghi";
-    //   const tenLength = "abcdefghij";
-
-    //   const nPrice = await zns.curvePricer.getPrice(domainHash, nineLength);
-    //   const tPrice = await zns.curvePricer.getPrice(domainHash, tenLength);
-
-    //   console.log(nPrice.toString());
-    //   console.log(tPrice.toString());
-    // });
     it("Should set the config for any existing domain hash, including 0x0", async () => {
       const newConfig = {
         baseLength: BigNumber.from("6"),

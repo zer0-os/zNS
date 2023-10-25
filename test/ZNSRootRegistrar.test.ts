@@ -21,9 +21,9 @@ import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
-import { calcCurvePrice, getPriceObject } from "./helpers/pricing";
+import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
-import { getAccessRevertMsg } from "./helpers/errors";
+import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
@@ -330,23 +330,84 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
     });
 
-    it.only("Can only register a TLD with characters [a-z]", async () => {
-      const longname = "wilderwilderwilderwilderwilderwilderwilderwilderwilder";
-      const shortname = "dwidler";
+    it("Can register a TLD with characters [a-z0-9]", async () => {
+      const letters = "world";
+      const lettersHash = hashDomainLabel(letters);
 
-      let tx1 = await defaultRootRegistration({
-        user: deployer,
-        zns,
-        domainName: shortname,
-      });
-      console.log(`short: ${tx1.gasUsed.toString()}`);
+      const alphaNumeric = "0x0dwidler0x0";
+      const alphaNumericHash = hashDomainLabel(alphaNumeric);
 
-      let tx2 = await defaultRootRegistration({
-        user: deployer,
-        zns,
-        domainName: longname,
-      });
-      console.log(`long: ${tx2.gasUsed.toString()}`);
+      const tx1 = zns.rootRegistrar.connect(deployer).registerRootDomain(
+        letters,
+        ethers.constants.AddressZero,
+        defaultTokenURI,
+        distrConfigEmpty
+      );
+
+      await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
+        ethers.constants.HashZero,
+        lettersHash,
+        BigNumber.from(lettersHash),
+        letters,
+        deployer.address,
+        ethers.constants.AddressZero,
+      );
+
+      const tx2 = zns.rootRegistrar.connect(deployer).registerRootDomain(
+        alphaNumeric,
+        ethers.constants.AddressZero,
+        defaultTokenURI,
+        distrConfigEmpty
+      );
+
+      await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
+        ethers.constants.HashZero,
+        alphaNumericHash,
+        BigNumber.from(alphaNumericHash),
+        alphaNumeric,
+        deployer.address,
+        ethers.constants.AddressZero,
+      );
+    });
+
+    it("Fails for domains that use any invalid character", async () => {
+      // Valid names must match the pattern [a-z0-9]
+      const nameA = "WILDER";
+      const nameB = "!?w1Id3r!?";
+      const nameC = "!%$#^*?!#👍3^29";
+      const nameD = "wo.rld";
+
+      await expect(
+        defaultRootRegistration({
+          user: deployer,
+          zns,
+          domainName: nameA,
+        })
+      ).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(
+        defaultRootRegistration({
+          user: deployer,
+          zns,
+          domainName: nameB,
+        })
+      ).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(
+        defaultRootRegistration({
+          user: deployer,
+          zns,
+          domainName: nameC,
+        })
+      ).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(
+        defaultRootRegistration({
+          user: deployer,
+          zns,
+          domainName: nameD,
+        })
+      ).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
     // eslint-disable-next-line max-len
@@ -477,31 +538,6 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
-    // eslint-disable-next-line max-len
-    it("Allows unicode characters in domain names and matches the hash of normalized string acquired from namehash library", async () => {
-      const unicodeDomainLabel = "œ柸þ€§ﾪ";
-
-      const normalizedDomainLabel = normalizeName(unicodeDomainLabel);
-
-      const tx = await defaultRootRegistration({
-        user,
-        zns,
-        domainName: normalizedDomainLabel,
-      });
-
-      const domainHash = await getDomainHashFromReceipt(tx);
-      // validate that namehash lib works the same way as our contract hashing
-      // TODO: a security issue with namehash lib is the usage of non-ASCII characters
-      //  this should be handled at the SDK/dApp level!
-      const namehashRef = hashDomainLabel(unicodeDomainLabel);
-      expect(domainHash).to.eq(namehashRef);
-      expect(await zns.registry.exists(domainHash)).to.be.true;
-
-      const expectedStaked = await calcCurvePrice(normalizedDomainLabel, priceConfigDefault);
-      const { amount: staked } = await zns.treasury.stakedForDomain(domainHash);
-      expect(expectedStaked).to.eq(staked);
-    });
-
     it("Disallows creation of a duplicate domain", async () => {
       await defaultRootRegistration({
         user,
@@ -615,14 +651,14 @@ describe("ZNSRootRegistrar", () => {
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
 
       // Verify owner in registry
-      const originalOwner  = await zns.registry.connect(deployer).getDomainOwner(domainHash);
+      const originalOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
       expect(originalOwner).to.equal(deployer.address);
 
       // Reclaim the Domain
       await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Verify domain token is still owned
-      const owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      const owner = await zns.domainToken.connect(user).ownerOf(tokenId);
       expect(owner).to.equal(user.address);
 
       // Verify domain is owned in registry
@@ -693,7 +729,7 @@ describe("ZNSRootRegistrar", () => {
       // Reclaim the Domain
       await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
       // Verify domain token is still owned
-      let owner  = await zns.domainToken.connect(user).ownerOf(tokenId);
+      let owner = await zns.domainToken.connect(user).ownerOf(tokenId);
       expect(owner).to.equal(user.address);
 
       // Transfer the domain token back
@@ -703,7 +739,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(deployer).reclaimDomain(domainHash);
 
       // Verify domain token is owned
-      owner  = await zns.domainToken.connect(deployer).ownerOf(tokenId);
+      owner = await zns.domainToken.connect(deployer).ownerOf(tokenId);
       expect(owner).to.equal(deployer.address);
 
       // Verify domain is owned in registrar
@@ -797,7 +833,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {
-    // Register Top level
+      // Register Top level
       const fakeHash = "0xd34cfa279afd55afc6aa9c00aa5d01df60179840a93d10eed730058b8dd4146c";
       const exists = await zns.registry.exists(fakeHash);
       expect(exists).to.be.false;
@@ -808,7 +844,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Revoking domain unstakes", async () => {
-    // Verify Balance
+      // Verify Balance
       const balance = await zns.zeroToken.balanceOf(user.address);
       expect(balance).to.eq(userBalanceInitial);
 
@@ -845,7 +881,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Cannot revoke if Name is owned by another user", async () => {
-    // Register Top level
+      // Register Top level
       const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const parentDomainHash = await getDomainHashFromReceipt(topLevelTx);
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
