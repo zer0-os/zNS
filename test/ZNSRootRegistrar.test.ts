@@ -738,7 +738,7 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("Revoking Domains", () => {
-    it("Revokes a Top level Domain - Happy Path", async () => {
+    it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration({
         user,
@@ -752,6 +752,13 @@ describe("ZNSRootRegistrar", () => {
       });
 
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
+
+      // add mintlist to check revocation
+      await zns.subRegistrar.connect(user).updateMintlistForDomain(
+        domainHash,
+        [user.address, zeroVault.address],
+        [true, true]
+      );
 
       const ogPrice = BigNumber.from(135);
       await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
@@ -775,6 +782,10 @@ describe("ZNSRootRegistrar", () => {
       // validate access type has been set to LOCKED
       const { accessType } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessType).to.eq(AccessType.LOCKED);
+
+      // validate mintlist has been removed
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, user.address)).to.be.false;
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, zeroVault.address)).to.be.false;
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {
