@@ -29,6 +29,10 @@ contract ZNSDomainToken is
     */
     string private baseURI;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
      * Note that this function does NOT have role protection enforced!
@@ -144,7 +148,7 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice To allow for user extension of the protocol we have to 
+     * @notice To allow for user extension of the protocol we have to
      * enable checking acceptance of new interfaces to ensure they are supported
      * @param interfaceId The interface ID
      */

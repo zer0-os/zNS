@@ -45,6 +45,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
         address _accessController,
         address _registry,

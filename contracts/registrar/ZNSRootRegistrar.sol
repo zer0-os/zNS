@@ -37,6 +37,10 @@ contract ZNSRootRegistrar is
     IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Create an instance of the ZNSRootRegistrar.sol
      * for registering, reclaiming and revoking ZNS domains

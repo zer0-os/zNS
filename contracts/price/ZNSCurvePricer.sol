@@ -30,6 +30,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
      * Only Owner of the 0x0 hash (Zero owned address) can call this function.

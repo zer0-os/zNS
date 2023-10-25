@@ -27,6 +27,10 @@ contract ZNSAddressResolver is
     mapping(bytes32 domainHash => address resolvedAddress)
         internal domainAddresses;
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Initializer for the `ZNSAddressResolver` proxy.
      * Note that setter functions are used instead of direct state variable assignments

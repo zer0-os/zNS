@@ -51,6 +51,10 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
