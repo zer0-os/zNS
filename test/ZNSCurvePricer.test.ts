@@ -301,13 +301,7 @@ describe("ZNSCurvePricer", () => {
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
       };
-      // const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
-      
-      // const a = "abcdefghijabcdefghij" // 20
-      // const b = "abcdefghijabcdefghijk" // 21
-      // const price = await zns.curvePricer.getPrice(domainHash, a);
 
-      // console.log(price.toString());
       await expect(
         zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
