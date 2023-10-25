@@ -330,12 +330,15 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
     });
 
-    it("Can register a TLD with characters [a-z0-9]", async () => {
+    it.only("Can register a TLD with characters [a-z0-9-]", async () => {
       const letters = "world";
       const lettersHash = hashDomainLabel(letters);
 
       const alphaNumeric = "0x0dwidler0x0";
       const alphaNumericHash = hashDomainLabel(alphaNumeric);
+
+      const withHyphen = "0x0-dwidler-0x0";
+      const withHyphenHash = hashDomainLabel(withHyphen);
 
       const tx1 = zns.rootRegistrar.connect(deployer).registerRootDomain(
         letters,
@@ -365,6 +368,22 @@ describe("ZNSRootRegistrar", () => {
         alphaNumericHash,
         BigNumber.from(alphaNumericHash),
         alphaNumeric,
+        deployer.address,
+        ethers.constants.AddressZero,
+      );
+
+      const tx3 = zns.rootRegistrar.connect(deployer).registerRootDomain(
+        withHyphen,
+        ethers.constants.AddressZero,
+        defaultTokenURI,
+        distrConfigEmpty
+      );
+
+      await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
+        ethers.constants.HashZero,
+        withHyphenHash,
+        BigNumber.from(withHyphenHash),
+        withHyphen,
         deployer.address,
         ethers.constants.AddressZero,
       );

@@ -47,8 +47,9 @@ library StringUtils {
 
         for (uint256 i; i < length;) {
             bytes1 b = nameBytes[i];
+            // Valid strings are lower case a-z, 0-9, or a hyphen
             require(
-                (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A),
+                (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D,
                 "StringUtils: Invalid domain name"
             );
             unchecked {
