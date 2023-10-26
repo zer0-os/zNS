@@ -1373,7 +1373,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke.sub(zeroVaultBalanceAfter)).to.eq(0);
     });
 
-    it.only("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
+    it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
       const priceConfig = {
         maxPrice: parseUnits("30000.93", decimalValues.thirteen),
         minPrice: parseUnits("2000.11", decimalValues.thirteen),
