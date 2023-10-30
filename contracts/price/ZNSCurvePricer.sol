@@ -294,10 +294,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        uint256 price = (config.baseLength * config.maxPrice / length) 
+        return (config.baseLength * config.maxPrice / length)
             / config.precisionMultiplier * config.precisionMultiplier;
-
-        return price;
     }
 
     /**
