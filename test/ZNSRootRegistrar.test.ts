@@ -5,7 +5,7 @@ import {
   AccessType, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
-  hashDomainLabel,
+  hashDomainLabel, INVALID_LENGTH_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
   NOT_AUTHORIZED_REG_ERR,
@@ -327,7 +327,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: emptyName,
         })
-      ).to.be.revertedWith("ZNSRootRegistrar: Domain Name not provided");
+      ).to.be.revertedWith(INVALID_LENGTH_ERR);
     });
 
     it("Can register a TLD with characters [a-z0-9-]", async () => {
