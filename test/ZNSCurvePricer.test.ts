@@ -307,6 +307,22 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
     });
 
+    it("Cannot go below the set minPrice", async () => {
+      // Using config numbers from audit
+      const newConfig = {
+        baseLength: BigNumber.from("5"),
+        maxLength: BigNumber.from("10"),
+        maxPrice: parseEther("10"),
+        minPrice: parseEther("5.5"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
+      };
+
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+      ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
+
     it("Should revert if called by anyone other than owner or operator", async () => {
       const newConfig = {
         baseLength: BigNumber.from("6"),
