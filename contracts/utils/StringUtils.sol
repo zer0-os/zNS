@@ -43,14 +43,17 @@ library StringUtils {
         uint256 length = nameBytes.length;
 
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        require(length < MAX_INT, "StringUtils: Domain name too long");
+        require(
+            length > 0 && length < MAX_INT,
+            "StringUtils: Domain label too long or nonexistent"
+        );
 
         for (uint256 i; i < length;) {
             bytes1 b = nameBytes[i];
             // Valid strings are lower case a-z, 0-9, or a hyphen
             require(
                 (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D,
-                "StringUtils: Invalid domain name"
+                "StringUtils: Invalid domain label"
             );
             unchecked {
                 ++i;
