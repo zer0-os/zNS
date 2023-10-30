@@ -1448,7 +1448,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
       const priceConfig = {
-        maxPrice: parseUnits("25000.93", decimalValues.thirteen),
+        maxPrice: parseUnits("30000.93", decimalValues.thirteen),
         minPrice: parseUnits("2000.11", decimalValues.thirteen),
         maxLength: BigNumber.from(50),
         baseLength: BigNumber.from(4),
