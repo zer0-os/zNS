@@ -4,7 +4,7 @@ import {
   deployZNS,
   getAccessRevertMsg,
   GOVERNOR_ROLE,
-  INITIALIZED_ERR,
+  INITIALIZED_ERR, INVALID_NAME_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
   PERCENTAGE_BASIS,
@@ -134,7 +134,7 @@ describe("ZNSFixedPricer", () => {
     await expect(tx).to.emit(zns.fixedPricer, "PriceSet").withArgs(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricer.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname", true)
     ).to.equal(newPrice);
   });
 
@@ -143,8 +143,14 @@ describe("ZNSFixedPricer", () => {
     await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricer.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname", false)
     ).to.equal(newPrice);
+  });
+
+  it("#getPrice() should revert for invalid label when not skipping the label validation", async () => {
+    await expect(
+      zns.fixedPricer.getPrice(domainHash, "tEstname", false)
+    ).to.be.revertedWith(INVALID_NAME_ERR);
   });
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
@@ -156,7 +162,7 @@ describe("ZNSFixedPricer", () => {
     const {
       price,
       fee,
-    } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname");
+    } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname", false);
 
     expect(price).to.equal(newPrice);
     expect(fee).to.equal(newPrice.mul(newFee).div(PERCENTAGE_BASIS));
@@ -351,7 +357,7 @@ describe("ZNSFixedPricer", () => {
         zns.fixedPricer.registry(),
         zns.fixedPricer.getAccessController(),
         zns.fixedPricer.priceConfigs(domainHash),
-        zns.fixedPricer.getPrice(domainHash, "wilder"),
+        zns.fixedPricer.getPrice(domainHash, "wilder", false),
       ];
 
       await validateUpgrade(deployer, zns.fixedPricer, newFixedPricer, factory, contractCalls);

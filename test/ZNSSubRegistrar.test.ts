@@ -2079,7 +2079,8 @@ describe("ZNSSubRegistrar", () => {
         stakeFee: feeFromSC,
       } = await zns.curvePricer.getPriceAndFee(
         subdomainParentHash,
-        label
+        label,
+        true
       );
       const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
         ethers.constants.HashZero,
@@ -3252,7 +3253,7 @@ describe("ZNSSubRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.fixedPricer.getPrice(ethers.constants.HashZero, domainLabel),
+        zns.fixedPricer.getPrice(ethers.constants.HashZero, domainLabel, true),
       ];
 
       await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);

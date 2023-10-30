@@ -829,7 +829,7 @@ describe("ZNSRootRegistrar", () => {
 
       const ogPrice = BigNumber.from(135);
       await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
-      expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
+      expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain, false)).to.eq(ogPrice);
 
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
 
@@ -1160,7 +1160,7 @@ describe("ZNSRootRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.curvePricer.getPrice(ethers.constants.HashZero, domainName),
+        zns.curvePricer.getPrice(ethers.constants.HashZero, domainName, false),
       ];
 
       await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);

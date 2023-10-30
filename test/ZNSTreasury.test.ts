@@ -126,7 +126,8 @@ describe("ZNSTreasury", () => {
 
       const expectedStake = await zns.curvePricer.getPrice(
         ethers.constants.HashZero,
-        domainName
+        domainName,
+        false
       );
       const fee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, expectedStake);
 
