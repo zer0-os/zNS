@@ -13,7 +13,8 @@ interface IZNSPricer {
      */
     function getPrice(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view returns (uint256);
 
     /**
@@ -23,7 +24,8 @@ interface IZNSPricer {
      */
     function getPriceAndFee(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view returns (uint256 price, uint256 fee);
 
     /**

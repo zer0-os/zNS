@@ -9,6 +9,8 @@ import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootReg
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { StringUtils } from "../../utils/StringUtils.sol";
+
 
 enum AccessType {
     LOCKED,
@@ -72,6 +74,8 @@ contract ZNSSubRegistrarUpgradeMock is
         string memory tokenURI,
         DistributionConfig calldata distrConfig
     ) external returns (bytes32) {
+        label.validate();
+
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
@@ -109,13 +113,15 @@ contract ZNSSubRegistrarUpgradeMock is
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(
                     parentHash,
-                    label
+                    label,
+                    true
                 );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
                     parentHash,
-                    label
+                    label,
+                    true
                 );
             }
         }
