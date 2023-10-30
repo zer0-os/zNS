@@ -90,18 +90,11 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
-        // Confirms string values are only [a-z0-9]
+        // Confirms string values are only [a-z0-9-]
         name.validate();
 
-        bytes memory nameBytes = bytes(name);
-
-        require(
-            nameBytes.length != 0,
-            "ZNSRootRegistrar: Domain Name not provided"
-        );
-
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(nameBytes);
+        bytes32 domainHash = keccak256(bytes(name));
 
         require(
             !registry.exists(domainHash),
@@ -109,7 +102,7 @@ contract ZNSRootRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
 
         _coreRegister(
             CoreRegisterArgs(

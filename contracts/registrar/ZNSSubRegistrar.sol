@@ -76,7 +76,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
-        // Confirms string values are only [a-z0-9]
+        // Confirms string values are only [a-z0-9-]
         label.validate();
 
         bytes32 domainHash = hashWithParent(parentHash, label);
@@ -117,13 +117,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
-                        label
+                        label,
+                        true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
                         parentHash,
-                        label
+                        label,
+                        true
                     );
             }
         }
@@ -192,9 +194,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setPricerContractForDomain(
         bytes32 domainHash,
-        // TODO audit question: is this a problem that we expect the simplest interface
-        //  but are able set any of the derived ones ??
-        //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
         require(
