@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
@@ -291,8 +291,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        return
-        (config.baseLength * config.maxPrice / length)
+        return (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
     }
 
@@ -304,7 +303,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * which can occur if some of the config values are not properly chosen and set.
      */
     function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
+        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
