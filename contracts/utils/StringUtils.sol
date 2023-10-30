@@ -35,7 +35,7 @@ library StringUtils {
     }
 
     /**
-     * @dev Confirm that a given string has only alphanumeric characters [a-z0-9]
+     * @dev Confirm that a given string has only alphanumeric characters [a-z0-9-]
      * @param s The string to validate
      */
     function validate(string memory s) internal pure {
@@ -43,7 +43,7 @@ library StringUtils {
         uint256 length = nameBytes.length;
 
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        require(length < MAX_INT, "ZNSRootRegistrar: Domain name too long");
+        require(length < MAX_INT, "StringUtils: Domain name too long");
 
         for (uint256 i; i < length;) {
             bytes1 b = nameBytes[i];
