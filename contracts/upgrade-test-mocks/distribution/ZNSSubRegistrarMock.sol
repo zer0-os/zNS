@@ -48,6 +48,8 @@ contract ZNSSubRegistrarUpgradeMock is
     ZNSSubRegistrarMainState,
     UpgradeMock {
 
+    using StringUtils for string;
+
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
             registry.isOwnerOrOperator(domainHash, msg.sender)
