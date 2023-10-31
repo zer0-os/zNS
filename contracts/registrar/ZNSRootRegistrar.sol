@@ -62,7 +62,7 @@ contract ZNSRootRegistrar is
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
-        setAddressResolver(addressResolver_);
+        setAddressResolver(addressResolver_); // TODO setResolver() instead with generic interface?
     }
 
     /**
@@ -103,16 +103,21 @@ contract ZNSRootRegistrar is
         // Get price for the domain
         uint256 domainPrice = rootPricer.getPrice(0x0, name);
 
+        // TODO function always receives a domainAddress or address(0),
+        // so is it safe to assume "address" resolver type below?
+        // How do we make this more generic for future use with diffewrent resolvers
+        // without needing an upgrade each time
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
-                name,
                 msg.sender,
-                domainPrice,
-                0,
                 domainAddress,
+                domainPrice,
+                0, 
+                name,
                 tokenURI,
+                "address",
                 true
             )
         );
@@ -174,10 +179,14 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(addressResolver));
+            registry.createDomainRecord(args.domainHash, args.registrant, args.resolverType);
+            // TODO resolve, the type of resolver is arg but we set here with address specifically
+            // TODO if we can genericize this, use something like `IZNSResolver.set()` instead
+            // which would set whatever the valid is for whatever the resolver type is
             addressResolver.setAddress(args.domainHash, args.domainAddress);
         } else {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(0));
+            // By passing an empty string we tell the registry to not add a resolver
+            registry.createDomainRecord(args.domainHash, args.registrant, "");
         }
 
         emit DomainRegistered(

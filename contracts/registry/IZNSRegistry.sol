@@ -63,6 +63,24 @@ interface IZNSRegistry {
         bool allowed
     );
 
+    /**
+     * @notice Emitted when a new resolver type is added to ZNS
+     * @param resolverType The name of the resolver type
+     * @param resolver The address of the resolver contract
+     */
+    event ResolverAdded(
+        string resolverType,
+        address resolver
+    );
+
+    /**
+     * @notice Emitted when a resolver is deleted from ZNS
+     * @param resolverType The name of the resolver type
+     */
+    event ResolverDeleted(
+        string resolverType
+    );
+
     function initialize(address accessController) external;
 
     function exists(bytes32 domainHash) external view returns (bool);
@@ -100,20 +118,29 @@ interface IZNSRegistry {
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
+        string calldata resolverType
+    ) external;
+
+    function addResolver(
+        string calldata resolverType,
         address resolver
+    ) external;
+
+    function deleteResolver(
+        string calldata resolverType
     ) external;
 
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
-        address resolver
+        string calldata resolverType
     ) external;
 
     function updateDomainOwner(bytes32 domainHash, address owner) external;
 
     function updateDomainResolver(
         bytes32 domainHash,
-        address resolver
+        string calldata resolverType
     ) external;
 
     function deleteRecord(bytes32 domainHash) external;
