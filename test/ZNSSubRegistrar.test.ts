@@ -771,8 +771,15 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("should revoke lvl 6 domain without refund and lock registration", async () => {
+    it("should revoke lvl 6 domain without refund, lock registration and remove mintlist", async () => {
       const domainHash = regResults[5].domainHash;
+
+      // add to mintlist
+      await zns.subRegistrar.connect(lvl6SubOwner).updateMintlistForDomain(
+        domainHash,
+        [lvl6SubOwner.address, lvl2SubOwner.address],
+        [true, true]
+      );
 
       const userBalBefore = await zns.zeroToken.balanceOf(lvl6SubOwner.address);
 
@@ -788,6 +795,10 @@ describe("ZNSSubRegistrar", () => {
       // and nobody can register a subdomain under this domain
       const { accessType: accessTypeFromSC } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessTypeFromSC).to.eq(AccessType.LOCKED);
+
+      // make sure that mintlist has been removed
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, lvl6SubOwner.address)).to.eq(false);
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, lvl2SubOwner.address)).to.eq(false);
 
       await expect(
         zns.subRegistrar.connect(lvl6SubOwner).registerSubdomain(
@@ -2529,7 +2540,7 @@ describe("ZNSSubRegistrar", () => {
         [true],
       );
 
-      const mintlisted = await zns.subRegistrar.mintlist(
+      const mintlisted = await zns.subRegistrar.isMintlistedForDomain(
         domainHash,
         lvl5SubOwner.address
       );

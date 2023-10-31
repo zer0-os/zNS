@@ -29,12 +29,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
+    struct Mintlist {
+        mapping(uint256 idx => mapping(address candidate => bool allowed)) list;
+        uint256 ownerIndex;
+    }
+
     /**
      * @notice Mapping of domainHash to mintlist set by the domain owner/operator.
      * These configs are used to determine who can register subdomains for every parent
      * in the case where parent's DistributionConfig.AccessType is set to AccessType.MINTLIST.
     */
-    mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public override mintlist;
+    mapping(bytes32 domainHash => Mintlist mintStruct) public mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
@@ -95,7 +100,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
-                mintlist[parentHash][msg.sender],
+                mintlist[parentHash]
+                    .list
+                    [mintlist[parentHash].ownerIndex]
+                    [msg.sender],
                 "ZNSSubRegistrar: Sender is not approved for purchase"
             );
         }
@@ -245,8 +253,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setAccessTypeForDomain(
         bytes32 domainHash,
         AccessType accessType
-    ) external override onlyOwnerOperatorOrRegistrar(domainHash) {
-        _setAccessTypeForDomain(domainHash, accessType);
+    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+        distrConfigs[domainHash].accessType = accessType;
+        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**
@@ -269,11 +278,46 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             "ZNSSubRegistrar: Not authorized"
         );
 
+        Mintlist storage mintlistForDomain = mintlist[domainHash];
+        uint256 ownerIndex = mintlistForDomain.ownerIndex;
+
         for (uint256 i; i < candidates.length; i++) {
-            mintlist[domainHash][candidates[i]] = allowed[i];
+            mintlistForDomain.list[ownerIndex][candidates[i]] = allowed[i];
         }
 
         emit MintlistUpdated(domainHash, candidates, allowed);
+    }
+
+    function isMintlistedForDomain(
+        bytes32 domainHash,
+        address candidate
+    ) external view override returns (bool) {
+        uint256 ownerIndex = mintlist[domainHash].ownerIndex;
+        return mintlist[domainHash].list[ownerIndex][candidate];
+    }
+
+    /*
+     * @notice Function to completely clear/remove the whole mintlist set for a given domain.
+     * Can only be called by the owner/operator of the domain or by `ZNSRootRegistrar` as a part of the
+     * `revokeDomain()` flow.
+     * Emits `MintlistCleared` event.
+     * @param domainHash The domain hash to clear the mintlist for
+     */
+    function clearMintlistForDomain(bytes32 domainHash)
+    public
+    override
+    onlyOwnerOperatorOrRegistrar(domainHash) {
+        mintlist[domainHash].ownerIndex = mintlist[domainHash].ownerIndex + 1;
+
+        emit MintlistCleared(domainHash);
+    }
+
+    function clearMintlistAndLock(bytes32 domainHash)
+    external
+    override
+    onlyOwnerOperatorOrRegistrar(domainHash) {
+        setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        clearMintlistForDomain(domainHash);
     }
 
     /**
@@ -294,18 +338,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
-    }
-
-    /**
-     * @dev Internal function used by this contract to set the access type for a subdomain
-     * during revocation process.
-    */
-    function _setAccessTypeForDomain(
-        bytes32 domainHash,
-        AccessType accessType
-    ) internal {
-        distrConfigs[domainHash].accessType = accessType;
-        emit AccessTypeSet(domainHash, accessType);
     }
 
     /**

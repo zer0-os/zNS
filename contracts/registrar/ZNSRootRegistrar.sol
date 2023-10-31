@@ -250,7 +250,7 @@ contract ZNSRootRegistrar is
             "ZNSRootRegistrar: Not the owner of both Name and Token"
         );
 
-        subRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
     }
 
