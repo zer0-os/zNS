@@ -120,6 +120,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // transfer stake fee to the parent beneficiary if it's > 0
         if (stakeFee > 0) {
+            require(
+                parentConfig.beneficiary != address(0),
+                "ZNSTreasury: parent domain has no beneficiary set"
+            );
+
             parentConfig.token.safeTransfer(
                 parentConfig.beneficiary,
                 stakeFee
@@ -190,6 +195,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         uint256 protocolFee
     ) external override onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
+
+        require(
+            parentConfig.beneficiary != address(0),
+            "ZNSTreasury: parent domain has no beneficiary set"
+        );
 
         // Transfer payment to parent beneficiary from payer
         parentConfig.token.safeTransferFrom(

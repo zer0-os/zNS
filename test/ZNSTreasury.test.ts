@@ -5,7 +5,8 @@ import {
   checkBalance, defaultTokenURI, deployTreasury,
   deployZNS,
   distrConfigEmpty,
-  getPriceObject, INITIALIZED_ERR, NOT_AUTHORIZED_REG_WIRED_ERR,
+  getPriceObject, NO_BENEFICIARY_ERR, NOT_AUTHORIZED_REG_WIRED_ERR,
+  INITIALIZED_ERR,
   priceConfigDefault,
   validateUpgrade,
 } from "./helpers";
@@ -328,7 +329,7 @@ describe("ZNSTreasury", () => {
           paymentAmt,
           protocolFee
         )
-      ).to.be.revertedWith("Address: call to non-contract");
+      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
     });
 
     it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {

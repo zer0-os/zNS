@@ -13,8 +13,8 @@ import {
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
   INITIALIZED_ERR,
-  INVALID_TOKENID_ERC_ERR,
-  ONLY_NAME_OWNER_REG_ERR,
+  INVALID_TOKENID_ERC_ERR, NO_BENEFICIARY_ERR,
+  ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
   PaymentType,
   precisionDefault,
   priceConfigDefault, curvePriceConfigEmpty,
@@ -82,7 +82,7 @@ describe("ZNSSubRegistrar", () => {
           rootOwner,
           lvl2SubOwner,
         ].map(async ({ address }) =>
-          zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.zeroToken.mint(address, ethers.utils.parseEther("100000000000")))
       );
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -318,6 +318,9 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds balance"
       );
+
+      // transfer back for other tests
+      await zns.zeroToken.connect(deployer).transfer(lvl2SubOwner.address, userBalanceAfter);
     });
 
     it("should revert when user has insufficient allowance", async () => {
@@ -338,6 +341,84 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds allowance"
       );
+    });
+
+    it("should revert on payment when parent's beneficiary has not yet been set and when stakeFee is > 0", async () => {
+      // register a new parent with direct payment and no payment config
+      const parentHash1 = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "parentnoconfigdirect",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: paymentConfigEmpty,
+          priceConfig: rootPriceConfig,
+        },
+      });
+
+      // set the token address
+      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash1, zns.zeroToken.address);
+
+      // register a new parent with stake payment and no payment config
+      const parentHash2 = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "parentnoconfigstake",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.curvePricer.address,
+            paymentType: PaymentType.STAKE,
+          },
+          paymentConfig: paymentConfigEmpty,
+          priceConfig: priceConfigDefault,
+        },
+      });
+
+      // set the token address
+      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash2, zns.zeroToken.address);
+
+      // register subdomains under new parents
+      await expect(
+        registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash1,
+          domainLabel: "sub1",
+        })
+      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+
+      await expect(
+        registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash2,
+          domainLabel: "sub2",
+        })
+      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+
+      // change stakeFee to 0
+      await zns.curvePricer.connect(rootOwner).setFeePercentage(
+        parentHash2,
+        BigNumber.from(0)
+      );
+
+      let subHash;
+      // try register a subdomain again
+      await expect(
+        subHash = registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash2,
+          domainLabel: "sub2",
+        })
+      ).to.be.fulfilled;
+
+      await zns.registry.exists(subHash);
     });
   });
 

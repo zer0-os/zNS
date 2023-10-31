@@ -185,7 +185,7 @@ export const registrationWithSetup = async ({
     );
   }
 
-  if (fullConfig.paymentConfig.beneficiary !== AddressZero && setConfigs) {
+  if (fullConfig.paymentConfig.token !== AddressZero && setConfigs) {
     // set up payment config
     await zns.treasury.connect(user).setPaymentConfig(
       domainHash,
