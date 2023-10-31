@@ -55,7 +55,11 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param skipValidityCheck If true, skips the validity check for the label
     */
     // solhint-disable-next-line no-unused-vars
-    function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
+    function getPrice(
+        bytes32 parentHash,
+        string calldata label,
+        bool skipValidityCheck
+    ) public override view returns (uint256) {
         require(
             priceConfigs[parentHash].isSet,
             "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
