@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 
 /**
@@ -51,5 +51,12 @@ interface ICurvePriceConfig {
          *  See [getRegistrationFee](#getregistrationfee) for the actual fee calc process.
          */
         uint256 feePercentage;
+
+        /**
+         * @notice A boolean value signifying the fact that this whole config has been set.
+         * This value is checked by other contracts to avoid giving out free domains for users who
+         * haven't yet managed to set their config.
+        */
+        bool isSet;
     }
 }
