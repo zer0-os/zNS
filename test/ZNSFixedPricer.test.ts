@@ -205,6 +205,14 @@ describe("ZNSFixedPricer", () => {
     );
   });
 
+  it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+    await expect(
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, PERCENTAGE_BASIS.add(1))
+    ).to.be.revertedWith(
+      "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+    );
+  });
+
   // eslint-disable-next-line max-len
   it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
     const newPrice = ethers.utils.parseEther("1823");

@@ -140,6 +140,11 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The new feePercentage
      */
     function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
