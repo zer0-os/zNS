@@ -280,6 +280,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       // as a user of "domainHash" that's not 0x0
@@ -315,6 +316,23 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
+      };
+
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+      ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
+
+    it("Cannot go below the set minPrice", async () => {
+      // Using config numbers from audit
+      const newConfig = {
+        baseLength: BigNumber.from("5"),
+        maxLength: BigNumber.from("10"),
+        maxPrice: parseEther("10"),
+        minPrice: parseEther("5.5"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
       };
 
       await expect(
@@ -330,6 +348,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       await expect(
@@ -349,6 +368,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -372,6 +392,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("2"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -632,6 +653,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: BigNumber.from(10),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always

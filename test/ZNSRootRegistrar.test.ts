@@ -171,9 +171,13 @@ describe("ZNSRootRegistrar", () => {
       minPrice: parseEther("10"),
       precisionMultiplier: precisionMultiDefault,
       feePercentage: registrationFeePercDefault,
+      isSet: true,
     };
 
-    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
+    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(
+      ethers.constants.HashZero,
+      newPricerConfig,
+    );
 
     await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
       ethers.constants.HashZero,
@@ -776,7 +780,14 @@ describe("ZNSRootRegistrar", () => {
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
 
       const ogPrice = BigNumber.from(135);
-      await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
+      await zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          price: ogPrice,
+          feePercentage: BigNumber.from(0),
+          isSet: true,
+        }
+      );
       expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain)).to.eq(ogPrice);
 
       const tokenId = await getTokenIdFromReceipt(topLevelTx);

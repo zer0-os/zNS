@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
@@ -47,6 +47,10 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     // solhint-disable-next-line no-unused-vars
     function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+        );
         return priceConfigs[parentHash].price;
     }
 
@@ -68,6 +72,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
      * @dev Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
      * and `FeePercentageSet` events.
+     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+     * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
@@ -77,6 +83,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) external override {
         setPrice(domainHash, priceConfig.price);
         setFeePercentage(domainHash, priceConfig.feePercentage);
+        priceConfigs[domainHash].isSet = true;
     }
 
     /**

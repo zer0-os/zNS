@@ -24,6 +24,7 @@ import { getProxyImplAddress } from "./helpers/utils";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
 
+
 describe("ZNSRegistry", () => {
   let deployer : SignerWithAddress;
   let operator : SignerWithAddress;
