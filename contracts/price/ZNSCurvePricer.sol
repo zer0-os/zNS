@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
@@ -29,6 +29,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
     */
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
@@ -61,6 +66,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         string calldata label
     ) public view override returns (uint256) {
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+        );
+
         uint256 length = label.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
@@ -103,6 +113,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
      * fires `PriceConfigSet` event.
      * Only ADMIN can call this function.
+     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+     * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
@@ -115,7 +127,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
-        priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
+        setFeePercentage(domainHash, priceConfig.feePercentage);
+        priceConfigs[domainHash].isSet = true;
 
         _validateConfig(domainHash);
 
@@ -244,9 +257,14 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The fee percentage to set
      */
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
-    external
+    public
     override
     onlyOwnerOrOperator(domainHash) {
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
@@ -291,8 +309,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        return
-        (config.baseLength * config.maxPrice / length)
+        return (config.baseLength * config.maxPrice / length)
         / config.precisionMultiplier * config.precisionMultiplier;
     }
 
@@ -304,7 +321,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * which can occur if some of the config values are not properly chosen and set.
      */
     function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
+        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
