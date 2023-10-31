@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
@@ -30,9 +30,8 @@ interface IZNSFixedPricer is IZNSPricer {
     struct PriceConfig {
         uint256 price;
         uint256 feePercentage;
+        bool isSet;
     }
-
-    function priceConfigs(bytes32 domainHash) external view returns (uint256 price, uint256 feePercentage);
 
     function initialize(address _accessController, address _registry) external;
 

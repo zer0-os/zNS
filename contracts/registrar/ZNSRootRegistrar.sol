@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
@@ -31,6 +31,7 @@ contract ZNSRootRegistrar is
     AAccessControlled,
     ARegistryWired,
     IZNSRootRegistrar {
+    using StringUtils for string;
 
     IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
@@ -38,7 +39,10 @@ contract ZNSRootRegistrar is
     IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
 
-    using StringUtils for string;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Create an instance of the ZNSRootRegistrar.sol
@@ -246,7 +250,7 @@ contract ZNSRootRegistrar is
             "ZNSRootRegistrar: Not the owner of both Name and Token"
         );
 
-        subRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
     }
 

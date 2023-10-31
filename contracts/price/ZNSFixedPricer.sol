@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
@@ -21,6 +21,11 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Mapping of domainHash to price config set by the domain owner/operator
     */
     mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(address _accessController, address _registry) external override initializer {
         _setAccessController(_accessController);
@@ -50,11 +55,12 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param skipValidityCheck If true, skips the validity check for the label
     */
     // solhint-disable-next-line no-unused-vars
-    function getPrice(
-        bytes32 parentHash,
-        string calldata label,
-        bool skipValidityCheck
-    ) public override view returns (uint256) {
+    function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+        );
+
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
             label.validate();
@@ -81,6 +87,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
      * @dev Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
      * and `FeePercentageSet` events.
+     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+     * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
@@ -90,6 +98,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) external override {
         setPrice(domainHash, priceConfig.price);
         setFeePercentage(domainHash, priceConfig.feePercentage);
+        priceConfigs[domainHash].isSet = true;
     }
 
     /**
@@ -148,6 +157,11 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The new feePercentage
      */
     function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }

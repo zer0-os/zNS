@@ -6,6 +6,7 @@ import {
   deployZNS,
   distrConfigEmpty,
   hashDomainLabel, INVALID_LENGTH_ERR,
+  INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
   NOT_AUTHORIZED_REG_ERR,
@@ -25,10 +26,11 @@ import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { ZNSRootRegistrar, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
+import { getProxyImplAddress } from "./helpers/utils";
+import { upgrades } from "hardhat";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -114,6 +116,23 @@ describe("ZNSRootRegistrar", () => {
     );
   });
 
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSRootRegistrar__factory(deployer);
+    const impl = await getProxyImplAddress(zns.rootRegistrar.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
     await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
     expect(await zns.registry.getDomainOwner(ethers.constants.HashZero)).to.equal(user.address);
@@ -153,9 +172,13 @@ describe("ZNSRootRegistrar", () => {
       minPrice: parseEther("10"),
       precisionMultiplier: precisionMultiDefault,
       feePercentage: registrationFeePercDefault,
+      isSet: true,
     };
 
-    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
+    const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(
+      ethers.constants.HashZero,
+      newPricerConfig,
+    );
 
     await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
       ethers.constants.HashZero,
@@ -180,17 +203,21 @@ describe("ZNSRootRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSRootRegistrar__factory(deployer);
-    const registrar = await registrarFactory.connect(user).deploy();
-    await registrar.deployed();
+    const registrarFactory = new ZNSRootRegistrar__factory(user);
 
-    const tx = registrar.connect(user).initialize(
-      zns.accessController.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
+    const tx = upgrades.deployProxy(
+      registrarFactory,
+      [
+        zns.accessController.address,
+        zns.registry.address,
+        zns.curvePricer.address,
+        zns.treasury.address,
+        zns.domainToken.address,
+        zns.addressResolver.address,
+      ],
+      {
+        kind: "uups",
+      }
     );
 
     await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
@@ -812,7 +839,7 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("Revoking Domains", () => {
-    it("Revokes a Top level Domain - Happy Path", async () => {
+    it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
       const topLevelTx = await defaultRootRegistration({
         user,
@@ -827,8 +854,22 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
 
+      // add mintlist to check revocation
+      await zns.subRegistrar.connect(user).updateMintlistForDomain(
+        domainHash,
+        [user.address, zeroVault.address],
+        [true, true]
+      );
+
       const ogPrice = BigNumber.from(135);
-      await zns.fixedPricer.connect(user).setPrice(domainHash, ogPrice);
+      await zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          price: ogPrice,
+          feePercentage: BigNumber.from(0),
+          isSet: true,
+        }
+      );
       expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain, false)).to.eq(ogPrice);
 
       const tokenId = await getTokenIdFromReceipt(topLevelTx);
@@ -849,6 +890,10 @@ describe("ZNSRootRegistrar", () => {
       // validate access type has been set to LOCKED
       const { accessType } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessType).to.eq(AccessType.LOCKED);
+
+      // validate mintlist has been removed
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, user.address)).to.be.false;
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, zeroVault.address)).to.be.false;
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {

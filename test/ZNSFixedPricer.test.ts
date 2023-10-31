@@ -18,7 +18,8 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { ZNSFixedPricer__factory, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSFixedPricer", () => {
@@ -85,6 +86,19 @@ describe("ZNSFixedPricer", () => {
     )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSFixedPricer__factory(deployer);
+    const impl = await getProxyImplAddress(zns.fixedPricer.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        deployer.address,
+        random.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
   it("should set config for 0x0 hash", async () => {
     const {
       price,
@@ -103,6 +117,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -196,6 +211,14 @@ describe("ZNSFixedPricer", () => {
     );
   });
 
+  it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+    await expect(
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, PERCENTAGE_BASIS.add(1))
+    ).to.be.revertedWith(
+      "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+    );
+  });
+
   // eslint-disable-next-line max-len
   it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
     const newPrice = ethers.utils.parseEther("1823");
@@ -205,6 +228,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -226,6 +250,7 @@ describe("ZNSFixedPricer", () => {
         {
           price: BigNumber.from(1),
           feePercentage: BigNumber.from(1),
+          isSet: true,
         }
       )
     ).to.be.revertedWith(

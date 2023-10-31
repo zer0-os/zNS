@@ -12,16 +12,18 @@ import {
   validateUpgrade,
   PaymentType,
   NOT_AUTHORIZED_REG_WIRED_ERR,
-  CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR, INVALID_LENGTH_ERR,
+  CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  INVALID_LENGTH_ERR,
+  INITIALIZED_ERR, INVALID_NAME_ERR,
 } from "./helpers";
 import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import {
-  INVALID_NAME_ERR,
   getAccessRevertMsg,
 } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
+import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -74,6 +76,20 @@ describe("ZNSCurvePricer", () => {
       domainLabel: "testdomain",
       fullConfig,
     });
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSCurvePricer__factory(deployer);
+    const impl = await getProxyImplAddress(zns.curvePricer.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        zns.accessController.address,
+        zns.registry.address,
+        priceConfigDefault
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Confirms values were initially set correctly", async () => {
@@ -275,6 +291,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       // as a user of "domainHash" that's not 0x0
@@ -310,6 +327,23 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
+      };
+
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+      ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
+
+    it("Cannot go below the set minPrice", async () => {
+      // Using config numbers from audit
+      const newConfig = {
+        baseLength: BigNumber.from("5"),
+        maxLength: BigNumber.from("10"),
+        maxPrice: parseEther("10"),
+        minPrice: parseEther("5.5"),
+        precisionMultiplier: precisionMultiDefault,
+        feePercentage: registrationFeePercDefault,
       };
 
       await expect(
@@ -325,6 +359,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       await expect(
@@ -344,6 +379,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -367,6 +403,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("2"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -627,6 +664,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: BigNumber.from(10),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: registrationFeePercDefault,
+        isSet: true,
       };
 
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always
@@ -821,7 +859,7 @@ describe("ZNSCurvePricer", () => {
     });
   });
 
-  describe("#setRegistrationFeePercentage", () => {
+  describe("#setFeePercentage", () => {
     it("Successfully sets the fee percentage", async () => {
       const newFeePerc = BigNumber.from(222);
       await zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc);
@@ -835,6 +873,13 @@ describe("ZNSCurvePricer", () => {
       const tx = zns.curvePricer.connect(admin)
         .setFeePercentage(domainHash, newFeePerc);
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
+    });
+
+    it("should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+      const newFeePerc = BigNumber.from(10001);
+      await expect(
+        zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc)
+      ).to.be.revertedWith("ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS");
     });
   });
 
