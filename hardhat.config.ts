@@ -71,7 +71,7 @@ const config : HardhatUserConfig = {
     timeout: 5000000,
   },
   gasReporter: {
-    enabled: false
+    enabled: false,
   },
   networks: {
     mainnet: {
