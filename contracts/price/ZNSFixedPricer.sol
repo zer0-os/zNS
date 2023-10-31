@@ -20,6 +20,11 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(address _accessController, address _registry) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);

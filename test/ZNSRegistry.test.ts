@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { IZNSContracts, DeployZNSParams } from "./helpers/types";
-import { ZNSRegistryUpgradeMock__factory } from "../typechain";
+import { ZNSRegistry__factory, ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
@@ -19,6 +19,7 @@ import {
   ONLY_OWNER_REGISTRAR_REG_ERR,
   OWNER_NOT_ZERO_REG_ERR,
 } from "./helpers/errors";
+import { getProxyImplAddress } from "./helpers/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -66,6 +67,18 @@ describe("ZNSRegistry", () => {
     ).to.be.revertedWith(
       INITIALIZED_ERR
     );
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSRegistry__factory(deployer);
+    const impl = await getProxyImplAddress(zns.registry.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        deployer.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   // eslint-disable-next-line max-len

@@ -5,7 +5,7 @@ import {
   AccessType, defaultTokenURI,
   deployZNS,
   distrConfigEmpty,
-  hashDomainLabel,
+  hashDomainLabel, INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
   NOT_AUTHORIZED_REG_ERR,
@@ -25,10 +25,11 @@ import { calcCurvePrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { ZNSRootRegistrar, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-// import { ICurvePriceConfig } from "../typechain/contracts/price/IZNSCurvePricer";
 import { parseEther } from "ethers/lib/utils";
+import { getProxyImplAddress } from "./helpers/utils";
+import { upgrades } from "hardhat";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -114,6 +115,23 @@ describe("ZNSRootRegistrar", () => {
     );
   });
 
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSRootRegistrar__factory(deployer);
+    const impl = await getProxyImplAddress(zns.rootRegistrar.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+        operator.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
     await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
     expect(await zns.registry.getDomainOwner(ethers.constants.HashZero)).to.equal(user.address);
@@ -184,17 +202,21 @@ describe("ZNSRootRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSRootRegistrar__factory(deployer);
-    const registrar = await registrarFactory.connect(user).deploy();
-    await registrar.deployed();
+    const registrarFactory = new ZNSRootRegistrar__factory(user);
 
-    const tx = registrar.connect(user).initialize(
-      zns.accessController.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
-      randomUser.address,
+    const tx = upgrades.deployProxy(
+      registrarFactory,
+      [
+        zns.accessController.address,
+        zns.registry.address,
+        zns.curvePricer.address,
+        zns.treasury.address,
+        zns.domainToken.address,
+        zns.addressResolver.address,
+      ],
+      {
+        kind: "uups",
+      }
     );
 
     await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));

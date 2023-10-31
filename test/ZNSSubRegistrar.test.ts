@@ -29,9 +29,10 @@ import assert from "assert";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { CustomDecimalTokenMock, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
+import { CustomDecimalTokenMock, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -3051,6 +3052,20 @@ describe("ZNSSubRegistrar", () => {
         governorAddresses: [deployer.address],
         adminAddresses: [admin.address],
       });
+    });
+
+    it("Should NOT let initialize the implementation contract", async () => {
+      const factory = new ZNSSubRegistrar__factory(deployer);
+      const impl = await getProxyImplAddress(zns.subRegistrar.address);
+      const implContract = factory.attach(impl);
+
+      await expect(
+        implContract.initialize(
+          deployer.address,
+          deployer.address,
+          deployer.address,
+        )
+      ).to.be.revertedWith(INITIALIZED_ERR);
     });
 
     it("#setRootRegistrar() should set the new root registrar correctly and emit #RootRegistrarSet event", async () => {
