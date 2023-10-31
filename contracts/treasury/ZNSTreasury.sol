@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -36,6 +36,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * > Stake is owned by the owner of the Name in `ZNSRegistry` which the owner of the Token can reclaim!
      */
     mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice `ZNSTreasury` proxy state initializer. Note that setter functions are used

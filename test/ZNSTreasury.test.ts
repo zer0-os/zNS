@@ -6,6 +6,7 @@ import {
   deployZNS,
   distrConfigEmpty,
   getPriceObject, NO_BENEFICIARY_ERR, NOT_AUTHORIZED_REG_WIRED_ERR,
+  INITIALIZED_ERR,
   priceConfigDefault,
   validateUpgrade,
 } from "./helpers";
@@ -14,8 +15,9 @@ import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "./helpers/access";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ZNSTreasuryUpgradeMock__factory } from "../typechain";
+import { ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { parseEther } from "ethers/lib/utils";
+import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -91,6 +93,21 @@ describe("ZNSTreasury", () => {
       zns.accessController.address
     );
     await expect(tx).to.be.revertedWith("Initializable: contract is already initialized");
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSTreasury__factory(deployer);
+    const impl = await getProxyImplAddress(zns.treasury.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        zns.registry.address,
+        zns.zeroToken.address,
+        zns.zeroVaultAddress,
+        zns.accessController.address
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("should NOT deploy/initialize with 0x0 addresses as args", async () => {

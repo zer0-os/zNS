@@ -110,6 +110,7 @@ export const registrationWithSetup = async ({
   domainContent = user.address,
   tokenURI = defaultTokenURI,
   fullConfig = fullDistrConfigEmpty,
+  setConfigs = true,
 } : {
   zns : IZNSContracts;
   user : SignerWithAddress;
@@ -118,6 +119,7 @@ export const registrationWithSetup = async ({
   domainContent ?: string;
   tokenURI ?: string;
   fullConfig ?: IFullDistributionConfig;
+  setConfigs ?: boolean;
 }) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
@@ -165,19 +167,25 @@ export const registrationWithSetup = async ({
   //  optimize for the best UX!
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address) {
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address && setConfigs) {
     await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as IFixedPriceConfig,
+      {
+        ...fullConfig.priceConfig as IFixedPriceConfig,
+        isSet: true,
+      },
     );
-  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address) {
+  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address && setConfigs) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
-      fullConfig.priceConfig as ICurvePriceConfig,
+      {
+        ...fullConfig.priceConfig as ICurvePriceConfig,
+        isSet: true,
+      },
     );
   }
 
-  if (fullConfig.paymentConfig.token !== AddressZero) {
+  if (fullConfig.paymentConfig.token !== AddressZero && setConfigs) {
     // set up payment config
     await zns.treasury.connect(user).setPaymentConfig(
       domainHash,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
@@ -36,6 +36,11 @@ contract ZNSRootRegistrar is
     IZNSDomainToken public domainToken;
     IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Create an instance of the ZNSRootRegistrar.sol

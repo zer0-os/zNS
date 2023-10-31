@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -28,6 +28,11 @@ contract ZNSDomainToken is
      * @notice Base URI used for ALL tokens. Can be empty if individual URIs are set.
     */
     string private baseURI;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
@@ -144,7 +149,7 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice To allow for user extension of the protocol we have to 
+     * @notice To allow for user extension of the protocol we have to
      * enable checking acceptance of new interfaces to ensure they are supported
      * @param interfaceId The interface ID
      */
