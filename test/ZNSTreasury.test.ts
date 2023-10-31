@@ -5,7 +5,9 @@ import {
   checkBalance, defaultTokenURI, deployTreasury,
   deployZNS,
   distrConfigEmpty,
-  getPriceObject, NO_BENEFICIARY_ERR, NOT_AUTHORIZED_REG_WIRED_ERR,
+  getPriceObject,
+  NO_BENEFICIARY_ERR,
+  NOT_AUTHORIZED_REG_WIRED_ERR,
   INITIALIZED_ERR,
   priceConfigDefault,
   validateUpgrade,
@@ -143,7 +145,8 @@ describe("ZNSTreasury", () => {
 
       const expectedStake = await zns.curvePricer.getPrice(
         ethers.constants.HashZero,
-        domainName
+        domainName,
+        false
       );
       const fee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, expectedStake);
 

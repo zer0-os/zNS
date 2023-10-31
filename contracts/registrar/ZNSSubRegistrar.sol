@@ -6,6 +6,7 @@ import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -16,6 +17,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+    using StringUtils for string;
 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
@@ -84,6 +86,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig
     ) external override returns (bytes32) {
+        // Confirms string values are only [a-z0-9-]
+        label.validate();
+
         bytes32 domainHash = hashWithParent(parentHash, label);
         require(
             !registry.exists(domainHash),
@@ -125,13 +130,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
-                        label
+                        label,
+                        true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
                         parentHash,
-                        label
+                        label,
+                        true
                     );
             }
         }
@@ -200,9 +207,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setPricerContractForDomain(
         bytes32 domainHash,
-        // TODO audit question: is this a problem that we expect the simplest interface
-        //  but are able set any of the derived ones ??
-        //  Can someone by setting their own contract here introduce a vulnerability ??
         IZNSPricer pricerContract
     ) public override {
         require(

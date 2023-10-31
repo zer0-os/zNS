@@ -54,9 +54,9 @@ export const approveForParent = async ({
   let price = BigNumber.from(0);
   let parentFee = BigNumber.from(0);
   if (pricerContract === zns.curvePricer.address) {
-    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel);
+    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
   } else if (pricerContract === zns.fixedPricer.address) {
-    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel);
+    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel, false);
   }
 
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);

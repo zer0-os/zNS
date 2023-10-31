@@ -5,6 +5,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 
 /**
@@ -12,6 +13,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * that doesn't depend on the length of the label.
 */
 contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSFixedPricer {
+    using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
@@ -30,7 +32,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setRegistry(_registry);
     }
 
-    // TODO audit question: should we add onlyProxy modifiers for every function in proxied contracts ??
     /**
      * @notice Sets the price for a domain. Only callable by domain owner/operator. Emits a `PriceSet` event.
      * @param domainHash The hash of the domain who sets the price for subdomains
@@ -42,15 +43,33 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Gets the price for a subdomain candidate label under the parent domain.
+     * @dev `skipValidityCheck` param is added to provide proper revert when the user is
+     * calling this to find out the price of a domain that is not valid. But in Registrar contracts
+     * we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
+     * So Registrars will pass this bool as "true" to not repeat the validity check.
+     * Note that if calling this function directly to find out the price, a user should always pass "false"
+     * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
+     * possible to register.
      * @param parentHash The hash of the parent domain to check the price under
      * @param label The label of the subdomain candidate to check the price for
+     * @param skipValidityCheck If true, skips the validity check for the label
     */
     // solhint-disable-next-line no-unused-vars
-    function getPrice(bytes32 parentHash, string calldata label) public override view returns (uint256) {
+    function getPrice(
+        bytes32 parentHash,
+        string calldata label,
+        bool skipValidityCheck
+    ) public override view returns (uint256) {
         require(
             priceConfigs[parentHash].isSet,
             "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
         );
+
+        if (!skipValidityCheck) {
+            // Confirms string values are only [a-z0-9-]
+            label.validate();
+        }
+
         return priceConfigs[parentHash].price;
     }
 
@@ -106,12 +125,14 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * under the given parent.
      * @param parentHash The hash of the parent domain under which price and fee are determined
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
+     * @param skipValidityCheck If true, skips the validity check for the label
     */
     function getPriceAndFee(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view override returns (uint256 price, uint256 fee) {
-        price = getPrice(parentHash, label);
+        price = getPrice(parentHash, label, skipValidityCheck);
         fee = getFeeForPrice(parentHash, price);
         return (price, fee);
     }

@@ -10,6 +10,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 
 /**
@@ -30,6 +31,7 @@ contract ZNSRootRegistrar is
     AAccessControlled,
     ARegistryWired,
     IZNSRootRegistrar {
+    using StringUtils for string;
 
     IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
@@ -92,10 +94,8 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
-        require(
-            bytes(name).length != 0,
-            "ZNSRootRegistrar: Domain Name not provided"
-        );
+        // Confirms string values are only [a-z0-9-]
+        name.validate();
 
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
@@ -106,7 +106,7 @@ contract ZNSRootRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
 
         _coreRegister(
             CoreRegisterArgs(
