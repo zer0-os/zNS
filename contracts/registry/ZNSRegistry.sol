@@ -14,7 +14,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     // Mapping of all approved resolvers
-    mapping(string resolverType => address resolver) internal resolvers; // TODO public for registrations?
+    mapping(string resolverType => address resolver) internal resolvers;
 
     /**
      * @notice Mapping of `domainHash` to [DomainRecord](./IZNSRegistry.md#iznsregistry) struct to hold information
@@ -172,7 +172,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
      * @param resolverType The resolver type as a string, e.g. "address"
      */
-    function getResolver(string calldata resolverType) public view returns(address) {
+    function getResolverType(string calldata resolverType) public view override returns(address) {
         return resolvers[resolverType];
     }
 
@@ -183,15 +183,17 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract
      */
-    function addResolver(string calldata resolverType, address resolver) public override onlyAdmin {
+    function addResolverType(string calldata resolverType, address resolver) public override onlyAdmin {
         resolvers[resolverType] = resolver;
-
         emit ResolverAdded(resolverType, resolver);
     }
 
-    function deleteResolver(string calldata resolverType) public override onlyAdmin {
+    /**
+     * @notice Delete a resolver type from the mapping of types
+     * @param resolverType The type to be removed
+     */
+    function deleteResolverType(string calldata resolverType) public override onlyAdmin {
         delete resolvers[resolverType];
-        
         emit ResolverDeleted(resolverType);
     }
 
@@ -238,7 +240,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Updates the resolver of an existing domain in `records`.
-     * Can be called by eithe the owner of the Name or an allowed operator.
+     * Can be called by either the owner of the Name or an allowed operator.
      * @param domainHash the hash of a domain's name
      * @param resolverType The new Resolver contract address
      */
@@ -295,11 +297,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         string calldata resolverType
     ) internal {
         address resolver = resolvers[resolverType];
-
-        require(
-            resolver != address(0),
-            "ZNSRegistry: Resolver not found"
-        );
 
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);

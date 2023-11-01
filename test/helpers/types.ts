@@ -92,7 +92,6 @@ export interface RegistrarConfig {
   registryAddress : string;
   curvePricerAddress : string;
   domainTokenAddress : string;
-  addressResolverAddress : string;
 }
 
 export interface IZNSContracts {

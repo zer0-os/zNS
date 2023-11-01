@@ -5,7 +5,6 @@ import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * // TODO confirm w/ kirill
  * @notice Stake fee is 0x0 for anything other than subdomain under a parent with Stake Payment
  * parent hash will be 0x0 for root domain
  */
@@ -18,7 +17,6 @@ struct CoreRegisterArgs {
     uint256 stakeFee;
     string label;
     string tokenURI;
-    string resolverType;
     bool isStakePayment;
 }
 
@@ -117,19 +115,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
      */
     event SubRegistrarSet(address subRegistrar);
 
-    /**
-     * @notice Emitted when the `addressResolver` address is set in state.
-     * @param addressResolver The new address of the AddressResolver contract
-     */
-    event AddressResolverSet(address addressResolver);
-
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
         address treasury_,
-        address domainToken_,
-        address addressResolver_
+        address domainToken_
     ) external;
 
     function registerRootDomain(
@@ -158,6 +149,4 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
-
-    function setAddressResolver(address addressResolver_) external;
 }

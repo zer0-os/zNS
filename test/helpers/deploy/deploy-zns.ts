@@ -360,7 +360,6 @@ export const deployRootRegistrar = async (
       config.curvePricerAddress,
       config.treasury.address,
       config.domainTokenAddress,
-      config.addressResolverAddress,
     ],
     {
       kind: "uups",
@@ -592,7 +591,6 @@ export const deployZNS = async ({
     registryAddress: registry.address,
     curvePricerAddress: curvePricer.address,
     domainTokenAddress: domainToken.address,
-    addressResolverAddress: addressResolver.address,
   };
 
   const rootRegistrar = await deployRootRegistrar(

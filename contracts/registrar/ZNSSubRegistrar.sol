@@ -103,7 +103,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
-            resolverType: "address",
             tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE
         });

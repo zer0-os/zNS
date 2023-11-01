@@ -121,12 +121,16 @@ interface IZNSRegistry {
         string calldata resolverType
     ) external;
 
-    function addResolver(
+    function getResolverType(
+        string calldata resolverType
+    ) external returns (address); 
+
+    function addResolverType(
         string calldata resolverType,
         address resolver
     ) external;
 
-    function deleteResolver(
+    function deleteResolverType(
         string calldata resolverType
     ) external;
 
