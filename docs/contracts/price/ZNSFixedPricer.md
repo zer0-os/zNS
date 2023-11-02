@@ -32,6 +32,18 @@ Mapping of domainHash to price config set by the domain owner/operator
 
 
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
+
+
 ### initialize
 
 ```solidity
@@ -65,12 +77,19 @@ Sets the price for a domain. Only callable by domain owner/operator. Emits a `Pr
 ### getPrice
 
 ```solidity
-function getPrice(bytes32 parentHash, string label) public view returns (uint256)
+function getPrice(bytes32 parentHash, string label, bool skipValidityCheck) public view returns (uint256)
 ```
 
 
 Gets the price for a subdomain candidate label under the parent domain.
 
+`skipValidityCheck` param is added to provide proper revert when the user is
+calling this to find out the price of a domain that is not valid. But in Registrar contracts
+we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
+So Registrars will pass this bool as "true" to not repeat the validity check.
+Note that if calling this function directly to find out the price, a user should always pass "false"
+as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
+possible to register.
 
 #### Parameters
 
@@ -78,6 +97,7 @@ Gets the price for a subdomain candidate label under the parent domain.
 | ---- | ---- | ----------- |
 | parentHash | bytes32 | The hash of the parent domain to check the price under |
 | label | string | The label of the subdomain candidate to check the price for |
+| skipValidityCheck | bool | If true, skips the validity check for the label |
 
 
 ### setFeePercentage
@@ -87,7 +107,8 @@ function setFeePercentage(bytes32 domainHash, uint256 feePercentage) public
 ```
 
 
-Sets the feePercentage for a domain. Only callable by domain owner/operator. Emits a `FeePercentageSet` event.
+Sets the feePercentage for a domain. Only callable by domain owner/operator.
+Emits a `FeePercentageSet` event.
 
 `feePercentage` is set as a part of the `PERCENTAGE_BASIS` of 10,000 where 1% = 100
 
@@ -110,6 +131,8 @@ Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this 
 
 Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
 and `FeePercentageSet` events.
+> This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+> Use the other individual setters to modify only, since they do not set this variable!
 
 #### Parameters
 
@@ -142,7 +165,7 @@ based on the value set by the owner of the parent domain.
 ### getPriceAndFee
 
 ```solidity
-function getPriceAndFee(bytes32 parentHash, string label) external view returns (uint256 price, uint256 fee)
+function getPriceAndFee(bytes32 parentHash, string label, bool skipValidityCheck) external view returns (uint256 price, uint256 fee)
 ```
 
 
@@ -157,6 +180,7 @@ under the given parent.
 | ---- | ---- | ----------- |
 | parentHash | bytes32 | The hash of the parent domain under which price and fee are determined |
 | label | string | The label of the subdomain candidate to get the price and fee for before/during registration |
+| skipValidityCheck | bool | If true, skips the validity check for the label |
 
 
 ### setRegistry
@@ -170,6 +194,42 @@ Sets the registry address in state.
 
 This function is required for all contracts inheriting `ARegistryWired`.
 
+
+
+### _setPrice
+
+```solidity
+function _setPrice(bytes32 domainHash, uint256 price) internal
+```
+
+
+Internal function for set price
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | The hash of the domain |
+| price | uint256 | The new price |
+
+
+### _setFeePercentage
+
+```solidity
+function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal
+```
+
+
+Internal function for setFeePercentage
+
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | The hash of the domain |
+| feePercentage | uint256 | The new feePercentage |
 
 
 ### _authorizeUpgrade

@@ -11,6 +11,18 @@ the `ZNSRootRegistrar.sol` contract or any address holding a REGISTRAR_ROLE.
 
 
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
+
+
 ### initialize
 
 ```solidity
@@ -175,9 +187,15 @@ function supportsInterface(bytes4 interfaceId) public view virtual returns (bool
 ```
 
 
+To allow for user extension of the protocol we have to
+enable checking acceptance of new interfaces to ensure they are supported
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| interfaceId | bytes4 | The interface ID |
 
 
 ### _burn
@@ -187,9 +205,14 @@ function _burn(uint256 tokenId) internal
 ```
 
 
+ERC721 `_burn` function
 
 
+#### Parameters
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenId | uint256 | The ID of the token to burn |
 
 
 ### _baseURI
@@ -199,11 +222,8 @@ function _baseURI() internal view returns (string)
 ```
 
 
+Return the baseURI
 
-
-Base URI for computing {tokenURI}. If set, the resulting URI for each
-token will be the concatenation of the `baseURI` and the `tokenId`. Empty
-by default, can be overridden in child contracts.
 
 
 

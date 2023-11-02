@@ -33,12 +33,24 @@ mapping(bytes32 => struct IZNSTreasury.Stake) stakedForDomain
 ```
 
 
-The mapping that stores `Stake` struct mapped by domainHash. It stores the staking data for each domain in zNS.
-Note that there is no owner address to which the stake is tied to. Instead, the owner data from `ZNSRegistry`
-is used to identify a user who owns the stake. So the staking data is tied to the owner of the Name.
-This should be taken into account, since any transfer of the Token to another address,
-and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
+The mapping that stores `Stake` struct mapped by domainHash. It stores the staking data for
+each domain in zNS. Note that there is no owner address to which the stake is tied to. Instead, the
+owner data from `ZNSRegistry` is used to identify a user who owns the stake. So the staking data is
+tied to the owner of the Name. This should be taken into account, since any transfer of the Token to
+another address, and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
 > Stake is owned by the owner of the Name in `ZNSRegistry` which the owner of the Token can reclaim!
+
+
+
+
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
 
 
 
@@ -131,8 +143,8 @@ An alternative to `stakeForDomain()` for cases when a parent domain is using Pay
 
 Note that `stakeFee` transfers are NOT present here, since a fee on top of the price is ONLY supported
 for STAKE payment type. This function is called by `ZNSRootRegistrar.sol` when a user wants to register a domain.
-This function uses a different approach than `stakeForDomain()` as it performs 2 transfers from the user's wallet.
-Is uses `paymentConfigs[parentHash]` to get the token and beneficiary for the parent domain.
+This function uses a different approach than `stakeForDomain()` as it performs 2 transfers from the user's
+wallet. Is uses `paymentConfigs[parentHash]` to get the token and beneficiary for the parent domain.
 Can be called ONLY by the REGISTRAR_ROLE. Fires a `DirectPaymentProcessed` event.
 
 #### Parameters
@@ -213,6 +225,30 @@ function setRegistry(address registry_) external
 Sets the registry address in state.
 
 This function is required for all contracts inheriting `ARegistryWired`.
+
+
+
+### _setBeneficiary
+
+```solidity
+function _setBeneficiary(bytes32 domainHash, address beneficiary) internal
+```
+
+
+
+
+
+
+
+### _setPaymentToken
+
+```solidity
+function _setPaymentToken(bytes32 domainHash, address paymentToken) internal
+```
+
+
+
+
 
 
 
