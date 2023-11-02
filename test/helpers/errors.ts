@@ -28,6 +28,13 @@ export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both N
 // eslint-disable-next-line max-len
 export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist";
 
+// StringUtils
+export const INVALID_NAME_ERR = "StringUtils: Invalid domain label";
+export const INVALID_LENGTH_ERR = "StringUtils: Domain label too long or nonexistent";
+
+// Treasury
+export const NO_BENEFICIARY_ERR = "ZNSTreasury: parent domain has no beneficiary set";
+
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";

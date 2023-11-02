@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -55,10 +55,15 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
-     * @dev ! The owner of the 0x0 hash should be a multisig !
+     * @dev ! The owner of the 0x0 hash should be a multisig ideally, but EOA can be used to deploy !
      * > Admin account deploying the contract will be the owner of the 0x0 hash !
      */
     function initialize(address accessController_) external override initializer {

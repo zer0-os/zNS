@@ -42,6 +42,17 @@ export const priceConfigDefault : ICurvePriceConfig = {
   baseLength: BigNumber.from(4),
   precisionMultiplier: precisionMultiDefault,
   feePercentage: registrationFeePercDefault,
+  isSet: true, // note that this value is never used, but is here to satisfy type constraints taken from the contract
+};
+
+export const curvePriceConfigEmpty : ICurvePriceConfig = {
+  maxPrice: ethers.constants.Zero,
+  minPrice: ethers.constants.Zero,
+  maxLength: BigNumber.from(0),
+  baseLength: BigNumber.from(0),
+  precisionMultiplier: BigNumber.from(0),
+  feePercentage: BigNumber.from(0),
+  isSet: true,
 };
 
 export const paymentConfigEmpty = {

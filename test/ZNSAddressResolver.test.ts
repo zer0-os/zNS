@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
@@ -10,8 +10,9 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
-  validateUpgrade,
+  validateUpgrade, INITIALIZED_ERR,
 } from "./helpers";
+import { getProxyImplAddress } from "./helpers/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -53,6 +54,19 @@ describe("ZNSAddressResolver", () => {
         deployer.address,
         DEFAULT_RESOLVER_TYPE
       );
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSAddressResolver__factory(deployer);
+    const impl = await getProxyImplAddress(zns.addressResolver.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        operator.address,
+        mockRegistrar.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Should get the AddressResolver", async () => { // Copy of registry tests
