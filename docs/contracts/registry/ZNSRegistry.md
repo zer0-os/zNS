@@ -65,6 +65,23 @@ modifier onlyOwner(bytes32 domainHash)
 Revert if `msg.sender` is not the owner. Used for owner restricted functions.
 
 
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | the hash of a domain's name |
+
+
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
 
 
 ### initialize
@@ -76,7 +93,7 @@ function initialize(address accessController_) external
 
 Initializer for the `ZNSRegistry` proxy.
 
-! The owner of the 0x0 hash should be a multisig !
+! The owner of the 0x0 hash should be a multisig ideally, but EOA can be used to deploy !
 > Admin account deploying the contract will be the owner of the 0x0 hash !
 
 #### Parameters

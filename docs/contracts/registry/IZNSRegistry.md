@@ -108,14 +108,9 @@ function initialize(address accessController) external
 ```
 
 
-Create an instance of the ZNSRegistry contract
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| accessController | address | The addrss of the access controller |
 
 
 ### exists
@@ -125,14 +120,9 @@ function exists(bytes32 domainHash) external view returns (bool)
 ```
 
 
-Check if a given domain exists
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of a domain's name |
 
 
 ### isOwnerOrOperator
@@ -142,15 +132,9 @@ function isOwnerOrOperator(bytes32 domainHash, address candidate) external view 
 ```
 
 
-Checks if provided address is an owner or an operator of the provided domain
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of a domain's name |
-| candidate | address | The address for which we are checking access |
 
 
 ### isOperatorFor
@@ -191,14 +175,9 @@ function getDomainRecord(bytes32 domainHash) external view returns (struct IZNSR
 ```
 
 
-Get a record for a domain
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | the hash of a domain's name |
 
 
 ### getDomainOwner
@@ -208,14 +187,9 @@ function getDomainOwner(bytes32 domainHash) external view returns (address)
 ```
 
 
-Get the owner of the given domain
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | the hash of a domain's name |
 
 
 ### getDomainResolver
@@ -225,14 +199,9 @@ function getDomainResolver(bytes32 domainHash) external view returns (address)
 ```
 
 
-Get the default resolver for the given domain
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of a domain's name |
 
 
 ### createDomainRecord
@@ -242,16 +211,9 @@ function createDomainRecord(bytes32 domainHash, address owner, address resolver)
 ```
 
 
-Create a new domain record
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain name |
-| owner | address | The owner of the new domain |
-| resolver | address | The resolver of the new domain |
 
 
 ### updateDomainRecord
@@ -261,16 +223,9 @@ function updateDomainRecord(bytes32 domainHash, address owner, address resolver)
 ```
 
 
-Update an existing domain record's owner or resolver
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain |
-| owner | address | The owner or an allowed operator of that domain |
-| resolver | address | The resolver for the domain |
 
 
 ### updateDomainOwner
@@ -280,15 +235,9 @@ function updateDomainOwner(bytes32 domainHash, address owner) external
 ```
 
 
-Update a domain's owner
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | the hash of a domain's name |
-| owner | address | The account to transfer ownership to |
 
 
 ### updateDomainResolver
@@ -298,15 +247,9 @@ function updateDomainResolver(bytes32 domainHash, address resolver) external
 ```
 
 
-Update the domain's default resolver
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | the hash of a domain's name |
-| resolver | address | The new default resolver |
 
 
 ### deleteRecord
@@ -316,14 +259,9 @@ function deleteRecord(bytes32 domainHash) external
 ```
 
 
-Delete a domain's record
 
 
-#### Parameters
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain name |
 
 
 
