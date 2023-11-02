@@ -12,7 +12,9 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   getAccessRevertMsg,
-  validateUpgrade, NOT_AUTHORIZED_REG_ERR,
+  validateUpgrade,
+  NOT_AUTHORIZED_REG_ERR,
+  DEFAULT_RESOLVER_TYPE,
 } from "./helpers";
 import {
   ONLY_NAME_OWNER_REG_ERR,
@@ -35,8 +37,6 @@ describe("ZNSRegistry", () => {
   let zns : IZNSContracts;
   let wilderDomainHash : string;
 
-  const resolverTypeDefault = "address";
-
   beforeEach(async () => {
     [deployer, operator, randomUser, mockResolver, mockRegistrar] = await hre.ethers.getSigners();
 
@@ -52,12 +52,12 @@ describe("ZNSRegistry", () => {
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    await zns.registry.connect(deployer).addResolverType(resolverTypeDefault, mockResolver.address);
+    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, mockResolver.address);
 
     await zns.registry.connect(mockRegistrar).createDomainRecord(
       wilderDomainHash,
       deployer.address,
-      resolverTypeDefault
+      DEFAULT_RESOLVER_TYPE
     );
   });
 
@@ -120,7 +120,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(
         domainHash,
         deployer.address,
-        resolverTypeDefault
+        DEFAULT_RESOLVER_TYPE
       );
 
       const record = await zns.registry.getDomainRecord(domainHash);
@@ -129,7 +129,7 @@ describe("ZNSRegistry", () => {
     });
 
     it("Gets the resolver we currently have assigned to a certain type", async () => {
-      const resolver = await zns.registry.getResolverType(resolverTypeDefault);
+      const resolver = await zns.registry.getResolverType(DEFAULT_RESOLVER_TYPE);
 
       expect(resolver).to.eq(mockResolver.address);
     });
@@ -288,7 +288,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(
         domainHash,
         deployer.address,
-        resolverTypeDefault
+        DEFAULT_RESOLVER_TYPE
       );
     });
 
@@ -298,7 +298,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.connect(deployer).createDomainRecord(
         domainHash,
         deployer.address,
-        resolverTypeDefault
+        DEFAULT_RESOLVER_TYPE
       );
 
       await expect(tx).to.be.revertedWith(
@@ -323,7 +323,7 @@ describe("ZNSRegistry", () => {
       const testType = "test-resolver";
       await zns.registry.connect(deployer).addResolverType(testType, randomUser.address);
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       await zns.registry.updateDomainRecord(domainHash, mockRegistrar.address, testType);
 
       const record = await zns.registry.getDomainRecord(domainHash);
@@ -344,7 +344,7 @@ describe("ZNSRegistry", () => {
     it("Can update a domain owner if the domain exists", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       await zns.registry.updateDomainOwner(domainHash, mockRegistrar.address);
 
       const record = await zns.registry.getDomainRecord(domainHash);
@@ -366,7 +366,7 @@ describe("ZNSRegistry", () => {
       const testType = "test-resolver";
       await zns.registry.connect(deployer).addResolverType(testType, randomUser.address);
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       await zns.registry.updateDomainResolver(domainHash, testType);
 
       const record = await zns.registry.getDomainRecord(domainHash);
@@ -377,7 +377,7 @@ describe("ZNSRegistry", () => {
     it("Cannot update a domain record if the owner is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.updateDomainRecord(domainHash, ethers.constants.AddressZero, mockResolver.address);
 
       await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
@@ -386,7 +386,7 @@ describe("ZNSRegistry", () => {
     it("Can update a domain record if the resolver is zero address", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.updateDomainRecord(domainHash, mockResolver.address, ethers.constants.AddressZero);
 
       await expect(tx).to.be.fulfilled;
@@ -430,7 +430,7 @@ describe("ZNSRegistry", () => {
     it("cannot update a domain's record if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainRecord(
         domainHash,
         mockResolver.address,
@@ -443,7 +443,7 @@ describe("ZNSRegistry", () => {
     it("cannot update an domain's owner if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
 
       await expect(tx).to.be.revertedWith(
@@ -454,7 +454,7 @@ describe("ZNSRegistry", () => {
     it("cannot update a domain's resolver if not an owner or operator", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
 
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
@@ -463,7 +463,7 @@ describe("ZNSRegistry", () => {
     it("Can delete record with REGISTRAR_ROLE", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       await zns.registry.connect(mockRegistrar).deleteRecord(domainHash);
 
       const record = await zns.registry.getDomainRecord(domainHash);
@@ -474,7 +474,7 @@ describe("ZNSRegistry", () => {
     it("Cannot delete record without REGISTRAR_ROLE", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).deleteRecord(domainHash);
 
       await expect(tx).to.be.revertedWith(
@@ -497,14 +497,14 @@ describe("ZNSRegistry", () => {
     it("Emits events when a new domain is created", async () => {
       const domainHash = hashDomainLabel("world");
 
-      const resolver = await zns.registry.getResolverType(resolverTypeDefault);
+      await zns.registry.getResolverType(DEFAULT_RESOLVER_TYPE);
 
       const tx = zns.registry
         .connect(mockRegistrar)
         .createDomainRecord(
           domainHash,
           deployer.address,
-          resolverTypeDefault
+          DEFAULT_RESOLVER_TYPE
         );
 
       await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(domainHash, deployer.address)
@@ -514,13 +514,13 @@ describe("ZNSRegistry", () => {
     it("Emits an event when an existing domain is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = await zns.registry
         .connect(deployer)
         .updateDomainRecord(
           domainHash,
           mockResolver.address,
-          resolverTypeDefault
+          DEFAULT_RESOLVER_TYPE
         );
 
       const rec = await tx.wait(0);
@@ -537,7 +537,7 @@ describe("ZNSRegistry", () => {
     it("Emits an event when a domain's owner is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(deployer).updateDomainOwner(domainHash, mockResolver.address);
 
       await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(
@@ -552,7 +552,7 @@ describe("ZNSRegistry", () => {
       const testType = "test-resolver";
       await zns.registry.connect(deployer).addResolverType(testType, randomUser.address);
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, resolverTypeDefault);
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(deployer).updateDomainResolver(domainHash, testType);
 
       await expect(tx).to.emit(zns.registry, "DomainResolverSet").withArgs(
@@ -608,7 +608,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(
         domainHash,
         deployer.address,
-        resolverTypeDefault
+        DEFAULT_RESOLVER_TYPE
       );
 
       const contractCalls = [
