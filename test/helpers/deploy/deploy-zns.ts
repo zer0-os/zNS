@@ -41,7 +41,7 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   defaultRoyaltyFraction,
-  DEFAULT_RESOLVER_TYPE
+  DEFAULT_RESOLVER_TYPE,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../access";
 import { getProxyImplAddress } from "../utils";
