@@ -2,6 +2,7 @@ import { BigNumber } from "ethers";
 import { ICurvePriceConfig } from "./types";
 import { ethers } from "hardhat";
 
+export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
