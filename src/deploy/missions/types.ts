@@ -39,4 +39,5 @@ export interface ICurvePriceConfig {
   baseLength : BigNumber;
   precisionMultiplier : BigNumber;
   feePercentage : BigNumber;
+  // isSet : boolean; // TODO need this still?
 }

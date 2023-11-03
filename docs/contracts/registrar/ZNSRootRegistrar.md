@@ -77,6 +77,18 @@ contract IZNSSubRegistrar subRegistrar
 
 
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
+
+
 ### initialize
 
 ```solidity
@@ -368,18 +380,6 @@ Only ADMIN in `ZNSAccessController` can call this function.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | addressResolver_ | address | Address of the `ZNSAddressResolver` contract |
-
-
-### _isValidString
-
-```solidity
-function _isValidString(string str) internal pure returns (bool)
-```
-
-
-
-
-
 
 
 ### _authorizeUpgrade

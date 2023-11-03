@@ -68,6 +68,18 @@ Emitted when a `mintlist` is updated for a domain.
 
 
 
+### MintlistCleared
+
+```solidity
+event MintlistCleared(bytes32 domainHash)
+```
+
+
+
+
+
+
+
 ### RootRegistrarSet
 
 ```solidity
@@ -92,10 +104,10 @@ function distrConfigs(bytes32 domainHash) external view returns (contract IZNSPr
 
 
 
-### mintlist
+### isMintlistedForDomain
 
 ```solidity
-function mintlist(bytes32 domainHash, address candidate) external view returns (bool)
+function isMintlistedForDomain(bytes32 domainHash, address candidate) external view returns (bool)
 ```
 
 
@@ -192,6 +204,30 @@ function setAccessTypeForDomain(bytes32 domainHash, enum IDistributionConfig.Acc
 
 ```solidity
 function updateMintlistForDomain(bytes32 domainHash, address[] candidates, bool[] allowed) external
+```
+
+
+
+
+
+
+
+### clearMintlistForDomain
+
+```solidity
+function clearMintlistForDomain(bytes32 domainHash) external
+```
+
+
+
+
+
+
+
+### clearMintlistAndLock
+
+```solidity
+function clearMintlistAndLock(bytes32 domainHash) external
 ```
 
 

@@ -157,7 +157,7 @@ export const validatePathRegistration = async ({
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel));
+        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel, false));
       } else {
         const {
           maxPrice,

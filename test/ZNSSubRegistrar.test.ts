@@ -13,11 +13,12 @@ import {
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
   INITIALIZED_ERR,
-  INVALID_TOKENID_ERC_ERR,
-  ONLY_NAME_OWNER_REG_ERR,
+  INVALID_NAME_ERR,
+  INVALID_TOKENID_ERC_ERR, NO_BENEFICIARY_ERR,
+  ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
   PaymentType,
   precisionDefault,
-  priceConfigDefault,
+  priceConfigDefault, curvePriceConfigEmpty,
   validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -26,12 +27,13 @@ import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
-import { registrationWithSetup } from "./helpers/register-setup";
+import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { CustomDecimalTokenMock, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
+import { CustomDecimalTokenMock, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -81,7 +83,7 @@ describe("ZNSSubRegistrar", () => {
           rootOwner,
           lvl2SubOwner,
         ].map(async ({ address }) =>
-          zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.zeroToken.mint(address, ethers.utils.parseEther("100000000000")))
       );
       await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -108,6 +110,79 @@ describe("ZNSSubRegistrar", () => {
           priceConfig: rootPriceConfig,
         },
       });
+    });
+
+    // eslint-disable-next-line max-len
+    it("should revert when trying to register a subdomain before parent has set it's config with FixedPricer", async () => {
+      // register a new root domain
+      const newRootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "rootunsetfixed",
+        setConfigs: false,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: {
+            price: BigNumber.from(0),
+            feePercentage: BigNumber.from(0),
+          },
+        },
+      });
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          newRootHash,
+          "subunset",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+      );
+    });
+
+    // eslint-disable-next-line max-len
+    it("should revert when trying to register a subdomain before parent has set it's config with CurvePricer", async () => {
+      // register a new root domain
+      const newRootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "rootunsetcurve",
+        setConfigs: false,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.curvePricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: curvePriceConfigEmpty,
+        },
+      });
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          newRootHash,
+          "subunset",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+      );
     });
 
     it("should register subdomain with the correct tokenURI assigned to the domain token minted", async () => {
@@ -137,6 +212,83 @@ describe("ZNSSubRegistrar", () => {
       const tokenId = BigNumber.from(subHash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
+    });
+
+    it("Can register a subdomain with characters [a-z0-9]", async () => {
+      const alphaNumeric = "0x0dwidler0x0";
+
+      // Add allowance
+      await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      // While "to.not.be.reverted" isn't really a full "test"
+      // we don't emit a custom event here, only in the `rootRegistrar.coreRegister`
+      // call. So we can't use the `.to.emit` syntax
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: alphaNumeric,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.not.be.reverted;
+    });
+
+    it("Fails for a subdomain that uses any invalid characters", async () => {
+      const nameA = "WILDER";
+      const nameB = "!?w1Id3r!?";
+      const nameC = "!%$#^*?!#👍3^29";
+      const nameD = "wo.rld";
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameA,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameB,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameC,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
+
+      await expect(defaultSubdomainRegistration(
+        {
+          user: lvl2SubOwner,
+          zns,
+          parentHash: rootHash,
+          subdomainLabel: nameD,
+          domainContent: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+        }
+      )).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
     it("should revert when trying to register a subdomain under a non-existent parent", async () => {
@@ -244,6 +396,9 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds balance"
       );
+
+      // transfer back for other tests
+      await zns.zeroToken.connect(deployer).transfer(lvl2SubOwner.address, userBalanceAfter);
     });
 
     it("should revert when user has insufficient allowance", async () => {
@@ -264,6 +419,84 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds allowance"
       );
+    });
+
+    it("should revert on payment when parent's beneficiary has not yet been set and when stakeFee is > 0", async () => {
+      // register a new parent with direct payment and no payment config
+      const parentHash1 = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "parentnoconfigdirect",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: paymentConfigEmpty,
+          priceConfig: rootPriceConfig,
+        },
+      });
+
+      // set the token address
+      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash1, zns.zeroToken.address);
+
+      // register a new parent with stake payment and no payment config
+      const parentHash2 = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "parentnoconfigstake",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.curvePricer.address,
+            paymentType: PaymentType.STAKE,
+          },
+          paymentConfig: paymentConfigEmpty,
+          priceConfig: priceConfigDefault,
+        },
+      });
+
+      // set the token address
+      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash2, zns.zeroToken.address);
+
+      // register subdomains under new parents
+      await expect(
+        registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash1,
+          domainLabel: "sub1",
+        })
+      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+
+      await expect(
+        registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash2,
+          domainLabel: "sub2",
+        })
+      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+
+      // change stakeFee to 0
+      await zns.curvePricer.connect(rootOwner).setFeePercentage(
+        parentHash2,
+        BigNumber.from(0)
+      );
+
+      let subHash;
+      // try register a subdomain again
+      await expect(
+        subHash = registrationWithSetup({
+          zns,
+          user: lvl2SubOwner,
+          parentHash: parentHash2,
+          domainLabel: "sub2",
+        })
+      ).to.be.fulfilled;
+
+      await zns.registry.exists(subHash);
     });
   });
 
@@ -616,8 +849,15 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("should revoke lvl 6 domain without refund and lock registration", async () => {
+    it("should revoke lvl 6 domain without refund, lock registration and remove mintlist", async () => {
       const domainHash = regResults[5].domainHash;
+
+      // add to mintlist
+      await zns.subRegistrar.connect(lvl6SubOwner).updateMintlistForDomain(
+        domainHash,
+        [lvl6SubOwner.address, lvl2SubOwner.address],
+        [true, true]
+      );
 
       const userBalBefore = await zns.zeroToken.balanceOf(lvl6SubOwner.address);
 
@@ -633,6 +873,10 @@ describe("ZNSSubRegistrar", () => {
       // and nobody can register a subdomain under this domain
       const { accessType: accessTypeFromSC } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessTypeFromSC).to.eq(AccessType.LOCKED);
+
+      // make sure that mintlist has been removed
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, lvl6SubOwner.address)).to.eq(false);
+      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, lvl2SubOwner.address)).to.eq(false);
 
       await expect(
         zns.subRegistrar.connect(lvl6SubOwner).registerSubdomain(
@@ -1375,7 +1619,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
       const priceConfig = {
-        maxPrice: parseUnits("25000.93", decimalValues.thirteen),
+        maxPrice: parseUnits("30000.93", decimalValues.thirteen),
         minPrice: parseUnits("2000.11", decimalValues.thirteen),
         maxLength: BigNumber.from(50),
         baseLength: BigNumber.from(4),
@@ -1384,6 +1628,7 @@ describe("ZNSSubRegistrar", () => {
             .sub(precisionDefault)
         ),
         feePercentage: BigNumber.from(185),
+        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1469,6 +1714,7 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigNumber.from(2),
         precisionMultiplier: BigNumber.from(1),
         feePercentage: BigNumber.from(0),
+        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1951,6 +2197,7 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigNumber.from(2),
         precisionMultiplier: BigNumber.from(1),
         feePercentage: BigNumber.from(111),
+        isSet: true,
       };
 
       // see `token` in paymentConfig
@@ -2001,7 +2248,8 @@ describe("ZNSSubRegistrar", () => {
         stakeFee: feeFromSC,
       } = await zns.curvePricer.getPriceAndFee(
         subdomainParentHash,
-        label
+        label,
+        true
       );
       const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
         ethers.constants.HashZero,
@@ -2371,7 +2619,7 @@ describe("ZNSSubRegistrar", () => {
         [true],
       );
 
-      const mintlisted = await zns.subRegistrar.mintlist(
+      const mintlisted = await zns.subRegistrar.isMintlistedForDomain(
         domainHash,
         lvl5SubOwner.address
       );
@@ -2977,6 +3225,20 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
+    it("Should NOT let initialize the implementation contract", async () => {
+      const factory = new ZNSSubRegistrar__factory(deployer);
+      const impl = await getProxyImplAddress(zns.subRegistrar.address);
+      const implContract = factory.attach(impl);
+
+      await expect(
+        implContract.initialize(
+          deployer.address,
+          deployer.address,
+          deployer.address,
+        )
+      ).to.be.revertedWith(INITIALIZED_ERR);
+    });
+
     it("#setRootRegistrar() should set the new root registrar correctly and emit #RootRegistrarSet event", async () => {
       const tx = await zns.subRegistrar.connect(admin).setRootRegistrar(random.address);
 
@@ -3147,21 +3409,26 @@ describe("ZNSSubRegistrar", () => {
       await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
       await zns.zeroToken.mint(lvl2SubOwner.address, parseEther("1000000"));
 
-      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-        rootHash,
-        domainLabel,
-        lvl2SubOwner.address,
-        defaultTokenURI,
-        {
-          accessType: AccessType.OPEN,
-          pricerContract: zns.fixedPricer.address,
-          paymentType: PaymentType.DIRECT,
-        }
-      );
-
-      const domainHash = await getDomainHashFromEvent({
+      const domainHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        domainLabel,
+        parentHash: rootHash,
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: zns.fixedPricer.address,
+            paymentType: PaymentType.DIRECT,
+          },
+          priceConfig: {
+            price: fixedPrice,
+            feePercentage: BigNumber.from(0),
+          },
+          paymentConfig: {
+            token: zns.zeroToken.address,
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
       });
 
       await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
@@ -3174,7 +3441,7 @@ describe("ZNSSubRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.fixedPricer.getPrice(ethers.constants.HashZero, domainLabel),
+        zns.fixedPricer.getPrice(rootHash, domainLabel, true),
       ];
 
       await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);

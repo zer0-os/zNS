@@ -57,16 +57,17 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : ICurvePriceConfig | IFixedPriceConfig = priceConfigDefault,
+  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = priceConfigDefault,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
   stakeFee : BigNumber;
 } => {
   let expectedPrice;
-  if (Object.keys(priceConfig).length === 6) {
+  const configLen = Object.keys(priceConfig).length;
+  if (configLen === 7 || configLen === 6) {
     expectedPrice = calcCurvePrice(name, priceConfig as ICurvePriceConfig);
-  } else if (Object.keys(priceConfig).length === 2) {
+  } else if (configLen === 3 || configLen === 2) {
     ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
   } else {
     throw new Error("Invalid price config");

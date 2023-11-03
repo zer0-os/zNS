@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { ICurvePriceConfig } from "../types/ICurvePriceConfig.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
@@ -69,7 +69,8 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     function getPrice(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view returns (uint256);
 
     function getFeeForPrice(
@@ -79,7 +80,8 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     function getPriceAndFee(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view returns (
         uint256 price,
         uint256 stakeFee

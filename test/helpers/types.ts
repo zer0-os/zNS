@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers";
 import {
-  Meow,
+  // Meow,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -26,10 +26,13 @@ import {
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
+  ZeroToken,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+export { ICurvePriceConfig } from "../../src/deploy/missions/types";
+
 
 export type Maybe<T> = T | undefined;
 
@@ -40,8 +43,10 @@ string
 | Array<BigNumber>
 | [string, BigNumber]
 & { token : string; amount : BigNumber; }
-|[string, string]
+| [string, string]
 & { token : string; beneficiary : string; }
+| ICurvePriceConfig
+| IFixedPriceConfig
 >;
 
 export type ZNSContractMockFactory =
@@ -84,14 +89,13 @@ export interface RegistrarConfig {
   registryAddress : string;
   curvePricerAddress : string;
   domainTokenAddress : string;
-  addressResolverAddress : string;
 }
 
 export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : Meow;
+  zeroToken : ZeroToken // TODO MEOW instead, figure out
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
