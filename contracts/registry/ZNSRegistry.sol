@@ -12,6 +12,10 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.
  */
 contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
+
+    // Mapping of all approved resolvers
+    mapping(string resolverType => address resolver) internal resolvers;
+
     /**
      * @notice Mapping of `domainHash` to [DomainRecord](./IZNSRegistry.md#iznsregistry) struct to hold information
      * about each domain
@@ -154,19 +158,48 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
-     * @param resolver The resolver of the new domain, can be 0
+     * @param resolverType The string identifier of the resolver for the new domain, e.g. "address"
      */
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
-        address resolver
+        string calldata resolverType
     ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domain data with no resolver address
-        if (resolver != address(0)) {
-            _setDomainResolver(domainHash, resolver);
+        if (bytes(resolverType).length != 0) {
+            _setDomainResolver(domainHash, resolverType);
         }
+    }
+
+    /**
+     * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
+     * @param resolverType The resolver type as a string, e.g. "address"
+     */
+    function getResolverType(string calldata resolverType) public view override returns(address) {
+        return resolvers[resolverType];
+    }
+
+    /**
+     * @notice Add a new resolver type option to the mapping of types
+     * This function can also be used to update the resolver mapping for an existing resolver 
+     * simple by using an existing key like "address" with a new address
+     * @param resolverType The type of the resolver to add
+     * @param resolver The address of the new resolver contract
+     */
+    function addResolverType(string calldata resolverType, address resolver) public override onlyAdmin {
+        resolvers[resolverType] = resolver;
+        emit ResolverAdded(resolverType, resolver);
+    }
+
+    /**
+     * @notice Delete a resolver type from the mapping of types
+     * @param resolverType The type to be removed
+     */
+    function deleteResolverType(string calldata resolverType) public override onlyAdmin {
+        delete resolvers[resolverType];
+        emit ResolverDeleted(resolverType);
     }
 
     /**
@@ -178,16 +211,16 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * Emits `DomainOwnerSet` and `DomainResolverSet` events.
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
-     * @param resolver The resolver for the domain
+     * @param resolverType The resolver for the domain
      */
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
-        address resolver
+        string calldata resolverType
     ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
-        _setDomainResolver(domainHash, resolver);
+        _setDomainResolver(domainHash, resolverType);
     }
 
     /**
@@ -212,16 +245,16 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Updates the resolver of an existing domain in `records`.
-     * Can be called by eithe the owner of the Name or an allowed operator.
+     * Can be called by either the owner of the Name or an allowed operator.
      * @param domainHash the hash of a domain's name
-     * @param resolver The new Resolver contract address
+     * @param resolverType The new Resolver contract address
      */
     function updateDomainResolver(
         bytes32 domainHash,
-        address resolver
+        string calldata resolverType
     ) external override onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
-        _setDomainResolver(domainHash, resolver);
+        _setDomainResolver(domainHash, resolverType);
     }
 
     /**
@@ -262,12 +295,14 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Internal function to set a domain's resolver in state `records`.
      * Resolver can be set to 0, since we allow partial domain data. Emits a `DomainResolverSet` event.
      * @param domainHash the hash of a domain's name
-     * @param resolver The resolver to set
+     * @param resolverType The resolver to set
      */
     function _setDomainResolver(
         bytes32 domainHash,
-        address resolver
+        string calldata resolverType
     ) internal {
+        address resolver = resolvers[resolverType];
+
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);
     }

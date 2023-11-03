@@ -36,7 +36,6 @@ contract ZNSRootRegistrar is
     IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
-    IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -54,22 +53,19 @@ contract ZNSRootRegistrar is
      * @param rootPricer_ Address of the IZNSPricer type contract that Zero chose to use for the root domains
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
-     * @param addressResolver_ Address of the ZNSAddressResolver contract
      */
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
         address treasury_,
-        address domainToken_,
-        address addressResolver_
+        address domainToken_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
-        setAddressResolver(addressResolver_);
     }
 
     /**
@@ -112,11 +108,11 @@ contract ZNSRootRegistrar is
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
-                name,
                 msg.sender,
+                domainAddress,
                 domainPrice,
                 0,
-                domainAddress,
+                name,
                 tokenURI,
                 true
             )
@@ -179,10 +175,13 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(addressResolver));
-            addressResolver.setAddress(args.domainHash, args.domainAddress);
+            registry.createDomainRecord(args.domainHash, args.registrant, "address");
+
+            IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
+                .setAddress(args.domainHash, args.domainAddress);
         } else {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(0));
+            // By passing an empty string we tell the registry to not add a resolver
+            registry.createDomainRecord(args.domainHash, args.registrant, "");
         }
 
         emit DomainRegistered(
@@ -383,21 +382,6 @@ contract ZNSRootRegistrar is
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
-    }
-
-    /**
-     * @notice Setter function for the `ZNSAddressResolver` address in state.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param addressResolver_ Address of the `ZNSAddressResolver` contract
-     */
-    function setAddressResolver(address addressResolver_) public override onlyAdmin {
-        require(
-            addressResolver_ != address(0),
-            "ZNSRootRegistrar: addressResolver_ is 0x0 address"
-        );
-        addressResolver = IZNSAddressResolver(addressResolver_);
-
-        emit AddressResolverSet(addressResolver_);
     }
 
     /**

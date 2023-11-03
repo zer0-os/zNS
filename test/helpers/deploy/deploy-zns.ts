@@ -41,6 +41,7 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   defaultRoyaltyFraction,
+  DEFAULT_RESOLVER_TYPE,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../access";
 import { getProxyImplAddress } from "../utils";
@@ -360,7 +361,6 @@ export const deployRootRegistrar = async (
       config.curvePricerAddress,
       config.treasury.address,
       config.domainTokenAddress,
-      config.addressResolverAddress,
     ],
     {
       kind: "uups",
@@ -592,7 +592,6 @@ export const deployZNS = async ({
     registryAddress: registry.address,
     curvePricerAddress: curvePricer.address,
     domainTokenAddress: domainToken.address,
-    addressResolverAddress: addressResolver.address,
   };
 
   const rootRegistrar = await deployRootRegistrar(
@@ -637,6 +636,7 @@ export const deployZNS = async ({
   // Give 15 ZERO to the deployer and allowance to the treasury
   await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
   await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("5000000"));
+  await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, addressResolver.address);
 
   return znsContracts;
 };

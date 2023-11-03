@@ -5,6 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,
+  DEFAULT_RESOLVER_TYPE,
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
@@ -45,11 +46,13 @@ describe("ZNSAddressResolver", () => {
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
+    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, zns.addressResolver.address);
+
     await zns.registry.connect(mockRegistrar)
       .createDomainRecord(
         wilderDomainHash,
         deployer.address,
-        zns.addressResolver.address
+        DEFAULT_RESOLVER_TYPE
       );
   });
 
@@ -70,7 +73,9 @@ describe("ZNSAddressResolver", () => {
     // The domain exists
     const existResolver = await zns.registry.getDomainResolver(wilderDomainHash);
     expect(existResolver).to.eq(zns.addressResolver.address);
+  });
 
+  it("Returns 0 when the domain doesnt exist", async () => {
     // The domain does not exist
     const someDomainHash = hashDomainLabel("random-record");
     const notExistResolver = await zns.registry.getDomainResolver(someDomainHash);

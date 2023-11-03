@@ -26,7 +26,7 @@ import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "./helpers/access";
-import { ZNSRootRegistrar, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -128,7 +128,6 @@ describe("ZNSRootRegistrar", () => {
         operator.address,
         operator.address,
         operator.address,
-        operator.address,
       )
     ).to.be.revertedWith(INITIALIZED_ERR);
   });
@@ -213,7 +212,6 @@ describe("ZNSRootRegistrar", () => {
         zns.curvePricer.address,
         zns.treasury.address,
         zns.domainToken.address,
-        zns.addressResolver.address,
       ],
       {
         kind: "uups",
@@ -226,7 +224,6 @@ describe("ZNSRootRegistrar", () => {
   it("Should NOT initialize twice", async () => {
     const tx = zns.rootRegistrar.connect(deployer).initialize(
       zns.accessController.address,
-      randomUser.address,
       randomUser.address,
       randomUser.address,
       randomUser.address,
@@ -1120,31 +1117,6 @@ describe("ZNSRootRegistrar", () => {
         await expect(tx).to.be.revertedWith("ZNSRootRegistrar: domainToken_ is 0x0 address");
       });
     });
-
-    describe("#setAddressResolver", () => {
-      it("Should set AddressResolver and fire AddressResolverSet event", async () => {
-        const currentResolver = await zns.rootRegistrar.addressResolver();
-        const tx = await zns.rootRegistrar.connect(deployer).setAddressResolver(randomUser.address);
-        const newResolver = await zns.rootRegistrar.addressResolver();
-
-        await expect(tx).to.emit(zns.rootRegistrar, "AddressResolverSet").withArgs(randomUser.address);
-
-        expect(newResolver).to.equal(randomUser.address);
-        expect(currentResolver).to.not.equal(newResolver);
-      });
-
-      it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.rootRegistrar.connect(user).setAddressResolver(randomUser.address);
-        await expect(tx).to.be.revertedWith(
-          getAccessRevertMsg(user.address, ADMIN_ROLE)
-        );
-      });
-
-      it("Should revert if AddressResolver is address zero", async () => {
-        const tx = zns.rootRegistrar.connect(deployer).setAddressResolver(ethers.constants.AddressZero);
-        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: addressResolver_ is 0x0 address");
-      });
-    });
   });
 
   describe("UUPS", () => {
@@ -1193,14 +1165,12 @@ describe("ZNSRootRegistrar", () => {
         distrConfigEmpty
       );
 
-      await zns.rootRegistrar.setAddressResolver(randomUser.address);
 
       const contractCalls = [
         zns.rootRegistrar.getAccessController(),
         zns.rootRegistrar.registry(),
         zns.rootRegistrar.treasury(),
         zns.rootRegistrar.domainToken(),
-        zns.rootRegistrar.addressResolver(),
         zns.registry.exists(domainHash),
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
