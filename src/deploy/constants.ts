@@ -22,7 +22,7 @@ export const znsNames = {
     instance: "domainToken",
   },
   meowToken: {
-    // TODO dep: change the naming everywhere needed when the new version of zToken is added!
+    // TODO dep: figure out the proper naming between the Mock and the prod token!
     contract: "MeowTokenMock",
     instance: "meowToken",
   },
@@ -72,3 +72,7 @@ export const EXECUTOR_ROLE = ethers.utils.solidityKeccak256(
   ["string"],
   ["EXECUTOR_ROLE"],
 );
+
+export const ResolverTypes = {
+  address: "address",
+};

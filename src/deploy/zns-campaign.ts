@@ -10,7 +10,6 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import * as hre from "hardhat";
-import { MeowTokenDM } from "./missions/contracts/MeowToken";
 
 
 // TODO dep: add configs for ENV vars in this repo
@@ -37,8 +36,6 @@ export const runZnsCampaign = async ({
       // TODO dep: add proper class for MeowToken in prod,
       //  that is able to determine to deploy a mock for test
       //  or use the data for existing Meow on mainnet to create and object and save to state
-      // TODO dep !IMPORTANT: make sure we publish the new MeowToken version properly
-      //  and updated it in this repo!!!!
       MeowTokenMockDM,
       ZNSAddressResolverDM,
       ZNSCurvePricerDM,

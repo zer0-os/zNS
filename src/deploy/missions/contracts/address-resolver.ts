@@ -1,5 +1,5 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, znsNames } from "../../constants";
+import { ProxyKinds, ResolverTypes, znsNames } from "../../constants";
 import { TDeployArgs } from "../types";
 
 
@@ -25,8 +25,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
     } = this.campaign;
 
     const resolverInReg = await registry.getResolverType(
-      // TODO dep: add an enum of all types and use it here
-      "address",
+      ResolverTypes.address,
     );
 
     return resolverInReg !== addressResolver.address;
@@ -42,8 +41,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
     } = this.campaign;
 
     await registry.connect(deployAdmin).addResolverType(
-      // TODO dep: add an enum of all types and use it here
-      "address",
+      ResolverTypes.address,
       addressResolver.address,
     );
   }
