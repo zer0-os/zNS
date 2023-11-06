@@ -4,7 +4,6 @@ import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
 import { MeowTokenMockDM } from "./mocks/meow-token-mock";
 
-
 export class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,

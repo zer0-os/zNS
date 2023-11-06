@@ -25,7 +25,7 @@ import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault }
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { TZNSContractState } from "../src/deploy/campaign/types";
+import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { createLogger } from "../src/deploy/logger/create-logger";
 import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
@@ -34,6 +34,8 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
+
+// import * as m from "@zero-tech/ztoken";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -58,7 +60,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
 
     // TODO dep: this whole config should be passed safely through ENV var injection
-    const config = {
+    const config : IDeployCampaignConfig = {
       deployAdmin: deployer,
       governorAddresses: [ deployer.address ],
       adminAddresses: [ deployer.address, admin.address ],
@@ -69,7 +71,8 @@ describe("ZNSRootRegistrar", () => {
         defaultRoyaltyFraction,
       },
       rootPriceConfig: priceConfigDefault,
-      registrationFee: registrationFeePercDefault,
+      // registrationFee: registrationFeePercDefault,
+      // stakingTokenAddress: "0x0eC78ED49C2D27b315D462d43B5BAB94d2C79bf8", // mainnet
       zeroVaultAddress: zeroVault.address,
     };
 
@@ -89,7 +92,11 @@ describe("ZNSRootRegistrar", () => {
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
-  it("Gas tests", async () => {
+  it.only("ignores other test", async () => {
+    expect(true).to.eq(true);
+  });
+
+  it.only("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,

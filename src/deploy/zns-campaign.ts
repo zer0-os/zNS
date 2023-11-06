@@ -1,4 +1,4 @@
-import { IDeployCampaignConfig, TLogger } from "./campaign/types";
+import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { FileStorageAdapter } from "./storage/file-storage";
 import { DeployCampaign } from "./campaign/deploy-campaign";
@@ -10,6 +10,7 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import * as hre from "hardhat";
+import { MeowTokenDM } from "./missions/contracts/MeowToken";
 
 
 // TODO dep: add configs for ENV vars in this repo
@@ -50,7 +51,7 @@ export const runZnsCampaign = async ({
     dbAdapter: dbAdapterIn,
     logger,
     config,
-  });
+  } as ICampaignArgs);
 
   await campaign.execute();
 

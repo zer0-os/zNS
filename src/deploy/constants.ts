@@ -23,7 +23,7 @@ export const znsNames = {
   },
   meowToken: {
     // TODO dep: change the naming everywhere needed when the new version of zToken is added!
-    contract: "ZeroToken",
+    contract: "MeowTokenMock",
     instance: "meowToken",
   },
   addressResolver: {
