@@ -1,8 +1,5 @@
 import {
-  Meow,
-  ZeroToken__factory,
-  ZeroTokenMock,
-  ZeroTokenMock__factory,
+  MeowTokenMock__factory,
   ZNSAccessController,
   ZNSAccessController__factory,
   ZNSAddressResolver,
@@ -18,7 +15,10 @@ import {
   ZNSRegistry__factory,
   ZNSSubRegistrar__factory,
   ZNSTreasury,
-  ZNSTreasury__factory, ZNSFixedPricer, ZNSSubRegistrar,
+  ZNSTreasury__factory,
+  ZNSFixedPricer,
+  ZNSSubRegistrar,
+  MeowTokenMock,
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig, IZNSContracts } from "../types";
 import * as hre from "hardhat";
@@ -37,7 +37,7 @@ import {
   subRegistrarName,
   transparentProxyName,
   treasuryName,
-  zeroTokenMockName,
+  meowTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   defaultRoyaltyFraction,
@@ -47,6 +47,7 @@ import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { BigNumber } from "ethers";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
+import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 
 
 export const deployAccessController = async ({
@@ -160,47 +161,47 @@ export const deployDomainToken = async (
   return domainToken;
 };
 
-export const deployZeroToken = async (
+export const deployMeowToken = async (
   deployer : SignerWithAddress,
   isTenderlyRun : boolean
 ) => {
-  const factory = new ZeroToken__factory(deployer);
+  const factory = new MeowTokenMock__factory(deployer);
 
-  const zeroToken = await hre.upgrades.deployProxy(
+  const meowToken = await hre.upgrades.deployProxy(
     factory,
     [
-      "ZERO",
-      "ZERO",
+      meowTokenName,
+      meowTokenSymbol,
     ],
     {
       kind: "transparent",
     }
-  ) as Meow;
+  ) as MeowTokenMock;
 
-  await zeroToken.deployed();
+  await meowToken.deployed();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: transparentProxyName,
-      address: zeroToken.address,
+      address: meowToken.address,
     });
 
-    const impl = await getProxyImplAddress(zeroToken.address);
+    const impl = await getProxyImplAddress(meowToken.address);
 
     await hre.tenderly.verify({
-      name: zeroTokenMockName,
+      name: meowTokenMockName,
       address: impl,
     });
 
-    console.log(`ZeroToken deployed at:
-                proxy: ${zeroToken.address}
+    console.log(`${meowTokenMockName} deployed at:
+                proxy: ${meowToken.address}
                 implementation: ${impl}`);
   }
 
   // Mint 10,000 ZERO for self
-  await zeroToken.mint(zeroToken.address, ethers.utils.parseEther("10000"));
+  await meowToken.mint(meowToken.address, ethers.utils.parseEther("10000"));
 
-  return zeroToken;
+  return meowToken;
 };
 
 export const deployAddressResolver = async (
@@ -393,27 +394,6 @@ export const deployRootRegistrar = async (
   return registrar;
 };
 
-export const deployZeroTokenMock = async (
-  deployer : SignerWithAddress,
-  isTenderlyRun : boolean
-) : Promise<ZeroTokenMock> => {
-  const zTokenMockMockFactory = new ZeroTokenMock__factory(deployer);
-  const token = await zTokenMockMockFactory.deploy(deployer.address);
-
-  await token.deployed();
-
-  if (isTenderlyRun) {
-    await hre.tenderly.verify({
-      name: "ZeroTokenMock",
-      address: token.address,
-    });
-
-    console.log(`ZeroTokenMock deployed at: ${token.address}`);
-  }
-
-  return token;
-};
-
 export const deployFixedPricer = async ({
   deployer,
   acAddress,
@@ -562,7 +542,7 @@ export const deployZNS = async ({
   // While we do use the real ZeroToken contract, it is only deployed as a mock here
   // for testing purposes that verify expected behavior of other contracts.
   // This should not be used in any other context than deploying to a local hardhat testnet.
-  const zeroTokenMock = await deployZeroToken(deployer, isTenderlyRun);
+  const meowTokenMock = await deployMeowToken(deployer, isTenderlyRun);
 
   const addressResolver = await deployAddressResolver(
     deployer,
@@ -583,7 +563,7 @@ export const deployZNS = async ({
     deployer,
     accessControllerAddress: accessController.address,
     registryAddress: registry.address,
-    zTokenMockAddress: zeroTokenMock.address,
+    zTokenMockAddress: meowTokenMock.address,
     zeroVaultAddress,
     isTenderlyRun,
   });
@@ -622,7 +602,7 @@ export const deployZNS = async ({
     accessController,
     registry,
     domainToken,
-    zeroToken: zeroTokenMock,
+    meowToken: meowTokenMock,
     addressResolver,
     curvePricer,
     treasury,
@@ -633,8 +613,8 @@ export const deployZNS = async ({
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury
-  await zeroTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
-  await zeroTokenMock.mint(deployer.address, ethers.utils.parseEther("5000000"));
+  await meowTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
+  await meowTokenMock.mint(deployer.address, ethers.utils.parseEther("5000000"));
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, addressResolver.address);
 
   return znsContracts;

@@ -933,7 +933,7 @@ describe("ZNSRootRegistrar", () => {
 
     it("Revoking domain unstakes", async () => {
       // Verify Balance
-      const balance = await zns.zeroToken.balanceOf(user.address);
+      const balance = await zns.meowToken.balanceOf(user.address);
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level

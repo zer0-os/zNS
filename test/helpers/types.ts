@@ -1,6 +1,5 @@
 import { BigNumber } from "ethers";
 import {
-  // Meow,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -26,7 +25,8 @@ import {
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
-  ZeroToken,
+  MeowToken,
+  MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
@@ -95,7 +95,7 @@ export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : ZeroToken; // TODO MEOW instead, figure out
+  meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
