@@ -72,7 +72,6 @@ describe("ZNSRootRegistrar", () => {
         defaultRoyaltyFraction,
       },
       rootPriceConfig: priceConfigDefault,
-      registrationFee: registrationFeePercDefault,
       zeroVaultAddress: zeroVault.address,
     };
 
