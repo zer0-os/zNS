@@ -92,10 +92,6 @@ describe("ZNSRootRegistrar", () => {
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
-  it.only("ignores other test", async () => {
-    expect(true).to.eq(true);
-  });
-
   it.only("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
