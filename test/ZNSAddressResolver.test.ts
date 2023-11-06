@@ -1,16 +1,18 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,
+  DEFAULT_RESOLVER_TYPE,
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
-  validateUpgrade,
+  validateUpgrade, INITIALIZED_ERR,
 } from "./helpers";
+import { getProxyImplAddress } from "./helpers/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -44,19 +46,36 @@ describe("ZNSAddressResolver", () => {
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
+    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, zns.addressResolver.address);
+
     await zns.registry.connect(mockRegistrar)
       .createDomainRecord(
         wilderDomainHash,
         deployer.address,
-        zns.addressResolver.address
+        DEFAULT_RESOLVER_TYPE
       );
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSAddressResolver__factory(deployer);
+    const impl = await getProxyImplAddress(zns.addressResolver.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        operator.address,
+        mockRegistrar.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Should get the AddressResolver", async () => { // Copy of registry tests
     // The domain exists
     const existResolver = await zns.registry.getDomainResolver(wilderDomainHash);
     expect(existResolver).to.eq(zns.addressResolver.address);
+  });
 
+  it("Returns 0 when the domain doesnt exist", async () => {
     // The domain does not exist
     const someDomainHash = hashDomainLabel("random-record");
     const notExistResolver = await zns.registry.getDomainResolver(someDomainHash);

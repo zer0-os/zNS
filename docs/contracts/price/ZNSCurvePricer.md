@@ -3,9 +3,9 @@
 
 **Implementation of the Curve Pricing, module that calculates the price of a domain
 based on its length and the rules set by Zero ADMIN.
-This module uses an asymptotic curve that starts from `maxPrice` and decreases in price
-until it reaches `minPrice` at `maxLength` length of the domain name. Price after `maxLength`
-is fixed and always equal to `minPrice`.**
+This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
+It then decreases in price, using the calculated price function below, until it reaches `minPrice`
+at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.**
 
 
 
@@ -38,6 +38,18 @@ Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
 
 
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
+
+
 ### initialize
 
 ```solidity
@@ -65,12 +77,19 @@ Only Owner of the 0x0 hash (Zero owned address) can call this function.
 ### getPrice
 
 ```solidity
-function getPrice(bytes32 parentHash, string label) public view returns (uint256)
+function getPrice(bytes32 parentHash, string label, bool skipValidityCheck) public view returns (uint256)
 ```
 
 
 Get the price of a given domain name
 
+`skipValidityCheck` param is added to provide proper revert when the user is
+calling this to find out the price of a domain that is not valid. But in Registrar contracts
+we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
+So Registrars will pass this bool as "true" to not repeat the validity check.
+Note that if calling this function directly to find out the price, a user should always pass "false"
+as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
+possible to register.
 
 #### Parameters
 
@@ -78,6 +97,7 @@ Get the price of a given domain name
 | ---- | ---- | ----------- |
 | parentHash | bytes32 | The hash of the parent domain under which price is determined |
 | label | string | The label of the subdomain candidate to get the price for before/during registration |
+| skipValidityCheck | bool | If true, skips the validity check for the label |
 
 
 ### getFeeForPrice
@@ -103,7 +123,7 @@ based on the value set by the owner of the parent domain.
 ### getPriceAndFee
 
 ```solidity
-function getPriceAndFee(bytes32 parentHash, string label) external view returns (uint256 price, uint256 stakeFee)
+function getPriceAndFee(bytes32 parentHash, string label, bool skipValidityCheck) external view returns (uint256 price, uint256 stakeFee)
 ```
 
 
@@ -118,6 +138,7 @@ under the given parent.
 | ---- | ---- | ----------- |
 | parentHash | bytes32 | The hash of the parent domain under which price and fee are determined |
 | label | string | The label of the subdomain candidate to get the price and fee for before/during registration |
+| skipValidityCheck | bool |  |
 
 
 ### setPriceConfig
@@ -132,6 +153,8 @@ Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this 
 Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
 fires `PriceConfigSet` event.
 Only ADMIN can call this function.
+> This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+> Use the other individual setters to modify only, since they do not set this variable!
 
 #### Parameters
 
@@ -261,7 +284,7 @@ Only domain owner/operator can call this function.
 ### setFeePercentage
 
 ```solidity
-function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external
+function setFeePercentage(bytes32 domainHash, uint256 feePercentage) public
 ```
 
 
@@ -302,10 +325,11 @@ function _getPrice(bytes32 parentHash, uint256 length) internal view returns (ui
 Internal function to calculate price based on the config set,
 and the length of the domain label.
 
-Before we calculate the price, 3 different cases are possible:
-1. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
-2. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
-3. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
+Before we calculate the price, 4 different cases are possible:
+1. `maxPrice` is 0, which means all subdomains under this parent are free
+2. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
+3. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
+4. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
 
 The formula itself creates an asymptotic curve that decreases in pricing based on domain name length,
 base length and max price, the result is divided by the precision multiplier to remove numbers beyond

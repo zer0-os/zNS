@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
@@ -10,6 +10,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { StringUtils } from "../utils/StringUtils.sol";
 
 
 /**
@@ -30,12 +31,17 @@ contract ZNSRootRegistrar is
     AAccessControlled,
     ARegistryWired,
     IZNSRootRegistrar {
+    using StringUtils for string;
 
     IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
-    IZNSAddressResolver public addressResolver;
     IZNSSubRegistrar public subRegistrar;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Create an instance of the ZNSRootRegistrar.sol
@@ -47,22 +53,19 @@ contract ZNSRootRegistrar is
      * @param rootPricer_ Address of the IZNSPricer type contract that Zero chose to use for the root domains
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
-     * @param addressResolver_ Address of the ZNSAddressResolver contract
      */
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
         address treasury_,
-        address domainToken_,
-        address addressResolver_
+        address domainToken_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
-        setAddressResolver(addressResolver_);
     }
 
     /**
@@ -87,10 +90,8 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig
     ) external override returns (bytes32) {
-        require(
-            bytes(name).length != 0,
-            "ZNSRootRegistrar: Domain Name not provided"
-        );
+        // Confirms string values are only [a-z0-9-]
+        name.validate();
 
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
@@ -101,17 +102,17 @@ contract ZNSRootRegistrar is
         );
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
 
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
-                name,
                 msg.sender,
+                domainAddress,
                 domainPrice,
                 0,
-                domainAddress,
+                name,
                 tokenURI,
                 true
             )
@@ -174,10 +175,13 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(addressResolver));
-            addressResolver.setAddress(args.domainHash, args.domainAddress);
+            registry.createDomainRecord(args.domainHash, args.registrant, "address");
+
+            IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
+                .setAddress(args.domainHash, args.domainAddress);
         } else {
-            registry.createDomainRecord(args.domainHash, args.registrant, address(0));
+            // By passing an empty string we tell the registry to not add a resolver
+            registry.createDomainRecord(args.domainHash, args.registrant, "");
         }
 
         emit DomainRegistered(
@@ -245,7 +249,7 @@ contract ZNSRootRegistrar is
             "ZNSRootRegistrar: Not the owner of both Name and Token"
         );
 
-        subRegistrar.setAccessTypeForDomain(domainHash, AccessType.LOCKED);
+        subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
     }
 
@@ -378,21 +382,6 @@ contract ZNSRootRegistrar is
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
-    }
-
-    /**
-     * @notice Setter function for the `ZNSAddressResolver` address in state.
-     * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param addressResolver_ Address of the `ZNSAddressResolver` contract
-     */
-    function setAddressResolver(address addressResolver_) public override onlyAdmin {
-        require(
-            addressResolver_ != address(0),
-            "ZNSRootRegistrar: addressResolver_ is 0x0 address"
-        );
-        addressResolver = IZNSAddressResolver(addressResolver_);
-
-        emit AddressResolverSet(addressResolver_);
     }
 
     /**

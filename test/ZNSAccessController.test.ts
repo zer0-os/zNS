@@ -5,6 +5,7 @@ import { deployAccessController } from "./helpers";
 import { expect } from "chai";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
+import { ethers } from "hardhat";
 
 
 describe("ZNSAccessController", () => {
@@ -45,6 +46,16 @@ describe("ZNSAccessController", () => {
           expect(hasRole).to.be.true;
         }, Promise.resolve()
       );
+    });
+
+    it("Should revert when passing 0x0 address to assing roles", async () => {
+      await expect(
+        deployAccessController({
+          deployer,
+          governorAddresses: [ ethers.constants.AddressZero ],
+          adminAddresses: [ ethers.constants.AddressZero ],
+        })
+      ).to.be.revertedWith("ZNSAccessController: Can't grant role to zero address");
     });
   });
 

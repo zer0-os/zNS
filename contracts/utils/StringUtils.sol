@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Source:
 // https://github.com/ensdomains/ens-contracts/blob/master/contracts/ethregistrar/StringUtils.sol
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 
 library StringUtils {
@@ -32,5 +32,33 @@ library StringUtils {
             }
         }
         return len;
+    }
+
+    /**
+     * @dev Confirm that a given string has only alphanumeric characters [a-z0-9-]
+     * @param s The string to validate
+     */
+    function validate(string memory s) internal pure {
+        bytes memory nameBytes = bytes(s);
+        uint256 length = nameBytes.length;
+
+        // solhint-disable-next-line var-name-mixedcase
+        uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+        require(
+            length > 0 && length < MAX_INT,
+            "StringUtils: Domain label too long or nonexistent"
+        );
+
+        for (uint256 i; i < length;) {
+            bytes1 b = nameBytes[i];
+            // Valid strings are lower case a-z, 0-9, or a hyphen
+            require(
+                (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D,
+                "StringUtils: Invalid domain label"
+            );
+            unchecked {
+                ++i;
+            }
+        }
     }
 }

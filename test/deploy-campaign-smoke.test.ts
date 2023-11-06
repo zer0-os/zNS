@@ -25,6 +25,7 @@ import {
 describe("Deploy Campaign Smoke Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let user : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 

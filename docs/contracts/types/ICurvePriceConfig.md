@@ -34,6 +34,7 @@ struct CurvePriceConfig {
   uint256 baseLength;
   uint256 precisionMultiplier;
   uint256 feePercentage;
+  bool isSet;
 }
 ```
 

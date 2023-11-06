@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IZNSAccessController } from "./IZNSAccessController.sol";
@@ -77,6 +77,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     function _grantRoleToMany(bytes32 role, address[] memory addresses) internal {
         uint256 length = addresses.length;
         for (uint256 i = 0; i < length; ++i) {
+            require(
+                addresses[i] != address(0),
+                "ZNSAccessController: Can't grant role to zero address"
+            );
             _grantRole(role, addresses[i]);
         }
     }

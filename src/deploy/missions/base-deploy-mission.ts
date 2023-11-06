@@ -1,9 +1,8 @@
-import { BigNumber, Contract } from "ethers";
+import { Contract } from "ethers";
 import {
   TDeployArgs,
   IProxyData,
   IDeployMissionArgs,
-  TDeployArg,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";

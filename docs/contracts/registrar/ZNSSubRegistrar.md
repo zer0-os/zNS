@@ -37,10 +37,26 @@ Note that the rules outlined in the DistributionConfig are only applied to direc
 
 
 
+### Mintlist
+
+
+
+
+
+
+
+
+```solidity
+struct Mintlist {
+  mapping(uint256 => mapping(address => bool)) list;
+  uint256 ownerIndex;
+}
+```
+
 ### mintlist
 
 ```solidity
-mapping(bytes32 => mapping(address => bool)) mintlist
+mapping(bytes32 => struct ZNSSubRegistrar.Mintlist) mintlist
 ```
 
 
@@ -55,6 +71,18 @@ in the case where parent's DistributionConfig.AccessType is set to AccessType.MI
 
 ```solidity
 modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash)
+```
+
+
+
+
+
+
+
+### constructor
+
+```solidity
+constructor() public
 ```
 
 
@@ -119,7 +147,8 @@ function setDistributionConfigForDomain(bytes32 domainHash, struct IDistribution
 ```
 
 
-Setter for `distrConfigs[domainHash]`. Only domain owner/operator or ZNSRootRegistrar can call this function.
+Setter for `distrConfigs[domainHash]`.
+Only domain owner/operator or ZNSRootRegistrar can call this function.
 
 This config can be changed by the domain owner/operator at any time or be set
 after registration if the config was not provided during the registration.
@@ -175,24 +204,10 @@ Fires `PaymentTypeSet` event.
 | paymentType | enum IDistributionConfig.PaymentType | The new payment type to set |
 
 
-### _setAccessTypeForDomain
-
-```solidity
-function _setAccessTypeForDomain(bytes32 domainHash, enum IDistributionConfig.AccessType accessType) internal
-```
-
-
-
-
-Internal function used by this contract to set the access type for a subdomain
-during revocation process.
-
-
-
 ### setAccessTypeForDomain
 
 ```solidity
-function setAccessTypeForDomain(bytes32 domainHash, enum IDistributionConfig.AccessType accessType) external
+function setAccessTypeForDomain(bytes32 domainHash, enum IDistributionConfig.AccessType accessType) public
 ```
 
 
@@ -231,6 +246,42 @@ Fires `MintlistUpdated` event.
 | domainHash | bytes32 | The domain hash to set the mintlist for |
 | candidates | address[] | The array of candidates to add/remove |
 | allowed | bool[] | The array of booleans indicating whether to add or remove the candidate |
+
+
+### isMintlistedForDomain
+
+```solidity
+function isMintlistedForDomain(bytes32 domainHash, address candidate) external view returns (bool)
+```
+
+
+
+
+
+
+
+### clearMintlistForDomain
+
+```solidity
+function clearMintlistForDomain(bytes32 domainHash) public
+```
+
+
+
+
+
+
+
+### clearMintlistAndLock
+
+```solidity
+function clearMintlistAndLock(bytes32 domainHash) external
+```
+
+
+
+
+
 
 
 ### setRegistry

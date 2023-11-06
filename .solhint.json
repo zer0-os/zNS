@@ -21,6 +21,7 @@
     "constructor-syntax": "warn",
     "named-parameters-mapping": "error",
     "comprehensive-interface": "error",
-    "max-line-length": ["error", 120]
+    "max-line-length": ["error", 120],
+    "custom-errors": "off"
   }
 }

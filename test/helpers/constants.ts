@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 // TODO: what is our official Domain Token name?
+export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
@@ -42,6 +43,17 @@ export const priceConfigDefault : ICurvePriceConfig = {
   baseLength: BigNumber.from(4),
   precisionMultiplier: precisionMultiDefault,
   feePercentage: registrationFeePercDefault,
+  isSet: true,
+};
+
+export const curvePriceConfigEmpty : ICurvePriceConfig = {
+  maxPrice: ethers.constants.Zero,
+  minPrice: ethers.constants.Zero,
+  maxLength: BigNumber.from(0),
+  baseLength: BigNumber.from(0),
+  precisionMultiplier: BigNumber.from(0),
+  feePercentage: BigNumber.from(0),
+  isSet: true,
 };
 
 export const paymentConfigEmpty = {
@@ -68,7 +80,7 @@ export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735
 export const accessControllerName = "ZNSAccessController";
 export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
-export const zeroTokenMockName = "ZeroToken";
+export const meowTokenMockName = "MeowTokenMock";
 export const addressResolverName = "ZNSAddressResolver";
 export const curvePricerName = "ZNSCurvePricer";
 export const fixedPricerName = "ZNSFixedPricer";

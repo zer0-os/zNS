@@ -19,7 +19,6 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
       curvePricer,
       treasury,
       domainToken,
-      addressResolver,
     } = this.campaign;
 
     return [
@@ -29,7 +28,6 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
       curvePricer.address,
       treasury.address,
       domainToken.address,
-      addressResolver.address,
     ];
   }
 
