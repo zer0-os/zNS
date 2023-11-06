@@ -17,4 +17,34 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
 
     return [ accessController.address, registry.address ];
   }
+
+  async needsPostDeploy () {
+    const {
+      registry,
+      addressResolver,
+    } = this.campaign;
+
+    const resolverInReg = await registry.getResolverType(
+      // TODO dep: add an enum of all types and use it here
+      "address",
+    );
+
+    return resolverInReg !== addressResolver.address;
+  }
+
+  async postDeploy () {
+    const {
+      registry,
+      addressResolver,
+      config: {
+        deployAdmin,
+      },
+    } = this.campaign;
+
+    await registry.connect(deployAdmin).addResolverType(
+      // TODO dep: add an enum of all types and use it here
+      "address",
+      addressResolver.address,
+    );
+  }
 }
