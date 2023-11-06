@@ -2,9 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
-import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
@@ -47,7 +45,8 @@ interface IZNSSubRegistrar is IDistributionConfig {
     );
 
     /*
-     * @notice Emitted when a `mintlist` is removed for a domain by the owner or through `ZNSRootRegistrar.revokeDomain()`.
+     * @notice Emitted when a `mintlist` is removed for a domain by the owner or through
+     * `ZNSRootRegistrar.revokeDomain()`.
      */
     event MintlistCleared(bytes32 indexed domainHash);
 

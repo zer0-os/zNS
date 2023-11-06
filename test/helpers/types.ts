@@ -95,7 +95,7 @@ export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : ZeroToken // TODO MEOW instead, figure out
+  zeroToken : ZeroToken; // TODO MEOW instead, figure out
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
