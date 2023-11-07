@@ -7,7 +7,7 @@ import {
   INITIALIZED_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
-  PERCENTAGE_BASIS,
+  DEFAULT_PERCENTAGE_BASIS,
   priceConfigDefault,
   validateUpgrade,
 } from "./helpers";
@@ -159,7 +159,7 @@ describe("ZNSFixedPricer", () => {
     } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname");
 
     expect(price).to.equal(newPrice);
-    expect(fee).to.equal(newPrice.mul(newFee).div(PERCENTAGE_BASIS));
+    expect(fee).to.equal(newPrice.mul(newFee).div(DEFAULT_PERCENTAGE_BASIS));
   });
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {

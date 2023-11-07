@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType, defaultRoyaltyFraction, defaultTokenURI,
+  AccessType, DEFAULT_ROYALTY_FRACTION, DEFAULT_TOKEN_URI,
   distrConfigEmpty,
   hashDomainLabel,
   INVALID_TOKENID_ERC_ERR,
@@ -20,7 +20,7 @@ import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
+import { precisionMultiDefault, priceConfigDefault, DEFAULT_REGISTRATION_FEE_PERCENT } from "./helpers/constants";
 import { calcCurvePrice, getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { getAccessRevertMsg } from "./helpers/errors";
@@ -29,8 +29,9 @@ import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { TZNSContractState } from "../src/deploy/campaign/types";
+import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { getLogger } from "../src/deploy/logger/create-logger";
+import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -54,22 +55,8 @@ describe("ZNSRootRegistrar", () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
     // zeroVault address is used to hold the fee charged to the user when registering
 
-    // TODO dep: this whole config should be passed safely through ENV var injection
-    const config = {
-      deployAdmin: deployer,
-      governorAddresses: [ deployer.address ],
-      adminAddresses: [ deployer.address, admin.address ],
-      domainToken: {
-        name: ZNS_DOMAIN_TOKEN_NAME,
-        symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-        defaultRoyaltyReceiver: deployer.address,
-        defaultRoyaltyFraction,
-      },
-      rootPriceConfig: priceConfigDefault,
-      registrationFee: registrationFeePercDefault,
-      zeroVaultAddress: zeroVault.address,
-    };
-
+    // Through env var injection we specify what variables to use
+    const config : IDeployCampaignConfig = await getConfig(deployer, zeroVault);
     const logger = getLogger();
 
     const campaign = await runZnsCampaign({
@@ -77,6 +64,7 @@ describe("ZNSRootRegistrar", () => {
       logger,
     });
 
+    // TODO integrate mongo in config
     zns = campaign.state.contracts;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
@@ -85,7 +73,11 @@ describe("ZNSRootRegistrar", () => {
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
-  it.only("Gas tests", async () => {
+  it.only("runs this", async () => {
+    console.log("");
+  });
+
+  it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
@@ -174,7 +166,7 @@ describe("ZNSRootRegistrar", () => {
       maxPrice: parseEther("150"),
       minPrice: parseEther("10"),
       precisionMultiplier: precisionMultiDefault,
-      feePercentage: registrationFeePercDefault,
+      feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
     };
 
     const pricerTx = await zns.curvePricer.connect(user).setPriceConfig(ethers.constants.HashZero, newPricerConfig);
@@ -524,7 +516,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -582,7 +574,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -1092,7 +1084,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,
         randomUser.address,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 

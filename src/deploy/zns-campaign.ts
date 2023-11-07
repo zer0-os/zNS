@@ -29,7 +29,6 @@ export const runZnsCampaign = async ({
 
   const deployer = new HardhatDeployer();
 
-  // TODO dep: remove all hardcoded stuff and turn into constants or ENV vars!
   const dbAdapterIn = await getMongoAdapter();
 
   const campaign = new DeployCampaign({

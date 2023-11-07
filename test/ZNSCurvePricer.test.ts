@@ -14,7 +14,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
 } from "./helpers";
-import { decimalsDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
+import { decimalsDefault, priceConfigDefault, DEFAULT_REGISTRATION_FEE_PERCENT } from "./helpers/constants";
 import {
   getAccessRevertMsg,
 } from "./helpers/errors";
@@ -264,7 +264,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: parseEther("150"),
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       // as a user of "domainHash" that's not 0x0
@@ -299,7 +299,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: parseEther("10"),
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       await expect(
@@ -314,7 +314,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: parseEther("10"),
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       await expect(
@@ -333,7 +333,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: parseEther("150"),
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -356,7 +356,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: parseEther("1"),
         minPrice: parseEther("2"),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -616,7 +616,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: BigNumber.from(100),
         minPrice: BigNumber.from(10),
         precisionMultiplier: precisionMultiDefault,
-        feePercentage: registrationFeePercDefault,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       };
 
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always

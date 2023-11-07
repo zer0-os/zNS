@@ -40,7 +40,7 @@ import {
   zeroTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
-  defaultRoyaltyFraction,
+  DEFAULT_ROYALTY_FRACTION,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
@@ -555,7 +555,7 @@ export const deployZNS = async ({
     deployer,
     accessController.address,
     zeroVaultAddress,
-    defaultRoyaltyFraction,
+    DEFAULT_ROYALTY_FRACTION,
     isTenderlyRun
   );
 

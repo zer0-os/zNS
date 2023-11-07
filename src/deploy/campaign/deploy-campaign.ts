@@ -4,12 +4,13 @@ import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
 import { BaseStorageAdapter } from "../storage/base-storage-adapter";
+import { MongoDBAdapter } from "../db/mongo-connect/mongo-adapter";
 
 
 export class DeployCampaign {
   state : ICampaignState;
   deployer : HardhatDeployer;
-  dbAdapter : BaseStorageAdapter;
+  dbAdapter : BaseStorageAdapter | MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
   version : string;

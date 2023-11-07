@@ -20,8 +20,8 @@ export interface IDeployCampaignConfig {
     defaultRoyaltyFraction : BigNumber;
   };
   rootPriceConfig : ICurvePriceConfig;
-  stakingTokenAddress ?: string;
   zeroVaultAddress : string;
+  stakingTokenAddress ?: string;
   // TODO dep: add more props when opts expanded
 }
 
@@ -41,7 +41,7 @@ export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
   deployer : HardhatDeployer;
   // TODO dep: is this the correct type?
-  dbAdapter : MongoDBAdapter | typeof BaseStorageAdapter;
+  dbAdapter : MongoDBAdapter | BaseStorageAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
 }

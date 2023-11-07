@@ -3,7 +3,7 @@ import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContracts 
 import {
   AccessType,
   ADMIN_ROLE,
-  defaultTokenURI,
+  DEFAULT_TOKEN_URI,
   deployZNS,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
@@ -639,7 +639,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -703,7 +703,7 @@ describe("ZNSSubRegistrar", () => {
           domainHash,
           "newsubdomain",
           lvl6SubOwner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(
@@ -930,7 +930,7 @@ describe("ZNSSubRegistrar", () => {
           lvl1Hash,
           "newsubdomain",
           branchLvl1Owner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
@@ -961,7 +961,7 @@ describe("ZNSSubRegistrar", () => {
           lvl4Hash,
           "newsubdomain",
           branchLvl2Owner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
@@ -2040,7 +2040,7 @@ describe("ZNSSubRegistrar", () => {
           subdomainParentHash,
           label,
           lvl3SubOwner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty,
         )
       ).to.be.revertedWith("ERC20: insufficient allowance");
@@ -2220,7 +2220,7 @@ describe("ZNSSubRegistrar", () => {
           res[0].domainHash,
           "tobedenied",
           ethers.constants.AddressZero,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -2250,7 +2250,7 @@ describe("ZNSSubRegistrar", () => {
         parentHash,
         domainLabel,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -2325,7 +2325,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlisted",
           ethers.constants.AddressZero,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -2345,7 +2345,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notmintlistednow",
           ethers.constants.AddressZero,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -2437,7 +2437,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[1].domainHash,
           "notallowed",
           ethers.constants.AddressZero,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -2482,7 +2482,7 @@ describe("ZNSSubRegistrar", () => {
         regResults[1].domainHash,
         "alloweddddd",
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -2517,7 +2517,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           "notallowed",
           ethers.constants.AddressZero,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
       ).to.be.revertedWith(
@@ -2637,7 +2637,7 @@ describe("ZNSSubRegistrar", () => {
           regResults[0].domainHash,
           domainConfigs[1].domainLabel,
           lvl2SubOwner.address,
-          defaultTokenURI,
+          DEFAULT_TOKEN_URI,
           domainConfigs[1].fullConfig.distrConfig
         )
       ).to.be.revertedWith(
@@ -3151,7 +3151,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         domainLabel,
         lvl2SubOwner.address,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         {
           accessType: AccessType.OPEN,
           pricerContract: zns.fixedPricer.address,
@@ -3214,7 +3214,7 @@ describe("ZNSSubRegistrar", () => {
         rootHash,
         "subbb",
         lvl2SubOwner.address,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         subConfigToSet
       );
 

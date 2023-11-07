@@ -3,9 +3,9 @@ import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  defaultRoyaltyFraction,
+  DEFAULT_ROYALTY_FRACTION,
   GOVERNOR_ROLE,
-  priceConfigDefault, registrationFeePercDefault,
+  priceConfigDefault, DEFAULT_REGISTRATION_FEE_PERCENT,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
@@ -41,10 +41,10 @@ describe("Deploy Campaign Smoke Test", () => {
         name: ZNS_DOMAIN_TOKEN_NAME,
         symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
         defaultRoyaltyReceiver: deployAdmin.address,
-        defaultRoyaltyFraction,
+        defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
       },
       rootPriceConfig: priceConfigDefault,
-      registrationFee: registrationFeePercDefault,
+      registrationFee: DEFAULT_REGISTRATION_FEE_PERCENT,
       zeroVaultAddress: zeroVault.address,
     };
 

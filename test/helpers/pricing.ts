@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+import { DEFAULT_PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -45,7 +45,7 @@ export const getStakingOrProtocolFee = (
   feePercentage : BigNumber = priceConfigDefault.feePercentage,
 ) => forAmount
   .mul(feePercentage)
-  .div(PERCENTAGE_BASIS);
+  .div(DEFAULT_PERCENTAGE_BASIS);
 
 /**
  * Get the domain name price, the registration fee and the total

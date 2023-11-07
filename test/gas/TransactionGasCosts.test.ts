@@ -1,6 +1,6 @@
 import { IDistributionConfig, IZNSContracts } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, defaultTokenURI, deployZNS, PaymentType, priceConfigDefault } from "../helpers";
+import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, priceConfigDefault } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { BigNumber } from "ethers";
@@ -114,7 +114,7 @@ describe("Transaction Gas Costs Test", () => {
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
       rootOwner.address,
-      defaultTokenURI,
+      DEFAULT_TOKEN_URI,
       config
     );
 
@@ -158,7 +158,7 @@ describe("Transaction Gas Costs Test", () => {
       rootHashDirect,
       "subdomain",
       lvl2SubOwner.address,
-      defaultTokenURI,
+      DEFAULT_TOKEN_URI,
       config,
     );
     const { gasUsed } = await tx.wait();

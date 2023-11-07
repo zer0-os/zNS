@@ -6,15 +6,15 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
-export const defaultTokenURI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_ROYALTY_FRACTION = BigNumber.from("200");
+export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_REGISTRATION_FEE_PERCENT = BigNumber.from("222");
+export const DEFAULT_PERCENTAGE_BASIS = BigNumber.from("10000");
 
-export const registrationFeePercDefault = BigNumber.from("222");
-export const PERCENTAGE_BASIS = BigNumber.from("10000");
 export const decimalsDefault = BigNumber.from(18);
 export const precisionDefault = BigNumber.from(2);
 export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
 
-export const defaultRoyaltyFraction = BigNumber.from("200");
 // eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,
@@ -41,7 +41,7 @@ export const priceConfigDefault : ICurvePriceConfig = {
   maxLength: BigNumber.from(50),
   baseLength: BigNumber.from(4),
   precisionMultiplier: precisionMultiDefault,
-  feePercentage: registrationFeePercDefault,
+  feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
 };
 
 export const paymentConfigEmpty = {

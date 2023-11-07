@@ -7,7 +7,7 @@ import {
 } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty, defaultTokenURI } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI } from "./constants";
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -19,7 +19,7 @@ export const defaultRootRegistration = async ({
   zns,
   domainName,
   domainContent = user.address,
-  tokenURI = defaultTokenURI,
+  tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
@@ -80,7 +80,7 @@ export const defaultSubdomainRegistration = async ({
   parentHash,
   subdomainLabel,
   domainContent = user.address,
-  tokenURI = defaultTokenURI,
+  tokenURI = DEFAULT_TOKEN_URI,
   distrConfig,
 } : {
   user : SignerWithAddress;
@@ -108,7 +108,7 @@ export const registrationWithSetup = async ({
   parentHash,
   domainLabel,
   domainContent = user.address,
-  tokenURI = defaultTokenURI,
+  tokenURI = DEFAULT_TOKEN_URI,
   fullConfig = fullDistrConfigEmpty,
 } : {
   zns : IZNSContracts;
