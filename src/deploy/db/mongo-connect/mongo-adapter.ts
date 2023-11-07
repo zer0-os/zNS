@@ -6,6 +6,7 @@ import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
 import { getLogger } from "../../logger/create-logger";
 import { logger } from "ethers";
+import { mongoDbName, mongoURILocal } from "../mongo-defaults";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
 
@@ -253,8 +254,10 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
     dbName: process.env.MONGO_DB_NAME!,
   };
 
+  const loggerIn = getLogger();
+
   const params = {
-    logger: getLogger(),
+    logger: loggerIn,
     clientOpts: !!process.env.MONGO_DB_CLIENT_OPTS
       ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
       : undefined,
@@ -262,8 +265,11 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
     version: process.env.MONGO_DB_VERSION,
   };
 
-  if (!checkParams.dbUri && !checkParams.dbName)
-    throw new Error("Not all ENV vars are set to create MongoDBAdapter!");
+  if (!checkParams.dbUri && !checkParams.dbName) {
+    loggerIn.info("`MONGO_DB_URI` and `MONGO_DB_NAME` have not been provided by the ENV. Proceeding to use defaults.");
+    checkParams.dbUri = mongoURILocal;
+    checkParams.dbName = mongoDbName;
+  }
 
   let createNew = false;
   if (mongoAdapter) {
