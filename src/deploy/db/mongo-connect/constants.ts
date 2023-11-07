@@ -10,3 +10,6 @@ export const VERSION_TYPES = {
   archived: "ARCHIVED",
 };
 
+// TODO dep: move these to default ENV config
+export const mongoURILocal = "mongodb://localhost:27018";
+export const mongoDbName = "zns-campaign";
