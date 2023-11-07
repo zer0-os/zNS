@@ -37,7 +37,7 @@ export const registerDomainPath = async ({
     let beneficiary;
 
     if (isRootDomain) {
-      paymentTokenContract = zns.zeroToken;
+      paymentTokenContract = zns.meowToken;
       // no beneficiary for root domain
       beneficiary = ethers.constants.AddressZero;
     } else {
@@ -46,8 +46,8 @@ export const registerDomainPath = async ({
       const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
-      if (paymentTokenAddress === zns.zeroToken.address) {
-        paymentTokenContract = zns.zeroToken;
+      if (paymentTokenAddress === zns.meowToken.address) {
+        paymentTokenContract = zns.meowToken;
       } else {
         paymentTokenContract = getTokenContract(paymentTokenAddress, config.user);
       }
@@ -157,7 +157,7 @@ export const validatePathRegistration = async ({
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel));
+        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel, false));
       } else {
         const {
           maxPrice,

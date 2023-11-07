@@ -4,8 +4,8 @@ import { TDeployArgs } from "../../types";
 import { ethers } from "ethers";
 
 
-const zeroTokenName = "Zero Token";
-const zeroTokenSymbol = "ZERO";
+export const meowTokenName = "Meow Token";
+export const meowTokenSymbol = "MEOW";
 
 
 // TODO dep !IMPORTANT!: refine this to create an object if using
@@ -21,7 +21,7 @@ export class MeowTokenMockDM extends BaseDeployMission {
   instanceName = znsNames.meowToken.instance;
 
   deployArgs () : TDeployArgs {
-    return [zeroTokenName, zeroTokenSymbol];
+    return [meowTokenName, meowTokenSymbol];
   }
 
   async postDeploy () {

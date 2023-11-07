@@ -5,8 +5,6 @@ import { TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
 
 
-// TODO dep: remove temp db folder and possibly add to .gitignore
-//  when testing is done
 export const fileStoragePath = path.join(process.cwd(), "./db");
 
 

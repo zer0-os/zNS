@@ -22,6 +22,18 @@ to Ethereum wallets or contracts registered in ZNS.
 
 
 
+### constructor
+
+```solidity
+constructor() public
+```
+
+
+
+
+
+
+
 ### initialize
 
 ```solidity

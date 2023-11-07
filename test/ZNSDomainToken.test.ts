@@ -21,6 +21,7 @@ import {
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { parseEther } from "ethers/lib/utils";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSDomainToken", () => {
@@ -65,6 +66,22 @@ describe("ZNSDomainToken", () => {
       zns.zeroVaultAddress,
       DEFAULT_ROYALTY_FRACTION
     )).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSDomainToken__factory(deployer);
+    const impl = await getProxyImplAddress(zns.domainToken.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        deployer.address,
+        ZNS_DOMAIN_TOKEN_NAME,
+        ZNS_DOMAIN_TOKEN_SYMBOL,
+        zns.zeroVaultAddress,
+        defaultRoyaltyFraction
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   describe("External functions", () => {

@@ -1,7 +1,8 @@
 ## IDistributionConfig
 
 
-**IDistributionConfig.sol - An interface containing all types required for distribution configuration of a domain.**
+**IDistributionConfig.sol - An interface containing all types required for 
+distribution configuration of a domain.**
 
 
 
@@ -9,7 +10,8 @@ Types outlined in this config are stored on the `ZNSSubRegistrar` contract and a
 how subdomains are distributed for each parent domain.
 Below are docs for the types in this file:
  - `DistributionConfig`: Struct containing the configuration data for a parent domain:
-     + `pricerContract`: The address of the pricer contract chosen by the owner of the parent domain (IZNSPricer type required!)
+     + `pricerContract`: The address of the pricer contract chosen by the owner of the 
+         parent domain (IZNSPricer type required!)
      + `paymentType`: The payment type chosen by the owner of the parent domain
      + `accessType`: The access type chosen by the owner of the parent domain
  - `AccessType`: Enum signifying the access type of a parent domain:

@@ -15,6 +15,7 @@ export class DeployCampaign {
   config : IDeployCampaignConfig;
   version : string;
 
+  // TODO dep: figure out typing here so that methods of each contract type are resolved in Mission classes!
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [name : string | symbol] : any;
 

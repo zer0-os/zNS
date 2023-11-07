@@ -48,7 +48,8 @@ async function makeConfig(): Promise<IDeployCampaignConfig> {
     maxLength,
     baseLength,
     precisionMultiplier,
-    feePercentage
+    feePercentage,
+    isSet: true // TODO what should this value be
   }
 
   const config : IDeployCampaignConfig = {

@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+/**
+ * @notice Stake fee is 0x0 for anything other than subdomain under a parent with Stake Payment
+ * parent hash will be 0x0 for root domain
+ */
 struct CoreRegisterArgs {
-    // 0x0 for root domains
     bytes32 parentHash;
     bytes32 domainHash;
-    string label;
     address registrant;
-    uint256 price;
-    // 0x0 for anything other than subdomain under a parent with Stake Payment
-    uint256 stakeFee;
     address domainAddress;
+    uint256 price;
+    uint256 stakeFee;
+    string label;
     string tokenURI;
     bool isStakePayment;
 }
@@ -114,19 +115,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
      */
     event SubRegistrarSet(address subRegistrar);
 
-    /**
-     * @notice Emitted when the `addressResolver` address is set in state.
-     * @param addressResolver The new address of the AddressResolver contract
-     */
-    event AddressResolverSet(address addressResolver);
-
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
         address treasury_,
-        address domainToken_,
-        address addressResolver_
+        address domainToken_
     ) external;
 
     function registerRootDomain(
@@ -155,6 +149,4 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
-
-    function setAddressResolver(address addressResolver_) external;
 }

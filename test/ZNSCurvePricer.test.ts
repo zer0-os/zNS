@@ -13,8 +13,14 @@ import {
   PaymentType,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
+  INVALID_LENGTH_ERR,
+  INVALID_NAME_ERR,
 } from "./helpers";
-import { decimalsDefault, priceConfigDefault, DEFAULT_REGISTRATION_FEE_PERCENT } from "./helpers/constants";
+import { 
+  decimalsDefault, 
+  priceConfigDefault, 
+  DEFAULT_REGISTRATION_FEE_PERCENT 
+} from "./helpers/constants";
 import {
   getAccessRevertMsg,
 } from "./helpers/errors";
@@ -51,8 +57,8 @@ describe("ZNSCurvePricer", () => {
       adminAddresses: [admin.address],
     });
 
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, priceConfigDefault.maxPrice);
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.mint(user.address, priceConfigDefault.maxPrice);
 
     const fullConfig = {
       distrConfig: {
@@ -61,7 +67,7 @@ describe("ZNSCurvePricer", () => {
         accessType: 1,
       },
       paymentConfig: {
-        token: zns.zeroToken.address,
+        token: zns.meowToken.address,
         beneficiary: user.address,
       },
       priceConfig: priceConfigDefault,
@@ -74,6 +80,21 @@ describe("ZNSCurvePricer", () => {
       fullConfig,
     });
   });
+
+  // TODO uncomment and resolve error after fixing merge conflict
+  // it("Should NOT let initialize the implementation contract", async () => {
+  //   const factory = new ZNSCurvePricer__factory(deployer);
+  //   const impl = await getProxyImplAddress(zns.curvePricer.address);
+  //   const implContract = factory.attach(impl);
+
+  //   await expect(
+  //     implContract.initialize(
+  //       zns.accessController.address,
+  //       zns.registry.address,
+  //       priceConfigDefault
+  //     )
+  //   ).to.be.revertedWith(INITIALIZED_ERR);
+  // });
 
   it("Confirms values were initially set correctly", async () => {
     const valueCalls = [
@@ -100,13 +121,21 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#getPrice", async () => {
-    it("Returns 0 price for a root name with no length", async () => {
+    it("Returns 0 price for a label with no length if label validation is skipped", async () => {
       const {
         price,
         stakeFee,
-      } = await zns.curvePricer.getPriceAndFee(domainHash, "");
+      } = await zns.curvePricer.getPriceAndFee(domainHash, "", true);
       expect(price).to.eq(0);
       expect(stakeFee).to.eq(0);
+    });
+
+    it("Reverts for a label with no length if label validation is not skipped", async () => {
+      await expect(zns.curvePricer.getPrice(domainHash, "", false)).to.be.revertedWith(INVALID_LENGTH_ERR);
+    });
+
+    it("Reverts for invalid label if label validation is not skipped", async () => {
+      await expect(zns.curvePricer.getPrice(domainHash, "wilder!", false)).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
     it("Returns the base price for domains that are equal to the base length", async () => {
@@ -114,7 +143,7 @@ describe("ZNSCurvePricer", () => {
       const domain = "eth";
       const params = await zns.curvePricer.priceConfigs(domainHash);
 
-      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
+      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain, true);
       expect(domainPrice).to.eq(params.maxPrice);
     });
 
@@ -123,10 +152,10 @@ describe("ZNSCurvePricer", () => {
       const domainB = "e";
       const params = await zns.curvePricer.priceConfigs(domainHash);
 
-      let domainPrice = await zns.curvePricer.getPrice(domainHash, domainA);
+      let domainPrice = await zns.curvePricer.getPrice(domainHash, domainA, true);
       expect(domainPrice).to.eq(params.maxPrice);
 
-      (domainPrice = await zns.curvePricer.getPrice(domainHash, domainB));
+      (domainPrice = await zns.curvePricer.getPrice(domainHash, domainB, true));
       expect(domainPrice).to.eq(params.maxPrice);
     });
 
@@ -144,8 +173,8 @@ describe("ZNSCurvePricer", () => {
       const domainOneExpPrice = await calcCurvePrice(domainOne, priceConfigDefault);
       const domainTwoExpPrice = await calcCurvePrice(domainTwo, priceConfigDefault);
 
-      const domainOnePriceSC = await zns.curvePricer.getPrice(domainHash, domainOne);
-      const domainTwoPriceSC = await zns.curvePricer.getPrice(domainHash, domainTwo);
+      const domainOnePriceSC = await zns.curvePricer.getPrice(domainHash, domainOne, true);
+      const domainTwoPriceSC = await zns.curvePricer.getPrice(domainHash, domainTwo, true);
 
       expect(domainOnePriceSC).to.eq(domainOneRefValue);
       expect(domainOnePriceSC).to.eq(domainOneExpPrice);
@@ -163,7 +192,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
       const expectedPrice = await calcCurvePrice(domain, priceConfigDefault);
-      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
+      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain, true);
 
       expect(domainPrice).to.eq(expectedPrice);
     });
@@ -173,31 +202,19 @@ describe("ZNSCurvePricer", () => {
       // domains that are greater than base length + 1
       const short = "wild";
       const medium = "wilderworld";
-      const long = "wilderworld.beasts.pets.nfts.cats.calico.steve";
+      const long = "wilderworldbeastspetsnftscatscalicosteve";
 
       const expectedShortPrice = await calcCurvePrice(short, priceConfigDefault);
-      const shortPrice = await zns.curvePricer.getPrice(domainHash, short);
+      const shortPrice = await zns.curvePricer.getPrice(domainHash, short, true);
       expect(expectedShortPrice).to.eq(shortPrice);
 
       const expectedMediumPrice = await calcCurvePrice(medium, priceConfigDefault);
-      const mediumPrice = await zns.curvePricer.getPrice(domainHash, medium);
+      const mediumPrice = await zns.curvePricer.getPrice(domainHash, medium, true);
       expect(expectedMediumPrice).to.eq(mediumPrice);
 
       const expectedLongPrice = await calcCurvePrice(long, priceConfigDefault);
-      const longPrice = await zns.curvePricer.getPrice(domainHash, long);
+      const longPrice = await zns.curvePricer.getPrice(domainHash, long, true);
       expect(expectedLongPrice).to.eq(longPrice);
-    });
-
-    it("Prices Special Characters Accurately", async () => {
-      const domainSpecialCharacterSet1 = "±ƒc¢Ãv";
-      const domainSpecialCharacterSet2 = "œ柸þ€§ﾪ";
-      const domainWithoutSpecials = "abcdef";
-      const expectedPrice = calcCurvePrice(domainWithoutSpecials, priceConfigDefault);
-      let domainPrice = await zns.curvePricer.getPrice(domainHash, domainSpecialCharacterSet1);
-      expect(domainPrice).to.eq(expectedPrice);
-
-      (domainPrice = await zns.curvePricer.getPrice(domainHash, domainSpecialCharacterSet2));
-      expect(domainPrice).to.eq(expectedPrice);
     });
 
     it("Can Price Names Longer Than 255 Characters", async () => {
@@ -209,7 +226,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "a";
       const expectedPrice = calcCurvePrice(domain, priceConfigDefault);
-      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
+      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain, true);
       expect(domainPrice).to.eq(expectedPrice);
     });
 
@@ -224,7 +241,7 @@ describe("ZNSCurvePricer", () => {
 
       // baseLength = 0 is a special case
       await zns.curvePricer.connect(user).setBaseLength(domainHash, 0);
-      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain);
+      const domainPrice = await zns.curvePricer.getPrice(domainHash, domain, true);
       expect(domainPrice).to.eq(config.maxPrice);
 
       let outer = 1;
@@ -238,7 +255,7 @@ describe("ZNSCurvePricer", () => {
         config = await zns.curvePricer.priceConfigs(domainHash);
 
         while (config.maxLength.gt(inner)) {
-          const priceTx = zns.curvePricer.getPrice(domainHash, domain);
+          const priceTx = zns.curvePricer.getPrice(domainHash, domain, true);
           promises.push(priceTx);
 
           domain += "a";
@@ -257,6 +274,19 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#setPriceConfig", () => {
+    it("Can't price a name that has invalid characters", async () => {
+      // Valid names must match the pattern [a-z0-9]
+      const labelA = "WILDER";
+      const labelB = "!?w1Id3r!?";
+      const labelC = "!%$#^*?!#👍3^29";
+      const labelD = "wo.rld";
+
+      await expect(zns.curvePricer.getPrice(domainHash, labelA, false)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelB, false)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelC, false)).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(zns.curvePricer.getPrice(domainHash, labelD, false)).to.be.revertedWith(INVALID_NAME_ERR);
+    });
+
     it("Should set the config for any existing domain hash, including 0x0", async () => {
       const newConfig = {
         baseLength: BigNumber.from("6"),
@@ -265,6 +295,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       // as a user of "domainHash" that's not 0x0
@@ -300,12 +331,30 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       await expect(
         zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
     });
+
+    // TODO resolve after merge conflicts
+    // it("Cannot go below the set minPrice", async () => {
+    //   // Using config numbers from audit
+    //   const newConfig = {
+    //     baseLength: BigNumber.from("5"),
+    //     maxLength: BigNumber.from("10"),
+    //     maxPrice: parseEther("10"),
+    //     minPrice: parseEther("5.5"),
+    //     precisionMultiplier: precisionMultiDefault,
+    //     feePercentage: registrationFeePercDefault,
+    //   };
+
+    //   await expect(
+    //     zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+    //   ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    // });
 
     it("Should revert if called by anyone other than owner or operator", async () => {
       const newConfig = {
@@ -315,6 +364,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("6"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       await expect(
@@ -334,6 +384,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("10"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -357,6 +408,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: parseEther("2"),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       const tx = zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
@@ -414,8 +466,8 @@ describe("ZNSCurvePricer", () => {
       const shortDomain = "a";
       const longDomain = "abcdefghijklmnopqrstuvwxyz";
 
-      const shortPrice = await zns.curvePricer.getPrice(domainHash, shortDomain);
-      const longPrice = await zns.curvePricer.getPrice(domainHash, longDomain);
+      const shortPrice = await zns.curvePricer.getPrice(domainHash, shortDomain, true);
+      const longPrice = await zns.curvePricer.getPrice(domainHash, longDomain, true);
 
       expect(shortPrice).to.eq(BigNumber.from("0"));
       expect(longPrice).to.eq(BigNumber.from("0"));
@@ -425,7 +477,7 @@ describe("ZNSCurvePricer", () => {
       const newMaxPrice = priceConfigDefault.maxPrice.add(parseEther("9"));
 
       const expectedPriceBefore = await calcCurvePrice(defaultDomain, priceConfigDefault);
-      const priceBefore= await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceBefore= await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
 
       expect(expectedPriceBefore).to.eq(priceBefore);
 
@@ -437,7 +489,7 @@ describe("ZNSCurvePricer", () => {
       };
 
       const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig);
-      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
 
       expect(expectedPriceAfter).to.eq(priceAfter);
       expect(expectedPriceAfter).to.be.gt(expectedPriceBefore);
@@ -494,9 +546,9 @@ describe("ZNSCurvePricer", () => {
       const long = "abcdefghijklmnoabcdefghijklmnoabcdefghijklmnoabcdefghijklmno";
 
       const priceCalls = [
-        zns.curvePricer.getPrice(domainHash, short),
-        zns.curvePricer.getPrice(domainHash, medium),
-        zns.curvePricer.getPrice(domainHash, long),
+        zns.curvePricer.getPrice(domainHash, short, true),
+        zns.curvePricer.getPrice(domainHash, medium, true),
+        zns.curvePricer.getPrice(domainHash, long, true),
       ];
 
       const [
@@ -554,7 +606,7 @@ describe("ZNSCurvePricer", () => {
     it("Verifies new prices are affected after changing the precision multiplier", async () => {
       const atIndex = 7;
 
-      const before = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const before = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       const beforePriceString = before.toString();
 
       expect(beforePriceString.charAt(atIndex)).to.eq("0");
@@ -566,7 +618,7 @@ describe("ZNSCurvePricer", () => {
 
       await zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newPrecisionMultiplier);
 
-      const after = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const after = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       const afterPriceString = after.toString();
 
       expect(afterPriceString.charAt(atIndex)).to.not.eq("0");
@@ -617,6 +669,7 @@ describe("ZNSCurvePricer", () => {
         minPrice: BigNumber.from(10),
         precisionMultiplier: precisionMultiDefault,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
       };
 
       // We use `baseLength == 0` to indicate a special event like a promo or discount and always
@@ -628,9 +681,9 @@ describe("ZNSCurvePricer", () => {
       const long = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
 
       const priceCalls = [
-        zns.curvePricer.getPrice(domainHash, short),
-        zns.curvePricer.getPrice(domainHash, medium),
-        zns.curvePricer.getPrice(domainHash, long),
+        zns.curvePricer.getPrice(domainHash, short, true),
+        zns.curvePricer.getPrice(domainHash, medium, true),
+        zns.curvePricer.getPrice(domainHash, long, true),
       ];
 
       const [shortPrice, mediumPrice, longPrice] = await Promise.all(priceCalls);
@@ -648,8 +701,8 @@ describe("ZNSCurvePricer", () => {
       const shortDomain = "a";
       const longDomain = "abcdefghijklmnopqrstuvwxyz";
 
-      const shortPrice = await zns.curvePricer.getPrice(domainHash, shortDomain);
-      const longPrice = await zns.curvePricer.getPrice(domainHash, longDomain);
+      const shortPrice = await zns.curvePricer.getPrice(domainHash, shortDomain, true);
+      const longPrice = await zns.curvePricer.getPrice(domainHash, longDomain, true);
 
       expect(shortPrice).to.eq(params.maxPrice);
       expect(longPrice).to.eq(params.maxPrice);
@@ -660,7 +713,7 @@ describe("ZNSCurvePricer", () => {
       const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
 
       const expectedPriceBefore = await calcCurvePrice(defaultDomain, priceConfigDefault);
-      const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.not.eq(paramsBefore.maxPrice);
 
@@ -674,7 +727,7 @@ describe("ZNSCurvePricer", () => {
       };
 
       const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig);
-      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.eq(paramsAfter.maxPrice);
     });
@@ -691,7 +744,7 @@ describe("ZNSCurvePricer", () => {
       const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
 
       const expectedPriceBefore = await calcCurvePrice(defaultDomain, newConfig1);
-      const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceBefore = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       expect(priceBefore).to.eq(expectedPriceBefore);
       expect(priceBefore).to.eq(paramsBefore.maxPrice);
 
@@ -706,7 +759,7 @@ describe("ZNSCurvePricer", () => {
       const paramsAfter = await zns.curvePricer.priceConfigs(domainHash);
 
       const expectedPriceAfter = await calcCurvePrice(defaultDomain, newConfig2);
-      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const priceAfter = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
       expect(priceAfter).to.eq(expectedPriceAfter);
       expect(priceAfter).to.not.eq(paramsAfter.maxPrice);
     });
@@ -716,7 +769,7 @@ describe("ZNSCurvePricer", () => {
       await zns.curvePricer.connect(user).setBaseLength(domainHash, newRootLength);
 
       let config = await zns.curvePricer.priceConfigs(domainHash);
-      let price = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      let price = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
 
       expect(config.maxPrice).to.eq(price);
 
@@ -727,7 +780,7 @@ describe("ZNSCurvePricer", () => {
       );
 
       config = await zns.curvePricer.priceConfigs(domainHash);
-      price = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      price = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
 
       expect(config.maxPrice).to.eq(price);
     });
@@ -741,7 +794,7 @@ describe("ZNSCurvePricer", () => {
       };
 
       const expectedRootPrice = await calcCurvePrice(defaultDomain, newConfig);
-      const rootPrice = await zns.curvePricer.getPrice(domainHash, defaultDomain);
+      const rootPrice = await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
 
       expect(rootPrice).to.eq(expectedRootPrice);
     });
@@ -791,9 +844,9 @@ describe("ZNSCurvePricer", () => {
       const beyondBaseLength = "abcde";
 
       const priceCalls = [
-        zns.curvePricer.getPrice(domainHash, short),
-        zns.curvePricer.getPrice(domainHash, long),
-        zns.curvePricer.getPrice(domainHash, beyondBaseLength),
+        zns.curvePricer.getPrice(domainHash, short, true),
+        zns.curvePricer.getPrice(domainHash, long, true),
+        zns.curvePricer.getPrice(domainHash, beyondBaseLength, true),
       ];
 
       const [shortPrice, longPrice, beyondPrice] = await Promise.all(priceCalls);
@@ -811,7 +864,7 @@ describe("ZNSCurvePricer", () => {
     });
   });
 
-  describe("#setRegistrationFeePercentage", () => {
+  describe("#setFeePercentage", () => {
     it("Successfully sets the fee percentage", async () => {
       const newFeePerc = BigNumber.from(222);
       await zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc);
@@ -825,6 +878,13 @@ describe("ZNSCurvePricer", () => {
       const tx = zns.curvePricer.connect(admin)
         .setFeePercentage(domainHash, newFeePerc);
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
+    });
+
+    it("should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+      const newFeePerc = BigNumber.from(10001);
+      await expect(
+        zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc)
+      ).to.be.revertedWith("ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS");
     });
   });
 
@@ -948,7 +1008,7 @@ describe("ZNSCurvePricer", () => {
         zns.curvePricer.registry(),
         zns.curvePricer.getAccessController(),
         zns.curvePricer.priceConfigs(domainHash),
-        zns.curvePricer.getPrice(domainHash, "wilder"),
+        zns.curvePricer.getPrice(domainHash, "wilder", true),
       ];
 
       await validateUpgrade(deployer, zns.curvePricer, newCurvePricer, factory, contractCalls);

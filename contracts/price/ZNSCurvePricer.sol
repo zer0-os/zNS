@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
@@ -30,6 +30,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
      * Only Owner of the 0x0 hash (Zero owned address) can call this function.
@@ -54,13 +59,32 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Get the price of a given domain name
+     * @dev `skipValidityCheck` param is added to provide proper revert when the user is
+     * calling this to find out the price of a domain that is not valid. But in Registrar contracts
+     * we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
+     * So Registrars will pass this bool as "true" to not repeat the validity check.
+     * Note that if calling this function directly to find out the price, a user should always pass "false"
+     * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
+     * possible to register.
      * @param parentHash The hash of the parent domain under which price is determined
      * @param label The label of the subdomain candidate to get the price for before/during registration
+     * @param skipValidityCheck If true, skips the validity check for the label
      */
     function getPrice(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) public view override returns (uint256) {
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+        );
+
+        if (!skipValidityCheck) {
+            // Confirms string values are only [a-z0-9-]
+            label.validate();
+        }
+
         uint256 length = label.strlen();
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
@@ -91,9 +115,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     function getPriceAndFee(
         bytes32 parentHash,
-        string calldata label
+        string calldata label,
+        bool skipValidityCheck
     ) external view override returns (uint256 price, uint256 stakeFee) {
-        price = getPrice(parentHash, label);
+        price = getPrice(parentHash, label, skipValidityCheck);
         stakeFee = getFeeForPrice(parentHash, price);
         return (price, stakeFee);
     }
@@ -103,6 +128,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
      * fires `PriceConfigSet` event.
      * Only ADMIN can call this function.
+     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+     * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
      * @param priceConfig The new price config to set
      */
@@ -115,7 +142,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         priceConfigs[domainHash].minPrice = priceConfig.minPrice;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
-        priceConfigs[domainHash].feePercentage = priceConfig.feePercentage;
+        setFeePercentage(domainHash, priceConfig.feePercentage);
+        priceConfigs[domainHash].isSet = true;
 
         _validateConfig(domainHash);
 
@@ -244,9 +272,14 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The fee percentage to set
      */
     function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
-    external
+    public
     override
     onlyOwnerOrOperator(domainHash) {
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
@@ -291,9 +324,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (length <= config.baseLength) return config.maxPrice;
         if (length > config.maxLength) return config.minPrice;
 
-        return
-        (config.baseLength * config.maxPrice / length)
-        / config.precisionMultiplier * config.precisionMultiplier;
+        return (config.baseLength * config.maxPrice / length)
+            / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
@@ -304,7 +336,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * which can occur if some of the config values are not properly chosen and set.
      */
     function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength - 1);
+        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
         require(
             priceConfigs[domainHash].minPrice <= prevToMinPrice,
             "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."

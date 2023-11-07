@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.18;
+pragma solidity 0.8.18;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
@@ -26,6 +25,11 @@ contract ZNSAddressResolver is
      */
     mapping(bytes32 domainHash => address resolvedAddress)
         internal domainAddresses;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
     /**
      * @notice Initializer for the `ZNSAddressResolver` proxy.

@@ -4,7 +4,7 @@ import {
   deployZNS,
   getAccessRevertMsg,
   GOVERNOR_ROLE,
-  INITIALIZED_ERR,
+  INITIALIZED_ERR, INVALID_NAME_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
@@ -18,7 +18,8 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { ZNSFixedPricer__factory, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSFixedPricer", () => {
@@ -46,8 +47,8 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
@@ -56,7 +57,7 @@ describe("ZNSFixedPricer", () => {
         accessType: 1,
       },
       paymentConfig: {
-        token: zns.zeroToken.address,
+        token: zns.meowToken.address,
         beneficiary: user.address,
       },
       priceConfig: {
@@ -85,6 +86,19 @@ describe("ZNSFixedPricer", () => {
     )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSFixedPricer__factory(deployer);
+    const impl = await getProxyImplAddress(zns.fixedPricer.address);
+    const implContract = factory.attach(impl);
+
+    await expect(
+      implContract.initialize(
+        deployer.address,
+        random.address,
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
+  });
+
   it("should set config for 0x0 hash", async () => {
     const {
       price,
@@ -103,6 +117,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -134,7 +149,7 @@ describe("ZNSFixedPricer", () => {
     await expect(tx).to.emit(zns.fixedPricer, "PriceSet").withArgs(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricer.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname", true)
     ).to.equal(newPrice);
   });
 
@@ -143,8 +158,14 @@ describe("ZNSFixedPricer", () => {
     await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
     expect(
-      await zns.fixedPricer.getPrice(domainHash, "testname")
+      await zns.fixedPricer.getPrice(domainHash, "testname", false)
     ).to.equal(newPrice);
+  });
+
+  it("#getPrice() should revert for invalid label when not skipping the label validation", async () => {
+    await expect(
+      zns.fixedPricer.getPrice(domainHash, "tEstname", false)
+    ).to.be.revertedWith(INVALID_NAME_ERR);
   });
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
@@ -156,7 +177,7 @@ describe("ZNSFixedPricer", () => {
     const {
       price,
       fee,
-    } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname");
+    } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname", false);
 
     expect(price).to.equal(newPrice);
     expect(fee).to.equal(newPrice.mul(newFee).div(DEFAULT_PERCENTAGE_BASIS));
@@ -190,6 +211,14 @@ describe("ZNSFixedPricer", () => {
     );
   });
 
+  it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
+    await expect(
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, PERCENTAGE_BASIS.add(1))
+    ).to.be.revertedWith(
+      "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+    );
+  });
+
   // eslint-disable-next-line max-len
   it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
     const newPrice = ethers.utils.parseEther("1823");
@@ -199,6 +228,7 @@ describe("ZNSFixedPricer", () => {
       {
         price: newPrice,
         feePercentage: newFee,
+        isSet: true,
       }
     );
 
@@ -220,6 +250,7 @@ describe("ZNSFixedPricer", () => {
         {
           price: BigNumber.from(1),
           feePercentage: BigNumber.from(1),
+          isSet: true,
         }
       )
     ).to.be.revertedWith(
@@ -273,8 +304,8 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+      await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {
@@ -283,7 +314,7 @@ describe("ZNSFixedPricer", () => {
           accessType: 1,
         },
         paymentConfig: {
-          token: zns.zeroToken.address,
+          token: zns.meowToken.address,
           beneficiary: user.address,
         },
         priceConfig: {
@@ -351,7 +382,7 @@ describe("ZNSFixedPricer", () => {
         zns.fixedPricer.registry(),
         zns.fixedPricer.getAccessController(),
         zns.fixedPricer.priceConfigs(domainHash),
-        zns.fixedPricer.getPrice(domainHash, "wilder"),
+        zns.fixedPricer.getPrice(domainHash, "wilder", false),
       ];
 
       await validateUpgrade(deployer, zns.fixedPricer, newFixedPricer, factory, contractCalls);
