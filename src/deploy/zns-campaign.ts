@@ -28,7 +28,14 @@ export const runZnsCampaign = async ({
 
   const deployer = new HardhatDeployer();
 
+  // let dbAdapterIn;
+
   const dbAdapterIn = await getMongoAdapter();
+  
+  // if(process.env.ENV_LEVEL === "dev") {
+  //   // Always clear before running again  
+  //   await dbAdapterIn.dropDB();
+  // }
 
   const campaign = new DeployCampaign({
     missions: [
@@ -38,6 +45,8 @@ export const runZnsCampaign = async ({
       // TODO dep: add proper class for MeowToken in prod,
       //  that is able to determine to deploy a mock for test
       //  or use the data for existing Meow on mainnet to create and object and save to state
+      // TODO dep !IMPORTANT: make sure we publish the new MeowToken version properly
+      //  and updated it in this repo!!!!
       MeowTokenMockDM,
       ZNSAddressResolverDM,
       ZNSCurvePricerDM,
@@ -48,7 +57,7 @@ export const runZnsCampaign = async ({
     ],
     deployer,
     // TODO dep: fix this typing!
-    dbAdapter: dbAdapterIn,
+    dbAdapter: dbAdapterIn!,
     logger,
     config,
   } as ICampaignArgs);

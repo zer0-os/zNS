@@ -250,6 +250,7 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
   const checkParams = {
     dbUri: process.env.MONGO_DB_URI!,
     dbName: process.env.MONGO_DB_NAME!,
+    version: process.env.MONGO_DB_VERSION!,
   };
 
   const logger = getLogger();
@@ -286,6 +287,9 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
   } else {
     createNew = true;
   }
+
+  // Always create a new instance for dev work
+  if (process.env.ENV_LEVEL === "dev") createNew = true;
 
   if (createNew) {
     logger.debug("Creating new MongoDBAdapter instance");

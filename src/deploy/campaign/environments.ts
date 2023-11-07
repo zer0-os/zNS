@@ -7,7 +7,7 @@ import * as hre from "hardhat";
 
 import { IDeployCampaignConfig } from "./types";
 import { 
-  DEFAULT_ROYALTY_FRACTION, 
+  DEFAULT_ROYALTY_FRACTION,
   ZNS_DOMAIN_TOKEN_NAME, 
   ZNS_DOMAIN_TOKEN_SYMBOL,
   priceConfigDefault,
@@ -85,6 +85,8 @@ export async function getConfig(
   const config = devConfig;
 
   config.deployAdmin = account;
+
+  config.domainToken!.defaultRoyaltyReceiver = account.address
   config.governorAddresses = [account.address]
   config.adminAddresses = [account.address]
   config.zeroVaultAddress = zeroVault.address;
