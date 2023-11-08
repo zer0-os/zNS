@@ -14,7 +14,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker
       - run: yarn mongo:start
       - node/install-packages:
           pkg-manager: yarn
