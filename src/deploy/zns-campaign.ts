@@ -10,8 +10,7 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import * as hre from "hardhat";
-import { getMongoAdapter, MongoDBAdapter } from "./db/mongo-connect/mongo-adapter";
-import { spawnTestMongo } from "./db/test-mongo";
+import { getMongoAdapter } from "./db/mongo-connect/mongo-adapter";
 
 
 // TODO dep: add configs for ENV vars in this repo

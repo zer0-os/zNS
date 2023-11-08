@@ -8,6 +8,8 @@ import { getLogger } from "../../logger/create-logger";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
 
+let mongoAdapter : MongoDBAdapter | null = null;
+
 
 export class MongoDBAdapter {
   logger : TLogger;
@@ -46,7 +48,6 @@ export class MongoDBAdapter {
     mongoAdapter = this;
   }
 
-  // TODO dep: possibly refactor into initialize() async constructor
   async initialize (version ?: string) {
     try {
       await this.client.connect();
@@ -244,7 +245,6 @@ export class MongoDBAdapter {
   }
 }
 
-let mongoAdapter : MongoDBAdapter | null = null;
 
 export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
   const checkParams = {
@@ -275,6 +275,8 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
       ([ key, value ]) => {
         if (key === "version") key = "curVersion";
 
+        // if the existing adapter was created with different options than the currently needed one
+        // we create a new one and overwrite
         if (JSON.stringify(mongoAdapter?.[key]) !== JSON.stringify(value)) {
           createNew = true;
           return;
@@ -292,8 +294,9 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
       ...params,
     });
     await mongoAdapter.initialize(params.version);
+  } else {
+    logger.debug("Returning existing MongoDBAdapter instance");
   }
 
-  logger.debug("Returning existing MongoDBAdapter instance");
   return mongoAdapter as MongoDBAdapter;
 };

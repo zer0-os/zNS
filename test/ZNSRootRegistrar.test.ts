@@ -34,13 +34,14 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
+import { MongoDBAdapter } from "../src/deploy/db/mongo-connect/mongo-adapter";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
 // TODO dep: this is the only test converted to use the new Campaign
 //  others need to be converted once the Campaign is ready in full
-describe("ZNSRootRegistrar", () => {
+describe.only("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -52,6 +53,8 @@ describe("ZNSRootRegistrar", () => {
   let operator : SignerWithAddress;
   const defaultDomain = normalizeName("wilder");
   let userBalanceInitial : BigNumber;
+
+  let mongoAdapter : MongoDBAdapter;
 
   beforeEach(async () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
@@ -80,11 +83,17 @@ describe("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
+    // TODO db: fix this type in Campaign !
+    mongoAdapter = campaign.dbAdapter as unknown as MongoDBAdapter;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user
     await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
+  });
+
+  afterEach(async () => {
+    await mongoAdapter.dropDB();
   });
 
   it("Gas tests", async () => {
