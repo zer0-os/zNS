@@ -1,7 +1,3 @@
-// local
-// test
-// prod
-
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import * as hre from "hardhat";
 
@@ -49,7 +45,7 @@ async function makeConfig(): Promise<IDeployCampaignConfig> {
     baseLength,
     precisionMultiplier,
     feePercentage,
-    isSet: true // TODO what should this value be
+    isSet: false
   }
 
   const config : IDeployCampaignConfig = {
@@ -76,8 +72,7 @@ export async function getConfig(
   governors?: Array<string>,
   admins?: Array<string>,
 ): Promise<IDeployCampaignConfig> {
-  
-  // let config;
+
   if(process.env.ENV_LEVEL !== "dev") {    
     return await makeConfig();
   }

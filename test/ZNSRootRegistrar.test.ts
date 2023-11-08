@@ -37,6 +37,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-connect/mongo-adapter";
+import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -59,23 +60,15 @@ describe.only("ZNSRootRegistrar", () => {
   let mongoAdapter : MongoDBAdapter;
 
   beforeEach(async () => {
-    [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
     // zeroVault address is used to hold the fee charged to the user when registering
+    [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    // TODO dep: this whole config should be passed safely through ENV var injection
-    const config : IDeployCampaignConfig = {
-      deployAdmin: deployer,
-      governorAddresses: [ deployer.address ],
-      adminAddresses: [ deployer.address, admin.address ],
-      domainToken: {
-        name: ZNS_DOMAIN_TOKEN_NAME,
-        symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-        defaultRoyaltyReceiver: deployer.address,
-        defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
-      },
-      rootPriceConfig: priceConfigDefault,
-      zeroVaultAddress: zeroVault.address,
-    };
+    const config : IDeployCampaignConfig = await getConfig(
+      deployer,
+      zeroVault,
+      [governor.address],
+      [admin.address],
+    );
 
     const logger = getLogger();
 
@@ -148,6 +141,37 @@ describe.only("ZNSRootRegistrar", () => {
       allowed
     );
   });
+
+  it("Gets the default configuration correctly", async () => {
+    const config : IDeployCampaignConfig = await getConfig(
+      deployer,
+      zeroVault,
+      [governor.address],
+      [admin.address],
+    );
+    
+    expect(config.deployAdmin.address).to.eq(deployer.address);
+
+    expect(config.governorAddresses[0]).to.eq(deployer.address);
+    expect(config.governorAddresses[1]).to.eq(governor.address);
+    expect(config.governorAddresses[2]).to.be.undefined;
+
+    expect(config.adminAddresses[0]).to.eq(deployer.address);
+    expect(config.adminAddresses[1]).to.eq(admin.address);
+    expect(config.adminAddresses[2]).to.be.undefined;
+
+    expect(config.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
+    expect(config.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
+    expect(config.domainToken.defaultRoyaltyReceiver).to.eq(deployer.address);
+    expect(config.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
+
+    expect(config.rootPriceConfig).to.deep.eq(priceConfigDefault);
+  });
+  // TODO
+  // gets a custom configuration correctl
+  // fails with the custom configuration
+  // fails with custom when governor addresses are set wrong (try base64 encoding)
+  // fails with custom when admin addresses are set wrong
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSRootRegistrar__factory(deployer);

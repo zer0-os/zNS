@@ -31,11 +31,6 @@ export const runZnsCampaign = async ({
   // let dbAdapterIn;
 
   const dbAdapterIn = await getMongoAdapter();
-  
-  // if(process.env.ENV_LEVEL === "dev") {
-  //   // Always clear before running again  
-  //   await dbAdapterIn.dropDB();
-  // }
 
   const campaign = new DeployCampaign({
     missions: [

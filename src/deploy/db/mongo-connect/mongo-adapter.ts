@@ -288,8 +288,6 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
     createNew = true;
   }
 
-  // Always create a new instance for dev work
-  if (process.env.ENV_LEVEL === "dev") createNew = true;
 
   if (createNew) {
     logger.debug("Creating new MongoDBAdapter instance");
