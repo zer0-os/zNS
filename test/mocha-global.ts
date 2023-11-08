@@ -1,5 +1,5 @@
-import { getMongoAdapter } from "../src/deploy/db/mongo-connect/mongo-adapter";
 import { spawnTestMongo, stopTestMongo } from "../src/deploy/db/test-mongo";
+import { getMongoAdapter } from "../src/deploy/db/mongo-connect/adapter";
 
 
 export const mochaGlobalSetup = async () => {

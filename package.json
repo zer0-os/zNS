@@ -25,7 +25,8 @@
     "gas-cost": "ts-node src/utils/gas-costs.ts",
     "docgen": "hardhat docgen",
     "mongo:start": "docker-compose up",
-    "mongo:stop": "docker-compose stop"
+    "mongo:stop": "docker-compose stop",
+    "mongo:drop": "ts-node src/utils/drop-db.ts"
   },
   "pre-commit": [
     "lint"

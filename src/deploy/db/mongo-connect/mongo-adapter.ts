@@ -2,13 +2,10 @@
 import { TLogger } from "../../campaign/types";
 import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
-import { COLL_NAMES, mongoDbName, mongoURILocal, VERSION_TYPES } from "./constants";
+import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
-import { getLogger } from "../../logger/create-logger";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
-
-let mongoAdapter : MongoDBAdapter | null = null;
 
 
 export class MongoDBAdapter {
@@ -43,9 +40,6 @@ export class MongoDBAdapter {
     this.contracts = {} as Collection<IContractDbData>;
     this.versions = {} as Collection<IDBVersion>;
     this.curVersion = "0";
-
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    mongoAdapter = this;
   }
 
   async initialize (version ?: string) {
@@ -241,62 +235,7 @@ export class MongoDBAdapter {
   }
 
   async dropDB () {
-    return this.db.dropDatabase();
+    await this.db.dropDatabase();
+    this.logger.info("Database dropped successfully.");
   }
 }
-
-
-export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
-  const checkParams = {
-    dbUri: process.env.MONGO_DB_URI!,
-    dbName: process.env.MONGO_DB_NAME!,
-  };
-
-  const logger = getLogger();
-
-  const params = {
-    logger,
-    clientOpts: !!process.env.MONGO_DB_CLIENT_OPTS
-      ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
-      : undefined,
-    // TODO dep: add better way to set version ENV var is not the best !
-    version: process.env.MONGO_DB_VERSION,
-  };
-
-  if (!checkParams.dbUri && !checkParams.dbName) {
-    logger.info("`MONGO_DB_URI` and `MONGO_DB_NAME` have not been provided by the ENV. Proceeding to use defaults.");
-    checkParams.dbUri = mongoURILocal;
-    checkParams.dbName = mongoDbName;
-  }
-
-  let createNew = false;
-  if (mongoAdapter) {
-    Object.values(checkParams).forEach(
-      ([ key, value ]) => {
-        if (key === "version") key = "curVersion";
-
-        // if the existing adapter was created with different options than the currently needed one
-        // we create a new one and overwrite
-        if (JSON.stringify(mongoAdapter?.[key]) !== JSON.stringify(value)) {
-          createNew = true;
-          return;
-        }
-      }
-    );
-  } else {
-    createNew = true;
-  }
-
-  if (createNew) {
-    logger.debug("Creating new MongoDBAdapter instance");
-    mongoAdapter = new MongoDBAdapter({
-      ...checkParams,
-      ...params,
-    });
-    await mongoAdapter.initialize(params.version);
-  } else {
-    logger.debug("Returning existing MongoDBAdapter instance");
-  }
-
-  return mongoAdapter as MongoDBAdapter;
-};

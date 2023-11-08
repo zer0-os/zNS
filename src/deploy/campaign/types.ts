@@ -40,8 +40,7 @@ export interface ICampaignState {
 export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
   deployer : HardhatDeployer;
-  // TODO dep: is this the correct type?
-  dbAdapter : MongoDBAdapter | typeof BaseStorageAdapter;
+  dbAdapter : MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
 }

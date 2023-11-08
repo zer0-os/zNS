@@ -17,14 +17,13 @@ export const spawnTestMongo = async () => {
     // @ts-ignore
     throw new Error(e.message);
   }
-
-  logger.info("MongoDB started");
 };
 
 export const stopTestMongo = async () => {
   const logger = getLogger();
 
   try {
+    // TODO db: possibly change this to delete the container
     exec("npm run mongo:stop");
     logger.info("MongoDB stopped");
   } catch (e) {
