@@ -15,7 +15,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run: yarn mongo:start
+      - run: docker-compose up
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
