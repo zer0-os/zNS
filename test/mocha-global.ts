@@ -1,11 +1,7 @@
-import { spawnTestMongo, stopTestMongo } from "../src/deploy/db/test-mongo";
 import { getMongoAdapter } from "../src/deploy/db/mongo-connect/adapter";
 
 
 export const mochaGlobalSetup = async () => {
-  // spawn test Mongo instance
-  await spawnTestMongo();
-
   await getMongoAdapter();
 };
 
@@ -14,6 +10,4 @@ export const mochaGlobalTeardown = async () => {
   // TODO dep: unblock this if needed
   // await mongoAdapter.dropDB();
   await mongoAdapter.close();
-
-  await stopTestMongo();
 };

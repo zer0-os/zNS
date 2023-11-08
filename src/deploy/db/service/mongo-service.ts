@@ -1,8 +1,8 @@
 import { exec } from "child_process";
-import { getLogger } from "../logger/create-logger";
+import { getLogger } from "../../logger/create-logger";
 
 
-export const spawnTestMongo = async () => {
+export const startMongo = async () => {
   const logger = getLogger();
 
   try {
@@ -19,7 +19,7 @@ export const spawnTestMongo = async () => {
   }
 };
 
-export const stopTestMongo = async () => {
+export const stopMongo = async () => {
   const logger = getLogger();
 
   try {
