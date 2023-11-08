@@ -42,6 +42,7 @@ export class MongoDBAdapter {
     this.curVersion = "0";
   }
 
+  // call this to actually start the adapter
   async initialize (version ?: string) {
     try {
       await this.client.connect();
@@ -68,6 +69,44 @@ export class MongoDBAdapter {
     return this.db;
   }
 
+  async close (forceClose = false) {
+    try {
+      await this.client.close(forceClose);
+      this.logger.info(`MongoDB connection closed at ${this.dbUri}`);
+    } catch (e) {
+      this.logger.error({
+        message: `MongoDB connection failed to close at ${this.dbUri}`,
+        error: e,
+      });
+      throw e;
+    }
+  }
+
+  // Contract methods
+  async getContract (contractName : string, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.findOne({
+      name: contractName,
+      version,
+    });
+  }
+
+  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.insertOne({
+      ...data,
+      version,
+    });
+  }
+
+  async dropDB () {
+    await this.db.dropDatabase();
+    this.logger.info("Database dropped successfully.");
+  }
+
+  // Versioning methods
   // TODO dep: add logging to all versioning stages and methods !!
   async configureVersioning (version ?: string) {
     // TODO dep: add archiving logic once determined on how to handle it
@@ -144,43 +183,12 @@ export class MongoDBAdapter {
       });
   }
 
-  async close (forceClose = false) {
-    try {
-      await this.client.close(forceClose);
-      this.logger.info(`MongoDB connection closed at ${this.dbUri}`);
-    } catch (e) {
-      this.logger.error({
-        message: `MongoDB connection failed to close at ${this.dbUri}`,
-        error: e,
-      });
-      throw e;
-    }
-  }
-
   async getCheckLatestVersion () {
     const v = await this.getLatestVersion();
 
     if (!v) throw new Error("No version found in DB!");
 
     return v;
-  }
-
-  async getContract (contractName : string, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
-
-    return this.contracts.findOne({
-      name: contractName,
-      version,
-    });
-  }
-
-  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
-
-    return this.contracts.insertOne({
-      ...data,
-      version,
-    });
   }
 
   async getTempVersion () : Promise<string | null> {
@@ -232,10 +240,5 @@ export class MongoDBAdapter {
     return this.versions.deleteMany({
       version,
     });
-  }
-
-  async dropDB () {
-    await this.db.dropDatabase();
-    this.logger.info("Database dropped successfully.");
   }
 }
