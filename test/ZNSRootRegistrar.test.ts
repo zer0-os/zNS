@@ -41,7 +41,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 // TODO dep: this is the only test converted to use the new Campaign
 //  others need to be converted once the Campaign is ready in full
-describe.only("ZNSRootRegistrar", () => {
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -83,8 +83,7 @@ describe.only("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
-    // TODO db: fix this type in Campaign !
-    mongoAdapter = campaign.dbAdapter as unknown as MongoDBAdapter;
+    mongoAdapter = campaign.dbAdapter;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user
@@ -96,7 +95,7 @@ describe.only("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it("Gas tests", async () => {
+  it.only("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
