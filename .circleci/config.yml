@@ -15,6 +15,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - run: yarn mongo:start
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
@@ -26,6 +27,7 @@ jobs:
       - run:
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
+      - run: yarn mongo:down
       - persist_to_workspace:
           root: ~/repo
           paths: .

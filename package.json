@@ -29,6 +29,7 @@
     "docgen": "hardhat docgen",
     "mongo:start": "docker-compose up -d",
     "mongo:stop": "docker-compose stop",
+    "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts"
   },
   "pre-commit": [
