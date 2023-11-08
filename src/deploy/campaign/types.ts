@@ -6,7 +6,7 @@ import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
-import { MongoDBAdapter } from "../db/mongo-connect/mongo-adapter";
+import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
 
 
 export interface IDeployCampaignConfig {

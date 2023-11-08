@@ -34,7 +34,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-connect/mongo-adapter";
+import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

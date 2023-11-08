@@ -11,7 +11,7 @@ import {
 } from "./missions/contracts";
 import * as hre from "hardhat";
 
-import { getMongoAdapter } from "./db/mongo-connect/adapter";
+import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 
 
 // TODO dep: add configs for ENV vars in this repo

@@ -1,4 +1,4 @@
-import { getMongoAdapter } from "../deploy/db/mongo-connect/adapter";
+import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
 
 
 export const dropDB = async () => {

@@ -1,4 +1,4 @@
-import { getMongoAdapter } from "../src/deploy/db/mongo-connect/adapter";
+import { getMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 
 
 export const mochaGlobalSetup = async () => {

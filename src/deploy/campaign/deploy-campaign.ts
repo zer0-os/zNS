@@ -3,7 +3,7 @@ import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
-import { MongoDBAdapter } from "../db/mongo-connect/mongo-adapter";
+import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
 
 
 export class DeployCampaign {
