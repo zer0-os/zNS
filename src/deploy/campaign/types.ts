@@ -20,8 +20,8 @@ export interface IDeployCampaignConfig {
     defaultRoyaltyFraction : BigNumber;
   };
   rootPriceConfig : ICurvePriceConfig;
-  stakingTokenAddress ?: string;
   zeroVaultAddress : string;
+  mockMeowToken : boolean;
   // TODO dep: add more props when opts expanded
 }
 
