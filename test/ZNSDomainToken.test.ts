@@ -79,7 +79,7 @@ describe("ZNSDomainToken", () => {
         ZNS_DOMAIN_TOKEN_NAME,
         ZNS_DOMAIN_TOKEN_SYMBOL,
         zns.zeroVaultAddress,
-        defaultRoyaltyFraction
+        DEFAULT_ROYALTY_FRACTION
       )
     ).to.be.revertedWith(INITIALIZED_ERR);
   });
