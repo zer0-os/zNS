@@ -6,7 +6,8 @@ import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,
-  hashDomainLabel, INVALID_LENGTH_ERR,
+  hashDomainLabel,
+  INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
@@ -14,16 +15,21 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
+  ONLY_OWNER_REGISTRAR_REG_ERR,
+  OwnerOf,
+  PaymentType,
+  REGISTRAR_ROLE,
   validateUpgrade,
   ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
+  DEFAULT_PRECISION_MULTIPLIER,
+  DEFAULT_PRICE_CONFIG,
+  DEFAULT_REGISTRATION_FEE_PERCENT,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { DEFAULT_PRECISION_MULTIPLIER, DEFAULT_PRICE_CONFIG, DEFAULT_REGISTRATION_FEE_PERCENT } from "./helpers/constants";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
@@ -55,9 +61,9 @@ describe("ZNSRootRegistrar", () => {
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : BigNumber;
-  
+
   let mongoAdapter : MongoDBAdapter;
-  
+
   const defaultDomain = normalizeName("wilder");
 
   beforeEach(async () => {
@@ -145,7 +151,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Gets the default configuration correctly", async () => {
     // set the environment to get the appropriate variables
-    const localConfig: IDeployCampaignConfig = await getConfig(
+    const localConfig : IDeployCampaignConfig = await getConfig(
       deployer,
       zeroVault,
       [governor.address],
@@ -174,9 +180,9 @@ describe("ZNSRootRegistrar", () => {
 
   it("Modifies config to use a random account as the deployer", async () => {
     // Run the deployment a second time, clear the DB so everything is deployed
-    if(mongoAdapter) await mongoAdapter.dropDB();
+    if (mongoAdapter) await mongoAdapter.dropDB();
 
-    const config: IDeployCampaignConfig = await getConfig(
+    const config : IDeployCampaignConfig = await getConfig(
       randomUser,
       user,
       [randomUser.address, admin.address], // governors
@@ -191,7 +197,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
-    
+
     const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
 
     expect(await zns.accessController.isAdmin(randomUser.address)).to.be.true;
@@ -207,8 +213,10 @@ describe("ZNSRootRegistrar", () => {
     // We could manipulate envariables through `process.env.<VAR_NAME>` for this test and call `getConfig()`
     // but the async nature of HH mocha tests causes this to mess up other tests
     // Instead we use the same encoding functions used in `getConfig()` to test the functionality
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     try {
-      atob("[0x123,0x456]")
+      atob("[0x123,0x456]");
     } catch (e : any) {
       expect(e.message).includes("Invalid character");
     }
@@ -256,7 +264,7 @@ describe("ZNSRootRegistrar", () => {
   it("Confirms a new 0x0 owner can modify the configs in the treasury and curve pricer", async () => {
     await zns.registry.updateDomainOwner(ethers.constants.HashZero, user.address);
 
-    const newTreasuryConfig: PaymentConfigStruct = {
+    const newTreasuryConfig : PaymentConfigStruct = {
       token: zeroVault.address, // Just needs to be a different address
       beneficiary: user.address,
     };

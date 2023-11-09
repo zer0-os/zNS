@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+/* solhint-disable */
 pragma solidity 0.8.3;
 
 import { MeowToken } from "@zero-tech/ztoken/contracts/MeowToken.sol";

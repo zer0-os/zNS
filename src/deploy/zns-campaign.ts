@@ -52,7 +52,7 @@ export const runZnsCampaign = async ({
     ],
     deployer,
     // TODO dep: fix this typing!
-    dbAdapter: dbAdapterIn!,
+    dbAdapter: dbAdapterIn,
     logger,
     config,
   } as ICampaignArgs);

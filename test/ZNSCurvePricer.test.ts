@@ -16,10 +16,10 @@ import {
   INVALID_LENGTH_ERR,
   INVALID_NAME_ERR,
 } from "./helpers";
-import { 
-  DEFAULT_DECIMALS, 
-  DEFAULT_PRICE_CONFIG, 
-  DEFAULT_REGISTRATION_FEE_PERCENT 
+import {
+  DEFAULT_DECIMALS,
+  DEFAULT_PRICE_CONFIG,
+  DEFAULT_REGISTRATION_FEE_PERCENT,
 } from "./helpers/constants";
 import {
   getAccessRevertMsg,
