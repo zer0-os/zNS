@@ -1,6 +1,5 @@
 import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
-import { FileStorageAdapter } from "./storage/file-storage";
 import { DeployCampaign } from "./campaign/deploy-campaign";
 import {
   MeowTokenMockDM,
