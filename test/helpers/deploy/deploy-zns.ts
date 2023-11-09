@@ -30,7 +30,7 @@ import {
   domainTokenName,
   erc1967ProxyName,
   fixedPricerName,
-  priceConfigDefault,
+  DEFAULT_PRICE_CONFIG,
   curvePricerName,
   registrarName,
   registryName,
@@ -507,7 +507,7 @@ export const deployZNS = async ({
   deployer,
   governorAddresses,
   adminAddresses,
-  priceConfig = priceConfigDefault,
+  priceConfig = DEFAULT_PRICE_CONFIG,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<IZNSContracts> => {

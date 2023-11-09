@@ -9,7 +9,7 @@ import {
   NO_BENEFICIARY_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   INITIALIZED_ERR,
-  priceConfigDefault,
+  DEFAULT_PRICE_CONFIG,
   validateUpgrade,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
@@ -195,7 +195,7 @@ describe("ZNSTreasury", () => {
         stakeFee: protocolFee,
       } = getPriceObject(
         domainName,
-        priceConfigDefault
+        DEFAULT_PRICE_CONFIG
       );
 
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
@@ -619,7 +619,7 @@ describe("ZNSTreasury", () => {
 
       const newLabel = "world";
       const newHash = hashSubdomainName(newLabel);
-      const { expectedPrice, stakeFee } = getPriceObject(newLabel, priceConfigDefault);
+      const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.constants.HashZero,

@@ -26,7 +26,7 @@ export const runZnsCampaign = async ({
   // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
 
-  const deployer = new HardhatDeployer();
+  const deployer = new HardhatDeployer(config.deployAdmin);
 
   // let dbAdapterIn;
 

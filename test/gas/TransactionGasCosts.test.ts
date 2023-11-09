@@ -1,6 +1,6 @@
 import { IDistributionConfig, IZNSContracts } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, priceConfigDefault } from "../helpers";
+import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { BigNumber } from "ethers";
@@ -42,11 +42,11 @@ describe("Transaction Gas Costs Test", () => {
       deployer,
       governorAddresses: [deployer.address, governor.address],
       adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
+      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, DEFAULT_PRICE_CONFIG);
 
     config = {
       pricerContract: zns.fixedPricer.address,
@@ -78,7 +78,7 @@ describe("Transaction Gas Costs Test", () => {
           token: zns.meowToken.address,
           beneficiary: rootOwner.address,
         },
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
       },
     });
 

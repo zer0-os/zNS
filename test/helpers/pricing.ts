@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { DEFAULT_PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
+import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -14,7 +14,7 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
  */
 export const calcCurvePrice = (
   name : string,
-  priceConfig = priceConfigDefault,
+  priceConfig = DEFAULT_PRICE_CONFIG,
 ) : BigNumber => {
   // Get price configuration for contract
   const {
@@ -42,7 +42,7 @@ export const calcCurvePrice = (
 
 export const getStakingOrProtocolFee = (
   forAmount : BigNumber,
-  feePercentage : BigNumber = priceConfigDefault.feePercentage,
+  feePercentage : BigNumber = DEFAULT_PRICE_CONFIG.feePercentage,
 ) => forAmount
   .mul(feePercentage)
   .div(DEFAULT_PERCENTAGE_BASIS);
@@ -57,7 +57,7 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = priceConfigDefault,
+  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = DEFAULT_PRICE_CONFIG,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;

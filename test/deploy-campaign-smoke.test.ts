@@ -5,7 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   DEFAULT_ROYALTY_FRACTION,
   GOVERNOR_ROLE,
-  priceConfigDefault, DEFAULT_REGISTRATION_FEE_PERCENT,
+  DEFAULT_PRICE_CONFIG, DEFAULT_REGISTRATION_FEE_PERCENT,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
@@ -44,7 +44,7 @@ describe("Deploy Campaign Smoke Test", () => {
         defaultRoyaltyReceiver: deployAdmin.address,
         defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
       },
-      rootPriceConfig: priceConfigDefault,
+      rootPriceConfig: DEFAULT_PRICE_CONFIG,
       registrationFee: DEFAULT_REGISTRATION_FEE_PERCENT,
       zeroVaultAddress: zeroVault.address,
     };

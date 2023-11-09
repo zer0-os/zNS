@@ -17,8 +17,8 @@ import {
   INVALID_TOKENID_ERC_ERR, NO_BENEFICIARY_ERR,
   ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
   PaymentType,
-  precisionDefault,
-  priceConfigDefault,
+  DECAULT_PRECISION,
+  DEFAULT_PRICE_CONFIG,
   validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -74,7 +74,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
       // Give funds to users
@@ -168,7 +168,7 @@ describe("ZNSSubRegistrar", () => {
             token: zns.meowToken.address,
             beneficiary: rootOwner.address,
           },
-          priceConfig: priceConfigDefault,
+          priceConfig: DEFAULT_PRICE_CONFIG,
         },
       });
 
@@ -453,7 +453,7 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: paymentConfigEmpty,
-          priceConfig: priceConfigDefault,
+          priceConfig: DEFAULT_PRICE_CONFIG,
         },
       });
 
@@ -528,7 +528,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -579,7 +579,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: lvl2SubOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -595,7 +595,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -611,7 +611,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: lvl4SubOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
 
           },
         },
@@ -645,7 +645,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: lvl6SubOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -698,7 +698,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: zeroVault.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -715,7 +715,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: multiOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -749,7 +749,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: multiOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -766,7 +766,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: zeroVault.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -1002,7 +1002,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: branchLvl2Owner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -1322,7 +1322,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -1625,7 +1625,7 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigNumber.from(4),
         precisionMultiplier: BigNumber.from(10).pow(
           decimalValues.thirteen
-            .sub(precisionDefault)
+            .sub(DECAULT_PRECISION)
         ),
         feePercentage: BigNumber.from(185),
         isSet: true,
@@ -1788,7 +1788,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
       const priceConfig = {
-        ...priceConfigDefault,
+        ...DEFAULT_PRICE_CONFIG,
         feePercentage: BigNumber.from(0),
       };
 
@@ -1940,7 +1940,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + DirectPayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...priceConfigDefault,
+        ...DEFAULT_PRICE_CONFIG,
         maxPrice: BigNumber.from(0),
         minPrice: BigNumber.from(0),
       };
@@ -2023,7 +2023,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + StakePayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...priceConfigDefault,
+        ...DEFAULT_PRICE_CONFIG,
         maxPrice: BigNumber.from(0),
         minPrice: BigNumber.from(0),
       };
@@ -2337,7 +2337,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -2799,7 +2799,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -2868,7 +2868,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: priceConfigDefault,
+            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -3321,7 +3321,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
