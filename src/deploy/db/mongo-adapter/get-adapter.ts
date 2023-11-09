@@ -25,7 +25,7 @@ export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
 
   if (!checkParams.dbUri && !checkParams.dbName) {
     logger.info("`MONGO_DB_URI` and `MONGO_DB_NAME` have not been provided by the ENV. Proceeding to use defaults.");
-    checkParams.dbUri = "mongodb://mongo:27018";// mongoURILocal;
+    checkParams.dbUri = `mongodb://${process.env.DOCKER_HOST}:27018`; // mongoURILocal;
     checkParams.dbName = mongoDbName;
   }
 
