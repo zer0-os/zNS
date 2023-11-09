@@ -1,5 +1,6 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { znsNames } from "../../constants";
+
+import { znsNames } from "./names";
 
 
 export class ZNSAccessControllerDM extends BaseDeployMission {

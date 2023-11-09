@@ -1,6 +1,7 @@
-import { ProxyKinds, znsNames } from "../../constants";
+import { ProxyKinds } from "../../constants";
 import { TDeployArgs } from "../types";
 import { BaseDeployMission } from "../base-deploy-mission";
+import { znsNames } from "./names";
 
 
 export class ZNSFixedPricerDM extends BaseDeployMission {

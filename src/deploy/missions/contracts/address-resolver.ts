@@ -1,6 +1,7 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, ResolverTypes, znsNames } from "../../constants";
+import { ProxyKinds, ResolverTypes } from "../../constants";
 import { TDeployArgs } from "../types";
+import { znsNames } from "./names";
 
 
 export class ZNSAddressResolverDM extends BaseDeployMission {

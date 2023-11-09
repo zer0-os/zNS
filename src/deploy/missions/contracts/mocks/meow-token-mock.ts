@@ -1,7 +1,8 @@
 import { BaseDeployMission } from "../../base-deploy-mission";
-import { ProxyKinds, znsNames } from "../../../constants";
+import { ProxyKinds } from "../../../constants";
 import { TDeployArgs } from "../../types";
 import { ethers } from "ethers";
+import { znsNames } from "../names";
 
 
 export const meowTokenName = "Meow Token";
@@ -23,6 +24,8 @@ export class MeowTokenMockDM extends BaseDeployMission {
   deployArgs () : TDeployArgs {
     return [meowTokenName, meowTokenSymbol];
   }
+
+  // TODO dep: add a needsPostDeploy() hook !!
 
   async postDeploy () {
     const {

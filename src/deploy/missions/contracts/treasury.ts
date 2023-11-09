@@ -1,8 +1,9 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, znsNames } from "../../constants";
+import { ProxyKinds } from "../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
 import { MeowTokenMockDM } from "./mocks/meow-token-mock";
+import { znsNames } from "./names";
 
 export class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
@@ -67,6 +68,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     return this.isMockedMeowToken;
   }
 
+  // TODO dep: figure out if this is needed to be here so it doesn't run by mistake in prod.
   // this should launch ONLY if the Meow Token was mocked in test !
   async postDeploy () {
     const {

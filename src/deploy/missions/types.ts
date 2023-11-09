@@ -18,9 +18,15 @@ export type TDeployArgs = Array<TDeployArg>;
 
 export type TProxyKind = "uups" | "transparent" | "beacon" | undefined;
 
+export interface IProxyKinds {
+  uups : TProxyKind;
+  transparent : TProxyKind;
+  beacon : TProxyKind;
+}
+
 export interface IProxyData {
   isProxy : boolean;
-  proxyKind ?: TProxyKind;
+  kind ?: TProxyKind;
 }
 
 export interface ICurvePriceConfig {
