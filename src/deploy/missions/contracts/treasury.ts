@@ -29,7 +29,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     if (!!stakingTokenAddress) {
       this.isMockedMeowToken = false;
     } else {
-      // TODO dep: is this a correct check?
+      // TODO dep: is this a correct check? rework this whole flow in the class when MeowTokenDM is done
       if (!this.campaign.state.missions.includes(MeowTokenMockDM)) throw new Error(
         `No staking token found!
         Please make sure to provide 'stakingTokenAddress' to the config
