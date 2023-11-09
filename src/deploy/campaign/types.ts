@@ -22,7 +22,6 @@ export interface IDeployCampaignConfig {
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  // TODO dep: add more props when opts expanded
 }
 
 export type TLogger = WinstonLogger | Console;

@@ -2,7 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds } from "../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
-import { MeowTokenMockDM } from "./mocks/meow-token-mock";
+import { MeowTokenDM } from "./meow-token/meow-token";
 import { znsNames } from "./names";
 
 export class ZNSTreasuryDM extends BaseDeployMission {
@@ -30,7 +30,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
       this.isMockedMeowToken = false;
     } else {
       // TODO dep: is this a correct check? rework this whole flow in the class when MeowTokenDM is done
-      if (!this.campaign.state.missions.includes(MeowTokenMockDM)) throw new Error(
+      if (!this.campaign.state.missions.includes(MeowTokenDM)) throw new Error(
         `No staking token found!
         Please make sure to provide 'stakingTokenAddress' to the config
         or add mocked token to the Deploy Campaign if this is a test.`

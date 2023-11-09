@@ -61,6 +61,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
 
     // TODO dep: this whole config should be passed safely through ENV var injection
+    // TODO dep: extract this to it's own file and function that will work everywhere as part of the flow
     const config : IDeployCampaignConfig = {
       deployAdmin: deployer,
       governorAddresses: [ deployer.address ],
@@ -73,6 +74,8 @@ describe("ZNSRootRegistrar", () => {
       },
       rootPriceConfig: priceConfigDefault,
       zeroVaultAddress: zeroVault.address,
+      // TODO dep: add this to the ENV
+      mockMeowToken: true,
     };
 
     const logger = getLogger();
@@ -95,7 +98,7 @@ describe("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it.only("Gas tests", async () => {
+  it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,

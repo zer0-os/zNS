@@ -2,7 +2,7 @@ import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "./campaign/types"
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { DeployCampaign } from "./campaign/deploy-campaign";
 import {
-  MeowTokenMockDM,
+  MeowTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
@@ -29,17 +29,14 @@ export const runZnsCampaign = async ({
   const deployer = new HardhatDeployer();
 
   // TODO dep: remove all hardcoded stuff and turn into constants or ENV vars!
-  const dbAdapterIn = await getMongoAdapter();
+  const dbAdapter = await getMongoAdapter();
 
   const campaign = new DeployCampaign({
     missions: [
       ZNSAccessControllerDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
-      // TODO dep: add proper class for MeowToken in prod,
-      //  that is able to determine to deploy a mock for test
-      //  or use the data for existing Meow on mainnet to create and object and save to state
-      MeowTokenMockDM,
+      MeowTokenDM,
       ZNSAddressResolverDM,
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
@@ -48,8 +45,7 @@ export const runZnsCampaign = async ({
       ZNSSubRegistrarDM,
     ],
     deployer,
-    // TODO dep: fix this typing!
-    dbAdapter: dbAdapterIn,
+    dbAdapter,
     logger,
     config,
   } as ICampaignArgs);
@@ -57,7 +53,7 @@ export const runZnsCampaign = async ({
   await campaign.execute();
 
   // TODO dep: find the best place to call these !
-  await dbAdapterIn.finalizeDeployedVersion(dbVersion);
+  await dbAdapter.finalizeDeployedVersion(dbVersion);
 
   return campaign;
 };
