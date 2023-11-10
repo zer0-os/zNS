@@ -17,6 +17,7 @@ jobs:
       - checkout
       - node/install-packages:
           pkg-manager: yarn
+          override-ci-command: yarn install
       - run: yarn build
       - run: yarn lint
       - run:
