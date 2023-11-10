@@ -22,6 +22,7 @@ export interface IDeployCampaignConfig {
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
+  stakingTokenAddress : string;
 }
 
 export type TLogger = WinstonLogger | Console;
@@ -30,9 +31,13 @@ export interface IContractState {
   [key : string] : Contract;
 }
 
+export interface IMissionInstances {
+  [key : string] : BaseDeployMission;
+}
+
 export interface ICampaignState {
   missions : Array<TDeployMissionCtor>;
-  instances : Array<BaseDeployMission>;
+  instances : IMissionInstances;
   contracts : TZNSContractState;
 }
 
