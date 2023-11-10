@@ -20,17 +20,9 @@ export class ZNSTreasuryDM extends BaseDeployMission {
       registry,
       meowToken,
       config: {
-        stakingTokenAddress,
         zeroVaultAddress,
       },
     } = this.campaign;
-
-    // TODO dep: is this needed at all? can this happen?
-    if (meowToken.address !== stakingTokenAddress) {
-      throw new Error(
-        `MEOW token address ${meowToken.address} does not match ENV set 'stakingTokenAddress' ${stakingTokenAddress}`
-      );
-    }
 
     return [
       accessController.address,

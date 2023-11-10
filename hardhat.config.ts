@@ -20,8 +20,10 @@ import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
 subtask(TASK_TEST_RUN_MOCHA_TESTS)
   .setAction(async (args, hre, runSuper) => {
     await mochaGlobalSetup();
-    await runSuper(args);
+    const testFailures = await runSuper(args);
     await mochaGlobalTeardown();
+
+    process.exit(testFailures);
   });
 
 // This call is needed to initialize Tenderly with Hardhat,

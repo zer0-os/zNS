@@ -74,7 +74,7 @@ describe("ZNSRootRegistrar", () => {
       },
       rootPriceConfig: priceConfigDefault,
       zeroVaultAddress: zeroVault.address,
-      // TODO dep: add this to the ENV
+      stakingTokenAddress: "",
       mockMeowToken: true,
     };
 
