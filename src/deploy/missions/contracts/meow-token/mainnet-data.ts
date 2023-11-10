@@ -1,6 +1,6 @@
 
 export const MeowMainnet = {
-  proxy: "0x0eC78ED49C2D27b315D462d43B5BAB94d2C79bf8",
+  address: "0x0eC78ED49C2D27b315D462d43B5BAB94d2C79bf8",
   implementation: "0xcDb3C5e9b4760f93437aBaD33dBEC9a2cE3704f6",
   abi: [
     {
