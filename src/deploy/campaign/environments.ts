@@ -70,7 +70,6 @@ export const getConfig = (
       ? ethers.BigNumber.from(process.env.BASE_LENGTH)
       : DEFAULT_PRICE_CONFIG.baseLength;
 
-
   const decimals = process.env.DECIMALS ? ethers.BigNumber.from(process.env.DECIMALS) : DEFAULT_DECIMALS;
   const precision = process.env.PRECISION ? ethers.BigNumber.from(process.env.PRECISION) : DECAULT_PRECISION;
   const precisionMultiplier = ethers.BigNumber.from(10).pow(decimals.sub(precision));

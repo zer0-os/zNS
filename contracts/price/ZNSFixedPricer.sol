@@ -58,7 +58,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function getPrice(
         bytes32 parentHash,
         string calldata label,
-        bool skipValidityCheck // TODO why do we want this?
+        bool skipValidityCheck
     ) public override view returns (uint256) {
         require(
             priceConfigs[parentHash].isSet,
