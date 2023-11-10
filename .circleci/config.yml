@@ -8,14 +8,13 @@ defaults: &defaults
   working_directory: ~/repo
   docker:
     - image: cimg/node:18.15.0
+    - image: mongo:7.0.0-rc5-jammy
 
 jobs:
   test and coverage:
     <<: *defaults
     steps:
       - checkout
-      - setup_remote_docker
-      - run: yarn mongo:start
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
@@ -27,7 +26,6 @@ jobs:
       - run:
           name: Validate Code Coverage Threshold
           command: yarn check-coverage #Validate code is adequately covered by unit tests
-      - run: yarn mongo:down
       - persist_to_workspace:
           root: ~/repo
           paths: .

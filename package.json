@@ -19,7 +19,7 @@
     "typechain": "hardhat typechain",
     "pretest": "yarn mongo:start",
     "test": "hardhat test",
-    "test-local": "yarn test",
+    "test:ci": "hardhat test", 
     "posttest": "yarn mongo:stop",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
