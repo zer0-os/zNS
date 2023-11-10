@@ -31,25 +31,4 @@ export class ZNSTreasuryDM extends BaseDeployMission {
       zeroVaultAddress,
     ];
   }
-
-  async needsPostDeploy () : Promise<boolean> {
-    return this.config.mockMeowToken;
-  }
-
-  // this should launch ONLY if the Meow Token was mocked in test !
-  async postDeploy () {
-    const {
-      meowToken,
-      treasury,
-      config: {
-        deployAdmin,
-      },
-    } = this.campaign;
-
-    // Give allowance to the treasury
-    await meowToken.connect(deployAdmin).approve(
-      treasury.address,
-      ethers.constants.MaxUint256
-    );
-  }
 }

@@ -3,8 +3,6 @@ import { ProxyKinds } from "../../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../../types";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
-import { MeowMainnet } from "./mainnet-data";
-import { compareBytecodeStrict } from "../../../../utils/compare-bytecode";
 
 
 export const meowTokenName = "MEOW";

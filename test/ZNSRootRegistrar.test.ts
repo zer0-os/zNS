@@ -88,6 +88,11 @@ describe("ZNSRootRegistrar", () => {
     zns = campaign.state.contracts;
     mongoAdapter = campaign.dbAdapter;
 
+    await zns.meowToken.connect(deployer).approve(
+      zns.treasury.address,
+      ethers.constants.MaxUint256
+    );
+
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user
     await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
