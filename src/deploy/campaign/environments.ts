@@ -116,7 +116,7 @@ export const getConfig = (
     },
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS,
+    mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true, 
   };
 
   return config;

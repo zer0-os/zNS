@@ -42,7 +42,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-connect/mongo-adapter";
+import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -85,8 +85,8 @@ describe("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
-    // TODO db: fix this type in Campaign !
-    mongoAdapter = campaign.dbAdapter as unknown as MongoDBAdapter;
+
+    mongoAdapter = campaign.dbAdapter;
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user

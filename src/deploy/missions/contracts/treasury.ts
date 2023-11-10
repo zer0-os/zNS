@@ -1,8 +1,9 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, znsNames } from "../../constants";
+import { ProxyKinds } from "../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../types";
 import { ethers } from "ethers";
-import { MeowTokenMockDM } from "./mocks/meow-token-mock";
+import { MeowTokenDM } from "./meow-token/meow-token";
+import { znsNames } from "./names";
 
 export class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
@@ -28,8 +29,8 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     if (!!stakingTokenAddress) {
       this.isMockedMeowToken = false;
     } else {
-      // TODO dep: is this a correct check?
-      if (!this.campaign.state.missions.includes(MeowTokenMockDM)) throw new Error(
+      // TODO dep: is this a correct check? rework this whole flow in the class when MeowTokenDM is done
+      if (!this.campaign.state.missions.includes(MeowTokenDM)) throw new Error(
         `No staking token found!
         Please make sure to provide 'stakingTokenAddress' to the config
         or add mocked token to the Deploy Campaign if this is a test.`
@@ -67,6 +68,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     return this.isMockedMeowToken;
   }
 
+  // TODO dep: figure out if this is needed to be here so it doesn't run by mistake in prod.
   // this should launch ONLY if the Meow Token was mocked in test !
   async postDeploy () {
     const {

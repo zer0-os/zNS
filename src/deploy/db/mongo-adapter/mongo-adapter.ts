@@ -2,13 +2,10 @@
 import { TLogger } from "../../campaign/types";
 import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
-import { COLL_NAMES, mongoDbName, mongoURILocal, VERSION_TYPES } from "./constants";
+import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
-import { getLogger } from "../../logger/create-logger";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
-
-let mongoAdapter : MongoDBAdapter | null = null;
 
 
 export class MongoDBAdapter {
@@ -43,11 +40,9 @@ export class MongoDBAdapter {
     this.contracts = {} as Collection<IContractDbData>;
     this.versions = {} as Collection<IDBVersion>;
     this.curVersion = "0";
-
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    mongoAdapter = this;
   }
 
+  // call this to actually start the adapter
   async initialize (version ?: string) {
     try {
       await this.client.connect();
@@ -74,6 +69,44 @@ export class MongoDBAdapter {
     return this.db;
   }
 
+  async close (forceClose = false) {
+    try {
+      await this.client.close(forceClose);
+      this.logger.info(`MongoDB connection closed at ${this.dbUri}`);
+    } catch (e) {
+      this.logger.error({
+        message: `MongoDB connection failed to close at ${this.dbUri}`,
+        error: e,
+      });
+      throw e;
+    }
+  }
+
+  // Contract methods
+  async getContract (contractName : string, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.findOne({
+      name: contractName,
+      version,
+    });
+  }
+
+  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
+    if (!version) version = await this.getCheckLatestVersion();
+
+    return this.contracts.insertOne({
+      ...data,
+      version,
+    });
+  }
+
+  async dropDB () {
+    await this.db.dropDatabase();
+    this.logger.info("Database dropped successfully.");
+  }
+
+  // Versioning methods
   // TODO dep: add logging to all versioning stages and methods !!
   async configureVersioning (version ?: string) {
     // TODO dep: add archiving logic once determined on how to handle it
@@ -150,43 +183,12 @@ export class MongoDBAdapter {
       });
   }
 
-  async close (forceClose = false) {
-    try {
-      await this.client.close(forceClose);
-      this.logger.info(`MongoDB connection closed at ${this.dbUri}`);
-    } catch (e) {
-      this.logger.error({
-        message: `MongoDB connection failed to close at ${this.dbUri}`,
-        error: e,
-      });
-      throw e;
-    }
-  }
-
   async getCheckLatestVersion () {
     const v = await this.getLatestVersion();
 
     if (!v) throw new Error("No version found in DB!");
 
     return v;
-  }
-
-  async getContract (contractName : string, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
-
-    return this.contracts.findOne({
-      name: contractName,
-      version,
-    });
-  }
-
-  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
-
-    return this.contracts.insertOne({
-      ...data,
-      version,
-    });
   }
 
   async getTempVersion () : Promise<string | null> {
@@ -239,66 +241,4 @@ export class MongoDBAdapter {
       version,
     });
   }
-
-  async dropDB () {
-    return this.db.dropDatabase();
-  }
 }
-
-
-export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
-  const checkParams = {
-    dbUri: process.env.MONGO_DB_URI!,
-    dbName: process.env.MONGO_DB_NAME!,
-    version: process.env.MONGO_DB_VERSION!,
-  };
-
-  const logger = getLogger();
-
-  const params = {
-    logger,
-    clientOpts: !!process.env.MONGO_DB_CLIENT_OPTS
-      ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
-      : undefined,
-    // TODO dep: add better way to set version ENV var is not the best !
-    version: process.env.MONGO_DB_VERSION,
-  };
-
-  if (!checkParams.dbUri && !checkParams.dbName) {
-    logger.info("`MONGO_DB_URI` and `MONGO_DB_NAME` have not been provided by the ENV. Proceeding to use defaults.");
-    checkParams.dbUri = mongoURILocal;
-    checkParams.dbName = mongoDbName;
-  }
-
-  let createNew = false;
-  if (mongoAdapter) {
-    Object.values(checkParams).forEach(
-      ([ key, value ]) => {
-        if (key === "version") key = "curVersion";
-
-        // if the existing adapter was created with different options than the currently needed one
-        // we create a new one and overwrite
-        if (JSON.stringify(mongoAdapter?.[key]) !== JSON.stringify(value)) {
-          createNew = true;
-          return;
-        }
-      }
-    );
-  } else {
-    createNew = true;
-  }
-
-
-  if (createNew) {
-    logger.debug("Creating new MongoDBAdapter instance");
-    mongoAdapter = new MongoDBAdapter({
-      ...checkParams,
-      ...params,
-    });
-    await mongoAdapter.initialize(params.version);
-  } else {
-    logger.debug("Returning existing MongoDBAdapter instance");
-  }
-
-  return mongoAdapter as MongoDBAdapter;
-};

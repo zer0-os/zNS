@@ -6,7 +6,7 @@ import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
-import { MongoDBAdapter } from "../db/mongo-connect/mongo-adapter";
+import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
 
 
 export interface IDeployCampaignConfig {
@@ -21,8 +21,7 @@ export interface IDeployCampaignConfig {
   };
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
-  stakingTokenAddress ?: string;
-  // TODO dep: add more props when opts expanded
+  mockMeowToken : boolean;
 }
 
 export type TLogger = WinstonLogger | Console;
@@ -40,8 +39,7 @@ export interface ICampaignState {
 export interface ICampaignArgs {
   missions : Array<TDeployMissionCtor>;
   deployer : HardhatDeployer;
-  // TODO dep: is this the correct type?
-  dbAdapter : MongoDBAdapter | BaseStorageAdapter;
+  dbAdapter : MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
 }

@@ -1,8 +1,10 @@
 import { exec } from "child_process";
-import { getLogger } from "../logger/create-logger";
+import { getLogger } from "../../logger/create-logger";
+import { promisify } from "util";
 
+const execAsync = promisify(exec);
 
-export const spawnTestMongo = async () => {
+export const startMongo = async () => {
   const logger = getLogger();
 
   try {
@@ -17,15 +19,14 @@ export const spawnTestMongo = async () => {
     // @ts-ignore
     throw new Error(e.message);
   }
-
-  logger.info("MongoDB started");
 };
 
-export const stopTestMongo = async () => {
+export const stopMongo = async () => {
   const logger = getLogger();
 
   try {
-    exec("npm run mongo:stop");
+    // TODO db: possibly change this to delete the container
+    await execAsync("npm run mongo:stop");
     logger.info("MongoDB stopped");
   } catch (e) {
     logger.error({

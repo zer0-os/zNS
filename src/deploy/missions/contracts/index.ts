@@ -5,6 +5,6 @@ export * from "./domain-token";
 export * from "./treasury";
 export * from "./curve-pricer";
 export * from "./access-controller";
-export * from "./mocks/meow-token-mock";
+export * from "./meow-token/meow-token";
 export * from "./fixed-pricer";
 export * from "./sub-registrar";

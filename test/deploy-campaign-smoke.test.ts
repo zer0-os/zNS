@@ -11,7 +11,6 @@ import {
 } from "./helpers";
 import { expect } from "chai";
 import { FileStorageAdapter } from "../src/deploy/storage/file-storage";
-import { znsNames } from "../src/deploy/constants";
 import {
   MeowTokenMockDM,
   ZNSAccessControllerDM,
@@ -19,6 +18,7 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
+import { znsNames } from "../src/deploy/missions/contracts/names";
 
 
 // TODO dep: possibly remove this whole test. it was added as a first check when prototyping

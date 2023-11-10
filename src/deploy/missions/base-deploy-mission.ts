@@ -94,7 +94,7 @@ export class BaseDeployMission {
       contract = await this.campaign.deployer.deployProxy({
         contractName: this.contractName,
         args: deployArgs,
-        kind: this.proxyData.proxyKind,
+        kind: this.proxyData.kind,
       });
     } else {
       contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
@@ -108,7 +108,7 @@ export class BaseDeployMission {
   }
 
   async needsPostDeploy () {
-    return Promise.resolve(true);
+    return Promise.resolve(false);
   }
 
   async postDeploy () {
