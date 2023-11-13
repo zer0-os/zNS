@@ -12,6 +12,7 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
+import { MEOW_TOKEN } from "../constants";
 
 const getCustomAddresses = (
   key : string,
@@ -34,9 +35,9 @@ const getCustomAddresses = (
 
   if (addresses.length === 0) {
     if (accounts && accounts.length > 0) {
-      addresses.push(...accounts);
+      addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
     } else {
-      addresses.push(account.address);
+      addresses.push(account.address); // No custom governors / admins provided, use the deployer as the default
     }
   }
   return addresses;
@@ -116,7 +117,7 @@ export const getConfig = (
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : "", // TODO default is ...?
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN
   };
 
   return config;
