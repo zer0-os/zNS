@@ -2,6 +2,7 @@ import { TLogger } from "../campaign/types";
 import { IContractDbData, TContractDBDoc } from "../db/types";
 
 
+// TODO dep: do we need this class at all? remove this if not used
 export class BaseStorageAdapter {
   logger : TLogger;
 

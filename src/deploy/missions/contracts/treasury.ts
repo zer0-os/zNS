@@ -3,6 +3,7 @@ import { ProxyKinds } from "../../constants";
 import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
 
+
 export class ZNSTreasuryDM extends BaseDeployMission {
   proxyData = {
     isProxy: true,
