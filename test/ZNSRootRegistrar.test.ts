@@ -88,7 +88,6 @@ describe("ZNSRootRegistrar", () => {
 
     mongoAdapter = campaign.dbAdapter;
 
-    // Why twice?
     await zns.meowToken.connect(deployer).approve(
       zns.treasury.address,
       ethers.constants.MaxUint256
