@@ -3,8 +3,6 @@ import { ProxyKinds } from "../../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../../types";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
-import { MeowMainnet } from "./mainnet-data";
-import assert from "assert";
 
 
 export const meowTokenName = "MEOW";
@@ -34,22 +32,24 @@ export class MeowTokenDM extends BaseDeployMission {
     if (!this.config.mockMeowToken) {
       this.logger.info("Using MEOW token from Mainnet");
 
-      const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(MeowMainnet.proxy);
+      // TODO dep: add proper bytecode comparison here and throw if different!
+      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.stakingTokenAddress);
 
-      const {
-        bytecode,
-      } = this.getArtifact();
+      // const {
+      //   bytecode,
+      // } = this.getArtifact();
 
-      assert.deepStrictEqual(
-        bytecode,
-        bytecodeFromChain,
-        "MEOW token bytecode compiled in this module differs from Mainnet"
-      );
+      // if (!compareBytecodeStrict(bytecode, bytecodeFromChain)) {
+      //   this.logger.error("MEOW token bytecode compiled in this module differs from Mainnet");
+      //   throw new Error(
+      //     "MEOW token bytecode compiled in this module differs from Mainnet"
+      //   );
+      // }
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
       const factory = await this.campaign.deployer.getFactory(this.contractName);
-      const contract = factory.attach(MeowMainnet.proxy);
+      const contract = factory.attach(this.config.stakingTokenAddress);
 
       await this.saveToDB(contract);
 

@@ -7,7 +7,7 @@ export const mochaGlobalSetup = async () => {
 
 export const mochaGlobalTeardown = async () => {
   const mongoAdapter = await getMongoAdapter();
-  // TODO dep: unblock this if needed
-  // await mongoAdapter.dropDB();
+  // the next line can be commented out to leave the DB after test to manually test
+  await mongoAdapter.dropDB();
   await mongoAdapter.close();
 };
