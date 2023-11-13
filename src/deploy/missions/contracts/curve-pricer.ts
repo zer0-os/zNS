@@ -1,6 +1,7 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, znsNames } from "../../constants";
+import { ProxyKinds } from "../../constants";
 import { TDeployArgs } from "../types";
+import { znsNames } from "./names";
 
 
 export class ZNSCurvePricerDM extends BaseDeployMission {

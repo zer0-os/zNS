@@ -9,6 +9,10 @@ export class HardhatDeployer {
     this.hre = hre;
   }
 
+  async getFactory (contractName : string) {
+    return this.hre.ethers.getContractFactory(contractName);
+  }
+
   async deployProxy ({
     contractName,
     args,
@@ -44,5 +48,8 @@ export class HardhatDeployer {
   async getProxyImplAddress (proxyContract : string) {
     return this.hre.upgrades.erc1967.getImplementationAddress(proxyContract);
   }
-}
 
+  async getBytecodeFromChain (address : string) {
+    return this.hre.ethers.provider.getCode(address);
+  }
+}

@@ -1,12 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { IContractDbObject } from "../missions/types";
 import { BaseStorageAdapter } from "./base-storage-adapter";
 import { TLogger } from "../campaign/types";
+import { IContractDbData } from "../db/types";
 
 
-// TODO dep: remove temp db folder and possibly add to .gitignore
-//  when testing is done
 export const fileStoragePath = path.join(process.cwd(), "./db");
 
 
@@ -28,7 +26,7 @@ export class FileStorageAdapter extends BaseStorageAdapter {
     }
   }
 
-  async writeContract (contractDbName : string, data : IContractDbObject) {
+  async writeContract (contractDbName : string, data : IContractDbData) {
     if (!this.writeLocal) return;
 
     const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
@@ -39,7 +37,7 @@ export class FileStorageAdapter extends BaseStorageAdapter {
     this.logger.info(`Contract data for ${contractDbName} saved to file: ${filePath}.`);
   }
 
-  async getContract (contractDbName : string) : Promise<IContractDbObject | null> {
+  async getContract (contractDbName : string) : Promise<IContractDbData | null> {
     const filePath = path.join(fileStoragePath, `/${contractDbName}.json`);
 
     if (!fs.existsSync(filePath)) {

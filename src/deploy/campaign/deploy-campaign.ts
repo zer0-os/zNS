@@ -1,15 +1,22 @@
-import { ICampaignArgs, ICampaignState, IDeployCampaignConfig, TLogger, TZNSContractState } from "./types";
+import {
+  ICampaignArgs,
+  ICampaignState,
+  IDeployCampaignConfig,
+  TLogger,
+  IMissionInstances,
+  TZNSContractState,
+} from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
-import { BaseStorageAdapter } from "../storage/base-storage-adapter";
+import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
 
 
 export class DeployCampaign {
   state : ICampaignState;
   deployer : HardhatDeployer;
-  dbAdapter : BaseStorageAdapter;
+  dbAdapter : MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
   version : string;
@@ -41,7 +48,7 @@ export class DeployCampaign {
   } : ICampaignArgs) {
     this.state = {
       missions,
-      instances: [],
+      instances: {},
       contracts: {} as TZNSContractState,
     };
     this.deployer = deployer;
@@ -53,12 +60,18 @@ export class DeployCampaign {
     const campaignProxy = new Proxy(this, DeployCampaign.indexedHandler);
 
     // instantiate all missions
-    this.state.instances = missions.map(
-      (mission : TDeployMissionCtor) => new mission({
-        campaign: campaignProxy,
-        logger,
-        config,
-      })
+    this.state.instances = missions.reduce(
+      (acc : IMissionInstances, mission : TDeployMissionCtor) => {
+        const instance = new mission({
+          campaign: campaignProxy,
+          logger,
+          config,
+        });
+
+        acc[instance.instanceName] = instance;
+        return acc;
+      },
+      {}
     );
 
     this.logger.debug("Deploy Campaign initialized.");
@@ -69,13 +82,13 @@ export class DeployCampaign {
   async execute () {
     this.logger.debug("Deploy Campaign execution started.");
 
-    await this.state.instances.reduce(
+    await Object.values(this.state.instances).reduce(
       async (
         acc : Promise<void>,
-        mission : BaseDeployMission,
+        missionInstance : BaseDeployMission,
       ) : Promise<void> => {
         await acc;
-        return mission.execute();
+        return missionInstance.execute();
       },
       Promise.resolve()
     );

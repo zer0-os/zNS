@@ -10,10 +10,9 @@ typechain-types
 cache
 artifacts
 
-# Local DB
-db
-
 # hardhat-tenderly plugin
 deployments
 
 *.env
+docker
+docker*.tgz

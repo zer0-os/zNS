@@ -25,7 +25,6 @@ import {
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
-  MeowToken,
   MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";

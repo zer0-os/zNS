@@ -1,6 +1,7 @@
 import { BaseDeployMission } from "../base-deploy-mission";
-import { ProxyKinds, REGISTRAR_ROLE, znsNames } from "../../constants";
+import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
 import { TDeployArgs } from "../types";
+import { znsNames } from "./names";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission {

@@ -12,24 +12,21 @@ export interface IDeployMissionArgs {
 
 export type TDeployMissionCtor = new (args : IDeployMissionArgs) => BaseDeployMission;
 
-export interface IContractDbObject {
-  address : string;
-  abi : string;
-  bytecode : string;
-  args : string;
-  implementation : string | null;
-  version : string;
-}
-
 export type TDeployArg = string | Array<string> | BigNumber | ICurvePriceConfig;
 
 export type TDeployArgs = Array<TDeployArg>;
 
 export type TProxyKind = "uups" | "transparent" | "beacon" | undefined;
 
+export interface IProxyKinds {
+  uups : TProxyKind;
+  transparent : TProxyKind;
+  beacon : TProxyKind;
+}
+
 export interface IProxyData {
   isProxy : boolean;
-  proxyKind ?: TProxyKind;
+  kind ?: TProxyKind;
 }
 
 export interface ICurvePriceConfig {

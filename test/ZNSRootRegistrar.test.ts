@@ -2,9 +2,12 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType, defaultRoyaltyFraction, defaultTokenURI,
+  AccessType,
+  defaultRoyaltyFraction,
+  defaultTokenURI,
   distrConfigEmpty,
-  hashDomainLabel, INVALID_LENGTH_ERR,
+  hashDomainLabel,
+  INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
@@ -12,9 +15,13 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
+  ONLY_OWNER_REGISTRAR_REG_ERR,
+  OwnerOf,
+  PaymentType,
+  REGISTRAR_ROLE,
   validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -24,18 +31,17 @@ import { checkBalance } from "./helpers/balances";
 import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
-import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
-import { createLogger } from "../src/deploy/logger/create-logger";
 import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
+import { runZnsCampaign } from "../src/deploy/zns-campaign";
+import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-
-// import * as m from "@zero-tech/ztoken";
+import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -55,11 +61,14 @@ describe("ZNSRootRegistrar", () => {
   const defaultDomain = normalizeName("wilder");
   let userBalanceInitial : BigNumber;
 
+  let mongoAdapter : MongoDBAdapter;
+
   beforeEach(async () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
     // zeroVault address is used to hold the fee charged to the user when registering
 
     // TODO dep: this whole config should be passed safely through ENV var injection
+    // TODO dep: extract this to it's own file and function that will work everywhere as part of the flow
     const config : IDeployCampaignConfig = {
       deployAdmin: deployer,
       governorAddresses: [ deployer.address ],
@@ -71,25 +80,34 @@ describe("ZNSRootRegistrar", () => {
         defaultRoyaltyFraction,
       },
       rootPriceConfig: priceConfigDefault,
-      // registrationFee: registrationFeePercDefault,
-      // stakingTokenAddress: "0x0eC78ED49C2D27b315D462d43B5BAB94d2C79bf8", // mainnet
       zeroVaultAddress: zeroVault.address,
+      stakingTokenAddress: "",
+      mockMeowToken: true,
     };
 
-    const logger = createLogger("debug");
+    const logger = getLogger();
 
     const campaign = await runZnsCampaign({
       config,
       logger,
-      writeLocal: false,
     });
 
     zns = campaign.state.contracts;
+    mongoAdapter = campaign.dbAdapter;
+
+    await zns.meowToken.connect(deployer).approve(
+      zns.treasury.address,
+      ethers.constants.MaxUint256
+    );
 
     userBalanceInitial = ethers.utils.parseEther("100000000000");
     // Give funds to user
     await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
+  });
+
+  afterEach(async () => {
+    await mongoAdapter.dropDB();
   });
 
   it("Gas tests", async () => {
