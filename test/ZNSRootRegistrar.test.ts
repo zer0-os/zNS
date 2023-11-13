@@ -33,7 +33,7 @@ import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
-import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
+import { getAccessRevertMsg, INVALID_CURVE_ERR, INVALID_ENV_ERR, INVALID_NAME_ERR, NO_MOCK_PROD_ERR, STAKING_TOKEN_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
@@ -43,7 +43,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig, validate } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -152,6 +152,78 @@ describe("ZNSRootRegistrar", () => {
       candidates,
       allowed
     );
+  });
+
+  it.only("Throws if env variable is invalid", async () => {
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+
+      validate(config, "other");
+      
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(INVALID_ENV_ERR);
+    }
+  });
+
+  it.only("Fails to validate when mocking MEOW on prod", async () => {
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+      // Modify the config
+      config.mockMeowToken = true;
+      validate(config, "prod");
+      
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(NO_MOCK_PROD_ERR);
+    }
+  });
+
+  it.only("Fails to validate if not using the MEOW token", async () => { 
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+
+      config.mockMeowToken = false;
+      config.stakingTokenAddress = "0x123"
+
+      validate(config, "prod");
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(STAKING_TOKEN_ERR);
+    }
+  });
+
+  it.only("Fails to validate if invalid curve for pricing", async () => { 
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+
+      config.mockMeowToken = false;
+      config.rootPriceConfig.minPrice = ethers.constants.Zero;
+      validate(config, "prod");
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(INVALID_CURVE_ERR);
+    }
   });
 
   it("Gets the default configuration correctly", async () => {
