@@ -1,8 +1,6 @@
 import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds } from "../../constants";
-import { IDeployMissionArgs, TDeployArgs } from "../types";
-import { ethers } from "ethers";
-import { MeowTokenDM } from "./meow-token/meow-token";
+import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
 
 export class ZNSTreasuryDM extends BaseDeployMission {
