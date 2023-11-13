@@ -1,6 +1,7 @@
 import { BigNumber } from "ethers";
 import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
-import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
+import { IFixedPriceConfig } from "./types";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 
 /**

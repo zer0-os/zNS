@@ -47,8 +47,8 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
@@ -57,7 +57,7 @@ describe("ZNSFixedPricer", () => {
         accessType: 1,
       },
       paymentConfig: {
-        token: zns.zeroToken.address,
+        token: zns.meowToken.address,
         beneficiary: user.address,
       },
       priceConfig: {
@@ -304,8 +304,8 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+      await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {
@@ -314,7 +314,7 @@ describe("ZNSFixedPricer", () => {
           accessType: 1,
         },
         paymentConfig: {
-          token: zns.zeroToken.address,
+          token: zns.meowToken.address,
           beneficiary: user.address,
         },
         priceConfig: {

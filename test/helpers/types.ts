@@ -1,33 +1,37 @@
 import { BigNumber } from "ethers";
 import {
-  ZNSAddressResolver,
-  ZNSDomainToken,
-  ZNSRootRegistrar,
-  ZNSRegistry,
-  ZNSTreasury,
   ZNSAccessController,
-  ZNSRootRegistrarUpgradeMock,
-  ZNSCurvePricerUpgradeMock,
+  ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
-  ZNSDomainTokenUpgradeMock,
-  ZNSRegistryUpgradeMock,
-  ZNSTreasuryUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
-  ZNSDomainTokenUpgradeMock__factory,
-  ZNSRootRegistrarUpgradeMock__factory,
-  ZNSCurvePricerUpgradeMock__factory,
-  ZNSRegistryUpgradeMock__factory,
-  ZNSTreasuryUpgradeMock__factory,
-  ZeroToken,
-  ZNSSubRegistrar,
   ZNSCurvePricer,
+  ZNSCurvePricerUpgradeMock,
+  ZNSCurvePricerUpgradeMock__factory,
+  ZNSDomainToken,
+  ZNSDomainTokenUpgradeMock,
+  ZNSDomainTokenUpgradeMock__factory,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
+  ZNSFixedPricerUpgradeMock__factory,
+  ZNSRegistry,
+  ZNSRegistryUpgradeMock,
+  ZNSRegistryUpgradeMock__factory,
+  ZNSRootRegistrar,
+  ZNSRootRegistrarUpgradeMock,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
-  ZNSSubRegistrarUpgradeMock__factory, ZNSFixedPricerUpgradeMock__factory,
+  ZNSSubRegistrarUpgradeMock__factory,
+  ZNSTreasury,
+  ZNSTreasuryUpgradeMock,
+  ZNSTreasuryUpgradeMock__factory,
+  MeowToken,
+  MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+export { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 
 export type Maybe<T> = T | undefined;
@@ -75,15 +79,6 @@ export type ZNSContract =
   ZNSAddressResolver |
   ZNSDomainToken;
 
-export interface ICurvePriceConfig {
-  maxPrice : BigNumber;
-  minPrice : BigNumber;
-  maxLength : BigNumber;
-  baseLength : BigNumber;
-  precisionMultiplier : BigNumber;
-  feePercentage : BigNumber;
-}
-
 export interface IFixedPriceConfig {
   price : BigNumber;
   feePercentage : BigNumber;
@@ -100,7 +95,7 @@ export interface IZNSContracts {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  zeroToken : ZeroToken;
+  meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
@@ -157,3 +152,4 @@ export interface IPathRegResult {
   zeroVaultBalanceBefore : BigNumber;
   zeroVaultBalanceAfter : BigNumber;
 }
+

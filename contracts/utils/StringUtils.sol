@@ -42,6 +42,7 @@ library StringUtils {
         bytes memory nameBytes = bytes(s);
         uint256 length = nameBytes.length;
 
+        // solhint-disable-next-line var-name-mixedcase
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
         require(
             length > 0 && length < MAX_INT,
