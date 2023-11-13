@@ -2,9 +2,12 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  AccessType, defaultRoyaltyFraction, defaultTokenURI,
+  AccessType,
+  defaultRoyaltyFraction,
+  defaultTokenURI,
   distrConfigEmpty,
-  hashDomainLabel, INVALID_LENGTH_ERR,
+  hashDomainLabel,
+  INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   normalizeName,
@@ -12,9 +15,13 @@ import {
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR, OwnerOf, PaymentType, REGISTRAR_ROLE,
+  ONLY_OWNER_REGISTRAR_REG_ERR,
+  OwnerOf,
+  PaymentType,
+  REGISTRAR_ROLE,
   validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";

@@ -7,7 +7,7 @@ let mongoAdapter : MongoDBAdapter | null = null;
 
 export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
   const checkParams = {
-    // TODO dep: fix type asserion error here
+    // TODO dep: fix type assertion error here
     dbUri: process.env.MONGO_DB_URI!,
     dbName: process.env.MONGO_DB_NAME!,
   };
