@@ -95,10 +95,12 @@ export class MongoDBAdapter {
   async writeContract (contractName : string, data : IContractDbData, version ?: string) {
     if (!version) version = await this.getCheckLatestVersion();
 
-    return this.contracts.insertOne({
+    await this.contracts.insertOne({
       ...data,
       version,
     });
+
+    this.logger.debug(`Successfully wrote ${contractName} to DB.`);
   }
 
   async dropDB () {

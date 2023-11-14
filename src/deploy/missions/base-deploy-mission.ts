@@ -58,6 +58,15 @@ export class BaseDeployMission {
       this.logger.debug(`${this.contractName} not found in DB, proceeding to deploy...`);
     } else {
       this.logger.debug(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
+
+      const contract = await this.campaign.deployer.getContractObject(
+        this.contractName,
+        dbContract.address,
+      );
+
+      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${contract.address}`);
+
+      this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
     }
 
     return !dbContract;

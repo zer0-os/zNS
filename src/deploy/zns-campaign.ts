@@ -48,7 +48,7 @@ export const runZnsCampaign = async ({
     dbAdapter,
     logger,
     config,
-  } as ICampaignArgs);
+  });
 
   await campaign.execute();
 
