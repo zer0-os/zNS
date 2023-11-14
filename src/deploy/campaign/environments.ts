@@ -14,6 +14,7 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MEOW_TOKEN } from "../constants";
+import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 
 const getCustomAddresses = (
   key : string,
@@ -118,7 +119,7 @@ export const getConfig = (
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN,
   };
 
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
@@ -128,10 +129,10 @@ export const getConfig = (
 };
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
-export const validate = (config : IDeployCampaignConfig, env ?: string) => {
+export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri ?: string) => {
   let envLevel;
 
-  if(env) {
+  if (env) {
     envLevel = env;
   } else {
     envLevel = process.env.ENV_LEVEL;
@@ -139,36 +140,26 @@ export const validate = (config : IDeployCampaignConfig, env ?: string) => {
 
   if (envLevel === "dev") return; // No validation needed for dev
 
-  if (envLevel === "prod") {
-    // mainnet
+  if (!mongoUri) mongoUri = process.env.MONGO_URI ? process.env.MONGO_URI : DEFAULT_MONGO_URI;
+
+  // Mainnet or testnet
+  if (envLevel === "prod" || envLevel === "test") {
     requires(!config.mockMeowToken, "Cannot mock MEOW token in production");
     requires(config.stakingTokenAddress === MEOW_TOKEN, "Must use MEOW token in production");
     requires(validatePrice(config.rootPriceConfig), "Must use a valid price configuration");
-    requires(
-      !!process.env.MONGO_DB_URI && !process.env.MONGO_DB_URI.includes("localhost"),
-      "Cannot use local mongo db in production"
-    );
-  } else if (envLevel === "test") {
-    // e.g. Test network like Sepolia
-    requires(!config.mockMeowToken, "Canot mock MEOW token in test");
-    requires(config.stakingTokenAddress === MEOW_TOKEN, "Must use MEOW token in test");
-    requires(validatePrice(config.rootPriceConfig), "Must use a valid price configuration");
-    requires(
-      !!process.env.MONGO_DB_URI && !process.env.MONGO_DB_URI.includes("localhost"),
-      "Cannot use local mongo db in test"
-    );
+    requires(!mongoUri.includes("localhost"), "Cannot use local mongo URI in production");
   }
 
   // If we reach this code, there is an env variable but it's not valid.
-  throw new Error("Invalid value. Must set env to one of `dev`, `test`, or `prod`");
+  throw new Error("Invalid environment value. Must set env to one of `dev`, `test`, or `prod`");
 
-}
+};
 
 const requires = (condition : boolean, message : string) => {
   if (!condition) {
     throw new Error(message);
   }
-}
+};
 
 // No price spike before `minPrice` kicks in at `maxLength`
 const validatePrice = (config : ICurvePriceConfig) => {
@@ -178,5 +169,6 @@ const validatePrice = (config : ICurvePriceConfig) => {
   const priceA = getCurvePrice(strA, config);
   const priceB = getCurvePrice(strB, config);
 
-  return priceA.lt(priceB);
-}
+  // if A < B, then the price spike is invalid
+  return priceA.gte(priceB);
+};

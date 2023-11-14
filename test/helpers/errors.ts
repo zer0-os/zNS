@@ -40,7 +40,8 @@ export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
 export const INITIALIZED_ERR = "Initializable: contract is already initialized";
 
 // Environment validation
-export const INVALID_ENV_ERR = "Invalid value. Must set env to one of `dev`, `test`, or `prod`"
+export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";
 export const NO_MOCK_PROD_ERR = "Cannot mock MEOW token in production";
 export const STAKING_TOKEN_ERR = "Must use MEOW token in production";
 export const INVALID_CURVE_ERR = "Must use a valid price configuration";
+export const MONGO_URI_ERR = "Cannot use local mongo URI in production";

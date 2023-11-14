@@ -2,28 +2,36 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
+  normalizeName,
+  validateUpgrade,
   AccessType,
+  OwnerOf,
+  PaymentType,
+  getAccessRevertMsg,
+  hashDomainLabel,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,
-  hashDomainLabel,
   INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
-  normalizeName,
+  REGISTRAR_ROLE,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+  DEFAULT_PRECISION_MULTIPLIER,
+  DEFAULT_PRICE_CONFIG,
+  DEFAULT_REGISTRATION_FEE_PERCENT,
   NOT_AUTHORIZED_REG_ERR,
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
-  OwnerOf,
-  PaymentType,
-  REGISTRAR_ROLE,
-  validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
-  DEFAULT_PRECISION_MULTIPLIER,
-  DEFAULT_PRICE_CONFIG,
-  DEFAULT_REGISTRATION_FEE_PERCENT,
+  INVALID_CURVE_ERR,
+  INVALID_ENV_ERR,
+  INVALID_NAME_ERR,
+  MONGO_URI_ERR,
+  NO_MOCK_PROD_ERR,
+  STAKING_TOKEN_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -33,7 +41,6 @@ import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
-import { getAccessRevertMsg, INVALID_CURVE_ERR, INVALID_ENV_ERR, INVALID_NAME_ERR, NO_MOCK_PROD_ERR, STAKING_TOKEN_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
@@ -154,7 +161,7 @@ describe("ZNSRootRegistrar", () => {
     );
   });
 
-  it.only("Throws if env variable is invalid", async () => {
+  it("Throws if env variable is invalid", async () => {
     try {
       const config = await getConfig(
         deployer,
@@ -164,14 +171,14 @@ describe("ZNSRootRegistrar", () => {
       );
 
       validate(config, "other");
-      
+
     /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch(e : any) {
       expect(e.message).includes(INVALID_ENV_ERR);
     }
   });
 
-  it.only("Fails to validate when mocking MEOW on prod", async () => {
+  it("Fails to validate when mocking MEOW on prod", async () => {
     try {
       const config = await getConfig(
         deployer,
@@ -182,14 +189,14 @@ describe("ZNSRootRegistrar", () => {
       // Modify the config
       config.mockMeowToken = true;
       validate(config, "prod");
-      
+
     /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch(e : any) {
       expect(e.message).includes(NO_MOCK_PROD_ERR);
     }
   });
 
-  it.only("Fails to validate if not using the MEOW token", async () => { 
+  it("Fails to validate if not using the MEOW token on prod", async () => {
     try {
       const config = await getConfig(
         deployer,
@@ -199,7 +206,7 @@ describe("ZNSRootRegistrar", () => {
       );
 
       config.mockMeowToken = false;
-      config.stakingTokenAddress = "0x123"
+      config.stakingTokenAddress = "0x123";
 
       validate(config, "prod");
     /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -208,7 +215,7 @@ describe("ZNSRootRegistrar", () => {
     }
   });
 
-  it.only("Fails to validate if invalid curve for pricing", async () => { 
+  it("Fails to validate if invalid curve for pricing", async () => {
     try {
       const config = await getConfig(
         deployer,
@@ -218,11 +225,56 @@ describe("ZNSRootRegistrar", () => {
       );
 
       config.mockMeowToken = false;
-      config.rootPriceConfig.minPrice = ethers.constants.Zero;
+      config.rootPriceConfig.baseLength = BigNumber.from(3);
+      config.rootPriceConfig.maxLength = BigNumber.from(5);
+      config.rootPriceConfig.maxPrice = ethers.constants.Zero;
+      config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
+
       validate(config, "prod");
     /* eslint-disable @typescript-eslint/no-explicit-any */
     } catch(e : any) {
       expect(e.message).includes(INVALID_CURVE_ERR);
+    }
+  });
+
+  it("Fails to validate if no mongo uri or local URI in prod", async () => {
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+
+      config.mockMeowToken = false;
+
+      // Normally we would call to an env variable to grab this value
+      const uri = "";
+
+      // Falls back onto the default URI which is for localhost and fails in prod
+      validate(config, "prod", uri);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(MONGO_URI_ERR);
+    }
+
+    try {
+      const config = await getConfig(
+        deployer,
+        zeroVault,
+        [deployer.address, governor.address],
+        [deployer.address, admin.address],
+      );
+
+      config.mockMeowToken = false;
+
+      // Normally we would call to an env variable to grab this value
+      const uri = "mongodb://localhost:27018";
+
+      validate(config, "prod", uri);
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    } catch(e : any) {
+      expect(e.message).includes(MONGO_URI_ERR);
     }
   });
 
