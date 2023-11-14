@@ -13,6 +13,12 @@ export class HardhatDeployer {
     return this.hre.ethers.getContractFactory(contractName);
   }
 
+  async getContractObject (contractName : string, address : string) {
+    const factory = await this.getFactory(contractName);
+
+    return factory.attach(address);
+  }
+
   async deployProxy ({
     contractName,
     args,
