@@ -1,18 +1,23 @@
 import { MongoDBAdapter } from "./mongo-adapter";
 import { getLogger } from "../../logger/create-logger";
 import { mongoDbName, mongoURILocal } from "./constants";
+import { TLogger } from "../../campaign/types";
 
 let mongoAdapter : MongoDBAdapter | null = null;
 
+export const resetMongoAdapter = () => {
+  mongoAdapter = null;
+};
 
-export const getMongoAdapter = async () : Promise<MongoDBAdapter> => {
+
+export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapter> => {
   const checkParams = {
     // TODO dep: fix type assertion error here
     dbUri: process.env.MONGO_DB_URI!,
     dbName: process.env.MONGO_DB_NAME!,
   };
 
-  const logger = getLogger();
+  logger = !logger ? getLogger() : logger;
 
   const params = {
     logger,
