@@ -80,6 +80,7 @@ describe("ZNSRootRegistrar", () => {
     const config : IDeployCampaignConfig = await getConfig(
       deployer,
       zeroVault,
+      "dev",
       [deployer.address, governor.address],
       [deployer.address, admin.address],
     );
@@ -166,6 +167,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -183,6 +185,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -201,6 +204,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -220,6 +224,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -242,6 +247,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -262,6 +268,7 @@ describe("ZNSRootRegistrar", () => {
       const config = await getConfig(
         deployer,
         zeroVault,
+        "dev",
         [deployer.address, governor.address],
         [deployer.address, admin.address],
       );
@@ -283,6 +290,7 @@ describe("ZNSRootRegistrar", () => {
     const localConfig : IDeployCampaignConfig = await getConfig(
       deployer,
       zeroVault,
+      "dev",
       [governor.address],
       [admin.address],
     );
@@ -314,6 +322,7 @@ describe("ZNSRootRegistrar", () => {
     const config : IDeployCampaignConfig = await getConfig(
       randomUser,
       user,
+      "dev",
       [randomUser.address, admin.address], // governors
       [randomUser.address, governor.address], // admins
     );

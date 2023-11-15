@@ -49,6 +49,7 @@ const getCustomAddresses = (
 export const getConfig = (
   account : SignerWithAddress,
   zeroVault : SignerWithAddress,
+  env ?: string,
   governors ?: Array<string>,
   admins ?: Array<string>,
 ) : IDeployCampaignConfig => {
@@ -123,13 +124,17 @@ export const getConfig = (
   };
 
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
-  validate(config);
+  validate(config, env);
 
   return config;
 };
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
-export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri ?: string) => {
+export const validate = (
+  config : IDeployCampaignConfig,
+  env ?: string,
+  mongoUri ?: string
+) => {
   let envLevel;
 
   if (env) {
