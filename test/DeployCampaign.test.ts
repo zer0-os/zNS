@@ -19,13 +19,13 @@ import {
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
-import { ICampaignArgs, IDeployCampaignConfig } from "../src/deploy/campaign/types";
+import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "../src/deploy/campaign/types";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
-import { getMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
+import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ResolverTypes } from "../src/deploy/constants";
 import { ethers } from "hardhat";
@@ -141,9 +141,15 @@ describe("Deploy Campaign Test", () => {
     });
   });
 
-  describe.only("Failure Recovery", () => {
+  describe("Failure Recovery", () => {
     const errorMsgDeploy = "FailMissionDeploy";
     const errorMsgPostDeploy = "FailMissionPostDeploy";
+
+    const loggerMock = {
+      info: () => {},
+      debug: () => {},
+      error: () => {},
+    };
 
     interface IDeployedData {
       contract : string;
@@ -156,22 +162,18 @@ describe("Deploy Campaign Test", () => {
       placeOfFailure,
       deployedNames,
       undeployedNames,
+      failingInstanceName,
       callback,
     } : {
       missionList : Array<typeof BaseDeployMission>;
       placeOfFailure : string;
       deployedNames : Array<{ contract : string; instance : string; }>;
       undeployedNames : Array<{ contract : string; instance : string; }>;
+      failingInstanceName : string;
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
-      const loggerMock = {
-        info: () => {},
-        debug: () => {},
-        error: () => {},
-      };
-
       const deployer = new HardhatDeployer();
-      const dbAdapter = await getMongoAdapter();
+      let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
       if (placeOfFailure === "postDeploy") {
@@ -200,10 +202,10 @@ describe("Deploy Campaign Test", () => {
 
       if (placeOfFailure === "deploy") {
         // it should not deploy AddressResolver
-        expect(contracts.addressResolver).to.be.undefined;
+        expect(contracts[failingInstanceName]).to.be.undefined;
       } else {
         // it should deploy AddressResolver
-        expect(contracts.addressResolver.address).to.be.properAddress;
+        expect(contracts[failingInstanceName].address).to.be.properAddress;
       }
 
       // check DB to verify we only deployed half
@@ -239,11 +241,22 @@ describe("Deploy Campaign Test", () => {
       // call whatever callback we passed before the next campaign run
       await callback?.(failingCampaign);
 
+      const { curVersion: initialDbVersion } = dbAdapter;
+
+      // reset mongoAdapter instance to make sure we pick up the correct DB version
+      resetMongoAdapter();
+
       // run Campaign again, but normally
       const nextCampaign = await runZnsCampaign({
         config: campaignConfig,
         logger,
       });
+
+      ({ dbAdapter } = nextCampaign);
+
+      // make sure MongoAdapter is using the correct TEMP version
+      const { curVersion: nextDbVersion } = dbAdapter;
+      expect(nextDbVersion).to.equal(initialDbVersion);
 
       // state should have 10 contracts in it
       const { state } = nextCampaign;
@@ -305,10 +318,10 @@ describe("Deploy Campaign Test", () => {
         zeroVaultAddress: zeroVault.address,
         // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
-        mockMeowToken: true,
+        mockMeowToken: true, // 1700083028872
       };
 
-      mongoAdapter = await getMongoAdapter();
+      mongoAdapter = await getMongoAdapter(loggerMock as TLogger);
     });
 
     afterEach(async () => {
@@ -361,6 +374,7 @@ describe("Deploy Campaign Test", () => {
         placeOfFailure: "deploy",
         deployedNames,
         undeployedNames,
+        failingInstanceName: "addressResolver",
       });
     });
 
@@ -419,6 +433,7 @@ describe("Deploy Campaign Test", () => {
         placeOfFailure: "postDeploy",
         deployedNames,
         undeployedNames,
+        failingInstanceName: "addressResolver",
         callback: checkPostDeploy,
       });
 
@@ -431,7 +446,7 @@ describe("Deploy Campaign Test", () => {
     });
 
     // eslint-disable-next-line max-len
-    it.only("[in RootRegistrar.deploy() hook] should ONLY deploy undeployed contracts in the run following a failed run", async () => {
+    it("[in RootRegistrar.deploy() hook] should ONLY deploy undeployed contracts in the run following a failed run", async () => {
       class FailingZNSRootRegistrarDM extends ZNSRootRegistrarDM {
         async deploy () {
           throw new Error(errorMsgDeploy);
@@ -474,6 +489,7 @@ describe("Deploy Campaign Test", () => {
         placeOfFailure: "deploy",
         deployedNames,
         undeployedNames,
+        failingInstanceName: "rootRegistrar",
       });
     });
 
@@ -533,6 +549,7 @@ describe("Deploy Campaign Test", () => {
         placeOfFailure: "postDeploy",
         deployedNames,
         undeployedNames,
+        failingInstanceName: "rootRegistrar",
         callback: checkPostDeploy,
       });
 
