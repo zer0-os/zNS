@@ -104,10 +104,10 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: "https://eth-sepolia.g.alchemy.com/v2/mX2eTgCe-osaWbsEJ1s7sRgmjZ1c178y",
       timeout: 10000000,
-      accounts: [
-        `${process.env.TESTNET_PRIVATE_KEY_A}`,
-        `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      ]
+      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
+      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      // ]
     },
     goerli: {
       url: "https://goerli.infura.io/v3/77c3d733140f4c12a77699e24cb30c27",
