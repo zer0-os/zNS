@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -19,7 +19,7 @@ import {
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
-import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "../src/deploy/campaign/types";
+import { IDeployCampaignConfig, TLogger } from "../src/deploy/campaign/types";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -170,6 +170,7 @@ describe("Deploy Campaign Test", () => {
       deployedNames : Array<{ contract : string; instance : string; }>;
       undeployedNames : Array<{ contract : string; instance : string; }>;
       failingInstanceName : string;
+      // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
       const deployer = new HardhatDeployer();
@@ -407,6 +408,7 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign) => {
         const {
+          // eslint-disable-next-line no-shadow
           registry,
         } = failingCampaign;
 
@@ -522,7 +524,9 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign) => {
         const {
+          // eslint-disable-next-line no-shadow
           accessController,
+          // eslint-disable-next-line no-shadow
           rootRegistrar,
         } = failingCampaign;
 
