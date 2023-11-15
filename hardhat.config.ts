@@ -23,7 +23,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
     const testFailures = await runSuper(args);
     await mochaGlobalTeardown();
 
-    process.exit(testFailures);
+    return testFailures;
   });
 
 // This call is needed to initialize Tenderly with Hardhat,
