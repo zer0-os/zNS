@@ -2,10 +2,15 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  defaultRoyaltyFraction,
-  priceConfigDefault,
+  DEFAULT_ROYALTY_FRACTION,
+  DEFAULT_PRICE_CONFIG,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
+  INVALID_ENV_ERR,
+  NO_MOCK_PROD_ERR,
+  STAKING_TOKEN_ERR,
+  INVALID_CURVE_ERR,
+  MONGO_URI_ERR,
 } from "./helpers";
 import { expect } from "chai";
 import {
@@ -28,13 +33,15 @@ import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ResolverTypes } from "../src/deploy/constants";
-import { ethers } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
+import { getConfig, validate } from "../src/deploy/campaign/environments";
+import { ethers, BigNumber } from "ethers";
 
 
 describe("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
+  let governor : SignerWithAddress;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let user : SignerWithAddress;
   let zeroVault : SignerWithAddress;
@@ -45,9 +52,12 @@ describe("Deploy Campaign Test", () => {
   // TODO dep: move logger to runZNSCampaign()
   const logger = getLogger();
 
+  before(async () => {
+    [deployAdmin, admin, governor, zeroVault, user] = await hre.ethers.getSigners();
+  });
+
   describe("MEOW Token Ops", () => {
     before(async () => {
-      [deployAdmin, admin, zeroVault, user] = await hre.ethers.getSigners();
 
       campaignConfig = {
         deployAdmin,
@@ -57,9 +67,9 @@ describe("Deploy Campaign Test", () => {
           name: ZNS_DOMAIN_TOKEN_NAME,
           symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
           defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: priceConfigDefault,
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
         mockMeowToken: true,
@@ -313,9 +323,9 @@ describe("Deploy Campaign Test", () => {
           name: ZNS_DOMAIN_TOKEN_NAME,
           symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
           defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: priceConfigDefault,
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
@@ -563,6 +573,134 @@ describe("Deploy Campaign Test", () => {
         rootRegistrar,
       } = nextCampaign;
       expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.true;
+    });
+  });
+
+  describe("Configurable Environment & Validation", () => {
+    // The `validate` function accepts the environment parameter only for the
+    // purpose of testing here as manipulating actual environment variables
+    // like `process.env.<VAR> = "value"` is not possible in a test environment
+    // because the Hardhat process for running these tests will not respect these
+    // changes. `getConfig` calls to `validate` on its own, but never passes a value
+    // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
+    it("Throws if env variable is invalid", async () => {
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+
+        validate(config, "other");
+
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(INVALID_ENV_ERR);
+      }
+    });
+
+    it("Fails to validate when mocking MEOW on prod", async () => {
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+        // Modify the config
+        config.mockMeowToken = true;
+        validate(config, "prod");
+
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(NO_MOCK_PROD_ERR);
+      }
+    });
+
+    it("Fails to validate if not using the MEOW token on prod", async () => {
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+
+        config.mockMeowToken = false;
+        config.stakingTokenAddress = "0x123";
+
+        validate(config, "prod");
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(STAKING_TOKEN_ERR);
+      }
+    });
+
+    it("Fails to validate if invalid curve for pricing", async () => {
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+
+        config.mockMeowToken = false;
+        config.stakingTokenAddress = MeowMainnet.address;
+        config.rootPriceConfig.baseLength = BigNumber.from(3);
+        config.rootPriceConfig.maxLength = BigNumber.from(5);
+        config.rootPriceConfig.maxPrice = ethers.constants.Zero;
+        config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
+
+        validate(config, "prod");
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(INVALID_CURVE_ERR);
+      }
+    });
+
+    it("Fails to validate if no mongo uri or local URI in prod", async () => {
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+
+        config.mockMeowToken = false;
+        config.stakingTokenAddress = MeowMainnet.address;
+
+        // Normally we would call to an env variable to grab this value
+        const uri = "";
+
+        // Falls back onto the default URI which is for localhost and fails in prod
+        validate(config, "prod", uri);
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(MONGO_URI_ERR);
+      }
+
+      try {
+        const config = await getConfig(
+          deployAdmin,
+          zeroVault,
+          [deployAdmin.address, governor.address],
+          [deployAdmin.address, admin.address],
+        );
+
+        config.mockMeowToken = false;
+        config.stakingTokenAddress = MeowMainnet.address;
+
+        // Normally we would call to an env variable to grab this value
+        const uri = "mongodb://localhost:27018";
+
+        validate(config, "prod", uri);
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e : any) {
+        expect(e.message).includes(MONGO_URI_ERR);
+      }
     });
   });
 });

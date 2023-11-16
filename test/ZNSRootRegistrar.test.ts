@@ -2,37 +2,40 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
+  normalizeName,
+  validateUpgrade,
   AccessType,
-  defaultRoyaltyFraction,
-  defaultTokenURI,
-  distrConfigEmpty,
+  OwnerOf,
+  PaymentType,
+  getAccessRevertMsg,
   hashDomainLabel,
+  DEFAULT_ROYALTY_FRACTION,
+  DEFAULT_TOKEN_URI,
+  distrConfigEmpty,
   INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
-  normalizeName,
+  REGISTRAR_ROLE,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+  DEFAULT_PRECISION_MULTIPLIER,
+  DEFAULT_PRICE_CONFIG,
+  DEFAULT_REGISTRATION_FEE_PERCENT,
   NOT_AUTHORIZED_REG_ERR,
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
-  OwnerOf,
-  PaymentType,
-  REGISTRAR_ROLE,
-  validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL,
+  INVALID_NAME_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { precisionMultiDefault, priceConfigDefault, registrationFeePercDefault } from "./helpers/constants";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
-import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
@@ -42,6 +45,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
+import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -58,32 +62,22 @@ describe("ZNSRootRegistrar", () => {
   let zns : TZNSContractState;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
-  const defaultDomain = normalizeName("wilder");
   let userBalanceInitial : BigNumber;
 
   let mongoAdapter : MongoDBAdapter;
 
-  beforeEach(async () => {
-    [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
-    // zeroVault address is used to hold the fee charged to the user when registering
+  const defaultDomain = normalizeName("wilder");
 
-    // TODO dep: this whole config should be passed safely through ENV var injection
-    // TODO dep: extract this to it's own file and function that will work everywhere as part of the flow
-    const config : IDeployCampaignConfig = {
-      deployAdmin: deployer,
-      governorAddresses: [ deployer.address ],
-      adminAddresses: [ deployer.address, admin.address ],
-      domainToken: {
-        name: ZNS_DOMAIN_TOKEN_NAME,
-        symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-        defaultRoyaltyReceiver: deployer.address,
-        defaultRoyaltyFraction,
-      },
-      rootPriceConfig: priceConfigDefault,
-      zeroVaultAddress: zeroVault.address,
-      stakingTokenAddress: "",
-      mockMeowToken: true,
-    };
+  beforeEach(async () => {
+    // zeroVault address is used to hold the fee charged to the user when registering
+    [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
+
+    const config : IDeployCampaignConfig = await getConfig(
+      deployer,
+      zeroVault,
+      [deployer.address, governor.address],
+      [deployer.address, admin.address],
+    );
 
     const logger = getLogger();
 
@@ -93,6 +87,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
+
     mongoAdapter = campaign.dbAdapter;
 
     await zns.meowToken.connect(deployer).approve(
@@ -161,7 +156,98 @@ describe("ZNSRootRegistrar", () => {
     );
   });
 
-  it("Should NOT let initialize the implementation contract", async () => {
+  it("Gets the default configuration correctly", async () => {
+    // set the environment to get the appropriate variables
+    const localConfig : IDeployCampaignConfig = await getConfig(
+      deployer,
+      zeroVault,
+      [governor.address],
+      [admin.address],
+    );
+
+    expect(localConfig.deployAdmin.address).to.eq(deployer.address);
+    expect(localConfig.governorAddresses[0]).to.eq(governor.address);
+    expect(localConfig.governorAddresses[1]).to.be.undefined;
+    expect(localConfig.adminAddresses[0]).to.eq(admin.address);
+    expect(localConfig.adminAddresses[1]).to.be.undefined;
+    expect(localConfig.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
+    expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
+    expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(deployer.address);
+    expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
+    expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
+  });
+
+  it("Confirms encoding functionality works for env variables", async () => {
+    const sample = "0x123,0x456,0x789";
+    const sampleFormatted = ["0x123", "0x456", "0x789"];
+    const encoded = btoa(sample);
+    const decoded = atob(encoded).split(",");
+    expect(decoded).to.deep.eq(sampleFormatted);
+  });
+
+  it("Modifies config to use a random account as the deployer", async () => {
+    // Run the deployment a second time, clear the DB so everything is deployed
+    if (mongoAdapter) await mongoAdapter.dropDB();
+
+    const config : IDeployCampaignConfig = await getConfig(
+      randomUser,
+      user,
+      [randomUser.address, admin.address], // governors
+      [randomUser.address, governor.address], // admins
+    );
+
+    const logger = getLogger();
+
+    const campaign = await runZnsCampaign({
+      config,
+      logger,
+    });
+
+    zns = campaign.state.contracts;
+
+    const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+
+    expect(await zns.accessController.isAdmin(randomUser.address)).to.be.true;
+    expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
+    expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
+    expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
+    expect(rootPaymentConfig.beneficiary).to.eq(user.address);
+  });
+
+  it("Fails when governor or admin addresses are given wrong", async () => {
+    // Custom addresses must given as the base64 encoded string of comma separated addresses
+    // e.g. btoa("0x123,0x456,0x789") = 'MHgxMjMsMHg0NTYsMHg3ODk=', which is what should be provided
+    // We could manipulate envariables through `process.env.<VAR_NAME>` for this test and call `getConfig()`
+    // but the async nature of HH mocha tests causes this to mess up other tests
+    // Instead we use the same encoding functions used in `getConfig()` to test the functionality
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    try {
+      atob("[0x123,0x456]");
+    } catch (e : any) {
+      expect(e.message).includes("Invalid character");
+    }
+
+    try {
+      atob("0x123, 0x456");
+    } catch (e : any) {
+      expect(e.message).includes("Invalid character");
+    }
+
+    try {
+      atob("0x123 0x456");
+    } catch (e : any) {
+      expect(e.message).includes("Invalid character");
+    }
+
+    try {
+      atob("'MHgxM jMsMHg0 NTYs MHg3ODk='");
+    } catch (e : any) {
+      expect(e.message).includes("Invalid character");
+    }
+  });
+
+  it("Should NOT initialize the implementation contract", async () => {
     const factory = new ZNSRootRegistrar__factory(deployer);
     const impl = await getProxyImplAddress(zns.rootRegistrar.address);
     const implContract = factory.attach(impl);
@@ -214,8 +300,8 @@ describe("ZNSRootRegistrar", () => {
       maxLength: BigNumber.from("35"),
       maxPrice: parseEther("150"),
       minPrice: parseEther("10"),
-      precisionMultiplier: precisionMultiDefault,
-      feePercentage: registrationFeePercDefault,
+      precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+      feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       isSet: true,
     };
 
@@ -412,7 +498,7 @@ describe("ZNSRootRegistrar", () => {
       const tx1 = zns.rootRegistrar.connect(deployer).registerRootDomain(
         letters,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -428,7 +514,7 @@ describe("ZNSRootRegistrar", () => {
       const tx2 = zns.rootRegistrar.connect(deployer).registerRootDomain(
         alphaNumeric,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -444,7 +530,7 @@ describe("ZNSRootRegistrar", () => {
       const tx3 = zns.rootRegistrar.connect(deployer).registerRootDomain(
         withHyphen,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -571,7 +657,7 @@ describe("ZNSRootRegistrar", () => {
         totalPrice,
         expectedPrice,
         stakeFee,
-      } = getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, DEFAULT_PRICE_CONFIG);
 
       await checkBalance({
         token: zns.meowToken as IERC20,
@@ -645,7 +731,7 @@ describe("ZNSRootRegistrar", () => {
       const tx = zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -703,7 +789,7 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.constants.AddressZero,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 
@@ -854,7 +940,7 @@ describe("ZNSRootRegistrar", () => {
       // Validated staked values
       const {
         expectedPrice: expectedStaked,
-      } = getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, DEFAULT_PRICE_CONFIG);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
       expect(token).to.eq(zns.meowToken.address);
@@ -962,7 +1048,7 @@ describe("ZNSRootRegistrar", () => {
       const {
         expectedPrice: expectedStaked,
         stakeFee: expectedStakeFee,
-      } = getPriceObject(defaultDomain, priceConfigDefault);
+      } = getPriceObject(defaultDomain, DEFAULT_PRICE_CONFIG);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
       expect(token).to.eq(zns.meowToken.address);
@@ -1201,12 +1287,12 @@ describe("ZNSRootRegistrar", () => {
       const domainHash = hashDomainLabel(domainName);
 
       await zns.meowToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.meowToken.mint(randomUser.address, priceConfigDefault.maxPrice);
+      await zns.meowToken.mint(randomUser.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,
         randomUser.address,
-        defaultTokenURI,
+        DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
 

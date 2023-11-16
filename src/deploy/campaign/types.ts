@@ -2,7 +2,6 @@ import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { BigNumber, Contract } from "ethers";
 import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { BaseStorageAdapter } from "../storage/base-storage-adapter";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";

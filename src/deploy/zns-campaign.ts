@@ -13,7 +13,6 @@ import * as hre from "hardhat";
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 
 
-// TODO dep: add configs for ENV vars in this repo
 export const runZnsCampaign = async ({
   config,
   logger,
@@ -26,9 +25,8 @@ export const runZnsCampaign = async ({
   // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
 
-  const deployer = new HardhatDeployer();
+  const deployer = new HardhatDeployer(config.deployAdmin);
 
-  // TODO dep: remove all hardcoded stuff and turn into constants or ENV vars!
   const dbAdapter = await getMongoAdapter();
 
   const campaign = new DeployCampaign({
