@@ -1,8 +1,8 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
-  defaultRoyaltyFraction,
-  priceConfigDefault,
+  DEFAULT_ROYALTY_FRACTION,
+  DEFAULT_PRICE_CONFIG,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
@@ -41,9 +41,9 @@ describe("Deploy Campaign Test", () => {
           name: ZNS_DOMAIN_TOKEN_NAME,
           symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
           defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: priceConfigDefault,
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
         mockMeowToken: true,

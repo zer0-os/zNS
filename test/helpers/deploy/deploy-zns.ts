@@ -30,7 +30,7 @@ import {
   domainTokenName,
   erc1967ProxyName,
   fixedPricerName,
-  priceConfigDefault,
+  DEFAULT_PRICE_CONFIG,
   curvePricerName,
   registrarName,
   registryName,
@@ -40,7 +40,7 @@ import {
   meowTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
-  defaultRoyaltyFraction,
+  DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
@@ -507,7 +507,7 @@ export const deployZNS = async ({
   deployer,
   governorAddresses,
   adminAddresses,
-  priceConfig = priceConfigDefault,
+  priceConfig = DEFAULT_PRICE_CONFIG,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<IZNSContracts> => {
@@ -535,7 +535,7 @@ export const deployZNS = async ({
     deployer,
     accessController.address,
     zeroVaultAddress,
-    defaultRoyaltyFraction,
+    DEFAULT_ROYALTY_FRACTION,
     isTenderlyRun
   );
 

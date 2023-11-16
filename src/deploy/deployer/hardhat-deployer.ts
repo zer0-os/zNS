@@ -1,12 +1,15 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
+  signer : SignerWithAddress;
 
-  constructor () {
+  constructor (signer : SignerWithAddress) {
     this.hre = hre;
+    this.signer = signer;
   }
 
   async getFactory (contractName : string) {
@@ -22,7 +25,7 @@ export class HardhatDeployer {
     args : TDeployArgs;
     kind : TProxyKind;
   }) {
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName);
+    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {
       kind,
     });
@@ -33,7 +36,7 @@ export class HardhatDeployer {
   }
 
   async deployContract (contractName : string, args : TDeployArgs) {
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName);
+    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await contractFactory.deploy(...args);
 
     await contract.deployed();

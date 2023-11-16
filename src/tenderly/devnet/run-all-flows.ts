@@ -4,7 +4,7 @@ import { BigNumber } from "ethers";
 import {
   deployZNS,
   hashDomainLabel, PaymentType,
-  priceConfigDefault,
+  DEFAULT_PRICE_CONFIG,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
@@ -67,7 +67,7 @@ export const runAllFlows = async () => {
       token: zns.meowToken.address,
       beneficiary: user.address,
     },
-    priceConfig: priceConfigDefault,
+    priceConfig: DEFAULT_PRICE_CONFIG,
   };
 
   await zns.meowToken.transfer(user.address, ethers.utils.parseEther("10000"));

@@ -7,15 +7,15 @@ export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
 
-export const defaultTokenURI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_ROYALTY_FRACTION = BigNumber.from("200");
+export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_REGISTRATION_FEE_PERCENT = BigNumber.from("222");
+export const DEFAULT_PERCENTAGE_BASIS = BigNumber.from("10000");
 
-export const registrationFeePercDefault = BigNumber.from("222");
-export const PERCENTAGE_BASIS = BigNumber.from("10000");
-export const decimalsDefault = BigNumber.from(18);
-export const precisionDefault = BigNumber.from(2);
-export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
+export const DEFAULT_DECIMALS = BigNumber.from(18);
+export const DECAULT_PRECISION = BigNumber.from(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigNumber.from(10).pow(DEFAULT_DECIMALS.sub(DECAULT_PRECISION));
 
-export const defaultRoyaltyFraction = BigNumber.from("200");
 // eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,
@@ -36,13 +36,13 @@ export enum PaymentType {
   STAKE,
 }
 
-export const priceConfigDefault : ICurvePriceConfig = {
+export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.utils.parseEther("25000"),
   minPrice: ethers.utils.parseEther("2000"),
   maxLength: BigNumber.from(50),
   baseLength: BigNumber.from(4),
-  precisionMultiplier: precisionMultiDefault,
-  feePercentage: registrationFeePercDefault,
+  precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+  feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
   isSet: true,
 };
 

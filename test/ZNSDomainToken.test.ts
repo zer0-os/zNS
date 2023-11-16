@@ -17,7 +17,7 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INITIALIZED_ERR,
-  PERCENTAGE_BASIS, defaultRoyaltyFraction,
+  DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { parseEther } from "ethers/lib/utils";
@@ -64,7 +64,7 @@ describe("ZNSDomainToken", () => {
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
       zns.zeroVaultAddress,
-      defaultRoyaltyFraction
+      DEFAULT_ROYALTY_FRACTION
     )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
@@ -79,7 +79,7 @@ describe("ZNSDomainToken", () => {
         ZNS_DOMAIN_TOKEN_NAME,
         ZNS_DOMAIN_TOKEN_SYMBOL,
         zns.zeroVaultAddress,
-        defaultRoyaltyFraction
+        DEFAULT_ROYALTY_FRACTION
       )
     ).to.be.revertedWith(INITIALIZED_ERR);
   });
@@ -222,7 +222,7 @@ describe("ZNSDomainToken", () => {
 
       await zns.domainToken.connect(deployer).setDefaultRoyalty(beneficiary.address, royaltyPerc);
 
-      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(PERCENTAGE_BASIS);
+      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(DEFAULT_PERCENTAGE_BASIS);
 
       // try pulling with incorrect tokenID - should still return the correct amount
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
@@ -251,13 +251,13 @@ describe("ZNSDomainToken", () => {
 
       await zns.domainToken.connect(deployer).setTokenRoyalty(tokenId, beneficiary.address, royaltyPerc);
 
-      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(PERCENTAGE_BASIS);
+      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(DEFAULT_PERCENTAGE_BASIS);
 
       // try pulling with incorrect tokenID - should return default values from initizlize()
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
 
       expect(royaltyInfoNoID[0]).to.equal(zns.zeroVaultAddress);
-      expect(royaltyInfoNoID[1]).to.equal(assetPrice.mul(defaultRoyaltyFraction).div(PERCENTAGE_BASIS));
+      expect(royaltyInfoNoID[1]).to.equal(assetPrice.mul(DEFAULT_ROYALTY_FRACTION).div(DEFAULT_PERCENTAGE_BASIS));
 
       // try pulling with correct tokenID - should return correct amount
       const royaltyInfo = await zns.domainToken.royaltyInfo(tokenId, assetPrice);

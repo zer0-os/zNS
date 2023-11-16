@@ -7,8 +7,8 @@ import {
   INITIALIZED_ERR, INVALID_NAME_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
-  PERCENTAGE_BASIS,
-  priceConfigDefault,
+  DEFAULT_PERCENTAGE_BASIS,
+  DEFAULT_PRICE_CONFIG,
   validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -43,7 +43,7 @@ describe("ZNSFixedPricer", () => {
       deployer,
       governorAddresses: [deployer.address, deployer.address],
       adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
+      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
@@ -180,7 +180,7 @@ describe("ZNSFixedPricer", () => {
     } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname", false);
 
     expect(price).to.equal(newPrice);
-    expect(fee).to.equal(newPrice.mul(newFee).div(PERCENTAGE_BASIS));
+    expect(fee).to.equal(newPrice.mul(newFee).div(DEFAULT_PERCENTAGE_BASIS));
   });
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
@@ -213,7 +213,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
     await expect(
-      zns.fixedPricer.connect(user).setFeePercentage(domainHash, PERCENTAGE_BASIS.add(1))
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS.add(1))
     ).to.be.revertedWith(
       "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
     );
@@ -300,7 +300,7 @@ describe("ZNSFixedPricer", () => {
         deployer,
         governorAddresses: [deployer.address, deployer.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
