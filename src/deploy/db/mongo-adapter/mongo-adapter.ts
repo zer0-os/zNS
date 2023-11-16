@@ -95,10 +95,12 @@ export class MongoDBAdapter {
   async writeContract (contractName : string, data : IContractDbData, version ?: string) {
     if (!version) version = await this.getCheckLatestVersion();
 
-    return this.contracts.insertOne({
+    await this.contracts.insertOne({
       ...data,
       version,
     });
+
+    this.logger.debug(`Successfully wrote ${contractName} to DB.`);
   }
 
   async dropDB () {
@@ -127,13 +129,16 @@ export class MongoDBAdapter {
       }
     } else {
       if (!tempV && !deployedV) {
-        this.logger.info("No version provided to MongoDBAdapter, using current timestamp as version");
         finalVersion = Date.now().toString();
+        // eslint-disable-next-line max-len
+        this.logger.info(`No version provided to MongoDBAdapter, using current timestamp as new TEMP version: ${finalVersion}`);
         await this.createUpdateTempVersion(finalVersion);
       } else if (!deployedV) {
         finalVersion = tempV as string;
+        this.logger.info(`Using existing MongoDB TEMP version: ${finalVersion}`);
       } else {
         finalVersion = deployedV;
+        this.logger.info(`Using existing MongoDB DEPLOYED version: ${finalVersion}`);
       }
     }
 
@@ -172,7 +177,7 @@ export class MongoDBAdapter {
     }
 
     // archive the current TEMP version if any
-    return this.versions.updateOne(
+    await this.versions.updateOne(
       {
         type: VERSION_TYPES.temp,
       },
@@ -181,6 +186,8 @@ export class MongoDBAdapter {
           type: VERSION_TYPES.archived,
         },
       });
+
+    this.logger.info(`Successfully finalized DB version ${finalV} from TEMP to DEPLOYED.`);
   }
 
   async getCheckLatestVersion () {

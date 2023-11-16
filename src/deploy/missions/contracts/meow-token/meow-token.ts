@@ -48,8 +48,10 @@ export class MeowTokenDM extends BaseDeployMission {
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const factory = await this.campaign.deployer.getFactory(this.contractName);
-      const contract = factory.attach(this.config.stakingTokenAddress);
+      const contract = await this.campaign.deployer.getContractObject(
+        this.contractName,
+        this.config.stakingTokenAddress,
+      );
 
       await this.saveToDB(contract);
 

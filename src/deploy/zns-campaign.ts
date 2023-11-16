@@ -1,4 +1,4 @@
-import { ICampaignArgs, IDeployCampaignConfig, TLogger } from "./campaign/types";
+import { IDeployCampaignConfig, TLogger } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { DeployCampaign } from "./campaign/deploy-campaign";
 import {
@@ -46,7 +46,7 @@ export const runZnsCampaign = async ({
     dbAdapter,
     logger,
     config,
-  } as ICampaignArgs);
+  });
 
   await campaign.execute();
 
