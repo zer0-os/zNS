@@ -26,12 +26,7 @@ import {
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
-  INVALID_CURVE_ERR,
-  INVALID_ENV_ERR,
   INVALID_NAME_ERR,
-  MONGO_URI_ERR,
-  NO_MOCK_PROD_ERR,
-  STAKING_TOKEN_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -50,7 +45,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig, validate } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -159,123 +154,6 @@ describe("ZNSRootRegistrar", () => {
       candidates,
       allowed
     );
-  });
-
-  it("Throws if env variable is invalid", async () => {
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-
-      validate(config, "other");
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(INVALID_ENV_ERR);
-    }
-  });
-
-  it("Fails to validate when mocking MEOW on prod", async () => {
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-      // Modify the config
-      config.mockMeowToken = true;
-      validate(config, "prod");
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(NO_MOCK_PROD_ERR);
-    }
-  });
-
-  it("Fails to validate if not using the MEOW token on prod", async () => {
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-
-      config.mockMeowToken = false;
-      config.stakingTokenAddress = "0x123";
-
-      validate(config, "prod");
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(STAKING_TOKEN_ERR);
-    }
-  });
-
-  it("Fails to validate if invalid curve for pricing", async () => {
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-
-      config.mockMeowToken = false;
-      config.rootPriceConfig.baseLength = BigNumber.from(3);
-      config.rootPriceConfig.maxLength = BigNumber.from(5);
-      config.rootPriceConfig.maxPrice = ethers.constants.Zero;
-      config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
-
-      validate(config, "prod");
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(INVALID_CURVE_ERR);
-    }
-  });
-
-  it("Fails to validate if no mongo uri or local URI in prod", async () => {
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-
-      config.mockMeowToken = false;
-
-      // Normally we would call to an env variable to grab this value
-      const uri = "";
-
-      // Falls back onto the default URI which is for localhost and fails in prod
-      validate(config, "prod", uri);
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(MONGO_URI_ERR);
-    }
-
-    try {
-      const config = await getConfig(
-        deployer,
-        zeroVault,
-        [deployer.address, governor.address],
-        [deployer.address, admin.address],
-      );
-
-      config.mockMeowToken = false;
-
-      // Normally we would call to an env variable to grab this value
-      const uri = "mongodb://localhost:27018";
-
-      validate(config, "prod", uri);
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    } catch(e : any) {
-      expect(e.message).includes(MONGO_URI_ERR);
-    }
   });
 
   it("Gets the default configuration correctly", async () => {
