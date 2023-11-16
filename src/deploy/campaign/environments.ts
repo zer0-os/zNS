@@ -178,5 +178,5 @@ const validatePrice = (config : ICurvePriceConfig) => {
   const priceB = getCurvePrice(strB, config);
 
   // if A < B, then the price spike is invalid
-  return priceA.gte(priceB);
+  return !priceA.lt(priceB);
 };

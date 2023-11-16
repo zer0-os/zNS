@@ -197,7 +197,7 @@ describe("Deploy Campaign Test", () => {
       }
     });
 
-    it.only("Fails to validate if invalid curve for pricing", async () => {
+    it("Fails to validate if invalid curve for pricing", async () => {
       try {
         const config = await getConfig(
           deployAdmin,
