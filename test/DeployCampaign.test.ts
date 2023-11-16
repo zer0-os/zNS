@@ -183,7 +183,7 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer();
+      const deployer = new HardhatDeployer(deployAdmin);
       let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
