@@ -9,11 +9,19 @@ import {
   DEFAULT_DECIMALS,
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
+  getCurvePrice,
+  NO_MOCK_PROD_ERR,
+  STAKING_TOKEN_ERR,
+  INVALID_CURVE_ERR,
+  MONGO_URI_ERR,
+  INVALID_ENV_ERR,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-
+import { MEOW_TOKEN } from "../constants";
+import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+
 
 const getCustomAddresses = (
   key : string,
@@ -118,8 +126,58 @@ export const getConfig = (
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN,
   };
 
+  // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
+  validate(config);
+
   return config;
+};
+
+// For testing the behaviour when we manipulate, we have an optional "env" string param
+export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri ?: string) => {
+  // Prioritize reading from the env variable first, and only then fallback to the param
+  let envLevel = process.env.ENV_LEVEL;
+
+  if (env) {
+    // We only ever specify an `env` param in tests
+    // So if there is a value we must use that instead
+    // otherwise only ever use the ENV_LEVEL above
+    envLevel = env;
+  }
+
+  if (envLevel === "dev") return; // No validation needed for dev
+
+  if (!mongoUri) mongoUri = process.env.MONGO_URI ? process.env.MONGO_URI : DEFAULT_MONGO_URI;
+
+  // Mainnet or testnet
+  if (envLevel === "prod" || envLevel === "test") {
+    requires(!config.mockMeowToken, NO_MOCK_PROD_ERR);
+    requires(config.stakingTokenAddress === MeowMainnet.address, STAKING_TOKEN_ERR);
+    requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
+    requires(!mongoUri.includes("localhost"), MONGO_URI_ERR);
+  }
+
+  // If we reach this code, there is an env variable but it's not valid.
+  throw new Error(INVALID_ENV_ERR);
+
+};
+
+const requires = (condition : boolean, message : string) => {
+  if (!condition) {
+    throw new Error(message);
+  }
+};
+
+// No price spike before `minPrice` kicks in at `maxLength`
+const validatePrice = (config : ICurvePriceConfig) => {
+  const strA = "a".repeat(config.maxLength.toNumber());
+  const strB = "b".repeat(config.maxLength.add(1).toNumber());
+
+  const priceA = getCurvePrice(strA, config);
+  const priceB = getCurvePrice(strB, config);
+
+  // if A < B, then the price spike is invalid
+  return !priceA.lt(priceB);
 };

@@ -2,28 +2,31 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
+  normalizeName,
+  validateUpgrade,
   AccessType,
+  OwnerOf,
+  PaymentType,
+  getAccessRevertMsg,
+  hashDomainLabel,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,
-  hashDomainLabel,
   INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
-  normalizeName,
+  REGISTRAR_ROLE,
+  ZNS_DOMAIN_TOKEN_NAME,
+  ZNS_DOMAIN_TOKEN_SYMBOL,
+  DEFAULT_PRECISION_MULTIPLIER,
+  DEFAULT_PRICE_CONFIG,
+  DEFAULT_REGISTRATION_FEE_PERCENT,
   NOT_AUTHORIZED_REG_ERR,
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
-  OwnerOf,
-  PaymentType,
-  REGISTRAR_ROLE,
-  validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME, ZNS_DOMAIN_TOKEN_SYMBOL,
-  DEFAULT_PRECISION_MULTIPLIER,
-  DEFAULT_PRICE_CONFIG,
-  DEFAULT_REGISTRATION_FEE_PERCENT,
+  INVALID_NAME_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -33,7 +36,6 @@ import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
-import { getAccessRevertMsg, INVALID_NAME_ERR } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
