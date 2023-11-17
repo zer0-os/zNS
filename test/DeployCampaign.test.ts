@@ -36,6 +36,10 @@ import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
 import { ethers, BigNumber } from "ethers";
+import { promisify } from "util";
+import { exec } from "child_process";
+
+const execAsync = promisify(exec);
 
 
 describe("Deploy Campaign Test", () => {
@@ -79,7 +83,6 @@ describe("Deploy Campaign Test", () => {
     it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       const { meowToken, dbAdapter } = campaign;
@@ -115,7 +118,6 @@ describe("Deploy Campaign Test", () => {
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       const {
@@ -260,7 +262,6 @@ describe("Deploy Campaign Test", () => {
       // run Campaign again, but normally
       const nextCampaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       ({ dbAdapter } = nextCampaign);
@@ -701,6 +702,48 @@ describe("Deploy Campaign Test", () => {
       } catch (e : any) {
         expect(e.message).includes(MONGO_URI_ERR);
       }
+    });
+  });
+
+  // TODO dep: add more versioning tests here for DB versions!
+  describe("Versioning", () => {
+    let campaign : DeployCampaign;
+
+    before(async () => {
+      campaignConfig = {
+        deployAdmin,
+        governorAddresses: [ deployAdmin.address ],
+        adminAddresses: [ deployAdmin.address, admin.address ],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: MeowMainnet.address,
+        mockMeowToken: true,
+      };
+
+      campaign = await runZnsCampaign({
+        config: campaignConfig,
+      });
+    });
+
+    it("should get the correct git tag + commit hash and write to DB", async () => {
+      const latestGitTag = (await execAsync("git describe --tags --abbrev=0")).stdout.trim();
+      const latestCommit = (await execAsync(`git rev-list -n 1 ${latestGitTag}`)).stdout.trim();
+
+      const fullGitTag = `${latestGitTag}:${latestCommit}`;
+
+      const { dbAdapter } = campaign;
+
+      const versionDoc = await dbAdapter.getLatestVersion();
+      expect(versionDoc?.contractsVersion).to.equal(fullGitTag);
+
+      const deployedVersion = await dbAdapter.getDeployedVersion();
+      expect(deployedVersion?.dbVersion).to.equal(fullGitTag);
     });
   });
 });
