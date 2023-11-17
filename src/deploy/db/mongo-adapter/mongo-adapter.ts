@@ -125,9 +125,9 @@ export class MongoDBAdapter {
     if (version) {
       finalVersion = version;
 
-      if (version !== deployedV?.dbVersion || !deployedV) {
+      if (!deployedV || version !== deployedV.dbVersion) {
         // we should only have a single TEMP version at any given time
-        if (version !== tempV?.dbVersion && tempV) {
+        if (tempV && version !== tempV.dbVersion) {
           await this.clearDBForVersion(tempV.dbVersion);
         }
 
