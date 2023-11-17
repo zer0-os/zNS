@@ -4,6 +4,8 @@ import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
 import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
+import fs from "fs";
+import { tagFilePath } from "../../../utils/git-tag/save-tag";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
 
@@ -166,7 +168,8 @@ export class MongoDBAdapter {
       // create new DEPLOYED version
       await this.versions.insertOne({
         type: VERSION_TYPES.deployed,
-        version: finalV,
+        dbVersion: finalV,
+        contractsVersion: this.getContractsVersion(),
       });
 
       // now remove the TEMP version
@@ -205,7 +208,7 @@ export class MongoDBAdapter {
 
     if (!v) return null;
 
-    return v.version;
+    return v.dbVersion;
   }
 
   async getDeployedVersion () : Promise<string | null> {
@@ -215,7 +218,7 @@ export class MongoDBAdapter {
 
     if (!v) return null;
 
-    return v.version;
+    return v.dbVersion;
   }
 
   async getLatestVersion () : Promise<string | null> {
@@ -226,12 +229,26 @@ export class MongoDBAdapter {
     return this.getDeployedVersion();
   }
 
+  getContractsVersion () {
+    if (!fs.existsSync(tagFilePath)) {
+      throw Error(`No git tag found at ${tagFilePath}`);
+    }
+
+    const tag = fs.readFileSync(tagFilePath, "utf8").trim();
+    this.logger.info(`Git tag found at ${tagFilePath}: ${tag}`);
+
+    return tag;
+  }
+
   async createUpdateTempVersion (version : string) {
+    const contractsVersion = this.getContractsVersion();
+
     return this.versions.updateOne({
       type: VERSION_TYPES.temp,
     }, {
       $set: {
-        version,
+        dbVersion: version,
+        contractsVersion,
       },
     }, {
       upsert: true,
