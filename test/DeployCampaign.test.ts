@@ -37,8 +37,6 @@ describe("Deploy Campaign Test", () => {
   let zeroVault : SignerWithAddress;
   let campaignConfig : IDeployCampaignConfig;
 
-  let mongoAdapter : MongoDBAdapter;
-
   // TODO dep: move logger to runZNSCampaign()
   const logger = getLogger();
 
@@ -179,8 +177,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Modifies config to use a random account as the deployer", async () => {
       // Run the deployment a second time, clear the DB so everything is deployed
-      if (mongoAdapter) await mongoAdapter.dropDB(); // not needed?
-
+      
       let zns : TZNSContractState;
 
       const config : IDeployCampaignConfig = await getConfig(
@@ -197,6 +194,8 @@ describe("Deploy Campaign Test", () => {
         logger,
       });
 
+      const { dbAdapter } = campaign;
+
       /* eslint-disable-next-line prefer-const */
       zns = campaign.state.contracts;
 
@@ -207,6 +206,8 @@ describe("Deploy Campaign Test", () => {
       expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
       expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
       expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
+
+      await dbAdapter.dropDB();
     });
 
     it("Fails when governor or admin addresses are given wrong", async () => {
