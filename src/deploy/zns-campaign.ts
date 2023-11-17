@@ -11,19 +11,20 @@ import {
 import * as hre from "hardhat";
 
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
+import { getLogger } from "./logger/create-logger";
 
 
 export const runZnsCampaign = async ({
   config,
-  logger,
   dbVersion,
 } : {
   config : IDeployCampaignConfig;
-  logger : TLogger;
   dbVersion ?: string;
 }) => {
   // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
+
+  const logger = getLogger();
 
   const deployer = new HardhatDeployer(config.deployAdmin);
 
