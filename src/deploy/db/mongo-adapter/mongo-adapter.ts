@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import fs from "fs";
 import { TLogger } from "../../campaign/types";
 import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
 import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
-import fs from "fs";
 import { tagFilePath } from "../../../utils/git-tag/save-tag";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
@@ -86,7 +86,9 @@ export class MongoDBAdapter {
 
   // Contract methods
   async getContract (contractName : string, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
+    if (!version) {
+      ({ dbVersion: version } = await this.getCheckLatestVersion());
+    }
 
     return this.contracts.findOne({
       name: contractName,
@@ -95,7 +97,9 @@ export class MongoDBAdapter {
   }
 
   async writeContract (contractName : string, data : IContractDbData, version ?: string) {
-    if (!version) version = await this.getCheckLatestVersion();
+    if (!version) {
+      ({ dbVersion: version } = await this.getCheckLatestVersion());
+    }
 
     await this.contracts.insertOne({
       ...data,
@@ -121,10 +125,10 @@ export class MongoDBAdapter {
     if (version) {
       finalVersion = version;
 
-      if (version !== deployedV || !deployedV) {
+      if (version !== deployedV?.dbVersion || !deployedV) {
         // we should only have a single TEMP version at any given time
-        if (version !== tempV && tempV) {
-          await this.clearDBForVersion(tempV);
+        if (version !== tempV?.dbVersion && tempV) {
+          await this.clearDBForVersion(tempV.dbVersion);
         }
 
         await this.createUpdateTempVersion(finalVersion);
@@ -136,10 +140,10 @@ export class MongoDBAdapter {
         this.logger.info(`No version provided to MongoDBAdapter, using current timestamp as new TEMP version: ${finalVersion}`);
         await this.createUpdateTempVersion(finalVersion);
       } else if (!deployedV) {
-        finalVersion = tempV as string;
+        finalVersion = tempV?.dbVersion as string;
         this.logger.info(`Using existing MongoDB TEMP version: ${finalVersion}`);
       } else {
-        finalVersion = deployedV;
+        finalVersion = deployedV.dbVersion;
         this.logger.info(`Using existing MongoDB DEPLOYED version: ${finalVersion}`);
       }
     }
@@ -148,11 +152,11 @@ export class MongoDBAdapter {
   }
 
   async finalizeDeployedVersion (version ?: string) {
-    const finalV = version || await this.getTempVersion();
+    const finalV = version || (await this.getTempVersion())?.dbVersion;
 
     if (!finalV) return;
 
-    const deployedV = await this.getDeployedVersion();
+    const deployedV = (await this.getDeployedVersion())?.dbVersion;
     if (finalV !== deployedV) {
       // archive the current DEPLOYED version
       await this.versions.updateOne(
@@ -169,7 +173,7 @@ export class MongoDBAdapter {
       await this.versions.insertOne({
         type: VERSION_TYPES.deployed,
         dbVersion: finalV,
-        contractsVersion: this.getContractsVersion(),
+        contractsVersion: this.getContractsVersionFromFile(),
       });
 
       // now remove the TEMP version
@@ -201,27 +205,27 @@ export class MongoDBAdapter {
     return v;
   }
 
-  async getTempVersion () : Promise<string | null> {
+  async getTempVersion () : Promise<IDBVersion | null> {
     const v = await this.versions.findOne({
       type: VERSION_TYPES.temp,
     });
 
     if (!v) return null;
 
-    return v.dbVersion;
+    return v;
   }
 
-  async getDeployedVersion () : Promise<string | null> {
+  async getDeployedVersion () : Promise<IDBVersion | null> {
     const v = await this.versions.findOne({
       type: VERSION_TYPES.deployed,
     });
 
     if (!v) return null;
 
-    return v.dbVersion;
+    return v;
   }
 
-  async getLatestVersion () : Promise<string | null> {
+  async getLatestVersion () : Promise<IDBVersion | null> {
     const v = await this.getTempVersion();
 
     if (v) return v;
@@ -229,7 +233,7 @@ export class MongoDBAdapter {
     return this.getDeployedVersion();
   }
 
-  getContractsVersion () {
+  getContractsVersionFromFile () {
     if (!fs.existsSync(tagFilePath)) {
       throw Error(`No git tag found at ${tagFilePath}`);
     }
@@ -241,7 +245,7 @@ export class MongoDBAdapter {
   }
 
   async createUpdateTempVersion (version : string) {
-    const contractsVersion = this.getContractsVersion();
+    const contractsVersion = this.getContractsVersionFromFile();
 
     return this.versions.updateOne({
       type: VERSION_TYPES.temp,
