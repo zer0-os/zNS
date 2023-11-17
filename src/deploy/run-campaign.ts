@@ -3,21 +3,16 @@ import { getConfig } from "./campaign/environments";
 import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
 
-const runCampaign = async () => {
-  const network = hre.network.name;
+const logger = getLogger();
 
+const runCampaign = async () => {
   const [deployer, zeroVault] = await hre.ethers.getSigners();
 
-  const env = network === "hardhat" ? "dev" : "test";
-
-  // Using the "test" environment so validation occurs
+  // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
   const config = await getConfig(
     deployer,
     zeroVault,
-    env,
   );
-
-  const logger = getLogger();
 
   await runZnsCampaign({
     config,
@@ -26,7 +21,7 @@ const runCampaign = async () => {
 };
 
 runCampaign().catch(error => {
-  console.error(error);
+  logger.error(error);
   process.exitCode = 1;
 }).finally(() => {
   process.exit(0);
