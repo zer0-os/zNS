@@ -743,7 +743,7 @@ describe("Deploy Campaign Test", () => {
       expect(versionDoc?.contractsVersion).to.equal(fullGitTag);
 
       const deployedVersion = await dbAdapter.getDeployedVersion();
-      expect(deployedVersion?.dbVersion).to.equal(fullGitTag);
+      expect(deployedVersion?.contractsVersion).to.equal(fullGitTag);
     });
   });
 });
