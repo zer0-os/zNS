@@ -18,7 +18,6 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
-#      - run: yarn save-tag-bash
       - run: yarn lint
       - run:
           name: Code Coverage Report
@@ -29,7 +28,7 @@ jobs:
           command: yarn check-coverage #Validate code is adequately covered by unit tests
       - persist_to_workspace:
           root: ~/repo
-          paths: .
+          paths: [.]
   publish:
     <<: *defaults
     steps:
