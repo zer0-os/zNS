@@ -8,7 +8,7 @@ const execAsync = promisify(exec);
 export const logger = getLogger();
 
 export const tagFile = "git-tag.txt";
-export const tagFilePath = `./artifacts/${tagFile}`;
+export const tagFilePath = `${process.cwd()}/artifacts/${tagFile}`;
 
 
 export const acquireLatestGitTag = async () => {
@@ -30,7 +30,7 @@ export const saveTag = async () => {
   const tag = await acquireLatestGitTag();
 
   fs.writeFileSync(tagFilePath, tag, "utf8");
-  logger.info(`Saved git tag-commit to ${tagFile}`);
+  logger.info(`Saved git tag-commit to ${tagFilePath}}`);
 };
 
 saveTag()
