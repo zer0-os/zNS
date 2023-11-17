@@ -11,7 +11,7 @@ export const tagFile = "git-tag.txt";
 export const tagFilePath = `${process.cwd()}/artifacts/${tagFile}`;
 
 
-export const acquireLatestGitTag = async () => {
+const acquireLatestGitTag = async () => {
   const gitTag = await execAsync("git describe --tags --abbrev=0");
   const tag = gitTag.stdout.trim();
 
@@ -26,7 +26,7 @@ export const acquireLatestGitTag = async () => {
   return full;
 };
 
-export const saveTag = async () => {
+const saveTag = async () => {
   const tag = await acquireLatestGitTag();
 
   fs.writeFileSync(tagFilePath, tag, "utf8");
