@@ -1,7 +1,9 @@
 import fs from "fs";
-import { logger } from "./save-tag";
-import { tagFilePath } from "./tag-file";
+import { tagFilePath } from "./constants";
+import { getLogger } from "../../deploy/logger/create-logger";
 
+
+const logger = getLogger();
 
 export const getGitTag = () => {
   if (!fs.existsSync(tagFilePath)) {
