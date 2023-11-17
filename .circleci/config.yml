@@ -18,6 +18,7 @@ jobs:
       - node/install-packages:
           pkg-manager: yarn
       - run: yarn build
+      - run: yarn save-tag
       - run: yarn lint
       - run:
           name: Code Coverage Report
