@@ -23,7 +23,6 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
 import { ethers, BigNumber } from "ethers";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 
 
 describe("Deploy Campaign Test", () => {
@@ -177,7 +176,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Modifies config to use a random account as the deployer", async () => {
       // Run the deployment a second time, clear the DB so everything is deployed
-      
+
       let zns : TZNSContractState;
 
       const config : IDeployCampaignConfig = await getConfig(
