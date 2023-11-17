@@ -2,13 +2,11 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { getLogger } from "../../deploy/logger/create-logger";
 import fs from "fs";
+import { tagFilePath } from "./constants";
 
 
 const execAsync = promisify(exec);
-export const logger = getLogger();
-
-export const tagFile = "git-tag.txt";
-export const tagFilePath = `${process.cwd()}/artifacts/${tagFile}`;
+const logger = getLogger();
 
 
 const acquireLatestGitTag = async () => {
@@ -35,7 +33,7 @@ const saveTag = async () => {
 
 saveTag()
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then()
+  .then(process.exit(0))
   .catch(e => {
     logger.error(e);
     process.exit(1);

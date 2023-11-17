@@ -5,7 +5,7 @@ import { Collection, Db, MongoClient, MongoClientOptions } from "mongodb";
 import { IDBVersion, IMongoDBAdapterArgs } from "./types";
 import { COLL_NAMES, VERSION_TYPES } from "./constants";
 import { IContractDbData } from "../types";
-import { tagFilePath } from "../../../utils/git-tag/save-tag";
+import { tagFilePath } from "../../../utils/git-tag/constants";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("dotenv").config();
 

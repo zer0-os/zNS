@@ -1,5 +1,6 @@
 import fs from "fs";
-import { logger, tagFilePath } from "./save-tag";
+import { logger } from "./save-tag";
+import { tagFilePath } from "./tag-file";
 
 
 export const getGitTag = () => {
