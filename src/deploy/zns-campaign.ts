@@ -1,4 +1,4 @@
-import { IDeployCampaignConfig, TLogger } from "./campaign/types";
+import { IDeployCampaignConfig } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { DeployCampaign } from "./campaign/deploy-campaign";
 import {

@@ -25,7 +25,6 @@ import {
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
-import { getLogger } from "../src/deploy/logger/create-logger";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
@@ -54,9 +53,6 @@ describe("Deploy Campaign Test", () => {
   let campaignConfig : IDeployCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
-
-  // TODO dep: move logger to runZNSCampaign()
-  const logger = getLogger();
 
   before(async () => {
     [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
