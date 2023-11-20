@@ -18,10 +18,8 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MEOW_TOKEN } from "../constants";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-
 
 const getCustomAddresses = (
   key : string,
@@ -126,7 +124,7 @@ export const getConfig = (
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN,
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
   };
 
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
@@ -136,7 +134,11 @@ export const getConfig = (
 };
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
-export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri ?: string) => {
+export const validate = (
+  config : IDeployCampaignConfig,
+  env ?: string,
+  mongoUri ?: string
+) => {
   // Prioritize reading from the env variable first, and only then fallback to the param
   let envLevel = process.env.ENV_LEVEL;
 
@@ -161,7 +163,6 @@ export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri
 
   // If we reach this code, there is an env variable but it's not valid.
   throw new Error(INVALID_ENV_ERR);
-
 };
 
 const requires = (condition : boolean, message : string) => {

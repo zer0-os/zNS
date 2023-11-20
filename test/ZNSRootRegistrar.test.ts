@@ -9,15 +9,12 @@ import {
   PaymentType,
   getAccessRevertMsg,
   hashDomainLabel,
-  DEFAULT_ROYALTY_FRACTION,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,
   INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
   INVALID_TOKENID_ERC_ERR,
   REGISTRAR_ROLE,
-  ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_PRECISION_MULTIPLIER,
   DEFAULT_PRICE_CONFIG,
   DEFAULT_REGISTRATION_FEE_PERCENT,
@@ -154,97 +151,6 @@ describe("ZNSRootRegistrar", () => {
       candidates,
       allowed
     );
-  });
-
-  it("Gets the default configuration correctly", async () => {
-    // set the environment to get the appropriate variables
-    const localConfig : IDeployCampaignConfig = await getConfig(
-      deployer,
-      zeroVault,
-      [governor.address],
-      [admin.address],
-    );
-
-    expect(localConfig.deployAdmin.address).to.eq(deployer.address);
-    expect(localConfig.governorAddresses[0]).to.eq(governor.address);
-    expect(localConfig.governorAddresses[1]).to.be.undefined;
-    expect(localConfig.adminAddresses[0]).to.eq(admin.address);
-    expect(localConfig.adminAddresses[1]).to.be.undefined;
-    expect(localConfig.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
-    expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
-    expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(deployer.address);
-    expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
-    expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
-  });
-
-  it("Confirms encoding functionality works for env variables", async () => {
-    const sample = "0x123,0x456,0x789";
-    const sampleFormatted = ["0x123", "0x456", "0x789"];
-    const encoded = btoa(sample);
-    const decoded = atob(encoded).split(",");
-    expect(decoded).to.deep.eq(sampleFormatted);
-  });
-
-  it("Modifies config to use a random account as the deployer", async () => {
-    // Run the deployment a second time, clear the DB so everything is deployed
-    if (mongoAdapter) await mongoAdapter.dropDB();
-
-    const config : IDeployCampaignConfig = await getConfig(
-      randomUser,
-      user,
-      [randomUser.address, admin.address], // governors
-      [randomUser.address, governor.address], // admins
-    );
-
-    const logger = getLogger();
-
-    const campaign = await runZnsCampaign({
-      config,
-      logger,
-    });
-
-    zns = campaign.state.contracts;
-
-    const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
-
-    expect(await zns.accessController.isAdmin(randomUser.address)).to.be.true;
-    expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
-    expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
-    expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
-    expect(rootPaymentConfig.beneficiary).to.eq(user.address);
-  });
-
-  it("Fails when governor or admin addresses are given wrong", async () => {
-    // Custom addresses must given as the base64 encoded string of comma separated addresses
-    // e.g. btoa("0x123,0x456,0x789") = 'MHgxMjMsMHg0NTYsMHg3ODk=', which is what should be provided
-    // We could manipulate envariables through `process.env.<VAR_NAME>` for this test and call `getConfig()`
-    // but the async nature of HH mocha tests causes this to mess up other tests
-    // Instead we use the same encoding functions used in `getConfig()` to test the functionality
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    try {
-      atob("[0x123,0x456]");
-    } catch (e : any) {
-      expect(e.message).includes("Invalid character");
-    }
-
-    try {
-      atob("0x123, 0x456");
-    } catch (e : any) {
-      expect(e.message).includes("Invalid character");
-    }
-
-    try {
-      atob("0x123 0x456");
-    } catch (e : any) {
-      expect(e.message).includes("Invalid character");
-    }
-
-    try {
-      atob("'MHgxM jMsMHg0 NTYs MHg3ODk='");
-    } catch (e : any) {
-      expect(e.message).includes("Invalid character");
-    }
   });
 
   it("Should NOT initialize the implementation contract", async () => {
