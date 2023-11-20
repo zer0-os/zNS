@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
@@ -314,7 +315,7 @@ describe("Deploy Campaign Test", () => {
     };
 
     beforeEach(async () => {
-      [deployAdmin, admin, zeroVault, user] = await hre.ethers.getSigners();
+      [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
       campaignConfig = {
         deployAdmin,
