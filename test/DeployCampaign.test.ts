@@ -627,11 +627,8 @@ describe("Deploy Campaign Test", () => {
         [userB.address, governor.address], // admins
       );
 
-      const logger = getLogger();
-
       const campaign = await runZnsCampaign({
         config,
-        logger,
       });
 
       const { dbAdapter } = campaign;
