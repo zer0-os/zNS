@@ -28,7 +28,7 @@ jobs:
           command: yarn check-coverage #Validate code is adequately covered by unit tests
       - persist_to_workspace:
           root: ~/repo
-          paths: .
+          paths: [.]
   publish:
     <<: *defaults
     steps:
