@@ -61,4 +61,38 @@ export class HardhatDeployer {
   async getBytecodeFromChain (address : string) {
     return this.hre.ethers.provider.getCode(address);
   }
+
+  async tenderlyVerify (
+    proxyName : string,
+    proxyAddress : string,
+    implName : string,
+    implAddress : string,
+  ) {
+    if (proxyName) {
+      await this.hre.tenderly.verify({
+        name: proxyName,
+        address: proxyAddress,
+      });
+    }
+
+    return this.hre.tenderly.verify({
+      name: implName,
+      address: implAddress,
+    });
+  }
+
+  async etherscanVerify ({
+    address,
+    ctorArgs,
+  } : {
+    address : string;
+    ctorArgs ?: TDeployArgs;
+  }) {
+    return this.hre.run("verify:verify", {
+      address,
+      // this should only be used for non-proxied contracts
+      // or proxy impls that have actual constructors
+      constructorArguments: ctorArgs,
+    });
+  }
 }

@@ -19,6 +19,7 @@ export class BaseDeployMission {
   campaign : DeployCampaign;
   logger : TLogger;
   config : IDeployCampaignConfig;
+  implAddress! : string | null;
 
   constructor ({
     campaign,
@@ -37,11 +38,11 @@ export class BaseDeployMission {
   async saveToDB (contract : Contract) {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-    const implAddress = this.proxyData.isProxy
+    this.implAddress = this.proxyData.isProxy
       ? await this.campaign.deployer.getProxyImplAddress(contract.address)
       : null;
 
-    const contractDbDoc = this.buildDbObject(contract, implAddress);
+    const contractDbDoc = this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
@@ -135,5 +136,19 @@ export class BaseDeployMission {
     if (await this.needsPostDeploy()) {
       await this.postDeploy();
     }
+  }
+
+  async verify () {
+    this.logger.info(`Verifying ${this.contractName} on Etherscan...`);
+    const { address } = await this.campaign[this.instanceName];
+
+    const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
+
+    await this.campaign.deployer.etherscanVerify({
+      address,
+      ctorArgs,
+    });
+
+    await this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
   }
 }
