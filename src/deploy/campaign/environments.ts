@@ -21,7 +21,6 @@ import { ICurvePriceConfig } from "../missions/types";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 
-
 const getCustomAddresses = (
   key : string,
   account : SignerWithAddress,
@@ -135,7 +134,11 @@ export const getConfig = (
 };
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
-export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri ?: string) => {
+export const validate = (
+  config : IDeployCampaignConfig,
+  env ?: string,
+  mongoUri ?: string
+) => {
   // Prioritize reading from the env variable first, and only then fallback to the param
   let envLevel = process.env.ENV_LEVEL;
 
@@ -160,7 +163,6 @@ export const validate = (config : IDeployCampaignConfig, env ?: string, mongoUri
 
   // If we reach this code, there is an env variable but it's not valid.
   throw new Error(INVALID_ENV_ERR);
-
 };
 
 const requires = (condition : boolean, message : string) => {

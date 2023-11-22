@@ -24,8 +24,7 @@ import {
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
-import { IDeployCampaignConfig, TLogger } from "../src/deploy/campaign/types";
-import { getLogger } from "../src/deploy/logger/create-logger";
+import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
@@ -36,24 +35,27 @@ import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
 import { ethers, BigNumber } from "ethers";
+import { promisify } from "util";
+import { exec } from "child_process";
+
+const execAsync = promisify(exec);
 
 
 describe("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
   let governor : SignerWithAddress;
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let user : SignerWithAddress;
+  let userA : SignerWithAddress;
+  let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
   let campaignConfig : IDeployCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
-  // TODO dep: move logger to runZNSCampaign()
-  const logger = getLogger();
-
   before(async () => {
-    [deployAdmin, admin, governor, zeroVault, user] = await hre.ethers.getSigners();
+    [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
   });
 
   describe("MEOW Token Ops", () => {
@@ -79,7 +81,6 @@ describe("Deploy Campaign Test", () => {
     it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       const { meowToken, dbAdapter } = campaign;
@@ -87,11 +88,11 @@ describe("Deploy Campaign Test", () => {
       const toMint = hre.ethers.utils.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
-        user.address,
+        userA.address,
         toMint
       );
 
-      const balance = await meowToken.balanceOf(user.address);
+      const balance = await meowToken.balanceOf(userA.address);
       expect(balance).to.equal(toMint);
 
       await dbAdapter.dropDB();
@@ -115,7 +116,6 @@ describe("Deploy Campaign Test", () => {
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       const {
@@ -136,7 +136,7 @@ describe("Deploy Campaign Test", () => {
       // `mint()` only exists on the Mocked contract
       try {
         await meowToken.connect(deployAdmin).mint(
-          user.address,
+          userA.address,
           toMint
         );
       } catch (e) {
@@ -260,7 +260,6 @@ describe("Deploy Campaign Test", () => {
       // run Campaign again, but normally
       const nextCampaign = await runZnsCampaign({
         config: campaignConfig,
-        logger,
       });
 
       ({ dbAdapter } = nextCampaign);
@@ -313,7 +312,7 @@ describe("Deploy Campaign Test", () => {
     };
 
     beforeEach(async () => {
-      [deployAdmin, admin, zeroVault, user] = await hre.ethers.getSigners();
+      [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
       campaignConfig = {
         deployAdmin,
@@ -583,6 +582,99 @@ describe("Deploy Campaign Test", () => {
     // because the Hardhat process for running these tests will not respect these
     // changes. `getConfig` calls to `validate` on its own, but never passes a value
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
+    it("Gets the default configuration correctly", async () => {
+      // set the environment to get the appropriate variables
+      const localConfig : IDeployCampaignConfig = await getConfig(
+        deployAdmin,
+        zeroVault,
+        [governor.address],
+        [admin.address],
+      );
+
+      expect(localConfig.deployAdmin.address).to.eq(deployAdmin.address);
+      expect(localConfig.governorAddresses[0]).to.eq(governor.address);
+      expect(localConfig.governorAddresses[1]).to.be.undefined;
+      expect(localConfig.adminAddresses[0]).to.eq(admin.address);
+      expect(localConfig.adminAddresses[1]).to.be.undefined;
+      expect(localConfig.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
+      expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
+      expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(deployAdmin.address);
+      expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
+      expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
+    });
+
+    it("Confirms encoding functionality works for env variables", async () => {
+      const sample = "0x123,0x456,0x789";
+      const sampleFormatted = ["0x123", "0x456", "0x789"];
+      const encoded = btoa(sample);
+      const decoded = atob(encoded).split(",");
+      expect(decoded).to.deep.eq(sampleFormatted);
+    });
+
+    it("Modifies config to use a random account as the deployer", async () => {
+      // Run the deployment a second time, clear the DB so everything is deployed
+
+      let zns : TZNSContractState;
+
+      const config : IDeployCampaignConfig = await getConfig(
+        userB,
+        userA,
+        [userB.address, admin.address], // governors
+        [userB.address, governor.address], // admins
+      );
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { dbAdapter } = campaign;
+
+      /* eslint-disable-next-line prefer-const */
+      zns = campaign.state.contracts;
+
+      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+
+      expect(await zns.accessController.isAdmin(userB.address)).to.be.true;
+      expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
+      expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
+      expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
+      expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
+
+      await dbAdapter.dropDB();
+    });
+
+    it("Fails when governor or admin addresses are given wrong", async () => {
+      // Custom addresses must given as the base64 encoded string of comma separated addresses
+      // e.g. btoa("0x123,0x456,0x789") = 'MHgxMjMsMHg0NTYsMHg3ODk=', which is what should be provided
+      // We could manipulate envariables through `process.env.<VAR_NAME>` for this test and call `getConfig()`
+      // but the async nature of HH mocha tests causes this to mess up other tests
+      // Instead we use the same encoding functions used in `getConfig()` to test the functionality
+
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      try {
+        atob("[0x123,0x456]");
+      } catch (e : any) {
+        expect(e.message).includes("Invalid character");
+      }
+
+      try {
+        atob("0x123, 0x456");
+      } catch (e : any) {
+        expect(e.message).includes("Invalid character");
+      }
+
+      try {
+        atob("0x123 0x456");
+      } catch (e : any) {
+        expect(e.message).includes("Invalid character");
+      }
+
+      try {
+        atob("'MHgxM jMsMHg0 NTYs MHg3ODk='");
+      } catch (e : any) {
+        expect(e.message).includes("Invalid character");
+      }
+    });
     it("Throws if env variable is invalid", async () => {
       try {
         const config = await getConfig(
@@ -701,6 +793,48 @@ describe("Deploy Campaign Test", () => {
       } catch (e : any) {
         expect(e.message).includes(MONGO_URI_ERR);
       }
+    });
+  });
+
+  // TODO dep: add more versioning tests here for DB versions!
+  describe("Versioning", () => {
+    let campaign : DeployCampaign;
+
+    before(async () => {
+      campaignConfig = {
+        deployAdmin,
+        governorAddresses: [ deployAdmin.address ],
+        adminAddresses: [ deployAdmin.address, admin.address ],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: MeowMainnet.address,
+        mockMeowToken: true,
+      };
+
+      campaign = await runZnsCampaign({
+        config: campaignConfig,
+      });
+    });
+
+    it("should get the correct git tag + commit hash and write to DB", async () => {
+      const latestGitTag = (await execAsync("git describe --tags --abbrev=0")).stdout.trim();
+      const latestCommit = (await execAsync(`git rev-list -n 1 ${latestGitTag}`)).stdout.trim();
+
+      const fullGitTag = `${latestGitTag}:${latestCommit}`;
+
+      const { dbAdapter } = campaign;
+
+      const versionDoc = await dbAdapter.getLatestVersion();
+      expect(versionDoc?.contractsVersion).to.equal(fullGitTag);
+
+      const deployedVersion = await dbAdapter.getDeployedVersion();
+      expect(deployedVersion?.contractsVersion).to.equal(fullGitTag);
     });
   });
 });

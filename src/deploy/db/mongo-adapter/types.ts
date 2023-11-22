@@ -10,6 +10,7 @@ export interface IMongoDBAdapterArgs {
 }
 
 export interface IDBVersion {
-  version : string;
+  dbVersion : string;
+  contractsVersion : string;
   type : string;
 }
