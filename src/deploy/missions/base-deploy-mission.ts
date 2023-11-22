@@ -7,6 +7,9 @@ import {
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
+import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
+import { ProxyKinds } from "../constants";
+import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
 // TODO dep:
@@ -149,6 +152,35 @@ export class BaseDeployMission {
       ctorArgs,
     });
 
-    await this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
+    this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
+  }
+
+  async getMonitoringData () : Promise<Array<ContractByName>> {
+    const implName = this.contractName;
+    let implAddress = this.campaign[this.instanceName].address;
+
+    if (this.proxyData.isProxy) {
+      const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
+      const proxyAddress = this.campaign[this.instanceName].address;
+      implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
+
+      return [
+        {
+          name: proxyName,
+          address: proxyAddress,
+        },
+        {
+          name: implName,
+          address: implAddress,
+        },
+      ];
+    }
+
+    return [
+      {
+        name: implName,
+        address: implAddress,
+      },
+    ];
   }
 }

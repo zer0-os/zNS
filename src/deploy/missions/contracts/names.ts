@@ -1,4 +1,6 @@
 export const erc1967ProxyName = "ERC1967Proxy";
+export const transparentProxyName = "TransparentUpgradeableProxy";
+
 
 export const znsNames = {
   accessController: {
