@@ -96,7 +96,7 @@ describe("Deploy Campaign Test", () => {
 
       const balance = await meowToken.balanceOf(userA.address);
       expect(balance).to.equal(balanceBefore.add(toMint));
-      
+
       await dbAdapter.dropDB();
     });
 
