@@ -127,8 +127,8 @@ export const getConfig = (
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG ? process.env.TENDERLY_PROJECT_SLUG : "",
-      monitorContracts: process.env.MONITOR_CONTRACTS ? !!process.env.MONITOR_CONTRACTS : false,
-      verifyContracts: process.env.VERIFY_CONTRACTS ? !!process.env.VERIFY_CONTRACTS : false,
+      monitorContracts: process.env.MONITOR_CONTRACTS === "true",
+      verifyContracts: process.env.VERIFY_CONTRACTS === "true",
     },
   };
 
