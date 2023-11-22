@@ -2,7 +2,6 @@ import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import assert from "assert";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 export class HardhatDeployer {
