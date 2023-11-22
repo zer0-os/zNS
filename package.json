@@ -18,7 +18,7 @@
     "build": "yarn run clean && yarn run compile",
     "postbuild": "yarn save-tag-bash",
     "typechain": "hardhat typechain",
-    "pretest": "yarn mongo:start && yarn save-tag",
+    "pretest": "yarn mongo:start",
     "test": "hardhat test",
     "test-local": "yarn test",
     "posttest": "yarn mongo:stop",
