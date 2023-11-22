@@ -9,7 +9,7 @@ const execAsync = promisify(exec);
 const logger = getLogger();
 
 
-const acquireLatestGitTag = async () => {
+export const acquireLatestGitTag = async () => {
   const gitTag = await execAsync("git describe --tags --abbrev=0");
   const tag = gitTag.stdout.trim();
 
@@ -24,17 +24,9 @@ const acquireLatestGitTag = async () => {
   return full;
 };
 
-const saveTag = async () => {
+export const saveTag = async () => {
   const tag = await acquireLatestGitTag();
 
   fs.writeFileSync(tagFilePath, tag, "utf8");
   logger.info(`Saved git tag-commit to ${tagFilePath}}`);
 };
-
-saveTag()
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  .then(process.exit(0))
-  .catch(e => {
-    logger.error(e);
-    process.exit(1);
-  });

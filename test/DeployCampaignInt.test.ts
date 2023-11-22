@@ -39,6 +39,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { saveTag } from "../src/utils/git-tag/save-tag";
 
 const execAsync = promisify(exec);
 
@@ -816,6 +817,8 @@ describe("Deploy Campaign Test", () => {
     let campaign : DeployCampaign;
 
     before(async () => {
+      await saveTag();
+
       campaignConfig = {
         deployAdmin,
         governorAddresses: [deployAdmin.address],
