@@ -22,6 +22,11 @@ export interface IDeployCampaignConfig {
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
+  postDeploy : {
+    tenderlyProjectSlug : string;
+    monitorContracts : boolean;
+    verifyContracts : boolean;
+  };
 }
 
 export type TLogger = WinstonLogger | Console;
