@@ -9,14 +9,13 @@ const runCampaign = async () => {
   const [deployer, zeroVault] = await hre.ethers.getSigners();
 
   // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
-  const config = await getConfig(
+  const config = getConfig(
     deployer,
     zeroVault,
   );
 
   await runZnsCampaign({
     config,
-    logger,
   });
 };
 
