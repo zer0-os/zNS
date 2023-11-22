@@ -2,6 +2,8 @@ import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import assert from "assert";
+import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
@@ -62,23 +64,8 @@ export class HardhatDeployer {
     return this.hre.ethers.provider.getCode(address);
   }
 
-  async tenderlyVerify (
-    proxyName : string,
-    proxyAddress : string,
-    implName : string,
-    implAddress : string,
-  ) {
-    if (proxyName) {
-      await this.hre.tenderly.verify({
-        name: proxyName,
-        address: proxyAddress,
-      });
-    }
-
-    return this.hre.tenderly.verify({
-      name: implName,
-      address: implAddress,
-    });
+  async tenderlyVerify (contracts : Array<ContractByName>) {
+    return this.hre.tenderly.verify(...contracts);
   }
 
   async etherscanVerify ({
