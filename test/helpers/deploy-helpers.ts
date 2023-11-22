@@ -1,0 +1,121 @@
+
+// For use in inegration test of deployment campaign
+
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { TZNSContractState } from "../../src/deploy/campaign/types";
+import { BigNumber, ethers } from "ethers";
+import { ICurvePriceConfig, IDistributionConfig } from "./types";
+import { expect } from "chai";
+import { hashDomainLabel } from ".";
+import { getDomainHashFromEvent } from "./events";
+
+export const approveBulk = async (
+  signers : Array<SignerWithAddress>,
+  zns : TZNSContractState,
+) => {
+  for (const signer of signers) {
+    const tx = await zns.meowToken.connect(signer).approve(
+      zns.treasury.address,
+      ethers.constants.MaxUint256,
+    );
+
+    await tx.wait(); // hang on hardhat?
+  }
+};
+
+export const mintBulk = async (
+  signers : Array<SignerWithAddress>,
+  amount : BigNumber,
+  zns : TZNSContractState,
+) => {
+  for (const signer of signers) {
+    await zns.meowToken.connect(signer).mint(
+      signer.address,
+      amount
+    );
+  }
+};
+
+export const getPriceBulk = async (
+  domains : Array<string>,
+  zns : TZNSContractState,
+  parentHashes : Array<string> = [],
+) => {
+  let index = 0;
+  const prices = [];
+
+  for (const domain of domains) {
+    const parent = parentHashes[index] ? parentHashes[index] : ethers.constants.HashZero;
+
+    const price = await zns.curvePricer.getPrice(
+      parent,
+      domain,
+      false
+    );
+    prices.push(price);
+
+    index++;
+  }
+
+  return prices;
+};
+
+export const registerRootDomainBulk = async (
+  signers : Array<SignerWithAddress>,
+  domains : Array<string>,
+  domainAddress : string,
+  tokenUri : string,
+  distConfig : IDistributionConfig,
+  priceConfig : ICurvePriceConfig,
+  zns : TZNSContractState,
+) : Promise<void> => {
+  let index = 0;
+
+  // TODO need to return state for outer calling tests, better way to do this?
+  // tried reduce, map, filter, other array prototype methods but couldn't get it to work
+  for(const domain of domains) {
+    await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
+      domain,
+      domainAddress,
+      `${tokenUri}${index}`,
+      distConfig
+    );
+
+    const domainHash = hashDomainLabel(domain);
+    expect(await zns.registry.exists(domainHash)).to.be.true;
+
+    // To mint subdomains from this domain we must first set the price config, so we do that here
+    await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
+
+    // TODO make setting price config part of the registration flow
+
+    index++;
+  }
+};
+
+export const registerSubdomainBulk = async (
+  signers : Array<SignerWithAddress>,
+  parents : Array<string>,
+  subdomains : Array<string>,
+  domainAddress : string,
+  tokenUri : string,
+  distConfig : IDistributionConfig,
+  zns : TZNSContractState,
+) => {
+  let index = 0;
+
+  for (const subdomain of subdomains) {
+    await zns.subRegistrar.connect(signers[index]).registerSubdomain(
+      parents[index],
+      subdomain,
+      domainAddress,
+      `${tokenUri}${index}`,
+      distConfig
+    );
+
+    const subdomainHash = await getDomainHashFromEvent({ zns, user: signers[index] });
+    expect(await zns.registry.exists(subdomainHash)).to.be.true;
+
+    index++;
+  }
+};

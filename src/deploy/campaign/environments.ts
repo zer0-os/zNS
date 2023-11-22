@@ -18,7 +18,6 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MEOW_TOKEN } from "../constants";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 
@@ -126,7 +125,7 @@ export const getConfig = (
     rootPriceConfig: priceConfig,
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MEOW_TOKEN,
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
   };
 
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
