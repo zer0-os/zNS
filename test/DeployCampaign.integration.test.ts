@@ -39,7 +39,7 @@ describe("DeployCampaign - Integration", () => {
     config = getConfig(deployer, zeroVault);
 
     config.mockMeowToken = hre.network.name === "hardhat";
-    const campaign = await runZnsCampaign({ config, logger });
+    const campaign = await runZnsCampaign({ config, dbVersion: "1.0.0" });
 
     zns = campaign.state.contracts;
 

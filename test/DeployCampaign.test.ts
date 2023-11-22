@@ -85,6 +85,8 @@ describe("Deploy Campaign Test", () => {
 
       const { meowToken, dbAdapter } = campaign;
 
+      const balanceBefore = await meowToken.balanceOf(userA.address);
+
       const toMint = hre.ethers.utils.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
@@ -93,8 +95,8 @@ describe("Deploy Campaign Test", () => {
       );
 
       const balance = await meowToken.balanceOf(userA.address);
-      expect(balance).to.equal(toMint);
-
+      expect(balance).to.equal(balanceBefore.add(toMint));
+      
       await dbAdapter.dropDB();
     });
 
