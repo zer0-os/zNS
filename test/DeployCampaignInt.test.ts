@@ -632,7 +632,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : TZNSContractState;
 
-      const config : IDeployCampaignConfig = await getConfig(
+      const config : IDeployCampaignConfig = getConfig(
         userB,
         userA,
         [userB.address, admin.address], // governors
