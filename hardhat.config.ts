@@ -35,7 +35,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
 // does not work properly locally or in CI, so we
 // keep it commented out and uncomment when using DevNet
 // locally.
-// !!! Uncomment this when using Tenderly DevNet !!!
+// !!! Uncomment this when using Tenderly !!!
 // tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
