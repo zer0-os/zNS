@@ -19,6 +19,7 @@ struct CoreRegisterArgs {
     string label;
     string tokenURI;
     bool isStakePayment;
+    PaymentConfig paymentConfig;
 }
 
 /**

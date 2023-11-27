@@ -115,18 +115,14 @@ contract ZNSRootRegistrar is
                 0,
                 name,
                 tokenURI,
-                true
+                true,
+                paymentConfig
             )
         );
 
         if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
-        }
-
-        // We check for both in the web app before setting, so we just need to verify at least one exists here
-        if (paymentConfig.beneficiary != address(0)) {
-            treasury.setPaymentConfig(domainHash, paymentConfig);
         }
 
         return domainHash;
@@ -188,6 +184,12 @@ contract ZNSRootRegistrar is
         } else {
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
+        }
+
+        // Because we check in the web app for the existance of both values in a payment config,
+        // it's fine to just check for one here
+        if (args.paymentConfig.beneficiary != address(0)) {
+            treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
         }
 
         emit DomainRegistered(

@@ -59,7 +59,6 @@ export const curvePriceConfigEmpty : ICurvePriceConfig = {
 export const paymentConfigEmpty = {
   token: ethers.constants.AddressZero,
   beneficiary: ethers.constants.AddressZero,
-  paymentType: PaymentType.DIRECT,
 };
 
 export const distrConfigEmpty = {

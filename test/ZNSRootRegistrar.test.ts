@@ -24,6 +24,7 @@ import {
   ONLY_NAME_OWNER_REG_ERR,
   ONLY_OWNER_REGISTRAR_REG_ERR,
   INVALID_NAME_ERR,
+  paymentConfigEmpty,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -123,7 +124,7 @@ describe("ZNSRootRegistrar", () => {
     expect(config.beneficiary).to.eq(user.address);
   });
 
-  it("Does not try to set the payment config when the beneficiary is the zero address", async () => {
+  it("Does not set the payment config when the beneficiary is the zero address", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
@@ -136,10 +137,7 @@ describe("ZNSRootRegistrar", () => {
       zns.addressResolver.address,
       tokenURI,
       distrConfig,
-      {
-        token: ethers.constants.AddressZero,
-        beneficiary: ethers.constants.AddressZero,
-      }
+      paymentConfigEmpty
     );
 
     const domainHash = hashDomainLabel(defaultDomain);
@@ -177,7 +175,8 @@ describe("ZNSRootRegistrar", () => {
       "subdomain",
       deployer.address,
       tokenURI,
-      distrConfigEmpty
+      distrConfigEmpty,
+      paymentConfigEmpty,
     );
 
     const candidates = [
@@ -336,6 +335,7 @@ describe("ZNSRootRegistrar", () => {
           domainAddress: ethers.constants.AddressZero,
           tokenURI: "",
           isStakePayment: false,
+          paymentConfig: paymentConfigEmpty,
         })
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
