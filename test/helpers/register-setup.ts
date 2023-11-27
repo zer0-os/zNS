@@ -33,7 +33,11 @@ export const defaultRootRegistration = async ({
     domainName,
     domainContent, // Arbitrary address value
     tokenURI,
-    distrConfig
+    distrConfig,
+    {
+      token: AddressZero,
+      beneficiary: AddressZero,
+    }
   );
 
   return tx.wait();

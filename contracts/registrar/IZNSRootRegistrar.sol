@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -127,7 +128,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distributionConfig
+        DistributionConfig calldata distributionConfig,
+        PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
     function coreRegister(
