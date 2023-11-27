@@ -40,7 +40,7 @@ export const getPriceBulk = async (
   domains : Array<string>,
   zns : TZNSContractState,
   parentHashes : Array<string> = [],
-  protocolFee : boolean = false,
+  includeProtocolFee  = false,
 ) => {
   let index = 0;
   const prices = [];
@@ -53,10 +53,10 @@ export const getPriceBulk = async (
       domain,
       true,
     );
-    
+
     const priceWithFee = price.add(stakeFee);
-    
-    if (protocolFee) {
+
+    if (includeProtocolFee) {
       const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, priceWithFee);
 
       prices.push(priceWithFee.add(protocolFee));
@@ -64,7 +64,6 @@ export const getPriceBulk = async (
       prices.push(priceWithFee);
     }
 
-    
 
     index++;
   }
@@ -98,9 +97,9 @@ export const registerRootDomainBulk = async (
 
     // To mint subdomains from this domain we must first set the price config, so we do that here
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
-    await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, { 
+    await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, {
       token: zns.meowToken.address,
-      beneficiary: signers[index].address
+      beneficiary: signers[index].address,
     });
 
     index++;

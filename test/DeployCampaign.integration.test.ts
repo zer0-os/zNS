@@ -97,7 +97,7 @@ describe("DeployCampaign - Integration", () => {
     freeShortSubHash = await zns.subRegistrar.hashWithParent(shortHash, freeShortSubdomain);
     freeMediumSubHash = await zns.subRegistrar.hashWithParent(mediumHash, freeMediumSubdomain);
     freeLongSubHash = await zns.subRegistrar.hashWithParent(longHash, freeLongSubdomain);
-    
+
     paidShortSubHash = await zns.subRegistrar.hashWithParent(shortHash, paidShortSubdomain);
     paidMediumSubHash = await zns.subRegistrar.hashWithParent(mediumHash, paidMediumSubdomain);
     paidLongSubHash = await zns.subRegistrar.hashWithParent(longHash, paidLongSubdomain);
@@ -123,9 +123,9 @@ describe("DeployCampaign - Integration", () => {
     // Get domain prices, including stake and protocol fee
     const [priceShort, priceMedium, priceLong] = await getPriceBulk(domains, zns);
 
-    logger.log("info", `Price of ${shortDomain} is ${priceShort.toString()}`);
-    logger.log("info", `Price of ${mediumDomain} is ${priceMedium.toString()}`);
-    logger.log("info", `Price of ${longDomain} is ${priceLong.toString()}`);
+    logger.info(`Price of ${shortDomain} is ${priceShort.toString()}`);
+    logger.info(`Price of ${mediumDomain} is ${priceMedium.toString()}`);
+    logger.info(`Price of ${longDomain} is ${priceLong.toString()}`);
 
     const balanceBeforePromises = [
       zns.meowToken.balanceOf(userA.address),
@@ -159,9 +159,9 @@ describe("DeployCampaign - Integration", () => {
     expect(balanceAfterB).to.equal(balanceBeforeB.sub(priceMedium));
     expect(balanceAfterC).to.equal(balanceBeforeC.sub(priceLong));
 
-    logger.log("info", `Domain ${shortHash} registered for user ${userA.address}`);
-    logger.log("info", `Domain ${mediumHash} registered for user ${userB.address}`);
-    logger.log("info", `Domain ${longHash} registered for user ${userC.address}`);
+    logger.info(`Domain ${shortHash} registered for user ${userA.address}`);
+    logger.info(`Domain ${mediumHash} registered for user ${userB.address}`);
+    logger.info(`Domain ${longHash} registered for user ${userC.address}`);
   });
 
   it("Mints subdomains with varying length for free as the owner of parent domain", async () => {
@@ -173,7 +173,7 @@ describe("DeployCampaign - Integration", () => {
       zns.meowToken.balanceOf(userA.address),
       zns.meowToken.balanceOf(userB.address),
       zns.meowToken.balanceOf(userC.address),
-    ]
+    ];
 
     const [balanceBeforeA, balanceBeforeB, balanceBeforeC ]= await Promise.all(balanceBeforePromises);
 
@@ -197,7 +197,7 @@ describe("DeployCampaign - Integration", () => {
       zns.meowToken.balanceOf(userB.address),
       zns.meowToken.balanceOf(userC.address),
     ];
-  
+
     const [balanceAfterA, balanceAfterB, balanceAfterC ]= await Promise.all(balanceAfterPromises);
 
     // Owners of parent domains can mint subdomains for free
@@ -205,9 +205,9 @@ describe("DeployCampaign - Integration", () => {
     expect(balanceBeforeB).to.eq(balanceAfterB);
     expect(balanceBeforeC).to.eq(balanceAfterC);
 
-    logger.log("info", `Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
-    logger.log("info", `Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
-    logger.log("info", `Subdomain ${freeLongSubHash} registered for user ${userC.address}`);
+    logger.info(`Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
+    logger.info(`Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
+    logger.info(`Subdomain ${freeLongSubHash} registered for user ${userC.address}`);
   });
 
   it("Mints subdomains with varying length for a cost", async () => {
@@ -219,7 +219,7 @@ describe("DeployCampaign - Integration", () => {
       zns.meowToken.balanceOf(userD.address),
       zns.meowToken.balanceOf(userE.address),
       zns.meowToken.balanceOf(userF.address),
-    ]
+    ];
 
     const [
       balanceBeforeD,
@@ -253,7 +253,7 @@ describe("DeployCampaign - Integration", () => {
       zns.meowToken.balanceOf(userE.address),
       zns.meowToken.balanceOf(userF.address),
     ];
-  
+
     const [
       balanceAfterD,
       balanceAfterE,
@@ -265,25 +265,25 @@ describe("DeployCampaign - Integration", () => {
     expect(balanceAfterE).to.eq(balanceBeforeE.sub(priceMedium));
     expect(balanceAfterF).to.eq(balanceBeforeF.sub(priceLong));
 
-    logger.log("info", `Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
-    logger.log("info", `Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
-    logger.log("info", `Subdomain ${freeLongSubHash} registered for user ${userC.address}`);
+    logger.info(`Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
+    logger.info(`Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
+    logger.info(`Subdomain ${freeLongSubHash} registered for user ${userC.address}`);
   });
 
   it("Revokes a domain correctly", async () => {
     // 3. Revoke domain
     const tx = zns.rootRegistrar.connect(userA).revokeDomain(freeShortSubHash);
     await expect(tx).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeShortSubHash, userA.address, false);
-    logger.log(
+    logger.info(
       "info",
       `Subdomain ${freeShortSubHash} revoked by user ${userA.address}`
     );
-    });
-    
+  });
+
   it("Reclaims a domain correctly", async () => {
     // 4. Reclaim domain
     await zns.registry.connect(userB).updateDomainOwner(freeMediumSubHash, userA.address);
-    logger.log(
+    logger.info(
       "info",
       `Subdomain ${freeMediumSubHash} ownership given to user ${userA.address} from user ${userB.address}`
     );
@@ -292,24 +292,24 @@ describe("DeployCampaign - Integration", () => {
 
     await expect(tx).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeMediumSubHash, userB.address);
     expect(await zns.registry.getDomainOwner(freeMediumSubHash)).to.equal(userB.address);
-    
-    logger.log("info", `Subdomain ${freeMediumSubHash} reclaimed by user ${userB.address} from user ${userA.address}`);
+
+    logger.info(`Subdomain ${freeMediumSubHash} reclaimed by user ${userB.address} from user ${userA.address}`);
   });
 
   it("Reclaims then revokes correctly", async () => {
     // 5. Reclaim and revoke domain
     const tx = zns.registry.connect(userC).updateDomainOwner(freeLongSubHash, userA.address);
     await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
-    logger.log("info", `Subdomain ${freeLongSubHash} ownership given to user ${userA.address} from user ${userC.address}`);
+    logger.info(`Subdomain ${freeLongSubHash} ownership given to user ${userA.address} from user ${userC.address}`);
 
     const tx1 = zns.rootRegistrar.connect(userC).reclaimDomain(freeLongSubHash);
     await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);
 
-    logger.log("info", `Subdomain ${freeLongSubHash} reclaimed by user ${userC.address}`);
+    logger.info(`Subdomain ${freeLongSubHash} reclaimed by user ${userC.address}`);
     expect(await zns.registry.getDomainOwner(freeLongSubHash)).to.equal(userC.address);
 
     const tx2 = zns.rootRegistrar.connect(userC).revokeDomain(freeLongSubHash);
     await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userC.address, false);
-    logger.log("info", `Subdomain ${freeLongSubHash} revoked by user ${userC.address}`);
+    logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userC.address}`);
   });
 });
