@@ -116,7 +116,7 @@ describe("ZNSSubRegistrar", () => {
       const subdomain = "world-subdomain";
 
       await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
-  
+
       await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         rootHash,
         subdomain,

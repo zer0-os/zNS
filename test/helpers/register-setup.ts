@@ -8,7 +8,7 @@ import {
 } from "./types";
 import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty} from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
 
 const { AddressZero } = ethers.constants;
