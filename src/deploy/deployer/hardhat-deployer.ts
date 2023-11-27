@@ -2,6 +2,7 @@ import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
@@ -60,5 +61,24 @@ export class HardhatDeployer {
 
   async getBytecodeFromChain (address : string) {
     return this.hre.ethers.provider.getCode(address);
+  }
+
+  async tenderlyVerify (contracts : Array<ContractByName>) {
+    return this.hre.tenderly.verify(...contracts);
+  }
+
+  async etherscanVerify ({
+    address,
+    ctorArgs,
+  } : {
+    address : string;
+    ctorArgs ?: TDeployArgs;
+  }) {
+    return this.hre.run("verify:verify", {
+      address,
+      // this should only be used for non-proxied contracts
+      // or proxy impls that have actual constructors
+      constructorArguments: ctorArgs,
+    });
   }
 }

@@ -35,7 +35,6 @@ import {
   registrarName,
   registryName,
   subRegistrarName,
-  transparentProxyName,
   treasuryName,
   meowTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -48,6 +47,7 @@ import { getProxyImplAddress } from "../utils";
 import { BigNumber } from "ethers";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
+import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
 
 export const deployAccessController = async ({

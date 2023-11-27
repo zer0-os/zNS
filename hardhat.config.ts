@@ -35,7 +35,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
 // does not work properly locally or in CI, so we
 // keep it commented out and uncomment when using DevNet
 // locally.
-// !!! Uncomment this when using Tenderly DevNet !!!
+// !!! Uncomment this when using Tenderly !!!
 // tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
@@ -98,20 +98,16 @@ const config : HardhatUserConfig = {
   },
   networks: {
     mainnet: {
-      url: "https://mainnet.infura.io/v3/97e75e0bbc6a4419a5dd7fe4a518b917",
+      url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,
     },
     sepolia: {
-      url: "https://eth-sepolia.g.alchemy.com/v2/mX2eTgCe-osaWbsEJ1s7sRgmjZ1c178y",
+      url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
       // accounts: [ // Comment out for CI, uncomment this when using Sepolia
       //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
       // ]
-    },
-    goerli: {
-      url: "https://goerli.infura.io/v3/77c3d733140f4c12a77699e24cb30c27",
-      timeout: 10000000,
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning

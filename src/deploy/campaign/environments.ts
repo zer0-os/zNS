@@ -125,6 +125,11 @@ export const getConfig = (
     zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN ? !!process.env.MOCK_MEOW_TOKEN : true,
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
+    postDeploy: {
+      tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG ? process.env.TENDERLY_PROJECT_SLUG : "",
+      monitorContracts: process.env.MONITOR_CONTRACTS === "true",
+      verifyContracts: process.env.VERIFY_CONTRACTS === "true",
+    },
   };
 
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
@@ -159,9 +164,19 @@ export const validate = (
     requires(config.stakingTokenAddress === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
     requires(!mongoUri.includes("localhost"), MONGO_URI_ERR);
+
+    if (config.postDeploy.verifyContracts) {
+      requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
+    }
+
+    if (config.postDeploy.monitorContracts) {
+      requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
+      requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
+      requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
+    }
   }
 
-  // If we reach this code, there is an env variable but it's not valid.
+  // If we reach this code, there is an env variable, but it's not valid.
   throw new Error(INVALID_ENV_ERR);
 };
 

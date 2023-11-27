@@ -17,16 +17,18 @@ import { getLogger } from "./logger/create-logger";
 export const runZnsCampaign = async ({
   config,
   dbVersion,
+  deployer,
 } : {
   config : IDeployCampaignConfig;
   dbVersion ?: string;
+  deployer ?: HardhatDeployer;
 }) => {
   // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
 
-  const deployer = new HardhatDeployer(config.deployAdmin);
+  if (!deployer) deployer = new HardhatDeployer(config.deployAdmin);
 
   const dbAdapter = await getMongoAdapter();
 

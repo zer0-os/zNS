@@ -11,6 +11,7 @@ import { TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
+import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
 export class DeployCampaign {
@@ -93,6 +94,14 @@ export class DeployCampaign {
       Promise.resolve()
     );
 
+    if (this.config.postDeploy.verifyContracts) {
+      await this.verify();
+    }
+
+    if (this.config.postDeploy.monitorContracts) {
+      await this.monitor();
+    }
+
     this.logger.debug("Deploy Campaign execution finished successfully.");
   }
 
@@ -100,5 +109,39 @@ export class DeployCampaign {
     this.state.contracts[instanceName] = contract;
     // TODO dep: make better logger and decide which levels to call where
     this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
+  }
+
+  async verify () {
+    return Object.values(this.state.instances).reduce(
+      async (
+        acc : Promise<void>,
+        missionInstance : BaseDeployMission,
+      ) => {
+        await acc;
+        return missionInstance.verify();
+      },
+      Promise.resolve()
+    );
+  }
+
+  async monitor () {
+    this.logger.info("Pushing contracts to Tenderly...");
+
+    const contracts = await Object.values(this.state.instances).reduce(
+      async (
+        acc : Promise<Array<ContractByName>>,
+        missionInstance : BaseDeployMission,
+      ) : Promise<Array<ContractByName>> => {
+        const newAcc = await acc;
+        const data = await missionInstance.getMonitoringData();
+
+        return [...newAcc, ...data];
+      },
+      Promise.resolve([])
+    );
+
+    await this.deployer.tenderlyVerify(contracts);
+
+    this.logger.info(`Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}.`);
   }
 }
