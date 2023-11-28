@@ -12,9 +12,6 @@ import { ProxyKinds } from "../constants";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
-// TODO dep:
-//    1. add better logging for each step
-//    2. add proper error handling
 export class BaseDeployMission {
   contractName! : string;
   instanceName! : string;

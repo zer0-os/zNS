@@ -4,7 +4,6 @@ import { TLogger } from "../campaign/types";
 let logger : TLogger | null = null;
 
 
-// TODO dep: refine this function and configurability of this logger
 export const createLogger = (logLevel ?: string, silent ?: boolean) => winston.createLogger({
   level: logLevel,
   format: winston.format.combine(
@@ -22,7 +21,6 @@ export const createLogger = (logLevel ?: string, silent ?: boolean) => winston.c
   silent,
 });
 
-// TODO dep: add more ENV vars here so we don't have to pass anything
 export const getLogger = () : TLogger => {
   if (logger) return logger;
 
