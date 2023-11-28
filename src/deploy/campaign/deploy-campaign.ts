@@ -94,13 +94,13 @@ export class DeployCampaign {
       Promise.resolve()
     );
 
-      if (this.config.postDeploy.verifyContracts) {
-        await this.verify();
-      }
+    if (this.config.postDeploy.verifyContracts) {
+      await this.verify();
+    }
 
-      if (this.config.postDeploy.monitorContracts) {
-        await this.monitor();
-      }
+    if (this.config.postDeploy.monitorContracts) {
+      await this.monitor();
+    }
 
     this.logger.debug("Deploy Campaign execution finished successfully.");
   }
