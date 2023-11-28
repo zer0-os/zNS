@@ -95,7 +95,7 @@ export class MongoDBAdapter {
     });
   }
 
-  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
+  async writeContract (contractName : string, data : Omit<IContractDbData, "version">, version ?: string) {
     if (!version) {
       ({ dbVersion: version } = await this.getCheckLatestVersion());
     }
