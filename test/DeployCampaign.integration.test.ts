@@ -246,11 +246,17 @@ describe("DeployCampaign - Integration", () => {
       zns
     );
 
+    const balanceAfterPromises =  [
+      zns.meowToken.balanceOf(userD.address),
+      zns.meowToken.balanceOf(userE.address),
+      zns.meowToken.balanceOf(userF.address),
+    ];
+
     const [
       balanceAfterD,
       balanceAfterE,
       balanceAfterF,
-    ]= await Promise.all(balancePromises);
+    ]= await Promise.all(balanceAfterPromises);
 
     // Owners of parent domains can mint subdomains for free
     expect(balanceAfterD).to.eq(balanceBeforeD.sub(priceShort));
