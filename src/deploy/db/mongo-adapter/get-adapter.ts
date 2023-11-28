@@ -18,6 +18,9 @@ export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapte
     dbName: process.env.MONGO_DB_NAME
       ? process.env.MONGO_DB_NAME
       : DEFAULT_MONGO_DB_NAME,
+    version: process.env.MONGO_DB_VERSION
+      ? process.env.MONGO_DB_VERSION
+      : undefined,
   };
 
   logger = !logger ? getLogger() : logger;
@@ -27,12 +30,16 @@ export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapte
     clientOpts: process.env.MONGO_DB_CLIENT_OPTS
       ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
       : undefined,
-    version: process.env.MONGO_DB_VERSION,
+    version: process.env.MONGO_DB_VERSION
+      ? process.env.MONGO_DB_VERSION
+      : undefined,
   };
 
   let createNew = false;
   if (mongoAdapter) {
     Object.values(checkParams).forEach(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       ([key, value]) => {
         if (key === "version") key = "curVersion";
 
