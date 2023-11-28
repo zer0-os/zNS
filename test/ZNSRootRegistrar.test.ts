@@ -38,7 +38,6 @@ import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { parseEther } from "ethers/lib/utils";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { getLogger } from "../src/deploy/logger/create-logger";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
@@ -103,8 +102,8 @@ describe("ZNSRootRegistrar", () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
-      paymentType: 1,
-      accessType: 1,
+      paymentType: PaymentType.STAKE,
+      accessType: AccessType.OPEN,
     };
 
     const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
