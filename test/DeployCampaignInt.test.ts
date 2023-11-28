@@ -867,8 +867,6 @@ describe("Deploy Campaign Test", () => {
     before (async () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
-      // TODO dep ver: add proper checks for the new config values
-      //  and make sure tenderly and etherscan ENV data is acquired correctly
       config = {
         deployAdmin,
         governorAddresses: [deployAdmin.address],

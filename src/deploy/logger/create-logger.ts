@@ -8,7 +8,6 @@ let logger : TLogger | null = null;
 export const createLogger = (logLevel ?: string, silent ?: boolean) => winston.createLogger({
   level: logLevel,
   format: winston.format.combine(
-    // TODO dep: adjust the format to what we need
     winston.format.json(),
     winston.format.timestamp(),
     winston.format.prettyPrint(),
@@ -16,7 +15,7 @@ export const createLogger = (logLevel ?: string, silent ?: boolean) => winston.c
   transports: [
     new winston.transports.Console(),
   ],
-  // TODO dep: make sure we need this to be set!
+  // TODO dep: do we need this to be set ?
   exitOnError: false,
   silent,
 });
