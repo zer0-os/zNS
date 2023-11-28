@@ -204,7 +204,7 @@ describe("ZNSAddressResolver", () => {
       // AddressResolver to upgrade to
       const factory = new ZNSAddressResolverUpgradeMock__factory(deployer);
       const newAddressResolver = await factory.deploy();
-      await newAddressResolver.deployed();
+      await newAddressResolver.waitForDeployment();
 
       // Confirm the deployer is a governor
       expect(
@@ -221,7 +221,7 @@ describe("ZNSAddressResolver", () => {
 
       // DomainToken to upgrade to
       const newAddressResolver = await factory.deploy();
-      await newAddressResolver.deployed();
+      await newAddressResolver.waitForDeployment();
 
       // Confirm the operator is not a governor
       await expect(
@@ -241,7 +241,7 @@ describe("ZNSAddressResolver", () => {
       // AddressResolver to upgrade to
       const factory = new ZNSAddressResolverUpgradeMock__factory(deployer);
       const newResolver = await factory.deploy();
-      await newResolver.deployed();
+      await newResolver.waitForDeployment();
 
       await zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, user.address);
 

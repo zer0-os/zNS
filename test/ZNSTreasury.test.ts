@@ -591,7 +591,7 @@ describe("ZNSTreasury", () => {
 
       const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
-      await treasury.deployed();
+      await treasury.waitForDeployment();
 
       await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
     });
@@ -603,7 +603,7 @@ describe("ZNSTreasury", () => {
 
       const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
-      await treasury.deployed();
+      await treasury.waitForDeployment();
 
       const deployTx = zns.treasury.connect(user).upgradeTo(treasury.address);
       await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
@@ -612,7 +612,7 @@ describe("ZNSTreasury", () => {
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       const treasuryFactory = new ZNSTreasuryUpgradeMock__factory(deployer);
       const treasury = await treasuryFactory.deploy();
-      await treasury.deployed();
+      await treasury.waitForDeployment();
 
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;

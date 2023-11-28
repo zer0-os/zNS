@@ -64,7 +64,7 @@ export const deployAccessController = async ({
   const accessControllerFactory = new ZNSAccessController__factory(deployer);
   const controller = await accessControllerFactory.deploy(governorAddresses, adminAddresses);
 
-  await controller.deployed();
+  await controller.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -93,7 +93,7 @@ export const deployRegistry = async (
       kind: "uups",
     }) as ZNSRegistry;
 
-  await registry.deployed();
+  await registry.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -138,7 +138,7 @@ export const deployDomainToken = async (
     }
   ) as ZNSDomainToken;
 
-  await domainToken.deployed();
+  await domainToken.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -178,7 +178,7 @@ export const deployMeowToken = async (
     }
   ) as MeowTokenMock;
 
-  await meowToken.deployed();
+  await meowToken.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -223,7 +223,7 @@ export const deployAddressResolver = async (
     }
   ) as ZNSAddressResolver;
 
-  await resolver.deployed();
+  await resolver.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -273,7 +273,7 @@ export const deployCurvePricer = async ({
     }
   ) as ZNSCurvePricer;
 
-  await curvePricer.deployed();
+  await curvePricer.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -324,7 +324,7 @@ export const deployTreasury = async ({
     }
   ) as ZNSTreasury;
 
-  await treasury.deployed();
+  await treasury.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -369,7 +369,7 @@ export const deployRootRegistrar = async (
     }
   ) as ZNSRootRegistrar;
 
-  await registrar.deployed();
+  await registrar.waitForDeployment();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, registrar.address);
 
@@ -417,7 +417,7 @@ export const deployFixedPricer = async ({
     }
   ) as ZNSFixedPricer;
 
-  await fixedPricer.deployed();
+  await fixedPricer.waitForDeployment();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -468,7 +468,7 @@ export const deploySubRegistrar = async ({
     }
   ) as ZNSSubRegistrar;
 
-  await subRegistrar.deployed();
+  await subRegistrar.waitForDeployment();
 
   // set SubRegistrar on RootRegistrar
   await rootRegistrar.setSubRegistrar(subRegistrar.address);

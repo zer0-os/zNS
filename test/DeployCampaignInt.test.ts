@@ -118,7 +118,7 @@ describe("Deploy Campaign Test", () => {
           kind: "transparent",
         });
 
-      await meow.deployed();
+      await meow.waitForDeployment();
 
       campaignConfig.stakingTokenAddress = meow.address;
 

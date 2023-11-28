@@ -591,7 +591,7 @@ describe("ZNSRegistry", () => {
 
       const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
-      await registry.deployed();
+      await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
       const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
@@ -601,7 +601,7 @@ describe("ZNSRegistry", () => {
     it("Fails when an unauthorized account tries to call to upgrade", async () => {
       const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
-      await registry.deployed();
+      await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
       const upgradeTx = zns.registry.connect(randomUser).upgradeTo(registry.address);
@@ -611,7 +611,7 @@ describe("ZNSRegistry", () => {
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       const registryFactory = new ZNSRegistryUpgradeMock__factory(deployer);
       const registry = await registryFactory.deploy();
-      await registry.deployed();
+      await registry.waitForDeployment();
 
       const domainHash = hashSubdomainName("world");
 

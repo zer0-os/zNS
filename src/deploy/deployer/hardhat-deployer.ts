@@ -37,7 +37,7 @@ export class HardhatDeployer {
       kind,
     });
 
-    await contract.deployed();
+    await contract.waitForDeployment();
 
     return contract;
   }
@@ -46,7 +46,7 @@ export class HardhatDeployer {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await contractFactory.deploy(...args);
 
-    await contract.deployed();
+    await contract.waitForDeployment();
 
     return contract;
   }

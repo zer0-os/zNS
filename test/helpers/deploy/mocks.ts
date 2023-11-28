@@ -10,7 +10,7 @@ export const deployCustomDecToken = async (
   const tokenFact = new CustomDecimalTokenMock__factory(deployer);
   const token = await tokenFact.deploy(deployer.address, decimals);
 
-  await token.deployed();
+  await token.waitForDeployment();
 
   return token;
 };

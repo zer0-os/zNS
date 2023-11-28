@@ -335,7 +335,7 @@ describe("ZNSFixedPricer", () => {
       // FixedPricer to upgrade to
       const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
       const newFixedPricer = await factory.deploy();
-      await newFixedPricer.deployed();
+      await newFixedPricer.waitForDeployment();
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
@@ -355,7 +355,7 @@ describe("ZNSFixedPricer", () => {
       // FixedPricer to upgrade to
       const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
       const newFixedPricer = await factory.deploy();
-      await newFixedPricer.deployed();
+      await newFixedPricer.waitForDeployment();
 
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(random.address)).to.be.reverted;
@@ -370,7 +370,7 @@ describe("ZNSFixedPricer", () => {
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       const factory = new ZNSFixedPricerUpgradeMock__factory(deployer);
       const newFixedPricer = await factory.deploy();
-      await newFixedPricer.deployed();
+      await newFixedPricer.waitForDeployment();
 
       await zns.fixedPricer.connect(user).setPrice(domainHash, "7");
       await zns.fixedPricer.connect(user).setFeePercentage(

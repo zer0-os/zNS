@@ -1159,7 +1159,7 @@ describe("ZNSRootRegistrar", () => {
 
       const registrarFactory = new ZNSRootRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
-      await registrar.deployed();
+      await registrar.waitForDeployment();
 
       const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeTo(registrar.address);
       await expect(upgradeTx).to.not.be.reverted;
@@ -1168,7 +1168,7 @@ describe("ZNSRootRegistrar", () => {
     it("Fails to upgrade when an unauthorized users calls", async () => {
       const registrarFactory = new ZNSRootRegistrar__factory(deployer);
       const registrar = await registrarFactory.deploy();
-      await registrar.deployed();
+      await registrar.waitForDeployment();
 
       const tx = zns.rootRegistrar.connect(randomUser).upgradeTo(registrar.address);
 
@@ -1183,7 +1183,7 @@ describe("ZNSRootRegistrar", () => {
 
       const registrarFactory = new ZNSRootRegistrarUpgradeMock__factory(deployer);
       const registrar = await registrarFactory.deploy();
-      await registrar.deployed();
+      await registrar.waitForDeployment();
 
       const domainName = "world";
       const domainHash = hashDomainLabel(domainName);

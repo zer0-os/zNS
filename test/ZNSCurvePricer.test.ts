@@ -968,7 +968,7 @@ describe("ZNSCurvePricer", () => {
       // CurvePricer to upgrade to
       const factory = new ZNSCurvePricer__factory(deployer);
       const newCurvePricer = await factory.deploy();
-      await newCurvePricer.deployed();
+      await newCurvePricer.waitForDeployment();
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
@@ -981,7 +981,7 @@ describe("ZNSCurvePricer", () => {
       // CurvePricer to upgrade to
       const factory = new ZNSCurvePricerUpgradeMock__factory(deployer);
       const newCurvePricer = await factory.deploy();
-      await newCurvePricer.deployed();
+      await newCurvePricer.waitForDeployment();
 
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
@@ -996,7 +996,7 @@ describe("ZNSCurvePricer", () => {
     it("Verifies that variable values are not changed in the upgrade process", async () => {
       const factory = new ZNSCurvePricerUpgradeMock__factory(deployer);
       const newCurvePricer = await factory.deploy();
-      await newCurvePricer.deployed();
+      await newCurvePricer.waitForDeployment();
 
       await zns.curvePricer.connect(user).setBaseLength(domainHash, "7");
       await zns.curvePricer.connect(user).setMaxPrice(

@@ -29,7 +29,7 @@ import { registerDomainPath, validatePathRegistration } from "./helpers/flows/re
 import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { CustomDecimalTokenMock, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
 import { parseEther, parseUnits } from "ethers/lib/utils";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
@@ -3363,7 +3363,7 @@ describe("ZNSSubRegistrar", () => {
       // SubRegistrar to upgrade to
       const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
       const newRegistrar = await factory.deploy();
-      await newRegistrar.deployed();
+      await newRegistrar.waitForDeployment();
 
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
@@ -3384,7 +3384,7 @@ describe("ZNSSubRegistrar", () => {
       // SubRegistrar to upgrade to
       const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
       const newRegistrar = await factory.deploy();
-      await newRegistrar.deployed();
+      await newRegistrar.waitForDeployment();
 
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(lvl2SubOwner.address)).to.be.reverted;
@@ -3402,7 +3402,7 @@ describe("ZNSSubRegistrar", () => {
 
       const registrarFactory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
       const registrar = await registrarFactory.deploy();
-      await registrar.deployed();
+      await registrar.waitForDeployment();
 
       const domainLabel = "world";
 
@@ -3451,7 +3451,7 @@ describe("ZNSSubRegistrar", () => {
       // SubRegistrar to upgrade to
       const factory = new ZNSSubRegistrarUpgradeMock__factory(deployer);
       const newRegistrar = await factory.deploy();
-      await newRegistrar.deployed();
+      await newRegistrar.waitForDeployment();
 
       const tx = zns.subRegistrar.connect(deployer).upgradeTo(newRegistrar.address);
       await expect(tx).to.not.be.reverted;

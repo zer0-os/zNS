@@ -1,7 +1,7 @@
 import { BigNumber, ContractReceipt, Event } from "ethers";
 import { IZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 
 /**
  * Get a specific named event from a transaction log

@@ -458,7 +458,7 @@ describe("ZNSDomainToken", () => {
       // DomainToken to upgrade to
       const factory = new ZNSDomainToken__factory(deployer);
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Confirm the deployer is a governor
       expect(
@@ -474,7 +474,7 @@ describe("ZNSDomainToken", () => {
       // DomainToken to upgrade to
       const factory = new ZNSDomainTokenUpgradeMock__factory(deployer);
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Call to register a token
       const tokenId = ethers.BigNumber.from("1");
@@ -499,7 +499,7 @@ describe("ZNSDomainToken", () => {
 
       // DomainToken to upgrade to
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Confirm the caller is not a governor
       await expect(zns.accessController.checkGovernor(caller.address)).to.be.revertedWith(
