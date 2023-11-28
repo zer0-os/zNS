@@ -32,7 +32,6 @@ export class MongoDBAdapter {
     dbName,
     clientOpts,
   } : IMongoDBAdapterArgs) {
-    // TODO dep: add a way to get these from ENV
     this.logger = logger;
     this.client = new MongoClient(dbUri, clientOpts);
     this.clientOpts = clientOpts;

@@ -57,11 +57,10 @@ export class BaseDeployMission {
   async needsDeploy () {
     const dbContract = await this.getFromDB();
 
-    // TODO dep: refine these
     if (!dbContract) {
-      this.logger.debug(`${this.contractName} not found in DB, proceeding to deploy...`);
+      this.logger.info(`${this.contractName} not found in DB, proceeding to deploy...`);
     } else {
-      this.logger.debug(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
+      this.logger.info(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
 
       const contract = await this.campaign.deployer.getContractObject(
         this.contractName,
@@ -142,7 +141,7 @@ export class BaseDeployMission {
   }
 
   async verify () {
-    this.logger.info(`Verifying ${this.contractName} on Etherscan...`);
+    this.logger.debug(`Verifying ${this.contractName} on Etherscan...`);
     const { address } = await this.campaign[this.instanceName];
 
     const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
@@ -152,7 +151,7 @@ export class BaseDeployMission {
       ctorArgs,
     });
 
-    this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
+    this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
   }
 
   async getMonitoringData () : Promise<Array<ContractByName>> {
