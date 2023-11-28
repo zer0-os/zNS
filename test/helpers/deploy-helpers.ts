@@ -82,8 +82,6 @@ export const registerRootDomainBulk = async (
 ) : Promise<void> => {
   let index = 0;
 
-  // TODO need to return state for outer calling tests, better way to do this?
-  // tried reduce, map, filter, other array prototype methods but couldn't get it to work
   for(const domain of domains) {
     await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
       domain,
@@ -95,7 +93,7 @@ export const registerRootDomainBulk = async (
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
 
-    // To mint subdomains from this domain we must first set the price config, so we do that here
+    // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
     await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, {
       token: zns.meowToken.address,

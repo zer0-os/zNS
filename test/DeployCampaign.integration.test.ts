@@ -7,7 +7,7 @@ import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
-import { hashDomainLabel } from "./helpers";
+import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
@@ -81,8 +81,8 @@ describe("DeployCampaign - Integration", () => {
     //  CurvePricer, stake, open
     distConfig = {
       pricerContract: zns.curvePricer.address,
-      paymentType: 1,
-      accessType: 1,
+      paymentType: PaymentType.STAKE,
+      accessType: AccessType.OPEN,
     };
 
     users = [
@@ -169,13 +169,13 @@ describe("DeployCampaign - Integration", () => {
     const parents = [shortHash, mediumHash, longHash];
     const subdomains = [freeShortSubdomain, freeMediumSubdomain, freeLongSubdomain];
 
-    const balanceBeforePromises =  [
+    const balancePromises =  [
       zns.meowToken.balanceOf(userA.address),
       zns.meowToken.balanceOf(userB.address),
       zns.meowToken.balanceOf(userC.address),
     ];
 
-    const [balanceBeforeA, balanceBeforeB, balanceBeforeC ]= await Promise.all(balanceBeforePromises);
+    const [balanceBeforeA, balanceBeforeB, balanceBeforeC ]= await Promise.all(balancePromises);
 
     expect(await zns.registry.exists(freeShortSubHash)).to.be.false;
     expect(await zns.registry.exists(freeMediumSubHash)).to.be.false;
@@ -192,13 +192,11 @@ describe("DeployCampaign - Integration", () => {
       zns
     );
 
-    const balanceAfterPromises = [
-      zns.meowToken.balanceOf(userA.address),
-      zns.meowToken.balanceOf(userB.address),
-      zns.meowToken.balanceOf(userC.address),
-    ];
-
-    const [balanceAfterA, balanceAfterB, balanceAfterC ]= await Promise.all(balanceAfterPromises);
+    const [
+      balanceAfterA,
+      balanceAfterB,
+      balanceAfterC
+    ]= await Promise.all(balancePromises);
 
     // Owners of parent domains can mint subdomains for free
     expect(balanceBeforeA).to.eq(balanceAfterA);
@@ -215,7 +213,7 @@ describe("DeployCampaign - Integration", () => {
     const parents = [shortHash, mediumHash, longHash];
     const subdomains = [paidShortSubdomain, paidMediumSubdomain, paidLongSubdomain];
 
-    const balanceBeforePromises =  [
+    const balancePromises =  [
       zns.meowToken.balanceOf(userD.address),
       zns.meowToken.balanceOf(userE.address),
       zns.meowToken.balanceOf(userF.address),
@@ -225,7 +223,7 @@ describe("DeployCampaign - Integration", () => {
       balanceBeforeD,
       balanceBeforeE,
       balanceBeforeF,
-    ]= await Promise.all(balanceBeforePromises);
+    ]= await Promise.all(balancePromises);
 
     const [
       priceShort,
@@ -248,17 +246,11 @@ describe("DeployCampaign - Integration", () => {
       zns
     );
 
-    const balanceAfterPromises = [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
-    ];
-
     const [
       balanceAfterD,
       balanceAfterE,
       balanceAfterF,
-    ]= await Promise.all(balanceAfterPromises);
+    ]= await Promise.all(balancePromises);
 
     // Owners of parent domains can mint subdomains for free
     expect(balanceAfterD).to.eq(balanceBeforeD.sub(priceShort));

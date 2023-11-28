@@ -76,11 +76,8 @@ describe("ZNSRootRegistrar", () => {
       [deployer.address, admin.address],
     );
 
-    const logger = getLogger();
-
     const campaign = await runZnsCampaign({
       config,
-      logger,
     });
 
     zns = campaign.state.contracts;
@@ -106,8 +103,8 @@ describe("ZNSRootRegistrar", () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: zns.curvePricer.address,
-      paymentType: 1,
-      accessType: 1,
+      paymentType: PaymentType.STAKE,
+      accessType: AccessType.OPEN,
     };
 
     const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
