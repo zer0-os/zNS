@@ -86,7 +86,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        CurvePriceConfig calldata curvePriceConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
@@ -125,7 +126,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             domainAddress: domainAddress,
             tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: paymentConfig,
+            curvePriceConfig: curvePriceConfig
         });
 
         if (!isOwnerOrOperator) {

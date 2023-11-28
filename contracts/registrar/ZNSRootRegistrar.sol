@@ -11,6 +11,7 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
 
 
 /**
@@ -89,7 +90,8 @@ contract ZNSRootRegistrar is
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        CurvePriceConfig calldata priceConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
@@ -116,7 +118,8 @@ contract ZNSRootRegistrar is
                 name,
                 tokenURI,
                 true,
-                paymentConfig
+                paymentConfig,
+                priceConfig
             )
         );
 
@@ -124,6 +127,8 @@ contract ZNSRootRegistrar is
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
+
+        IZNSCurvePricer(address(distributionConfig.pricerContract)).setPriceConfig(domainHash, priceConfig);
 
         return domainHash;
     }

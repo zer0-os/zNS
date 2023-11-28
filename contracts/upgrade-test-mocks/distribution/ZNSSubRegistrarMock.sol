@@ -12,6 +12,7 @@ import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
 import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
+import { ICurvePriceConfig } from "../../types/ICurvePriceConfig.sol";
 
 
 enum AccessType {
@@ -77,7 +78,8 @@ contract ZNSSubRegistrarUpgradeMock is
         address domainAddress,
         string memory tokenURI,
         DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        ICurvePriceConfig.CurvePriceConfig calldata curvePriceConfig
     ) external returns (bytes32) {
         label.validate();
 
@@ -106,7 +108,8 @@ contract ZNSSubRegistrarUpgradeMock is
             domainAddress: domainAddress,
             tokenURI: tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: paymentConfig,
+            curvePriceConfig: curvePriceConfig
         });
 
         require(

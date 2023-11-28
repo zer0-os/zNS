@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { ICurvePriceConfig } from "../types/ICurvePriceConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
@@ -20,6 +21,7 @@ struct CoreRegisterArgs {
     string tokenURI;
     bool isStakePayment;
     PaymentConfig paymentConfig;
+    ICurvePriceConfig.CurvePriceConfig curvePriceConfig;
 }
 
 /**
@@ -41,7 +43,7 @@ struct CoreRegisterArgs {
  *      + `tokenURI`: The tokenURI for the domain to be registered
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
-interface IZNSRootRegistrar is IDistributionConfig {
+interface IZNSRootRegistrar is IDistributionConfig, ICurvePriceConfig {
 
     enum OwnerOf {
         NAME,
@@ -130,7 +132,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        CurvePriceConfig calldata curvePriceConfig
     ) external returns (bytes32);
 
     function coreRegister(

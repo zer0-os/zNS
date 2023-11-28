@@ -6,7 +6,9 @@ export * from "./constants";
 export * from "./balances";
 export * from "./errors";
 export * from "./validate-upgrade";
-export { EXECUTOR_ROLE } from "../../src/deploy/constants";
-export { REGISTRAR_ROLE } from "../../src/deploy/constants";
-export { ADMIN_ROLE } from "../../src/deploy/constants";
-export { GOVERNOR_ROLE } from "../../src/deploy/constants";
+export { 
+  EXECUTOR_ROLE,
+  REGISTRAR_ROLE,
+  ADMIN_ROLE,
+  GOVERNOR_ROLE
+} from "../../src/deploy/constants";

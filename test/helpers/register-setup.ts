@@ -10,6 +10,7 @@ import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty} from "./constants";
 import { getTokenContract } from "./tokens";
+import { DEFAULT_PRICE_CONFIG } from "./constants";
 
 const { AddressZero } = ethers.constants;
 
@@ -34,7 +35,8 @@ export const defaultRootRegistration = async ({
     domainContent, // Arbitrary address value
     tokenURI,
     distrConfig,
-    paymentConfigEmpty
+    paymentConfigEmpty,
+    DEFAULT_PRICE_CONFIG,
   );
 
   return tx.wait();
@@ -98,7 +100,8 @@ export const defaultSubdomainRegistration = async ({
     domainContent, // Arbitrary address value
     tokenURI,
     distrConfig,
-    paymentConfigEmpty
+    paymentConfigEmpty,
+    DEFAULT_PRICE_CONFIG,
   );
 
   return tx.wait();

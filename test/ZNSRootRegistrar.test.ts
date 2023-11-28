@@ -115,7 +115,8 @@ describe("ZNSRootRegistrar", () => {
       {
         token: zns.meowToken.address,
         beneficiary: user.address,
-      }
+      },
+      DEFAULT_PRICE_CONFIG,
     );
 
     const domainHash = hashDomainLabel(defaultDomain);
@@ -137,7 +138,8 @@ describe("ZNSRootRegistrar", () => {
       zns.addressResolver.address,
       tokenURI,
       distrConfig,
-      paymentConfigEmpty
+      paymentConfigEmpty,
+      DEFAULT_PRICE_CONFIG
     );
 
     const domainHash = hashDomainLabel(defaultDomain);
@@ -162,7 +164,8 @@ describe("ZNSRootRegistrar", () => {
       {
         token: ethers.constants.AddressZero,
         beneficiary: ethers.constants.AddressZero,
-      }
+      },
+      DEFAULT_PRICE_CONFIG
     );
 
     const receipt = await tx.wait();
@@ -177,6 +180,7 @@ describe("ZNSRootRegistrar", () => {
       tokenURI,
       distrConfigEmpty,
       paymentConfigEmpty,
+      DEFAULT_PRICE_CONFIG
     );
 
     const candidates = [
@@ -336,6 +340,7 @@ describe("ZNSRootRegistrar", () => {
           tokenURI: "",
           isStakePayment: false,
           paymentConfig: paymentConfigEmpty,
+          curvePriceConfig: DEFAULT_PRICE_CONFIG
         })
       ).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
@@ -459,7 +464,8 @@ describe("ZNSRootRegistrar", () => {
         {
           token: ethers.constants.AddressZero,
           beneficiary: ethers.constants.AddressZero,
-        }
+        },
+        DEFAULT_PRICE_CONFIG,
       );
 
       await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
@@ -476,10 +482,8 @@ describe("ZNSRootRegistrar", () => {
         ethers.constants.AddressZero,
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
-        {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
-        }
+        paymentConfigEmpty,
+        DEFAULT_PRICE_CONFIG,
       );
 
       await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
@@ -496,10 +500,8 @@ describe("ZNSRootRegistrar", () => {
         ethers.constants.AddressZero,
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
-        {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
-        }
+        paymentConfigEmpty,
+        DEFAULT_PRICE_CONFIG,
       );
 
       await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
@@ -560,10 +562,8 @@ describe("ZNSRootRegistrar", () => {
         ethers.constants.AddressZero,
         tokenURI,
         distrConfigEmpty,
-        {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
-        }
+        paymentConfigEmpty,
+        DEFAULT_PRICE_CONFIG,
       );
 
       const hashFromTS = hashDomainLabel(defaultDomain);
@@ -597,7 +597,8 @@ describe("ZNSRootRegistrar", () => {
         {
           token: ethers.constants.AddressZero,
           beneficiary: ethers.constants.AddressZero,
-        }
+        },
+        DEFAULT_PRICE_CONFIG,
       );
 
       const receipt = await tx.wait(0);
@@ -712,7 +713,8 @@ describe("ZNSRootRegistrar", () => {
         {
           token: ethers.constants.AddressZero,
           beneficiary: ethers.constants.AddressZero,
-        }
+        },
+        DEFAULT_PRICE_CONFIG,
       );
 
       await expect(tx).to.not.be.reverted;
@@ -774,7 +776,8 @@ describe("ZNSRootRegistrar", () => {
         {
           token: ethers.constants.AddressZero,
           beneficiary: ethers.constants.AddressZero,
-        }
+        },
+        DEFAULT_PRICE_CONFIG,
       );
 
       const userBalanceAfter = await zns.meowToken.balanceOf(user.address);
@@ -1281,7 +1284,8 @@ describe("ZNSRootRegistrar", () => {
         {
           token: ethers.constants.AddressZero,
           beneficiary: ethers.constants.AddressZero,
-        }
+        },
+        DEFAULT_PRICE_CONFIG
       );
 
 

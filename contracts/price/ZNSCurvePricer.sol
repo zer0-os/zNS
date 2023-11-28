@@ -24,6 +24,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
+    // TODO would be better to use onlyRegistrar
+    mapping(bytes32 domainHash => bool isSet) public isSetByRegistrar;
+
     /**
      * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
      * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
@@ -255,7 +258,20 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setPrecisionMultiplier(
         bytes32 domainHash,
         uint256 multiplier
-    ) public override onlyOwnerOrOperator(domainHash) {
+    ) public override {
+        
+        // In the initial registration, `setPriceConfig` is called by the registrar
+        // This is the only time this function can be called by someone other than the owner or an operator
+        // Setting the registrar as an operator would allow permanent access to modify the price config
+        // for a domain, so instead we allow a single call here and then it's never accessible again
+        if(isSetByRegistrar[domainHash]) {
+            // We set `isSetByRegistrar` to true in `setFeePercentage` to avoid breaking this one
+            require(
+                registry.isOwnerOrOperator(domainHash, msg.sender),
+                "ZNSCurvePricer: Not authorized. Only Owner or Operator allowed"
+            );
+        }
+
         require(multiplier != 0, "ZNSCurvePricer: precisionMultiplier cannot be 0");
         require(multiplier <= 10**18, "ZNSCurvePricer: precisionMultiplier cannot be greater than 10^18");
         priceConfigs[domainHash].precisionMultiplier = multiplier;
@@ -271,10 +287,19 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param domainHash The domain hash to set the fee percentage for
      * @param feePercentage The fee percentage to set
      */
-    function setFeePercentage(bytes32 domainHash, uint256 feePercentage)
-    public
-    override
-    onlyOwnerOrOperator(domainHash) {
+    function setFeePercentage(
+        bytes32 domainHash,
+        uint256 feePercentage
+    ) public override {
+
+        if(!isSetByRegistrar[domainHash]) {
+            isSetByRegistrar[domainHash] = true;
+        } else {
+            require(
+                registry.isOwnerOrOperator(domainHash, msg.sender),
+                "ZNSCurvePricer: Not authorized. Only Owner or Operator allowed"
+            );
+        }
         require(
             feePercentage <= PERCENTAGE_BASIS,
             "ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
