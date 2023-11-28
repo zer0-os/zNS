@@ -7,6 +7,9 @@ import {
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
+import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
+import { ProxyKinds } from "../constants";
+import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
 // TODO dep:
@@ -19,6 +22,7 @@ export class BaseDeployMission {
   campaign : DeployCampaign;
   logger : TLogger;
   config : IDeployCampaignConfig;
+  implAddress! : string | null;
 
   constructor ({
     campaign,
@@ -37,11 +41,11 @@ export class BaseDeployMission {
   async saveToDB (contract : Contract) {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-    const implAddress = this.proxyData.isProxy
+    this.implAddress = this.proxyData.isProxy
       ? await this.campaign.deployer.getProxyImplAddress(contract.address)
       : null;
 
-    const contractDbDoc = this.buildDbObject(contract, implAddress);
+    const contractDbDoc = this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
@@ -135,5 +139,48 @@ export class BaseDeployMission {
     if (await this.needsPostDeploy()) {
       await this.postDeploy();
     }
+  }
+
+  async verify () {
+    this.logger.info(`Verifying ${this.contractName} on Etherscan...`);
+    const { address } = await this.campaign[this.instanceName];
+
+    const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
+
+    await this.campaign.deployer.etherscanVerify({
+      address,
+      ctorArgs,
+    });
+
+    this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
+  }
+
+  async getMonitoringData () : Promise<Array<ContractByName>> {
+    const implName = this.contractName;
+    let implAddress = this.campaign[this.instanceName].address;
+
+    if (this.proxyData.isProxy) {
+      const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
+      const proxyAddress = this.campaign[this.instanceName].address;
+      implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
+
+      return [
+        {
+          name: proxyName,
+          address: proxyAddress,
+        },
+        {
+          name: implName,
+          address: implAddress,
+        },
+      ];
+    }
+
+    return [
+      {
+        name: implName,
+        address: implAddress,
+      },
+    ];
   }
 }

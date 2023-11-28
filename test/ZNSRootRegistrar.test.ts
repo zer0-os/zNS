@@ -69,7 +69,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    const config : IDeployCampaignConfig = await getConfig(
+    const config : IDeployCampaignConfig = getConfig(
       deployer,
       zeroVault,
       [deployer.address, governor.address],

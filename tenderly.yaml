@@ -1,4 +1,6 @@
-account_id: e750f9f2-65bc-4765-84a8-7f8dbddd73ee
+account_id: "zer0-os"
+project_slug: "zns-sepolia-test"
+provider: ""
 exports:
   hardhat:
     project_slug: zer0-os/zns-1
@@ -17,5 +19,3 @@ exports:
       istanbul_block: 0
       berlin_block: 0
       london_block: 0
-project_slug: zer0-os/zns-1
-provider: ""

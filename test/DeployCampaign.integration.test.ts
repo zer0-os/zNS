@@ -195,7 +195,7 @@ describe("DeployCampaign - Integration", () => {
     const [
       balanceAfterA,
       balanceAfterB,
-      balanceAfterC
+      balanceAfterC,
     ]= await Promise.all(balancePromises);
 
     // Owners of parent domains can mint subdomains for free
