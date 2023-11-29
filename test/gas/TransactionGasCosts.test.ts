@@ -114,7 +114,7 @@ describe("Transaction Gas Costs Test", () => {
     const paymentConfig = {
       token: zns.meowToken.address,
       beneficiary: rootOwner.address,
-    }
+    };
 
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
@@ -163,7 +163,7 @@ describe("Transaction Gas Costs Test", () => {
     const paymentConfig = {
       token: zns.meowToken.address,
       beneficiary: rootOwner.address,
-    }
+    };
 
     const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       rootHashDirect,
