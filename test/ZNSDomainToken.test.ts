@@ -20,7 +20,6 @@ import {
   DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
-import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
 
 

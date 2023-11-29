@@ -2,7 +2,6 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { parseEther } from "ethers/lib/utils";
 import { IZNSContracts } from "./helpers/types";
 import {
   deployZNS,

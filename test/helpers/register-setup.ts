@@ -1,15 +1,15 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
-  ICurvePriceConfig,
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { TransactionReceipt, ethers } from "ethers";
+import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI } from "./constants";
 import { getTokenContract } from "./tokens";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 const { ZeroAddress } = ethers;
 
@@ -28,7 +28,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
-}) : Promise<TransactionReceipt> => {
+}) : Promise<ContractTransactionReceipt | null> => {
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value

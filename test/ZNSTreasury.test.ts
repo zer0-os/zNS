@@ -18,7 +18,6 @@ import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
-import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");

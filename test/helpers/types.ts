@@ -29,7 +29,6 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-export { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 
 export type Maybe<T> = T | undefined;
