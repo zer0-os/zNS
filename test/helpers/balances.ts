@@ -16,8 +16,8 @@ export const checkBalance = async ({
 }) => {
   const balanceAfter = await token.balanceOf(userAddress);
   const diff = shouldDecrease
-    ? balanceBefore.sub(balanceAfter)
-    : balanceAfter.sub(balanceBefore);
+    ? balanceBefore - balanceAfter
+    : balanceAfter - balanceBefore;
 
   expect(diff).to.eq(target);
 };

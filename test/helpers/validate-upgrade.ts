@@ -22,13 +22,13 @@ export const validateUpgrade = async (
   // we can be sure these functions exist
   const newNumber = BigInt("123");
   await upgradedContract.connect(deployer).setNewMapping(newNumber);
-  await upgradedContract.setNewMappingSpecific(newNumber.add(1), deployer.address);
+  await upgradedContract.setNewMappingSpecific(newNumber + 1n, deployer.address);
   await upgradedContract.setNewNumber(newNumber);
   await upgradedContract.setNewAddress(deployer.address);
 
   const postUpgradeCalls = [
     upgradedContract.connect(deployer).newMapping(newNumber),
-    upgradedContract.newMapping(newNumber.add(1)),
+    upgradedContract.newMapping(newNumber + 1n),
     upgradedContract.newNumber(),
     upgradedContract.newAddress(),
   ];

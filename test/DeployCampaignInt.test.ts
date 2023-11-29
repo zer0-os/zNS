@@ -758,7 +758,7 @@ describe("Deploy Campaign Test", () => {
         config.stakingTokenAddress = MeowMainnet.address;
         config.rootPriceConfig.baseLength = BigInt(3);
         config.rootPriceConfig.maxLength = BigInt(5);
-        config.rootPriceConfig.maxPrice = ethers.constants.Zero;
+        config.rootPriceConfig.maxPrice = BigInt(0);
         config.rootPriceConfig.minPrice = ethers.parseEther("3");
 
         validate(config, "prod");

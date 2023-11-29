@@ -166,12 +166,12 @@ describe("ZNSTreasury", () => {
         token: zns.meowToken,
         balanceBefore: balanceBeforeStake,
         userAddress: user.address,
-        target: stake.add(fee),
+        target: stake + fee,
         shouldDecrease: true,
       });
 
       const zeroVaultBalanceAfterStake = await zns.meowToken.balanceOf(zeroVault.address);
-      expect(zeroVaultBalanceAfterStake).to.eq(zeroVaultBalanceBeforeStake.add(fee));
+      expect(zeroVaultBalanceAfterStake).to.eq(zeroVaultBalanceBeforeStake + fee);
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
@@ -180,9 +180,9 @@ describe("ZNSTreasury", () => {
           ethers.ZeroHash,
           domainHash,
           user.address,
-          ethers.constants.Zero,
-          ethers.constants.Zero,
-          ethers.constants.Zero
+          BigInt(0),
+          BigInt(0),
+          BigInt(0)
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
@@ -203,7 +203,7 @@ describe("ZNSTreasury", () => {
         domainHash,
         user.address,
         expectedPrice,
-        ethers.constants.Zero,
+        BigInt(0),
         protocolFee
       );
 
@@ -215,7 +215,7 @@ describe("ZNSTreasury", () => {
           user.address,
           zns.meowToken.address,
           expectedPrice,
-          ethers.constants.Zero,
+          BigInt(0),
           protocolFee
         );
     });
@@ -231,7 +231,7 @@ describe("ZNSTreasury", () => {
         domainHash,
         user.address,
         stakeAmt,
-        ethers.constants.Zero,
+        BigInt(0),
         protocolFee
       );
 
@@ -284,8 +284,8 @@ describe("ZNSTreasury", () => {
       const paymentAmt = parseEther("1000");
       const protocolFee = parseEther("10");
       // give tokens to mock registrar
-      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt.add(protocolFee));
-      await zns.meowToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt.add(protocolFee));
+      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
+      await zns.meowToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt + protocolFee);
 
       const userBalanceBefore = await zns.meowToken.balanceOf(user.address);
       const payerBalanceBefore = await zns.meowToken.balanceOf(mockRegistrar.address);
@@ -303,9 +303,9 @@ describe("ZNSTreasury", () => {
       const payerBalanceAfter = await zns.meowToken.balanceOf(mockRegistrar.address);
       const zeroVaultBalanceAfter = await zns.meowToken.balanceOf(zeroVault.address);
 
-      expect(userBalanceAfter.sub(userBalanceBefore)).to.eq(paymentAmt);
-      expect(payerBalanceBefore.sub(payerBalanceAfter)).to.eq(paymentAmt.add(protocolFee));
-      expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
+      expect(userBalanceAfter - userBalanceBefore).to.eq(paymentAmt);
+      expect(payerBalanceBefore - payerBalanceAfter).to.eq(paymentAmt + protocolFee);
+      expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
     });
 
     it("should revert if paymentConfig not set", async () => {
@@ -350,8 +350,8 @@ describe("ZNSTreasury", () => {
       const paymentAmt = parseEther("100");
       const protocolFee = parseEther("7");
       // give tokens to mock registrar
-      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt.add(protocolFee));
-      await zns.meowToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt.add(protocolFee));
+      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
+      await zns.meowToken.connect(mockRegistrar).approve(zns.treasury.address, paymentAmt + protocolFee);
 
       await expect(
         zns.treasury.connect(mockRegistrar).processDirectPayment(
@@ -626,7 +626,7 @@ describe("ZNSTreasury", () => {
         newHash,
         deployer.address,
         expectedPrice,
-        ethers.constants.Zero,
+        BigInt(0),
         stakeFee
       );
 

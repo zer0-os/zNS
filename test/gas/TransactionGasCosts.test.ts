@@ -128,7 +128,7 @@ describe("Transaction Gas Costs Test", () => {
 
     let gasDiff = BigInt(0);
     if (prevGas) {
-      gasDiff = gasUsed.sub(BigInt(prevGas));
+      gasDiff = gasUsed - BigInt(prevGas);
     }
 
     console.log(`
@@ -137,7 +137,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
+    if (gasDiff > 1000 || gasDiff < -1000) {
       fs.writeFileSync(
         gasCostFile,
         JSON.stringify({
@@ -171,7 +171,7 @@ describe("Transaction Gas Costs Test", () => {
     const prevGas = previous[title];
     let gasDiff = BigInt(0);
     if (prevGas) {
-      gasDiff = gasUsed.sub(BigInt(prevGas));
+      gasDiff = gasUsed - BigInt(prevGas);
     }
 
     console.log(`
@@ -180,7 +180,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
+    if (gasDiff > 1000 || gasDiff < -1000) {
       fs.writeFileSync(
         gasCostFile,
         JSON.stringify({

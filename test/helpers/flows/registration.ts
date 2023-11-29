@@ -197,7 +197,7 @@ export const validatePathRegistration = async ({
     }
 
     const protocolFee = getStakingOrProtocolFee(
-      expectedPrice.add(stakeFee),
+      expectedPrice + stakeFee,
       curveFeePercentage
     );
 
@@ -214,16 +214,16 @@ export const validatePathRegistration = async ({
     } = regResults[idx];
 
     // fee can be 0
-    const expUserBalDiff = expectedPrice.add(stakeFee).add(protocolFee);
+    const expUserBalDiff = expectedPrice + stakeFee + protocolFee;
 
     // check user balance
-    expect(userBalanceBefore.sub(userBalanceAfter)).to.eq(expUserBalDiff);
+    expect(userBalanceBefore - userBalanceAfter).to.eq(expUserBalDiff);
     // check parent balance
-    expect(parentBalanceAfter.sub(parentBalanceBefore)).to.eq(expParentBalDiff);
+    expect(parentBalanceAfter - parentBalanceBefore).to.eq(expParentBalDiff);
     // check treasury stakes
-    expect(treasuryBalanceAfter.sub(treasuryBalanceBefore)).to.eq(expTreasuryBalDiff);
+    expect(treasuryBalanceAfter - treasuryBalanceBefore).to.eq(expTreasuryBalDiff);
     // check zero vault exempt fees
-    expect(zeroVaultBalanceAfter.sub(zeroVaultBalanceBefore)).to.eq(protocolFee);
+    expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
 
     const dataFromReg = await zns.registry.getDomainRecord(domainHash);
     expect(dataFromReg.owner).to.eq(user.address);

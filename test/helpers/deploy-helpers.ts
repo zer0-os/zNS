@@ -54,12 +54,12 @@ export const getPriceBulk = async (
       true,
     );
 
-    const priceWithFee = price.add(stakeFee);
+    const priceWithFee = price + stakeFee;
 
     if (includeProtocolFee) {
       const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, priceWithFee);
 
-      prices.push(priceWithFee.add(protocolFee));
+      prices.push(priceWithFee + protocolFee);
     } else {
       prices.push(priceWithFee);
     }

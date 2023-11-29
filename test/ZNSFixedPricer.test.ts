@@ -179,7 +179,7 @@ describe("ZNSFixedPricer", () => {
     } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname", false);
 
     expect(price).to.equal(newPrice);
-    expect(fee).to.equal(newPrice.mul(newFee).div(DEFAULT_PERCENTAGE_BASIS));
+    expect(fee).to.equal(newPrice * newFee / DEFAULT_PERCENTAGE_BASIS);
   });
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
@@ -212,7 +212,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
     await expect(
-      zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS.add(1))
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS + 1n)
     ).to.be.revertedWith(
       "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
     );

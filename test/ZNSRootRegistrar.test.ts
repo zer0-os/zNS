@@ -860,7 +860,7 @@ describe("ZNSRootRegistrar", () => {
       expect(finalToken).to.equal(ethers.ZeroAddress);
 
       // Verify final balances
-      const computedFinalBalance = balance.add(staked);
+      const computedFinalBalance = balance + staked;
       const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedFinalBalance).to.equal(finalBalance);
     });
@@ -965,8 +965,8 @@ describe("ZNSRootRegistrar", () => {
       expect(finalToken).to.equal(ethers.ZeroAddress);
 
       // Verify final balances
-      const computedBalanceAfterStaking = balanceAfterStaking.add(staked);
-      const balanceMinusFee = balance.sub(expectedStakeFee);
+      const computedBalanceAfterStaking = balanceAfterStaking + staked;
+      const balanceMinusFee = balance - expectedStakeFee;
       expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
       const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedBalanceAfterStaking).to.equal(finalBalance);

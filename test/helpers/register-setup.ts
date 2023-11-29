@@ -62,8 +62,8 @@ export const approveForParent = async ({
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
   const tokenContract = getTokenContract(tokenAddress, user);
 
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price.add(parentFee));
-  const toApprove = price.add(parentFee).add(protocolFee);
+  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
+  const toApprove = price + parentFee + protocolFee;
 
   return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
 };
