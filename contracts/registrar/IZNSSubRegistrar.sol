@@ -40,6 +40,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     */
     event MintlistUpdated(
         bytes32 indexed domainHash,
+        uint256 indexed ownerIndex,
         address[] candidates,
         bool[] allowed
     );

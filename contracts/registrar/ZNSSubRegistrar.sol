@@ -289,7 +289,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             mintlistForDomain.list[ownerIndex][candidates[i]] = allowed[i];
         }
 
-        emit MintlistUpdated(domainHash, candidates, allowed);
+        emit MintlistUpdated(domainHash, ownerIndex, candidates, allowed);
     }
 
     function isMintlistedForDomain(
