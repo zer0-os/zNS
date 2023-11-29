@@ -2637,7 +2637,7 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it.only("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
+    it("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
       const { domainHash } = regResults[1];
 
       const candidatesArr = [
