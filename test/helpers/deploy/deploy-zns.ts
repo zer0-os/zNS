@@ -83,6 +83,7 @@ export const deployRegistry = async (
   isTenderlyRun = false,
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
+  // TODO ethers: figure out why this is happening with OZ guys.
   const registry = await hre.upgrades.deployProxy(
     registryFactory,
     [
@@ -135,17 +136,19 @@ export const deployDomainToken = async (
     {
       kind: "uups",
     }
-  ) as ZNSDomainToken;
+  ) as unknown as ZNSDomainToken;
 
   await domainToken.waitForDeployment();
+
+  const domainTokenAddress = await domainToken.getAddress();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address: domainToken.address,
+      address: domainTokenAddress,
     });
 
-    const impl = await getProxyImplAddress(domainToken.address);
+    const impl = await getProxyImplAddress(domainTokenAddress);
 
     await hre.tenderly.verify({
       name: domainTokenName,
@@ -153,7 +156,7 @@ export const deployDomainToken = async (
     });
 
     console.log(`ZNSDomainToken deployed at:
-                proxy: ${domainToken.address}
+                proxy: ${domainTokenAddress}
                 implementation: ${impl}`);
   }
 
@@ -175,7 +178,7 @@ export const deployMeowToken = async (
     {
       kind: "transparent",
     }
-  ) as MeowTokenMock;
+  ) as unknown as MeowTokenMock;
 
   await meowToken.waitForDeployment();
 

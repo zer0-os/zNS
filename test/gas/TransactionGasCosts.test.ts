@@ -48,7 +48,7 @@ describe("Transaction Gas Costs Test", () => {
     await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_PRICE_CONFIG);
 
     config = {
-      pricerContract: zns.fixedPricer.address,
+      pricerContract: await zns.fixedPricer.getAddress(),
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
@@ -61,7 +61,7 @@ describe("Transaction Gas Costs Test", () => {
       ].map(async ({ address }) =>
         zns.meowToken.mint(address, ethers.parseEther("1000000")))
     );
-    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
 
     rootHashDirect = await registrationWithSetup({
       zns,
@@ -70,11 +70,11 @@ describe("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          pricerContract: zns.curvePricer.address,
+          pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
-          token: zns.meowToken.address,
+          token: await zns.meowToken.getAddress(),
           beneficiary: rootOwner.address,
         },
         priceConfig: DEFAULT_PRICE_CONFIG,
@@ -108,7 +108,7 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Root Domain Price", async function () {
     // approve
-    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
     // register root domain
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
@@ -151,7 +151,7 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Subdomain Price", async function () {
     // approve
-    await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
     // register subdomain
     const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       rootHashDirect,

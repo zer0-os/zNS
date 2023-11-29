@@ -15,7 +15,7 @@ export const approveBulk = async (
 ) => {
   for (const signer of signers) {
     const tx = await zns.meowToken.connect(signer).approve(
-      zns.treasury.address,
+      await zns.treasury.getAddress(),
       ethers.constants.MaxUint256,
     );
 
@@ -96,7 +96,7 @@ export const registerRootDomainBulk = async (
     // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
     await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: signers[index].address,
     });
 

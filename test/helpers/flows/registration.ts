@@ -46,7 +46,7 @@ export const registerDomainPath = async ({
       const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
-      if (paymentTokenAddress === zns.meowToken.address) {
+      if (paymentTokenAddress === await zns.meowToken.getAddress()) {
         paymentTokenContract = zns.meowToken;
       } else {
         paymentTokenContract = getTokenContract(paymentTokenAddress, config.user);
@@ -57,7 +57,7 @@ export const registerDomainPath = async ({
       ? BigInt(0)
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceBefore = await paymentTokenContract.balanceOf(config.user.address);
-    const treasuryBalanceBefore = await paymentTokenContract.balanceOf(zns.treasury.address);
+    const treasuryBalanceBefore = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
     const zeroVaultBalanceBefore = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
 
     const domainHash = await registrationWithSetup({
@@ -70,7 +70,7 @@ export const registerDomainPath = async ({
       ? BigInt(0)
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceAfter = await paymentTokenContract.balanceOf(config.user.address);
-    const treasuryBalanceAfter = await paymentTokenContract.balanceOf(zns.treasury.address);
+    const treasuryBalanceAfter = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
     const zeroVaultBalanceAfter = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
 
     const domainObj = {
@@ -153,7 +153,7 @@ export const validatePathRegistration = async ({
       } = config;
       ({ paymentType } = config);
 
-      if (pricerContract === zns.fixedPricer.address) {
+      if (pricerContract === await zns.fixedPricer.getAddress()) {
         ({
           price: expectedPrice,
           fee: stakeFee,
@@ -227,7 +227,7 @@ export const validatePathRegistration = async ({
 
     const dataFromReg = await zns.registry.getDomainRecord(domainHash);
     expect(dataFromReg.owner).to.eq(user.address);
-    expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
+    expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
 
     const tokenId = BigInt(domainHash).toString();
     const tokenOwner = await zns.domainToken.ownerOf(tokenId);

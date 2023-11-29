@@ -17,7 +17,7 @@ import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { ZNSFixedPricer__factory, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
@@ -46,17 +46,17 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
-        pricerContract: zns.fixedPricer.address,
+        pricerContract: await zns.fixedPricer.getAddress(),
         accessType: 1,
       },
       paymentConfig: {
-        token: zns.meowToken.address,
+        token: await zns.meowToken.getAddress(),
         beneficiary: user.address,
       },
       priceConfig: {
@@ -74,20 +74,20 @@ describe("ZNSFixedPricer", () => {
   });
 
   it("should deploy with correct parameters", async () => {
-    expect(await zns.fixedPricer.getAccessController()).to.equal(zns.accessController.address);
-    expect(await zns.fixedPricer.registry()).to.equal(zns.registry.address);
+    expect(await zns.fixedPricer.getAccessController()).to.equal(await zns.accessController.getAddress());
+    expect(await zns.fixedPricer.registry()).to.equal(await zns.registry.getAddress());
   });
 
   it("should NOT initialize twice", async () => {
     await expect(zns.fixedPricer.initialize(
-      zns.accessController.address,
-      zns.registry.address,
+      await zns.accessController.getAddress(),
+      await zns.registry.getAddress(),
     )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSFixedPricer__factory(deployer);
-    const impl = await getProxyImplAddress(zns.fixedPricer.address);
+    const impl = await getProxyImplAddress(await zns.fixedPricer.getAddress());
     const implContract = factory.attach(impl);
 
     await expect(
@@ -133,8 +133,8 @@ describe("ZNSFixedPricer", () => {
     await expect(
       deployFixedPricer({
         deployer: random,
-        acAddress: zns.accessController.address,
-        regAddress: zns.registry.address,
+        acAddress: await zns.accessController.getAddress(),
+        regAddress: await zns.registry.getAddress(),
       }),
     ).to.be.revertedWith(
       getAccessRevertMsg(random.address, ADMIN_ROLE)
@@ -265,7 +265,7 @@ describe("ZNSFixedPricer", () => {
     ).to.equal(random.address);
 
     // set back for other tests
-    await zns.fixedPricer.connect(admin).setRegistry(zns.registry.address);
+    await zns.fixedPricer.connect(admin).setRegistry(await zns.registry.getAddress());
   });
 
   it("#setRegistry() should revert if called by anyone other than ADMIN_ROLE", async () => {
@@ -303,17 +303,17 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
       await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {
           paymentType: PaymentType.DIRECT,
-          pricerContract: zns.fixedPricer.address,
+          pricerContract: await zns.fixedPricer.getAddress(),
           accessType: 1,
         },
         paymentConfig: {
-          token: zns.meowToken.address,
+          token: await zns.meowToken.getAddress(),
           beneficiary: user.address,
         },
         priceConfig: {
@@ -344,8 +344,8 @@ describe("ZNSFixedPricer", () => {
 
       await expect(
         zns.fixedPricer.connect(deployer).initialize(
-          zns.accessController.address,
-          zns.registry.address,
+          await zns.accessController.getAddress(),
+          await zns.registry.getAddress(),
         )
       ).to.be.revertedWith(INITIALIZED_ERR);
     });

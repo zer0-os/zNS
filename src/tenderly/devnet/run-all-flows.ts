@@ -31,12 +31,12 @@ export const runAllFlows = async () => {
 
   const fullRootConfig = {
     distrConfig: {
-      pricerContract: zns.fixedPricer.address,
+      pricerContract: await zns.fixedPricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: 1,
     },
     paymentConfig: {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: governor.address,
     },
     priceConfig: {
@@ -46,7 +46,7 @@ export const runAllFlows = async () => {
   };
 
   // get some funds and approve funds for treasury
-  await zns.meowToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
+  await zns.meowToken.connect(governor).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
   const rootHash = await registrationWithSetup({
     zns,
@@ -58,19 +58,19 @@ export const runAllFlows = async () => {
   const subdomainLabel = "subdomain";
   const fullSubConfig = {
     distrConfig: {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.DIRECT,
       accessType: 1,
     },
     paymentConfig: {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: user.address,
     },
     priceConfig: DEFAULT_PRICE_CONFIG,
   };
 
   await zns.meowToken.transfer(user.address, ethers.parseEther("10000"));
-  await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+  await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
   await registrationWithSetup({
     zns,

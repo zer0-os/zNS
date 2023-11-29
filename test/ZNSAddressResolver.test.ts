@@ -46,7 +46,7 @@ describe("ZNSAddressResolver", () => {
 
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, zns.addressResolver.address);
+    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await zns.addressResolver.getAddress());
 
     await zns.registry.connect(mockRegistrar)
       .createDomainRecord(
@@ -58,7 +58,7 @@ describe("ZNSAddressResolver", () => {
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSAddressResolver__factory(deployer);
-    const impl = await getProxyImplAddress(zns.addressResolver.address);
+    const impl = await getProxyImplAddress(await zns.addressResolver.getAddress());
     const implContract = factory.attach(impl);
 
     await expect(
@@ -72,7 +72,7 @@ describe("ZNSAddressResolver", () => {
   it("Should get the AddressResolver", async () => { // Copy of registry tests
     // The domain exists
     const existResolver = await zns.registry.getDomainResolver(wilderDomainHash);
-    expect(existResolver).to.eq(zns.addressResolver.address);
+    expect(existResolver).to.eq(await zns.addressResolver.getAddress());
   });
 
   it("Returns 0 when the domain doesnt exist", async () => {
@@ -83,7 +83,7 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should have registry address correctly set", async () => {
-    expect(await zns.addressResolver.registry()).to.equal(zns.registry.address);
+    expect(await zns.addressResolver.registry()).to.equal(await zns.registry.getAddress());
   });
 
   it("Should setRegistry() correctly with ADMIN_ROLE", async () => {
@@ -193,7 +193,7 @@ describe("ZNSAddressResolver", () => {
     await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
 
     const resolverAddress = await zns.registry.getDomainResolver(wilderDomainHash);
-    expect(resolverAddress).to.eq(zns.addressResolver.address);
+    expect(resolverAddress).to.eq(await zns.addressResolver.getAddress());
 
     const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
     expect(resolvedAddress).to.eq(user.address);
@@ -211,7 +211,7 @@ describe("ZNSAddressResolver", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newAddressResolver.address);
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(await newAddressResolver.getAddress());
 
       await expect(upgradeTx).to.not.be.reverted;
     });
@@ -230,7 +230,7 @@ describe("ZNSAddressResolver", () => {
         getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
       );
 
-      const upgradeTx = zns.domainToken.connect(operator).upgradeTo(newAddressResolver.address);
+      const upgradeTx = zns.domainToken.connect(operator).upgradeTo(await newAddressResolver.getAddress());
 
       await expect(upgradeTx).to.be.revertedWith(
         getAccessRevertMsg(operator.address, GOVERNOR_ROLE)

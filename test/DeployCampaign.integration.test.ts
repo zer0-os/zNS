@@ -80,7 +80,7 @@ describe("DeployCampaign - Integration", () => {
 
     //  CurvePricer, stake, open
     distConfig = {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };

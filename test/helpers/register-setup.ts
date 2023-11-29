@@ -53,9 +53,9 @@ export const approveForParent = async ({
   const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
   let price = BigInt(0);
   let parentFee = BigInt(0);
-  if (pricerContract === zns.curvePricer.address) {
+  if (pricerContract === await zns.curvePricer.getAddress()) {
     [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
-  } else if (pricerContract === zns.fixedPricer.address) {
+  } else if (pricerContract === await zns.fixedPricer.getAddress()) {
     [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel, false);
   }
 
@@ -65,7 +65,7 @@ export const approveForParent = async ({
   const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
 
-  return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
+  return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
 };
 
 /**
@@ -167,7 +167,7 @@ export const registrationWithSetup = async ({
   //  optimize for the best UX!
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address && setConfigs) {
+  if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
     await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       {
@@ -175,7 +175,7 @@ export const registrationWithSetup = async ({
         isSet: true,
       },
     );
-  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address && setConfigs) {
+  } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       {

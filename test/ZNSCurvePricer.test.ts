@@ -56,17 +56,17 @@ describe("ZNSCurvePricer", () => {
       adminAddresses: [admin.address],
     });
 
-    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
     const fullConfig = {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
-        pricerContract: zns.curvePricer.address,
+        pricerContract: await zns.curvePricer.getAddress(),
         accessType: 1,
       },
       paymentConfig: {
-        token: zns.meowToken.address,
+        token: await zns.meowToken.getAddress(),
         beneficiary: user.address,
       },
       priceConfig: DEFAULT_PRICE_CONFIG,
@@ -115,8 +115,8 @@ describe("ZNSCurvePricer", () => {
     const regFromSC = await zns.curvePricer.registry();
     const acFromSC = await zns.curvePricer.getAccessController();
 
-    expect(regFromSC).to.eq(zns.registry.address);
-    expect(acFromSC).to.eq(zns.accessController.address);
+    expect(regFromSC).to.eq(await zns.registry.getAddress());
+    expect(acFromSC).to.eq(await zns.accessController.getAddress());
   });
 
   describe("#getPrice", async () => {

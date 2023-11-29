@@ -653,7 +653,7 @@ describe("Deploy Campaign Test", () => {
       expect(await zns.accessController.isAdmin(userB.address)).to.be.true;
       expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
       expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
-      expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
+      expect(rootPaymentConfig.token).to.eq(await zns.meowToken.getAddress());
       expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
 
       await dbAdapter.dropDB();

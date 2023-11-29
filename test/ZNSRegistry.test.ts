@@ -66,7 +66,7 @@ describe("ZNSRegistry", () => {
   it("Cannot be initialized twice", async () => {
     await expect(
       zns.registry.initialize(
-        zns.accessController.address
+        await zns.accessController.getAddress()
       )
     ).to.be.revertedWith(
       INITIALIZED_ERR
@@ -75,7 +75,7 @@ describe("ZNSRegistry", () => {
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSRegistry__factory(deployer);
-    const impl = await getProxyImplAddress(zns.registry.address);
+    const impl = await getProxyImplAddress(await zns.registry.getAddress());
     const implContract = factory.attach(impl);
 
     await expect(

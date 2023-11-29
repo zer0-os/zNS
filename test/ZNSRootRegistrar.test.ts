@@ -82,13 +82,13 @@ describe("ZNSRootRegistrar", () => {
     mongoAdapter = campaign.dbAdapter;
 
     await zns.meowToken.connect(deployer).approve(
-      zns.treasury.address,
+      await zns.treasury.getAddress(),
       ethers.MaxUint256
     );
 
     userBalanceInitial = ethers.parseEther("100000000000");
     // Give funds to user
-    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.MaxUint256);
+    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
@@ -96,10 +96,10 @@ describe("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it("Gas tests", async () => {
+  it.only("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };
@@ -149,7 +149,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Should NOT initialize the implementation contract", async () => {
     const factory = new ZNSRootRegistrar__factory(deployer);
-    const impl = await getProxyImplAddress(zns.rootRegistrar.address);
+    const impl = await getProxyImplAddress(await zns.rootRegistrar.getAddress());
     const implContract = factory.attach(impl);
 
     await expect(
@@ -225,7 +225,7 @@ describe("ZNSRootRegistrar", () => {
     const balance = await zns.meowToken.balanceOf(user.address);
     expect(balance).to.eq(userBalanceInitial);
 
-    const allowance = await zns.meowToken.allowance(user.address, zns.treasury.address);
+    const allowance = await zns.meowToken.allowance(user.address, await zns.treasury.getAddress());
     expect(allowance).to.eq(ethers.constants.MaxUint256);
   });
 
@@ -238,11 +238,11 @@ describe("ZNSRootRegistrar", () => {
     const tx = upgrades.deployProxy(
       registrarFactory,
       [
-        zns.accessController.address,
-        zns.registry.address,
-        zns.curvePricer.address,
-        zns.treasury.address,
-        zns.domainToken.address,
+        await zns.accessController.getAddress(),
+        await zns.registry.getAddress(),
+        await zns.curvePricer.getAddress(),
+        await zns.treasury.getAddress(),
+        await zns.domainToken.getAddress(),
       ],
       {
         kind: "uups",
@@ -254,7 +254,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Should NOT initialize twice", async () => {
     const tx = zns.rootRegistrar.connect(deployer).initialize(
-      zns.accessController.address,
+      await zns.accessController.getAddress(),
       randomUser.address,
       randomUser.address,
       randomUser.address,
@@ -511,7 +511,7 @@ describe("ZNSRootRegistrar", () => {
 
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
       const distrConfig = {
-        pricerContract: zns.fixedPricer.address,
+        pricerContract: await zns.fixedPricer.getAddress(),
         accessType: AccessType.OPEN,
         paymentType: PaymentType.DIRECT,
       };
@@ -577,7 +577,7 @@ describe("ZNSRootRegistrar", () => {
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
 
       expect(staked).to.eq(expectedPrice);
-      expect(token).to.eq(zns.meowToken.address);
+      expect(token).to.eq(await zns.meowToken.getAddress());
     });
 
     it("Sets the correct data in Registry", async () => {
@@ -597,7 +597,7 @@ describe("ZNSRootRegistrar", () => {
       } = await zns.registry.getDomainRecord(domainHash);
 
       expect(ownerFromReg).to.eq(user.address);
-      expect(resolverFromReg).to.eq(zns.addressResolver.address);
+      expect(resolverFromReg).to.eq(await zns.addressResolver.getAddress());
     });
 
     it("Fails when the user does not have enough funds", async () => {
@@ -669,12 +669,12 @@ describe("ZNSRootRegistrar", () => {
         user,
         zns,
         domainName: defaultDomain,
-        domainContent: zns.rootRegistrar.address,
+        domainContent: await zns.rootRegistrar.getAddress(),
       });
       const domainHash = await getDomainHashFromReceipt(tx);
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
-      expect(resolvedAddress).to.eq(zns.rootRegistrar.address);
+      expect(resolvedAddress).to.eq(await zns.rootRegistrar.getAddress());
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
@@ -742,7 +742,7 @@ describe("ZNSRootRegistrar", () => {
       // Verify same amount is staked
       const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-      expect(tokenAfterReclaim).to.equal(zns.meowToken.address);
+      expect(tokenAfterReclaim).to.equal(await zns.meowToken.getAddress());
       expect(token).to.equal(tokenAfterReclaim);
     });
 
@@ -823,7 +823,7 @@ describe("ZNSRootRegistrar", () => {
       // Verify same amount is staked
       const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.equal(stakedAfterReclaim);
-      expect(tokenAfterReclaim).to.equal(zns.meowToken.address);
+      expect(tokenAfterReclaim).to.equal(await zns.meowToken.getAddress());
       expect(token).to.equal(tokenAfterReclaim);
     });
 
@@ -843,7 +843,7 @@ describe("ZNSRootRegistrar", () => {
       } = getPriceObject(defaultDomain, DEFAULT_PRICE_CONFIG);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
-      expect(token).to.eq(zns.meowToken.address);
+      expect(token).to.eq(await zns.meowToken.getAddress());
 
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
@@ -874,7 +874,7 @@ describe("ZNSRootRegistrar", () => {
         zns,
         domainName: defaultDomain,
         distrConfig: {
-          pricerContract: zns.fixedPricer.address,
+          pricerContract: await zns.fixedPricer.getAddress(),
           paymentType: PaymentType.DIRECT,
           accessType: AccessType.OPEN,
         },
@@ -951,7 +951,7 @@ describe("ZNSRootRegistrar", () => {
       } = getPriceObject(defaultDomain, DEFAULT_PRICE_CONFIG);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
       expect(staked).to.eq(expectedStaked);
-      expect(token).to.eq(zns.meowToken.address);
+      expect(token).to.eq(await zns.meowToken.getAddress());
 
       // Get balance after staking
       const balanceAfterStaking = await zns.meowToken.balanceOf(user.address);
@@ -1186,7 +1186,7 @@ describe("ZNSRootRegistrar", () => {
       const domainName = "world";
       const domainHash = hashDomainLabel(domainName);
 
-      await zns.meowToken.connect(randomUser).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.connect(randomUser).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
       await zns.meowToken.mint(randomUser.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(

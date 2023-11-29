@@ -49,7 +49,7 @@ describe("ZNSDomainToken", () => {
   });
 
   it("should initialize correctly", async () => {
-    expect(await zns.domainToken.getAccessController()).to.equal(zns.accessController.address);
+    expect(await zns.domainToken.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
     const royaltyInfo = await zns.domainToken.royaltyInfo("0", parseEther("100"));
@@ -69,7 +69,7 @@ describe("ZNSDomainToken", () => {
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSDomainToken__factory(deployer);
-    const impl = await getProxyImplAddress(zns.domainToken.address);
+    const impl = await getProxyImplAddress(await zns.domainToken.getAddress());
     const implContract = factory.attach(impl);
 
     await expect(
@@ -202,14 +202,14 @@ describe("ZNSDomainToken", () => {
       expect(
         await zns.domainToken.getAccessController()
       ).to.equal(
-        zns.accessController.address
+        await zns.accessController.getAddress()
       );
     });
   });
 
   describe("Royalties", () => {
     it("should set and correctly retrieve default royalty", async () => {
-      const assetPrice = parseEther("164");
+      const assetPrice = ethers.parseEther("164");
 
       const initialRoyaltyInfo = await zns.domainToken.royaltyInfo("0", assetPrice);
 
