@@ -3403,8 +3403,8 @@ describe("ZNSSubRegistrar", () => {
 
       const domainLabel = "world";
 
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
-      await zns.meowToken.mint(lvl2SubOwner.address, parseEther("1000000"));
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.meowToken.mint(lvl2SubOwner.address, ethers.parseEther("1000000"));
 
       const domainHash = await registrationWithSetup({
         zns,
@@ -3462,8 +3462,8 @@ describe("ZNSSubRegistrar", () => {
       expect(rootConfigBefore.pricerContract).to.eq(await zns.fixedPricer.getAddress());
       expect(rootConfigBefore.paymentType).to.eq(PaymentType.DIRECT);
 
-      await zns.meowToken.mint(lvl2SubOwner.address, parseEther("1000000"));
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), parseEther("1000000"));
+      await zns.meowToken.mint(lvl2SubOwner.address, ethers.parseEther("1000000"));
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.parseEther("1000000"));
 
       const subConfigToSet = {
         accessType: AccessType.MINTLIST,

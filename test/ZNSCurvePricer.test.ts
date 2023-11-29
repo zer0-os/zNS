@@ -290,8 +290,8 @@ describe("ZNSCurvePricer", () => {
       const newConfig = {
         baseLength: BigInt("6"),
         maxLength: BigInt("35"),
-        maxPrice: parseEther("150"),
-        minPrice: parseEther("10"),
+        maxPrice: ethers.parseEther("150"),
+        minPrice: ethers.parseEther("10"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
         isSet: true,
@@ -326,8 +326,8 @@ describe("ZNSCurvePricer", () => {
       const newConfig = {
         baseLength: BigInt("6"),
         maxLength: BigInt("20"),
-        maxPrice: parseEther("10"),
-        minPrice: parseEther("6"),
+        maxPrice: ethers.parseEther("10"),
+        minPrice: ethers.parseEther("6"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
         isSet: true,
@@ -344,8 +344,8 @@ describe("ZNSCurvePricer", () => {
     //   const newConfig = {
     //     baseLength: BigInt("5"),
     //     maxLength: BigInt("10"),
-    //     maxPrice: parseEther("10"),
-    //     minPrice: parseEther("5.5"),
+    //     maxPrice: ethers.parseEther("10"),
+    //     minPrice: ethers.parseEther("5.5"),
     //     precisionMultiplier: precisionMultiDefault,
     //     feePercentage: registrationFeePercDefault,
     //   };
@@ -359,8 +359,8 @@ describe("ZNSCurvePricer", () => {
       const newConfig = {
         baseLength: BigInt("6"),
         maxLength: BigInt("20"),
-        maxPrice: parseEther("10"),
-        minPrice: parseEther("6"),
+        maxPrice: ethers.parseEther("10"),
+        minPrice: ethers.parseEther("6"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
         isSet: true,
@@ -379,8 +379,8 @@ describe("ZNSCurvePricer", () => {
       const newConfig = {
         baseLength: BigInt("6"),
         maxLength: BigInt("35"),
-        maxPrice: parseEther("150"),
-        minPrice: parseEther("10"),
+        maxPrice: ethers.parseEther("150"),
+        minPrice: ethers.parseEther("10"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
         isSet: true,
@@ -403,8 +403,8 @@ describe("ZNSCurvePricer", () => {
       const newConfig = {
         baseLength: BigInt("3"),
         maxLength: BigInt("35"),
-        maxPrice: parseEther("1"),
-        minPrice: parseEther("2"),
+        maxPrice: ethers.parseEther("1"),
+        minPrice: ethers.parseEther("2"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
         feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
         isSet: true,
@@ -418,7 +418,7 @@ describe("ZNSCurvePricer", () => {
 
   describe("#setMaxPrice", () => {
     it("Allows an authorized user to set the max price", async () => {
-      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + parseEther("10");
+      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("10");
 
       await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
 
@@ -427,7 +427,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Disallows an unauthorized user to set the max price", async () => {
-      const newMaxPrice = parseEther("0.7");
+      const newMaxPrice = ethers.parseEther("0.7");
 
       const tx = zns.curvePricer.connect(admin).setMaxPrice(domainHash, newMaxPrice);
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
@@ -443,7 +443,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Correctly sets max price", async () => {
-      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + parseEther("553");
+      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("553");
       await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
 
       const params = await zns.curvePricer.priceConfigs(domainHash);
@@ -451,7 +451,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Should revert when setting maxPrice that causes a spike at maxLength", async () => {
-      const newMaxPrice = parseEther("500");
+      const newMaxPrice = ethers.parseEther("500");
       await expect(
         zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice)
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
@@ -473,7 +473,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("The price of a domain is modified relatively when the basePrice is changed", async () => {
-      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + parseEther("9");
+      const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("9");
 
       const expectedPriceBefore = await getCurvePrice(defaultDomain, DEFAULT_PRICE_CONFIG);
       const priceBefore= await zns.curvePricer.getPrice(domainHash, defaultDomain, true);
@@ -498,7 +498,7 @@ describe("ZNSCurvePricer", () => {
 
   describe("#setMinPrice", async () => {
     it("Allows an authorized user to set the min price", async () => {
-      const newMinPrice = parseEther("0.1");
+      const newMinPrice = ethers.parseEther("0.1");
 
       await zns.curvePricer.connect(user).setMinPrice(domainHash, newMinPrice);
 
@@ -507,7 +507,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Disallows an unauthorized user from setting the min price", async () => {
-      const newMinPrice = parseEther("0.1");
+      const newMinPrice = ethers.parseEther("0.1");
 
       const tx = zns.curvePricer.connect(admin).setMinPrice(domainHash, newMinPrice);
       await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
@@ -523,7 +523,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Successfully sets the min price correctly", async () => {
-      const newMinPrice = parseEther("0.1");
+      const newMinPrice = ethers.parseEther("0.1");
       await zns.curvePricer.connect(user).setMinPrice(domainHash, newMinPrice);
 
       const params = await zns.curvePricer.priceConfigs(domainHash);
@@ -534,7 +534,7 @@ describe("ZNSCurvePricer", () => {
       // All domains longer than 15 characters are the same price
       await zns.curvePricer.connect(user).setMaxLength(domainHash, "15");
 
-      const minPrice = parseEther("50");
+      const minPrice = ethers.parseEther("50");
       await zns.curvePricer.connect(user).setMinPrice(domainHash, minPrice);
 
       // 16 characters
@@ -562,7 +562,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Should revert when setting minPrice that causes a spike at maxLength", async () => {
-      const newMinPrice = DEFAULT_PRICE_CONFIG.minPrice + parseEther("231");
+      const newMinPrice = DEFAULT_PRICE_CONFIG.minPrice + ethers.parseEther("231");
       await expect(
         zns.curvePricer.connect(user).setMinPrice(domainHash, newMinPrice)
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
@@ -625,7 +625,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Should revert when setting precisionMultiplier higher than 10^18", async () => {
-      const newMultiplier = parseEther("100");
+      const newMultiplier = ethers.parseEther("100");
       await expect(
         zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newMultiplier)
       ).to.be.revertedWith(

@@ -52,9 +52,9 @@ describe("ZNSDomainToken", () => {
     expect(await zns.domainToken.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
-    const royaltyInfo = await zns.domainToken.royaltyInfo("0", parseEther("100"));
+    const royaltyInfo = await zns.domainToken.royaltyInfo("0", ethers.parseEther("100"));
     expect(royaltyInfo[0]).to.equal(zns.zeroVaultAddress);
-    expect(royaltyInfo[1]).to.equal(parseEther("2"));
+    expect(royaltyInfo[1]).to.equal(ethers.parseEther("2"));
   });
 
   it("should NOT initialize twice", async () => {
@@ -245,7 +245,7 @@ describe("ZNSDomainToken", () => {
       const tokenId = BigInt("777356");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
-      const assetPrice = parseEther("19");
+      const assetPrice = ethers.parseEther("19");
       const royaltyPerc = BigInt("1013"); // 2.37%
 
       await zns.domainToken.connect(deployer).setTokenRoyalty(tokenId, beneficiary.address, royaltyPerc);

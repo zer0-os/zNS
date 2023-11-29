@@ -30,7 +30,7 @@ import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
-import { getDomainHashFromReceipt, getTokenIdFromReceipt } from "./helpers/events";
+import { getDomainHashFromEvent } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
@@ -104,16 +104,17 @@ describe("ZNSRootRegistrar", () => {
       accessType: AccessType.OPEN,
     };
 
-    const tx = await zns.rootRegistrar.connect(deployer).registerRootDomain(
+    await zns.rootRegistrar.connect(deployer).registerRootDomain(
       defaultDomain,
       deployer.address,
       tokenURI,
       distrConfig
     );
 
-    const receipt = await tx.wait();
-
-    const domainHash = await getDomainHashFromReceipt(receipt);
+    const domainHash = await getDomainHashFromEvent({
+      zns,
+      user: deployer,
+    });
 
     // Registering as deployer (owner of parent) and user is different gas values
     await zns.subRegistrar.connect(deployer).registerSubdomain(
@@ -198,8 +199,8 @@ describe("ZNSRootRegistrar", () => {
     const newPricerConfig = {
       baseLength: BigInt("6"),
       maxLength: BigInt("35"),
-      maxPrice: parseEther("150"),
-      minPrice: parseEther("10"),
+      maxPrice: ethers.parseEther("150"),
+      minPrice: ethers.parseEther("10"),
       precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
       feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
       isSet: true,
@@ -287,12 +288,15 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("#isOwnerOf() returns correct bools", async () => {
-      const topLevelTx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
       });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
       const tokenId = BigInt(domainHash);
 
       const isOwnerOfBothUser = await zns.rootRegistrar.isOwnerOf(
@@ -517,16 +521,17 @@ describe("ZNSRootRegistrar", () => {
       };
       const tokenURI = "https://example.com/817c64af";
 
-      const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
+      await zns.rootRegistrar.connect(user).registerRootDomain(
         defaultDomain,
         ethers.ZeroAddress,
         tokenURI,
         distrConfig
       );
 
-      const receipt = await tx.wait(0);
-
-      const domainHash = await getDomainHashFromReceipt(receipt);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       const {
         pricerContract,
@@ -547,12 +552,16 @@ describe("ZNSRootRegistrar", () => {
       const balanceBeforeVault = await zns.meowToken.balanceOf(zeroVault.address);
 
       // Deploy "wilder" with default configuration
-      const tx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
       });
-      const domainHash = await getDomainHashFromReceipt(tx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
       const {
         totalPrice,
         expectedPrice,
@@ -581,14 +590,18 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Sets the correct data in Registry", async () => {
-      const tx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
       });
 
       const namehashRef = hashDomainLabel(defaultDomain);
-      const domainHash = await getDomainHashFromReceipt(tx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
       expect(domainHash).to.eq(namehashRef);
 
       const {
@@ -639,13 +652,16 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Records the correct domain hash", async () => {
-      const tx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
       });
 
-      const domainHash = await getDomainHashFromReceipt(tx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       const exists = await zns.registry.exists(domainHash);
       expect(exists).to.be.true;
@@ -665,13 +681,16 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Resolves the correct address from the domain", async () => {
-      const tx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
         domainContent: await zns.rootRegistrar.getAddress(),
       });
-      const domainHash = await getDomainHashFromReceipt(tx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
       expect(resolvedAddress).to.eq(await zns.rootRegistrar.getAddress());
@@ -716,9 +735,12 @@ describe("ZNSRootRegistrar", () => {
   describe("Reclaiming Domains", () => {
     it("Can reclaim name/stake if Token is owned", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
-      const tokenId = await getTokenIdFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
+      const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
@@ -747,9 +769,12 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Reclaiming domain token emits DomainReclaimed event", async () => {
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
-      const tokenId = await getTokenIdFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
+      const tokenId = BigInt(domainHash);
 
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
@@ -768,8 +793,11 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Cannot reclaim name/stake if token is not owned", async () => {
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
       // Reclaim the Domain
       const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
@@ -792,9 +820,12 @@ describe("ZNSRootRegistrar", () => {
 
     it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
-      const tokenId = await getTokenIdFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
+      const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
@@ -833,9 +864,12 @@ describe("ZNSRootRegistrar", () => {
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
-      const tokenId = await getTokenIdFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
+      const tokenId = BigInt(domainHash);
 
       // Validated staked values
       const {
@@ -880,7 +914,10 @@ describe("ZNSRootRegistrar", () => {
         },
       });
 
-      const domainHash = await getDomainHashFromReceipt(topLevelTx);
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       // add mintlist to check revocation
       await zns.subRegistrar.connect(user).updateMintlistForDomain(
@@ -941,8 +978,11 @@ describe("ZNSRootRegistrar", () => {
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level
-      const tx = await defaultRootRegistration({ user, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(tx);
+      await defaultRootRegistration({ user, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       // Validated staked values
       const {
@@ -974,8 +1014,11 @@ describe("ZNSRootRegistrar", () => {
 
     it("Cannot revoke if Name is owned by another user", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const parentDomainHash = await getDomainHashFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const parentDomainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
 
@@ -986,8 +1029,11 @@ describe("ZNSRootRegistrar", () => {
 
     it("No one can revoke if Token and Name have different owners", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const parentDomainHash = await getDomainHashFromReceipt(topLevelTx);
+      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
+      const parentDomainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
 
@@ -1005,8 +1051,11 @@ describe("ZNSRootRegistrar", () => {
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
       // Register Top level
-      const tx = await defaultRootRegistration({ user, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromReceipt(tx);
+      await defaultRootRegistration({ user, zns, domainName: defaultDomain });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
 
       // assign an operator
       await zns.registry.connect(user).setOwnersOperator(operator.address, true);

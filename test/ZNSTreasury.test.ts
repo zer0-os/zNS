@@ -60,7 +60,7 @@ describe("ZNSTreasury", () => {
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     // Give funds to user
-    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
 
     // register random domain
@@ -280,8 +280,8 @@ describe("ZNSTreasury", () => {
         config
       );
 
-      const paymentAmt = parseEther("1000");
-      const protocolFee = parseEther("10");
+      const paymentAmt = ethers.parseEther("1000");
+      const protocolFee = ethers.parseEther("10");
       // give tokens to mock registrar
       await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
       await zns.meowToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);
@@ -317,8 +317,8 @@ describe("ZNSTreasury", () => {
       expect(token).to.eq(ethers.ZeroAddress);
       expect(beneficiary).to.eq(ethers.ZeroAddress);
 
-      const paymentAmt = parseEther("100");
-      const protocolFee = parseEther("7");
+      const paymentAmt = ethers.parseEther("100");
+      const protocolFee = ethers.parseEther("7");
 
       await expect(
         zns.treasury.connect(mockRegistrar).processDirectPayment(
@@ -346,8 +346,8 @@ describe("ZNSTreasury", () => {
     });
 
     it("should emit DirectPaymentProcessed event with correct params", async () => {
-      const paymentAmt = parseEther("100");
-      const protocolFee = parseEther("7");
+      const paymentAmt = ethers.parseEther("100");
+      const protocolFee = ethers.parseEther("7");
       // give tokens to mock registrar
       await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
       await zns.meowToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);

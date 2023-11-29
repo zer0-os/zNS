@@ -12,11 +12,11 @@ export const validateUpgrade = async (
 ) => {
   const preVals = await Promise.all(getters);
 
-  await contract.connect(deployer).upgradeTo(upgradeContract.address);
+  await contract.connect(deployer).upgradeTo(await upgradeContract.getAddress());
 
   // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead
-  const upgradedContract = upgradeContractFactory.attach(contract.address);
+  const upgradedContract = upgradeContractFactory.attach(await contract.getAddress());
 
   // Because every upgraded contract will have the same additions to it,
   // we can be sure these functions exist
