@@ -83,7 +83,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("100000000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       rootPriceConfig = {
         price: ethers.parseEther("1375.612"),
@@ -216,7 +216,7 @@ describe("ZNSSubRegistrar", () => {
       const alphaNumeric = "0x0dwidler0x0";
 
       // Add allowance
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // While "to.not.be.reverted" isn't really a full "test"
       // we don't emit a custom event here, only in the `rootRegistrar.coreRegister`
@@ -381,7 +381,7 @@ describe("ZNSSubRegistrar", () => {
       await zns.meowToken.connect(lvl2SubOwner).transfer(deployer.address, userBalanceAfter);
 
       // add allowance
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
@@ -545,7 +545,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       domainConfigs = [
         {
@@ -787,7 +787,7 @@ describe("ZNSSubRegistrar", () => {
       ];
 
       // prep
-      await zns.meowToken.connect(multiOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(multiOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register
       const domainHashes = await configs.reduce(
@@ -1354,7 +1354,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain
       rootHash = await registrationWithSetup({
@@ -2352,7 +2352,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain and 1 subdomain
       domainConfigs = [
@@ -2814,7 +2814,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain and 1 subdomain
       domainConfigs = [
@@ -3330,7 +3330,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
-      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       fixedPrice = ethers.parseEther("397.13");
       // register root domain

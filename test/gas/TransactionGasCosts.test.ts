@@ -61,7 +61,7 @@ describe("Transaction Gas Costs Test", () => {
       ].map(async ({ address }) =>
         zns.meowToken.mint(address, ethers.parseEther("1000000")))
     );
-    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
     rootHashDirect = await registrationWithSetup({
       zns,
@@ -108,7 +108,7 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Root Domain Price", async function () {
     // approve
-    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     // register root domain
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
@@ -151,7 +151,7 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Subdomain Price", async function () {
     // approve
-    await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+    await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     // register subdomain
     const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       rootHashDirect,

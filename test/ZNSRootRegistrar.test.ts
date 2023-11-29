@@ -96,7 +96,7 @@ describe("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it.only("Gas tests", async () => {
+  it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
@@ -227,7 +227,7 @@ describe("ZNSRootRegistrar", () => {
     expect(balance).to.eq(userBalanceInitial);
 
     const allowance = await zns.meowToken.allowance(user.address, await zns.treasury.getAddress());
-    expect(allowance).to.eq(ethers.constants.MaxUint256);
+    expect(allowance).to.eq(ethers.MaxUint256);
   });
 
   it("Should revert when initialize() without ADMIN_ROLE", async () => {
@@ -1235,7 +1235,7 @@ describe("ZNSRootRegistrar", () => {
       const domainName = "world";
       const domainHash = hashDomainLabel(domainName);
 
-      await zns.meowToken.connect(randomUser).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(randomUser).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
       await zns.meowToken.mint(randomUser.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(

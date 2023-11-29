@@ -303,7 +303,7 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.constants.MaxUint256);
+      await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
       await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
 
       const fullConfig = {

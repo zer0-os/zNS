@@ -16,7 +16,7 @@ export const approveBulk = async (
   for (const signer of signers) {
     const tx = await zns.meowToken.connect(signer).approve(
       await zns.treasury.getAddress(),
-      ethers.constants.MaxUint256,
+      ethers.MaxUint256,
     );
 
     await tx.wait(); // hang on hardhat?
