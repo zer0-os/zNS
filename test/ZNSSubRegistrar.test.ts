@@ -2637,7 +2637,7 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
-    it("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
+    it.only("#updateMintlistForDomain() should fire a #MintlistUpdated event with correct params", async () => {
       const { domainHash } = regResults[1];
 
       const candidatesArr = [
@@ -2669,7 +2669,10 @@ describe("ZNSSubRegistrar", () => {
       );
       const event = events[events.length - 1];
 
+      const ownerIndex = await zns.subRegistrar.mintlist(domainHash);
+
       expect(event.args?.domainHash).to.eq(domainHash);
+      expect(event.args?.ownerIndex).to.eq(ownerIndex);
       expect(event.args?.candidates).to.deep.eq(candidatesArr);
       expect(event.args?.allowed).to.deep.eq(allowedArr);
     });
