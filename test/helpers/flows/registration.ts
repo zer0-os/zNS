@@ -1,6 +1,6 @@
 import { IDomainConfigForTest, IZNSContracts, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
-import { BigNumber, ethers } from "ethers";
+import { ethers } from "ethers";
 import { getPriceObject, getStakingOrProtocolFee } from "../pricing";
 import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
@@ -54,7 +54,7 @@ export const registerDomainPath = async ({
     }
 
     const parentBalanceBefore = isRootDomain
-      ? BigNumber.from(0)
+      ? BigInt(0)
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceBefore = await paymentTokenContract.balanceOf(config.user.address);
     const treasuryBalanceBefore = await paymentTokenContract.balanceOf(zns.treasury.address);
@@ -67,7 +67,7 @@ export const registerDomainPath = async ({
     });
 
     const parentBalanceAfter = isRootDomain
-      ? BigNumber.from(0)
+      ? BigInt(0)
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceAfter = await paymentTokenContract.balanceOf(config.user.address);
     const treasuryBalanceAfter = await paymentTokenContract.balanceOf(zns.treasury.address);
@@ -109,8 +109,8 @@ export const validatePathRegistration = async ({
   ) => {
     await acc;
 
-    let expectedPrice : BigNumber;
-    let stakeFee = BigNumber.from(0);
+    let expectedPrice : bigint;
+    let stakeFee = BigInt(0);
 
     // calc only needed for asymptotic pricing, otherwise it is fixed
     let parentHashFound = parentHash;
@@ -144,7 +144,7 @@ export const validatePathRegistration = async ({
           feePercentage: curveFeePercentage,
         },
       ));
-      expParentBalDiff = BigNumber.from(0);
+      expParentBalDiff = BigInt(0);
       expTreasuryBalDiff = expectedPrice;
     } else {
       const config = await zns.subRegistrar.distrConfigs(parentHashFound);
@@ -188,12 +188,12 @@ export const validatePathRegistration = async ({
       if (paymentType === PaymentType.STAKE) {
         expParentBalDiff = stakeFee;
       } else {
-        stakeFee = BigNumber.from(0);
+        stakeFee = BigInt(0);
         expParentBalDiff = expectedPrice;
       }
 
       expTreasuryBalDiff = paymentType === PaymentType.STAKE
-        ? expectedPrice : BigNumber.from(0);
+        ? expectedPrice : BigInt(0);
     }
 
     const protocolFee = getStakingOrProtocolFee(
@@ -229,7 +229,7 @@ export const validatePathRegistration = async ({
     expect(dataFromReg.owner).to.eq(user.address);
     expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
-    const tokenId = BigNumber.from(domainHash).toString();
+    const tokenId = BigInt(domainHash).toString();
     const tokenOwner = await zns.domainToken.ownerOf(tokenId);
     expect(tokenOwner).to.eq(user.address);
 

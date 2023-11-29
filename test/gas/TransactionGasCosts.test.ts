@@ -3,8 +3,7 @@ import * as hre from "hardhat";
 import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
-import { BigNumber } from "ethers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import fs from "fs";
 
 
@@ -98,8 +97,8 @@ describe("Transaction Gas Costs Test", () => {
     //       },
     //     },
     //     priceConfig: {
-    //       price: BigNumber.from(ethers.utils.parseEther("1375.612")),
-    //       feePercentage: BigNumber.from(0),
+    //       price: BigInt(ethers.utils.parseEther("1375.612")),
+    //       feePercentage: BigInt(0),
     //     },
     //   },
     // });
@@ -127,9 +126,9 @@ describe("Transaction Gas Costs Test", () => {
     const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
     const prevGas = previous[title];
 
-    let gasDiff = BigNumber.from(0);
+    let gasDiff = BigInt(0);
     if (prevGas) {
-      gasDiff = gasUsed.sub(BigNumber.from(prevGas));
+      gasDiff = gasUsed.sub(BigInt(prevGas));
     }
 
     console.log(`
@@ -170,9 +169,9 @@ describe("Transaction Gas Costs Test", () => {
     const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
 
     const prevGas = previous[title];
-    let gasDiff = BigNumber.from(0);
+    let gasDiff = BigInt(0);
     if (prevGas) {
-      gasDiff = gasUsed.sub(BigNumber.from(prevGas));
+      gasDiff = gasUsed.sub(BigInt(prevGas));
     }
 
     console.log(`

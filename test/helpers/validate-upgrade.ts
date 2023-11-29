@@ -1,7 +1,6 @@
 import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSContract, ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
-import { BigNumber } from "ethers";
 
 
 export const validateUpgrade = async (
@@ -21,7 +20,7 @@ export const validateUpgrade = async (
 
   // Because every upgraded contract will have the same additions to it,
   // we can be sure these functions exist
-  const newNumber = BigNumber.from("123");
+  const newNumber = BigInt("123");
   await upgradedContract.connect(deployer).setNewMapping(newNumber);
   await upgradedContract.setNewMappingSpecific(newNumber.add(1), deployer.address);
   await upgradedContract.setNewNumber(newNumber);

@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { ERC165__factory, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,

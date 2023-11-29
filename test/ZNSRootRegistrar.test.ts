@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   normalizeName,
   validateUpgrade,
@@ -27,7 +27,6 @@ import {
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
-import { BigNumber } from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
@@ -36,7 +35,6 @@ import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
-import { parseEther } from "ethers/lib/utils";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
@@ -58,7 +56,7 @@ describe("ZNSRootRegistrar", () => {
   let zns : TZNSContractState;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
-  let userBalanceInitial : BigNumber;
+  let userBalanceInitial : bigint;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -85,12 +83,12 @@ describe("ZNSRootRegistrar", () => {
 
     await zns.meowToken.connect(deployer).approve(
       zns.treasury.address,
-      ethers.constants.MaxUint256
+      ethers.MaxUint256
     );
 
-    userBalanceInitial = ethers.utils.parseEther("100000000000");
+    userBalanceInitial = ethers.parseEther("100000000000");
     // Give funds to user
-    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
@@ -198,8 +196,8 @@ describe("ZNSRootRegistrar", () => {
 
     // Modify the curve pricer
     const newPricerConfig = {
-      baseLength: BigNumber.from("6"),
-      maxLength: BigNumber.from("35"),
+      baseLength: BigInt("6"),
+      maxLength: BigInt("35"),
       maxPrice: parseEther("150"),
       minPrice: parseEther("10"),
       precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -295,7 +293,7 @@ describe("ZNSRootRegistrar", () => {
         domainName: defaultDomain,
       });
       const domainHash = await getDomainHashFromReceipt(topLevelTx);
-      const tokenId = BigNumber.from(domainHash);
+      const tokenId = BigInt(domainHash);
 
       const isOwnerOfBothUser = await zns.rootRegistrar.isOwnerOf(
         domainHash,
@@ -407,7 +405,7 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.constants.HashZero,
         lettersHash,
-        BigNumber.from(lettersHash),
+        BigInt(lettersHash),
         letters,
         deployer.address,
         ethers.constants.AddressZero,
@@ -423,7 +421,7 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.constants.HashZero,
         alphaNumericHash,
-        BigNumber.from(alphaNumericHash),
+        BigInt(alphaNumericHash),
         alphaNumeric,
         deployer.address,
         ethers.constants.AddressZero,
@@ -439,7 +437,7 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.constants.HashZero,
         withHyphenHash,
-        BigNumber.from(withHyphenHash),
+        BigInt(withHyphenHash),
         withHyphen,
         deployer.address,
         ethers.constants.AddressZero,
@@ -501,7 +499,7 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.constants.HashZero,
         hashFromTS,
-        BigNumber.from(hashFromTS),
+        BigInt(hashFromTS),
         defaultDomain,
         user.address,
         ethers.constants.AddressZero,
@@ -858,7 +856,7 @@ describe("ZNSRootRegistrar", () => {
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
-      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+      expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.constants.AddressZero);
 
       // Verify final balances
@@ -891,12 +889,12 @@ describe("ZNSRootRegistrar", () => {
         [true, true]
       );
 
-      const ogPrice = BigNumber.from(135);
+      const ogPrice = BigInt(135);
       await zns.fixedPricer.connect(user).setPriceConfig(
         domainHash,
         {
           price: ogPrice,
-          feePercentage: BigNumber.from(0),
+          feePercentage: BigInt(0),
           isSet: true,
         }
       );
@@ -963,7 +961,7 @@ describe("ZNSRootRegistrar", () => {
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
-      expect(finalstaked).to.equal(ethers.BigNumber.from("0"));
+      expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.constants.AddressZero);
 
       // Verify final balances
@@ -993,7 +991,7 @@ describe("ZNSRootRegistrar", () => {
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
 
-      const tokenId = BigNumber.from(parentDomainHash);
+      const tokenId = BigInt(parentDomainHash);
 
       await zns.domainToken.transferFrom(deployer.address, user.address, tokenId);
 

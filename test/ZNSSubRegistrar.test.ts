@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContracts } from "./helpers/types";
 import {
   AccessType,
@@ -23,7 +23,6 @@ import {
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
-import { BigNumber } from "ethers";
 import { expect } from "chai";
 import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
@@ -89,7 +88,7 @@ describe("ZNSSubRegistrar", () => {
 
       rootPriceConfig = {
         price: ethers.utils.parseEther("1375.612"),
-        feePercentage: BigNumber.from(0),
+        feePercentage: BigInt(0),
       };
 
       // register root domain
@@ -131,8 +130,8 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: rootOwner.address,
           },
           priceConfig: {
-            price: BigNumber.from(0),
-            feePercentage: BigNumber.from(0),
+            price: BigInt(0),
+            feePercentage: BigInt(0),
           },
         },
       });
@@ -204,12 +203,12 @@ describe("ZNSSubRegistrar", () => {
           },
           priceConfig: {
             price: ethers.utils.parseEther("777.325"),
-            feePercentage: BigNumber.from(0),
+            feePercentage: BigInt(0),
           },
         },
       });
 
-      const tokenId = BigNumber.from(subHash).toString();
+      const tokenId = BigInt(subHash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
     });
@@ -339,12 +338,12 @@ describe("ZNSSubRegistrar", () => {
           },
           priceConfig: {
             price: ethers.utils.parseEther("777.325"),
-            feePercentage: BigNumber.from(0),
+            feePercentage: BigInt(0),
           },
         },
       });
 
-      const tokenId = BigNumber.from(subHash).toString();
+      const tokenId = BigInt(subHash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
 
@@ -365,7 +364,7 @@ describe("ZNSSubRegistrar", () => {
         fullConfig: fullDistrConfigEmpty,
       });
 
-      const tokenId = BigNumber.from(subHash).toString();
+      const tokenId = BigInt(subHash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
 
@@ -482,7 +481,7 @@ describe("ZNSSubRegistrar", () => {
       // change stakeFee to 0
       await zns.curvePricer.connect(rootOwner).setFeePercentage(
         parentHash2,
-        BigNumber.from(0)
+        BigInt(0)
       );
 
       let subHash;
@@ -505,7 +504,7 @@ describe("ZNSSubRegistrar", () => {
     let regResults : Array<IPathRegResult>;
 
     const fixedPrice = ethers.utils.parseEther("1375.612");
-    const fixedFeePercentage = BigNumber.from(200);
+    const fixedFeePercentage = BigInt(200);
 
     before(async () => {
       [
@@ -563,7 +562,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: rootOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
@@ -681,7 +680,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: multiOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
@@ -732,7 +731,7 @@ describe("ZNSSubRegistrar", () => {
               token: zns.meowToken.address,
               beneficiary: zeroVault.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
@@ -823,7 +822,7 @@ describe("ZNSSubRegistrar", () => {
           expect(owner).to.eq(multiOwner.address);
           expect(resolver).to.eq(zns.addressResolver.address);
 
-          const tokenId = BigNumber.from(domainHash).toString();
+          const tokenId = BigInt(domainHash).toString();
           const tokenOwner = await zns.domainToken.ownerOf(tokenId);
           expect(tokenOwner).to.eq(multiOwner.address);
 
@@ -894,7 +893,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
 
-      const tokenId = BigNumber.from(domainHash).toString();
+      const tokenId = BigInt(domainHash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
       ).to.be.revertedWith(
@@ -929,7 +928,7 @@ describe("ZNSSubRegistrar", () => {
       expect(
         parentBalBefore.sub(parentBalAfter)
       ).to.eq(
-        BigNumber.from(0)
+        BigInt(0)
       );
       expect(
         paymentContractBalBefore.sub(paymentContractBalAfter)
@@ -958,7 +957,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
 
-      const tokenId = BigNumber.from(domainHash).toString();
+      const tokenId = BigInt(domainHash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
       ).to.be.revertedWith(
@@ -1091,7 +1090,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
 
-      const tokenId = BigNumber.from(lvl3Hash).toString();
+      const tokenId = BigInt(lvl3Hash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
       ).to.be.revertedWith(
@@ -1244,7 +1243,7 @@ describe("ZNSSubRegistrar", () => {
             token: zns.meowToken.address,
             beneficiary: branchLvl1Owner.address,
           },
-          priceConfig: { price: fixedPrice, feePercentage: BigNumber.from(0) },
+          priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
         },
       });
 
@@ -1286,8 +1285,8 @@ describe("ZNSSubRegistrar", () => {
 
   describe("Token movements with different distr setups", () => {
     let rootHash : string;
-    let fixedPrice : BigNumber;
-    let feePercentage : BigNumber;
+    let fixedPrice : bigint;
+    let feePercentage : bigint;
     let token2 : CustomDecimalTokenMock;
     let token5 : CustomDecimalTokenMock;
     let token8 : CustomDecimalTokenMock;
@@ -1295,11 +1294,11 @@ describe("ZNSSubRegistrar", () => {
     let token18 : CustomDecimalTokenMock;
 
     const decimalValues = {
-      two: BigNumber.from(2),
-      five: BigNumber.from(5),
-      eight: BigNumber.from(8),
-      thirteen: BigNumber.from(13),
-      eighteen: BigNumber.from(18),
+      two: BigInt(2),
+      five: BigInt(5),
+      eight: BigInt(8),
+      thirteen: BigInt(13),
+      eighteen: BigInt(18),
     };
 
     before(async () => {
@@ -1375,7 +1374,7 @@ describe("ZNSSubRegistrar", () => {
           },
           priceConfig: {
             price: ethers.utils.parseEther("1375.612"),
-            feePercentage: BigNumber.from(0),
+            feePercentage: BigInt(0),
           },
         },
       });
@@ -1386,7 +1385,7 @@ describe("ZNSSubRegistrar", () => {
       expect(decimals).to.eq(decimalValues.five);
 
       fixedPrice = parseUnits("1375.17", decimalValues.five);
-      feePercentage = BigNumber.from(200);
+      feePercentage = BigInt(200);
 
       const priceConfig = {
         price: fixedPrice,
@@ -1468,7 +1467,7 @@ describe("ZNSSubRegistrar", () => {
     it("FixedPricer - StakePayment - no fee - 18 decimals", async () => {
       const priceConfig = {
         price: parseUnits("397.77", decimalValues.eighteen),
-        feePercentage: BigNumber.from(0),
+        feePercentage: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1543,7 +1542,7 @@ describe("ZNSSubRegistrar", () => {
     it("FixedPricer - DirectPayment - no fee - 8 decimals", async () => {
       const priceConfig = {
         price: parseUnits("11.371", decimalValues.eight),
-        feePercentage: BigNumber.from(0),
+        feePercentage: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1621,13 +1620,13 @@ describe("ZNSSubRegistrar", () => {
       const priceConfig = {
         maxPrice: parseUnits("30000.93", decimalValues.thirteen),
         minPrice: parseUnits("2000.11", decimalValues.thirteen),
-        maxLength: BigNumber.from(50),
-        baseLength: BigNumber.from(4),
-        precisionMultiplier: BigNumber.from(10).pow(
+        maxLength: BigInt(50),
+        baseLength: BigInt(4),
+        precisionMultiplier: BigInt(10).pow(
           decimalValues.thirteen
             .sub(DECAULT_PRECISION)
         ),
-        feePercentage: BigNumber.from(185),
+        feePercentage: BigInt(185),
         isSet: true,
       };
 
@@ -1710,10 +1709,10 @@ describe("ZNSSubRegistrar", () => {
       const priceConfig = {
         maxPrice: parseUnits("234.46", decimalValues.two),
         minPrice: parseUnits("3.37", decimalValues.two),
-        maxLength: BigNumber.from(20),
-        baseLength: BigNumber.from(2),
-        precisionMultiplier: BigNumber.from(1),
-        feePercentage: BigNumber.from(0),
+        maxLength: BigInt(20),
+        baseLength: BigInt(2),
+        precisionMultiplier: BigInt(1),
+        feePercentage: BigInt(0),
         isSet: true,
       };
 
@@ -1789,7 +1788,7 @@ describe("ZNSSubRegistrar", () => {
     it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
       const priceConfig = {
         ...DEFAULT_PRICE_CONFIG,
-        feePercentage: BigNumber.from(0),
+        feePercentage: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1858,8 +1857,8 @@ describe("ZNSSubRegistrar", () => {
 
     it("FixedPricer + DirectPayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        price: BigNumber.from(0),
-        feePercentage: BigNumber.from(0),
+        price: BigInt(0),
+        feePercentage: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -1941,8 +1940,8 @@ describe("ZNSSubRegistrar", () => {
     it("CurvePricer + DirectPayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
         ...DEFAULT_PRICE_CONFIG,
-        maxPrice: BigNumber.from(0),
-        minPrice: BigNumber.from(0),
+        maxPrice: BigInt(0),
+        minPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2024,8 +2023,8 @@ describe("ZNSSubRegistrar", () => {
     it("CurvePricer + StakePayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
         ...DEFAULT_PRICE_CONFIG,
-        maxPrice: BigNumber.from(0),
-        minPrice: BigNumber.from(0),
+        maxPrice: BigInt(0),
+        minPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2106,10 +2105,10 @@ describe("ZNSSubRegistrar", () => {
 
     it("FixedPricer + StakePayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        price: BigNumber.from(0),
+        price: BigInt(0),
         // we are trying to set a feePercentage, but that should still result to 0 fee
         // since fee is based on price
-        feePercentage: BigNumber.from(5),
+        feePercentage: BigInt(5),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2193,10 +2192,10 @@ describe("ZNSSubRegistrar", () => {
       const priceConfigIncorrect = {
         maxPrice: parseUnits("234.46", decimalValues.eighteen),
         minPrice: parseUnits("3.37", decimalValues.eighteen),
-        maxLength: BigNumber.from(20),
-        baseLength: BigNumber.from(2),
-        precisionMultiplier: BigNumber.from(1),
-        feePercentage: BigNumber.from(111),
+        maxLength: BigInt(20),
+        baseLength: BigInt(2),
+        precisionMultiplier: BigInt(1),
+        feePercentage: BigInt(111),
         isSet: true,
       };
 
@@ -2266,7 +2265,7 @@ describe("ZNSSubRegistrar", () => {
       const priceDiff = priceIncorrect.sub(priceCorrect);
       // the difference should be very large
       expect(priceDiff).to.be.gt(
-        BigNumber.from(10).pow(decimalValues.eighteen)
+        BigInt(10).pow(decimalValues.eighteen)
       );
 
       // let's see how much a user actually paid
@@ -2313,10 +2312,10 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Registration access", () => {
-    let fixedPrice : BigNumber;
+    let fixedPrice : bigint;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
-    let fixedFeePercentage : BigNumber;
+    let fixedFeePercentage : bigint;
 
     before(async () => {
       [
@@ -2342,7 +2341,7 @@ describe("ZNSSubRegistrar", () => {
       });
 
       fixedPrice = ethers.utils.parseEther("397");
-      fixedFeePercentage = BigNumber.from(200);
+      fixedFeePercentage = BigInt(200);
 
       await Promise.all(
         [
@@ -2435,7 +2434,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
       // check domain token
-      const tokenId = BigNumber.from(hash).toString();
+      const tokenId = BigInt(hash).toString();
       const tokenOwner = await zns.domainToken.ownerOf(tokenId);
       expect(tokenOwner).to.eq(lvl2SubOwner.address);
 
@@ -2513,7 +2512,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
 
       // check domain token
-      const tokenId = BigNumber.from(hash).toString();
+      const tokenId = BigInt(hash).toString();
       const tokenOwner = await zns.domainToken.ownerOf(tokenId);
       expect(tokenOwner).to.eq(lvl5SubOwner.address);
     });
@@ -2563,7 +2562,7 @@ describe("ZNSSubRegistrar", () => {
       expect(dataFromReg.resolver).to.eq(zns.addressResolver.address);
 
       // check domain token
-      const tokenId = BigNumber.from(hash).toString();
+      const tokenId = BigInt(hash).toString();
       const tokenOwner = await zns.domainToken.ownerOf(tokenId);
       expect(tokenOwner).to.eq(lvl4SubOwner.address);
 
@@ -2775,10 +2774,10 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Existing subdomain ops", () => {
-    let fixedPrice : BigNumber;
+    let fixedPrice : bigint;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
-    let fixedFeePercentage : BigNumber;
+    let fixedFeePercentage : bigint;
 
     before(async () => {
       [
@@ -2804,7 +2803,7 @@ describe("ZNSSubRegistrar", () => {
       });
 
       fixedPrice = ethers.utils.parseEther("397");
-      fixedFeePercentage = BigNumber.from(200);
+      fixedFeePercentage = BigInt(200);
 
       await Promise.all(
         [
@@ -3166,7 +3165,7 @@ describe("ZNSSubRegistrar", () => {
 
     // eslint-disable-next-line max-len
     it("should TRANSFER ownership of a subdomain and let the receiver RECLAIM and then revoke with REFUND", async () => {
-      const tokenId = BigNumber.from(regResults[1].domainHash).toString();
+      const tokenId = BigInt(regResults[1].domainHash).toString();
 
       const { amount: stakedBefore } = await zns.treasury.stakedForDomain(regResults[1].domainHash);
 
@@ -3304,7 +3303,7 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("UUPS", () => {
-    let fixedPrice : BigNumber;
+    let fixedPrice : bigint;
     let rootHash : string;
 
     beforeEach(async () => {
@@ -3353,7 +3352,7 @@ describe("ZNSSubRegistrar", () => {
           },
           priceConfig: {
             price: fixedPrice,
-            feePercentage: BigNumber.from(0),
+            feePercentage: BigInt(0),
           },
         },
       });
@@ -3422,7 +3421,7 @@ describe("ZNSSubRegistrar", () => {
           },
           priceConfig: {
             price: fixedPrice,
-            feePercentage: BigNumber.from(0),
+            feePercentage: BigInt(0),
           },
           paymentConfig: {
             token: zns.meowToken.address,
@@ -3473,7 +3472,7 @@ describe("ZNSSubRegistrar", () => {
         pricerContract: zns.curvePricer.address,
         paymentType: PaymentType.STAKE,
         newAddress: lvl2SubOwner.address,
-        newUint: BigNumber.from(1912171236),
+        newUint: BigInt(1912171236),
       };
 
       // register a subdomain with new logic
@@ -3501,7 +3500,7 @@ describe("ZNSSubRegistrar", () => {
         pricerContract: zns.fixedPricer.address,
         paymentType: PaymentType.DIRECT,
         newAddress: lvl2SubOwner.address,
-        newUint: BigNumber.from(123),
+        newUint: BigInt(123),
       };
 
       // try setting new fields to the new struct

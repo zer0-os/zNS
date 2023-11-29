@@ -1,6 +1,6 @@
-import { BigNumber, ContractReceipt, Event } from "ethers";
+import { ContractReceipt, Event } from "ethers";
 import { IZNSContracts } from "./types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 
 /**
@@ -45,9 +45,9 @@ export const getDomainHashFromReceipt = async (
 export const getTokenIdFromReceipt = async (
   txReceipt : ContractReceipt,
   eventName = "DomainRegistered",
-) : Promise<BigNumber> => {
+) : Promise<bigint> => {
   const tokenId = await getDomainHashFromReceipt(txReceipt, eventName);
-  return BigNumber.from(tokenId);
+  return BigInt(tokenId);
 };
 
 export const getDomainRegisteredEvents = async ({
@@ -59,7 +59,7 @@ export const getDomainRegisteredEvents = async ({
 } : {
   zns : IZNSContracts;
   domainHash ?: string | null;
-  tokenId ?: BigNumber | null;
+  tokenId ?: bigint | null;
   registrant ?: string | null;
   blockRange ?: number;
 }) : Promise<Array<Event>> => {

@@ -1,6 +1,5 @@
 import * as hre from "hardhat";
 import * as ethers from "ethers";
-import { BigNumber } from "ethers";
 import {
   deployZNS,
   hashDomainLabel, PaymentType,
@@ -11,7 +10,7 @@ import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
 const domainName = "wilder";
 const domainHash = hashDomainLabel(domainName);
-const tokenId = BigNumber.from(domainHash);
+const tokenId = BigInt(domainHash);
 
 
 export const runAllFlows = async () => {
@@ -27,8 +26,8 @@ export const runAllFlows = async () => {
     isTenderlyRun: true,
   });
 
-  const rootPrice = BigNumber.from(ethers.utils.parseEther("200"));
-  const rootFeePercentage = BigNumber.from(250);
+  const rootPrice = BigInt(ethers.parseEther("200"));
+  const rootFeePercentage = BigInt(250);
 
   const fullRootConfig = {
     distrConfig: {

@@ -23,7 +23,7 @@ import {
 import { DeployZNSParams, RegistrarConfig, IZNSContracts } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   accessControllerName,
   addressResolverName,
@@ -44,7 +44,6 @@ import {
 } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
-import { BigNumber } from "ethers";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
@@ -120,7 +119,7 @@ export const deployDomainToken = async (
   deployer : SignerWithAddress,
   accessControllerAddress : string,
   royaltyReceiverAddress : string,
-  royaltyFraction : BigNumber,
+  royaltyFraction : bigint,
   isTenderlyRun : boolean
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);

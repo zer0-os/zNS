@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
@@ -34,7 +34,7 @@ import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
-import { ethers, BigNumber } from "ethers";
+import { ethers, BigInt } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
@@ -756,8 +756,8 @@ describe("Deploy Campaign Test", () => {
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = MeowMainnet.address;
-        config.rootPriceConfig.baseLength = BigNumber.from(3);
-        config.rootPriceConfig.maxLength = BigNumber.from(5);
+        config.rootPriceConfig.baseLength = BigInt(3);
+        config.rootPriceConfig.maxLength = BigInt(5);
         config.rootPriceConfig.maxPrice = ethers.constants.Zero;
         config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
 

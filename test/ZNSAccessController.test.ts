@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { deployAccessController } from "./helpers";
 import { expect } from "chai";

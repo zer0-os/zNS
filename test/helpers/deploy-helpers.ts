@@ -1,9 +1,9 @@
 
 // For use in inegration test of deployment campaign
 
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { TZNSContractState } from "../../src/deploy/campaign/types";
-import { BigNumber, ethers } from "ethers";
+import { ethers } from "ethers";
 import { ICurvePriceConfig, IDistributionConfig } from "./types";
 import { expect } from "chai";
 import { hashDomainLabel } from ".";
@@ -25,7 +25,7 @@ export const approveBulk = async (
 
 export const mintBulk = async (
   signers : Array<SignerWithAddress>,
-  amount : BigNumber,
+  amount : bigint,
   zns : TZNSContractState,
 ) => {
   for (const signer of signers) {

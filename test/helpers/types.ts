@@ -1,4 +1,3 @@
-import { BigNumber } from "ethers";
 import {
   ZNSAccessController,
   ZNSAddressResolver,
@@ -27,7 +26,7 @@ import {
   ZNSTreasuryUpgradeMock__factory,
   MeowTokenMock,
 } from "../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { AccessType, PaymentType } from "./constants";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 export { ICurvePriceConfig } from "../../src/deploy/missions/types";
@@ -38,10 +37,10 @@ export type Maybe<T> = T | undefined;
 export type GeneralContractGetter = Promise<
 string
 | boolean
-| BigNumber
-| Array<BigNumber>
-| [string, BigNumber]
-& { token : string; amount : BigNumber; }
+| bigint
+| Array<bigint>
+| [string, bigint]
+& { token : string; amount : bigint; }
 | [string, string]
 & { token : string; beneficiary : string; }
 | ICurvePriceConfig
@@ -79,8 +78,8 @@ export type ZNSContract =
   ZNSDomainToken;
 
 export interface IFixedPriceConfig {
-  price : BigNumber;
-  feePercentage : BigNumber;
+  price : bigint;
+  feePercentage : bigint;
 }
 
 export interface RegistrarConfig {
@@ -109,7 +108,7 @@ export interface DeployZNSParams {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   priceConfig ?: ICurvePriceConfig;
-  registrationFeePerc ?: BigNumber;
+  registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
 }
@@ -142,13 +141,13 @@ export interface IDomainConfigForTest {
 
 export interface IPathRegResult {
   domainHash : string;
-  userBalanceBefore : BigNumber;
-  userBalanceAfter : BigNumber;
-  parentBalanceBefore : BigNumber;
-  parentBalanceAfter : BigNumber;
-  treasuryBalanceBefore : BigNumber;
-  treasuryBalanceAfter : BigNumber;
-  zeroVaultBalanceBefore : BigNumber;
-  zeroVaultBalanceAfter : BigNumber;
+  userBalanceBefore : bigint;
+  userBalanceAfter : bigint;
+  parentBalanceBefore : bigint;
+  parentBalanceAfter : bigint;
+  treasuryBalanceBefore : bigint;
+  treasuryBalanceAfter : bigint;
+  zeroVaultBalanceBefore : bigint;
+  zeroVaultBalanceAfter : bigint;
 }
 

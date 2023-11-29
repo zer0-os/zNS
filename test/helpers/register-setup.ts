@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   ICurvePriceConfig,
   IDistributionConfig,
@@ -6,7 +6,7 @@ import {
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { BigNumber, ContractReceipt, ethers } from "ethers";
+import { ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI } from "./constants";
 import { getTokenContract } from "./tokens";
@@ -51,8 +51,8 @@ export const approveForParent = async ({
   domainLabel : string;
 }) => {
   const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
-  let price = BigNumber.from(0);
-  let parentFee = BigNumber.from(0);
+  let price = BigInt(0);
+  let parentFee = BigInt(0);
   if (pricerContract === zns.curvePricer.address) {
     [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
   } else if (pricerContract === zns.fixedPricer.address) {

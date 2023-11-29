@@ -12,12 +12,11 @@ import {
   validateUpgrade,
 } from "./helpers";
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
 import { ZNSFixedPricer__factory, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -31,13 +30,13 @@ describe("ZNSFixedPricer", () => {
 
   let zns : IZNSContracts;
   let domainHash : string;
-  let parentPrice : BigNumber;
-  let parentFeePercentage : BigNumber;
+  let parentPrice : bigint;
+  let parentFeePercentage : bigint;
 
   before(async () => {
     [deployer, admin, user, zeroVault, random] = await hre.ethers.getSigners();
     parentPrice = ethers.utils.parseEther("2223");
-    parentFeePercentage = BigNumber.from(2310);
+    parentFeePercentage = BigInt(2310);
 
     zns = await deployZNS({
       deployer,
@@ -109,7 +108,7 @@ describe("ZNSFixedPricer", () => {
     expect(feePercentage).to.equal(0);
 
     const newPrice = ethers.utils.parseEther("9182263");
-    const newFee = BigNumber.from(2359);
+    const newFee = BigInt(2359);
 
     // deployer owns 0x0 hash at initialization time
     await zns.fixedPricer.connect(deployer).setPriceConfig(
@@ -170,7 +169,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
     const newPrice = ethers.utils.parseEther("3213");
-    const newFee = BigNumber.from(1234);
+    const newFee = BigInt(1234);
     await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
     await zns.fixedPricer.connect(user).setFeePercentage(domainHash, newFee);
 
@@ -192,7 +191,7 @@ describe("ZNSFixedPricer", () => {
   });
 
   it("#setFeePercentage() should set the fee correctly and emit #FeePercentageSet event", async () => {
-    const newFee = BigNumber.from(1234);
+    const newFee = BigInt(1234);
     const tx = zns.fixedPricer.connect(user).setFeePercentage(domainHash, newFee);
 
     await expect(tx).to.emit(zns.fixedPricer, "FeePercentageSet").withArgs(domainHash, newFee);
@@ -205,7 +204,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#setFeePercentage() should revert if called by anyone other than domain owner", async () => {
     await expect(
-      zns.fixedPricer.connect(random).setFeePercentage(domainHash, BigNumber.from(1))
+      zns.fixedPricer.connect(random).setFeePercentage(domainHash, BigInt(1))
     ).to.be.revertedWith(
       NOT_AUTHORIZED_REG_WIRED_ERR
     );
@@ -222,7 +221,7 @@ describe("ZNSFixedPricer", () => {
   // eslint-disable-next-line max-len
   it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
     const newPrice = ethers.utils.parseEther("1823");
-    const newFee = BigNumber.from("12");
+    const newFee = BigInt("12");
     const tx = zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       {
@@ -248,8 +247,8 @@ describe("ZNSFixedPricer", () => {
       zns.fixedPricer.connect(random).setPriceConfig(
         domainHash,
         {
-          price: BigNumber.from(1),
-          feePercentage: BigNumber.from(1),
+          price: BigInt(1),
+          feePercentage: BigInt(1),
           isSet: true,
         }
       )
@@ -375,7 +374,7 @@ describe("ZNSFixedPricer", () => {
       await zns.fixedPricer.connect(user).setPrice(domainHash, "7");
       await zns.fixedPricer.connect(user).setFeePercentage(
         domainHash,
-        BigNumber.from(12)
+        BigInt(12)
       );
 
       const contractCalls = [
