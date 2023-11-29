@@ -30,7 +30,7 @@ import { registrationWithSetup } from "./helpers/register-setup";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
-const { HashZero } = ethers.constants;
+const { ZeroHash } = ethers;
 
 describe("ZNSCurvePricer", () => {
   let deployer : SignerWithAddress;
@@ -302,7 +302,7 @@ describe("ZNSCurvePricer", () => {
       await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
 
       // as a ZNS deployer who owns the 0x0 hash
-      await zns.curvePricer.connect(deployer).setPriceConfig(HashZero, newConfig);
+      await zns.curvePricer.connect(deployer).setPriceConfig(ZeroHash, newConfig);
 
       const configUser = await zns.curvePricer.priceConfigs(domainHash);
 
@@ -313,7 +313,7 @@ describe("ZNSCurvePricer", () => {
       expect(configUser.precisionMultiplier).to.eq(newConfig.precisionMultiplier);
       expect(configUser.feePercentage).to.eq(newConfig.feePercentage);
 
-      const configDeployer = await zns.curvePricer.priceConfigs(HashZero);
+      const configDeployer = await zns.curvePricer.priceConfigs(ZeroHash);
 
       expect(configDeployer.baseLength).to.eq(newConfig.baseLength);
       expect(configDeployer.maxLength).to.eq(newConfig.maxLength);
@@ -372,7 +372,7 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
 
       await expect(
-        zns.curvePricer.connect(randomAcc).setPriceConfig(HashZero, newConfig)
+        zns.curvePricer.connect(randomAcc).setPriceConfig(ZeroHash, newConfig)
       ).to.be.revertedWith(NOT_AUTHORIZED_REG_WIRED_ERR);
     });
 
@@ -890,7 +890,7 @@ describe("ZNSCurvePricer", () => {
 
   describe("#getRegistrationFee", () => {
     it("Successfully gets the fee for a price", async () => {
-      const stake = ethers.utils.parseEther("0.2");
+      const stake = ethers.parseEther("0.2");
       const fee = await zns.curvePricer.getFeeForPrice(domainHash, stake);
       const expectedFee = stake.mul("222").div("10000");
 
@@ -919,7 +919,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Disallows setting the access controller to the zero address", async () => {
-      const tx = zns.curvePricer.connect(admin).setAccessController(ethers.constants.AddressZero);
+      const tx = zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress);
       await expect(tx).to.be.revertedWith(
         "AC: _accessController is 0x0 address"
       );

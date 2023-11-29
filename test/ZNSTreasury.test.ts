@@ -62,7 +62,7 @@ describe("ZNSTreasury", () => {
 
     // Give funds to user
     await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.meowToken.mint(user.address, ethers.utils.parseEther("50000"));
+    await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
 
     // register random domain
     await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -78,7 +78,7 @@ describe("ZNSTreasury", () => {
     const {
       token,
       beneficiary,
-    } = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+    } = await zns.treasury.paymentConfigs(ethers.ZeroHash);
     const accessController = await zns.treasury.getAccessController();
 
     expect(registry).to.eq(zns.registry.address);
@@ -130,7 +130,7 @@ describe("ZNSTreasury", () => {
           await expect(
             deployTreasury({
               ...args,
-              [key]: ethers.constants.AddressZero,
+              [key]: ethers.ZeroAddress,
             })
           ).to.be.reverted;
         }
@@ -144,14 +144,14 @@ describe("ZNSTreasury", () => {
       const zeroVaultBalanceBeforeStake = await zns.meowToken.balanceOf(zeroVault.address);
 
       const expectedStake = await zns.curvePricer.getPrice(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         domainName,
         false
       );
-      const fee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, expectedStake);
+      const fee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, expectedStake);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         domainHash,
         user.address,
         expectedStake,
@@ -177,7 +177,7 @@ describe("ZNSTreasury", () => {
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
       await expect(
         zns.treasury.connect(randomAcc).stakeForDomain(
-          ethers.constants.HashZero,
+          ethers.ZeroHash,
           domainHash,
           user.address,
           ethers.constants.Zero,
@@ -199,7 +199,7 @@ describe("ZNSTreasury", () => {
       );
 
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         domainHash,
         user.address,
         expectedPrice,
@@ -210,7 +210,7 @@ describe("ZNSTreasury", () => {
       await expect(tx)
         .to.emit(zns.treasury, "StakeDeposited")
         .withArgs(
-          ethers.constants.HashZero,
+          ethers.ZeroHash,
           domainHash,
           user.address,
           zns.meowToken.address,
@@ -223,11 +223,11 @@ describe("ZNSTreasury", () => {
 
   describe("#unstakeForDomain()", () => {
     it("Unstakes the correct amount and saves the correct token", async () => {
-      const stakeAmt = ethers.utils.parseEther("173");
-      const protocolFee = ethers.utils.parseEther("3.112");
+      const stakeAmt = ethers.parseEther("173");
+      const protocolFee = ethers.parseEther("3.112");
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         domainHash,
         user.address,
         stakeAmt,
@@ -273,7 +273,7 @@ describe("ZNSTreasury", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(
         randomHash,
         user.address,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
       );
 
       await zns.treasury.connect(user).setPaymentConfig(
@@ -315,8 +315,8 @@ describe("ZNSTreasury", () => {
         token,
         beneficiary,
       } = await zns.treasury.paymentConfigs(randomHash);
-      expect(token).to.eq(ethers.constants.AddressZero);
-      expect(beneficiary).to.eq(ethers.constants.AddressZero);
+      expect(token).to.eq(ethers.ZeroAddress);
+      expect(beneficiary).to.eq(ethers.ZeroAddress);
 
       const paymentAmt = parseEther("100");
       const protocolFee = parseEther("7");
@@ -335,7 +335,7 @@ describe("ZNSTreasury", () => {
     it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
       await expect(
         zns.treasury.connect(randomAcc).processDirectPayment(
-          ethers.constants.HashZero,
+          ethers.ZeroHash,
           domainHash,
           mockRegistrar.address,
           "0",
@@ -355,14 +355,14 @@ describe("ZNSTreasury", () => {
 
       await expect(
         zns.treasury.connect(mockRegistrar).processDirectPayment(
-          ethers.constants.HashZero,
+          ethers.ZeroHash,
           domainHash,
           mockRegistrar.address,
           paymentAmt,
           protocolFee
         )
       ).to.emit(zns.treasury, "DirectPaymentProcessed").withArgs(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         domainHash,
         mockRegistrar.address,
         zeroVault.address,
@@ -378,8 +378,8 @@ describe("ZNSTreasury", () => {
         token: paymentTokenBefore,
         beneficiary: beneficiaryBefore,
       } = await zns.treasury.paymentConfigs(domainHash);
-      expect(paymentTokenBefore).to.eq(ethers.constants.AddressZero);
-      expect(beneficiaryBefore).to.eq(ethers.constants.AddressZero);
+      expect(paymentTokenBefore).to.eq(ethers.ZeroAddress);
+      expect(beneficiaryBefore).to.eq(ethers.ZeroAddress);
 
       const configToSet = {
         token: randomAcc.address,
@@ -426,7 +426,7 @@ describe("ZNSTreasury", () => {
 
     it("should NOT set token or beneficiary to 0x0 address", async () => {
       const zeroBeneficiaryConf = {
-        beneficiary: ethers.constants.AddressZero,
+        beneficiary: ethers.ZeroAddress,
         token: randomAcc.address,
       };
 
@@ -440,7 +440,7 @@ describe("ZNSTreasury", () => {
       );
 
       const meowTokenConf = {
-        token: ethers.constants.AddressZero,
+        token: ethers.ZeroAddress,
         beneficiary: randomAcc.address,
       };
 
@@ -459,26 +459,26 @@ describe("ZNSTreasury", () => {
     it("Should set the correct address of Zero Vault", async () => {
       const {
         beneficiary: currentZeroVault,
-      } = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+      } = await zns.treasury.paymentConfigs(ethers.ZeroHash);
       expect(currentZeroVault).to.not.eq(mockRegistrar.address);
 
       const tx = await zns.treasury.setBeneficiary(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         mockRegistrar.address
       );
 
-      const { beneficiary: newZeroVault } = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+      const { beneficiary: newZeroVault } = await zns.treasury.paymentConfigs(ethers.ZeroHash);
       expect(newZeroVault).to.eq(mockRegistrar.address);
 
       await expect(tx).to.emit(zns.treasury, "BeneficiarySet").withArgs(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         mockRegistrar.address
       );
     });
 
     it("Should revert when called by anyone other than owner or operator", async () => {
       const tx = zns.treasury.connect(randomAcc).setBeneficiary(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         mockRegistrar.address
       );
       await expect(tx).to.be.revertedWith(
@@ -488,8 +488,8 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when beneficiary is address 0", async () => {
       const tx = zns.treasury.setBeneficiary(
-        ethers.constants.HashZero,
-        ethers.constants.AddressZero
+        ethers.ZeroHash,
+        ethers.ZeroAddress
       );
       await expect(tx).to.be.revertedWith("ZNSTreasury: beneficiary passed as 0x0 address");
     });
@@ -525,7 +525,7 @@ describe("ZNSTreasury", () => {
     });
 
     it("Should revert when paymentToken is address 0", async () => {
-      const tx = zns.treasury.connect(user).setPaymentToken(domainHash, ethers.constants.AddressZero);
+      const tx = zns.treasury.connect(user).setPaymentToken(domainHash, ethers.ZeroAddress);
       await expect(tx).to.be.revertedWith("ZNSTreasury: paymentToken passed as 0x0 address");
     });
   });
@@ -551,7 +551,7 @@ describe("ZNSTreasury", () => {
     });
 
     it("Should revert when accessController is address 0", async () => {
-      const tx = zns.treasury.setAccessController(ethers.constants.AddressZero);
+      const tx = zns.treasury.setAccessController(ethers.ZeroAddress);
       await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
     });
   });
@@ -577,7 +577,7 @@ describe("ZNSTreasury", () => {
     });
 
     it("Should revert when registry is address 0", async () => {
-      const tx = zns.treasury.setRegistry(ethers.constants.AddressZero);
+      const tx = zns.treasury.setRegistry(ethers.ZeroAddress);
       await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
     });
   });
@@ -622,7 +622,7 @@ describe("ZNSTreasury", () => {
       const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         newHash,
         deployer.address,
         expectedPrice,
@@ -633,7 +633,7 @@ describe("ZNSTreasury", () => {
       const calls = [
         treasury.registry(),
         treasury.getAccessController(),
-        treasury.paymentConfigs(ethers.constants.HashZero),
+        treasury.paymentConfigs(ethers.ZeroHash),
         treasury.stakedForDomain(newHash),
       ];
 

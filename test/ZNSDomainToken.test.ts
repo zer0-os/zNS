@@ -92,7 +92,7 @@ describe("ZNSDomainToken", () => {
         .register(caller.address, tokenId, randomTokenURI);
 
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         caller.address,
         tokenId
       );
@@ -129,7 +129,7 @@ describe("ZNSDomainToken", () => {
       // Verify Transfer event is emitted
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
         caller.address,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         tokenId
       );
 

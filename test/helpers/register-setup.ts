@@ -6,12 +6,12 @@ import {
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { ContractReceipt, ethers } from "ethers";
+import { TransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI } from "./constants";
 import { getTokenContract } from "./tokens";
 
-const { AddressZero } = ethers.constants;
+const { ZeroAddress } = ethers;
 
 
 export const defaultRootRegistration = async ({
@@ -28,7 +28,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
-}) : Promise<ContractReceipt> => {
+}) : Promise<TransactionReceipt> => {
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
@@ -62,7 +62,7 @@ export const approveForParent = async ({
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
   const tokenContract = getTokenContract(tokenAddress, user);
 
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, price.add(parentFee));
+  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price.add(parentFee));
   const toApprove = price.add(parentFee).add(protocolFee);
 
   return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
@@ -127,7 +127,7 @@ export const registrationWithSetup = async ({
     : distrConfigEmpty;
 
   // register domain
-  if (!parentHash || parentHash === ethers.constants.HashZero) {
+  if (!parentHash || parentHash === ethers.ZeroHash) {
     await defaultRootRegistration({
       user,
       zns,
@@ -185,7 +185,7 @@ export const registrationWithSetup = async ({
     );
   }
 
-  if (fullConfig.paymentConfig.token !== AddressZero && setConfigs) {
+  if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {
     // set up payment config
     await zns.treasury.connect(user).setPaymentConfig(
       domainHash,

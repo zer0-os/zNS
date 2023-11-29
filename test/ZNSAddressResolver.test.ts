@@ -79,7 +79,7 @@ describe("ZNSAddressResolver", () => {
     // The domain does not exist
     const someDomainHash = hashDomainLabel("random-record");
     const notExistResolver = await zns.registry.getDomainResolver(someDomainHash);
-    expect(notExistResolver).to.eq(hre.ethers.constants.AddressZero);
+    expect(notExistResolver).to.eq(hre.ethers.ZeroAddress);
   });
 
   it("Should have registry address correctly set", async () => {
@@ -154,13 +154,13 @@ describe("ZNSAddressResolver", () => {
 
     await expect(
       zns.addressResolver.connect(mockRegistrar)
-        .setAddress(wilderDomainHash, hre.ethers.constants.AddressZero)
+        .setAddress(wilderDomainHash, hre.ethers.ZeroAddress)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, hre.ethers.constants.AddressZero);
+      .withArgs(wilderDomainHash, hre.ethers.ZeroAddress);
 
     const address = await zns.addressResolver.getAddress(wilderDomainHash);
-    expect(address).to.eq(hre.ethers.constants.AddressZero);
+    expect(address).to.eq(hre.ethers.ZeroAddress);
 
   });
 

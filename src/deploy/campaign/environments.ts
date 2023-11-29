@@ -60,12 +60,12 @@ export const getConfig = (
   // Price config variables
   const maxPrice =
     process.env.MAX_PRICE
-      ? ethers.utils.parseEther(process.env.MAX_PRICE)
+      ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
   const minPrice =
     process.env.MIN_PRICE
-      ? ethers.utils.parseEther(process.env.MIN_PRICE)
+      ? ethers.parseEther(process.env.MIN_PRICE)
       : DEFAULT_PRICE_CONFIG.minPrice;
 
   const maxLength =

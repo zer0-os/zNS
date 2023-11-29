@@ -93,7 +93,7 @@ describe("Deploy Campaign Test", () => {
 
       const { meowToken, dbAdapter } = campaign;
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
         userA.address,
@@ -140,7 +140,7 @@ describe("Deploy Campaign Test", () => {
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
       // TODO dep: what else ??
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       try {
         await meowToken.connect(deployAdmin).mint(
@@ -438,7 +438,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not add resolverType to Registry
-        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.constants.AddressZero);
+        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.ZeroAddress);
       };
 
       // check contracts are deployed correctly
@@ -648,7 +648,7 @@ describe("Deploy Campaign Test", () => {
       /* eslint-disable-next-line prefer-const */
       zns = campaign.state.contracts;
 
-      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.ZeroHash);
 
       expect(await zns.accessController.isAdmin(userB.address)).to.be.true;
       expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
@@ -759,7 +759,7 @@ describe("Deploy Campaign Test", () => {
         config.rootPriceConfig.baseLength = BigInt(3);
         config.rootPriceConfig.maxLength = BigInt(5);
         config.rootPriceConfig.maxPrice = ethers.constants.Zero;
-        config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
+        config.rootPriceConfig.minPrice = ethers.parseEther("3");
 
         validate(config, "prod");
         /* eslint-disable @typescript-eslint/no-explicit-any */

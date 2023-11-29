@@ -198,7 +198,7 @@ export const deployMeowToken = async (
   }
 
   // Mint 10,000 ZERO for self
-  await meowToken.mint(meowToken.address, ethers.utils.parseEther("10000"));
+  await meowToken.mint(meowToken.address, ethers.parseEther("10000"));
 
   return meowToken;
 };
@@ -613,7 +613,7 @@ export const deployZNS = async ({
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await meowTokenMock.connect(deployer).approve(treasury.address, ethers.constants.MaxUint256);
-  await meowTokenMock.mint(deployer.address, ethers.utils.parseEther("5000000"));
+  await meowTokenMock.mint(deployer.address, ethers.parseEther("5000000"));
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, addressResolver.address);
 
   return znsContracts;

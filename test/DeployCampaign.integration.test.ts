@@ -63,7 +63,7 @@ describe("DeployCampaign - Integration", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.utils.parseEther("10000000");
+  const mintAmount = ethers.parseEther("10000000");
 
   const domains = [shortDomain, mediumDomain, longDomain];
 

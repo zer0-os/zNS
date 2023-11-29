@@ -69,7 +69,7 @@ export const runAllFlows = async () => {
     priceConfig: DEFAULT_PRICE_CONFIG,
   };
 
-  await zns.meowToken.transfer(user.address, ethers.utils.parseEther("10000"));
+  await zns.meowToken.transfer(user.address, ethers.parseEther("10000"));
   await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   await registrationWithSetup({

@@ -27,10 +27,10 @@ export const registerDomainPath = async ({
     if (!parentHash) {
       parentHash = !!newAcc[idx - 1]
         ? newAcc[idx - 1].domainHash
-        : ethers.constants.HashZero;
+        : ethers.ZeroHash;
     }
 
-    const isRootDomain = parentHash === ethers.constants.HashZero;
+    const isRootDomain = parentHash === ethers.ZeroHash;
 
     // and get the necessary contracts based on parent config
     let paymentTokenContract;
@@ -39,7 +39,7 @@ export const registerDomainPath = async ({
     if (isRootDomain) {
       paymentTokenContract = zns.meowToken;
       // no beneficiary for root domain
-      beneficiary = ethers.constants.AddressZero;
+      beneficiary = ethers.ZeroAddress;
     } else {
       // grab all the important data of the parent
       const paymentConfig = await zns.treasury.paymentConfigs(parentHash);
@@ -115,7 +115,7 @@ export const validatePathRegistration = async ({
     // calc only needed for asymptotic pricing, otherwise it is fixed
     let parentHashFound = parentHash;
     if (!parentHashFound) {
-      parentHashFound = !!regResults[idx - 1] ? regResults[idx - 1].domainHash : ethers.constants.HashZero;
+      parentHashFound = !!regResults[idx - 1] ? regResults[idx - 1].domainHash : ethers.ZeroHash;
     }
 
     const {
@@ -125,12 +125,12 @@ export const validatePathRegistration = async ({
       baseLength: curveBaseLength,
       precisionMultiplier: curvePrecisionMultiplier,
       feePercentage: curveFeePercentage,
-    } = await zns.curvePricer.priceConfigs(ethers.constants.HashZero);
+    } = await zns.curvePricer.priceConfigs(ethers.ZeroHash);
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
     let paymentType;
-    if (parentHashFound === ethers.constants.HashZero) {
+    if (parentHashFound === ethers.ZeroHash) {
       ({
         expectedPrice,
       } = getPriceObject(

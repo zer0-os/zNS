@@ -35,7 +35,7 @@ describe("ZNSFixedPricer", () => {
 
   before(async () => {
     [deployer, admin, user, zeroVault, random] = await hre.ethers.getSigners();
-    parentPrice = ethers.utils.parseEther("2223");
+    parentPrice = ethers.parseEther("2223");
     parentFeePercentage = BigInt(2310);
 
     zns = await deployZNS({
@@ -47,7 +47,7 @@ describe("ZNSFixedPricer", () => {
     });
 
     await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+    await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
@@ -102,17 +102,17 @@ describe("ZNSFixedPricer", () => {
     const {
       price,
       feePercentage,
-    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+    } = await zns.fixedPricer.priceConfigs(ethers.ZeroHash);
 
     expect(price).to.equal(0);
     expect(feePercentage).to.equal(0);
 
-    const newPrice = ethers.utils.parseEther("9182263");
+    const newPrice = ethers.parseEther("9182263");
     const newFee = BigInt(2359);
 
     // deployer owns 0x0 hash at initialization time
     await zns.fixedPricer.connect(deployer).setPriceConfig(
-      ethers.constants.HashZero,
+      ethers.ZeroHash,
       {
         price: newPrice,
         feePercentage: newFee,
@@ -123,7 +123,7 @@ describe("ZNSFixedPricer", () => {
     const {
       price: newPriceAfter,
       feePercentage: newFeeAfter,
-    } = await zns.fixedPricer.priceConfigs(ethers.constants.HashZero);
+    } = await zns.fixedPricer.priceConfigs(ethers.ZeroHash);
 
     expect(newPriceAfter).to.equal(newPrice);
     expect(newFeeAfter).to.equal(newFee);
@@ -142,7 +142,7 @@ describe("ZNSFixedPricer", () => {
   });
 
   it("#setPrice() should work correctly and emit #PriceSet event", async () => {
-    const newPrice = ethers.utils.parseEther("1823");
+    const newPrice = ethers.parseEther("1823");
     const tx = zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
     await expect(tx).to.emit(zns.fixedPricer, "PriceSet").withArgs(domainHash, newPrice);
@@ -153,7 +153,7 @@ describe("ZNSFixedPricer", () => {
   });
 
   it("#getPrice should return the correct price", async () => {
-    const newPrice = ethers.utils.parseEther("3213");
+    const newPrice = ethers.parseEther("3213");
     await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
 
     expect(
@@ -168,7 +168,7 @@ describe("ZNSFixedPricer", () => {
   });
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
-    const newPrice = ethers.utils.parseEther("3213");
+    const newPrice = ethers.parseEther("3213");
     const newFee = BigInt(1234);
     await zns.fixedPricer.connect(user).setPrice(domainHash, newPrice);
     await zns.fixedPricer.connect(user).setFeePercentage(domainHash, newFee);
@@ -184,7 +184,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
     await expect(
-      zns.fixedPricer.connect(random).setPrice(domainHash, ethers.utils.parseEther("1"))
+      zns.fixedPricer.connect(random).setPrice(domainHash, ethers.parseEther("1"))
     ).to.be.revertedWith(
       NOT_AUTHORIZED_REG_WIRED_ERR
     );
@@ -220,7 +220,7 @@ describe("ZNSFixedPricer", () => {
 
   // eslint-disable-next-line max-len
   it("#setPriceConfig() should set the price config correctly and emit #PriceSet and #FeePercentageSet events", async () => {
-    const newPrice = ethers.utils.parseEther("1823");
+    const newPrice = ethers.parseEther("1823");
     const newFee = BigInt("12");
     const tx = zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
@@ -304,7 +304,7 @@ describe("ZNSFixedPricer", () => {
       });
 
       await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+      await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {

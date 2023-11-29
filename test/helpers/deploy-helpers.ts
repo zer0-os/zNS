@@ -46,7 +46,7 @@ export const getPriceBulk = async (
   const prices = [];
 
   for (const domain of domains) {
-    const parent = parentHashes[index] ? parentHashes[index] : ethers.constants.HashZero;
+    const parent = parentHashes[index] ? parentHashes[index] : ethers.ZeroHash;
 
     const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(
       parent,
@@ -57,7 +57,7 @@ export const getPriceBulk = async (
     const priceWithFee = price.add(stakeFee);
 
     if (includeProtocolFee) {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, priceWithFee);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, priceWithFee);
 
       prices.push(priceWithFee.add(protocolFee));
     } else {

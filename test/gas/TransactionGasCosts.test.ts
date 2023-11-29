@@ -45,7 +45,7 @@ describe("Transaction Gas Costs Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, DEFAULT_PRICE_CONFIG);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_PRICE_CONFIG);
 
     config = {
       pricerContract: zns.fixedPricer.address,
@@ -59,7 +59,7 @@ describe("Transaction Gas Costs Test", () => {
         rootOwner,
         lvl2SubOwner,
       ].map(async ({ address }) =>
-        zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+        zns.meowToken.mint(address, ethers.parseEther("1000000")))
     );
     await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -97,7 +97,7 @@ describe("Transaction Gas Costs Test", () => {
     //       },
     //     },
     //     priceConfig: {
-    //       price: BigInt(ethers.utils.parseEther("1375.612")),
+    //       price: BigInt(ethers.parseEther("1375.612")),
     //       feePercentage: BigInt(0),
     //     },
     //   },

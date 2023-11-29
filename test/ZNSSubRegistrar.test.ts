@@ -82,12 +82,12 @@ describe("ZNSSubRegistrar", () => {
           rootOwner,
           lvl2SubOwner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("100000000000")))
+          zns.meowToken.mint(address, ethers.parseEther("100000000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
       rootPriceConfig = {
-        price: ethers.utils.parseEther("1375.612"),
+        price: ethers.parseEther("1375.612"),
         feePercentage: BigInt(0),
       };
 
@@ -202,7 +202,7 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig: {
-            price: ethers.utils.parseEther("777.325"),
+            price: ethers.parseEther("777.325"),
             feePercentage: BigInt(0),
           },
         },
@@ -294,7 +294,7 @@ describe("ZNSSubRegistrar", () => {
       // check that 0x0 hash can NOT be passed as parentHash
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          ethers.constants.HashZero,
+          ethers.ZeroHash,
           "sub",
           lvl2SubOwner.address,
           subTokenURI,
@@ -305,7 +305,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // check that a random non-existent hash can NOT be passed as parentHash
-      const randomHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("random"));
+      const randomHash = ethers.keccak256(ethers.toUtf8Bytes("random"));
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           randomHash,
@@ -337,7 +337,7 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig: {
-            price: ethers.utils.parseEther("777.325"),
+            price: ethers.parseEther("777.325"),
             feePercentage: BigInt(0),
           },
         },
@@ -503,7 +503,7 @@ describe("ZNSSubRegistrar", () => {
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
 
-    const fixedPrice = ethers.utils.parseEther("1375.612");
+    const fixedPrice = ethers.parseEther("1375.612");
     const fixedFeePercentage = BigInt(200);
 
     before(async () => {
@@ -544,7 +544,7 @@ describe("ZNSSubRegistrar", () => {
           branchLvl2Owner,
           multiOwner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -890,8 +890,8 @@ describe("ZNSSubRegistrar", () => {
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
-      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.owner).to.eq(ethers.ZeroAddress);
+      expect(dataFromReg.resolver).to.eq(ethers.ZeroAddress);
 
       const tokenId = BigInt(domainHash).toString();
       await expect(
@@ -954,8 +954,8 @@ describe("ZNSSubRegistrar", () => {
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
-      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.owner).to.eq(ethers.ZeroAddress);
+      expect(dataFromReg.resolver).to.eq(ethers.ZeroAddress);
 
       const tokenId = BigInt(domainHash).toString();
       await expect(
@@ -1087,8 +1087,8 @@ describe("ZNSSubRegistrar", () => {
       expect(stakedAfterRevoke).to.eq(0);
 
       const dataFromReg = await zns.registry.getDomainRecord(lvl3Hash);
-      expect(dataFromReg.owner).to.eq(ethers.constants.AddressZero);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.owner).to.eq(ethers.ZeroAddress);
+      expect(dataFromReg.resolver).to.eq(ethers.ZeroAddress);
 
       const tokenId = BigInt(lvl3Hash).toString();
       await expect(
@@ -1182,7 +1182,7 @@ describe("ZNSSubRegistrar", () => {
       await registrationWithSetup({
         zns,
         user: rootOwner,
-        parentHash: ethers.constants.HashZero,
+        parentHash: ethers.ZeroHash,
         domainLabel: domainConfigs[0].domainLabel,
         fullConfig: domainConfigs[0].fullConfig,
       });
@@ -1353,7 +1353,7 @@ describe("ZNSSubRegistrar", () => {
           branchLvl1Owner,
           branchLvl2Owner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -1373,7 +1373,7 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: rootOwner.address,
           },
           priceConfig: {
-            price: ethers.utils.parseEther("1375.612"),
+            price: ethers.parseEther("1375.612"),
             feePercentage: BigInt(0),
           },
         },
@@ -2251,7 +2251,7 @@ describe("ZNSSubRegistrar", () => {
         true
       );
       const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
-        ethers.constants.HashZero,
+        ethers.ZeroHash,
         priceFromSC.add(feeFromSC)
       );
 
@@ -2340,7 +2340,7 @@ describe("ZNSSubRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      fixedPrice = ethers.utils.parseEther("397");
+      fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
 
       await Promise.all(
@@ -2352,7 +2352,7 @@ describe("ZNSSubRegistrar", () => {
           lvl5SubOwner,
           lvl6SubOwner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -2466,7 +2466,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
           res[0].domainHash,
           "tobedenied",
-          ethers.constants.AddressZero,
+          ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
@@ -2496,7 +2496,7 @@ describe("ZNSSubRegistrar", () => {
       await zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
         parentHash,
         domainLabel,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
@@ -2509,7 +2509,7 @@ describe("ZNSSubRegistrar", () => {
       // check registry
       const dataFromReg = await zns.registry.getDomainRecord(hash);
       expect(dataFromReg.owner).to.eq(lvl5SubOwner.address);
-      expect(dataFromReg.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromReg.resolver).to.eq(ethers.ZeroAddress);
 
       // check domain token
       const tokenId = BigInt(hash).toString();
@@ -2571,7 +2571,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
           parentHash,
           "notmintlisted",
-          ethers.constants.AddressZero,
+          ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
@@ -2591,7 +2591,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl4SubOwner).registerSubdomain(
           parentHash,
           "notmintlistednow",
-          ethers.constants.AddressZero,
+          ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
@@ -2683,7 +2683,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
           regResults[1].domainHash,
           "notallowed",
-          ethers.constants.AddressZero,
+          ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
@@ -2728,7 +2728,7 @@ describe("ZNSSubRegistrar", () => {
       await zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
         regResults[1].domainHash,
         "alloweddddd",
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         DEFAULT_TOKEN_URI,
         distrConfigEmpty
       );
@@ -2763,7 +2763,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl4SubOwner).registerSubdomain(
           parentHash,
           "notallowed",
-          ethers.constants.AddressZero,
+          ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty
         )
@@ -2802,7 +2802,7 @@ describe("ZNSSubRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      fixedPrice = ethers.utils.parseEther("397");
+      fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
 
       await Promise.all(
@@ -2814,7 +2814,7 @@ describe("ZNSSubRegistrar", () => {
           lvl5SubOwner,
           lvl6SubOwner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
@@ -2946,12 +2946,12 @@ describe("ZNSSubRegistrar", () => {
       await zns.registry.connect(lvl2SubOwner).updateDomainRecord(
         regResults[1].domainHash,
         lvl3SubOwner.address,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
       );
 
       const dataFromRegAfter = await zns.registry.getDomainRecord(regResults[1].domainHash);
       expect(dataFromRegAfter.owner).to.eq(lvl3SubOwner.address);
-      expect(dataFromRegAfter.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromRegAfter.resolver).to.eq(ethers.ZeroAddress);
 
       // reclaim to switch ownership back to original owner
       await zns.rootRegistrar.connect(lvl2SubOwner).reclaimDomain(
@@ -2960,7 +2960,7 @@ describe("ZNSSubRegistrar", () => {
 
       const dataFromRegAfterReclaim = await zns.registry.getDomainRecord(regResults[1].domainHash);
       expect(dataFromRegAfterReclaim.owner).to.eq(lvl2SubOwner.address);
-      expect(dataFromRegAfterReclaim.resolver).to.eq(ethers.constants.AddressZero);
+      expect(dataFromRegAfterReclaim.resolver).to.eq(ethers.ZeroAddress);
     });
 
     describe("#setDistributionConfigForDomain()", () => {
@@ -3042,7 +3042,7 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         const newConfig = {
-          pricerContract: ethers.constants.AddressZero,
+          pricerContract: ethers.ZeroAddress,
           paymentType: PaymentType.STAKE,
           accessType: AccessType.MINTLIST,
         };
@@ -3099,7 +3099,7 @@ describe("ZNSSubRegistrar", () => {
         await expect(
           zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
             domainHash,
-            ethers.constants.AddressZero,
+            ethers.ZeroAddress,
           )
         ).to.be.revertedWith(
           "ZNSSubRegistrar: pricerContract can not be 0x0 address"
@@ -3256,7 +3256,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("#setRootRegistrar should NOT set registrar as 0x0 address", async () => {
       await expect(
-        zns.subRegistrar.connect(admin).setRootRegistrar(ethers.constants.AddressZero),
+        zns.subRegistrar.connect(admin).setRootRegistrar(ethers.ZeroAddress),
       ).to.be.revertedWith(
         "ZNSSubRegistrar: _registrar can not be 0x0 address",
       );
@@ -3330,11 +3330,11 @@ describe("ZNSSubRegistrar", () => {
           rootOwner,
           lvl2SubOwner,
         ].map(async ({ address }) =>
-          zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
+          zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
-      fixedPrice = ethers.utils.parseEther("397.13");
+      fixedPrice = ethers.parseEther("397.13");
       // register root domain
       rootHash = await registrationWithSetup({
         zns,

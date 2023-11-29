@@ -36,8 +36,8 @@ export enum PaymentType {
 }
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
-  maxPrice: ethers.utils.parseEther("25000"),
-  minPrice: ethers.utils.parseEther("2000"),
+  maxPrice: ethers.parseEther("25000"),
+  minPrice: ethers.parseEther("2000"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -46,8 +46,8 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
 };
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
-  maxPrice: ethers.constants.Zero,
-  minPrice: ethers.constants.Zero,
+  maxPrice: BigInt(0),
+  minPrice: BigInt(0),
   maxLength: BigInt(0),
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
@@ -56,13 +56,13 @@ export const curvePriceConfigEmpty : ICurvePriceConfig = {
 };
 
 export const paymentConfigEmpty = {
-  token: ethers.constants.AddressZero,
-  beneficiary: ethers.constants.AddressZero,
+  token: ethers.ZeroAddress,
+  beneficiary: ethers.ZeroAddress,
   paymentType: PaymentType.DIRECT,
 };
 
 export const distrConfigEmpty = {
-  pricerContract: ethers.constants.AddressZero,
+  pricerContract: ethers.ZeroAddress,
   paymentType: 0,
   accessType: 0,
 };

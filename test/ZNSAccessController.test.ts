@@ -52,8 +52,8 @@ describe("ZNSAccessController", () => {
       await expect(
         deployAccessController({
           deployer,
-          governorAddresses: [ ethers.constants.AddressZero ],
-          adminAddresses: [ ethers.constants.AddressZero ],
+          governorAddresses: [ ethers.ZeroAddress ],
+          adminAddresses: [ ethers.ZeroAddress ],
         })
       ).to.be.revertedWith("ZNSAccessController: Can't grant role to zero address");
     });
