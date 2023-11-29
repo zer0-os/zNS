@@ -13,7 +13,7 @@ export class ZNSTreasuryDM extends BaseDeployMission {
   contractName = znsNames.treasury.contract;
   instanceName = znsNames.treasury.instance;
 
-  deployArgs () : TDeployArgs {
+  async deployArgs () : Promise<TDeployArgs> {
     const {
       accessController,
       registry,
@@ -24,9 +24,9 @@ export class ZNSTreasuryDM extends BaseDeployMission {
     } = this.campaign;
 
     return [
-      accessController.address,
-      registry.address,
-      meowToken.address,
+      await accessController.getAddress(),
+      await registry.getAddress(),
+      await meowToken.getAddress(),
       zeroVaultAddress,
     ];
   }

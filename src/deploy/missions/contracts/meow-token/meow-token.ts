@@ -57,13 +57,14 @@ export class MeowTokenDM extends BaseDeployMission {
 
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${contract.address}`);
+      // eslint-disable-next-line max-len
+      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${await contract.getAddress()}`);
     } else {
       await super.deploy();
     }
   }
 
-  deployArgs () : TDeployArgs {
+  async deployArgs () : Promise<TDeployArgs> {
     return [meowTokenName, meowTokenSymbol];
   }
 

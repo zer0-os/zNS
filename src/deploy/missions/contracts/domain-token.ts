@@ -12,8 +12,8 @@ export class ZNSDomainTokenDM extends BaseDeployMission {
   contractName = znsNames.domainToken.contract;
   instanceName = znsNames.domainToken.instance;
 
-  deployArgs () : TDeployArgs {
-    const { accessController: { address: acAddress } } = this.campaign;
+  async deployArgs () : Promise<TDeployArgs> {
+    const { accessController } = this.campaign;
     const {
       domainToken: {
         name,
@@ -23,6 +23,6 @@ export class ZNSDomainTokenDM extends BaseDeployMission {
       },
     } = this.config;
 
-    return [ acAddress, name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
+    return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
   }
 }

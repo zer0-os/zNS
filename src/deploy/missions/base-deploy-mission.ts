@@ -39,10 +39,10 @@ export class BaseDeployMission {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
     this.implAddress = this.proxyData.isProxy
-      ? await this.campaign.deployer.getProxyImplAddress(contract.address)
+      ? await this.campaign.deployer.getProxyImplAddress(await contract.getAddress())
       : null;
 
-    const contractDbDoc = this.buildDbObject(contract, this.implAddress);
+    const contractDbDoc = await this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
@@ -62,9 +62,10 @@ export class BaseDeployMission {
       const contract = await this.campaign.deployer.getContractObject(
         this.contractName,
         dbContract.address,
-      );
+      ) as Contract;
 
-      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${contract.address}`);
+      // eslint-disable-next-line max-len
+      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${await contract.getAddress()}`);
 
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
     }
@@ -72,7 +73,7 @@ export class BaseDeployMission {
     return !dbContract;
   }
 
-  deployArgs () : TDeployArgs {
+  async deployArgs () : Promise<TDeployArgs> {
     return [];
   }
 
@@ -80,11 +81,11 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  buildDbObject (hhContract : Contract, implAddress : string | null) : Omit<IContractDbData, "version"> {
+  async buildDbObject (hhContract : Contract, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,
-      address: hhContract.address,
+      address: await hhContract.getAddress(),
       abi: JSON.stringify(abi),
       bytecode,
       implementation: implAddress,
@@ -92,8 +93,8 @@ export class BaseDeployMission {
   }
 
   async deploy () {
-    const deployArgs = this.deployArgs();
-    this.logger.info(`Deploying ${this.contractName} with arguments: ${this.deployArgs()}`);
+    const deployArgs = await this.deployArgs();
+    this.logger.info(`Deploying ${this.contractName} with arguments: ${deployArgs}`);
 
     let contract;
     if (this.proxyData.isProxy) {
@@ -110,7 +111,7 @@ export class BaseDeployMission {
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${contract.address}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${await contract.getAddress()}`);
   }
 
   async needsPostDeploy () {
@@ -138,7 +139,7 @@ export class BaseDeployMission {
     this.logger.debug(`Verifying ${this.contractName} on Etherscan...`);
     const { address } = await this.campaign[this.instanceName];
 
-    const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
+    const ctorArgs = !this.proxyData.isProxy ? await this.deployArgs() : undefined;
 
     await this.campaign.deployer.etherscanVerify({
       address,
