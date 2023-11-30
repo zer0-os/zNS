@@ -185,14 +185,14 @@ export const validatePathRegistration = async ({
       }
 
       // if parent's payment is staking, then beneficiary only gets the fee
-      if (paymentType.toString() === PaymentType.STAKE.toString()) {
+      if (paymentType === PaymentType.STAKE) {
         expParentBalDiff = stakeFee;
       } else {
         stakeFee = BigInt(0);
         expParentBalDiff = expectedPrice;
       }
 
-      expTreasuryBalDiff = paymentType.toString() === PaymentType.STAKE.toString()
+      expTreasuryBalDiff = paymentType === PaymentType.STAKE
         ? expectedPrice : BigInt(0);
     }
 

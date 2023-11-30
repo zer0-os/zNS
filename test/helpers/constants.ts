@@ -16,24 +16,24 @@ export const DECAULT_PRECISION = BigInt(2);
 export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DECAULT_PRECISION);
 
 // eslint-disable-next-line no-shadow
-export enum AccessType {
-  LOCKED,
-  OPEN,
-  MINTLIST,
-}
+export const AccessType  = {
+  LOCKED: 0n,
+  OPEN: 1n,
+  MINTLIST: 2n,
+};
 
 // eslint-disable-next-line no-shadow
-export enum OwnerOf {
-  NAME,
-  TOKEN,
-  BOTH,
-}
+export const OwnerOf = {
+  NAME: 0n,
+  TOKEN: 1n,
+  BOTH: 2n,
+};
 
 // eslint-disable-next-line no-shadow
-export enum PaymentType {
-  DIRECT,
-  STAKE,
-}
+export const PaymentType = {
+  DIRECT: 0n,
+  STAKE: 1n,
+};
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
