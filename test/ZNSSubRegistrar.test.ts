@@ -29,7 +29,7 @@ import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { CustomDecimalTokenMock, ZNSSubRegistrar, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
+import { CustomDecimalTokenMock, ZNSSubRegistrar, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -3466,7 +3466,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(tx).to.not.be.reverted;
 
       // create new proxy object
-      const newRegistrarProxy = factory.attach(await zns.subRegistrar.getAddress());
+      const newRegistrarProxy = factory.attach(await zns.subRegistrar.getAddress()) as ZNSSubRegistrarUpgradeMock;
 
       // check values in storage
       const rootConfigBefore = await newRegistrarProxy.distrConfigs(rootHash);
