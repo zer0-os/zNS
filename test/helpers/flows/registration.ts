@@ -233,7 +233,7 @@ export const validatePathRegistration = async ({
     const tokenOwner = await zns.domainToken.ownerOf(tokenId);
     expect(tokenOwner).to.eq(user.address);
 
-    const domainAddress = await zns.addressResolver.getAddress(domainHash);
+    const domainAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
     expect(domainAddress).to.eq(user.address);
 
     const events = await getDomainRegisteredEvents({

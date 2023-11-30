@@ -841,7 +841,7 @@ describe("ZNSSubRegistrar", () => {
           expect(token).to.eq(configs[idx].fullConfig.paymentConfig.token);
           expect(beneficiary).to.eq(configs[idx].fullConfig.paymentConfig.beneficiary);
 
-          const domainAddress = await zns.addressResolver.getAddress(domainHash);
+          const domainAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
           expect(domainAddress).to.eq(multiOwner.address);
         }, Promise.resolve()
       );

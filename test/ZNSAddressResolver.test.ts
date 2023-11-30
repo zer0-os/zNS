@@ -134,7 +134,7 @@ describe("ZNSAddressResolver", () => {
       .to.emit(zns.addressResolver, "AddressSet")
       .withArgs(wilderDomainHash, user.address);
 
-    const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(resolvedAddress).to.equal(user.address);
   });
 
@@ -159,7 +159,7 @@ describe("ZNSAddressResolver", () => {
       .to.emit(zns.addressResolver, "AddressSet")
       .withArgs(wilderDomainHash, hre.ethers.ZeroAddress);
 
-    const address = await zns.addressResolver.getAddress(wilderDomainHash);
+    const address = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(address).to.eq(hre.ethers.ZeroAddress);
 
   });
@@ -167,7 +167,7 @@ describe("ZNSAddressResolver", () => {
   it("Should resolve address correctly", async () => {
     await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
 
-    const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(resolvedAddress).to.equal(user.address);
   });
 
@@ -195,7 +195,7 @@ describe("ZNSAddressResolver", () => {
     const resolverAddress = await zns.registry.getDomainResolver(wilderDomainHash);
     expect(resolverAddress).to.eq(await zns.addressResolver.getAddress());
 
-    const resolvedAddress = await zns.addressResolver.getAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(resolvedAddress).to.eq(user.address);
   });
 
@@ -247,7 +247,7 @@ describe("ZNSAddressResolver", () => {
 
       const contractCalls = [
         zns.addressResolver.registry(),
-        zns.addressResolver.getAddress(wilderDomainHash),
+        zns.addressResolver.resolveDomainAddress(wilderDomainHash),
       ];
 
       await validateUpgrade(deployer, zns.addressResolver, newResolver, factory, contractCalls);

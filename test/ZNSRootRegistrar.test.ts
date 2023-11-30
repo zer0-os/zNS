@@ -697,7 +697,7 @@ describe("ZNSRootRegistrar", () => {
         user,
       });
 
-      const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
+      const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
       expect(resolvedAddress).to.eq(await zns.rootRegistrar.getAddress());
     });
 
