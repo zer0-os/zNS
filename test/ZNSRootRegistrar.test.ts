@@ -33,7 +33,12 @@ import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { IERC20, ZNSRootRegistrar, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import {
+  IERC20,
+  ZNSRootRegistrar,
+  ZNSRootRegistrar__factory,
+  ZNSRootRegistrarUpgradeMock__factory,
+} from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -902,7 +907,7 @@ describe("ZNSRootRegistrar", () => {
   describe("Revoking Domains", () => {
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
-      const topLevelTx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,

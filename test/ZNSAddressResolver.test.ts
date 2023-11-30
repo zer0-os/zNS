@@ -1,5 +1,10 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolver, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
+import {
+  ERC165__factory,
+  ZNSAddressResolver,
+  ZNSAddressResolver__factory,
+  ZNSAddressResolverUpgradeMock__factory,
+} from "../typechain";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";

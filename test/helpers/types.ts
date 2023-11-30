@@ -27,7 +27,6 @@ import {
   MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { AccessType, PaymentType } from "./constants";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 

@@ -29,7 +29,13 @@ import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { CustomDecimalTokenMock, ZNSSubRegistrar, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
+import {
+  CustomDecimalTokenMock,
+  ZNSSubRegistrar,
+  ZNSSubRegistrar__factory,
+  ZNSSubRegistrarUpgradeMock,
+  ZNSSubRegistrarUpgradeMock__factory,
+} from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
