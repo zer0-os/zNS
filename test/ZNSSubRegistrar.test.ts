@@ -1904,7 +1904,10 @@ describe("ZNSSubRegistrar", () => {
       // validate transfer events are not happenning
       const latestBlock = await time.latestBlock();
       const transferFilterToParent = zns.meowToken.filters.Transfer(lvl3SubOwner.address, lvl2SubOwner.address);
-      const transferFilterToTreasury = zns.meowToken.filters.Transfer(lvl3SubOwner.address, await zns.treasury.getAddress());
+      const transferFilterToTreasury = zns.meowToken.filters.Transfer(
+        lvl3SubOwner.address,
+        await zns.treasury.getAddress()
+      );
       const transfersToParent = await zns.meowToken.queryFilter(
         transferFilterToParent,
         latestBlock - 3,
@@ -1986,8 +1989,14 @@ describe("ZNSSubRegistrar", () => {
 
       // validate transfer events are not happenning
       const latestBlock = await time.latestBlock();
-      const transferFilterToParent = zns.meowToken.filters.Transfer(lvl3SubOwner.address, lvl2SubOwner.address);
-      const transferFilterToTreasury = zns.meowToken.filters.Transfer(lvl3SubOwner.address, await zns.treasury.getAddress());
+      const transferFilterToParent = zns.meowToken.filters.Transfer(
+        lvl3SubOwner.address,
+        lvl2SubOwner.address
+      );
+      const transferFilterToTreasury = zns.meowToken.filters.Transfer(
+        lvl3SubOwner.address,
+        await zns.treasury.getAddress()
+      );
       const transfersToParent = await zns.meowToken.queryFilter(
         transferFilterToParent,
         latestBlock - 3,
@@ -2070,7 +2079,10 @@ describe("ZNSSubRegistrar", () => {
       // validate transfer events are not happenning
       const latestBlock = await time.latestBlock();
       const transferFilterToParent = zns.meowToken.filters.Transfer(lvl3SubOwner.address, lvl2SubOwner.address);
-      const transferFilterToTreasury = zns.meowToken.filters.Transfer(lvl3SubOwner.address, await zns.treasury.getAddress());
+      const transferFilterToTreasury = zns.meowToken.filters.Transfer(
+        lvl3SubOwner.address,
+        await zns.treasury.getAddress()
+      );
       const transfersToParent = await zns.meowToken.queryFilter(
         transferFilterToParent,
         latestBlock - 3,
@@ -2154,7 +2166,10 @@ describe("ZNSSubRegistrar", () => {
       // validate transfer events are not happenning
       const latestBlock = await time.latestBlock();
       const transferFilterToParent = zns.meowToken.filters.Transfer(lvl3SubOwner.address, lvl2SubOwner.address);
-      const transferFilterToTreasury = zns.meowToken.filters.Transfer(lvl3SubOwner.address, await zns.treasury.getAddress());
+      const transferFilterToTreasury = zns.meowToken.filters.Transfer(
+        lvl3SubOwner.address,
+        await zns.treasury.getAddress()
+      );
       const transfersToParent = await zns.meowToken.queryFilter(
         transferFilterToParent,
         latestBlock - 3,
