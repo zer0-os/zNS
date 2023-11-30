@@ -185,14 +185,14 @@ export const validatePathRegistration = async ({
       }
 
       // if parent's payment is staking, then beneficiary only gets the fee
-      if (paymentType === PaymentType.STAKE) {
+      if (paymentType.toString() === PaymentType.STAKE.toString()) {
         expParentBalDiff = stakeFee;
       } else {
         stakeFee = BigInt(0);
         expParentBalDiff = expectedPrice;
       }
 
-      expTreasuryBalDiff = paymentType === PaymentType.STAKE
+      expTreasuryBalDiff = paymentType.toString() === PaymentType.STAKE.toString()
         ? expectedPrice : BigInt(0);
     }
 
@@ -227,7 +227,7 @@ export const validatePathRegistration = async ({
 
     const dataFromReg = await zns.registry.getDomainRecord(domainHash);
     expect(dataFromReg.owner).to.eq(user.address);
-    expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
+    expect(dataFromReg.resolver).to.eq(zns.addressResolver.getAddress);
 
     const tokenId = BigInt(domainHash).toString();
     const tokenOwner = await zns.domainToken.ownerOf(tokenId);
