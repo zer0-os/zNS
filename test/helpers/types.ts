@@ -82,7 +82,7 @@ export interface IFixedPriceConfig {
 }
 
 export interface RegistrarConfig {
-  treasury : ZNSTreasury;
+  treasuryAddress : string;
   registryAddress : string;
   curvePricerAddress : string;
   domainTokenAddress : string;
