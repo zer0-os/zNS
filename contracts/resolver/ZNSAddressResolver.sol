@@ -47,7 +47,7 @@ contract ZNSAddressResolver is
      * @dev Returns address associated with a given domain name hash.
      * @param domainHash The identifying hash of a domain's name
      */
-    function getAddress(
+    function resolveDomainAddress(
         bytes32 domainHash
     ) external view override returns (address) {
         return domainAddresses[domainHash];
