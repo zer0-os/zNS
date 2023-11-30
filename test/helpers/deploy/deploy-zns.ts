@@ -69,13 +69,13 @@ export const deployAccessController = async ({
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: accessControllerName,
-      address,
+      address: await controller.getAddress(),
     });
 
-    console.log(`AccessController deployed at: ${address}`);
+    console.log(`AccessController deployed at: ${await controller.getAddress()}`);
   }
 
-  return controller;
+  return controller as unknown as ZNSAccessController;
 };
 
 export const deployRegistry = async (
@@ -92,7 +92,7 @@ export const deployRegistry = async (
     ],
     {
       kind: "uups",
-    }) as ZNSRegistry;
+    });
 
   await registry.waitForDeployment();
   const address = await registry.getAddress();
@@ -100,10 +100,10 @@ export const deployRegistry = async (
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await registry.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await registry.getAddress());
 
     await hre.tenderly.verify({
       name: registryName,
@@ -111,11 +111,11 @@ export const deployRegistry = async (
     });
 
     console.log(`ZNSRegistry deployed at:
-                proxy: ${address}
+                proxy: ${await registry.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return registry;
+  return registry as unknown as ZNSRegistry;
 };
 
 export const deployDomainToken = async (
@@ -162,13 +162,13 @@ export const deployDomainToken = async (
                 implementation: ${impl}`);
   }
 
-  return domainToken;
+  return domainToken as unknown as ZNSDomainToken;
 };
 
 export const deployMeowToken = async (
   deployer : SignerWithAddress,
   isTenderlyRun : boolean
-) => {
+) : Promise<MeowTokenMock> => {
   const factory = new MeowTokenMock__factory(deployer);
 
   const meowToken = await hre.upgrades.deployProxy(
@@ -184,15 +184,13 @@ export const deployMeowToken = async (
 
   await meowToken.waitForDeployment();
 
-  const address = await meowToken.getAddress();
-
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: transparentProxyName,
-      address,
+      address: await meowToken.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await meowToken.getAddress());
 
     await hre.tenderly.verify({
       name: meowTokenMockName,
@@ -200,14 +198,14 @@ export const deployMeowToken = async (
     });
 
     console.log(`${meowTokenMockName} deployed at:
-                proxy: ${address}
+                proxy: ${await meowToken.getAddress()}
                 implementation: ${impl}`);
   }
 
   // Mint 10,000 ZERO for self
-  await meowToken.mint(address, ethers.parseEther("10000"));
+  await meowToken.mint(await meowToken.getAddress(), ethers.parseEther("10000"));
 
-  return meowToken;
+  return meowToken as unknown as MeowTokenMock;
 };
 
 export const deployAddressResolver = async (
@@ -227,19 +225,17 @@ export const deployAddressResolver = async (
     {
       kind: "uups",
     }
-  ) as ZNSAddressResolver;
+  );
 
   await resolver.waitForDeployment();
-
-  const address = await resolver.getAddress();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await resolver.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await resolver.getAddress());
 
     await hre.tenderly.verify({
       name: addressResolverName,
@@ -247,11 +243,11 @@ export const deployAddressResolver = async (
     });
 
     console.log(`ZNSAddressResolver deployed at:
-                proxy: ${address}
+                proxy: ${await resolver.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return resolver;
+  return resolver as unknown as ZNSAddressResolver;
 };
 
 export const deployCurvePricer = async ({
@@ -279,7 +275,7 @@ export const deployCurvePricer = async ({
     {
       kind: "uups",
     }
-  ) as ZNSCurvePricer;
+  );
 
   await curvePricer.waitForDeployment();
 
@@ -288,10 +284,10 @@ export const deployCurvePricer = async ({
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await curvePricer.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await curvePricer.getAddress());
 
     await hre.tenderly.verify({
       name: curvePricerName,
@@ -299,11 +295,11 @@ export const deployCurvePricer = async ({
     });
 
     console.log(`${curvePricerName} deployed at:
-                proxy: ${address}
+                proxy: ${await curvePricer.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return curvePricer;
+  return curvePricer as unknown as ZNSCurvePricer;
 };
 
 export const deployTreasury = async ({
@@ -322,7 +318,7 @@ export const deployTreasury = async ({
   isTenderlyRun : boolean;
 }) : Promise<ZNSTreasury> => {
   const treasuryFactory = new ZNSTreasury__factory(deployer);
-  const treasury : ZNSTreasury = await upgrades.deployProxy(treasuryFactory,
+  const treasury = await upgrades.deployProxy(treasuryFactory,
     [
       accessControllerAddress,
       registryAddress,
@@ -332,19 +328,17 @@ export const deployTreasury = async ({
     {
       kind: "uups",
     }
-  ) as ZNSTreasury;
+  );
 
   await treasury.waitForDeployment();
-
-  const address = await treasury.getAddress();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await treasury.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await treasury.getAddress());
 
     await hre.tenderly.verify({
       name: treasuryName,
@@ -352,11 +346,11 @@ export const deployTreasury = async ({
     });
 
     console.log(`ZNSTreasury deployed at:
-                proxy: ${address}
+                proxy: ${await treasury.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return treasury;
+  return treasury as unknown as ZNSTreasury;
 };
 
 export const deployRootRegistrar = async (
@@ -373,27 +367,25 @@ export const deployRootRegistrar = async (
       await accessController.getAddress(),
       config.registryAddress,
       config.curvePricerAddress,
-      await config.treasury.getAddress(),
+      config.treasury,
       config.domainTokenAddress,
     ],
     {
       kind: "uups",
     }
-  ) as ZNSRootRegistrar;
+  );
 
   await registrar.waitForDeployment();
-
-  const address = await registrar.getAddress();
 
   await accessController.connect(deployer).grantRole(REGISTRAR_ROLE, await registrar.getAddress());
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await registrar.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await registrar.getAddress());
 
     await hre.tenderly.verify({
       name: registrarName,
@@ -401,11 +393,11 @@ export const deployRootRegistrar = async (
     });
 
     console.log(`ZNSRootRegistrar deployed at:
-                proxy: ${address}
+                proxy: ${await registrar.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return registrar;
+  return registrar as unknown as ZNSRootRegistrar;
 };
 
 export const deployFixedPricer = async ({
@@ -429,19 +421,17 @@ export const deployFixedPricer = async ({
     {
       kind: "uups",
     }
-  ) as ZNSFixedPricer;
+  );
 
   await fixedPricer.waitForDeployment();
-
-  const address = await fixedPricer.getAddress();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await fixedPricer.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await fixedPricer.getAddress());
 
     await hre.tenderly.verify({
       name: fixedPricerName,
@@ -449,11 +439,11 @@ export const deployFixedPricer = async ({
     });
 
     console.log(`${fixedPricerName} deployed at:
-                proxy: ${address}
+                proxy: ${await fixedPricer.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return fixedPricer;
+  return fixedPricer as unknown as ZNSFixedPricer;
 };
 
 export const deploySubRegistrar = async ({
@@ -482,25 +472,23 @@ export const deploySubRegistrar = async ({
     {
       kind: "uups",
     }
-  ) as ZNSSubRegistrar;
+  );
 
   await subRegistrar.waitForDeployment();
 
-  const address = await subRegistrar.getAddress();
-
   // set SubRegistrar on RootRegistrar
-  await rootRegistrar.setSubRegistrar(address);
+  await rootRegistrar.setSubRegistrar(await subRegistrar.getAddress());
 
   // give SubRegistrar REGISTRAR_ROLE
-  await accessController.connect(admin).grantRole(REGISTRAR_ROLE, address);
+  await accessController.connect(admin).grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
-      address,
+      address: await subRegistrar.getAddress(),
     });
 
-    const impl = await getProxyImplAddress(address);
+    const impl = await getProxyImplAddress(await subRegistrar.getAddress());
 
     await hre.tenderly.verify({
       name: subRegistrarName,
@@ -508,11 +496,11 @@ export const deploySubRegistrar = async ({
     });
 
     console.log(`${subRegistrarName} deployed at:
-                proxy: ${address}
+                proxy: ${await subRegistrar.getAddress()}
                 implementation: ${impl}`);
   }
 
-  return subRegistrar;
+  return subRegistrar as unknown as ZNSSubRegistrar;
 };
 
 /**
@@ -536,6 +524,10 @@ export const deployZNS = async ({
   // to not clog the test output.
   await hre.upgrades.silenceWarnings();
 
+  if (!zeroVaultAddress) {
+    zeroVaultAddress = deployer.address;
+  }
+
   const accessController = await deployAccessController({
     deployer,
     governorAddresses: [deployer.address, ...governorAddresses],
@@ -543,18 +535,15 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
-  const acAddress = await accessController.getAddress();
-
   const registry = await deployRegistry(
     deployer,
-    acAddress,
+    await accessController.getAddress(),
     isTenderlyRun
   );
-  const registryAddress = await registry.getAddress();
 
   const domainToken = await deployDomainToken(
     deployer,
-    acAddress,
+    await accessController.getAddress(),
     zeroVaultAddress,
     DEFAULT_ROYALTY_FRACTION,
     isTenderlyRun
@@ -567,23 +556,23 @@ export const deployZNS = async ({
 
   const addressResolver = await deployAddressResolver(
     deployer,
-    acAddress,
-    registryAddress,
+    await accessController.getAddress(),
+    await registry.getAddress(),
     isTenderlyRun
   );
 
   const curvePricer = await deployCurvePricer({
     deployer,
-    accessControllerAddress: acAddress,
-    registryAddress,
+    accessControllerAddress: await accessController.getAddress(),
+    registryAddress: await registry.getAddress(),
     priceConfig,
     isTenderlyRun,
   });
 
   const treasury = await deployTreasury({
     deployer,
-    accessControllerAddress: acAddress,
-    registryAddress,
+    accessControllerAddress: await accessController.getAddress(),
+    registryAddress: await registry.getAddress(),
     zTokenMockAddress: await meowTokenMock.getAddress(),
     zeroVaultAddress,
     isTenderlyRun,
@@ -591,7 +580,7 @@ export const deployZNS = async ({
 
   const config : RegistrarConfig = {
     treasury,
-    registryAddress,
+    registryAddress: await registry.getAddress(),
     curvePricerAddress: await curvePricer.getAddress(),
     domainTokenAddress: await domainToken.getAddress(),
   };
@@ -605,8 +594,8 @@ export const deployZNS = async ({
 
   const fixedPricer = await deployFixedPricer({
     deployer,
-    acAddress,
-    regAddress: registryAddress,
+    acAddress: await accessController.getAddress(),
+    regAddress: await registry.getAddress(),
     isTenderlyRun,
   });
 
@@ -635,7 +624,9 @@ export const deployZNS = async ({
 
   // Give 15 ZERO to the deployer and allowance to the treasury
   await meowTokenMock.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
-  await meowTokenMock.mint(deployer.address, ethers.parseEther("5000000"));
+  await meowTokenMock.mint(await deployer.getAddress(), ethers.parseEther("5000000"));
+
+  // TODO This contract has a function `getAddress` that takes a param so this errors, have to rename function
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await addressResolver.getAddress());
 
   return znsContracts;

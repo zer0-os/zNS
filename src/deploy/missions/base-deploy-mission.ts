@@ -96,22 +96,24 @@ export class BaseDeployMission {
     const deployArgs = await this.deployArgs();
     this.logger.info(`Deploying ${this.contractName} with arguments: ${deployArgs}`);
 
-    let contract;
+    let baseContract;
     if (this.proxyData.isProxy) {
-      contract = await this.campaign.deployer.deployProxy({
+      baseContract = await this.campaign.deployer.deployProxy({
         contractName: this.contractName,
         args: deployArgs,
         kind: this.proxyData.kind,
       });
     } else {
-      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+      baseContract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
+
+    const contract = new Contract(await baseContract.getAddress(), baseContract.interface, baseContract.runner);
 
     await this.saveToDB(contract);
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${await contract.getAddress()}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${await baseContract.getAddress()}`);
   }
 
   async needsPostDeploy () {

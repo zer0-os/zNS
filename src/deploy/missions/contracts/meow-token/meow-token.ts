@@ -1,7 +1,7 @@
 import { BaseDeployMission } from "../../base-deploy-mission";
 import { ProxyKinds } from "../../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../../types";
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import { znsNames } from "../names";
 
 
@@ -48,17 +48,19 @@ export class MeowTokenDM extends BaseDeployMission {
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const contract = await this.campaign.deployer.getContractObject(
+      const baseContract = await this.campaign.deployer.getContractObject(
         this.contractName,
         this.config.stakingTokenAddress,
       );
+
+      const contract = new Contract(baseContract.target.toString(), baseContract.interface, baseContract.runner);
 
       await this.saveToDB(contract);
 
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
       // eslint-disable-next-line max-len
-      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${await contract.getAddress()}`);
+      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${await baseContract.getAddress()}`);
     } else {
       await super.deploy();
     }
