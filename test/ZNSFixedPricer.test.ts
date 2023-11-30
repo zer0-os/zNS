@@ -88,7 +88,7 @@ describe("ZNSFixedPricer", () => {
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSFixedPricer__factory(deployer);
     const impl = await getProxyImplAddress(await zns.fixedPricer.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSFixedPricer;
 
     await expect(
       implContract.initialize(

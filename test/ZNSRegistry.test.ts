@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { IZNSContracts, DeployZNSParams } from "./helpers/types";
-import { ZNSRegistry__factory, ZNSRegistryUpgradeMock__factory } from "../typechain";
+import { ZNSRegistry, ZNSRegistry__factory, ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
@@ -76,7 +76,7 @@ describe("ZNSRegistry", () => {
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSRegistry__factory(deployer);
     const impl = await getProxyImplAddress(await zns.registry.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSRegistry;
 
     await expect(
       implContract.initialize(
@@ -528,24 +528,25 @@ describe("ZNSRegistry", () => {
     it("Emits an event when an existing domain is updated", async () => {
       const domainHash = hashDomainLabel("world");
 
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
-      const tx = await zns.registry
-        .connect(deployer)
-        .updateDomainRecord(
+      await zns.registry.connect(mockRegistrar).createDomainRecord(
+        domainHash,
+        deployer.address,
+        DEFAULT_RESOLVER_TYPE
+      );
+
+      const tx = zns.registry.connect(deployer).updateDomainRecord(
           domainHash,
           mockResolver.address,
           DEFAULT_RESOLVER_TYPE
         );
 
-      const rec = await tx.wait(0);
-      const [ownerEvent, resolverEvent] = rec.events ?? [];
-      expect(ownerEvent.event).to.be.eq("DomainOwnerSet");
-      expect(ownerEvent.args?.[0]).to.be.eq(domainHash);
-      expect(ownerEvent.args?.[1]).to.be.eq(mockResolver.address);
-
-      expect(resolverEvent.event).to.be.eq("DomainResolverSet");
-      expect(resolverEvent.args?.[0]).to.be.eq(domainHash);
-      expect(resolverEvent.args?.[1]).to.be.eq(mockResolver.address);
+      await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(
+        domainHash,
+        mockResolver.address,  
+      ).to.emit(zns.registry, "DomainResolverSet").withArgs(
+        domainHash,
+        mockResolver.address,
+      );
     });
 
     it("Emits an event when a domain's owner is updated", async () => {

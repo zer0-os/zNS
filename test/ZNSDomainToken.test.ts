@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import {
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSDomainToken__factory, ERC165__factory,
+  ZNSDomainToken__factory, ERC165__factory, ZNSDomainToken,
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -70,7 +70,7 @@ describe("ZNSDomainToken", () => {
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSDomainToken__factory(deployer);
     const impl = await getProxyImplAddress(await zns.domainToken.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSDomainToken;
 
     await expect(
       implContract.initialize(
@@ -442,9 +442,9 @@ describe("ZNSDomainToken", () => {
 
     it("should support IERC165", async () => {
       const erc165Interface = ERC165__factory.createInterface();
-      const interfaceId = erc165Interface.getSighash(erc165Interface.functions["supportsInterface(bytes4)"]);
+      const fragment = erc165Interface.getFunction("supportsInterface");
 
-      expect(await zns.domainToken.supportsInterface(interfaceId)).to.be.true;
+      expect(await zns.domainToken.supportsInterface(fragment.selector)).to.be.true;
     });
 
     it("should not support random interface", async () => {

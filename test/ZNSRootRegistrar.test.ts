@@ -33,7 +33,7 @@ import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { IERC20, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
+import { IERC20, ZNSRootRegistrar, ZNSRootRegistrar__factory, ZNSRootRegistrarUpgradeMock__factory } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -151,7 +151,7 @@ describe("ZNSRootRegistrar", () => {
   it("Should NOT initialize the implementation contract", async () => {
     const factory = new ZNSRootRegistrar__factory(deployer);
     const impl = await getProxyImplAddress(await zns.rootRegistrar.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSRootRegistrar;
 
     await expect(
       implContract.initialize(

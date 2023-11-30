@@ -17,7 +17,7 @@ import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { getAccessRevertMsg } from "./helpers/errors";
-import { ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
+import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -99,7 +99,7 @@ describe("ZNSTreasury", () => {
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSTreasury__factory(deployer);
     const impl = await getProxyImplAddress(await zns.treasury.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSTreasury;
 
     await expect(
       implContract.initialize(

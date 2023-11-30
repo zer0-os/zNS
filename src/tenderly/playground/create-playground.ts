@@ -15,5 +15,5 @@ export const createPlayground = async ({
 
   const forkURL = `${forkRpcUrlBase}/${forkId}`;
 
-  return new ethers.providers.JsonRpcProvider(forkURL);
+  return new ethers.JsonRpcProvider(forkURL);
 };

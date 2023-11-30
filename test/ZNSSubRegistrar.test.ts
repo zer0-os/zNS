@@ -29,7 +29,7 @@ import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { CustomDecimalTokenMock, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
+import { CustomDecimalTokenMock, ZNSSubRegistrar, ZNSSubRegistrar__factory, ZNSSubRegistrarUpgradeMock__factory } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -3240,7 +3240,7 @@ describe("ZNSSubRegistrar", () => {
     it("Should NOT let initialize the implementation contract", async () => {
       const factory = new ZNSSubRegistrar__factory(deployer);
       const impl = await getProxyImplAddress(await zns.subRegistrar.getAddress());
-      const implContract = factory.attach(impl);
+      const implContract = factory.attach(impl) as ZNSSubRegistrar;
 
       await expect(
         implContract.initialize(

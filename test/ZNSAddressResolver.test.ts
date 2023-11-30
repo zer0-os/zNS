@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { ERC165__factory, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
+import { ERC165__factory, ZNSAddressResolver, ZNSAddressResolver__factory, ZNSAddressResolverUpgradeMock__factory } from "../typechain";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
@@ -59,7 +59,7 @@ describe("ZNSAddressResolver", () => {
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSAddressResolver__factory(deployer);
     const impl = await getProxyImplAddress(await zns.addressResolver.getAddress());
-    const implContract = factory.attach(impl);
+    const implContract = factory.attach(impl) as ZNSAddressResolver;
 
     await expect(
       implContract.initialize(
@@ -179,8 +179,10 @@ describe("ZNSAddressResolver", () => {
 
   it("Should support the ERC-165 interface ID", async () => {
     const erc165Interface = ERC165__factory.createInterface();
-    const interfaceId = erc165Interface.getSighash(erc165Interface.functions["supportsInterface(bytes4)"]);
-    const supported = await zns.addressResolver.supportsInterface(interfaceId);
+
+    const fragment = erc165Interface.getFunction("supportsInterface");
+
+    const supported = await zns.addressResolver.supportsInterface(fragment.selector);
     expect(supported).to.be.true;
   });
 
