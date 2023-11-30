@@ -13,7 +13,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_NAME_ERR,
+  INVALID_NAME_ERR, AccessType,
 } from "./helpers";
 import {
   DEFAULT_DECIMALS,
@@ -63,7 +63,7 @@ describe("ZNSCurvePricer", () => {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
         pricerContract: await zns.curvePricer.getAddress(),
-        accessType: 1,
+        accessType: AccessType.OPEN,
       },
       paymentConfig: {
         token: await zns.meowToken.getAddress(),

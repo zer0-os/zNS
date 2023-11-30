@@ -535,14 +535,14 @@ describe("ZNSRegistry", () => {
       );
 
       const tx = zns.registry.connect(deployer).updateDomainRecord(
-          domainHash,
-          mockResolver.address,
-          DEFAULT_RESOLVER_TYPE
-        );
+        domainHash,
+        mockResolver.address,
+        DEFAULT_RESOLVER_TYPE
+      );
 
       await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(
         domainHash,
-        mockResolver.address,  
+        mockResolver.address,
       ).to.emit(zns.registry, "DomainResolverSet").withArgs(
         domainHash,
         mockResolver.address,

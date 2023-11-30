@@ -784,15 +784,9 @@ describe("ZNSRootRegistrar", () => {
       // Transfer the domain token
       await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
       // Reclaim the Domain
-      const tx = await zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
-      const receipt = await tx.wait(0);
-
-      // Verify Transfer event is emitted
-      expect(receipt.events?.[1].event).to.eq("DomainReclaimed");
-      expect(receipt.events?.[1].args?.domainHash).to.eq(
-        domainHash
-      );
-      expect(receipt.events?.[1].args?.registrant).to.eq(
+      const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
+      await expect(tx).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(
+        domainHash,
         user.address
       );
     });
