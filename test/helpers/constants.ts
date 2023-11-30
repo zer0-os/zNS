@@ -63,8 +63,8 @@ export const paymentConfigEmpty = {
 
 export const distrConfigEmpty = {
   pricerContract: ethers.ZeroAddress,
-  paymentType: 0,
-  accessType: 0,
+  paymentType: PaymentType.DIRECT,
+  accessType: AccessType.LOCKED,
 };
 
 export const fullDistrConfigEmpty = {

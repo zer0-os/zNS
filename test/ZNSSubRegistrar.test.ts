@@ -483,16 +483,13 @@ describe("ZNSSubRegistrar", () => {
         BigInt(0)
       );
 
-      let subHash;
       // try register a subdomain again
-      await expect(
-        subHash = await registrationWithSetup({
-          zns,
-          user: lvl2SubOwner,
-          parentHash: parentHash2,
-          domainLabel: "sub2",
-        })
-      ).to.be.fulfilled;
+      const subHash = await registrationWithSetup({
+        zns,
+        user: lvl2SubOwner,
+        parentHash: parentHash2,
+        domainLabel: "sub2",
+      });
 
       await zns.registry.exists(subHash);
     });
@@ -1621,7 +1618,7 @@ describe("ZNSSubRegistrar", () => {
         minPrice: ethers.parseUnits("2000.11", decimalValues.thirteen),
         maxLength: BigInt(50),
         baseLength: BigInt(4),
-        precisionMultiplier: BigInt(10).pow(
+        precisionMultiplier: BigInt(10) ** (
           decimalValues.thirteen - DECAULT_PRECISION
         ),
         feePercentage: BigInt(185),
@@ -2226,7 +2223,7 @@ describe("ZNSSubRegistrar", () => {
           },
           paymentConfig: {
             // ! this token has 5 decimals !
-            token: token5.address,
+            token: await token5.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig: priceConfigIncorrect,
@@ -3380,7 +3377,7 @@ describe("ZNSSubRegistrar", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.subRegistrar.connect(deployer).upgradeTo(newRegistrar.address);
+      const tx = zns.subRegistrar.connect(deployer).upgradeTo(await newRegistrar.getAddress());
       await expect(tx).to.not.be.reverted;
 
       await expect(
@@ -3401,7 +3398,7 @@ describe("ZNSSubRegistrar", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(lvl2SubOwner.address)).to.be.reverted;
 
-      const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeTo(newRegistrar.address);
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeTo(await newRegistrar.getAddress());
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(lvl2SubOwner.address, GOVERNOR_ROLE)
@@ -3465,7 +3462,7 @@ describe("ZNSSubRegistrar", () => {
       const newRegistrar = await factory.deploy();
       await newRegistrar.waitForDeployment();
 
-      const tx = zns.subRegistrar.connect(deployer).upgradeTo(newRegistrar.address);
+      const tx = zns.subRegistrar.connect(deployer).upgradeTo(await newRegistrar.getAddress());
       await expect(tx).to.not.be.reverted;
 
       // create new proxy object

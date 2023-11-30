@@ -114,8 +114,8 @@ export interface DeployZNSParams {
 
 export interface IDistributionConfig {
   pricerContract : string;
-  paymentType : PaymentType;
-  accessType : AccessType;
+  paymentType : bigint;
+  accessType : bigint;
 }
 
 export interface IPaymentConfig {
