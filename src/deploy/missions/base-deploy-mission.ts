@@ -153,11 +153,11 @@ export class BaseDeployMission {
 
   async getMonitoringData () : Promise<Array<ContractByName>> {
     const implName = this.contractName;
-    let implAddress = this.campaign[this.instanceName].address;
+    let implAddress = await this.campaign[this.instanceName].getAddress();
 
     if (this.proxyData.isProxy) {
       const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
-      const proxyAddress = this.campaign[this.instanceName].address;
+      const proxyAddress = await this.campaign[this.instanceName].getAddress();
       implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
 
       return [
