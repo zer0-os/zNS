@@ -972,7 +972,7 @@ describe("ZNSCurvePricer", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.curvePricer.connect(deployer).upgradeTo(newCurvePricer.address);
+      const tx = zns.curvePricer.connect(deployer).upgradeTo(await newCurvePricer.getAddress());
       await expect(tx).to.not.be.reverted;
     });
 
@@ -985,7 +985,7 @@ describe("ZNSCurvePricer", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
 
-      const tx = zns.curvePricer.connect(randomAcc).upgradeTo(newCurvePricer.address);
+      const tx = zns.curvePricer.connect(randomAcc).upgradeTo(await newCurvePricer.getAddress());
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomAcc.address, GOVERNOR_ROLE)

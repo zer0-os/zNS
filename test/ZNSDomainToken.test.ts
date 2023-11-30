@@ -464,7 +464,7 @@ describe("ZNSDomainToken", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(await newDomainToken.getAddress());
 
       await expect(upgradeTx).to.not.be.reverted;
     });
@@ -505,7 +505,7 @@ describe("ZNSDomainToken", () => {
         getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
       );
 
-      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(newDomainToken.address);
+      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(await newDomainToken.getAddress());
 
       await expect(upgradeTx).to.be.revertedWith(
         getAccessRevertMsg(caller.address, GOVERNOR_ROLE)

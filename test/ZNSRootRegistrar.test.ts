@@ -1218,7 +1218,7 @@ describe("ZNSRootRegistrar", () => {
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
-      const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeTo(registrar.address);
+      const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeTo(await registrar.getAddress());
       await expect(upgradeTx).to.not.be.reverted;
     });
 
@@ -1227,7 +1227,7 @@ describe("ZNSRootRegistrar", () => {
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
-      const tx = zns.rootRegistrar.connect(randomUser).upgradeTo(registrar.address);
+      const tx = zns.rootRegistrar.connect(randomUser).upgradeTo(await registrar.getAddress());
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE)

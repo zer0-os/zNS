@@ -594,7 +594,7 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(registry.address);
+      const upgradeTx = zns.registry.connect(deployer).upgradeTo(await registry.getAddress());
       await expect(upgradeTx).to.be.not.be.reverted;
     });
 
@@ -604,7 +604,7 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(randomUser).upgradeTo(registry.address);
+      const upgradeTx = zns.registry.connect(randomUser).upgradeTo(await registry.getAddress());
       await expect(upgradeTx).to.be.revertedWith(getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE));
     });
 

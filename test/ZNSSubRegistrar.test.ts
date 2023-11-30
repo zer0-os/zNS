@@ -486,7 +486,7 @@ describe("ZNSSubRegistrar", () => {
       let subHash;
       // try register a subdomain again
       await expect(
-        subHash = registrationWithSetup({
+        subHash = await registrationWithSetup({
           zns,
           user: lvl2SubOwner,
           parentHash: parentHash2,
@@ -1383,7 +1383,7 @@ describe("ZNSSubRegistrar", () => {
       const decimals = await token5.decimals();
       expect(decimals).to.eq(decimalValues.five);
 
-      fixedPrice = parseUnits("1375.17", decimalValues.five);
+      fixedPrice = ethers.parseUnits("1375.17", decimalValues.five);
       feePercentage = BigInt(200);
 
       const priceConfig = {
@@ -1403,7 +1403,7 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: token5.address,
+            token: await token5.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1465,7 +1465,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("FixedPricer - StakePayment - no fee - 18 decimals", async () => {
       const priceConfig = {
-        price: parseUnits("397.77", decimalValues.eighteen),
+        price: ethers.parseUnits("397.77", decimalValues.eighteen),
         feePercentage: BigInt(0),
       };
 
@@ -1481,7 +1481,7 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            token: token18.address,
+            token: await token18.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1540,7 +1540,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("FixedPricer - DirectPayment - no fee - 8 decimals", async () => {
       const priceConfig = {
-        price: parseUnits("11.371", decimalValues.eight),
+        price: ethers.parseUnits("11.371", decimalValues.eight),
         feePercentage: BigInt(0),
       };
 
@@ -1556,7 +1556,7 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: token8.address,
+            token: await token8.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1617,8 +1617,8 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
       const priceConfig = {
-        maxPrice: parseUnits("30000.93", decimalValues.thirteen),
-        minPrice: parseUnits("2000.11", decimalValues.thirteen),
+        maxPrice: ethers.parseUnits("30000.93", decimalValues.thirteen),
+        minPrice: ethers.parseUnits("2000.11", decimalValues.thirteen),
         maxLength: BigInt(50),
         baseLength: BigInt(4),
         precisionMultiplier: BigInt(10).pow(
@@ -1640,7 +1640,7 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
-            token: token13.address,
+            token: await token13.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -1705,8 +1705,8 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - StakePayment - no fee - 2 decimals", async () => {
       const priceConfig = {
-        maxPrice: parseUnits("234.46", decimalValues.two),
-        minPrice: parseUnits("3.37", decimalValues.two),
+        maxPrice: ethers.parseUnits("234.46", decimalValues.two),
+        minPrice: ethers.parseUnits("3.37", decimalValues.two),
         maxLength: BigInt(20),
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
@@ -1726,7 +1726,7 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
-            token: token2.address,
+            token: await token2.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
           priceConfig,
@@ -2188,8 +2188,8 @@ describe("ZNSSubRegistrar", () => {
     it("Setting price config in incorrect decimals triggers incorrect pricing", async () => {
       // we will use token with 5 decimals, but set prices in 18 decimals
       const priceConfigIncorrect = {
-        maxPrice: parseUnits("234.46", decimalValues.eighteen),
-        minPrice: parseUnits("3.37", decimalValues.eighteen),
+        maxPrice: ethers.parseUnits("234.46", decimalValues.eighteen),
+        minPrice: ethers.parseUnits("3.37", decimalValues.eighteen),
         maxLength: BigInt(20),
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
@@ -2222,8 +2222,8 @@ describe("ZNSSubRegistrar", () => {
 
       const priceConfigCorrect = {
         ...priceConfigIncorrect,
-        maxPrice: parseUnits("234.46", decimalValues.five),
-        minPrice: parseUnits("3.37", decimalValues.five),
+        maxPrice: ethers.parseUnits("234.46", decimalValues.five),
+        minPrice: ethers.parseUnits("3.37", decimalValues.five),
       };
 
       // calc prices off-chain
@@ -2271,7 +2271,7 @@ describe("ZNSSubRegistrar", () => {
       // we sending him 10^20 tokens
       await token5.connect(deployer).transfer(
         lvl3SubOwner.address,
-        parseUnits("10000000000000000000", decimalValues.five)
+        ethers.parseUnits("10000000000000000000", decimalValues.five)
       );
 
       // client tx approving the correct price will fail

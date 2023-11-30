@@ -339,7 +339,7 @@ describe("ZNSFixedPricer", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.fixedPricer.connect(deployer).upgradeTo(newFixedPricer.address);
+      const tx = zns.fixedPricer.connect(deployer).upgradeTo(await newFixedPricer.getAddress());
       await expect(tx).to.not.be.reverted;
 
       await expect(
@@ -359,7 +359,7 @@ describe("ZNSFixedPricer", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(random.address)).to.be.reverted;
 
-      const tx = zns.fixedPricer.connect(random).upgradeTo(newFixedPricer.address);
+      const tx = zns.fixedPricer.connect(random).upgradeTo(await newFixedPricer.getAddress());
 
       await expect(tx).to.be.revertedWith(
         getAccessRevertMsg(random.address, GOVERNOR_ROLE)
