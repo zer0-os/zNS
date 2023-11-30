@@ -227,7 +227,7 @@ describe("Deploy Campaign Test", () => {
         expect(contracts[failingInstanceName]).to.be.undefined;
       } else {
         // it should deploy AddressResolver
-        expect(contracts[failingInstanceName].address).to.be.properAddress;
+        expect(await contracts[failingInstanceName].getAddress()).to.be.properAddress;
       }
 
       // check DB to verify we only deployed half
@@ -310,7 +310,7 @@ describe("Deploy Campaign Test", () => {
           const fromState = nextCampaign[instance];
 
           expect(fromDB?.address).to.equal(address);
-          expect(fromState.address).to.equal(address);
+          expect(await fromState.getAddress()).to.equal(address);
         },
         Promise.resolve()
       );
@@ -469,7 +469,7 @@ describe("Deploy Campaign Test", () => {
         registry,
         addressResolver,
       } = nextCampaign;
-      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(addressResolver.address);
+      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(await addressResolver.getAddress());
     });
 
     // eslint-disable-next-line max-len
@@ -556,7 +556,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not grant REGISTRAR_ROLE to RootRegistrar
-        expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.false;
+        expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.false;
       };
 
       // check contracts are deployed correctly
@@ -587,7 +587,7 @@ describe("Deploy Campaign Test", () => {
         accessController,
         rootRegistrar,
       } = nextCampaign;
-      expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.true;
+      expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.true;
     });
   });
 

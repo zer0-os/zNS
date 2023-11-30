@@ -592,7 +592,7 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      await expect(zns.treasury.connect(deployer).upgradeTo(treasury.address)).to.not.be.reverted;
+      await expect(zns.treasury.connect(deployer).upgradeTo(await treasury.getAddress())).to.not.be.reverted;
     });
 
     it("Fails when an unauthorized user tries to upgrade the contract", async () => {
@@ -604,7 +604,7 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      const deployTx = zns.treasury.connect(user).upgradeTo(treasury.address);
+      const deployTx = zns.treasury.connect(user).upgradeTo(await treasury.getAddress());
       await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
     });
 
