@@ -34,7 +34,7 @@ import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
-import { ethers, BigInt } from "ethers";
+import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
@@ -120,7 +120,7 @@ describe("Deploy Campaign Test", () => {
 
       await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = meow.address;
+      campaignConfig.stakingTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -285,7 +285,7 @@ describe("Deploy Campaign Test", () => {
       expect(Object.keys(state.instances).length).to.equal(10);
       expect(state.missions.length).to.equal(10);
       // it should deploy AddressResolver
-      expect(state.contracts.addressResolver.address).to.be.properAddress;
+      expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
       // check DB to verify we deployed everything
       const allNames = deployedNames.concat(undeployedNames);

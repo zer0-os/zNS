@@ -4,10 +4,11 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { TZNSContractState } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
-import { ICurvePriceConfig, IDistributionConfig } from "./types";
+import { IDistributionConfig } from "./types";
 import { expect } from "chai";
 import { hashDomainLabel } from ".";
 import { getDomainHashFromEvent } from "./events";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,

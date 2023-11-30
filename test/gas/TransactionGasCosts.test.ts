@@ -117,7 +117,8 @@ describe("Transaction Gas Costs Test", () => {
       config
     );
 
-    const { gasUsed } = await tx.wait();
+    const receipt = await tx.wait();
+    const gasUsed = receipt?.gasUsed as bigint;
 
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")
@@ -160,7 +161,8 @@ describe("Transaction Gas Costs Test", () => {
       DEFAULT_TOKEN_URI,
       config,
     );
-    const { gasUsed } = await tx.wait();
+    const receipt = await tx.wait();
+    const gasUsed = receipt?.gasUsed as bigint;
 
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")

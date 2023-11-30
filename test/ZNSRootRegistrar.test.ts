@@ -669,13 +669,18 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Creates and finds the correct tokenId", async () => {
-      const tx = await defaultRootRegistration({
+      await defaultRootRegistration({
         user,
         zns,
         domainName: defaultDomain,
       });
 
-      const tokenId = await getTokenIdFromReceipt(tx);
+      const tokenId = BigInt(
+        await getDomainHashFromEvent({
+          zns,
+          user,
+        })
+      );
       const owner = await zns.domainToken.ownerOf(tokenId);
       expect(owner).to.eq(user.address);
     });
@@ -937,7 +942,12 @@ describe("ZNSRootRegistrar", () => {
       );
       expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain, false)).to.eq(ogPrice);
 
-      const tokenId = await getTokenIdFromReceipt(topLevelTx);
+      const tokenId = BigInt(
+        await getDomainHashFromEvent({
+          zns,
+          user,
+        })
+      );
 
       // Revoke the domain and then verify
       await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
