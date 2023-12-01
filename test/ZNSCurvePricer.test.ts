@@ -17,6 +17,7 @@ import {
   INVALID_NAME_ERR,
 } from "./helpers";
 import {
+  AccessType,
   DEFAULT_DECIMALS,
   DEFAULT_PRICE_CONFIG,
   DEFAULT_REGISTRATION_FEE_PERCENT,
@@ -64,7 +65,7 @@ describe("ZNSCurvePricer", () => {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
         pricerContract: zns.curvePricer.address,
-        accessType: 1,
+        accessType: AccessType.OPEN,
       },
       paymentConfig: {
         token: zns.meowToken.address,

@@ -5,6 +5,7 @@ import {
   deployZNS,
   hashDomainLabel, PaymentType,
   DEFAULT_PRICE_CONFIG,
+  AccessType,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
@@ -34,7 +35,7 @@ export const runAllFlows = async () => {
     distrConfig: {
       pricerContract: zns.fixedPricer.address,
       paymentType: PaymentType.STAKE,
-      accessType: 1,
+      accessType: AccessType.OPEN,
     },
     paymentConfig: {
       token: zns.meowToken.address,
@@ -61,7 +62,7 @@ export const runAllFlows = async () => {
     distrConfig: {
       pricerContract: zns.curvePricer.address,
       paymentType: PaymentType.DIRECT,
-      accessType: 1,
+      accessType: AccessType.OPEN,
     },
     paymentConfig: {
       token: zns.meowToken.address,
