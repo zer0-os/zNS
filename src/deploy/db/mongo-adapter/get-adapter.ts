@@ -27,7 +27,9 @@ export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapte
     clientOpts: process.env.MONGO_DB_CLIENT_OPTS
       ? JSON.parse(process.env.MONGO_DB_CLIENT_OPTS)
       : undefined,
-    version: process.env.MONGO_DB_VERSION,
+    version: process.env.MONGO_DB_VERSION
+      ? process.env.MONGO_DB_VERSION
+      : undefined,
   };
 
   let createNew = false;

@@ -22,7 +22,7 @@ export class DeployCampaign {
   config : IDeployCampaignConfig;
   version : string;
 
-  // TODO dep: figure out typing here so that methods of each contract type are resolved in Mission classes!
+  // TODO dep: improve typing here so that methods of each contract type are resolved in Mission classes!
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [name : string | symbol] : any;
 
@@ -75,13 +75,13 @@ export class DeployCampaign {
       {}
     );
 
-    this.logger.debug("Deploy Campaign initialized.");
+    this.logger.info("Deploy Campaign initialized.");
 
     return campaignProxy;
   }
 
   async execute () {
-    this.logger.debug("Deploy Campaign execution started.");
+    this.logger.info("Deploy Campaign execution started.");
 
     await Object.values(this.state.instances).reduce(
       async (
@@ -102,12 +102,11 @@ export class DeployCampaign {
       await this.monitor();
     }
 
-    this.logger.debug("Deploy Campaign execution finished successfully.");
+    this.logger.info("Deploy Campaign execution finished successfully.");
   }
 
   updateStateContract (instanceName : string, contractName : string, contract : Contract) {
     this.state.contracts[instanceName] = contract;
-    // TODO dep: make better logger and decide which levels to call where
     this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
   }
 

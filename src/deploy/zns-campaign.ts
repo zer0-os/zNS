@@ -23,7 +23,6 @@ export const runZnsCampaign = async ({
   dbVersion ?: string;
   deployer ?: HardhatDeployer;
 }) => {
-  // TODO dep: figure out the best place to put this at!
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
@@ -53,7 +52,6 @@ export const runZnsCampaign = async ({
 
   await campaign.execute();
 
-  // TODO dep: find the best place to call these !
   await dbAdapter.finalizeDeployedVersion(dbVersion);
 
   return campaign;

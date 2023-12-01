@@ -48,8 +48,8 @@ import { access } from "fs";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-// TODO dep: this is the only test converted to use the new Campaign
-//  others need to be converted once the Campaign is ready in full
+// This is the only test converted to use the new Campaign, other
+// contract specific tests are using `deployZNS()` helper
 describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;

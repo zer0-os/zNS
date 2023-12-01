@@ -12,9 +12,6 @@ import { ProxyKinds } from "../constants";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
-// TODO dep:
-//    1. add better logging for each step
-//    2. add proper error handling
 export class BaseDeployMission {
   contractName! : string;
   instanceName! : string;
@@ -57,11 +54,10 @@ export class BaseDeployMission {
   async needsDeploy () {
     const dbContract = await this.getFromDB();
 
-    // TODO dep: refine these
     if (!dbContract) {
-      this.logger.debug(`${this.contractName} not found in DB, proceeding to deploy...`);
+      this.logger.info(`${this.contractName} not found in DB, proceeding to deploy...`);
     } else {
-      this.logger.debug(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
+      this.logger.info(`${this.contractName} found in DB at ${dbContract.address}, no deployment needed.`);
 
       const contract = await this.campaign.deployer.getContractObject(
         this.contractName,
@@ -84,7 +80,7 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  buildDbObject (hhContract : Contract, implAddress : string | null) : IContractDbData {
+  buildDbObject (hhContract : Contract, implAddress : string | null) : Omit<IContractDbData, "version"> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,
@@ -92,9 +88,6 @@ export class BaseDeployMission {
       abi: JSON.stringify(abi),
       bytecode,
       implementation: implAddress,
-      // TODO dep: this might not be needed here since MongoAdapter will add it
-      //  upon writing to DB
-      version: this.campaign.version,
     };
   }
 
@@ -142,7 +135,7 @@ export class BaseDeployMission {
   }
 
   async verify () {
-    this.logger.info(`Verifying ${this.contractName} on Etherscan...`);
+    this.logger.debug(`Verifying ${this.contractName} on Etherscan...`);
     const { address } = await this.campaign[this.instanceName];
 
     const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
@@ -152,7 +145,7 @@ export class BaseDeployMission {
       ctorArgs,
     });
 
-    this.logger.info(`Etherscan verification for ${this.contractName} finished successfully.`);
+    this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
   }
 
   async getMonitoringData () : Promise<Array<ContractByName>> {

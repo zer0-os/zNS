@@ -32,7 +32,6 @@ export class MongoDBAdapter {
     dbName,
     clientOpts,
   } : IMongoDBAdapterArgs) {
-    // TODO dep: add a way to get these from ENV
     this.logger = logger;
     this.client = new MongoClient(dbUri, clientOpts);
     this.clientOpts = clientOpts;
@@ -96,7 +95,7 @@ export class MongoDBAdapter {
     });
   }
 
-  async writeContract (contractName : string, data : IContractDbData, version ?: string) {
+  async writeContract (contractName : string, data : Omit<IContractDbData, "version">, version ?: string) {
     if (!version) {
       ({ dbVersion: version } = await this.getCheckLatestVersion());
     }
@@ -115,7 +114,6 @@ export class MongoDBAdapter {
   }
 
   // Versioning methods
-  // TODO dep: add logging to all versioning stages and methods !!
   async configureVersioning (version ?: string) {
     // TODO dep: add archiving logic once determined on how to handle it
     const tempV = await this.getTempVersion();
@@ -260,7 +258,6 @@ export class MongoDBAdapter {
   }
 
   async clearDBForVersion (version : string) {
-    // TODO dep: add more collections here when added
     await this.contracts.deleteMany({
       version,
     });
