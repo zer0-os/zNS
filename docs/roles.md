@@ -30,6 +30,8 @@ ownership.
 - The function `ZNSRootRegister.coreRegister()` allows registrars to register domains. 
 - The function `ZNSRegistry.createDomainRecord()` allows registrars to register domain records which track ownership and address
 resolver. 
+- The function `ZNSRegistry.addResolverType` allows admins to add new types of resolvers
+- The function `ZNSRegistry.deleteResolverType` allows admins to remove an existing type of resolver.
 - The function `ZNSDomainToken.register()` allows registrars to mint tokens which are used to validate domain ownership. 
 - The function `ZNSDomainToken.revoke()` allows registrars to burn tokens to revoke domain ownership. 
 - The function `ZNSTreasury.stakeForDomain()` allows registrars to process registration fee to beneficiaries and stake domain funds
