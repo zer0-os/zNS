@@ -35,6 +35,10 @@ describe("ZNSTreasury", () => {
 
   const domainName = "wilderrr";
   const domainHash = hashDomainLabel(domainName);
+  let paymentConfig : {
+    token : string;
+    beneficiary : string;
+  };
 
   beforeEach(async () => {
     [
@@ -56,7 +60,7 @@ describe("ZNSTreasury", () => {
 
     zns = await deployZNS(params);
 
-    const paymentConfig = {
+    paymentConfig = {
       token: await zns.meowToken.getAddress(),
       beneficiary: user.address,
     };
@@ -383,8 +387,8 @@ describe("ZNSTreasury", () => {
         token: paymentTokenBefore,
         beneficiary: beneficiaryBefore,
       } = await zns.treasury.paymentConfigs(domainHash);
-      expect(paymentTokenBefore).to.eq(ethers.ZeroAddress);
-      expect(beneficiaryBefore).to.eq(ethers.ZeroAddress);
+      expect(paymentTokenBefore).to.eq(paymentConfig.token);
+      expect(beneficiaryBefore).to.eq(paymentConfig.beneficiary);
 
       const configToSet = {
         token: randomAcc.address,
