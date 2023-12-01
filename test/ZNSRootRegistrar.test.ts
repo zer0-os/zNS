@@ -46,7 +46,6 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
-import { access } from "fs";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

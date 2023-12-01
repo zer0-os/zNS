@@ -10,7 +10,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   INITIALIZED_ERR,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade,
+  validateUpgrade, NOT_AUTHORIZED_TREASURY_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";

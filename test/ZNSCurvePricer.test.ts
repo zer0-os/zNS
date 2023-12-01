@@ -13,7 +13,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_NAME_ERR,
+  INVALID_NAME_ERR, INITIALIZED_ERR,
 } from "./helpers";
 import {
   AccessType,
@@ -25,8 +25,9 @@ import {
   getAccessRevertMsg,
 } from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
+import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
+import { getProxyImplAddress } from "./helpers/utils";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -81,20 +82,19 @@ describe("ZNSCurvePricer", () => {
     });
   });
 
-  // TODO uncomment and resolve error after fixing merge conflict
-  // it("Should NOT let initialize the implementation contract", async () => {
-  //   const factory = new ZNSCurvePricer__factory(deployer);
-  //   const impl = await getProxyImplAddress(zns.curvePricer.address);
-  //   const implContract = factory.attach(impl);
+  it("Should NOT let initialize the implementation contract", async () => {
+    const factory = new ZNSCurvePricer__factory(deployer);
+    const impl = await getProxyImplAddress(await zns.curvePricer.getAddress());
+    const implContract = factory.attach(impl) as ZNSCurvePricer;
 
-  //   await expect(
-  //     implContract.initialize(
-  //       zns.accessController.address,
-  //       zns.registry.address,
-  //       priceConfigDefault
-  //     )
-  //   ).to.be.revertedWith(INITIALIZED_ERR);
-  // });
+    await expect(
+      implContract.initialize(
+        await zns.accessController.getAddress(),
+        await zns.registry.getAddress(),
+        DEFAULT_PRICE_CONFIG
+      )
+    ).to.be.revertedWith(INITIALIZED_ERR);
+  });
 
   it("Confirms values were initially set correctly", async () => {
     const valueCalls = [
