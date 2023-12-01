@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
@@ -79,7 +80,8 @@ interface IZNSSubRegistrar is IDistributionConfig {
         string calldata label,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains
+        DistributionConfig calldata configForSubdomains,
+        PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
     function hashWithParent(

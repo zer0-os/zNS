@@ -7,7 +7,7 @@ import {
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI } from "./constants";
+import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -33,7 +33,8 @@ export const defaultRootRegistration = async ({
     domainName,
     domainContent, // Arbitrary address value
     tokenURI,
-    distrConfig
+    distrConfig,
+    paymentConfigEmpty
   );
 
   return tx.wait();
@@ -96,7 +97,8 @@ export const defaultSubdomainRegistration = async ({
     subdomainLabel,
     domainContent, // Arbitrary address value
     tokenURI,
-    distrConfig
+    distrConfig,
+    paymentConfigEmpty
   );
 
   return tx.wait();

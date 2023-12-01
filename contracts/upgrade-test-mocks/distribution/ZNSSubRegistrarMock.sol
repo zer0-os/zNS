@@ -11,6 +11,7 @@ import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
+import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
 
 
 enum AccessType {
@@ -75,7 +76,8 @@ contract ZNSSubRegistrarUpgradeMock is
         string calldata label,
         address domainAddress,
         string memory tokenURI,
-        DistributionConfig calldata distrConfig
+        DistributionConfig calldata distrConfig,
+        PaymentConfig calldata paymentConfig
     ) external returns (bytes32) {
         label.validate();
 
@@ -103,7 +105,8 @@ contract ZNSSubRegistrarUpgradeMock is
             stakeFee: 0,
             domainAddress: domainAddress,
             tokenURI: tokenURI,
-            isStakePayment: parentConfig.paymentType == PaymentType.STAKE
+            isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
+            paymentConfig: paymentConfig
         });
 
         require(

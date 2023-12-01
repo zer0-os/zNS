@@ -16,6 +16,7 @@ import {
   INVALID_NAME_ERR, AccessType,
 } from "./helpers";
 import {
+  AccessType,
   DEFAULT_DECIMALS,
   DEFAULT_PRICE_CONFIG,
   DEFAULT_REGISTRATION_FEE_PERCENT,

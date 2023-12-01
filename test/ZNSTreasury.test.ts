@@ -56,6 +56,11 @@ describe("ZNSTreasury", () => {
 
     zns = await deployZNS(params);
 
+    const paymentConfig = {
+      token: zns.meowToken.address,
+      beneficiary: user.address,
+    };
+
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
@@ -68,7 +73,8 @@ describe("ZNSTreasury", () => {
       domainName,
       user.address,
       DEFAULT_TOKEN_URI,
-      distrConfigEmpty
+      distrConfigEmpty,
+      paymentConfig,
     );
   });
 
@@ -372,7 +378,7 @@ describe("ZNSTreasury", () => {
   });
 
   describe("#setPaymentConfig(), BeneficiarySet and PaymentTokenSet", () => {
-    it("should re-set payment config for an existing subdomain", async () => {
+    it("should set payment config for an existing subdomain", async () => {
       const {
         token: paymentTokenBefore,
         beneficiary: beneficiaryBefore,
@@ -419,7 +425,7 @@ describe("ZNSTreasury", () => {
           configToSet,
         )
       ).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
+        NOT_AUTHORIZED_TREASURY_ERR
       );
     });
 

@@ -116,6 +116,48 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
+    it("Sets the payment config when given", async () => {
+      const subdomain = "world-subdomain";
+
+      await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        rootHash,
+        subdomain,
+        lvl2SubOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        {
+          token: zns.meowToken.address,
+          beneficiary: lvl2SubOwner.address,
+        },
+      );
+
+      const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
+      const config = await zns.treasury.paymentConfigs(subHash);
+      expect(config.token).to.eq(zns.meowToken.address);
+      expect(config.beneficiary).to.eq(lvl2SubOwner.address);
+    });
+
+    it("Does not set the payment config when the beneficiary is the zero address", async () => {
+      const subdomain = "not-world-subdomain";
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          rootHash,
+          subdomain,
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty
+        )
+      );
+
+      const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
+      const config = await zns.treasury.paymentConfigs(subHash);
+      expect(config.token).to.eq(ethers.constants.AddressZero);
+      expect(config.beneficiary).to.eq(ethers.constants.AddressZero);
+    });
+
     // eslint-disable-next-line max-len
     it("should revert when trying to register a subdomain before parent has set it's config with FixedPricer", async () => {
       // register a new root domain
@@ -148,6 +190,10 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          {
+            token: zns.meowToken.address,
+            beneficiary: rootOwner.address,
+          },
         )
       ).to.be.revertedWith(
         "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
@@ -183,6 +229,7 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
@@ -304,6 +351,7 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -318,6 +366,7 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -396,6 +445,7 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ERC20: transfer amount exceeds balance"
@@ -419,6 +469,7 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ERC20: insufficient allowance"
@@ -886,6 +937,7 @@ describe("ZNSSubRegistrar", () => {
           lvl6SubOwner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -950,6 +1002,7 @@ describe("ZNSSubRegistrar", () => {
           lvl6SubOwner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -1177,6 +1230,7 @@ describe("ZNSSubRegistrar", () => {
           branchLvl1Owner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
 
@@ -1208,6 +1262,7 @@ describe("ZNSSubRegistrar", () => {
           branchLvl2Owner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
     });
@@ -2305,6 +2360,7 @@ describe("ZNSSubRegistrar", () => {
           lvl3SubOwner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith("ERC20: insufficient allowance");
 
@@ -2484,7 +2540,8 @@ describe("ZNSSubRegistrar", () => {
           "tobedenied",
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
-          distrConfigEmpty
+          distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -2514,7 +2571,8 @@ describe("ZNSSubRegistrar", () => {
         domainLabel,
         ethers.ZeroAddress,
         DEFAULT_TOKEN_URI,
-        distrConfigEmpty
+        distrConfigEmpty,
+        paymentConfigEmpty,
       );
 
       const hash = await getDomainHashFromEvent({
@@ -2589,7 +2647,8 @@ describe("ZNSSubRegistrar", () => {
           "notmintlisted",
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
-          distrConfigEmpty
+          distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ZNSSubRegistrar: Sender is not approved for purchase"
@@ -2609,7 +2668,8 @@ describe("ZNSSubRegistrar", () => {
           "notmintlistednow",
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
-          distrConfigEmpty
+          distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ZNSSubRegistrar: Sender is not approved for purchase"
@@ -2701,7 +2761,8 @@ describe("ZNSSubRegistrar", () => {
           "notallowed",
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
-          distrConfigEmpty
+          distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -2746,7 +2807,8 @@ describe("ZNSSubRegistrar", () => {
         "alloweddddd",
         ethers.ZeroAddress,
         DEFAULT_TOKEN_URI,
-        distrConfigEmpty
+        distrConfigEmpty,
+        paymentConfigEmpty,
       );
 
       const hash = await getDomainHashFromEvent({
@@ -2781,7 +2843,8 @@ describe("ZNSSubRegistrar", () => {
           "notallowed",
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
-          distrConfigEmpty
+          distrConfigEmpty,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -2901,7 +2964,8 @@ describe("ZNSSubRegistrar", () => {
           domainConfigs[1].domainLabel,
           lvl2SubOwner.address,
           DEFAULT_TOKEN_URI,
-          domainConfigs[1].fullConfig.distrConfig
+          domainConfigs[1].fullConfig.distrConfig,
+          paymentConfigEmpty,
         )
       ).to.be.revertedWith(
         "ZNSSubRegistrar: Subdomain already exists"
@@ -3497,7 +3561,8 @@ describe("ZNSSubRegistrar", () => {
         "subbb",
         lvl2SubOwner.address,
         DEFAULT_TOKEN_URI,
-        subConfigToSet
+        subConfigToSet,
+        paymentConfigEmpty,
       );
 
       const subHash = await getDomainHashFromEvent({
