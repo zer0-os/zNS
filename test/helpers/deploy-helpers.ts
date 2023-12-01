@@ -6,7 +6,7 @@ import { TZNSContractState } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./types";
 import { expect } from "chai";
-import { hashDomainLabel } from ".";
+import { hashDomainLabel, paymentConfigEmpty } from ".";
 import { getDomainHashFromEvent } from "./events";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -88,7 +88,11 @@ export const registerRootDomainBulk = async (
       domain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: signers[index].address,
+      }
     );
 
     const domainHash = hashDomainLabel(domain);
@@ -96,10 +100,6 @@ export const registerRootDomainBulk = async (
 
     // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
-    await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, {
-      token: await zns.meowToken.getAddress(),
-      beneficiary: signers[index].address,
-    });
 
     index++;
   }
@@ -122,7 +122,8 @@ export const registerSubdomainBulk = async (
       subdomain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      paymentConfigEmpty
     );
 
     const subdomainHash = await getDomainHashFromEvent({ zns, user: signers[index] });
