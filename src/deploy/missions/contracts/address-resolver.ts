@@ -13,10 +13,10 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
   contractName = znsNames.addressResolver.contract;
   instanceName = znsNames.addressResolver.instance;
 
-  deployArgs () : TDeployArgs {
+  async deployArgs () : Promise<TDeployArgs> {
     const { accessController, registry } = this.campaign;
 
-    return [ accessController.address, registry.address ];
+    return [await accessController.getAddress(), await registry.getAddress()];
   }
 
   async needsPostDeploy () {
@@ -29,7 +29,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
       ResolverTypes.address,
     );
 
-    return resolverInReg !== addressResolver.address;
+    return resolverInReg !== await addressResolver.getAddress();
   }
 
   async postDeploy () {
@@ -43,7 +43,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
 
     await registry.connect(deployAdmin).addResolverType(
       ResolverTypes.address,
-      addressResolver.address,
+      await addressResolver.getAddress(),
     );
   }
 }

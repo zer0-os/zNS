@@ -7,8 +7,8 @@ export const getProxyImplAddress = async (proxyAddress : string) => {
   try {
     impl = await upgrades.erc1967.getImplementationAddress(proxyAddress);
   } catch (e) {
-    const padded = await ethers.provider.getStorageAt(proxyAddress, implSlotErc1967);
-    impl = ethers.utils.hexStripZeros(padded);
+    const padded = await ethers.provider.getStorage(proxyAddress, implSlotErc1967);
+    impl = ethers.toBeHex(ethers.stripZerosLeft(padded));
   }
 
   return impl;

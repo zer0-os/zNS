@@ -1,7 +1,5 @@
-import { BigNumber } from "ethers";
 
-
-export const ethMultiplier = BigNumber.from(10).pow(18);
+export const ethMultiplier = BigInt(10) ** 18n;
 
 export const calcGasCostInCurrency = (
   gas : string,
@@ -10,14 +8,11 @@ export const calcGasCostInCurrency = (
 ) => {
   let cost;
   let currency = "WEI";
-  cost = BigNumber.from(gas)
-    .mul(BigNumber.from(gasPriceInGwei))
-    .mul(ethMultiplier)
-    .div(BigNumber.from(10).pow(9));
+  cost = BigInt(gas) * BigInt(gasPriceInGwei) * ethMultiplier / (BigInt(10) ** 9n);
 
   if (!!ethPriceInUSD) {
     currency = "USD WEI";
-    cost = cost.mul(BigNumber.from(ethPriceInUSD));
+    cost = cost * BigInt(ethPriceInUSD);
   }
 
   return { cost, currency };

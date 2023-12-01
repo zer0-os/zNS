@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { deployAccessController } from "./helpers";
 import { expect } from "chai";
@@ -52,8 +52,8 @@ describe("ZNSAccessController", () => {
       await expect(
         deployAccessController({
           deployer,
-          governorAddresses: [ ethers.constants.AddressZero ],
-          adminAddresses: [ ethers.constants.AddressZero ],
+          governorAddresses: [ ethers.ZeroAddress ],
+          adminAddresses: [ ethers.ZeroAddress ],
         })
       ).to.be.revertedWith("ZNSAccessController: Can't grant role to zero address");
     });
@@ -177,11 +177,11 @@ describe("ZNSAccessController", () => {
     });
 
     it("Should revert when setting role admin without GOVERNOR_ROLE", async () => {
-      const [ { address: random } ] = randomAccs;
+      const [ random  ] = randomAccs;
       await expect(
         accessController.connect(random).setRoleAdmin(REGISTRAR_ROLE, EXECUTOR_ROLE)
       ).to.be.revertedWith(
-        getAccessRevertMsg(random, GOVERNOR_ROLE)
+        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
       );
     });
   });
@@ -215,38 +215,38 @@ describe("ZNSAccessController", () => {
     });
 
     it("Should revert if account does not have GOVERNOR_ROLE", async () => {
-      const [ { address: random } ] = randomAccs;
+      const [ random ] = randomAccs;
       await expect(
-        accessController.connect(random).checkGovernor(random)
+        accessController.connect(random).checkGovernor(random.address)
       ).to.be.revertedWith(
-        getAccessRevertMsg(random, GOVERNOR_ROLE)
+        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
       );
     });
 
     it("Should revert if account does not have ADMIN_ROLE", async () => {
-      const [ { address: random } ] = randomAccs;
+      const [ random ] = randomAccs;
       await expect(
-        accessController.connect(random).checkAdmin(random)
+        accessController.connect(random).checkAdmin(random.address)
       ).to.be.revertedWith(
-        getAccessRevertMsg(random, ADMIN_ROLE)
+        getAccessRevertMsg(random.address, ADMIN_ROLE)
       );
     });
 
     it("Should revert if account does not have REGISTRAR_ROLE", async () => {
-      const [ { address: random } ] = randomAccs;
+      const [ random ] = randomAccs;
       await expect(
-        accessController.connect(random).checkRegistrar(random)
+        accessController.connect(random).checkRegistrar(random.address)
       ).to.be.revertedWith(
-        getAccessRevertMsg(random, REGISTRAR_ROLE)
+        getAccessRevertMsg(random.address, REGISTRAR_ROLE)
       );
     });
 
     it("Should revert if account does not have EXECUTOR_ROLE", async () => {
-      const [ { address: random } ] = randomAccs;
+      const [ random ] = randomAccs;
       await expect(
-        accessController.connect(random).checkExecutor(random)
+        accessController.connect(random).checkExecutor(random.address)
       ).to.be.revertedWith(
-        getAccessRevertMsg(random, EXECUTOR_ROLE)
+        getAccessRevertMsg(random.address, EXECUTOR_ROLE)
       );
     });
   });

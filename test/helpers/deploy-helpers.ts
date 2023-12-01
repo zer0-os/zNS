@@ -1,13 +1,14 @@
 
 // For use in inegration test of deployment campaign
 
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { TZNSContractState } from "../../src/deploy/campaign/types";
-import { BigNumber, ethers } from "ethers";
-import { ICurvePriceConfig, IDistributionConfig } from "./types";
+import { ethers } from "ethers";
+import { IDistributionConfig } from "./types";
 import { expect } from "chai";
-import { hashDomainLabel } from ".";
+import { hashDomainLabel, paymentConfigEmpty } from ".";
 import { getDomainHashFromEvent } from "./events";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
@@ -15,8 +16,8 @@ export const approveBulk = async (
 ) => {
   for (const signer of signers) {
     const tx = await zns.meowToken.connect(signer).approve(
-      zns.treasury.address,
-      ethers.constants.MaxUint256,
+      await zns.treasury.getAddress(),
+      ethers.MaxUint256,
     );
 
     await tx.wait(); // hang on hardhat?
@@ -25,7 +26,7 @@ export const approveBulk = async (
 
 export const mintBulk = async (
   signers : Array<SignerWithAddress>,
-  amount : BigNumber,
+  amount : bigint,
   zns : TZNSContractState,
 ) => {
   for (const signer of signers) {
@@ -46,7 +47,7 @@ export const getPriceBulk = async (
   const prices = [];
 
   for (const domain of domains) {
-    const parent = parentHashes[index] ? parentHashes[index] : ethers.constants.HashZero;
+    const parent = parentHashes[index] ? parentHashes[index] : ethers.ZeroHash;
 
     const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(
       parent,
@@ -54,12 +55,12 @@ export const getPriceBulk = async (
       true,
     );
 
-    const priceWithFee = price.add(stakeFee);
+    const priceWithFee = price + stakeFee;
 
     if (includeProtocolFee) {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, priceWithFee);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, priceWithFee);
 
-      prices.push(priceWithFee.add(protocolFee));
+      prices.push(priceWithFee + protocolFee);
     } else {
       prices.push(priceWithFee);
     }
@@ -87,7 +88,11 @@ export const registerRootDomainBulk = async (
       domain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: signers[index].address,
+      }
     );
 
     const domainHash = hashDomainLabel(domain);
@@ -95,10 +100,6 @@ export const registerRootDomainBulk = async (
 
     // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
-    await zns.treasury.connect(signers[index]).setPaymentConfig(domainHash, {
-      token: zns.meowToken.address,
-      beneficiary: signers[index].address,
-    });
 
     index++;
   }
@@ -121,7 +122,8 @@ export const registerSubdomainBulk = async (
       subdomain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      paymentConfigEmpty
     );
 
     const subdomainHash = await getDomainHashFromEvent({ zns, user: signers[index] });

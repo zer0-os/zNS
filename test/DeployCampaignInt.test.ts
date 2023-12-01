@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
@@ -34,7 +34,7 @@ import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
-import { ethers, BigNumber } from "ethers";
+import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
@@ -93,7 +93,7 @@ describe("Deploy Campaign Test", () => {
 
       const { meowToken, dbAdapter } = campaign;
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
         userA.address,
@@ -118,9 +118,9 @@ describe("Deploy Campaign Test", () => {
           kind: "transparent",
         });
 
-      await meow.deployed();
+      await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = meow.address;
+      campaignConfig.stakingTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -140,7 +140,7 @@ describe("Deploy Campaign Test", () => {
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
       // TODO dep: what else ??
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       try {
         await meowToken.connect(deployAdmin).mint(
@@ -227,7 +227,7 @@ describe("Deploy Campaign Test", () => {
         expect(contracts[failingInstanceName]).to.be.undefined;
       } else {
         // it should deploy AddressResolver
-        expect(contracts[failingInstanceName].address).to.be.properAddress;
+        expect(await contracts[failingInstanceName].getAddress()).to.be.properAddress;
       }
 
       // check DB to verify we only deployed half
@@ -285,7 +285,7 @@ describe("Deploy Campaign Test", () => {
       expect(Object.keys(state.instances).length).to.equal(10);
       expect(state.missions.length).to.equal(10);
       // it should deploy AddressResolver
-      expect(state.contracts.addressResolver.address).to.be.properAddress;
+      expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
       // check DB to verify we deployed everything
       const allNames = deployedNames.concat(undeployedNames);
@@ -310,7 +310,7 @@ describe("Deploy Campaign Test", () => {
           const fromState = nextCampaign[instance];
 
           expect(fromDB?.address).to.equal(address);
-          expect(fromState.address).to.equal(address);
+          expect(await fromState.getAddress()).to.equal(address);
         },
         Promise.resolve()
       );
@@ -438,7 +438,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not add resolverType to Registry
-        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.constants.AddressZero);
+        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.ZeroAddress);
       };
 
       // check contracts are deployed correctly
@@ -469,7 +469,7 @@ describe("Deploy Campaign Test", () => {
         registry,
         addressResolver,
       } = nextCampaign;
-      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(addressResolver.address);
+      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(await addressResolver.getAddress());
     });
 
     // eslint-disable-next-line max-len
@@ -556,7 +556,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not grant REGISTRAR_ROLE to RootRegistrar
-        expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.false;
+        expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.false;
       };
 
       // check contracts are deployed correctly
@@ -587,7 +587,7 @@ describe("Deploy Campaign Test", () => {
         accessController,
         rootRegistrar,
       } = nextCampaign;
-      expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.true;
+      expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.true;
     });
   });
 
@@ -648,12 +648,12 @@ describe("Deploy Campaign Test", () => {
       /* eslint-disable-next-line prefer-const */
       zns = campaign.state.contracts;
 
-      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.ZeroHash);
 
       expect(await zns.accessController.isAdmin(userB.address)).to.be.true;
       expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
       expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
-      expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
+      expect(rootPaymentConfig.token).to.eq(await zns.meowToken.getAddress());
       expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
 
       await dbAdapter.dropDB();
@@ -756,10 +756,10 @@ describe("Deploy Campaign Test", () => {
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = MeowMainnet.address;
-        config.rootPriceConfig.baseLength = BigNumber.from(3);
-        config.rootPriceConfig.maxLength = BigNumber.from(5);
-        config.rootPriceConfig.maxPrice = ethers.constants.Zero;
-        config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
+        config.rootPriceConfig.baseLength = BigInt(3);
+        config.rootPriceConfig.maxLength = BigInt(5);
+        config.rootPriceConfig.maxPrice = BigInt(0);
+        config.rootPriceConfig.minPrice = ethers.parseEther("3");
 
         validate(config, "prod");
         /* eslint-disable @typescript-eslint/no-explicit-any */

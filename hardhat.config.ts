@@ -6,8 +6,8 @@ require("dotenv").config();
 
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
-import "@nomiclabs/hardhat-ethers";
-import "@nomicfoundation/hardhat-network-helpers";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-toolbox/network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
@@ -114,6 +114,10 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
+  },
+  defender: {
+    apiKey: process.env.DEFENDER_KEY as string,
+    apiSecret: process.env.DEFENDER_SECRET as string,
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,

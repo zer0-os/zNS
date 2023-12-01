@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
@@ -63,7 +63,7 @@ describe("DeployCampaign - Integration", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.utils.parseEther("10000000");
+  const mintAmount = ethers.parseEther("10000000");
 
   const domains = [shortDomain, mediumDomain, longDomain];
 
@@ -80,7 +80,7 @@ describe("DeployCampaign - Integration", () => {
 
     //  CurvePricer, stake, open
     distConfig = {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };
@@ -155,9 +155,9 @@ describe("DeployCampaign - Integration", () => {
 
     const [balanceAfterA, balanceAfterB, balanceAfterC ]= await Promise.all(balanceAfterPromises);
 
-    expect(balanceAfterA).to.equal(balanceBeforeA.sub(priceShort));
-    expect(balanceAfterB).to.equal(balanceBeforeB.sub(priceMedium));
-    expect(balanceAfterC).to.equal(balanceBeforeC.sub(priceLong));
+    expect(balanceAfterA).to.equal(balanceBeforeA - priceShort);
+    expect(balanceAfterB).to.equal(balanceBeforeB - priceMedium);
+    expect(balanceAfterC).to.equal(balanceBeforeC - priceLong);
 
     logger.info(`Domain ${shortHash} registered for user ${userA.address}`);
     logger.info(`Domain ${mediumHash} registered for user ${userB.address}`);
@@ -259,9 +259,9 @@ describe("DeployCampaign - Integration", () => {
     ]= await Promise.all(balanceAfterPromises);
 
     // Owners of parent domains can mint subdomains for free
-    expect(balanceAfterD).to.eq(balanceBeforeD.sub(priceShort));
-    expect(balanceAfterE).to.eq(balanceBeforeE.sub(priceMedium));
-    expect(balanceAfterF).to.eq(balanceBeforeF.sub(priceLong));
+    expect(balanceAfterD).to.eq(balanceBeforeD - priceShort);
+    expect(balanceAfterE).to.eq(balanceBeforeE - priceMedium);
+    expect(balanceAfterF).to.eq(balanceBeforeF - priceLong);
 
     logger.info(`Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
     logger.info(`Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
