@@ -48,6 +48,7 @@
     "@openzeppelin/contracts-400": "npm:@openzeppelin/contracts@4.0.0",
     "@openzeppelin/contracts-upgradeable": "4.9.3",
     "@openzeppelin/contracts-upgradeable-400": "npm:@openzeppelin/contracts-upgradeable@4.0.0",
+    "@openzeppelin/defender-sdk": "^1.6.0",
     "@openzeppelin/hardhat-upgrades": "^2.4.3",
     "@semantic-release/git": "^10.0.1",
     "@tenderly/hardhat-tenderly": "^2.0.1",

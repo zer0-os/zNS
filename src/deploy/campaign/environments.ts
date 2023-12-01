@@ -21,6 +21,8 @@ import { ICurvePriceConfig } from "../missions/types";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 
+import { Defender, DefenderRelaySigner } from '@openzeppelin/defender-sdk';
+
 const getCustomAddresses = (
   key : string,
   account : SignerWithAddress,
@@ -52,7 +54,7 @@ const getCustomAddresses = (
 
 // This function builds a config with default values but overrides them with any values that are set
 export const getConfig = (
-  account : SignerWithAddress,
+  account : DefenderRelaySigner | SignerWithAddress,
   zeroVault : SignerWithAddress,
   governors ?: Array<string>,
   admins ?: Array<string>,
