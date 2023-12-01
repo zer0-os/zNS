@@ -16,7 +16,6 @@ const runCampaign = async () => {
 
   await runZnsCampaign({
     config,
-    logger,
   });
 };
 
