@@ -10,6 +10,7 @@ import {
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
+  AccessType,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -54,7 +55,7 @@ describe("ZNSFixedPricer", () => {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
         pricerContract: zns.fixedPricer.address,
-        accessType: 1,
+        accessType: AccessType.OPEN,
       },
       paymentConfig: {
         token: zns.meowToken.address,
@@ -311,7 +312,7 @@ describe("ZNSFixedPricer", () => {
         distrConfig: {
           paymentType: PaymentType.DIRECT,
           pricerContract: zns.fixedPricer.address,
-          accessType: 1,
+          accessType: AccessType.OPEN,
         },
         paymentConfig: {
           token: zns.meowToken.address,

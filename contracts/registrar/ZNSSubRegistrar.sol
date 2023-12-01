@@ -7,6 +7,7 @@ import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -84,7 +85,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata label,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distrConfig
+        DistributionConfig calldata distrConfig,
+        PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
@@ -122,7 +124,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             stakeFee: 0,
             domainAddress: domainAddress,
             tokenURI: tokenURI,
-            isStakePayment: parentConfig.paymentType == PaymentType.STAKE
+            isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
+            paymentConfig: paymentConfig
         });
 
         if (!isOwnerOrOperator) {

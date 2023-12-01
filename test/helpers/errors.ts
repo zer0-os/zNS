@@ -34,6 +34,7 @@ export const INVALID_LENGTH_ERR = "StringUtils: Domain label too long or nonexis
 
 // Treasury
 export const NO_BENEFICIARY_ERR = "ZNSTreasury: parent domain has no beneficiary set";
+export const NOT_AUTHORIZED_TREASURY_ERR = "ZNSTreasury: Not authorized.";
 
 // OpenZeppelin
 export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";

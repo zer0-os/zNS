@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
-import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
+import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
 
@@ -75,7 +75,7 @@ contract ZNSRootRegistrar is
      * checks existence of the domain in the registry and reverts if it exists.
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
-     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
+     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event. 
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      * @param tokenURI URI to assign to the Domain Token issued for the domain
@@ -88,7 +88,8 @@ contract ZNSRootRegistrar is
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distributionConfig
+        DistributionConfig calldata distributionConfig,
+        PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
@@ -114,7 +115,8 @@ contract ZNSRootRegistrar is
                 0,
                 name,
                 tokenURI,
-                true
+                true,
+                paymentConfig
             )
         );
 
@@ -182,6 +184,12 @@ contract ZNSRootRegistrar is
         } else {
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
+        }
+
+        // Because we check in the web app for the existance of both values in a payment config,
+        // it's fine to just check for one here
+        if (args.paymentConfig.beneficiary != address(0)) {
+            treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
         }
 
         emit DomainRegistered(

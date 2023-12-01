@@ -16,7 +16,7 @@ import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { getAccessRevertMsg } from "./helpers/errors";
+import { NOT_AUTHORIZED_TREASURY_ERR, getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -57,6 +57,11 @@ describe("ZNSTreasury", () => {
 
     zns = await deployZNS(params);
 
+    const paymentConfig = {
+      token: zns.meowToken.address,
+      beneficiary: user.address,
+    };
+
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
@@ -69,7 +74,8 @@ describe("ZNSTreasury", () => {
       domainName,
       user.address,
       DEFAULT_TOKEN_URI,
-      distrConfigEmpty
+      distrConfigEmpty,
+      paymentConfig,
     );
   });
 
@@ -373,13 +379,13 @@ describe("ZNSTreasury", () => {
   });
 
   describe("#setPaymentConfig(), BeneficiarySet and PaymentTokenSet", () => {
-    it("should re-set payment config for an existing subdomain", async () => {
+    it("should set payment config for an existing subdomain", async () => {
       const {
         token: paymentTokenBefore,
         beneficiary: beneficiaryBefore,
       } = await zns.treasury.paymentConfigs(domainHash);
-      expect(paymentTokenBefore).to.eq(ethers.constants.AddressZero);
-      expect(beneficiaryBefore).to.eq(ethers.constants.AddressZero);
+      expect(paymentTokenBefore).to.eq(zns.meowToken.address);
+      expect(beneficiaryBefore).to.eq(user.address);
 
       const configToSet = {
         token: randomAcc.address,
@@ -420,7 +426,7 @@ describe("ZNSTreasury", () => {
           configToSet,
         )
       ).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
+        NOT_AUTHORIZED_TREASURY_ERR
       );
     });
 
