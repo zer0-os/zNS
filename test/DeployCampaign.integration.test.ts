@@ -71,7 +71,7 @@ describe("DeployCampaign - Integration", () => {
     [deployer, zeroVault, domainAddressMock, userA, userB, userC, userD, userE, userF] = await hre.ethers.getSigners();
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
-    config = getConfig(deployer, zeroVault);
+    config = await getConfig({ deployer, zeroVaultAddress: zeroVault.address });
 
     config.mockMeowToken = hre.network.name === "hardhat";
     const campaign = await runZnsCampaign({ config, dbVersion: "1.0.0" });

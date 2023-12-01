@@ -1,5 +1,4 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-
 import { IDeployCampaignConfig } from "./types";
 import {
   DEFAULT_REGISTRATION_FEE_PERCENT,
@@ -20,12 +19,12 @@ import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
-import { Defender, DefenderRelaySigner } from '@openzeppelin/defender-sdk';
 
 const getCustomAddresses = (
   key : string,
-  account : SignerWithAddress,
+  deployerAddress : string,
   accounts ?: Array<string>
 ) => {
   const addresses = [];
@@ -46,19 +45,31 @@ const getCustomAddresses = (
     if (accounts && accounts.length > 0) {
       addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
     } else {
-      addresses.push(account.address); // No custom governors / admins provided, use the deployer as the default
+      addresses.push(deployerAddress); // No custom governors / admins provided, use the deployer as the default
     }
   }
   return addresses;
 };
 
 // This function builds a config with default values but overrides them with any values that are set
-export const getConfig = (
-  account : DefenderRelaySigner | SignerWithAddress,
-  zeroVault : SignerWithAddress,
-  governors ?: Array<string>,
-  admins ?: Array<string>,
-) : IDeployCampaignConfig => {
+export const getConfig = async ({
+  deployer,
+  zeroVaultAddress,
+  governors,
+  admins,
+} : {
+  deployer : SignerWithAddress | DefenderRelaySigner;
+  zeroVaultAddress : string;
+  governors ?: Array<string>;
+  admins ?: Array<string>;
+}) : Promise<IDeployCampaignConfig> => {
+  let deployerAddress;
+  if (typeof deployer === typeof DefenderRelaySigner) {
+    deployerAddress = (deployer as SignerWithAddress).address;
+  } else {
+    deployerAddress = await (deployer as DefenderRelaySigner).getAddress();
+  }
+
   // Price config variables
   const maxPrice =
     process.env.MAX_PRICE
@@ -91,7 +102,7 @@ export const getConfig = (
   const royaltyReceiver =
     process.env.ROYALTY_RECEIVER
       ? process.env.ROYALTY_RECEIVER
-      : account.address;
+      : deployerAddress;
   const royaltyFraction =
     process.env.ROYALTY_FRACTION
       ? BigInt(process.env.ROYALTY_FRACTION)
@@ -108,13 +119,13 @@ export const getConfig = (
   };
 
   // Get governor addresses set through env, if any
-  const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", account, governors);
+  const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
 
   // Get admin addresses set through env, if any
-  const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", account, admins);
+  const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
   const config : IDeployCampaignConfig = {
-    deployAdmin: account,
+    deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
     domainToken: {
@@ -124,7 +135,7 @@ export const getConfig = (
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVault.address,
+    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
