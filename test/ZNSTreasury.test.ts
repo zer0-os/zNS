@@ -57,7 +57,7 @@ describe("ZNSTreasury", () => {
     zns = await deployZNS(params);
 
     const paymentConfig = {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: user.address,
     };
 

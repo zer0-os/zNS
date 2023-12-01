@@ -13,7 +13,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_NAME_ERR, AccessType,
+  INVALID_NAME_ERR,
 } from "./helpers";
 import {
   AccessType,
