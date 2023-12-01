@@ -105,39 +105,39 @@ describe("ZNSRootRegistrar", () => {
   it("Sets the payment config when provided with the domain registration", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };
 
     await zns.rootRegistrar.connect(user).registerRootDomain(
       defaultDomain,
-      zns.addressResolver.address,
+      await zns.addressResolver.getAddress(),
       tokenURI,
       distrConfig,
       {
-        token: zns.meowToken.address,
+        token: await zns.meowToken.getAddress(),
         beneficiary: user.address,
       }
     );
 
     const domainHash = hashDomainLabel(defaultDomain);
     const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(zns.meowToken.address);
+    expect(config.token).to.eq(await zns.meowToken.getAddress());
     expect(config.beneficiary).to.eq(user.address);
   });
 
   it("Does not set the payment config when the beneficiary is the zero address", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
-      pricerContract: zns.curvePricer.address,
+      pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };
 
     await zns.rootRegistrar.connect(user).registerRootDomain(
       defaultDomain,
-      zns.addressResolver.address,
+      await zns.addressResolver.getAddress(),
       tokenURI,
       distrConfig,
       paymentConfigEmpty
@@ -145,8 +145,8 @@ describe("ZNSRootRegistrar", () => {
 
     const domainHash = hashDomainLabel(defaultDomain);
     const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(ethers.constants.AddressZero);
-    expect(config.beneficiary).to.eq(ethers.constants.AddressZero);
+    expect(config.token).to.eq(ethers.ZeroAddress);
+    expect(config.beneficiary).to.eq(ethers.ZeroAddress);
   });
 
   it("Gas tests", async () => {
@@ -163,8 +163,8 @@ describe("ZNSRootRegistrar", () => {
       tokenURI,
       distrConfig,
       {
-        token: ethers.constants.AddressZero,
-        beneficiary: ethers.constants.AddressZero,
+        token: ethers.ZeroAddress,
+        beneficiary: ethers.ZeroAddress,
       }
     );
 
@@ -464,8 +464,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -484,8 +484,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -504,8 +504,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -568,8 +568,8 @@ describe("ZNSRootRegistrar", () => {
         tokenURI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -602,8 +602,8 @@ describe("ZNSRootRegistrar", () => {
         tokenURI,
         distrConfig,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -726,8 +726,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -799,8 +799,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 
@@ -1335,8 +1335,8 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_TOKEN_URI,
         distrConfigEmpty,
         {
-          token: ethers.constants.AddressZero,
-          beneficiary: ethers.constants.AddressZero,
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
         }
       );
 

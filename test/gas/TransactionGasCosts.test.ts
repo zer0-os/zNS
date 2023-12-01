@@ -111,7 +111,7 @@ describe("Transaction Gas Costs Test", () => {
     await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     // register root domain
     const paymentConfig = {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: rootOwner.address,
     };
 
@@ -161,7 +161,7 @@ describe("Transaction Gas Costs Test", () => {
     await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     // register subdomain
     const paymentConfig = {
-      token: zns.meowToken.address,
+      token: await zns.meowToken.getAddress(),
       beneficiary: rootOwner.address,
     };
 

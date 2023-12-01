@@ -119,7 +119,7 @@ describe("ZNSSubRegistrar", () => {
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";
 
-      await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         rootHash,
@@ -128,14 +128,14 @@ describe("ZNSSubRegistrar", () => {
         subTokenURI,
         distrConfigEmpty,
         {
-          token: zns.meowToken.address,
+          token: await zns.meowToken.getAddress(),
           beneficiary: lvl2SubOwner.address,
         },
       );
 
       const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
       const config = await zns.treasury.paymentConfigs(subHash);
-      expect(config.token).to.eq(zns.meowToken.address);
+      expect(config.token).to.eq(await zns.meowToken.getAddress());
       expect(config.beneficiary).to.eq(lvl2SubOwner.address);
     });
 
@@ -154,8 +154,8 @@ describe("ZNSSubRegistrar", () => {
 
       const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
       const config = await zns.treasury.paymentConfigs(subHash);
-      expect(config.token).to.eq(ethers.constants.AddressZero);
-      expect(config.beneficiary).to.eq(ethers.constants.AddressZero);
+      expect(config.token).to.eq(ethers.ZeroAddress);
+      expect(config.beneficiary).to.eq(ethers.ZeroAddress);
     });
 
     // eslint-disable-next-line max-len
@@ -191,7 +191,7 @@ describe("ZNSSubRegistrar", () => {
           subTokenURI,
           distrConfigEmpty,
           {
-            token: zns.meowToken.address,
+            token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
         )
