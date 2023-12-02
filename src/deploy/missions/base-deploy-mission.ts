@@ -139,7 +139,7 @@ export class BaseDeployMission {
 
   async verify () {
     this.logger.debug(`Verifying ${this.contractName} on Etherscan...`);
-    const { address } = await this.campaign[this.instanceName];
+    const address = await this.campaign[this.instanceName].getAddress();
 
     const ctorArgs = !this.proxyData.isProxy ? await this.deployArgs() : undefined;
 

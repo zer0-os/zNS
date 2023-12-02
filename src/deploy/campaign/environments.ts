@@ -59,7 +59,7 @@ export const getConfig = async ({
   admins,
 } : {
   deployer : SignerWithAddress | DefenderRelaySigner;
-  zeroVaultAddress : string;
+  zeroVaultAddress ?: string;
   governors ?: Array<string>;
   admins ?: Array<string>;
 }) : Promise<IDeployCampaignConfig> => {
@@ -135,7 +135,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress,
+    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS!, // ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {

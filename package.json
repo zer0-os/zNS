@@ -32,7 +32,8 @@
     "mongo:start": "docker-compose up -d",
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
-    "mongo:drop": "ts-node src/utils/drop-db.ts"
+    "mongo:drop": "ts-node src/utils/drop-db.ts",
+    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia"
   },
   "pre-commit": [
     "lint"

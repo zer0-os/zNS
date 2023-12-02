@@ -20,6 +20,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
   }
 
   async needsPostDeploy () {
+    // TODO def: add logging for all post tasks!
     const {
       registry,
       addressResolver,

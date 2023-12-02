@@ -7,33 +7,35 @@ import { Defender } from "@openzeppelin/defender-sdk";
 const logger = getLogger();
 
 const runCampaign = async () => {
-  const [ zeroVault] = await hre.ethers.getSigners();
-  const zeroVaultAddress = zeroVault.address;
+  // const [ zeroVault] = await hre.ethers.getSigners();
+  // const zeroVaultAddress = zeroVault.address;
 
   const credentials = {
-    relayerApiKey: process.env.DEFENDER_KEY,
-    relayerApiSecret: process.env.DEFENDER_SECRET,
+    relayerApiKey: process.env.RELAYER_KEY,
+    relayerApiSecret: process.env.RELAYER_SECRET,
   };
 
   const client = new Defender(credentials);
 
   const provider = client.relaySigner.getProvider();
-  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
+  // TODO def: figure out how many seconds to pass here or use default !!!
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast", validForSeconds: 120 });
 
 
   // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
   const config = await getConfig({
     deployer,
-    zeroVaultAddress,
+    // zeroVaultAddress,
   });
 
   await runZnsCampaign({
     config,
+    provider,
   });
 };
 
 runCampaign().catch(error => {
-  logger.error(error);
+  logger.error(error.message);
   process.exitCode = 1;
 }).finally(() => {
   process.exit(0);
