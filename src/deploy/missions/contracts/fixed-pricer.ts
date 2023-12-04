@@ -13,12 +13,12 @@ export class ZNSFixedPricerDM extends BaseDeployMission {
   contractName = znsNames.fixedPricer.contract;
   instanceName = znsNames.fixedPricer.instance;
 
-  async deployArgs () : Promise<TDeployArgs> {
+  deployArgs () : TDeployArgs {
     const {
       accessController,
       registry,
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress()];
+    return [ accessController.address, registry.address ];
   }
 }

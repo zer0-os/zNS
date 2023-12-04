@@ -1,5 +1,6 @@
 import * as hre from "hardhat";
 import * as ethers from "ethers";
+import { BigNumber } from "ethers";
 import {
   deployZNS,
   hashDomainLabel, PaymentType,
@@ -11,7 +12,7 @@ import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
 const domainName = "wilder";
 const domainHash = hashDomainLabel(domainName);
-const tokenId = BigInt(domainHash);
+const tokenId = BigNumber.from(domainHash);
 
 
 export const runAllFlows = async () => {
@@ -27,17 +28,17 @@ export const runAllFlows = async () => {
     isTenderlyRun: true,
   });
 
-  const rootPrice = BigInt(ethers.parseEther("200"));
-  const rootFeePercentage = BigInt(250);
+  const rootPrice = BigNumber.from(ethers.utils.parseEther("200"));
+  const rootFeePercentage = BigNumber.from(250);
 
   const fullRootConfig = {
     distrConfig: {
-      pricerContract: await zns.fixedPricer.getAddress(),
+      pricerContract: zns.fixedPricer.address,
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     },
     paymentConfig: {
-      token: await zns.meowToken.getAddress(),
+      token: zns.meowToken.address,
       beneficiary: governor.address,
     },
     priceConfig: {
@@ -47,7 +48,7 @@ export const runAllFlows = async () => {
   };
 
   // get some funds and approve funds for treasury
-  await zns.meowToken.connect(governor).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+  await zns.meowToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   const rootHash = await registrationWithSetup({
     zns,
@@ -59,19 +60,19 @@ export const runAllFlows = async () => {
   const subdomainLabel = "subdomain";
   const fullSubConfig = {
     distrConfig: {
-      pricerContract: await zns.curvePricer.getAddress(),
+      pricerContract: zns.curvePricer.address,
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     },
     paymentConfig: {
-      token: await zns.meowToken.getAddress(),
+      token: zns.meowToken.address,
       beneficiary: user.address,
     },
     priceConfig: DEFAULT_PRICE_CONFIG,
   };
 
-  await zns.meowToken.transfer(user.address, ethers.parseEther("10000"));
-  await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+  await zns.meowToken.transfer(user.address, ethers.utils.parseEther("10000"));
+  await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   await registrationWithSetup({
     zns,

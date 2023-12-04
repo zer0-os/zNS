@@ -1,17 +1,17 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
+  ICurvePriceConfig,
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { ContractTransactionReceipt, ethers } from "ethers";
+import { BigNumber, ContractReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
-const { ZeroAddress } = ethers;
+const { AddressZero } = ethers.constants;
 
 
 export const defaultRootRegistration = async ({
@@ -28,7 +28,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
-}) : Promise<ContractTransactionReceipt | null> => {
+}) : Promise<ContractReceipt> => {
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
@@ -52,21 +52,21 @@ export const approveForParent = async ({
   domainLabel : string;
 }) => {
   const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
-  let price = BigInt(0);
-  let parentFee = BigInt(0);
-  if (pricerContract === await zns.curvePricer.getAddress()) {
+  let price = BigNumber.from(0);
+  let parentFee = BigNumber.from(0);
+  if (pricerContract === zns.curvePricer.address) {
     [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
-  } else if (pricerContract === await zns.fixedPricer.getAddress()) {
+  } else if (pricerContract === zns.fixedPricer.address) {
     [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel, false);
   }
 
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
   const tokenContract = getTokenContract(tokenAddress, user);
 
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
-  const toApprove = price + parentFee + protocolFee;
+  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.constants.HashZero, price.add(parentFee));
+  const toApprove = price.add(parentFee).add(protocolFee);
 
-  return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
+  return tokenContract.connect(user).approve(zns.treasury.address, toApprove);
 };
 
 /**
@@ -129,7 +129,7 @@ export const registrationWithSetup = async ({
     : distrConfigEmpty;
 
   // register domain
-  if (!parentHash || parentHash === ethers.ZeroHash) {
+  if (!parentHash || parentHash === ethers.constants.HashZero) {
     await defaultRootRegistration({
       user,
       zns,
@@ -169,7 +169,7 @@ export const registrationWithSetup = async ({
   //  optimize for the best UX!
   //  maybe add API to SubReg to set these up in one tx?
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.address && setConfigs) {
     await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       {
@@ -177,7 +177,7 @@ export const registrationWithSetup = async ({
         isSet: true,
       },
     );
-  } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
+  } else if (fullConfig.distrConfig.pricerContract === zns.curvePricer.address && setConfigs) {
     await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       {
@@ -187,7 +187,7 @@ export const registrationWithSetup = async ({
     );
   }
 
-  if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {
+  if (fullConfig.paymentConfig.token !== AddressZero && setConfigs) {
     // set up payment config
     await zns.treasury.connect(user).setPaymentConfig(
       domainHash,

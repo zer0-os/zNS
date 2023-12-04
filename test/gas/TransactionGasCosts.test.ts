@@ -3,7 +3,8 @@ import * as hre from "hardhat";
 import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { BigNumber } from "ethers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import fs from "fs";
 
 
@@ -45,10 +46,10 @@ describe("Transaction Gas Costs Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_PRICE_CONFIG);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, DEFAULT_PRICE_CONFIG);
 
     config = {
-      pricerContract: await zns.fixedPricer.getAddress(),
+      pricerContract: zns.fixedPricer.address,
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
@@ -59,9 +60,9 @@ describe("Transaction Gas Costs Test", () => {
         rootOwner,
         lvl2SubOwner,
       ].map(async ({ address }) =>
-        zns.meowToken.mint(address, ethers.parseEther("1000000")))
+        zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
     );
-    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
     rootHashDirect = await registrationWithSetup({
       zns,
@@ -70,11 +71,11 @@ describe("Transaction Gas Costs Test", () => {
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
-          pricerContract: await zns.curvePricer.getAddress(),
+          pricerContract: zns.curvePricer.address,
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
-          token: await zns.meowToken.getAddress(),
+          token: zns.meowToken.address,
           beneficiary: rootOwner.address,
         },
         priceConfig: DEFAULT_PRICE_CONFIG,
@@ -97,8 +98,8 @@ describe("Transaction Gas Costs Test", () => {
     //       },
     //     },
     //     priceConfig: {
-    //       price: BigInt(ethers.parseEther("1375.612")),
-    //       feePercentage: BigInt(0),
+    //       price: BigNumber.from(ethers.utils.parseEther("1375.612")),
+    //       feePercentage: BigNumber.from(0),
     //     },
     //   },
     // });
@@ -108,10 +109,10 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Root Domain Price", async function () {
     // approve
-    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register root domain
     const paymentConfig = {
-      token: await zns.meowToken.getAddress(),
+      token: zns.meowToken.address,
       beneficiary: rootOwner.address,
     };
 
@@ -123,8 +124,7 @@ describe("Transaction Gas Costs Test", () => {
       paymentConfig
     );
 
-    const receipt = await tx.wait();
-    const gasUsed = receipt?.gasUsed as bigint;
+    const { gasUsed } = await tx.wait();
 
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")
@@ -133,9 +133,9 @@ describe("Transaction Gas Costs Test", () => {
     const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
     const prevGas = previous[title];
 
-    let gasDiff = BigInt(0);
+    let gasDiff = BigNumber.from(0);
     if (prevGas) {
-      gasDiff = gasUsed - BigInt(prevGas);
+      gasDiff = gasUsed.sub(BigNumber.from(prevGas));
     }
 
     console.log(`
@@ -144,7 +144,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff > 1000 || gasDiff < -1000) {
+    if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
       fs.writeFileSync(
         gasCostFile,
         JSON.stringify({
@@ -158,10 +158,10 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Subdomain Price", async function () {
     // approve
-    await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register subdomain
     const paymentConfig = {
-      token: await zns.meowToken.getAddress(),
+      token: zns.meowToken.address,
       beneficiary: rootOwner.address,
     };
 
@@ -173,8 +173,7 @@ describe("Transaction Gas Costs Test", () => {
       config,
       paymentConfig
     );
-    const receipt = await tx.wait();
-    const gasUsed = receipt?.gasUsed as bigint;
+    const { gasUsed } = await tx.wait();
 
     const previous = JSON.parse(
       fs.readFileSync(gasCostFile, "utf8")
@@ -183,9 +182,9 @@ describe("Transaction Gas Costs Test", () => {
     const title = this.test ? this.test.title : "! Title Not Found - Check Test Context !";
 
     const prevGas = previous[title];
-    let gasDiff = BigInt(0);
+    let gasDiff = BigNumber.from(0);
     if (prevGas) {
-      gasDiff = gasUsed - BigInt(prevGas);
+      gasDiff = gasUsed.sub(BigNumber.from(prevGas));
     }
 
     console.log(`
@@ -194,7 +193,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff > 1000 || gasDiff < -1000) {
+    if (gasDiff.gt(1000) || gasDiff.lt(-1000)) {
       fs.writeFileSync(
         gasCostFile,
         JSON.stringify({

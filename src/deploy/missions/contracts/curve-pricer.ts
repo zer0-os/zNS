@@ -13,7 +13,7 @@ export class ZNSCurvePricerDM extends BaseDeployMission {
   contractName = znsNames.curvePricer.contract;
   instanceName = znsNames.curvePricer.instance;
 
-  async deployArgs () : Promise<TDeployArgs> {
+  deployArgs () : TDeployArgs {
     const {
       accessController,
       registry,
@@ -22,6 +22,6 @@ export class ZNSCurvePricerDM extends BaseDeployMission {
       },
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress(), rootPriceConfig];
+    return [ accessController.address, registry.address, rootPriceConfig ];
   }
 }

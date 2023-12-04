@@ -13,8 +13,8 @@ export class ZNSRegistryDM extends BaseDeployMission {
   contractName = znsNames.registry.contract;
   instanceName = znsNames.registry.instance;
 
-  async deployArgs () : Promise<TDeployArgs> {
-    const { accessController } = this.campaign;
-    return [ await accessController.getAddress() ];
+  deployArgs () : TDeployArgs {
+    const { accessController: { address: acAddress } } = this.campaign;
+    return [ acAddress ];
   }
 }

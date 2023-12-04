@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
@@ -44,7 +44,7 @@ export class HardhatDeployer {
       kind,
     });
 
-    await contract.waitForDeployment();
+    await contract.deployed();
 
     return contract;
   }
@@ -55,7 +55,7 @@ export class HardhatDeployer {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await contractFactory.deploy(...args);
 
-    await contract.waitForDeployment();
+    await contract.deployed();
 
     return contract;
   }

@@ -1,8 +1,8 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { Contract } from "ethers";
+import { BigNumber, Contract } from "ethers";
 import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
@@ -17,7 +17,7 @@ export interface IDeployCampaignConfig {
     name : string;
     symbol : string;
     defaultRoyaltyReceiver : string;
-    defaultRoyaltyFraction : bigint;
+    defaultRoyaltyFraction : BigNumber;
   };
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;

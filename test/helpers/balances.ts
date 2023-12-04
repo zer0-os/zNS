@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import { IERC20 } from "../../typechain";
 import { expect } from "chai";
 
@@ -9,15 +10,15 @@ export const checkBalance = async ({
   shouldDecrease = true,
 } : {
   token : IERC20;
-  balanceBefore : bigint;
+  balanceBefore : BigNumber;
   userAddress : string;
-  target : bigint;
+  target : BigNumber;
   shouldDecrease ?: boolean;
 }) => {
   const balanceAfter = await token.balanceOf(userAddress);
   const diff = shouldDecrease
-    ? balanceBefore - balanceAfter
-    : balanceAfter - balanceBefore;
+    ? balanceBefore.sub(balanceAfter)
+    : balanceAfter.sub(balanceBefore);
 
   expect(diff).to.eq(target);
 };

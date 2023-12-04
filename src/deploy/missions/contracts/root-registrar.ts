@@ -13,7 +13,7 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
   contractName = znsNames.rootRegistrar.contract;
   instanceName = znsNames.rootRegistrar.instance;
 
-  async deployArgs () : Promise<TDeployArgs> {
+  deployArgs () : TDeployArgs {
     const {
       accessController,
       registry,
@@ -23,12 +23,12 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
     } = this.campaign;
 
     return [
-      await accessController.getAddress(),
-      await registry.getAddress(),
+      accessController.address,
+      registry.address,
       // we use CurvePricer as the IZNSPricer for root domains
-      await curvePricer.getAddress(),
-      await treasury.getAddress(),
-      await domainToken.getAddress(),
+      curvePricer.address,
+      treasury.address,
+      domainToken.address,
     ];
   }
 
@@ -41,7 +41,7 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
 
     const isRegistrar = await accessController
       .connect(deployAdmin)
-      .isRegistrar(await rootRegistrar.getAddress());
+      .isRegistrar(rootRegistrar.address);
 
     return !isRegistrar;
   }
@@ -57,6 +57,6 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
 
     await accessController
       .connect(deployAdmin)
-      .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+      .grantRole(REGISTRAR_ROLE, rootRegistrar.address);
   }
 }

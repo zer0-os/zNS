@@ -73,31 +73,31 @@ export const getConfig = async ({
   // Price config variables
   const maxPrice =
     process.env.MAX_PRICE
-      ? ethers.parseEther(process.env.MAX_PRICE)
+      ? ethers.utils.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
   const minPrice =
     process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
+      ? ethers.utils.parseEther(process.env.MIN_PRICE)
       : DEFAULT_PRICE_CONFIG.minPrice;
 
   const maxLength =
     process.env.MAX_LENGTH
-      ? BigInt(process.env.MAX_LENGTH)
+      ? ethers.BigNumber.from(process.env.MAX_LENGTH)
       : DEFAULT_PRICE_CONFIG.maxLength;
 
   const baseLength =
     process.env.BASE_LENGTH
-      ? BigInt(process.env.BASE_LENGTH)
+      ? ethers.BigNumber.from(process.env.BASE_LENGTH)
       : DEFAULT_PRICE_CONFIG.baseLength;
 
-  const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DECAULT_PRECISION;
-  const precisionMultiplier = BigInt(10) ** (decimals - precision);
+  const decimals = process.env.DECIMALS ? ethers.BigNumber.from(process.env.DECIMALS) : DEFAULT_DECIMALS;
+  const precision = process.env.PRECISION ? ethers.BigNumber.from(process.env.PRECISION) : DECAULT_PRECISION;
+  const precisionMultiplier = ethers.BigNumber.from(10).pow(decimals.sub(precision));
 
   const feePercentage =
     process.env.REG_FEE_PERCENT
-      ? BigInt(process.env.REG_FEE_PERCENT)
+      ? ethers.BigNumber.from(process.env.REG_FEE_PERCENT)
       : DEFAULT_REGISTRATION_FEE_PERCENT;
   const royaltyReceiver =
     process.env.ROYALTY_RECEIVER
@@ -105,7 +105,7 @@ export const getConfig = async ({
       : deployerAddress;
   const royaltyFraction =
     process.env.ROYALTY_FRACTION
-      ? BigInt(process.env.ROYALTY_FRACTION)
+      ? ethers.BigNumber.from(process.env.ROYALTY_FRACTION)
       : DEFAULT_ROYALTY_FRACTION;
 
   const priceConfig : ICurvePriceConfig = {
@@ -201,12 +201,12 @@ const requires = (condition : boolean, message : string) => {
 
 // No price spike before `minPrice` kicks in at `maxLength`
 const validatePrice = (config : ICurvePriceConfig) => {
-  const strA = "a".repeat(Number(config.maxLength));
-  const strB = "b".repeat(Number(config.maxLength + 1n));
+  const strA = "a".repeat(config.maxLength.toNumber());
+  const strB = "b".repeat(config.maxLength.add(1).toNumber());
 
   const priceA = getCurvePrice(strA, config);
   const priceB = getCurvePrice(strB, config);
 
   // if A < B, then the price spike is invalid
-  return !(priceA < priceB);
+  return !priceA.lt(priceB);
 };

@@ -39,10 +39,10 @@ export class BaseDeployMission {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
     this.implAddress = this.proxyData.isProxy
-      ? await this.campaign.deployer.getProxyImplAddress(await contract.getAddress())
+      ? await this.campaign.deployer.getProxyImplAddress(contract.address)
       : null;
 
-    const contractDbDoc = await this.buildDbObject(contract, this.implAddress);
+    const contractDbDoc = this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
@@ -62,10 +62,9 @@ export class BaseDeployMission {
       const contract = await this.campaign.deployer.getContractObject(
         this.contractName,
         dbContract.address,
-      ) as Contract;
+      );
 
-      // eslint-disable-next-line max-len
-      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${await contract.getAddress()}`);
+      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${contract.address}`);
 
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
     }
@@ -73,7 +72,7 @@ export class BaseDeployMission {
     return !dbContract;
   }
 
-  async deployArgs () : Promise<TDeployArgs> {
+  deployArgs () : TDeployArgs {
     return [];
   }
 
@@ -81,11 +80,11 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  async buildDbObject (hhContract : Contract, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
+  buildDbObject (hhContract : Contract, implAddress : string | null) : Omit<IContractDbData, "version"> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,
-      address: await hhContract.getAddress(),
+      address: hhContract.address,
       abi: JSON.stringify(abi),
       bytecode,
       implementation: implAddress,
@@ -93,27 +92,25 @@ export class BaseDeployMission {
   }
 
   async deploy () {
-    const deployArgs = await this.deployArgs();
-    this.logger.info(`Deploying ${this.contractName} with arguments: ${deployArgs}`);
+    const deployArgs = this.deployArgs();
+    this.logger.info(`Deploying ${this.contractName} with arguments: ${this.deployArgs()}`);
 
-    let baseContract;
+    let contract;
     if (this.proxyData.isProxy) {
-      baseContract = await this.campaign.deployer.deployProxy({
+      contract = await this.campaign.deployer.deployProxy({
         contractName: this.contractName,
         args: deployArgs,
         kind: this.proxyData.kind,
       });
     } else {
-      baseContract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
-
-    const contract = new Contract(await baseContract.getAddress(), baseContract.interface, baseContract.runner);
 
     await this.saveToDB(contract);
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${await baseContract.getAddress()}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${contract.address}`);
   }
 
   async needsPostDeploy () {
@@ -141,7 +138,7 @@ export class BaseDeployMission {
     this.logger.debug(`Verifying ${this.contractName} on Etherscan...`);
     const address = await this.campaign[this.instanceName].getAddress();
 
-    const ctorArgs = !this.proxyData.isProxy ? await this.deployArgs() : undefined;
+    const ctorArgs = !this.proxyData.isProxy ? this.deployArgs() : undefined;
 
     await this.campaign.deployer.etherscanVerify({
       address,
@@ -153,11 +150,11 @@ export class BaseDeployMission {
 
   async getMonitoringData () : Promise<Array<ContractByName>> {
     const implName = this.contractName;
-    let implAddress = await this.campaign[this.instanceName].getAddress();
+    let implAddress = this.campaign[this.instanceName].address;
 
     if (this.proxyData.isProxy) {
       const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
-      const proxyAddress = await this.campaign[this.instanceName].getAddress();
+      const proxyAddress = this.campaign[this.instanceName].address;
       implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
 
       return [

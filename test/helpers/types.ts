@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import {
   ZNSAccessController,
   ZNSAddressResolver,
@@ -26,8 +27,10 @@ import {
   ZNSTreasuryUpgradeMock__factory,
   MeowTokenMock,
 } from "../../typechain";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { AccessType, PaymentType } from "./constants";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+export { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 
 export type Maybe<T> = T | undefined;
@@ -35,10 +38,10 @@ export type Maybe<T> = T | undefined;
 export type GeneralContractGetter = Promise<
 string
 | boolean
-| bigint
-| Array<bigint>
-| [string, bigint]
-& { token : string; amount : bigint; }
+| BigNumber
+| Array<BigNumber>
+| [string, BigNumber]
+& { token : string; amount : BigNumber; }
 | [string, string]
 & { token : string; beneficiary : string; }
 | ICurvePriceConfig
@@ -76,12 +79,12 @@ export type ZNSContract =
   ZNSDomainToken;
 
 export interface IFixedPriceConfig {
-  price : bigint;
-  feePercentage : bigint;
+  price : BigNumber;
+  feePercentage : BigNumber;
 }
 
 export interface RegistrarConfig {
-  treasuryAddress : string;
+  treasury : ZNSTreasury;
   registryAddress : string;
   curvePricerAddress : string;
   domainTokenAddress : string;
@@ -106,15 +109,15 @@ export interface DeployZNSParams {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   priceConfig ?: ICurvePriceConfig;
-  registrationFeePerc ?: bigint;
+  registrationFeePerc ?: BigNumber;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
 }
 
 export interface IDistributionConfig {
   pricerContract : string;
-  paymentType : bigint;
-  accessType : bigint;
+  paymentType : PaymentType;
+  accessType : AccessType;
 }
 
 export interface IPaymentConfig {
@@ -139,13 +142,13 @@ export interface IDomainConfigForTest {
 
 export interface IPathRegResult {
   domainHash : string;
-  userBalanceBefore : bigint;
-  userBalanceAfter : bigint;
-  parentBalanceBefore : bigint;
-  parentBalanceAfter : bigint;
-  treasuryBalanceBefore : bigint;
-  treasuryBalanceAfter : bigint;
-  zeroVaultBalanceBefore : bigint;
-  zeroVaultBalanceAfter : bigint;
+  userBalanceBefore : BigNumber;
+  userBalanceAfter : BigNumber;
+  parentBalanceBefore : BigNumber;
+  parentBalanceAfter : BigNumber;
+  treasuryBalanceBefore : BigNumber;
+  treasuryBalanceAfter : BigNumber;
+  zeroVaultBalanceBefore : BigNumber;
+  zeroVaultBalanceAfter : BigNumber;
 }
 

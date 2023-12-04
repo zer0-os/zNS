@@ -1,7 +1,7 @@
 import { BaseDeployMission } from "../../base-deploy-mission";
 import { ProxyKinds } from "../../../constants";
 import { IDeployMissionArgs, TDeployArgs } from "../../types";
-import { Contract, ethers } from "ethers";
+import { ethers } from "ethers";
 import { znsNames } from "../names";
 
 
@@ -48,25 +48,22 @@ export class MeowTokenDM extends BaseDeployMission {
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const baseContract = await this.campaign.deployer.getContractObject(
+      const contract = await this.campaign.deployer.getContractObject(
         this.contractName,
         this.config.stakingTokenAddress,
       );
-
-      const contract = new Contract(baseContract.target.toString(), baseContract.interface, baseContract.runner);
 
       await this.saveToDB(contract);
 
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-      // eslint-disable-next-line max-len
-      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${await baseContract.getAddress()}`);
+      this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${contract.address}`);
     } else {
       await super.deploy();
     }
   }
 
-  async deployArgs () : Promise<TDeployArgs> {
+  deployArgs () : TDeployArgs {
     return [meowTokenName, meowTokenSymbol];
   }
 
@@ -85,7 +82,7 @@ export class MeowTokenDM extends BaseDeployMission {
     // Mint 100,000 MEOW to the deployer
     await meowToken.connect(deployAdmin).mint(
       deployAdmin.address,
-      ethers.parseEther("100000")
+      ethers.utils.parseEther("100000")
     );
   }
 }

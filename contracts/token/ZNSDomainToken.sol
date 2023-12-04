@@ -157,7 +157,7 @@ contract ZNSDomainToken is
     public
     view
     virtual
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    override(ERC721Upgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
     }
