@@ -51,7 +51,6 @@
     "@openzeppelin/contracts-upgradeable": "4.8.3",
     "@openzeppelin/contracts-upgradeable-400": "npm:@openzeppelin/contracts-upgradeable@4.0.0",
     "@openzeppelin/defender-sdk": "^1.6.0",
-    "@openzeppelin/hardhat-upgrades": "1.26.0",
     "@semantic-release/git": "^10.0.1",
     "@tenderly/hardhat-tenderly": "^1.7.4",
     "@typechain/ethers-v5": "10.1.0",
@@ -63,7 +62,7 @@
     "@zero-tech/ztoken": "2.0.0",
     "chai": "4.2.0",
     "eslint": "^8.37.0",
-    "ethers": "5.5.1",
+    "ethers": "5.6.9",
     "hardhat": "2.13.0",
     "hardhat-gas-reporter": "1.0.8",
     "semantic-release": "^21.0.1",
@@ -75,6 +74,9 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^1.1.0",
+    "@openzeppelin/hardhat-upgrades": "2.5.0",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
     "mongodb": "^6.1.0",
