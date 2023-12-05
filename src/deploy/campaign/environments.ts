@@ -54,7 +54,6 @@ const getCustomAddresses = (
 // This function builds a config with default values but overrides them with any values that are set
 export const getConfig = async ({
   deployer,
-  zeroVaultAddress,
   governors,
   admins,
 } : {
