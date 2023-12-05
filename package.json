@@ -32,7 +32,8 @@
     "mongo:start": "docker-compose up -d",
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
-    "mongo:drop": "ts-node src/utils/drop-db.ts"
+    "mongo:drop": "ts-node src/utils/drop-db.ts",
+    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia"
   },
   "pre-commit": [
     "lint"
@@ -49,6 +50,7 @@
     "@openzeppelin/contracts-400": "npm:@openzeppelin/contracts@4.0.0",
     "@openzeppelin/contracts-upgradeable": "4.8.3",
     "@openzeppelin/contracts-upgradeable-400": "npm:@openzeppelin/contracts-upgradeable@4.0.0",
+    "@openzeppelin/defender-sdk": "^1.6.0",
     "@openzeppelin/hardhat-upgrades": "1.26.0",
     "@semantic-release/git": "^10.0.1",
     "@tenderly/hardhat-tenderly": "^1.7.4",
