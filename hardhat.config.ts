@@ -5,10 +5,11 @@ import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 require("dotenv").config();
 
 import * as tenderly from "@tenderly/hardhat-tenderly";
-import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-toolbox"; // has verify but does it work?
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
+// import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
@@ -104,10 +105,10 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      // ],
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      ],
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning

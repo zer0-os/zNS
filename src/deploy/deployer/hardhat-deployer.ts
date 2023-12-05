@@ -4,6 +4,7 @@ import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { ZNSAccessController } from "../../../typechain";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
@@ -79,7 +80,8 @@ export class HardhatDeployer {
     address : string;
     ctorArgs ?: TDeployArgs;
   }) {
-    return this.hre.run("verify:verify", {
+    // TODO is there a smart way to check if already verified?
+    return this.hre.run("verify", {
       address,
       // this should only be used for non-proxied contracts
       // or proxy impls that have actual constructors
