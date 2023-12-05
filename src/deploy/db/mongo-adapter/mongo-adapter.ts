@@ -177,7 +177,7 @@ export class MongoDBAdapter {
       // now remove the TEMP version
       await this.versions.deleteOne({
         type: VERSION_TYPES.temp,
-        version: finalV,
+        dbVersion: finalV,
       });
     }
 
