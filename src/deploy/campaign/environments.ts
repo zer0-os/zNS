@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IDeployCampaignConfig } from "./types";
 import {
   DEFAULT_REGISTRATION_FEE_PERCENT,
@@ -54,7 +54,6 @@ const getCustomAddresses = (
 // This function builds a config with default values but overrides them with any values that are set
 export const getConfig = async ({
   deployer,
-  zeroVaultAddress,
   governors,
   admins,
 } : {

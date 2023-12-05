@@ -1,4 +1,3 @@
-import * as hre from "hardhat";
 import { getConfig } from "./campaign/environments";
 import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
@@ -25,7 +24,6 @@ const runCampaign = async () => {
   // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
   const config = await getConfig({
     deployer,
-    // zeroVaultAddress,
   });
 
   await runZnsCampaign({

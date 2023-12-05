@@ -9,8 +9,10 @@ export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
   signer : SignerWithAddress | DefenderRelaySigner;
   // TODO def: add proper type for the provider
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   provider : any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor (signer : SignerWithAddress | DefenderRelaySigner, provider : any) {
     this.hre = hre;
     this.signer = signer;
