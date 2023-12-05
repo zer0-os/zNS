@@ -600,14 +600,14 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IDeployCampaignConfig = await getConfig(
-        deployAdmin,
-        zeroVault,
-        [governor.address],
-        [admin.address],
-      );
+      const localConfig : IDeployCampaignConfig = await getConfig({
+        deployer: deployAdmin,
+        zeroVaultAddress: zeroVault.address,
+        governors: [governor.address],
+        admins: [admin.address],
+      });
 
-      expect(localConfig.deployAdmin.address).to.eq(deployAdmin.address);
+      expect(await localConfig.deployAdmin.getAddress()).to.eq(deployAdmin.address);
       expect(localConfig.governorAddresses[0]).to.eq(governor.address);
       expect(localConfig.governorAddresses[1]).to.be.undefined;
       expect(localConfig.adminAddresses[0]).to.eq(admin.address);
@@ -632,12 +632,12 @@ describe("Deploy Campaign Test", () => {
 
       let zns : TZNSContractState;
 
-      const config : IDeployCampaignConfig = getConfig(
-        userB,
-        userA,
-        [userB.address, admin.address], // governors
-        [userB.address, governor.address], // admins
-      );
+      const config : IDeployCampaignConfig = await getConfig({
+        deployer: userB,
+        zeroVaultAddress: userA.address,
+        governors: [userB.address, admin.address], // governors
+        admins: [userB.address, governor.address], // admins
+      });
 
       const campaign = await runZnsCampaign({
         config,
@@ -693,12 +693,12 @@ describe("Deploy Campaign Test", () => {
     });
     it("Throws if env variable is invalid", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         validate(config, "other");
 
@@ -710,12 +710,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate when mocking MEOW on prod", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
         // Modify the config
         config.mockMeowToken = true;
         validate(config, "prod");
@@ -728,12 +728,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = "0x123";
@@ -747,12 +747,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if invalid curve for pricing", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = MeowMainnet.address;
@@ -770,12 +770,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = MeowMainnet.address;
@@ -791,12 +791,12 @@ describe("Deploy Campaign Test", () => {
       }
 
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
+        const config = await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         config.mockMeowToken = false;
         config.stakingTokenAddress = MeowMainnet.address;

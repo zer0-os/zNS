@@ -36,7 +36,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
 // keep it commented out and uncomment when using DevNet
 // locally.
 // !!! Uncomment this when using Tenderly !!!
-// tenderly.setup({ automaticVerifications: false });
+tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -107,7 +107,7 @@ const config : HardhatUserConfig = {
       // accounts: [ // Comment out for CI, uncomment this when using Sepolia
       //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      // ]
+      // ],
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning

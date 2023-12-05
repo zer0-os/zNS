@@ -6,10 +6,11 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
+import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 
 export interface IDeployCampaignConfig {
-  deployAdmin : SignerWithAddress;
+  deployAdmin : SignerWithAddress | DefenderRelaySigner;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
