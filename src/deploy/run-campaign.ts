@@ -8,7 +8,7 @@ import * as hre from "hardhat";
 const logger = getLogger();
 
 const runCampaign = async () => {
-  const [ user ] = await hre.ethers.getSigners();
+  // const [ user ] = await hre.ethers.getSigners();
   // const zeroVaultAddress = zeroVault.address;
 
   const credentials = {
@@ -22,7 +22,7 @@ const runCampaign = async () => {
 
   const provider = client.relaySigner.getProvider();
   // TODO def: figure out how many seconds to pass here or use default !!!
-  const deployer = client.relaySigner.getSigner(provider, { speed: "fast", validForSeconds: 120 });
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
   // TODO check verification on etherscan
   // TODO make sure subsequent passes work after initial first pass success
@@ -32,7 +32,7 @@ const runCampaign = async () => {
   const config = await getConfig({
     deployer,
     governors: [await deployer.getAddress()],
-    admins: [user.address, await deployer.getAddress()],
+    admins: [await deployer.getAddress()],
   });
 
   await runZnsCampaign({
