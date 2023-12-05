@@ -18,19 +18,16 @@ export const runZnsCampaign = async ({
   config,
   dbVersion,
   deployer,
-  provider,
 } : {
   config : IDeployCampaignConfig;
   dbVersion ?: string;
   deployer ?: HardhatDeployer;
-  // TODO def: add proper type for the provider
-  provider ?: any;
 }) => {
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
 
-  if (!deployer) deployer = new HardhatDeployer(config.deployAdmin, provider);
+  if (!deployer) deployer = new HardhatDeployer(config.deployAdmin);
 
   const dbAdapter = await getMongoAdapter();
 

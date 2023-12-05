@@ -8,13 +8,10 @@ import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-cli
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
   signer : SignerWithAddress | DefenderRelaySigner;
-  // TODO def: add proper type for the provider
-  provider : any;
 
-  constructor (signer : SignerWithAddress | DefenderRelaySigner, provider : any) {
+  constructor (signer : SignerWithAddress | DefenderRelaySigner) {
     this.hre = hre;
     this.signer = signer;
-    this.provider = provider;
   }
 
   async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
@@ -22,8 +19,7 @@ export class HardhatDeployer {
   }
 
   async getContractObject (contractName : string, address : string) {
-    const signer = await this.provider.getSigner();
-    const factory = await this.getFactory(contractName, signer);
+    const factory = await this.getFactory(contractName, this.signer);
 
     return factory.attach(address);
   }
