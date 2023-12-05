@@ -42,13 +42,12 @@ const getCustomAddresses = (
     }
   }
 
-  if (addresses.length === 0) {
-    if (accounts && accounts.length > 0) {
-      addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
-    } else {
-      addresses.push(deployerAddress); // No custom governors / admins provided, use the deployer as the default
-    }
+  if (accounts && accounts.length > 0) {
+    addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
+  } else {
+    addresses.push(deployerAddress); // No custom governors / admins provided, use the deployer as the default
   }
+
   return addresses;
 };
 
@@ -170,28 +169,31 @@ export const validate = (
 
   if (envLevel === "dev") return; // No validation needed for dev
 
+  if (envLevel !== "test" && envLevel !== "prod") {
+    // If we reach this code, there is an env variable, but it's not valid.
+    throw new Error(INVALID_ENV_ERR);
+  }
+
   if (!mongoUri) mongoUri = process.env.MONGO_URI ? process.env.MONGO_URI : DEFAULT_MONGO_URI;
 
   // Mainnet or testnet
-  if (envLevel === "prod" || envLevel === "test") {
+  if (envLevel === "prod") {
     requires(!config.mockMeowToken, NO_MOCK_PROD_ERR);
     requires(config.stakingTokenAddress === MeowMainnet.address, STAKING_TOKEN_ERR);
-    requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
     requires(!mongoUri.includes("localhost"), MONGO_URI_ERR);
-
-    if (config.postDeploy.verifyContracts) {
-      requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
-    }
-
-    if (config.postDeploy.monitorContracts) {
-      requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
-      requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
-      requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
-    }
   }
 
-  // If we reach this code, there is an env variable, but it's not valid.
-  throw new Error(INVALID_ENV_ERR);
+  requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
+
+  if (config.postDeploy.verifyContracts) {
+    requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
+  }
+
+  if (config.postDeploy.monitorContracts) {
+    requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
+    requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
+    requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
+  }
 };
 
 const requires = (condition : boolean, message : string) => {
