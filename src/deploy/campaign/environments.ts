@@ -124,7 +124,7 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  if (!zeroVaultAddress && process.env.ZERO_VAULT_ADDRESS)
+  if (!zeroVaultAddress && !process.env.ZERO_VAULT_ADDRESS)
     throw Error("Zero Vault address not provided");
 
   const config : IDeployCampaignConfig = {
@@ -138,7 +138,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: !!process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress,
+    zeroVaultAddress: !!process.env.ZERO_VAULT_ADDRESS ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
