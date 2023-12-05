@@ -3,22 +3,27 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
-  signer : SignerWithAddress;
+  signer : SignerWithAddress | DefenderRelaySigner;
+  // TODO def: add proper type for the provider
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  provider : any;
 
-  constructor (signer : SignerWithAddress) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor (signer : SignerWithAddress | DefenderRelaySigner, provider : any) {
     this.hre = hre;
     this.signer = signer;
   }
 
-  async getFactory (contractName : string) {
-    return this.hre.ethers.getContractFactory(contractName);
+  async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
+    return this.hre.ethers.getContractFactory(contractName, signer);
   }
 
   async getContractObject (contractName : string, address : string) {
-    const factory = await this.getFactory(contractName);
+    const factory = await this.getFactory(contractName, this.signer);
 
     return factory.attach(address);
   }
@@ -32,6 +37,8 @@ export class HardhatDeployer {
     args : TDeployArgs;
     kind : TProxyKind;
   }) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {
       kind,
@@ -43,6 +50,8 @@ export class HardhatDeployer {
   }
 
   async deployContract (contractName : string, args : TDeployArgs) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
     const contract = await contractFactory.deploy(...args);
 
