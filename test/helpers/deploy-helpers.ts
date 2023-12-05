@@ -87,7 +87,11 @@ export const registerRootDomainBulk = async (
       domain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      {
+        token: zns.meowToken.address,
+        beneficiary: signers[index].address,
+      }
     );
 
     const domainHash = hashDomainLabel(domain);
@@ -121,7 +125,11 @@ export const registerSubdomainBulk = async (
       subdomain,
       domainAddress,
       `${tokenUri}${index}`,
-      distConfig
+      distConfig,
+      {
+        token: zns.meowToken.address,
+        beneficiary: signers[index].address,
+      }
     );
 
     const subdomainHash = await getDomainHashFromEvent({ zns, user: signers[index] });

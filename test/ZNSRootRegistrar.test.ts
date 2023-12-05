@@ -43,7 +43,6 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
-import { access } from "fs";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -754,7 +753,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromReceipt(tx);
 
-      const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
+      const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.rootRegistrar.address);
     });
 
