@@ -28,7 +28,6 @@ const runCampaign = async () => {
 
   await runZnsCampaign({
     config,
-    provider,
   });
 };
 
