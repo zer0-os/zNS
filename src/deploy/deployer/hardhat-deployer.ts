@@ -4,7 +4,6 @@ import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { ZNSAccessController } from "../../../typechain";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
