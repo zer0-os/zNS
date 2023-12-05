@@ -123,6 +123,11 @@ const config : HardhatUserConfig = {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
   },
+  defender: {
+    apiKey: `${process.env.DEFENDER_KEY}`,
+    apiSecret: `${process.env.DEFENDER_SECRET}`,
+    useDefenderDeploy: true,
+  },
   docgen: {
     pages: "files",
     templates: "docs/docgen-templates",
