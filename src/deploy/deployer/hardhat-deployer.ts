@@ -4,14 +4,19 @@ import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
   signer : SignerWithAddress | DefenderRelaySigner;
+  deployModule : HardhatUpgrades | DefenderHardhatUpgrades;
+  env : string;
 
-  constructor (signer : SignerWithAddress | DefenderRelaySigner) {
+  constructor (signer : SignerWithAddress | DefenderRelaySigner, env : string) {
     this.hre = hre;
     this.signer = signer;
+    this.env = env;
+    this.deployModule = env === "dev" ? this.hre.upgrades : this.hre.defender;
   }
 
   async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
@@ -36,7 +41,7 @@ export class HardhatDeployer {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {
+    const contract = await this.deployModule.deployProxy(contractFactory, args, {
       kind,
     });
 
@@ -49,7 +54,13 @@ export class HardhatDeployer {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await contractFactory.deploy(...args);
+
+    let contract;
+    if (this.env === "dev") {
+      contract = await (this.deployModule as DefenderHardhatUpgrades).deployContract(contractFactory, args);
+    } else {
+      contract = await contractFactory.deploy(...args);
+    }
 
     await contract.waitForDeployment();
 
