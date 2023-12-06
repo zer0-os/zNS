@@ -100,53 +100,6 @@ describe("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it("Sets the payment config when provided with the domain registration", async () => {
-    const tokenURI = "https://example.com/817c64af";
-    const distrConfig : IDistributionConfig = {
-      pricerContract: zns.curvePricer.address,
-      paymentType: PaymentType.STAKE,
-      accessType: AccessType.OPEN,
-    };
-
-    await zns.rootRegistrar.connect(user).registerRootDomain(
-      defaultDomain,
-      zns.addressResolver.address,
-      tokenURI,
-      distrConfig,
-      {
-        token: zns.meowToken.address,
-        beneficiary: user.address,
-      }
-    );
-
-    const domainHash = hashDomainLabel(defaultDomain);
-    const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(zns.meowToken.address);
-    expect(config.beneficiary).to.eq(user.address);
-  });
-
-  it("Does not set the payment config when the beneficiary is the zero address", async () => {
-    const tokenURI = "https://example.com/817c64af";
-    const distrConfig : IDistributionConfig = {
-      pricerContract: zns.curvePricer.address,
-      paymentType: PaymentType.STAKE,
-      accessType: AccessType.OPEN,
-    };
-
-    await zns.rootRegistrar.connect(user).registerRootDomain(
-      defaultDomain,
-      zns.addressResolver.address,
-      tokenURI,
-      distrConfig,
-      paymentConfigEmpty
-    );
-
-    const domainHash = hashDomainLabel(defaultDomain);
-    const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(ethers.constants.AddressZero);
-    expect(config.beneficiary).to.eq(ethers.constants.AddressZero);
-  });
-
   it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
@@ -201,6 +154,53 @@ describe("ZNSRootRegistrar", () => {
       candidates,
       allowed
     );
+  });
+
+  it("Sets the payment config when provided with the domain registration", async () => {
+    const tokenURI = "https://example.com/817c64af";
+    const distrConfig : IDistributionConfig = {
+      pricerContract: zns.curvePricer.address,
+      paymentType: PaymentType.STAKE,
+      accessType: AccessType.OPEN,
+    };
+
+    await zns.rootRegistrar.connect(user).registerRootDomain(
+      defaultDomain,
+      zns.addressResolver.address,
+      tokenURI,
+      distrConfig,
+      {
+        token: zns.meowToken.address,
+        beneficiary: user.address,
+      }
+    );
+
+    const domainHash = hashDomainLabel(defaultDomain);
+    const config = await zns.treasury.paymentConfigs(domainHash);
+    expect(config.token).to.eq(zns.meowToken.address);
+    expect(config.beneficiary).to.eq(user.address);
+  });
+
+  it("Does not set the payment config when the beneficiary is the zero address", async () => {
+    const tokenURI = "https://example.com/817c64af";
+    const distrConfig : IDistributionConfig = {
+      pricerContract: zns.curvePricer.address,
+      paymentType: PaymentType.STAKE,
+      accessType: AccessType.OPEN,
+    };
+
+    await zns.rootRegistrar.connect(user).registerRootDomain(
+      defaultDomain,
+      zns.addressResolver.address,
+      tokenURI,
+      distrConfig,
+      paymentConfigEmpty
+    );
+
+    const domainHash = hashDomainLabel(defaultDomain);
+    const config = await zns.treasury.paymentConfigs(domainHash);
+    expect(config.token).to.eq(ethers.constants.AddressZero);
+    expect(config.beneficiary).to.eq(ethers.constants.AddressZero);
   });
 
   it("Should NOT initialize the implementation contract", async () => {
