@@ -18,6 +18,7 @@ export class MongoDBAdapter {
   db : Db;
   curVersion : string;
   clientOpts ?: MongoClientOptions;
+  archiveCurrentDeployed : boolean;
 
   // Collection pointers
   contracts : Collection<IContractDbData>;
@@ -31,6 +32,7 @@ export class MongoDBAdapter {
     dbUri,
     dbName,
     clientOpts,
+    archive,
   } : IMongoDBAdapterArgs) {
     this.logger = logger;
     this.client = new MongoClient(dbUri, clientOpts);
@@ -41,6 +43,7 @@ export class MongoDBAdapter {
     this.contracts = {} as Collection<IContractDbData>;
     this.versions = {} as Collection<IDBVersion>;
     this.curVersion = "0";
+    this.archiveCurrentDeployed = !!archive;
   }
 
   // call this to actually start the adapter
@@ -132,17 +135,34 @@ export class MongoDBAdapter {
         await this.createUpdateTempVersion(finalVersion);
       }
     } else {
-      if (!tempV && !deployedV) {
+      if (!tempV) {
+        // what to do with the current DEPLOYED version
+        if (this.archiveCurrentDeployed) {
+          this.logger.debug("Archiving enabled - Archiving current DEPLOYED DB version...");
+          // archive the current DEPLOYED version
+          await this.versions.updateOne(
+            {
+              type: VERSION_TYPES.deployed,
+            },
+            {
+              $set: {
+                type: VERSION_TYPES.archived,
+              },
+            });
+        } else {
+          this.logger.debug("Archiving disabled - Clearing current DEPLOYED DB version...");
+          // get the current DEPLOYED and clear DB for that version
+          if (deployedV) await this.clearDBForVersion(deployedV.dbVersion);
+        }
+
+        // create new TEMP version
         finalVersion = Date.now().toString();
         // eslint-disable-next-line max-len
         this.logger.info(`No version provided to MongoDBAdapter, using current timestamp as new TEMP version: ${finalVersion}`);
         await this.createUpdateTempVersion(finalVersion);
-      } else if (!deployedV) {
-        finalVersion = tempV?.dbVersion as string;
-        this.logger.info(`Using existing MongoDB TEMP version: ${finalVersion}`);
       } else {
-        finalVersion = deployedV.dbVersion;
-        this.logger.info(`Using existing MongoDB DEPLOYED version: ${finalVersion}`);
+        finalVersion = tempV.dbVersion;
+        this.logger.info(`Using existing MongoDB TEMP version: ${finalVersion}`);
       }
     }
 
@@ -177,7 +197,7 @@ export class MongoDBAdapter {
       // now remove the TEMP version
       await this.versions.deleteOne({
         type: VERSION_TYPES.temp,
-        version: finalV,
+        dbVersion: finalV,
       });
     }
 
@@ -263,7 +283,7 @@ export class MongoDBAdapter {
     });
 
     return this.versions.deleteMany({
-      version,
+      dbVersion: version,
     });
   }
 }
