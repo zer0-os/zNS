@@ -116,8 +116,8 @@ const config : HardhatUserConfig = {
     },
   },
   defender: {
-    apiKey: process.env.DEFENDER_KEY as string,
-    apiSecret: process.env.DEFENDER_SECRET as string,
+    apiKey: `${process.env.DEFENDER_KEY}`,
+    apiSecret: `${process.env.DEFENDER_SECRET}`,
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
