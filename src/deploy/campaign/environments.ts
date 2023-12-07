@@ -65,9 +65,9 @@ export const getConfig = async ({
 }) : Promise<IDeployCampaignConfig> => {
   let deployerAddress;
   if (typeof deployer === typeof DefenderRelaySigner) {
-    deployerAddress = (deployer as SignerWithAddress).address;
-  } else {
     deployerAddress = await (deployer as DefenderRelaySigner).getAddress();
+  } else {
+    deployerAddress = (deployer as SignerWithAddress).address;
   }
 
   // Price config variables
