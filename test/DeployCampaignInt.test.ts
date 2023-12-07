@@ -57,14 +57,16 @@ describe("Deploy Campaign Test", () => {
 
   let mongoAdapter : MongoDBAdapter;
 
+  const env = "dev";
+
   before(async () => {
     [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
   });
 
   describe("MEOW Token Ops", () => {
     before(async () => {
-
       campaignConfig = {
+        env,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -94,14 +96,16 @@ describe("Deploy Campaign Test", () => {
       const { meowToken, dbAdapter } = campaign;
 
       const toMint = hre.ethers.parseEther("972315");
+
+      const balanceBefore = await meowToken.balanceOf(userA.address);
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
         userA.address,
         toMint
       );
 
-      const balance = await meowToken.balanceOf(userA.address);
-      expect(balance).to.equal(toMint);
+      const balanceAfter = await meowToken.balanceOf(userA.address);
+      expect(balanceAfter - balanceBefore).to.equal(toMint);
 
       await dbAdapter.dropDB();
     });
@@ -194,7 +198,7 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer(deployAdmin);
+      const deployer = new HardhatDeployer(deployAdmin, env);
       let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
@@ -326,6 +330,7 @@ describe("Deploy Campaign Test", () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
       campaignConfig = {
+        env,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -820,6 +825,7 @@ describe("Deploy Campaign Test", () => {
       await saveTag();
 
       campaignConfig = {
+        env,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -868,6 +874,7 @@ describe("Deploy Campaign Test", () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
       config = {
+        env: "dev",
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -904,7 +911,7 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin);
+      const deployer = new HardhatDeployerMock(deployAdmin, env);
 
       const campaign = await runZnsCampaign({
         deployer,
@@ -914,13 +921,18 @@ describe("Deploy Campaign Test", () => {
       const { state: { contracts } } = campaign;
       ({ dbAdapter: mongoAdapter } = campaign);
 
-      Object.values(contracts).forEach(({ address }, idx) => {
-        if (idx === 0) {
-          expect(verifyData[idx].ctorArgs).to.be.deep.eq([config.governorAddresses, config.adminAddresses]);
-        }
+      await Object.values(contracts).reduce(
+        async (acc, contract, idx) => {
+          await acc;
 
-        expect(verifyData[idx].address).to.equal(address);
-      });
+          if (idx === 0) {
+            expect(verifyData[idx].ctorArgs).to.be.deep.eq([config.governorAddresses, config.adminAddresses]);
+          }
+
+          expect(verifyData[idx].address).to.equal(await contract.getAddress());
+        },
+        Promise.resolve()
+      );
     });
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
@@ -931,7 +943,7 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin);
+      const deployer = new HardhatDeployerMock(deployAdmin, env);
 
       config.postDeploy.monitorContracts = true;
       config.postDeploy.verifyContracts = false;
