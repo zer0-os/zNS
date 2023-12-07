@@ -10,6 +10,7 @@ import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-cli
 
 
 export interface IDeployCampaignConfig {
+  env : string;
   deployAdmin : SignerWithAddress | DefenderRelaySigner;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;

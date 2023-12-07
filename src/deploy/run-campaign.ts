@@ -2,14 +2,10 @@ import { getConfig } from "./campaign/environments";
 import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
 import { Defender } from "@openzeppelin/defender-sdk";
-import * as hre from "hardhat";
 
 const logger = getLogger();
 
 const runCampaign = async () => {
-  // const [ user ] = await hre.ethers.getSigners();
-  // const zeroVaultAddress = zeroVault.address;
-
   const credentials = {
     apiKey: process.env.DEFENDER_KEY,
     apiSecret: process.env.DEFENDER_SECRET,

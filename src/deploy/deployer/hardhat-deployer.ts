@@ -5,6 +5,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
+import { ethers } from "ethers";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
@@ -20,7 +21,10 @@ export class HardhatDeployer {
   }
 
   async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
-    return this.hre.ethers.getContractFactory(contractName, signer);
+    // is this typecasting a problem at all?
+    // TS gets confused on the function typing here
+    // if we use the SignerWithAddress | DefenderRelaySigner type
+    return this.hre.ethers.getContractFactory(contractName, signer as ethers.Signer);
   }
 
   async getContractObject (contractName : string, address : string) {

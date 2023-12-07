@@ -46,3 +46,4 @@ export const NO_MOCK_PROD_ERR = "Cannot mock MEOW token in production";
 export const STAKING_TOKEN_ERR = "Must use MEOW token in production";
 export const INVALID_CURVE_ERR = "Must use a valid price configuration";
 export const MONGO_URI_ERR = "Cannot use local mongo URI in production";
+export const NO_ZERO_VAULT_ERR = "Must provide ZERO_VAULT_ADDRESS for 'prod' or 'test' environments";

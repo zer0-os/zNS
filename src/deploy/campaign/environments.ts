@@ -14,7 +14,7 @@ import {
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
-  INVALID_ENV_ERR,
+  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
@@ -54,12 +54,10 @@ const getCustomAddresses = (
 // This function builds a config with default values but overrides them with any values that are set
 export const getConfig = async ({
   deployer,
-  zeroVaultAddress,
   governors,
   admins,
 } : {
   deployer : SignerWithAddress | DefenderRelaySigner;
-  zeroVaultAddress ?: string;
   governors ?: Array<string>;
   admins ?: Array<string>;
 }) : Promise<IDeployCampaignConfig> => {
@@ -125,6 +123,7 @@ export const getConfig = async ({
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
   const config : IDeployCampaignConfig = {
+    env: process.env.ENV_LEVEL!,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
@@ -135,7 +134,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS!, // ? process.env.ZERO_VAULT_ADDRESS : zeroVaultAddress,
+    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
@@ -183,6 +182,7 @@ export const validate = (
     requires(!mongoUri.includes("localhost"), MONGO_URI_ERR);
   }
 
+  requires(!!config.zeroVaultAddress, NO_ZERO_VAULT_ERR);
   requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
 
   if (config.postDeploy.verifyContracts) {
