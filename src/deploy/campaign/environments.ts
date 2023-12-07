@@ -56,10 +56,12 @@ export const getConfig = async ({
   deployer,
   governors,
   admins,
+  zeroVaultAddress,
 } : {
   deployer : SignerWithAddress | DefenderRelaySigner;
   governors ?: Array<string>;
   admins ?: Array<string>;
+  zeroVaultAddress ?: string;
 }) : Promise<IDeployCampaignConfig> => {
   let deployerAddress;
   if (typeof deployer === typeof DefenderRelaySigner) {
@@ -134,7 +136,8 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ZERO_VAULT_ADDRESS!,
+    zeroVaultAddress: process.env.ENV_LEVEL !== "dev"
+      ? process.env.ZERO_VAULT_ADDRESS! : zeroVaultAddress!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
@@ -175,15 +178,15 @@ export const validate = (
 
   if (!mongoUri) mongoUri = process.env.MONGO_URI ? process.env.MONGO_URI : DEFAULT_MONGO_URI;
 
-  // Mainnet or testnet
+  requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
+  requires(!!config.zeroVaultAddress, NO_ZERO_VAULT_ERR);
+
+  // Mainnet
   if (envLevel === "prod") {
     requires(!config.mockMeowToken, NO_MOCK_PROD_ERR);
     requires(config.stakingTokenAddress === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!mongoUri.includes("localhost"), MONGO_URI_ERR);
   }
-
-  requires(!!config.zeroVaultAddress, NO_ZERO_VAULT_ERR);
-  requires(validatePrice(config.rootPriceConfig), INVALID_CURVE_ERR);
 
   if (config.postDeploy.verifyContracts) {
     requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");

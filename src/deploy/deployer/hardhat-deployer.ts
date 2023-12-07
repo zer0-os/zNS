@@ -60,7 +60,7 @@ export class HardhatDeployer {
     const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
 
     let contract;
-    if (this.env === "dev") {
+    if (this.env !== "dev") {
       contract = await (this.deployModule as DefenderHardhatUpgrades).deployContract(contractFactory, args);
     } else {
       contract = await contractFactory.deploy(...args);
