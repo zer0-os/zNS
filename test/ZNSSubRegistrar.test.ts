@@ -894,7 +894,7 @@ describe("ZNSSubRegistrar", () => {
           expect(token).to.eq(configs[idx].fullConfig.paymentConfig.token);
           expect(beneficiary).to.eq(configs[idx].fullConfig.paymentConfig.beneficiary);
 
-          const domainAddress = await zns.addressResolver.getAddress(domainHash);
+          const domainAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
           expect(domainAddress).to.eq(multiOwner.address);
         }, Promise.resolve()
       );
@@ -2729,7 +2729,10 @@ describe("ZNSSubRegistrar", () => {
       );
       const event = events[events.length - 1];
 
+      const ownerIndex = await zns.subRegistrar.mintlist(domainHash);
+
       expect(event.args?.domainHash).to.eq(domainHash);
+      expect(event.args?.ownerIndex).to.eq(ownerIndex);
       expect(event.args?.candidates).to.deep.eq(candidatesArr);
       expect(event.args?.allowed).to.deep.eq(allowedArr);
     });

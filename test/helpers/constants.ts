@@ -2,10 +2,9 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
-// TODO: what is our official Domain Token name?
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
+export const ZNS_DOMAIN_TOKEN_NAME = "ZERO NAME ADDRESS";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNA";
 
 export const DEFAULT_ROYALTY_FRACTION = BigNumber.from("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";

@@ -127,7 +127,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
      * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
      * fires `PriceConfigSet` event.
-     * Only ADMIN can call this function.
+     * Only the owner of the domain or an allowed operator can call this function
      * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
      * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
