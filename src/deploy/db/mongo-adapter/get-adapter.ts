@@ -30,6 +30,7 @@ export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapte
     version: process.env.MONGO_DB_VERSION
       ? process.env.MONGO_DB_VERSION
       : undefined,
+    archive: process.env.ARCHIVE_PREVIOUS_DB_VERSION === "true",
   };
 
   let createNew = false;
