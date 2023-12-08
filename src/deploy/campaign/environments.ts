@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+// import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDeployCampaignConfig } from "./types";
 import {
   DEFAULT_REGISTRATION_FEE_PERCENT,
@@ -16,10 +16,11 @@ import {
   INVALID_ENV_ERR,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
+
 import { ICurvePriceConfig } from "../missions/types";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { DefenderRelaySigner } from '@openzeppelin/defender-relay-client/lib/ethers';
 
 
 const getCustomAddresses = (
@@ -53,22 +54,15 @@ const getCustomAddresses = (
 
 // This function builds a config with default values but overrides them with any values that are set
 export const getConfig = async ({
-  deployer,
-  zeroVaultAddress,
+  deployAdmin: deployAdmin,
   governors,
   admins,
 } : {
-  deployer : SignerWithAddress | DefenderRelaySigner;
-  zeroVaultAddress ?: string;
+  deployAdmin : DefenderRelaySigner;
   governors ?: Array<string>;
   admins ?: Array<string>;
 }) : Promise<IDeployCampaignConfig> => {
-  let deployerAddress;
-  if (typeof deployer === typeof DefenderRelaySigner) {
-    deployerAddress = (deployer as SignerWithAddress).address;
-  } else {
-    deployerAddress = await (deployer as DefenderRelaySigner).getAddress();
-  }
+  const deployerAddress = await (deployAdmin as DefenderRelaySigner).getAddress();
 
   // Price config variables
   const maxPrice =
@@ -125,7 +119,7 @@ export const getConfig = async ({
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
   const config : IDeployCampaignConfig = {
-    deployAdmin: deployer,
+    deployAdmin: deployAdmin,
     governorAddresses,
     adminAddresses,
     domainToken: {

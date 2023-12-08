@@ -71,7 +71,7 @@ describe("ZNSRootRegistrar", () => {
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
     const config : IDeployCampaignConfig = await getConfig({
-      deployer,
+      deployAdmin: deployer,
       zeroVaultAddress: zeroVault.address,
       governors: [deployer.address, governor.address],
       admins: [deployer.address, admin.address],

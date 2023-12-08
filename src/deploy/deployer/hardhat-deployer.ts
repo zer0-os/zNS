@@ -1,23 +1,24 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+// import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+// import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { DefenderRelaySigner, DefenderRelayProvider } from "@openzeppelin/defender-relay-client/lib/ethers";
+import { JsonRpcSigner } from "@ethersproject/providers";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
-  signer : SignerWithAddress | DefenderRelaySigner;
-  // TODO def: add proper type for the provider
-  provider : any;
+  signer : DefenderRelaySigner;
+  provider : DefenderRelayProvider;
 
-  constructor (signer : SignerWithAddress | DefenderRelaySigner, provider : any) {
+  constructor (signer: DefenderRelaySigner, provider : DefenderRelayProvider) {
     this.hre = hre;
     this.signer = signer;
     this.provider = provider;
   }
 
-  async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
+  async getFactory (contractName : string, signer ?: JsonRpcSigner) {
     return this.hre.ethers.getContractFactory(contractName, signer);
   }
 
@@ -83,7 +84,7 @@ export class HardhatDeployer {
     address : string;
     ctorArgs ?: TDeployArgs;
   }) {
-    return this.hre.run("verify:verify", {
+    return this.hre.run("verify", {
       address,
       // this should only be used for non-proxied contracts
       // or proxy impls that have actual constructors

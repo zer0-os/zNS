@@ -12,27 +12,26 @@ import * as hre from "hardhat";
 
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 import { getLogger } from "./logger/create-logger";
+import { DefenderRelayProvider } from "@openzeppelin/defender-relay-client/lib/ethers";
 
-
-export const runZnsCampaign = async ({
-  config,
-  dbVersion,
-  deployer,
-  provider,
-} : {
+interface CampaignParams {
   config : IDeployCampaignConfig;
+  provider : DefenderRelayProvider;
   dbVersion ?: string;
   deployer ?: HardhatDeployer;
   // TODO def: add proper type for the provider
-  provider ?: any;
-}) => {
+}
+
+export const runZnsCampaign = async (args : CampaignParams) => {
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
 
-  if (!deployer) deployer = new HardhatDeployer(config.deployAdmin, provider);
+  const deployer = args.deployer 
+    ? args.deployer 
+    : new HardhatDeployer(args.config.deployAdmin, args.provider);
 
-  const dbAdapter = await getMongoAdapter();
+    const dbAdapter = await getMongoAdapter();
 
   const campaign = new DeployCampaign({
     missions: [

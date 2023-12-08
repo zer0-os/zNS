@@ -2,15 +2,16 @@ import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { BigNumber, Contract } from "ethers";
 import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+// import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+// import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { DefenderRelaySigner } from '@openzeppelin/defender-relay-client/lib/ethers';
 
 
 export interface IDeployCampaignConfig {
-  deployAdmin : SignerWithAddress | DefenderRelaySigner;
+  deployAdmin : DefenderRelaySigner;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {

@@ -601,7 +601,7 @@ describe("Deploy Campaign Test", () => {
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
       const localConfig : IDeployCampaignConfig = await getConfig({
-        deployer: deployAdmin,
+        deployAdmin: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
         admins: [admin.address],
@@ -633,7 +633,7 @@ describe("Deploy Campaign Test", () => {
       let zns : TZNSContractState;
 
       const config : IDeployCampaignConfig = await getConfig({
-        deployer: userB,
+        deployAdmin: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
         admins: [userB.address, governor.address], // admins
@@ -694,7 +694,7 @@ describe("Deploy Campaign Test", () => {
     it("Throws if env variable is invalid", async () => {
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
@@ -711,7 +711,7 @@ describe("Deploy Campaign Test", () => {
     it("Fails to validate when mocking MEOW on prod", async () => {
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
@@ -729,7 +729,7 @@ describe("Deploy Campaign Test", () => {
     it("Fails to validate if not using the MEOW token on prod", async () => {
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
@@ -748,7 +748,7 @@ describe("Deploy Campaign Test", () => {
     it("Fails to validate if invalid curve for pricing", async () => {
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
@@ -771,7 +771,7 @@ describe("Deploy Campaign Test", () => {
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
@@ -792,7 +792,7 @@ describe("Deploy Campaign Test", () => {
 
       try {
         const config = await getConfig({
-          deployer: deployAdmin,
+          deployAdmin: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],

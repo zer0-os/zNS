@@ -7,14 +7,28 @@ require("dotenv").config();
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
-import "@nomicfoundation/hardhat-network-helpers";
+// import "@nomicfoundation/hardhat-network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
+// import "@nomiclabs/hardhat-etherscan";
 import "@openzeppelin/hardhat-upgrades";
+import "@openzeppelin/defender-sdk";
+import "@openzeppelin/defender-sdk-deploy-client";
+// import "@openzeppelin/defender-admin-client";
+// import "@openzeppelin/defender-relay-client";
 import "solidity-coverage";
 import "solidity-docgen";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
+
+/**
+ *  "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@openzeppelin/defender-relay-client": "^1.52.0",
+    "@openzeppelin/defender-sdk": "^1.5.0",
+    "@openzeppelin/hardhat-upgrades": "^2.4.0",
+    "@openzeppelin/test-helpers": "^0.5.16",
+ */
 
 
 subtask(TASK_TEST_RUN_MOCHA_TESTS)
@@ -93,6 +107,12 @@ const config : HardhatUserConfig = {
   mocha: {
     timeout: 5000000,
   },
+  defender: {
+    apiKey: process.env.DEFENDER_KEY_JAMES!,
+    apiSecret: process.env.DEFENDER_SECRET_JAMES!,
+    // relayerApiKey: process.env.RELAYER_KEY_JAMES!,
+    // relayerApiSecret: process.env.RELAYER_SECRET_JAMES!,
+  },
   gasReporter: {
     enabled: false,
   },
@@ -104,19 +124,16 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      // ],
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      ],
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-  },
-  etherscan: {
-    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   },
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
