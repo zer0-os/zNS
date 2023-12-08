@@ -994,7 +994,7 @@ describe("Deploy Campaign Test", () => {
       expect(oldRegistryDocFromNewDB?.bytecode).to.equal(registryDocInitial?.bytecode);
 
       // make sure contracts in state have been picked up correctly from DB
-      expect(newContracts.registry.address).to.equal(registryDocInitial?.address);
+      expect(await newContracts.registry.getAddress()).to.equal(registryDocInitial?.address);
 
       // reset back to default
       process.env.MONGO_DB_VERSION = initialDBVersionVal;
