@@ -12,7 +12,7 @@ interface IZNSAddressResolver {
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 
-    function getAddress(bytes32 domainHash) external view returns (address);
+    function resolveDomainAddress(bytes32 domainHash) external view returns (address);
 
     function setAddress(
         bytes32 domainHash,

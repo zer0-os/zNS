@@ -754,7 +754,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromReceipt(tx);
 
-      const resolvedAddress = await zns.addressResolver.getAddress(domainHash);
+      const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
       expect(resolvedAddress).to.eq(zns.rootRegistrar.address);
     });
 
