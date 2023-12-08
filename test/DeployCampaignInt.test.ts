@@ -40,7 +40,6 @@ import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
-import assert from "assert";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
 const execAsync = promisify(exec);
