@@ -7,6 +7,7 @@ export interface IMongoDBAdapterArgs {
   dbName : string;
   version ?: string;
   clientOpts ?: Record<string, unknown>;
+  archive ?: boolean;
 }
 
 export interface IDBVersion {

@@ -40,6 +40,8 @@ import { exec } from "child_process";
 import { TDeployArgs } from "../src/deploy/missions/types";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
+import assert from "assert";
+import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
 const execAsync = promisify(exec);
 
@@ -864,6 +866,138 @@ describe("Deploy Campaign Test", () => {
 
       const deployedVersion = await dbAdapter.getDeployedVersion();
       expect(deployedVersion?.contractsVersion).to.equal(fullGitTag);
+    });
+
+    // eslint-disable-next-line max-len
+    it("should create new DB version and KEEP old data if ARCHIVE is true and no TEMP versions currently exist", async () => {
+      const { dbAdapter } = campaign;
+
+      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const initialDBVersion = versionDocInitial?.dbVersion;
+      const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
+
+      expect(
+        process.env.MONGO_DB_VERSION === undefined
+        || process.env.MONGO_DB_VERSION === ""
+      ).to.be.true;
+
+      // set archiving for the new mongo adapter
+      const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
+      process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
+
+      // run a new campaign
+      const { dbAdapter: newDbAdapter } = await runZnsCampaign({
+        config: campaignConfig,
+      });
+
+      expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
+
+      // get some data from new DB version
+      const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
+      expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
+
+      const versionDocNew = await newDbAdapter.getLatestVersion();
+      expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
+      expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
+
+      // make sure old contracts from previous DB version are still there
+      const oldRegistryDocFromNewDB = await newDbAdapter.getContract(
+        znsNames.registry.contract,
+        initialDBVersion
+      );
+
+      expect(oldRegistryDocFromNewDB?.version).to.equal(registryDocInitial?.version);
+      expect(oldRegistryDocFromNewDB?.address).to.equal(registryDocInitial?.address);
+      expect(oldRegistryDocFromNewDB?.name).to.equal(registryDocInitial?.name);
+      expect(oldRegistryDocFromNewDB?.abi).to.equal(registryDocInitial?.abi);
+      expect(oldRegistryDocFromNewDB?.bytecode).to.equal(registryDocInitial?.bytecode);
+
+      // reset back to default
+      process.env.ARCHIVE_PREVIOUS_DB_VERSION = initialArchiveVal;
+    });
+
+    // eslint-disable-next-line max-len
+    it("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
+      const { dbAdapter } = campaign;
+
+      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const initialDBVersion = versionDocInitial?.dbVersion;
+      const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
+
+      expect(
+        process.env.MONGO_DB_VERSION === undefined
+        || process.env.MONGO_DB_VERSION === ""
+      ).to.be.true;
+
+      // set archiving for the new mongo adapter
+      const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
+      process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
+
+      // run a new campaign
+      const { dbAdapter: newDbAdapter } = await runZnsCampaign({
+        config: campaignConfig,
+      });
+
+      expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
+
+      // get some data from new DB version
+      const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
+      expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
+
+      const versionDocNew = await newDbAdapter.getLatestVersion();
+      expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
+      expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
+
+      // make sure old contracts from previous DB version are NOT there
+      const oldRegistryDocFromNewDB = await newDbAdapter.getContract(
+        znsNames.registry.contract,
+        initialDBVersion
+      );
+
+      expect(oldRegistryDocFromNewDB).to.be.null;
+
+      // reset back to default
+      process.env.ARCHIVE_PREVIOUS_DB_VERSION = initialArchiveVal;
+    });
+
+    // eslint-disable-next-line max-len
+    it("should pick up existing contracts and NOT deploy new ones into state if MONGO_DB_VERSION is specified", async () => {
+      const { dbAdapter } = campaign;
+
+      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const initialDBVersion = versionDocInitial?.dbVersion;
+      const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
+
+      // set DB version for the new mongo adapter
+      const initialDBVersionVal = process.env.MONGO_DB_VERSION;
+      process.env.MONGO_DB_VERSION = initialDBVersion;
+
+      // run a new campaign
+      const { state: { contracts: newContracts } } = await runZnsCampaign({
+        config: campaignConfig,
+      });
+
+      // make sure we picked up the correct DB version
+      const versionDocNew = await dbAdapter.getLatestVersion();
+      expect(versionDocNew?.dbVersion).to.equal(initialDBVersion);
+
+      // make sure old contracts from previous DB version are still there
+      const oldRegistryDocFromNewDB = await dbAdapter.getContract(
+        znsNames.registry.contract,
+        initialDBVersion
+      );
+
+      expect(oldRegistryDocFromNewDB?.version).to.equal(registryDocInitial?.version);
+      expect(oldRegistryDocFromNewDB?.address).to.equal(registryDocInitial?.address);
+      expect(oldRegistryDocFromNewDB?.name).to.equal(registryDocInitial?.name);
+      expect(oldRegistryDocFromNewDB?.abi).to.equal(registryDocInitial?.abi);
+      expect(oldRegistryDocFromNewDB?.bytecode).to.equal(registryDocInitial?.bytecode);
+
+      // make sure contracts in state have been picked up correctly from DB
+      expect(newContracts.registry.address).to.equal(registryDocInitial?.address);
+
+      // reset back to default
+      process.env.MONGO_DB_VERSION = initialDBVersionVal;
     });
   });
 
