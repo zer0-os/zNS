@@ -1,28 +1,21 @@
 ## CoreRegisterArgs
 
-
-
-
-
-
-
-
 ```solidity
 struct CoreRegisterArgs {
   bytes32 parentHash;
   bytes32 domainHash;
-  string label;
   address registrant;
+  address domainAddress;
   uint256 price;
   uint256 stakeFee;
-  address domainAddress;
+  string label;
   string tokenURI;
   bool isStakePayment;
+  struct PaymentConfig paymentConfig;
 }
 ```
 
 ## IZNSRootRegistrar
-
 
 **IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.**
 
@@ -43,17 +36,7 @@ Below are docs for the types in this file:
      + `tokenURI`: The tokenURI for the domain to be registered
      + `isStakePayment`: A flag for whether the payment is a stake payment or not
 
-
-
-
 ### OwnerOf
-
-
-
-
-
-
-
 
 ```solidity
 enum OwnerOf {
@@ -66,9 +49,8 @@ enum OwnerOf {
 ### DomainRegistered
 
 ```solidity
-event DomainRegistered(bytes32 parentHash, bytes32 domainHash, uint256 tokenId, string name, address registrant, address domainAddress)
+event DomainRegistered(bytes32 parentHash, bytes32 domainHash, uint256 tokenId, string label, address registrant, address domainAddress)
 ```
-
 
 Emitted when a NEW domain is registered.
 
@@ -84,10 +66,9 @@ and can be set at a later time by the domain owner.
 | parentHash | bytes32 | The hash of the parent domain (0x0 for root domains) |
 | domainHash | bytes32 | The hash of the domain registered |
 | tokenId | uint256 | The tokenId of the domain registered |
-| name | string | The name as string of the domain registered |
+| label | string | The name as the last part of the full domain string (level) registered |
 | registrant | address | The address that called `ZNSRootRegistrar.registerRootDomain()` |
 | domainAddress | address | The domain address of the domain registered |
-
 
 ### DomainRevoked
 
@@ -95,9 +76,7 @@ and can be set at a later time by the domain owner.
 event DomainRevoked(bytes32 domainHash, address owner, bool stakeRefunded)
 ```
 
-
 Emitted when a domain is revoked.
-
 
 #### Parameters
 
@@ -107,16 +86,13 @@ Emitted when a domain is revoked.
 | owner | address | The address that called `ZNSRootRegistrar.sol.revokeDomain()` and domain owner |
 | stakeRefunded | bool | A flag for whether the stake was refunded or not |
 
-
 ### DomainReclaimed
 
 ```solidity
 event DomainReclaimed(bytes32 domainHash, address registrant)
 ```
 
-
 Emitted when an ownership of the Name is reclaimed by the Token owner.
-
 
 #### Parameters
 
@@ -125,16 +101,13 @@ Emitted when an ownership of the Name is reclaimed by the Token owner.
 | domainHash | bytes32 | The hash of the domain reclaimed |
 | registrant | address | The address that called `ZNSRootRegistrar.sol.reclaimDomain()` |
 
-
 ### RootPricerSet
 
 ```solidity
 event RootPricerSet(address rootPricer)
 ```
 
-
 Emitted when the `rootPricer` address is set in state.
-
 
 #### Parameters
 
@@ -142,16 +115,13 @@ Emitted when the `rootPricer` address is set in state.
 | ---- | ---- | ----------- |
 | rootPricer | address | The new address of any IZNSPricer type contract |
 
-
 ### TreasurySet
 
 ```solidity
 event TreasurySet(address treasury)
 ```
 
-
 Emitted when the `treasury` address is set in state.
-
 
 #### Parameters
 
@@ -159,16 +129,13 @@ Emitted when the `treasury` address is set in state.
 | ---- | ---- | ----------- |
 | treasury | address | The new address of the Treasury contract |
 
-
 ### DomainTokenSet
 
 ```solidity
 event DomainTokenSet(address domainToken)
 ```
 
-
 Emitted when the `domainToken` address is set in state.
-
 
 #### Parameters
 
@@ -176,16 +143,13 @@ Emitted when the `domainToken` address is set in state.
 | ---- | ---- | ----------- |
 | domainToken | address | The new address of the DomainToken contract |
 
-
 ### SubRegistrarSet
 
 ```solidity
 event SubRegistrarSet(address subRegistrar)
 ```
 
-
 Emitted when the `subRegistrar` address is set in state.
-
 
 #### Parameters
 
@@ -193,47 +157,17 @@ Emitted when the `subRegistrar` address is set in state.
 | ---- | ---- | ----------- |
 | subRegistrar | address | The new address of the SubRegistrar contract |
 
-
-### AddressResolverSet
-
-```solidity
-event AddressResolverSet(address addressResolver)
-```
-
-
-Emitted when the `addressResolver` address is set in state.
-
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| addressResolver | address | The new address of the AddressResolver contract |
-
-
 ### initialize
 
 ```solidity
-function initialize(address accessController_, address registry_, address rootPricer_, address treasury_, address domainToken_, address addressResolver_) external
+function initialize(address accessController_, address registry_, address rootPricer_, address treasury_, address domainToken_) external
 ```
-
-
-
-
-
-
 
 ### registerRootDomain
 
 ```solidity
-function registerRootDomain(string name, address domainAddress, string tokenURI, struct IDistributionConfig.DistributionConfig distributionConfig) external returns (bytes32)
+function registerRootDomain(string name, address domainAddress, string tokenURI, struct IDistributionConfig.DistributionConfig distributionConfig, struct PaymentConfig paymentConfig) external returns (bytes32)
 ```
-
-
-
-
-
-
 
 ### coreRegister
 
@@ -241,23 +175,11 @@ function registerRootDomain(string name, address domainAddress, string tokenURI,
 function coreRegister(struct CoreRegisterArgs args) external
 ```
 
-
-
-
-
-
-
 ### revokeDomain
 
 ```solidity
 function revokeDomain(bytes32 domainHash) external
 ```
-
-
-
-
-
-
 
 ### reclaimDomain
 
@@ -265,23 +187,11 @@ function revokeDomain(bytes32 domainHash) external
 function reclaimDomain(bytes32 domainHash) external
 ```
 
-
-
-
-
-
-
 ### isOwnerOf
 
 ```solidity
 function isOwnerOf(bytes32 domainHash, address candidate, enum IZNSRootRegistrar.OwnerOf ownerOf) external view returns (bool)
 ```
-
-
-
-
-
-
 
 ### setRegistry
 
@@ -289,23 +199,11 @@ function isOwnerOf(bytes32 domainHash, address candidate, enum IZNSRootRegistrar
 function setRegistry(address registry_) external
 ```
 
-
-
-
-
-
-
 ### setRootPricer
 
 ```solidity
 function setRootPricer(address rootPricer_) external
 ```
-
-
-
-
-
-
 
 ### setTreasury
 
@@ -313,46 +211,15 @@ function setRootPricer(address rootPricer_) external
 function setTreasury(address treasury_) external
 ```
 
-
-
-
-
-
-
 ### setDomainToken
 
 ```solidity
 function setDomainToken(address domainToken_) external
 ```
 
-
-
-
-
-
-
 ### setSubRegistrar
 
 ```solidity
 function setSubRegistrar(address subRegistrar_) external
 ```
-
-
-
-
-
-
-
-### setAddressResolver
-
-```solidity
-function setAddressResolver(address addressResolver_) external
-```
-
-
-
-
-
-
-
 
