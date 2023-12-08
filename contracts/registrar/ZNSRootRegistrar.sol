@@ -75,7 +75,7 @@ contract ZNSRootRegistrar is
      * checks existence of the domain in the registry and reverts if it exists.
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
-     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event. 
+     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      * @param tokenURI URI to assign to the Domain Token issued for the domain
@@ -83,6 +83,9 @@ contract ZNSRootRegistrar is
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
      *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
      *      but all the parameters inside are required.
+     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
+     *  but all the parameters inside are required.
      */
     function registerRootDomain(
         string calldata name,

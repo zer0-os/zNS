@@ -79,6 +79,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param domainAddress (optional) The address to which the subdomain will be resolved to
      * @param tokenURI (required) The tokenURI for the subdomain to be registered
      * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
+     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
+     *  but all the parameters inside are required.
     */
     function registerSubdomain(
         bytes32 parentHash,
