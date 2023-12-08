@@ -209,6 +209,7 @@ describe("ZNSRootRegistrar", () => {
   it("Should NOT initialize the implementation contract", async () => {
     const factory = new ZNSRootRegistrar__factory(deployer);
     const impl = await getProxyImplAddress(await zns.rootRegistrar.getAddress());
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const implContract = factory.attach(impl) as ZNSRootRegistrar;
 
     await expect(

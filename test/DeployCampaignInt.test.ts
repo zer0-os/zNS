@@ -142,7 +142,6 @@ describe("Deploy Campaign Test", () => {
 
       expect(meowToken.address).to.equal(meow.address);
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
-      // TODO dep: what else ??
 
       const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
@@ -696,6 +695,7 @@ describe("Deploy Campaign Test", () => {
         expect(e.message).includes("Invalid character");
       }
     });
+
     it("Throws if env variable is invalid", async () => {
       try {
         const config = await getConfig({
