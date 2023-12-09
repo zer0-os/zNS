@@ -1235,10 +1235,21 @@
     lodash "^4.17.19"
     node-fetch "^2.6.0"
 
-"@openzeppelin/defender-base-client@1.54.0", "@openzeppelin/defender-base-client@^1.52.0":
+"@openzeppelin/defender-base-client@1.54.0":
   version "1.54.0"
   resolved "https://registry.yarnpkg.com/@openzeppelin/defender-base-client/-/defender-base-client-1.54.0.tgz#00585714ae8afdb338629b21bbcc0e26a52b14b2"
   integrity sha512-7UfOk/4BY0d+7Dr+U79xgRbOYkBCWcm0NEsBrOzcmuWEe7Pht6jo2JncHGZiIGRLdfH28VHRW4gNY6Bs8BiSHw==
+  dependencies:
+    amazon-cognito-identity-js "^6.0.1"
+    async-retry "^1.3.3"
+    axios "^1.4.0"
+    lodash "^4.17.19"
+    node-fetch "^2.6.0"
+
+"@openzeppelin/defender-base-client@^1.52.0":
+  version "1.54.1"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/defender-base-client/-/defender-base-client-1.54.1.tgz#ed777ae56908d5a920e1f72ac735c63694e65b30"
+  integrity sha512-DRGz/7KN3ZQwu28YWMOaojrC7jjPkz/uCwkC8/C8B11qwZhA5qIVvyhYHhhFOCl0J84+E3TNdvkPD2q3p2WaJw==
   dependencies:
     amazon-cognito-identity-js "^6.0.1"
     async-retry "^1.3.3"
@@ -1274,7 +1285,7 @@
     amazon-cognito-identity-js "^6.3.6"
     async-retry "^1.3.3"
 
-"@openzeppelin/defender-sdk-deploy-client@^1.5.0", "@openzeppelin/defender-sdk-deploy-client@^1.6.0", "@openzeppelin/defender-sdk-deploy-client@^1.7.0":
+"@openzeppelin/defender-sdk-deploy-client@^1.5.0", "@openzeppelin/defender-sdk-deploy-client@^1.7.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk-deploy-client/-/defender-sdk-deploy-client-1.7.0.tgz#4df169c4bbdc9704b2a2b70075731205f55615d6"
   integrity sha512-eu/1khO5R0IdHio3BXlzUWZdr0Rgodoi49Djqtl3N78G8yN7t4RijfGrJm9rSqjrDFsjM41eWNHYGjc+KKyhKg==
@@ -1351,7 +1362,7 @@
     axios "^1.4.0"
     lodash "^4.17.21"
 
-"@openzeppelin/defender-sdk@^1.5.0":
+"@openzeppelin/defender-sdk@^1.7.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@openzeppelin/defender-sdk/-/defender-sdk-1.7.0.tgz#9012fe2e16192977f348bc59407a36d7a9d5a436"
   integrity sha512-oDO2u9rxFp9emAk3yDNjU6wTDpfv3+qMy3/8KCWJtozMXm7gNFxDOBnB2K6HH28+jw+l76Cp6hfkii5MJcuQrQ==

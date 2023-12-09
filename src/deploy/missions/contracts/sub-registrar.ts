@@ -2,6 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
 import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
+import { Signer } from "ethers";
 
 
 export class ZNSSubRegistrarDM extends BaseDeployMission {
@@ -17,29 +18,28 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
   private isSetOnRoot : boolean | undefined;
 
   deployArgs () : TDeployArgs {
-    const {
-      accessController,
-      registry,
-      rootRegistrar,
-    } = this.campaign;
+    const accessControllerAddress = this.campaign.state.contracts.accessController.target.toString();
+    const registryAddress = this.campaign.state.contracts.registry.target.toString();
+    const rootRegistrarAddress = this.campaign.state.contracts.rootRegistrar.target.toString();
 
-    return [ accessController.address, registry.address, rootRegistrar.address ];
+    return [ accessControllerAddress, registryAddress, rootRegistrarAddress ];
   }
 
   async needsPostDeploy () {
     const {
-      accessController,
-      subRegistrar,
       rootRegistrar,
       config: { deployAdmin },
     } = this.campaign;
 
+    const accessController = this.campaign.state.contracts.accessController;
+    const subRegistrarAddress = this.campaign.state.contracts.subRegistrar.target.toString();
+
     this.hasRegistrarRole = await accessController
-      .connect(deployAdmin)
-      .isRegistrar(subRegistrar.address);
+      .connect(deployAdmin as unknown as Signer)
+      .isRegistrar(subRegistrarAddress);
 
     const currentSubRegistrarOnRoot = await rootRegistrar.subRegistrar();
-    this.isSetOnRoot = currentSubRegistrarOnRoot === subRegistrar.address;
+    this.isSetOnRoot = currentSubRegistrarOnRoot === subRegistrarAddress;
 
     return !this.hasRegistrarRole || !this.isSetOnRoot;
   }
@@ -53,22 +53,23 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
     }
 
     const {
-      accessController,
-      subRegistrar,
-      rootRegistrar,
       config: {
         deployAdmin,
       },
     } = this.campaign;
 
+    const accessController = this.campaign.state.contracts.accessController;
+    const subRegistrarAddress = this.campaign.state.contracts.subRegistrar.target.toString();
+    const rootRegistrar = this.campaign.state.contracts.rootRegistrar;
+
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(subRegistrar.address);
+      await rootRegistrar.connect(deployAdmin as unknown as Signer).setSubRegistrar(subRegistrarAddress);
     }
 
     if (!this.hasRegistrarRole) {
       await accessController
-        .connect(deployAdmin)
-        .grantRole(REGISTRAR_ROLE, subRegistrar.address);
+        .connect(deployAdmin as unknown as Signer)
+        .grantRole(REGISTRAR_ROLE, subRegistrarAddress);
     }
   }
 }

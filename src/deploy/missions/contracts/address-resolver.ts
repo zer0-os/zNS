@@ -2,6 +2,7 @@ import { BaseDeployMission } from "../base-deploy-mission";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
+import { Signer } from "ethers";
 
 
 export class ZNSAddressResolverDM extends BaseDeployMission {
@@ -14,9 +15,12 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
   instanceName = znsNames.addressResolver.instance;
 
   deployArgs () : TDeployArgs {
-    const { accessController, registry } = this.campaign;
+    const {
+      accessController,
+      registry,
+    } = this.campaign.state.contracts;
 
-    return [ accessController.address, registry.address ];
+    return [ accessController.target.toString(), registry.target.toString() ];
   }
 
   async needsPostDeploy () {
@@ -24,13 +28,13 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
     const {
       registry,
       addressResolver,
-    } = this.campaign;
+    } = this.campaign.state.contracts;
 
     const resolverInReg = await registry.getResolverType(
       ResolverTypes.address,
     );
 
-    return resolverInReg !== addressResolver.address;
+    return resolverInReg !== addressResolver.target.toString();
   }
 
   async postDeploy () {
@@ -42,9 +46,9 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
       },
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
+    await registry.connect(deployAdmin as unknown as Signer).addResolverType(
       ResolverTypes.address,
-      addressResolver.address,
+      addressResolver.target.toString(),
     );
   }
 }

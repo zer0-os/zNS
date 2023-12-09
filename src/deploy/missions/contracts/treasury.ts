@@ -23,10 +23,14 @@ export class ZNSTreasuryDM extends BaseDeployMission {
       },
     } = this.campaign;
 
+    const accessControllerAddress = this.campaign.state.contracts.accessController.target.toString();
+    const registryAddress = this.campaign.state.contracts.registry.target.toString();
+    const meowTokenAddress = this.campaign.state.contracts.meowToken.target.toString();
+
     return [
-      accessController.address,
-      registry.address,
-      meowToken.address,
+      accessControllerAddress,
+      registryAddress,
+      meowTokenAddress,
       zeroVaultAddress,
     ];
   }

@@ -5,7 +5,7 @@ import {
   IDeployMissionArgs,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig, TLogger } from "../campaign/types";
+import { Contractv6, IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
 import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
 import { ProxyKinds } from "../constants";
@@ -35,14 +35,13 @@ export class BaseDeployMission {
     return this.campaign.dbAdapter.getContract(this.contractName);
   }
 
-  async saveToDB (contract : Contract) {
+  async saveToDB (contract : Contractv6) {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
-
+    
     this.implAddress = this.proxyData.isProxy
-      ? await this.campaign.deployer.getProxyImplAddress(contract.address)
+      ? await this.campaign.deployer.getProxyImplAddress(await contract.getAddress())
       : null;
-
-    const contractDbDoc = this.buildDbObject(contract, this.implAddress);
+    const contractDbDoc = await this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
@@ -64,8 +63,9 @@ export class BaseDeployMission {
         dbContract.address,
       );
 
-      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${contract.address}`);
+      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${await contract.getAddress()}`);
 
+      // Might be issue here, again with casting
       this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
     }
 
@@ -80,11 +80,19 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  buildDbObject (hhContract : Contract, implAddress : string | null) : Omit<IContractDbData, "version"> {
+  async buildDbObject (hhContract : Contractv6, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
     const { abi, bytecode } = this.getArtifact();
+
+    const returnValue = {
+      name: this.contractName,
+      address: await hhContract.getAddress(),
+      abi: JSON.stringify(abi),
+      bytecode,
+      implementation: implAddress,
+    };
     return {
       name: this.contractName,
-      address: hhContract.address,
+      address: await hhContract.getAddress(),
       abi: JSON.stringify(abi),
       bytecode,
       implementation: implAddress,
@@ -110,7 +118,7 @@ export class BaseDeployMission {
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${contract.address}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${await contract.getAddress()}`);
   }
 
   async needsPostDeploy () {

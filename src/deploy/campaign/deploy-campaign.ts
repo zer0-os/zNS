@@ -5,6 +5,7 @@ import {
   TLogger,
   IMissionInstances,
   TZNSContractState,
+  Contractv6,
 } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";
@@ -93,19 +94,20 @@ export class DeployCampaign {
       },
       Promise.resolve()
     );
+    
+    // TODO temp, Defender already verifies them (I think)
+    // if (this.config.postDeploy.verifyContracts) {
+    //   await this.verify();
+    // }
 
-    if (this.config.postDeploy.verifyContracts) {
-      await this.verify();
-    }
-
-    if (this.config.postDeploy.monitorContracts) {
-      await this.monitor();
-    }
+    // if (this.config.postDeploy.monitorContracts) {
+    //   await this.monitor();
+    // }
 
     this.logger.info("Deploy Campaign execution finished successfully.");
   }
 
-  updateStateContract (instanceName : string, contractName : string, contract : Contract) {
+  updateStateContract (instanceName : string, contractName : string, contract : Contractv6) {
     this.state.contracts[instanceName] = contract;
     this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
   }

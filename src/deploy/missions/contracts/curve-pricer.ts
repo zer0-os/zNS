@@ -15,13 +15,16 @@ export class ZNSCurvePricerDM extends BaseDeployMission {
 
   deployArgs () : TDeployArgs {
     const {
-      accessController,
-      registry,
       config: {
         rootPriceConfig,
       },
     } = this.campaign;
 
-    return [ accessController.address, registry.address, rootPriceConfig ];
+    const {
+      accessController,
+      registry,
+    } = this.campaign.state.contracts;
+
+    return [ accessController.target.toString(), registry.target.toString(), rootPriceConfig ];
   }
 }

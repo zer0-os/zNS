@@ -1,23 +1,16 @@
-import { BigNumber } from "ethers";
+import { Signer } from "ethers";
 import { IERC20__factory } from "../../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-export const ETH_MULTIPLIER = BigNumber.from(10).pow(BigNumber.from(18));
+export const ETH_MULTIPLIER = BigInt(10) ** BigInt(18);
 
 export const toTokenValue = (
-  value : number | string | BigNumber,
-  decimals : number | string | BigNumber = 18
-) => BigNumber.from(value)
-  .mul(
-    BigNumber.from(10)
-      .pow(
-        BigNumber.from(decimals)
-      )
-  );
+  value : number | string | BigInt,
+  decimals : number | string | BigInt = 18
+) => BigInt(value.toString()) * BigInt(10) ** (BigInt(decimals.toString()));
 
 export const getTokenContract = (
   address : string,
-  signer : SignerWithAddress
+  signer : Signer
 ) => {
   const ierc20 = IERC20__factory.connect(address, signer);
   return ierc20.attach(address);

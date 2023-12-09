@@ -1,30 +1,36 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
-// import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
-// import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { DefenderRelaySigner, DefenderRelayProvider } from "@openzeppelin/defender-relay-client/lib/ethers";
-import { JsonRpcSigner } from "@ethersproject/providers";
+import {
+  DefenderRelayProvider,
+  DefenderRelaySigner
+} from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { Defender } from "@openzeppelin/defender-sdk";
+import { Contractv6 } from "../campaign/types";
+import { Signer } from "ethers";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
   signer : DefenderRelaySigner;
   provider : DefenderRelayProvider;
+  client : Defender;
 
-  constructor (signer: DefenderRelaySigner, provider : DefenderRelayProvider) {
+  constructor (client : Defender) {
     this.hre = hre;
-    this.signer = signer;
-    this.provider = provider;
+    this.client = client
+    this.provider = client.relaySigner.getProvider();
+    this.signer = client.relaySigner.getSigner(this.provider, { speed: "fast" });
   }
 
-  async getFactory (contractName : string, signer ?: JsonRpcSigner) {
-    return this.hre.ethers.getContractFactory(contractName, signer);
+  async getFactory (contractName : string) {
+    // TODO ethers / typechain issue with typing here, have to cast to unknown as Signer
+    return this.hre.ethers.getContractFactory(contractName, this.signer as unknown as Signer);
   }
 
+  // Return type is Promise<ContractFactory<any[], BaseContract>>
   async getContractObject (contractName : string, address : string) {
-    const signer = await this.provider.getSigner();
-    const factory = await this.getFactory(contractName, signer);
+    const factory = await this.getFactory(contractName);
 
     return factory.attach(address);
   }
@@ -40,25 +46,27 @@ export class HardhatDeployer {
   }) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await this.hre.upgrades.deployProxy(contractFactory, args, {
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await this.hre.upgrades.deployProxy(contractFactory, args, {
       kind,
     });
 
-    await contract.deployed();
+    const tx = await deployment.deploymentTransaction();
+    const receipt = await this.provider.waitForTransaction(tx!.hash, 3);
 
-    return contract;
+    return contractFactory.attach(receipt.contractAddress);
   }
 
   async deployContract (contractName : string, args : TDeployArgs) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await contractFactory.deploy(...args);
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await contractFactory.deploy(...args);
 
-    await contract.deployed();
+    const tx = await deployment.deploymentTransaction();
+    const receipt = await this.provider.waitForTransaction(tx!.hash, 3);
 
-    return contract;
+    return contractFactory.attach(receipt.contractAddress);
   }
 
   getContractArtifact (contractName : string) {

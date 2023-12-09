@@ -1,7 +1,7 @@
 import { BaseDeployMission } from "./base-deploy-mission";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
-import { BigNumber } from "ethers";
+import { BaseContract } from "ethers";
 
 
 export interface IDeployMissionArgs {
@@ -12,7 +12,7 @@ export interface IDeployMissionArgs {
 
 export type TDeployMissionCtor = new (args : IDeployMissionArgs) => BaseDeployMission;
 
-export type TDeployArg = string | Array<string> | BigNumber | ICurvePriceConfig;
+export type TDeployArg = string | Array<string> | bigint | ICurvePriceConfig;
 
 export type TDeployArgs = Array<TDeployArg>;
 
@@ -30,11 +30,11 @@ export interface IProxyData {
 }
 
 export interface ICurvePriceConfig {
-  maxPrice : BigNumber;
-  minPrice : BigNumber;
-  maxLength : BigNumber;
-  baseLength : BigNumber;
-  precisionMultiplier : BigNumber;
-  feePercentage : BigNumber;
+  maxPrice : bigint;
+  minPrice : bigint;
+  maxLength : bigint;
+  baseLength : bigint;
+  precisionMultiplier : bigint;
+  feePercentage : bigint;
   isSet : boolean;
 }

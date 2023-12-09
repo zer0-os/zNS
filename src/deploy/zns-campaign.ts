@@ -1,3 +1,4 @@
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IDeployCampaignConfig } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { DeployCampaign } from "./campaign/deploy-campaign";
@@ -12,26 +13,23 @@ import * as hre from "hardhat";
 
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 import { getLogger } from "./logger/create-logger";
-import { DefenderRelayProvider } from "@openzeppelin/defender-relay-client/lib/ethers";
+import { Defender } from "@openzeppelin/defender-sdk";
 
-interface CampaignParams {
+interface MetaCampaignParams {
   config : IDeployCampaignConfig;
-  provider : DefenderRelayProvider;
+  client : Defender,
   dbVersion ?: string;
-  deployer ?: HardhatDeployer;
-  // TODO def: add proper type for the provider
 }
 
-export const runZnsCampaign = async (args : CampaignParams) => {
+export const runZnsCampaign = async (args : MetaCampaignParams) => {
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
 
-  const deployer = args.deployer 
-    ? args.deployer 
-    : new HardhatDeployer(args.config.deployAdmin, args.provider);
+  // Always use new deployer
+  const deployer = new HardhatDeployer(args.client);
 
-    const dbAdapter = await getMongoAdapter();
+  const dbAdapter = await getMongoAdapter();
 
   const campaign = new DeployCampaign({
     missions: [
@@ -49,12 +47,12 @@ export const runZnsCampaign = async (args : CampaignParams) => {
     deployer,
     dbAdapter,
     logger,
-    config,
+    config: args.config,
   });
 
   await campaign.execute();
 
-  await dbAdapter.finalizeDeployedVersion(dbVersion);
+  await dbAdapter.finalizeDeployedVersion(args.dbVersion);
 
   return campaign;
 };

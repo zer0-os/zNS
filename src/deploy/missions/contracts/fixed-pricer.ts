@@ -14,11 +14,9 @@ export class ZNSFixedPricerDM extends BaseDeployMission {
   instanceName = znsNames.fixedPricer.instance;
 
   deployArgs () : TDeployArgs {
-    const {
-      accessController,
-      registry,
-    } = this.campaign;
+    const accessControllerAddress = this.campaign.state.contracts.accessController.target;
+    const registryAddress = this.campaign.state.contracts.registry.target;
 
-    return [ accessController.address, registry.address ];
+    return [ accessControllerAddress.toString(), registryAddress.toString() ];
   }
 }

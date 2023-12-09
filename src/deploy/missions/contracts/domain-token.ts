@@ -13,7 +13,8 @@ export class ZNSDomainTokenDM extends BaseDeployMission {
   instanceName = znsNames.domainToken.instance;
 
   deployArgs () : TDeployArgs {
-    const { accessController: { address: acAddress } } = this.campaign;
+    const acAddress = this.campaign.state.contracts.accessController.target.toString();
+
     const {
       domainToken: {
         name,
