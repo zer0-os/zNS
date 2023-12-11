@@ -16,11 +16,7 @@ const runCampaign = async () => {
   const client = new Defender(credentials);
 
   const provider = client.relaySigner.getProvider();
-  // TODO def: figure out how many seconds to pass here or use default !!!
-  const deployer = client.relaySigner.getSigner(provider, { speed: "fast", validForSeconds: 120 });
-
-  // TODO check verification on etherscan
-  // TODO make sure subsequent passes work after initial first pass success
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
   // Error on first pass when attempting verification
   // Reading `ENV_LEVEL` environment variable to determine rules to be enforced

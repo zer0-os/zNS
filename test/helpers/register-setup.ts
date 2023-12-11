@@ -165,9 +165,6 @@ export const registrationWithSetup = async ({
 
   if (!hasConfig) return domainHash;
 
-  // TODO sub: do we want to set these up upon registration or make a user call these separately?
-  //  optimize for the best UX!
-  //  maybe add API to SubReg to set these up in one tx?
   // set up prices
   if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
     await zns.fixedPricer.connect(user).setPriceConfig(

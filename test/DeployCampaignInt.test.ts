@@ -818,7 +818,6 @@ describe("Deploy Campaign Test", () => {
     });
   });
 
-  // TODO dep: add more versioning tests here for DB versions!
   describe("Versioning", () => {
     let campaign : DeployCampaign;
 
