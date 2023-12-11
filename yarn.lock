@@ -1402,7 +1402,7 @@
     "@openzeppelin/defender-sdk-relay-client" "^1.7.0"
     "@openzeppelin/defender-sdk-relay-signer-client" "^1.7.0"
 
-"@openzeppelin/hardhat-upgrades@^2.4.3":
+"@openzeppelin/hardhat-upgrades@^2.5.0":
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/@openzeppelin/hardhat-upgrades/-/hardhat-upgrades-2.5.0.tgz#29b6bdc1a998bdc1672028586510e144ec25ae7e"
   integrity sha512-pRsqyRbp8LX9sTSMbL7jx4NjqjN/4PlKngmuAyRQIheYTGbRIs3FW3WyLuiCjkDlTETfmOsmzrnZxJmxDmxZIA==
