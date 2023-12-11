@@ -71,6 +71,10 @@ export class MeowTokenDM extends BaseDeployMission {
   }
 
   async needsPostDeploy () {
+    const msg = this.config.mockMeowToken ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
     return this.config.mockMeowToken;
   }
 
@@ -87,5 +91,7 @@ export class MeowTokenDM extends BaseDeployMission {
       deployAdmin.address,
       ethers.parseEther("100000")
     );
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }

@@ -20,7 +20,6 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
   }
 
   async needsPostDeploy () {
-    // TODO def: add logging for all post tasks!
     const {
       registry,
       addressResolver,
@@ -30,7 +29,12 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
       ResolverTypes.address,
     );
 
-    return resolverInReg !== await addressResolver.getAddress();
+    const needs = resolverInReg !== await addressResolver.getAddress();
+    const msg = needs ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
+    return needs;
   }
 
   async postDeploy () {
@@ -46,5 +50,7 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
       ResolverTypes.address,
       await addressResolver.getAddress(),
     );
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }
