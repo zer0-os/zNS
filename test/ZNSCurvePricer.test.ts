@@ -339,22 +339,22 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
     });
 
-    // TODO resolve after merge conflicts
-    // it("Cannot go below the set minPrice", async () => {
-    //   // Using config numbers from audit
-    //   const newConfig = {
-    //     baseLength: BigInt("5"),
-    //     maxLength: BigInt("10"),
-    //     maxPrice: ethers.parseEther("10"),
-    //     minPrice: ethers.parseEther("5.5"),
-    //     precisionMultiplier: precisionMultiDefault,
-    //     feePercentage: registrationFeePercDefault,
-    //   };
+    it("Cannot go below the set minPrice", async () => {
+      // Using config numbers from audit
+      const newConfig = {
+        baseLength: BigInt("5"),
+        maxLength: BigInt("10"),
+        maxPrice: ethers.parseEther("10"),
+        minPrice: ethers.parseEther("5.5"),
+        precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        isSet: true,
+      };
 
-    //   await expect(
-    //     zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
-    //   ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
-    // });
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig)
+      ).to.be.revertedWith(CURVE_PRICE_CONFIG_ERR);
+    });
 
     it("Should revert if called by anyone other than owner or operator", async () => {
       const newConfig = {
