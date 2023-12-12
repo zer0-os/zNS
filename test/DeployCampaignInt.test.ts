@@ -111,7 +111,7 @@ describe("Deploy Campaign Test", () => {
       const balanceAfter = await meowToken.balanceOf(userA.address);
       expect(balanceAfter - balanceBefore).to.equal(toMint);
 
-      // await dbAdapter.dropDB();
+      await dbAdapter.dropDB();
     });
 
     it("should use existing deployed non-mocked MeowToken contract when `mockMeowToken` is false", async () => {
@@ -164,7 +164,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       // Cannot call to real db to      
-      // await dbAdapter.dropDB();
+      await dbAdapter.dropDB();
     });
   });
 
@@ -362,7 +362,7 @@ describe("Deploy Campaign Test", () => {
     });
 
     afterEach(async () => {
-      // await mongoAdapter.dropDB();
+      await mongoAdapter.dropDB();
     });
 
     // eslint-disable-next-line max-len
@@ -668,7 +668,7 @@ describe("Deploy Campaign Test", () => {
       expect(rootPaymentConfig.token).to.eq(await zns.meowToken.getAddress());
       expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
 
-      // await dbAdapter.dropDB();
+      await dbAdapter.dropDB();
     });
 
     it("Fails when governor or admin addresses are given wrong", async () => {
@@ -1041,7 +1041,7 @@ describe("Deploy Campaign Test", () => {
     });
 
     afterEach(async () => {
-      // await mongoAdapter.dropDB();
+      await mongoAdapter.dropDB();
     });
 
     it("should prepare the correct data for each contract when verifying on Etherscan", async () => {
