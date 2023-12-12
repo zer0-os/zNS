@@ -1,5 +1,7 @@
 import { ethers } from "hardhat";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ContractTransactionResponse, TransactionReceipt } from "ethers";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO NAME ADDRESS";
@@ -70,6 +72,13 @@ export const fullDistrConfigEmpty = {
   priceConfig: undefined,
   paymentConfig: paymentConfigEmpty,
 };
+
+export const mockDefenderProvider = {
+  waitForTransaction: async (txHash : string, blocks : number) : Promise<TransactionReceipt> => {
+    // Above params exist just to match the real `waitForTransaction` function signature
+    return await ethers.provider.getTransactionReceipt(txHash) as TransactionReceipt;
+  }
+} as unknown as DefenderRelayProvider;
 
 export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 

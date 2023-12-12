@@ -1,3 +1,6 @@
+import * as hre from "hardhat";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+
 import { IDeployCampaignConfig } from "./campaign/types";
 import { HardhatDeployer } from "./deployer/hardhat-deployer";
 import { DeployCampaign } from "./campaign/deploy-campaign";
@@ -8,18 +11,18 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
-import * as hre from "hardhat";
-
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 import { getLogger } from "./logger/create-logger";
 
-
+// TODO how do we mock certain things for tests
 export const runZnsCampaign = async ({
   config,
+  provider,
   dbVersion,
   deployer,
 } : {
   config : IDeployCampaignConfig;
+  provider : DefenderRelayProvider;
   dbVersion ?: string;
   deployer ?: HardhatDeployer;
 }) => {
@@ -27,7 +30,9 @@ export const runZnsCampaign = async ({
 
   const logger = getLogger();
 
-  if (!deployer) deployer = new HardhatDeployer(config.deployAdmin, config.env);
+  if (!deployer) {
+    deployer = new HardhatDeployer(config.deployAdmin, provider, config.env);
+  }
 
   const dbAdapter = await getMongoAdapter();
 

@@ -1,9 +1,12 @@
 import { getConfig } from "./campaign/environments";
-import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
 import { Defender } from "@openzeppelin/defender-sdk";
 
-const logger = getLogger();
+// import { DefenderRelayProvider, DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+
+// import { IDeployCampaignConfig } from "./campaign/types";
+// import { BaseContract, ContractFactory, Signer } from "ethers";
+
 
 const runCampaign = async () => {
   const credentials = {
@@ -17,7 +20,7 @@ const runCampaign = async () => {
 
   const provider = client.relaySigner.getProvider();
   // TODO def: figure out how many seconds to pass here or use default !!!
-  const deployer = client.relaySigner.getSigner(provider, { speed: "fast", validForSeconds: 120 });
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
   // TODO check verification on etherscan
   // TODO make sure subsequent passes work after initial first pass success
@@ -32,12 +35,13 @@ const runCampaign = async () => {
 
   await runZnsCampaign({
     config,
+    provider,
   });
 };
 
 runCampaign().catch(error => {
-  logger.error(error.message);
   process.exitCode = 1;
+  console.log(error);
 }).finally(() => {
   process.exit(0);
 });

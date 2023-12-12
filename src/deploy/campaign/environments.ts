@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { IDeployCampaignConfig } from "./types";
 import {
@@ -63,12 +63,12 @@ export const getConfig = async ({
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
 }) : Promise<IDeployCampaignConfig> => {
-  let deployerAddress;
-  if (typeof deployer === typeof DefenderRelaySigner) {
-    deployerAddress = await (deployer as DefenderRelaySigner).getAddress();
-  } else {
-    deployerAddress = (deployer as SignerWithAddress).address;
-  }
+    let deployerAddress;
+    if (Object.keys(deployer).includes("address")) {
+      deployerAddress = (deployer as HardhatEthersSigner).address;
+    } else {
+      deployerAddress = await deployer.getAddress();
+    }
 
   // Price config variables
   const maxPrice =

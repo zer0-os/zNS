@@ -3,32 +3,43 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
 import { ethers } from "ethers";
 
+import {
+  DefenderRelayProvider,
+  DefenderRelaySigner
+} from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { Defender } from "@openzeppelin/defender-sdk";
+import { ContractV6 } from "../campaign/types";
+import { Signer } from "ethers";
+
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
+  provider : DefenderRelayProvider;
   signer : SignerWithAddress | DefenderRelaySigner;
-  deployModule : HardhatUpgrades | DefenderHardhatUpgrades;
   env : string;
 
-  constructor (signer : SignerWithAddress | DefenderRelaySigner, env : string) {
+  // TODO for test updates, make a mock Defender object to give a client with a signer
+  // can be signer from hh
+  constructor (
+    signer : SignerWithAddress | DefenderRelaySigner,
+    provider : DefenderRelayProvider,
+    env : string
+  ) {
     this.hre = hre;
+    this.provider = provider;
     this.signer = signer;
     this.env = env;
-    this.deployModule = env === "dev" ? this.hre.upgrades : this.hre.defender;
   }
 
   async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
-    // is this typecasting a problem at all?
-    // TS gets confused on the function typing here
-    // if we use the SignerWithAddress | DefenderRelaySigner type
-    return this.hre.ethers.getContractFactory(contractName, signer as ethers.Signer);
+    const attachedSigner = signer ?? this.signer;
+    return this.hre.ethers.getContractFactory(contractName, attachedSigner as ethers.Signer);
   }
 
   async getContractObject (contractName : string, address : string) {
-    const factory = await this.getFactory(contractName, this.signer);
+    const factory = await this.getFactory(contractName);
 
     return factory.attach(address);
   }
@@ -41,34 +52,32 @@ export class HardhatDeployer {
     contractName : string;
     args : TDeployArgs;
     kind : TProxyKind;
-  }) {
+  }) : Promise<ContractV6> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await this.deployModule.deployProxy(contractFactory, args, {
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await this.hre.upgrades.deployProxy(contractFactory, args, {
       kind,
     });
 
-    await contract.waitForDeployment();
+    const tx = await deployment.deploymentTransaction();
+    const waitBlocks = this.env === "dev" ? 0 : 3;
+    const receipt = await this.provider.waitForTransaction(tx!.hash, waitBlocks);
 
-    return contract;
+    return contractFactory.attach(receipt.contractAddress);
   }
 
-  async deployContract (contractName : string, args : TDeployArgs) {
+  async deployContract (contractName : string, args : TDeployArgs) : Promise<ContractV6> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await contractFactory.deploy(...args);
 
-    let contract;
-    if (this.env !== "dev") {
-      contract = await (this.deployModule as DefenderHardhatUpgrades).deployContract(contractFactory, args);
-    } else {
-      contract = await contractFactory.deploy(...args);
-    }
+    const tx = await deployment.deploymentTransaction();
+    const waitBlocks = this.env === "dev" ? 0 : 3;
+    const receipt = await this.provider.waitForTransaction(tx!.hash, waitBlocks);
 
-    await contract.waitForDeployment();
-
-    return contract;
+    return contractFactory.attach(receipt.contractAddress);
   }
 
   getContractArtifact (contractName : string) {
