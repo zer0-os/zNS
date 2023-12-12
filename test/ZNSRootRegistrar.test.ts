@@ -17,7 +17,7 @@ import {
   REGISTRAR_ROLE,
   DEFAULT_PRECISION_MULTIPLIER,
   DEFAULT_PRICE_CONFIG,
-  DEFAULT_REGISTRATION_FEE_PERCENT,
+  DEFAULT_PROTOCOL_FEE_PERCENT,
   NOT_AUTHORIZED_REG_ERR,
   NOT_BOTH_OWNER_RAR_ERR,
   NOT_TOKEN_OWNER_RAR_ERR,
@@ -261,7 +261,7 @@ describe("ZNSRootRegistrar", () => {
       maxPrice: ethers.parseEther("150"),
       minPrice: ethers.parseEther("10"),
       precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-      feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+      feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
       isSet: true,
     };
 

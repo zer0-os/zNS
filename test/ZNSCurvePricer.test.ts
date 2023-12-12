@@ -19,7 +19,7 @@ import {
   AccessType,
   DEFAULT_DECIMALS,
   DEFAULT_PRICE_CONFIG,
-  DEFAULT_REGISTRATION_FEE_PERCENT,
+  DEFAULT_PROTOCOL_FEE_PERCENT,
 } from "./helpers/constants";
 import {
   getAccessRevertMsg,
@@ -294,7 +294,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("150"),
         minPrice: ethers.parseEther("10"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -330,7 +330,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("10"),
         minPrice: ethers.parseEther("6"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -347,7 +347,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("10"),
         minPrice: ethers.parseEther("5.5"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -363,7 +363,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("10"),
         minPrice: ethers.parseEther("6"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -383,7 +383,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("150"),
         minPrice: ethers.parseEther("10"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -407,7 +407,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: ethers.parseEther("1"),
         minPrice: ethers.parseEther("2"),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 
@@ -668,7 +668,7 @@ describe("ZNSCurvePricer", () => {
         maxPrice: BigInt(100),
         minPrice: BigInt(10),
         precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-        feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
         isSet: true,
       };
 

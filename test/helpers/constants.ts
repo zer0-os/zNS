@@ -7,7 +7,7 @@ export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNA";
 
 export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
-export const DEFAULT_REGISTRATION_FEE_PERCENT = BigInt("222");
+export const DEFAULT_PROTOCOL_FEE_PERCENT = BigInt("222");
 export const DEFAULT_PERCENTAGE_BASIS = BigInt("10000");
 
 export const DEFAULT_DECIMALS = BigInt(18);
@@ -40,7 +40,7 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-  feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+  feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
   isSet: true,
 };
 
