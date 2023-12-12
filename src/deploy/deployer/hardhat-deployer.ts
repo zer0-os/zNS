@@ -1,11 +1,14 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { TDeployArgs, TProxyKind } from "../missions/types";
+import { ITenderlyContractData, TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
 import { ethers } from "ethers";
+import axios from "axios";
+import { getLogger } from "../logger/create-logger";
+
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
@@ -83,8 +86,32 @@ export class HardhatDeployer {
     return this.hre.ethers.provider.getCode(address);
   }
 
-  async tenderlyVerify (contracts : Array<ContractByName>) {
-    return this.hre.tenderly.verify(...contracts);
+  async tenderlyPush (contracts : Array<ITenderlyContractData>) {
+    //     curl -X POST https://api.tenderly.co/api/v1/account/$ACCOUNT_SLUG/project/$PROJECT_SLUG/address \
+    //       --header "Content-Type: application/json" \
+    //       --header "X-Access-Key: $ACCESS_KEY" \
+    //       --data-raw '{
+    //          "network_id": "42",
+    //          "address": "0x404469525f6Ab4023Ce829D8F627d424D3986675"
+    //        }'
+
+    // write axios post based on the comment above
+    const inst = axios.create({
+      baseURL: "https://api.tenderly.co/",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Key": process.env.TENDERLY_ACCESS_KEY,
+      },
+    });
+
+    const { data } = await inst.post(
+      `api/v2/accounts/${process.env.TENDERLY_ACCOUNT_ID}/projects/${process.env.TENDERLY_PROJECT_SLUG}/contracts`,
+      contracts
+    );
+
+    return data;
+    // this below does not push to the project
+    // return this.hre.tenderly.verify(...contracts);
   }
 
   async etherscanVerify ({

@@ -1,15 +1,16 @@
+/* eslint-disable camelcase */
 import { Contract } from "ethers";
 import {
   TDeployArgs,
   IProxyData,
-  IDeployMissionArgs,
+  IDeployMissionArgs, ITenderlyContractData,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
 import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
 import { ProxyKinds } from "../constants";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { NetworkData } from "../deployer/constants";
 
 
 export class BaseDeployMission {
@@ -146,31 +147,34 @@ export class BaseDeployMission {
     this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
   }
 
-  async getMonitoringData () : Promise<Array<ContractByName>> {
+  async getMonitoringData () : Promise<Array<ITenderlyContractData>> {
+    const networkId = NetworkData[this.campaign.config.env].id;
     const implName = this.contractName;
     let implAddress = await this.campaign[this.instanceName].getAddress();
 
     if (this.proxyData.isProxy) {
-      const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
       const proxyAddress = await this.campaign[this.instanceName].getAddress();
       implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
 
       return [
         {
-          name: proxyName,
+          display_name: `${this.contractName}Proxy`,
           address: proxyAddress,
+          network_id: networkId,
         },
         {
-          name: implName,
+          display_name: `${implName}Impl`,
           address: implAddress,
+          network_id: networkId,
         },
       ];
     }
 
     return [
       {
-        name: implName,
+        display_name: implName,
         address: implAddress,
+        network_id: networkId,
       },
     ];
   }

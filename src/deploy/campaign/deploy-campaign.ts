@@ -7,11 +7,10 @@ import {
   TZNSContractState,
 } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { TDeployMissionCtor } from "../missions/types";
+import { ITenderlyContractData, TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
 import { Contract } from "ethers";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
 export class DeployCampaign {
@@ -128,9 +127,9 @@ export class DeployCampaign {
 
     const contracts = await Object.values(this.state.instances).reduce(
       async (
-        acc : Promise<Array<ContractByName>>,
+        acc : Promise<Array<ITenderlyContractData>>,
         missionInstance : BaseDeployMission,
-      ) : Promise<Array<ContractByName>> => {
+      ) : Promise<Array<ITenderlyContractData>> => {
         const newAcc = await acc;
         const data = await missionInstance.getMonitoringData();
 
@@ -139,8 +138,11 @@ export class DeployCampaign {
       Promise.resolve([])
     );
 
-    await this.deployer.tenderlyVerify(contracts);
+    const response = await this.deployer.tenderlyPush(contracts);
 
-    this.logger.info(`Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}.`);
+    this.logger.info(`
+    Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}
+    with data: ${JSON.stringify(response, null, "\t")}
+    `);
   }
 }
