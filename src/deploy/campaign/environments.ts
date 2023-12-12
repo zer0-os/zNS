@@ -63,12 +63,12 @@ export const getConfig = async ({
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
 }) : Promise<IDeployCampaignConfig> => {
-    let deployerAddress;
-    if (Object.keys(deployer).includes("address")) {
-      deployerAddress = (deployer as HardhatEthersSigner).address;
-    } else {
-      deployerAddress = await deployer.getAddress();
-    }
+  let deployerAddress;
+  if (Object.keys(deployer).includes("address")) {
+    deployerAddress = (deployer as HardhatEthersSigner).address;
+  } else {
+    deployerAddress = await deployer.getAddress();
+  }
 
   // Price config variables
   const maxPrice =
