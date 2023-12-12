@@ -159,7 +159,7 @@ describe("Deploy Campaign Test", () => {
         );
       }
 
-      // Cannot call to real db to      
+      // Cannot call to real db to
       await dbAdapter.dropDB();
     });
   });
@@ -1049,6 +1049,7 @@ describe("Deploy Campaign Test", () => {
 
       const campaign = await runZnsCampaign({
         config,
+        deployer,
       });
 
       const { state: { contracts } } = campaign;

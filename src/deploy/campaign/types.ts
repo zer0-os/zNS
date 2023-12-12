@@ -1,8 +1,8 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { BaseContract, Contract } from "ethers";
+import { BaseContract } from "ethers";
 import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";

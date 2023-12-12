@@ -5,7 +5,7 @@ import {
   TLogger,
   IMissionInstances,
   TZNSContractState,
-  ContractV6
+  ContractV6,
 } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { TDeployMissionCtor } from "../missions/types";

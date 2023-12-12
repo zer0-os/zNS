@@ -1,7 +1,5 @@
 import { ethers } from "hardhat";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-import { ContractTransactionResponse, TransactionReceipt } from "ethers";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO NAME ADDRESS";

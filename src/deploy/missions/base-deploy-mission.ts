@@ -81,7 +81,10 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  async buildDbObject (hhContract : ContractV6, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
+  async buildDbObject (
+    hhContract : ContractV6,
+    implAddress : string | null
+  ) : Promise<Omit<IContractDbData, "version">> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,

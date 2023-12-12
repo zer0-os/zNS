@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 
 import {
   DefenderRelayProvider,
-  DefenderRelaySigner
+  DefenderRelaySigner,
 } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ContractV6 } from "../campaign/types";
 
@@ -16,7 +16,7 @@ export class HardhatDeployer {
   signer : SignerWithAddress | DefenderRelaySigner;
   env : string;
   provider ?: DefenderRelayProvider;
-  
+
   constructor (
     signer : SignerWithAddress | DefenderRelaySigner,
     env : string,
@@ -57,9 +57,10 @@ export class HardhatDeployer {
 
     let receipt;
     if (!this.provider) {
-      return await deployment.waitForDeployment();
+      return deployment.waitForDeployment();
     } else {
       const tx = await deployment.deploymentTransaction();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       receipt = await this.provider.waitForTransaction(tx!.hash, 3);
 
       return contractFactory.attach(receipt.contractAddress);
@@ -74,9 +75,10 @@ export class HardhatDeployer {
 
     let receipt;
     if (!this.provider) {
-      return await deployment.waitForDeployment();
+      return deployment.waitForDeployment();
     } else {
       const tx = await deployment.deploymentTransaction();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       receipt = await this.provider.waitForTransaction(tx!.hash, 3);
 
       return contractFactory.attach(receipt.contractAddress);
