@@ -5,7 +5,6 @@ import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { expect } from "chai";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
@@ -43,7 +42,6 @@ import { TDeployArgs } from "../src/deploy/missions/types";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
-import { mockDefenderProvider } from "./helpers";
 
 const execAsync = promisify(exec);
 
@@ -94,7 +92,6 @@ describe("Deploy Campaign Test", () => {
     it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       const { meowToken, dbAdapter } = campaign;
@@ -132,7 +129,6 @@ describe("Deploy Campaign Test", () => {
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       const {
@@ -203,7 +199,7 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer(deployAdmin, mockDefenderProvider, env);
+      const deployer = new HardhatDeployer(deployAdmin, env);
       let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
@@ -280,7 +276,6 @@ describe("Deploy Campaign Test", () => {
       // run Campaign again, but normally
       const nextCampaign = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       ({ dbAdapter } = nextCampaign);
@@ -652,7 +647,6 @@ describe("Deploy Campaign Test", () => {
 
       const campaign = await runZnsCampaign({
         config,
-        provider: mockDefenderProvider,
       });
 
       const { dbAdapter } = campaign;
@@ -856,7 +850,6 @@ describe("Deploy Campaign Test", () => {
 
       campaign = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider
       });
     });
 
@@ -895,7 +888,6 @@ describe("Deploy Campaign Test", () => {
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
@@ -944,7 +936,6 @@ describe("Deploy Campaign Test", () => {
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
@@ -984,7 +975,6 @@ describe("Deploy Campaign Test", () => {
       // run a new campaign
       const { state: { contracts: newContracts } } = await runZnsCampaign({
         config: campaignConfig,
-        provider: mockDefenderProvider,
       });
 
       // make sure we picked up the correct DB version
@@ -1055,11 +1045,10 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin, mockDefenderProvider, env);
+      const deployer = new HardhatDeployerMock(deployAdmin, env);
 
       const campaign = await runZnsCampaign({
         config,
-        provider: mockDefenderProvider,
       });
 
       const { state: { contracts } } = campaign;
@@ -1087,14 +1076,13 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin, mockDefenderProvider, env);
+      const deployer = new HardhatDeployerMock(deployAdmin,  env);
 
       config.postDeploy.monitorContracts = true;
       config.postDeploy.verifyContracts = false;
 
       const campaign = await runZnsCampaign({
         config,
-        provider: mockDefenderProvider,
         deployer,
       });
 

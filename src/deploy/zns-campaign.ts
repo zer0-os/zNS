@@ -22,7 +22,7 @@ export const runZnsCampaign = async ({
   deployer,
 } : {
   config : IDeployCampaignConfig;
-  provider : DefenderRelayProvider;
+  provider ?: DefenderRelayProvider;
   dbVersion ?: string;
   deployer ?: HardhatDeployer;
 }) => {
@@ -31,7 +31,7 @@ export const runZnsCampaign = async ({
   const logger = getLogger();
 
   if (!deployer) {
-    deployer = new HardhatDeployer(config.deployAdmin, provider, config.env);
+    deployer = new HardhatDeployer(config.deployAdmin, config.env, provider);
   }
 
   const dbAdapter = await getMongoAdapter();
