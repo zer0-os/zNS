@@ -122,6 +122,10 @@ const config : HardhatUserConfig = {
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   },
+  sourcify: {
+    // If set to "true", will try to verify the contracts after deployment
+    enabled: false,
+  },
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
