@@ -1067,7 +1067,7 @@ describe("Deploy Campaign Test", () => {
       );
     });
 
-    it.only("should prepare the correct contract data when pushing to Tenderly Project", async () => {
+    it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
