@@ -2,12 +2,10 @@ import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ITenderlyContractData, TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
 import { ethers } from "ethers";
 import axios from "axios";
-import { getLogger } from "../logger/create-logger";
 
 
 export class HardhatDeployer {

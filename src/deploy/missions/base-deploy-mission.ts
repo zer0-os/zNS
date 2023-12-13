@@ -8,8 +8,6 @@ import {
 import { DeployCampaign } from "../campaign/deploy-campaign";
 import { IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
-import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
-import { ProxyKinds } from "../constants";
 import { NetworkData } from "../deployer/constants";
 
 
