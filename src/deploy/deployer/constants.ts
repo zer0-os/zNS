@@ -15,4 +15,8 @@ export const NetworkData : INetworkData = {
     name: "mainnet",
     id: "1",
   },
+  dev: {
+    name: "hardhat",
+    id: "31337",
+  },
 };

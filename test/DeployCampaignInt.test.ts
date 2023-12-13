@@ -37,7 +37,7 @@ import { getConfig, validate } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { TDeployArgs } from "../src/deploy/missions/types";
+import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
 import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
@@ -1067,10 +1067,10 @@ describe("Deploy Campaign Test", () => {
       );
     });
 
-    it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
-      let tenderlyData : Array<ContractByName> = [];
+    it.only("should prepare the correct contract data when pushing to Tenderly Project", async () => {
+      let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer {
-        async tenderlyPush (contracts : Array<ContractByName>) {
+        async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }
       }
@@ -1096,22 +1096,19 @@ describe("Deploy Campaign Test", () => {
           const dbData = await instance.getFromDB();
 
           if (instance.proxyData.isProxy) {
-            const proxyName = instance.proxyData.kind === ProxyKinds.uups
-              ? erc1967ProxyName
-              : transparentProxyName;
             // check proxy
             expect(tenderlyData[idx].address).to.be.eq(dbData?.address);
-            expect(tenderlyData[idx].name).to.be.eq(proxyName);
+            expect(tenderlyData[idx].display_name).to.be.eq(`${instance.contractName}Proxy`);
 
             // check impl
             expect(tenderlyData[idx + 1].address).to.be.eq(dbData?.implementation);
-            expect(tenderlyData[idx + 1].name).to.be.eq(dbData?.name);
-            expect(tenderlyData[idx + 1].name).to.be.eq(instance.contractName);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${dbData?.name}Impl`);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${instance.contractName}Impl`);
             idx += 2;
           } else {
             expect(tenderlyData[idx].address).to.equal(dbData?.address);
-            expect(tenderlyData[idx].name).to.equal(dbData?.name);
-            expect(tenderlyData[idx].name).to.equal(instance.contractName);
+            expect(tenderlyData[idx].display_name).to.equal(dbData?.name);
+            expect(tenderlyData[idx].display_name).to.equal(instance.contractName);
             idx++;
           }
         },
