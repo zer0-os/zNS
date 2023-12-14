@@ -99,6 +99,7 @@ export const registerRootDomainBulk = async (
   let index = 0;
 
   for(const domain of domains) {
+    const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
     const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
       domain,
       config.zeroVaultAddress,
@@ -109,11 +110,16 @@ export const registerRootDomainBulk = async (
         beneficiary: config.zeroVaultAddress,
       }
     );
-
+    logger.info(`Deploy transaction submitted, waiting...`);
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);
-      logger.info(`registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
+      logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
+
+    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+    const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
+    const balanceDiff = balanceBefore - balanceAfter;
+    const expectedDiff = balanceBefore - price;
 
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
@@ -148,6 +154,8 @@ export const registerSubdomainBulk = async (
       distConfig,
       paymentConfigEmpty
     );
+
+    logger.info(`Deploy transaction submitted, waiting...`);
 
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);

@@ -23,7 +23,6 @@ const runCampaign = async () => {
     deployer,
     governors: [await deployer.getAddress()],
     admins: [await deployer.getAddress()],
-    zeroVaultAddress: await deployer.getAddress(),
   });
 
   await runZnsCampaign({
