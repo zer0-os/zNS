@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { expect } from "chai";
 import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
@@ -12,7 +13,6 @@ import {
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
 } from "./helpers";
-import { expect } from "chai";
 import {
   MeowTokenDM,
   meowTokenName,
@@ -42,7 +42,6 @@ import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
 const execAsync = promisify(exec);
-
 
 describe("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
@@ -158,6 +157,7 @@ describe("Deploy Campaign Test", () => {
         );
       }
 
+      // Cannot call to real db to
       await dbAdapter.dropDB();
     });
   });
@@ -1045,8 +1045,8 @@ describe("Deploy Campaign Test", () => {
       const deployer = new HardhatDeployerMock(deployAdmin, env);
 
       const campaign = await runZnsCampaign({
-        deployer,
         config,
+        deployer,
       });
 
       const { state: { contracts } } = campaign;
@@ -1074,14 +1074,14 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin, env);
+      const deployer = new HardhatDeployerMock(deployAdmin,  env);
 
       config.postDeploy.monitorContracts = true;
       config.postDeploy.verifyContracts = false;
 
       const campaign = await runZnsCampaign({
-        deployer,
         config,
+        deployer,
       });
 
       const { state: { instances } } = campaign;

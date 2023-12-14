@@ -1,13 +1,12 @@
 
 // For use in inegration test of deployment campaign
-
+import * as hre from "hardhat"
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { TZNSContractState } from "../../src/deploy/campaign/types";
+import { IDeployCampaignConfig, TLogger, TZNSContractState } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./types";
 import { expect } from "chai";
 import { hashDomainLabel, paymentConfigEmpty } from ".";
-import { getDomainHashFromEvent } from "./events";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const approveBulk = async (
@@ -15,12 +14,18 @@ export const approveBulk = async (
   zns : TZNSContractState,
 ) => {
   for (const signer of signers) {
-    const tx = await zns.meowToken.connect(signer).approve(
-      await zns.treasury.getAddress(),
-      ethers.MaxUint256,
-    );
+    // if (hre.network.name === "hardhat") {
+    const hasApproval = await zns.meowToken.allowance(signer.address, await zns.treasury.getAddress());
 
-    await tx.wait(); // hang on hardhat?
+    // To avoid resending the approval repeatedly we first check the allowance
+    if (hasApproval === BigInt(0)) {
+      const tx = await zns.meowToken.connect(signer).approve(
+        await zns.treasury.getAddress(),
+        ethers.MaxUint256,
+      );
+
+      await tx.wait();
+    }
   }
 };
 
@@ -40,29 +45,38 @@ export const mintBulk = async (
 export const getPriceBulk = async (
   domains : Array<string>,
   zns : TZNSContractState,
-  parentHashes : Array<string> = [],
-  includeProtocolFee  = false,
+  parentHashes ?: Array<string>,
 ) => {
   let index = 0;
   const prices = [];
 
   for (const domain of domains) {
-    const parent = parentHashes[index] ? parentHashes[index] : ethers.ZeroHash;
+    let parent;
+    if (parentHashes) {
+      parent = parentHashes[index];
+    } else {
+      parent = ethers.ZeroHash;
+    }
 
-    const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(
+    // temp, can do one call `getPRiceAndFee` but debugging where failure occurs
+    const price = await zns.curvePricer.getPrice(parent, domain, true);
+    const stakeFee = await zns.curvePricer.getFeeForPrice(parent, price);
+
+    const obj = await zns.curvePricer.getPriceAndFee(
       parent,
       domain,
       true,
     );
 
-    const priceWithFee = price + stakeFee;
+    // TODO fix this to be one if statement
+    if (parentHashes) {
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, obj.price + obj.stakeFee);
 
-    if (includeProtocolFee) {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, priceWithFee);
-
-      prices.push(priceWithFee + protocolFee);
+      prices.push(obj.price + obj.stakeFee + protocolFee);
     } else {
-      prices.push(priceWithFee);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, obj.price);
+
+      prices.push(obj.price + protocolFee);
     }
 
 
@@ -75,29 +89,42 @@ export const getPriceBulk = async (
 export const registerRootDomainBulk = async (
   signers : Array<SignerWithAddress>,
   domains : Array<string>,
-  domainAddress : string,
+  config : IDeployCampaignConfig,
   tokenUri : string,
   distConfig : IDistributionConfig,
   priceConfig : ICurvePriceConfig,
   zns : TZNSContractState,
+  logger : TLogger,
 ) : Promise<void> => {
   let index = 0;
 
   for(const domain of domains) {
-    await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
+    const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
+    const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
       domain,
-      domainAddress,
+      config.zeroVaultAddress,
       `${tokenUri}${index}`,
       distConfig,
       {
         token: await zns.meowToken.getAddress(),
-        beneficiary: signers[index].address,
+        beneficiary: config.zeroVaultAddress,
       }
     );
+    logger.info(`Deploy transaction submitted, waiting...`);
+    if (hre.network.name !== "hardhat") {
+      await tx.wait(3);
+      logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
+    }
+
+    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+    const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
+    const balanceDiff = balanceBefore - balanceAfter;
+    const expectedDiff = balanceBefore - price;
 
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
 
+    // TODO figure out if we want to do this on prod?
     // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
 
@@ -109,15 +136,17 @@ export const registerSubdomainBulk = async (
   signers : Array<SignerWithAddress>,
   parents : Array<string>,
   subdomains : Array<string>,
+  subdomainHashes : Array<string>,
   domainAddress : string,
   tokenUri : string,
   distConfig : IDistributionConfig,
   zns : TZNSContractState,
+  logger : TLogger,
 ) => {
   let index = 0;
 
   for (const subdomain of subdomains) {
-    await zns.subRegistrar.connect(signers[index]).registerSubdomain(
+    const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain(
       parents[index],
       subdomain,
       domainAddress,
@@ -126,8 +155,14 @@ export const registerSubdomainBulk = async (
       paymentConfigEmpty
     );
 
-    const subdomainHash = await getDomainHashFromEvent({ zns, user: signers[index] });
-    expect(await zns.registry.exists(subdomainHash)).to.be.true;
+    logger.info(`Deploy transaction submitted, waiting...`);
+
+    if (hre.network.name !== "hardhat") {
+      await tx.wait(3);
+      logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
+    }
+
+    expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
 
     index++;
   }

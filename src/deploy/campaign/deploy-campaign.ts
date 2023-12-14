@@ -5,11 +5,11 @@ import {
   TLogger,
   IMissionInstances,
   TZNSContractState,
+  ContractV6,
 } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
 import { ITenderlyContractData, TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { Contract } from "ethers";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
 
 
@@ -104,7 +104,7 @@ export class DeployCampaign {
     this.logger.info("Deploy Campaign execution finished successfully.");
   }
 
-  updateStateContract (instanceName : string, contractName : string, contract : Contract) {
+  updateStateContract (instanceName : string, contractName : string, contract : ContractV6) {
     this.state.contracts[instanceName] = contract;
     this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
   }

@@ -1,7 +1,8 @@
 import { getConfig } from "./campaign/environments";
-import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
 import { Defender } from "@openzeppelin/defender-sdk";
+
+import { getLogger } from "./logger/create-logger";
 
 const logger = getLogger();
 
@@ -18,8 +19,6 @@ const runCampaign = async () => {
   const provider = client.relaySigner.getProvider();
   const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
-  // Error on first pass when attempting verification
-  // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
   const config = await getConfig({
     deployer,
     governors: [await deployer.getAddress()],
@@ -28,12 +27,13 @@ const runCampaign = async () => {
 
   await runZnsCampaign({
     config,
+    provider,
   });
 };
 
 runCampaign().catch(error => {
-  logger.error(error.message);
   process.exitCode = 1;
+  logger.error(error);
 }).finally(() => {
   process.exit(0);
 });

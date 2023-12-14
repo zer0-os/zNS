@@ -88,7 +88,7 @@ export class MeowTokenDM extends BaseDeployMission {
 
     // Mint 100,000 MEOW to the deployer
     await meowToken.connect(deployAdmin).mint(
-      deployAdmin.address,
+      await deployAdmin.getAddress(),
       ethers.parseEther("100000")
     );
 
