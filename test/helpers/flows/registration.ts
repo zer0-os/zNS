@@ -8,7 +8,6 @@ import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
 
 
-// TODO sub: make these helpers better
 export const registerDomainPath = async ({
   zns,
   domainConfigs,

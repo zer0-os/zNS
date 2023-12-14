@@ -47,10 +47,6 @@ export class BaseDeployMission {
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
   }
 
-  async preDeploy () {
-    return Promise.resolve();
-  }
-
   async needsDeploy () {
     const dbContract = await this.getFromDB();
 
@@ -127,7 +123,6 @@ export class BaseDeployMission {
 
   async execute () {
     if (await this.needsDeploy()) {
-      await this.preDeploy();
       await this.deploy();
     } else {
       this.logger.info(`Skipping ${this.contractName} deployment...`);

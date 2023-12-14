@@ -2,7 +2,7 @@ import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat
 
 import { IDeployCampaignConfig } from "./types";
 import {
-  DEFAULT_REGISTRATION_FEE_PERCENT,
+  DEFAULT_PROTOCOL_FEE_PERCENT,
   DEFAULT_ROYALTY_FRACTION,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
@@ -96,9 +96,9 @@ export const getConfig = async ({
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
   const feePercentage =
-    process.env.REG_FEE_PERCENT
-      ? BigInt(process.env.REG_FEE_PERCENT)
-      : DEFAULT_REGISTRATION_FEE_PERCENT;
+    process.env.PROTOCOL_FEE_PERC
+      ? BigInt(process.env.PROTOCOL_FEE_PERC)
+      : DEFAULT_PROTOCOL_FEE_PERCENT;
   const royaltyReceiver =
     process.env.ROYALTY_RECEIVER
       ? process.env.ROYALTY_RECEIVER
@@ -130,8 +130,8 @@ export const getConfig = async ({
     governorAddresses,
     adminAddresses,
     domainToken: {
-      name: process.env.TOKEN_NAME ? process.env.TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
-      symbol: process.env.TOKEN_SYMBOL ? process.env.TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
+      name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
+      symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
       defaultRoyaltyReceiver: royaltyReceiver,
       defaultRoyaltyFraction: royaltyFraction,
     },

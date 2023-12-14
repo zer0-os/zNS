@@ -41,7 +41,12 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
     const currentSubRegistrarOnRoot = await rootRegistrar.subRegistrar();
     this.isSetOnRoot = currentSubRegistrarOnRoot === await subRegistrar.getAddress();
 
-    return !this.hasRegistrarRole || !this.isSetOnRoot;
+    const needs = !this.hasRegistrarRole || !this.isSetOnRoot;
+    const msg = needs ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
+    return needs;
   }
 
   async postDeploy () {
@@ -70,5 +75,7 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
         .connect(deployAdmin)
         .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
     }
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }
