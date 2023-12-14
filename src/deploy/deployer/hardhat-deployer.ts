@@ -85,15 +85,6 @@ export class HardhatDeployer {
   }
 
   async tenderlyPush (contracts : Array<ITenderlyContractData>) {
-    //     curl -X POST https://api.tenderly.co/api/v1/account/$ACCOUNT_SLUG/project/$PROJECT_SLUG/address \
-    //       --header "Content-Type: application/json" \
-    //       --header "X-Access-Key: $ACCESS_KEY" \
-    //       --data-raw '{
-    //          "network_id": "42",
-    //          "address": "0x404469525f6Ab4023Ce829D8F627d424D3986675"
-    //        }'
-
-    // write axios post based on the comment above
     const inst = axios.create({
       baseURL: "https://api.tenderly.co/",
       headers: {
@@ -110,8 +101,6 @@ export class HardhatDeployer {
     );
 
     return data;
-    // this below does not push to the project
-    // return this.hre.tenderly.verify(...contracts);
   }
 
   async etherscanVerify ({
