@@ -84,9 +84,6 @@ describe("DeployCampaign - Integration", () => {
   
     config = await getConfig({
       deployer,
-      governors: [await deployer.getAddress()],
-      admins: [await deployer.getAddress()],
-      zeroVaultAddress: await deployer.getAddress(),
     });
 
     config.mockMeowToken = hre.network.name === "hardhat";

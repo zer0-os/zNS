@@ -44,10 +44,14 @@ const getCustomAddresses = (
 
   if (accounts && accounts.length > 0) {
     addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
-  } else {
-    addresses.push(deployerAddress); // No custom governors / admins provided, use the deployer as the default
+  }
+  
+  if (!addresses.includes(deployerAddress)) {
+    // No custom governors / admins provided, use the deployer as the default
+    addresses.push(deployerAddress);
   }
 
+  
   return addresses;
 };
 
@@ -99,10 +103,7 @@ export const getConfig = async ({
     process.env.PROTOCOL_FEE_PERC
       ? BigInt(process.env.PROTOCOL_FEE_PERC)
       : DEFAULT_PROTOCOL_FEE_PERCENT;
-  const royaltyReceiver =
-    process.env.ROYALTY_RECEIVER
-      ? process.env.ROYALTY_RECEIVER
-      : deployerAddress;
+  const royaltyReceiver = process.env.ROYALTY_RECEIVER!;
   const royaltyFraction =
     process.env.ROYALTY_FRACTION
       ? BigInt(process.env.ROYALTY_FRACTION)
@@ -173,6 +174,10 @@ export const validate = (
   if (envLevel !== "test" && envLevel !== "prod") {
     // If we reach this code, there is an env variable, but it's not valid.
     throw new Error(INVALID_ENV_ERR);
+  }
+
+  if (!config.domainToken.defaultRoyaltyReceiver) {
+    throw new Error("Must provide a default royalty receiver");
   }
 
   if (!mongoUri) mongoUri = process.env.MONGO_URI ? process.env.MONGO_URI : DEFAULT_MONGO_URI;
