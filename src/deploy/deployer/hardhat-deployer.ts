@@ -1,10 +1,9 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { TDeployArgs, TProxyKind } from "../missions/types";
+import { ITenderlyContractData, TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { ethers } from "ethers";
-
+import axios from "axios";
 import {
   DefenderRelayProvider,
   DefenderRelaySigner,
@@ -97,8 +96,23 @@ export class HardhatDeployer {
     return this.hre.ethers.provider.getCode(address);
   }
 
-  async tenderlyVerify (contracts : Array<ContractByName>) {
-    return this.hre.tenderly.verify(...contracts);
+  async tenderlyPush (contracts : Array<ITenderlyContractData>) {
+    const inst = axios.create({
+      baseURL: "https://api.tenderly.co/",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Key": process.env.TENDERLY_ACCESS_KEY,
+      },
+    });
+
+    const { data } = await inst.post(
+      `api/v2/accounts/${process.env.TENDERLY_ACCOUNT_ID}/projects/${process.env.TENDERLY_PROJECT_SLUG}/contracts`,
+      {
+        contracts,
+      }
+    );
+
+    return data;
   }
 
   async etherscanVerify ({

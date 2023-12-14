@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
-import { promisify } from "util";
-import { exec } from "child_process";
 import { expect } from "chai";
 import {
   DEFAULT_ROYALTY_FRACTION,
@@ -14,7 +11,7 @@ import {
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
-  MONGO_URI_ERR, erc1967ProxyName,
+  MONGO_URI_ERR,
 } from "./helpers";
 import {
   MeowTokenDM,
@@ -26,7 +23,7 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
-import { transparentProxyName, znsNames } from "../src/deploy/missions/contracts/names";
+import { znsNames } from "../src/deploy/missions/contracts/names";
 import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -34,12 +31,13 @@ import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
-import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
+import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
-
-import { TDeployArgs } from "../src/deploy/missions/types";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { ethers } from "ethers";
+import { promisify } from "util";
+import { exec } from "child_process";
+import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
@@ -1069,9 +1067,9 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
-      let tenderlyData : Array<ContractByName> = [];
+      let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer {
-        async tenderlyVerify (contracts : Array<ContractByName>) {
+        async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }
       }
@@ -1097,22 +1095,19 @@ describe("Deploy Campaign Test", () => {
           const dbData = await instance.getFromDB();
 
           if (instance.proxyData.isProxy) {
-            const proxyName = instance.proxyData.kind === ProxyKinds.uups
-              ? erc1967ProxyName
-              : transparentProxyName;
             // check proxy
             expect(tenderlyData[idx].address).to.be.eq(dbData?.address);
-            expect(tenderlyData[idx].name).to.be.eq(proxyName);
+            expect(tenderlyData[idx].display_name).to.be.eq(`${instance.contractName}Proxy`);
 
             // check impl
             expect(tenderlyData[idx + 1].address).to.be.eq(dbData?.implementation);
-            expect(tenderlyData[idx + 1].name).to.be.eq(dbData?.name);
-            expect(tenderlyData[idx + 1].name).to.be.eq(instance.contractName);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${dbData?.name}Impl`);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${instance.contractName}Impl`);
             idx += 2;
           } else {
             expect(tenderlyData[idx].address).to.equal(dbData?.address);
-            expect(tenderlyData[idx].name).to.equal(dbData?.name);
-            expect(tenderlyData[idx].name).to.equal(instance.contractName);
+            expect(tenderlyData[idx].display_name).to.equal(dbData?.name);
+            expect(tenderlyData[idx].display_name).to.equal(instance.contractName);
             idx++;
           }
         },
