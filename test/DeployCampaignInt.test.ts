@@ -10,7 +10,7 @@ import {
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
-  MONGO_URI_ERR, erc1967ProxyName,
+  MONGO_URI_ERR,
 } from "./helpers";
 import { expect } from "chai";
 import {
@@ -23,7 +23,7 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
-import { transparentProxyName, znsNames } from "../src/deploy/missions/contracts/names";
+import { znsNames } from "../src/deploy/missions/contracts/names";
 import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -31,14 +31,13 @@ import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
-import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
+import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig, validate } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
