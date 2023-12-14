@@ -6,7 +6,7 @@ import {
   IDeployMissionArgs, ITenderlyContractData,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig, TLogger } from "../campaign/types";
+import { ContractV6, IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
 import { NetworkData } from "../deployer/constants";
 
@@ -34,7 +34,7 @@ export class BaseDeployMission {
     return this.campaign.dbAdapter.getContract(this.contractName);
   }
 
-  async saveToDB (contract : Contract) {
+  async saveToDB (contract : ContractV6) {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
     this.implAddress = this.proxyData.isProxy
@@ -76,7 +76,10 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  async buildDbObject (hhContract : Contract, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
+  async buildDbObject (
+    hhContract : ContractV6,
+    implAddress : string | null
+  ) : Promise<Omit<IContractDbData, "version">> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,
@@ -91,24 +94,22 @@ export class BaseDeployMission {
     const deployArgs = await this.deployArgs();
     this.logger.info(`Deploying ${this.contractName} with arguments: ${deployArgs}`);
 
-    let baseContract;
+    let contract : ContractV6;
     if (this.proxyData.isProxy) {
-      baseContract = await this.campaign.deployer.deployProxy({
+      contract = await this.campaign.deployer.deployProxy({
         contractName: this.contractName,
         args: deployArgs,
         kind: this.proxyData.kind,
       });
     } else {
-      baseContract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
-
-    const contract = new Contract(await baseContract.getAddress(), baseContract.interface, baseContract.runner);
 
     await this.saveToDB(contract);
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${await baseContract.getAddress()}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${await contract.getAddress()}`);
   }
 
   async needsPostDeploy () {

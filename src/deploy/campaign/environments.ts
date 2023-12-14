@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { IDeployCampaignConfig } from "./types";
 import {
@@ -64,10 +64,10 @@ export const getConfig = async ({
   zeroVaultAddress ?: string;
 }) : Promise<IDeployCampaignConfig> => {
   let deployerAddress;
-  if (typeof deployer === typeof DefenderRelaySigner) {
-    deployerAddress = await (deployer as DefenderRelaySigner).getAddress();
+  if (deployer && Object.keys(deployer).includes("address")) {
+    deployerAddress = (deployer as HardhatEthersSigner).address;
   } else {
-    deployerAddress = (deployer as SignerWithAddress).address;
+    deployerAddress = await deployer.getAddress();
   }
 
   // Price config variables
@@ -136,8 +136,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ENV_LEVEL !== "dev"
-      ? process.env.ZERO_VAULT_ADDRESS! : zeroVaultAddress!,
+    zeroVaultAddress: zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {
