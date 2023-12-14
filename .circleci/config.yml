@@ -8,6 +8,7 @@ defaults: &defaults
   working_directory: ~/repo
   docker:
     - image: cimg/node:18.15.0
+    - image: mongo:7.0.0-rc5-jammy
 
 jobs:
   test and coverage:
@@ -27,7 +28,7 @@ jobs:
           command: yarn check-coverage #Validate code is adequately covered by unit tests
       - persist_to_workspace:
           root: ~/repo
-          paths: .
+          paths: [.]
   publish:
     <<: *defaults
     steps:

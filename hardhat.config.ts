@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
+
+import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
+
 require("dotenv").config();
 
-import { HardhatUserConfig } from "hardhat/config";
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomiclabs/hardhat-ethers";
@@ -11,6 +13,18 @@ import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
 import "hardhat-gas-reporter";
+import { HardhatUserConfig, subtask } from "hardhat/config";
+import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
+
+
+subtask(TASK_TEST_RUN_MOCHA_TESTS)
+  .setAction(async (args, hre, runSuper) => {
+    await mochaGlobalSetup();
+    const testFailures = await runSuper(args);
+    await mochaGlobalTeardown();
+
+    return testFailures;
+  });
 
 // This call is needed to initialize Tenderly with Hardhat,
 // the automatic verifications, though, don't seem to work,
@@ -21,7 +35,7 @@ import "hardhat-gas-reporter";
 // does not work properly locally or in CI, so we
 // keep it commented out and uncomment when using DevNet
 // locally.
-// !!! Uncomment this when using Tenderly DevNet !!!
+// !!! Uncomment this when using Tenderly !!!
 // tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
@@ -29,6 +43,15 @@ const config : HardhatUserConfig = {
     compilers: [
       {
         version: "0.8.18",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.3",
         settings: {
           optimizer: {
             enabled: true,
@@ -75,12 +98,16 @@ const config : HardhatUserConfig = {
   },
   networks: {
     mainnet: {
-      url: "https://mainnet.infura.io/v3/97e75e0bbc6a4419a5dd7fe4a518b917",
+      url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,
     },
-    goerli: {
-      url: "https://goerli.infura.io/v3/77c3d733140f4c12a77699e24cb30c27",
+    sepolia: {
+      url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
+      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
+      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      // ]
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning

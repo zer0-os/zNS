@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
-import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
+import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
 
@@ -83,12 +83,16 @@ contract ZNSRootRegistrar is
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
      *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
      *      but all the parameters inside are required.
+     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
+     *  but all the parameters inside are required.
      */
     function registerRootDomain(
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distributionConfig
+        DistributionConfig calldata distributionConfig,
+        PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
@@ -114,7 +118,8 @@ contract ZNSRootRegistrar is
                 0,
                 name,
                 tokenURI,
-                true
+                true,
+                paymentConfig
             )
         );
 
@@ -182,6 +187,12 @@ contract ZNSRootRegistrar is
         } else {
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
+        }
+
+        // Because we check in the web app for the existance of both values in a payment config,
+        // it's fine to just check for one here
+        if (args.paymentConfig.beneficiary != address(0)) {
+            treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
         }
 
         emit DomainRegistered(

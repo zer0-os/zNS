@@ -1,6 +1,7 @@
 import { BigNumber } from "ethers";
-import { PERCENTAGE_BASIS, priceConfigDefault } from "./constants";
-import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
+import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
+import { IFixedPriceConfig } from "./types";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 
 /**
@@ -11,9 +12,9 @@ import { ICurvePriceConfig, IFixedPriceConfig } from "./types";
  * @param priceConfig Object with all the pricing props
  * @returns The expected price for that domain
  */
-export const calcCurvePrice = (
+export const getCurvePrice = (
   name : string,
-  priceConfig = priceConfigDefault,
+  priceConfig = DEFAULT_PRICE_CONFIG,
 ) : BigNumber => {
   // Get price configuration for contract
   const {
@@ -41,10 +42,10 @@ export const calcCurvePrice = (
 
 export const getStakingOrProtocolFee = (
   forAmount : BigNumber,
-  feePercentage : BigNumber = priceConfigDefault.feePercentage,
+  feePercentage : BigNumber = DEFAULT_PRICE_CONFIG.feePercentage,
 ) => forAmount
   .mul(feePercentage)
-  .div(PERCENTAGE_BASIS);
+  .div(DEFAULT_PERCENTAGE_BASIS);
 
 /**
  * Get the domain name price, the registration fee and the total
@@ -56,7 +57,7 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = priceConfigDefault,
+  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = DEFAULT_PRICE_CONFIG,
 ) : {
   totalPrice : BigNumber;
   expectedPrice : BigNumber;
@@ -65,7 +66,7 @@ export const getPriceObject = (
   let expectedPrice;
   const configLen = Object.keys(priceConfig).length;
   if (configLen === 7 || configLen === 6) {
-    expectedPrice = calcCurvePrice(name, priceConfig as ICurvePriceConfig);
+    expectedPrice = getCurvePrice(name, priceConfig as ICurvePriceConfig);
   } else if (configLen === 3 || configLen === 2) {
     ({ price: expectedPrice } = priceConfig as IFixedPriceConfig);
   } else {

@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
@@ -42,12 +41,14 @@ interface IZNSSubRegistrar is IDistributionConfig {
     */
     event MintlistUpdated(
         bytes32 indexed domainHash,
+        uint256 indexed ownerIndex,
         address[] candidates,
         bool[] allowed
     );
 
     /*
-     * @notice Emitted when a `mintlist` is removed for a domain by the owner or through `ZNSRootRegistrar.revokeDomain()`.
+     * @notice Emitted when a `mintlist` is removed for a domain by the owner or through
+     * `ZNSRootRegistrar.revokeDomain()`.
      */
     event MintlistCleared(bytes32 indexed domainHash);
 
@@ -80,7 +81,8 @@ interface IZNSSubRegistrar is IDistributionConfig {
         string calldata label,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains
+        DistributionConfig calldata configForSubdomains,
+        PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
     function hashWithParent(

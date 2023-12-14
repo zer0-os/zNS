@@ -37,7 +37,7 @@ export const registerDomainPath = async ({
     let beneficiary;
 
     if (isRootDomain) {
-      paymentTokenContract = zns.zeroToken;
+      paymentTokenContract = zns.meowToken;
       // no beneficiary for root domain
       beneficiary = ethers.constants.AddressZero;
     } else {
@@ -46,8 +46,8 @@ export const registerDomainPath = async ({
       const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
-      if (paymentTokenAddress === zns.zeroToken.address) {
-        paymentTokenContract = zns.zeroToken;
+      if (paymentTokenAddress === zns.meowToken.address) {
+        paymentTokenContract = zns.meowToken;
       } else {
         paymentTokenContract = getTokenContract(paymentTokenAddress, config.user);
       }
@@ -233,7 +233,7 @@ export const validatePathRegistration = async ({
     const tokenOwner = await zns.domainToken.ownerOf(tokenId);
     expect(tokenOwner).to.eq(user.address);
 
-    const domainAddress = await zns.addressResolver.getAddress(domainHash);
+    const domainAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
     expect(domainAddress).to.eq(user.address);
 
     const events = await getDomainRegisteredEvents({
@@ -243,7 +243,7 @@ export const validatePathRegistration = async ({
     expect(events[events.length - 1].args?.parentHash).to.eq(parentHashFound);
     expect(events[events.length - 1].args?.domainHash).to.eq(domainHash);
     expect(events[events.length - 1].args?.tokenId).to.eq(tokenId);
-    expect(events[events.length - 1].args?.name).to.eq(domainLabel);
+    expect(events[events.length - 1].args?.label).to.eq(domainLabel);
     expect(events[events.length - 1].args?.domainAddress).to.eq(user.address);
   }, Promise.resolve()
 );

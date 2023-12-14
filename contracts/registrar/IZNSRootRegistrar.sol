@@ -2,7 +2,8 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+
 
 /**
  * @notice Stake fee is 0x0 for anything other than subdomain under a parent with Stake Payment
@@ -18,6 +19,7 @@ struct CoreRegisterArgs {
     string label;
     string tokenURI;
     bool isStakePayment;
+    PaymentConfig paymentConfig;
 }
 
 /**
@@ -56,7 +58,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * @param parentHash The hash of the parent domain (0x0 for root domains)
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
-     * @param name The name as string of the domain registered
+     * @param label The name as the last part of the full domain string (level) registered
      * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
      * @param domainAddress The domain address of the domain registered
      */
@@ -64,7 +66,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         bytes32 parentHash,
         bytes32 indexed domainHash,
         uint256 indexed tokenId,
-        string name,
+        string label,
         address indexed registrant,
         address domainAddress
     );
@@ -127,7 +129,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         string calldata name,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distributionConfig
+        DistributionConfig calldata distributionConfig,
+        PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
     function coreRegister(

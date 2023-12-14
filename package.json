@@ -16,14 +16,23 @@
     "lint": "yarn lint-sol & yarn lint-ts --no-error-on-unmatched-pattern",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile",
+    "postbuild": "yarn save-tag",
     "typechain": "hardhat typechain",
+    "pretest": "yarn mongo:start",
     "test": "hardhat test",
+    "test-local": "yarn test",
+    "posttest": "yarn mongo:stop",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
     "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
     "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts",
     "gas-cost": "ts-node src/utils/gas-costs.ts",
-    "docgen": "hardhat docgen"
+    "docgen": "hardhat docgen",
+    "save-tag": "chmod a+x ./src/utils/git-tag/save-tag.sh && bash ./src/utils/git-tag/save-tag.sh",
+    "mongo:start": "docker-compose up -d",
+    "mongo:stop": "docker-compose stop",
+    "mongo:down": "docker-compose down",
+    "mongo:drop": "ts-node src/utils/drop-db.ts"
   },
   "pre-commit": [
     "lint"
@@ -35,9 +44,11 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "2.0.2",
     "@nomiclabs/hardhat-ethers": "2.2.2",
-    "@nomiclabs/hardhat-etherscan": "3.0.0",
-    "@openzeppelin/contracts": "4.8.3",
-    "@openzeppelin/contracts-upgradeable": "4.8.3",
+    "@nomiclabs/hardhat-etherscan": "3.1.7",
+    "@openzeppelin/contracts": "4.9.3",
+    "@openzeppelin/contracts-400": "npm:@openzeppelin/contracts@4.0.0",
+    "@openzeppelin/contracts-upgradeable": "4.9.3",
+    "@openzeppelin/contracts-upgradeable-400": "npm:@openzeppelin/contracts-upgradeable@4.0.0",
     "@openzeppelin/hardhat-upgrades": "1.26.0",
     "@semantic-release/git": "^10.0.1",
     "@tenderly/hardhat-tenderly": "^1.7.4",
@@ -47,15 +58,14 @@
     "@types/mocha": "9.1.0",
     "@types/node": "^18.15.11",
     "@zero-tech/eslint-config-cpt": "0.2.7",
-    "@zero-tech/ztoken": "1.0.1",
+    "@zero-tech/ztoken": "2.0.0",
     "chai": "4.2.0",
     "eslint": "^8.37.0",
     "ethers": "5.5.1",
     "hardhat": "2.13.0",
     "hardhat-gas-reporter": "1.0.8",
-    "logdown": "3.3.1",
     "semantic-release": "^21.0.1",
-    "solhint": "^3.4.1",
+    "solhint": "4.0.0",
     "solidity-coverage": "^0.8.2",
     "solidity-docgen": "^0.6.0-beta.35",
     "ts-node": "10.9.1",
@@ -64,9 +74,8 @@
   },
   "dependencies": {
     "axios": "^1.4.0",
-    "dotenv": "16.0.3"
-  },
-  "resolutions": {
-    "@solidity-parser/parser": "0.16.0"
+    "dotenv": "16.0.3",
+    "mongodb": "^6.1.0",
+    "winston": "^3.11.0"
   }
 }

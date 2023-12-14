@@ -1,6 +1,6 @@
 import { IDistributionConfig, IZNSContracts } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, defaultTokenURI, deployZNS, PaymentType, priceConfigDefault } from "../helpers";
+import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { BigNumber } from "ethers";
@@ -42,11 +42,11 @@ describe("Transaction Gas Costs Test", () => {
       deployer,
       governorAddresses: [deployer.address, governor.address],
       adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
+      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, priceConfigDefault);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.constants.HashZero, DEFAULT_PRICE_CONFIG);
 
     config = {
       pricerContract: zns.fixedPricer.address,
@@ -60,9 +60,9 @@ describe("Transaction Gas Costs Test", () => {
         rootOwner,
         lvl2SubOwner,
       ].map(async ({ address }) =>
-        zns.zeroToken.mint(address, ethers.utils.parseEther("1000000")))
+        zns.meowToken.mint(address, ethers.utils.parseEther("1000000")))
     );
-    await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
     rootHashDirect = await registrationWithSetup({
       zns,
@@ -75,10 +75,10 @@ describe("Transaction Gas Costs Test", () => {
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
-          token: zns.zeroToken.address,
+          token: zns.meowToken.address,
           beneficiary: rootOwner.address,
         },
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
       },
     });
 
@@ -109,13 +109,19 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Root Domain Price", async function () {
     // approve
-    await zns.zeroToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(rootOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register root domain
+    const paymentConfig = {
+      token: zns.meowToken.address,
+      beneficiary: rootOwner.address,
+    };
+
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
       "root",
       rootOwner.address,
-      defaultTokenURI,
-      config
+      DEFAULT_TOKEN_URI,
+      config,
+      paymentConfig
     );
 
     const { gasUsed } = await tx.wait();
@@ -152,14 +158,20 @@ describe("Transaction Gas Costs Test", () => {
 
   it("Subdomain Price", async function () {
     // approve
-    await zns.zeroToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.connect(lvl2SubOwner).approve(zns.treasury.address, ethers.constants.MaxUint256);
     // register subdomain
+    const paymentConfig = {
+      token: zns.meowToken.address,
+      beneficiary: rootOwner.address,
+    };
+
     const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       rootHashDirect,
       "subdomain",
       lvl2SubOwner.address,
-      defaultTokenURI,
+      DEFAULT_TOKEN_URI,
       config,
+      paymentConfig
     );
     const { gasUsed } = await tx.wait();
 

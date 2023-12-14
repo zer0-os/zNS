@@ -1,20 +1,20 @@
 import { BigNumber } from "ethers";
-import { ICurvePriceConfig } from "./types";
 import { ethers } from "hardhat";
+import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "ZNS Domain Token";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZDT";
+export const ZNS_DOMAIN_TOKEN_NAME = "ZERO NAME ADDRESS";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNA";
 
-export const defaultTokenURI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_ROYALTY_FRACTION = BigNumber.from("200");
+export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
+export const DEFAULT_REGISTRATION_FEE_PERCENT = BigNumber.from("222");
+export const DEFAULT_PERCENTAGE_BASIS = BigNumber.from("10000");
 
-export const registrationFeePercDefault = BigNumber.from("222");
-export const PERCENTAGE_BASIS = BigNumber.from("10000");
-export const decimalsDefault = BigNumber.from(18);
-export const precisionDefault = BigNumber.from(2);
-export const precisionMultiDefault = BigNumber.from(10).pow(decimalsDefault.sub(precisionDefault));
+export const DEFAULT_DECIMALS = BigNumber.from(18);
+export const DECAULT_PRECISION = BigNumber.from(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigNumber.from(10).pow(DEFAULT_DECIMALS.sub(DECAULT_PRECISION));
 
-export const defaultRoyaltyFraction = BigNumber.from("200");
 // eslint-disable-next-line no-shadow
 export enum AccessType {
   LOCKED,
@@ -35,14 +35,14 @@ export enum PaymentType {
   STAKE,
 }
 
-export const priceConfigDefault : ICurvePriceConfig = {
+export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.utils.parseEther("25000"),
   minPrice: ethers.utils.parseEther("2000"),
   maxLength: BigNumber.from(50),
   baseLength: BigNumber.from(4),
-  precisionMultiplier: precisionMultiDefault,
-  feePercentage: registrationFeePercDefault,
-  isSet: true, // note that this value is never used, but is here to satisfy type constraints taken from the contract
+  precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+  feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+  isSet: true,
 };
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
@@ -58,13 +58,12 @@ export const curvePriceConfigEmpty : ICurvePriceConfig = {
 export const paymentConfigEmpty = {
   token: ethers.constants.AddressZero,
   beneficiary: ethers.constants.AddressZero,
-  paymentType: PaymentType.DIRECT,
 };
 
 export const distrConfigEmpty = {
   pricerContract: ethers.constants.AddressZero,
-  paymentType: 0,
-  accessType: 0,
+  paymentType: PaymentType.DIRECT,
+  accessType: AccessType.LOCKED,
 };
 
 export const fullDistrConfigEmpty = {
@@ -79,12 +78,11 @@ export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735
 export const accessControllerName = "ZNSAccessController";
 export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
-export const zeroTokenMockName = "ZeroToken";
+export const meowTokenMockName = "MeowTokenMock";
 export const addressResolverName = "ZNSAddressResolver";
 export const curvePricerName = "ZNSCurvePricer";
 export const fixedPricerName = "ZNSFixedPricer";
 export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
-export const transparentProxyName = "TransparentUpgradeableProxy";
 export const subRegistrarName = "ZNSSubRegistrar";

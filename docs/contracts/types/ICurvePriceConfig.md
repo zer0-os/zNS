@@ -1,9 +1,5 @@
 ## ICurvePriceConfig
 
-
-
-
-
 **`CurvePriceConfig` struct properties:**
 
 - `maxPrice` (uint256): Maximum price for a domain returned at <= `baseLength`
@@ -15,16 +11,7 @@ should be picked based on the number of token decimals to calculate properly.
 e.g. if we use a token with 18 decimals, and want precision of 2,
 our precision multiplier will be equal 10^18 - 10^2 = 10^16
 
-
-
 ### CurvePriceConfig
-
-
-
-
-
-
-
 
 ```solidity
 struct CurvePriceConfig {
@@ -37,5 +24,4 @@ struct CurvePriceConfig {
   bool isSet;
 }
 ```
-
 

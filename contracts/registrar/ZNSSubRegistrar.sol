@@ -7,6 +7,7 @@ import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -78,13 +79,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param domainAddress (optional) The address to which the subdomain will be resolved to
      * @param tokenURI (required) The tokenURI for the subdomain to be registered
      * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
+     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
+     *  but all the parameters inside are required.
     */
     function registerSubdomain(
         bytes32 parentHash,
         string calldata label,
         address domainAddress,
         string calldata tokenURI,
-        DistributionConfig calldata distrConfig
+        DistributionConfig calldata distrConfig,
+        PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
@@ -122,7 +127,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             stakeFee: 0,
             domainAddress: domainAddress,
             tokenURI: tokenURI,
-            isStakePayment: parentConfig.paymentType == PaymentType.STAKE
+            isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
+            paymentConfig: paymentConfig
         });
 
         if (!isOwnerOrOperator) {
@@ -289,7 +295,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             mintlistForDomain.list[ownerIndex][candidates[i]] = allowed[i];
         }
 
-        emit MintlistUpdated(domainHash, candidates, allowed);
+        emit MintlistUpdated(domainHash, ownerIndex, candidates, allowed);
     }
 
     function isMintlistedForDomain(

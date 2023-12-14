@@ -4,7 +4,8 @@ import { BigNumber } from "ethers";
 import {
   deployZNS,
   hashDomainLabel, PaymentType,
-  priceConfigDefault,
+  DEFAULT_PRICE_CONFIG,
+  AccessType,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
@@ -34,10 +35,10 @@ export const runAllFlows = async () => {
     distrConfig: {
       pricerContract: zns.fixedPricer.address,
       paymentType: PaymentType.STAKE,
-      accessType: 1,
+      accessType: AccessType.OPEN,
     },
     paymentConfig: {
-      token: zns.zeroToken.address,
+      token: zns.meowToken.address,
       beneficiary: governor.address,
     },
     priceConfig: {
@@ -47,7 +48,7 @@ export const runAllFlows = async () => {
   };
 
   // get some funds and approve funds for treasury
-  await zns.zeroToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
+  await zns.meowToken.connect(governor).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   const rootHash = await registrationWithSetup({
     zns,
@@ -61,17 +62,17 @@ export const runAllFlows = async () => {
     distrConfig: {
       pricerContract: zns.curvePricer.address,
       paymentType: PaymentType.DIRECT,
-      accessType: 1,
+      accessType: AccessType.OPEN,
     },
     paymentConfig: {
-      token: zns.zeroToken.address,
+      token: zns.meowToken.address,
       beneficiary: user.address,
     },
-    priceConfig: priceConfigDefault,
+    priceConfig: DEFAULT_PRICE_CONFIG,
   };
 
-  await zns.zeroToken.transfer(user.address, ethers.utils.parseEther("10000"));
-  await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+  await zns.meowToken.transfer(user.address, ethers.utils.parseEther("10000"));
+  await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
 
   await registrationWithSetup({
     zns,

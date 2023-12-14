@@ -7,9 +7,10 @@ import {
   INITIALIZED_ERR, INVALID_NAME_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
-  PERCENTAGE_BASIS,
-  priceConfigDefault,
+  DEFAULT_PERCENTAGE_BASIS,
+  DEFAULT_PRICE_CONFIG,
   validateUpgrade,
+  AccessType,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -43,21 +44,21 @@ describe("ZNSFixedPricer", () => {
       deployer,
       governorAddresses: [deployer.address, deployer.address],
       adminAddresses: [admin.address],
-      priceConfig: priceConfigDefault,
+      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-    await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+    await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+    await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
         paymentType: PaymentType.DIRECT,
         pricerContract: zns.fixedPricer.address,
-        accessType: 1,
+        accessType: AccessType.OPEN,
       },
       paymentConfig: {
-        token: zns.zeroToken.address,
+        token: zns.meowToken.address,
         beneficiary: user.address,
       },
       priceConfig: {
@@ -180,7 +181,7 @@ describe("ZNSFixedPricer", () => {
     } = await zns.fixedPricer.getPriceAndFee(domainHash, "testname", false);
 
     expect(price).to.equal(newPrice);
-    expect(fee).to.equal(newPrice.mul(newFee).div(PERCENTAGE_BASIS));
+    expect(fee).to.equal(newPrice.mul(newFee).div(DEFAULT_PERCENTAGE_BASIS));
   });
 
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
@@ -213,7 +214,7 @@ describe("ZNSFixedPricer", () => {
 
   it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
     await expect(
-      zns.fixedPricer.connect(user).setFeePercentage(domainHash, PERCENTAGE_BASIS.add(1))
+      zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS.add(1))
     ).to.be.revertedWith(
       "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
     );
@@ -300,21 +301,21 @@ describe("ZNSFixedPricer", () => {
         deployer,
         governorAddresses: [deployer.address, deployer.address],
         adminAddresses: [admin.address],
-        priceConfig: priceConfigDefault,
+        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.zeroToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
-      await zns.zeroToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
+      await zns.meowToken.connect(user).approve(zns.treasury.address, ethers.constants.MaxUint256);
+      await zns.meowToken.mint(user.address, ethers.utils.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {
           paymentType: PaymentType.DIRECT,
           pricerContract: zns.fixedPricer.address,
-          accessType: 1,
+          accessType: AccessType.OPEN,
         },
         paymentConfig: {
-          token: zns.zeroToken.address,
+          token: zns.meowToken.address,
           beneficiary: user.address,
         },
         priceConfig: {

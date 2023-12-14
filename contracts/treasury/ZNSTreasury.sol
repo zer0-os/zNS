@@ -234,7 +234,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender) || accessController.isRegistrar(msg.sender),
+            "ZNSTreasury: Not authorized."
+        );
         _setBeneficiary(domainHash, paymentConfig.beneficiary);
         _setPaymentToken(domainHash, address(paymentConfig.token));
     }

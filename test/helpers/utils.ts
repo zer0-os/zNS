@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { ethers, upgrades } from "hardhat";
 import { implSlotErc1967 } from "./constants";
 
@@ -11,4 +12,11 @@ export const getProxyImplAddress = async (proxyAddress : string) => {
   }
 
   return impl;
+};
+
+export const loggerMock = {
+  ...console,
+  log: () => {},
+  info: () => {},
+  debug: () => {},
 };
