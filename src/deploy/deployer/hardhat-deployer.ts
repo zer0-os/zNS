@@ -104,7 +104,9 @@ export class HardhatDeployer {
 
     const { data } = await inst.post(
       `api/v2/accounts/${process.env.TENDERLY_ACCOUNT_ID}/projects/${process.env.TENDERLY_PROJECT_SLUG}/contracts`,
-      contracts
+      {
+        contracts,
+      }
     );
 
     return data;
