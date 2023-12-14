@@ -64,7 +64,7 @@ export const getConfig = async ({
   zeroVaultAddress ?: string;
 }) : Promise<IDeployCampaignConfig> => {
   let deployerAddress;
-  if (Object.keys(deployer).includes("address")) {
+  if (deployer && Object.keys(deployer).includes("address")) {
     deployerAddress = (deployer as HardhatEthersSigner).address;
   } else {
     deployerAddress = await deployer.getAddress();
@@ -136,8 +136,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: process.env.ENV_LEVEL !== "dev"
-      ? process.env.ZERO_VAULT_ADDRESS! : zeroVaultAddress!,
+    zeroVaultAddress: zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS ? process.env.STAKING_TOKEN_ADDRESS : MeowMainnet.address,
     postDeploy: {

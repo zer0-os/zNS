@@ -109,7 +109,7 @@ export class HardhatDeployer {
     ctorArgs ?: TDeployArgs;
   }) {
     // TODO is there a smart way to check if already verified?
-    return this.hre.run("verify", {
+    return this.hre.run("verify:verify", {
       address,
       // this should only be used for non-proxied contracts
       // or proxy impls that have actual constructors
