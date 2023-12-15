@@ -137,13 +137,18 @@ export class BaseDeployMission {
     const address = await this.campaign[this.instanceName].getAddress();
 
     const ctorArgs = !this.proxyData.isProxy ? await this.deployArgs() : undefined;
+    try {
+      await this.campaign.deployer.etherscanVerify({
+        address,
+        ctorArgs,
+      });
 
-    await this.campaign.deployer.etherscanVerify({
-      address,
-      ctorArgs,
-    });
-
-    this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
+      this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
+    } catch (e : any) {
+      this.logger.error(`Etherscan verification for ${this.contractName} failed.`);
+      this.logger.error(e.message);
+      this.logger.debug(`Continuing...`);
+    }
   }
 
   async getMonitoringData () : Promise<Array<ITenderlyContractData>> {
