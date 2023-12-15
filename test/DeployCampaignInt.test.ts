@@ -1031,7 +1031,7 @@ describe("Deploy Campaign Test", () => {
       await mongoAdapter.dropDB();
     });
 
-    it.only("should prepare the correct data for each contract when verifying on Etherscan", async () => {
+    it("should prepare the correct data for each contract when verifying on Etherscan", async () => {
       const verifyData : Array<{ address : string; ctorArgs ?: TDeployArgs; }> = [];
       class HardhatDeployerMock extends HardhatDeployer {
         async etherscanVerify (args : {
