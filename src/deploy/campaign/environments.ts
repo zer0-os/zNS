@@ -45,13 +45,13 @@ const getCustomAddresses = (
   if (accounts && accounts.length > 0) {
     addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
   }
-  
+
   if (!addresses.includes(deployerAddress)) {
     // No custom governors / admins provided, use the deployer as the default
     addresses.push(deployerAddress);
   }
 
-  
+
   return addresses;
 };
 

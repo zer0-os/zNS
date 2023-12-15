@@ -1,6 +1,6 @@
 
 // For use in inegration test of deployment campaign
-import * as hre from "hardhat"
+import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDeployCampaignConfig, TLogger, TZNSContractState } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
@@ -62,21 +62,15 @@ export const getPriceBulk = async (
     const price = await zns.curvePricer.getPrice(parent, domain, true);
     const stakeFee = await zns.curvePricer.getFeeForPrice(parent, price);
 
-    const obj = await zns.curvePricer.getPriceAndFee(
-      parent,
-      domain,
-      true,
-    );
-
     // TODO fix this to be one if statement
     if (parentHashes) {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, obj.price + obj.stakeFee);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
 
-      prices.push(obj.price + obj.stakeFee + protocolFee);
+      prices.push(price + stakeFee + protocolFee);
     } else {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, obj.price);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
 
-      prices.push(obj.price + protocolFee);
+      prices.push(price + protocolFee);
     }
 
 
@@ -110,7 +104,7 @@ export const registerRootDomainBulk = async (
         beneficiary: config.zeroVaultAddress,
       }
     );
-    logger.info(`Deploy transaction submitted, waiting...`);
+    logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);
       logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
@@ -155,7 +149,7 @@ export const registerSubdomainBulk = async (
       paymentConfigEmpty
     );
 
-    logger.info(`Deploy transaction submitted, waiting...`);
+    logger.info("Deploy transaction submitted, waiting...");
 
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);
@@ -170,7 +164,7 @@ export const registerSubdomainBulk = async (
     } else {
       const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
       const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
-  
+
       expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
     }
 

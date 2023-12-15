@@ -144,10 +144,11 @@ export class BaseDeployMission {
       });
 
       this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     } catch (e : any) {
       this.logger.error(`Etherscan verification for ${this.contractName} failed.`);
       this.logger.error(e.message);
-      this.logger.debug(`Continuing...`);
+      this.logger.debug("Continuing...");
     }
   }
 

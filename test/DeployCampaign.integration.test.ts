@@ -97,7 +97,8 @@ describe("DeployCampaign - Integration", () => {
     zns = campaign.state.contracts;
 
     // Surprised this typing works for signer of tx
-    // await zns.treasury.connect(deployer as unknown as Signer).setBeneficiary(ethers.ZeroHash, config.zeroVaultAddress);
+    // await zns.treasury.connect(deployer as unknown as Signer)
+    // .setBeneficiary(ethers.ZeroHash, config.zeroVaultAddress);
 
     //  CurvePricer, stake, open
     distConfig = {
@@ -291,7 +292,7 @@ describe("DeployCampaign - Integration", () => {
 
     if (hre.network.name !== "hardhat") await tx.wait(1);
 
-    expect(tx).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeShortSubHash, userA.address, false);
+    await expect(tx).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeShortSubHash, userA.address, false);
     logger.info(
       "info",
       `Subdomain ${freeShortSubHash} revoked by user ${userA.address}`
@@ -311,7 +312,7 @@ describe("DeployCampaign - Integration", () => {
 
     if (hre.network.name !== "hardhat") await tx1.wait(1);
 
-    expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeMediumSubHash, userB.address);
+    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeMediumSubHash, userB.address);
     expect(await zns.registry.getDomainOwner(freeMediumSubHash)).to.equal(userB.address);
 
     logger.info(`Subdomain ${freeMediumSubHash} reclaimed by user ${userB.address} from user ${userA.address}`);

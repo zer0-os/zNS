@@ -135,17 +135,18 @@ export class DeployCampaign {
       },
       Promise.resolve([])
     );
-    
+
     try {
       const response = await this.deployer.tenderlyPush(contracts);
       this.logger.info(
         `Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}
         with data: ${JSON.stringify(response, null, "\t")}`
       );
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     } catch (e : any) {
-      this.logger.error(`Tenderly push failed.`);
+      this.logger.error("Tenderly push failed.");
       this.logger.error(e.message);
-      this.logger.debug(`Continuing...`);
+      this.logger.debug("Continuing...");
     }
 
   }
