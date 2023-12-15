@@ -7,6 +7,7 @@ require("dotenv").config();
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox/network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
@@ -122,7 +123,7 @@ const config : HardhatUserConfig = {
     },
   },
   defender: {
-    useDefenderDeploy: true,
+    useDefenderDeploy: false,
     apiKey: `${process.env.DEFENDER_KEY}`,
     apiSecret: `${process.env.DEFENDER_SECRET}`,
   },

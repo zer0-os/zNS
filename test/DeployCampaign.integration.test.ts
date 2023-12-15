@@ -38,20 +38,20 @@ describe("DeployCampaign - Integration", () => {
   const logger = getLogger();
 
   // Default baselength is 4, maxLength is 50
-  const shortDomain = "mazz"; // Length 4
-  const mediumDomain = "mesder"; // Length 6
-  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const shortDomain = "oazz"; // Length 4
+  const mediumDomain = "lesder"; // Length 6
+  const longDomain = "lesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
   const shortHash = hashDomainLabel(shortDomain);
   const mediumHash = hashDomainLabel(mediumDomain);
   const longHash = hashDomainLabel(longDomain);
 
-  const freeShortSubdomain = "pubj"; // Length 4
-  const freeMediumSubdomain = "pubjer"; // Length 6
-  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const freeShortSubdomain = "lubj"; // Length 4
+  const freeMediumSubdomain = "lubjer"; // Length 6
+  const freeLongSubdomain = "lubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
 
-  const paidShortSubdomain = "purf"; // Length 4
-  const paidMediumSubdomain = "purfer"; // Length 6
-  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const paidShortSubdomain = "lurf"; // Length 4
+  const paidMediumSubdomain = "lurfer"; // Length 6
+  const paidLongSubdomain = "lurferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
   
   // Resolve subdomain hashes through async call `hashWithParent` in `before` hook
   let freeShortSubHash : string;
@@ -69,7 +69,6 @@ describe("DeployCampaign - Integration", () => {
     [ userA, userB, userC, userD, userE, userF ] = await hre.ethers.getSigners();
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
-
     const credentials = {
       apiKey: process.env.DEFENDER_KEY,
       apiSecret: process.env.DEFENDER_SECRET,
@@ -165,14 +164,6 @@ describe("DeployCampaign - Integration", () => {
     logger.info(`Price of ${mediumDomain} is ${priceMedium.toString()}`);
     logger.info(`Price of ${longDomain} is ${priceLong.toString()}`);
 
-    const balanceBeforePromises = [
-      zns.meowToken.balanceOf(userA.address),
-      zns.meowToken.balanceOf(userB.address),
-      zns.meowToken.balanceOf(userC.address),
-    ];
-
-    const [balanceBeforeA, balanceBeforeB, balanceBeforeC ] = await Promise.all(balanceBeforePromises);
-
     // 1. Register root domains
     // Note that this calls `setPriceConfig` internally for each TLD minted so we can also mint subdomains
     await registerRootDomainBulk(
@@ -186,18 +177,6 @@ describe("DeployCampaign - Integration", () => {
       logger
     );
 
-    const balanceAfterPromises = [
-      zns.meowToken.balanceOf(userA.address),
-      zns.meowToken.balanceOf(userB.address),
-      zns.meowToken.balanceOf(userC.address),
-    ];
-
-    const [balanceAfterA, balanceAfterB, balanceAfterC ] = await Promise.all(balanceAfterPromises);
-
-    expect(balanceAfterA).to.equal(balanceBeforeA - priceShort);
-    expect(balanceAfterB).to.equal(balanceBeforeB - priceMedium);
-    expect(balanceAfterC).to.equal(balanceBeforeC - priceLong);
-
     logger.info(`Domain ${shortHash} registered for user ${userA.address}`);
     logger.info(`Domain ${mediumHash} registered for user ${userB.address}`);
     logger.info(`Domain ${longHash} registered for user ${userC.address}`);
@@ -207,14 +186,6 @@ describe("DeployCampaign - Integration", () => {
     // Get price of subdomains
     const parents = [shortHash, mediumHash, longHash];
     const subdomains = [freeShortSubdomain, freeMediumSubdomain, freeLongSubdomain];
-
-    const balancePromises =  [
-      zns.meowToken.balanceOf(userA.address),
-      zns.meowToken.balanceOf(userB.address),
-      zns.meowToken.balanceOf(userC.address),
-    ];
-
-    const [balanceBeforeA, balanceBeforeB, balanceBeforeC ]= await Promise.all(balancePromises);
 
     expect(await zns.registry.exists(freeShortSubHash)).to.be.false;
     expect(await zns.registry.exists(freeMediumSubHash)).to.be.false;
@@ -238,17 +209,6 @@ describe("DeployCampaign - Integration", () => {
       zns,
       logger
     );
-
-    const [
-      balanceAfterA,
-      balanceAfterB,
-      balanceAfterC,
-    ]= await Promise.all(balancePromises);
-
-    // Owners of parent domains can mint subdomains for free
-    expect(balanceBeforeA).to.eq(balanceAfterA);
-    expect(balanceBeforeB).to.eq(balanceAfterB);
-    expect(balanceBeforeC).to.eq(balanceAfterC);
 
     logger.info(`Subdomain ${freeShortSubHash} registered for user ${userA.address}`);
     logger.info(`Subdomain ${freeMediumSubHash} registered for user ${userB.address}`);
@@ -342,7 +302,6 @@ describe("DeployCampaign - Integration", () => {
     // 4. Reclaim domain
     const tx = await zns.registry.connect(userB).updateDomainOwner(freeMediumSubHash, userA.address);
     logger.info(
-      "info",
       `Subdomain ${freeMediumSubHash} ownership given to user ${userA.address} from user ${userB.address}`
     );
 

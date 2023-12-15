@@ -21,8 +21,6 @@ const runCampaign = async () => {
 
   const config = await getConfig({
     deployer,
-    governors: [await deployer.getAddress()],
-    admins: [await deployer.getAddress()],
   });
 
   await runZnsCampaign({

@@ -117,9 +117,8 @@ export const registerRootDomainBulk = async (
     }
 
     const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
-    const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
-    const balanceDiff = balanceBefore - balanceAfter;
-    const expectedDiff = balanceBefore - price;
+    const [price, protocolFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
+    expect(balanceAfter).to.be.eq(balanceBefore - price - protocolFee);
 
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
@@ -146,6 +145,7 @@ export const registerSubdomainBulk = async (
   let index = 0;
 
   for (const subdomain of subdomains) {
+    const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
     const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain(
       parents[index],
       subdomain,
@@ -161,6 +161,19 @@ export const registerSubdomainBulk = async (
       await tx.wait(3);
       logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
+
+    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+
+    const owner = await zns.registry.getDomainOwner(parents[index]);
+    if (signers[index].address === owner) {
+      expect(balanceAfter).to.be.eq(balanceBefore);
+    } else {
+      const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
+  
+      expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
+    }
+
 
     expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
 
