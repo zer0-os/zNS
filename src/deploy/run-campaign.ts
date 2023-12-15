@@ -30,8 +30,8 @@ const runCampaign = async () => {
 };
 
 runCampaign().catch(error => {
-  process.exitCode = 1;
-  logger.error(error);
+  logger.error(error.stack);
+  process.exit(1);
 }).finally(() => {
   process.exit(0);
 });

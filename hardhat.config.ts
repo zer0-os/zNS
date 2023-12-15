@@ -10,6 +10,7 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox/network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
@@ -105,16 +106,16 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.TESTNET_PRIVATE_KEY_A}`,
-        `${process.env.TESTNET_PRIVATE_KEY_B}`,
-        `${process.env.TESTNET_PRIVATE_KEY_C}`,
-        `${process.env.TESTNET_PRIVATE_KEY_D}`,
-        `${process.env.TESTNET_PRIVATE_KEY_E}`,
-        `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      ],
-      // Must have to avoid instead failing as `invalid length for result data` error
-      throwOnCallFailures: false, // not sure if this even works
+      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
+      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
+      // ],
+      // // Must have to avoid instead failing as `invalid length for result data` error
+      // throwOnCallFailures: false, // not sure if this even works
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning

@@ -38,21 +38,21 @@ describe("DeployCampaign - Integration", () => {
   const logger = getLogger();
 
   // Default baselength is 4, maxLength is 50
-  const shortDomain = "oazz"; // Length 4
-  const mediumDomain = "lesder"; // Length 6
-  const longDomain = "lesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const shortDomain = "mazz"; // Length 4
+  const mediumDomain = "mesder"; // Length 6
+  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
   const shortHash = hashDomainLabel(shortDomain);
   const mediumHash = hashDomainLabel(mediumDomain);
   const longHash = hashDomainLabel(longDomain);
 
-  const freeShortSubdomain = "lubj"; // Length 4
-  const freeMediumSubdomain = "lubjer"; // Length 6
-  const freeLongSubdomain = "lubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const freeShortSubdomain = "pubj"; // Length 4
+  const freeMediumSubdomain = "pubjer"; // Length 6
+  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
 
-  const paidShortSubdomain = "lurf"; // Length 4
-  const paidMediumSubdomain = "lurfer"; // Length 6
-  const paidLongSubdomain = "lurferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
-  
+  const paidShortSubdomain = "purf"; // Length 4
+  const paidMediumSubdomain = "purfer"; // Length 6
+  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+
   // Resolve subdomain hashes through async call `hashWithParent` in `before` hook
   let freeShortSubHash : string;
   let freeMediumSubHash : string;
@@ -75,12 +75,12 @@ describe("DeployCampaign - Integration", () => {
       relayerApiKey: process.env.RELAYER_KEY,
       relayerApiSecret: process.env.RELAYER_SECRET,
     };
-  
+
     const client = new Defender(credentials);
-  
+
     const provider = client.relaySigner.getProvider();
     const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
-  
+
     config = await getConfig({
       deployer,
     });
@@ -98,7 +98,7 @@ describe("DeployCampaign - Integration", () => {
 
     // Surprised this typing works for signer of tx
     // await zns.treasury.connect(deployer as unknown as Signer).setBeneficiary(ethers.ZeroHash, config.zeroVaultAddress);
-    
+
     //  CurvePricer, stake, open
     distConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
@@ -147,7 +147,7 @@ describe("DeployCampaign - Integration", () => {
         userF.address,
       ],
       config.rootPriceConfig.maxPrice * BigInt(3)
-    )
+    );
     // await zns.meowToken.connect(userB).transfer(userA.address, config.rootPriceConfig.maxPrice);
   });
 
@@ -320,13 +320,13 @@ describe("DeployCampaign - Integration", () => {
   it("Reclaims then revokes correctly", async () => {
     // 5. Reclaim and revoke domain
     const tx = await zns.registry.connect(userC).updateDomainOwner(freeLongSubHash, userA.address);
-    expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
+    await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
     logger.info(`Subdomain ${freeLongSubHash} ownership given to user ${userA.address} from user ${userC.address}`);
 
     if (hre.network.name !== "hardhat") await tx.wait(1);
 
     const tx1 = await zns.rootRegistrar.connect(userC).reclaimDomain(freeLongSubHash);
-    expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);
+    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);
 
     if (hre.network.name !== "hardhat") await tx1.wait(1);
 
@@ -336,7 +336,7 @@ describe("DeployCampaign - Integration", () => {
     const tx2 = await zns.rootRegistrar.connect(userC).revokeDomain(freeLongSubHash);
     if (hre.network.name !== "hardhat") await tx2.wait(1);
 
-    expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userC.address, false);
+    await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userC.address, false);
     logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userC.address}`);
   });
 });

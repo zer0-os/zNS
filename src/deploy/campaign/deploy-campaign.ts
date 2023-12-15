@@ -19,7 +19,6 @@ export class DeployCampaign {
   dbAdapter : MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
-  version : string;
 
   // TODO dep: improve typing here so that methods of each contract type are resolved in Mission classes!
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,7 +54,6 @@ export class DeployCampaign {
     this.dbAdapter = dbAdapter;
     this.logger = logger;
     this.config = config;
-    this.version = Date.now().toString();
 
     const campaignProxy = new Proxy(this, DeployCampaign.indexedHandler);
 
