@@ -21,6 +21,7 @@ import { ICurvePriceConfig } from "../missions/types";
 import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import env from "hardhat";
 
 
 const getCustomAddresses = (
@@ -103,7 +104,7 @@ export const getConfig = async ({
     process.env.PROTOCOL_FEE_PERC
       ? BigInt(process.env.PROTOCOL_FEE_PERC)
       : DEFAULT_PROTOCOL_FEE_PERCENT;
-  const royaltyReceiver = process.env.ROYALTY_RECEIVER!;
+  const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddress;
   const royaltyFraction =
     process.env.ROYALTY_FRACTION
       ? BigInt(process.env.ROYALTY_FRACTION)

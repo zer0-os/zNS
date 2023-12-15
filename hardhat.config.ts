@@ -10,7 +10,6 @@ import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox/network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
-import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "solidity-coverage";
 import "solidity-docgen";
