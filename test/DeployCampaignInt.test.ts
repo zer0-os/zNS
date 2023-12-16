@@ -33,13 +33,14 @@ import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapt
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig, validate } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
+
 
 const execAsync = promisify(exec);
 
@@ -596,6 +597,16 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Configurable Environment & Validation", () => {
+    let envInitial : string;
+
+    beforeEach(async () => {
+      envInitial = JSON.stringify(process.env);
+    });
+
+    afterEach(async () => {
+      process.env = JSON.parse(envInitial);
+    });
+
     // The `validate` function accepts the environment parameter only for the
     // purpose of testing here as manipulating actual environment variables
     // like `process.env.<VAR> = "value"` is not possible in a test environment
@@ -698,14 +709,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Throws if env variable is invalid", async () => {
       try {
-        const config = await getConfig({
+        await getConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-
-        validate(config, "other");
 
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
@@ -714,16 +723,15 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate when mocking MEOW on prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "true";
+
       try {
-        const config = await getConfig({
+        await getConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-        // Modify the config
-        config.mockMeowToken = true;
-        validate(config, "prod");
 
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
@@ -732,18 +740,16 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = "0x123";
+
       try {
-        const config = await getConfig({
+        await getConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = "0x123";
-
-        validate(config, "prod");
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(STAKING_TOKEN_ERR);
@@ -751,22 +757,21 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if invalid curve for pricing", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.BASE_LENGTH = "3";
+      process.env.MAX_LENGTH = "5";
+      process.env.MAX_PRICE = "0";
+      process.env.MIN_PRICE = ethers.parseEther("3").toString();
+
       try {
-        const config = await getConfig({
+        await getConfig({
+          env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-        config.rootPriceConfig.baseLength = BigInt(3);
-        config.rootPriceConfig.maxLength = BigInt(5);
-        config.rootPriceConfig.maxPrice = BigInt(0);
-        config.rootPriceConfig.minPrice = ethers.parseEther("3");
-
-        validate(config, "prod");
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(INVALID_CURVE_ERR);
@@ -774,42 +779,39 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      // Falls back onto the default URI which is for localhost and fails in prod
+      process.env.MONGO_URI = "";
+      process.env.ROYALTY_RECEIVER = "0x123";
+      process.env.ROYALTY_FRACTION = "100";
+
       try {
-        const config = await getConfig({
+        await getConfig({
+          env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-
-        // Normally we would call to an env variable to grab this value
-        const uri = "";
-
-        // Falls back onto the default URI which is for localhost and fails in prod
-        validate(config, "prod", uri);
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
-        expect(e.message).includes(MONGO_URI_ERR);
+        expect(e.message).includes("Must provide a Mongo URI used for prod environment!");
       }
 
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.MONGO_URI = "mongodb://localhost:27018";
+      process.env.ZERO_VAULT_ADDRESS = "0x123";
+
       try {
-        const config = await getConfig({
+        await getConfig({
+          env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
           admins: [deployAdmin.address, admin.address],
         });
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-
-        // Normally we would call to an env variable to grab this value
-        const uri = "mongodb://localhost:27018";
-
-        validate(config, "prod", uri);
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(MONGO_URI_ERR);
