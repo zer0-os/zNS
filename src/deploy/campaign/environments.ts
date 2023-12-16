@@ -134,7 +134,7 @@ export const getConfig = async ({
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver!,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,

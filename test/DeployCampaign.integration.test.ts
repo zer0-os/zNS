@@ -19,7 +19,8 @@ import { Defender } from "@openzeppelin/defender-sdk";
 
 describe("DeployCampaign - Integration", () => {
   // Minters
-  // let deployAdmin : SignerWithAddress;
+  let deployAdmin : SignerWithAddress;
+  let zeroVault : SignerWithAddress;
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let userC : SignerWithAddress;
@@ -66,23 +67,34 @@ describe("DeployCampaign - Integration", () => {
   const domains = [shortDomain, mediumDomain, longDomain];
 
   before(async () => {
-    [ userA, userB, userC, userD, userE, userF ] = await hre.ethers.getSigners();
+    [ deployAdmin, zeroVault, userA, userB, userC, userD, userE, userF ] = await hre.ethers.getSigners();
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
-    const credentials = {
-      apiKey: process.env.DEFENDER_KEY,
-      apiSecret: process.env.DEFENDER_SECRET,
-      relayerApiKey: process.env.RELAYER_KEY,
-      relayerApiSecret: process.env.RELAYER_SECRET,
-    };
 
-    const client = new Defender(credentials);
+    let deployer;
+    let provider;
+    let zeroVaultAddress;
 
-    const provider = client.relaySigner.getProvider();
-    const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
+    if (hre.network.name === "hardhat") {
+      deployer = deployAdmin;
+      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL)
+    } else {
+      const credentials = {
+        apiKey: process.env.DEFENDER_KEY,
+        apiSecret: process.env.DEFENDER_SECRET,
+        relayerApiKey: process.env.RELAYER_KEY,
+        relayerApiSecret: process.env.RELAYER_SECRET,
+      };
+  
+      const client = new Defender(credentials);
+      provider = client.relaySigner.getProvider();
+      deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
+    }
+
 
     config = await getConfig({
       deployer,
+      zeroVaultAddress: zeroVault.address,
     });
 
     config.mockMeowToken = hre.network.name === "hardhat";
@@ -126,30 +138,13 @@ describe("DeployCampaign - Integration", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (config.mockMeowToken) {
+    if (hre.network.name === "hardhat" && config.mockMeowToken) {
       await mintBulk(
         users,
         mintAmount,
         zns
       );
     }
-  });
-
-  // TODO TEMP DELETE
-  // TRANSFER FROM ASTRO WITH MOST BALANCE
-  it("temp transfer", async () => {
-    await zns.meowToken.connect(userA).transferBulk(
-      [
-        // userA.address,
-        userB.address,
-        userC.address,
-        userD.address,
-        userE.address,
-        userF.address,
-      ],
-      config.rootPriceConfig.maxPrice * BigInt(3)
-    );
-    // await zns.meowToken.connect(userB).transfer(userA.address, config.rootPriceConfig.maxPrice);
   });
 
   it("Successfully mints TLDs with varying length", async () => {
