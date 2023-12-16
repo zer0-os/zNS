@@ -77,7 +77,7 @@ describe("DeployCampaign - Integration", () => {
 
     if (hre.network.name === "hardhat") {
       deployer = deployAdmin;
-      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL)
+      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
     } else {
       const credentials = {
         apiKey: process.env.DEFENDER_KEY,
@@ -85,7 +85,7 @@ describe("DeployCampaign - Integration", () => {
         relayerApiKey: process.env.RELAYER_KEY,
         relayerApiSecret: process.env.RELAYER_SECRET,
       };
-  
+
       const client = new Defender(credentials);
       provider = client.relaySigner.getProvider();
       deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
