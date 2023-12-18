@@ -1,20 +1,10 @@
 ## IZNSAddressResolver
 
-
-
-
-
-
-
-
 ### AddressSet
 
 ```solidity
 event AddressSet(bytes32 domainHash, address newAddress)
 ```
-
-
-
 
 Emit when ownership of a domain is modified
 
@@ -25,30 +15,17 @@ Emit when ownership of a domain is modified
 | domainHash | bytes32 | The identifying hash of a domain's name |
 | newAddress | address | The new domain owner |
 
-
 ### supportsInterface
 
 ```solidity
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-
-
-
-
-
-
-### getAddress
+### resolveDomainAddress
 
 ```solidity
-function getAddress(bytes32 domainHash) external view returns (address)
+function resolveDomainAddress(bytes32 domainHash) external view returns (address)
 ```
-
-
-
-
-
-
 
 ### setAddress
 
@@ -56,23 +33,11 @@ function getAddress(bytes32 domainHash) external view returns (address)
 function setAddress(bytes32 domainHash, address newAddress) external
 ```
 
-
-
-
-
-
-
 ### getInterfaceId
 
 ```solidity
 function getInterfaceId() external pure returns (bytes4)
 ```
-
-
-
-
-
-
 
 ### setRegistry
 
@@ -80,22 +45,9 @@ function getInterfaceId() external pure returns (bytes4)
 function setRegistry(address _registry) external
 ```
 
-
-
-
-
-
-
 ### initialize
 
 ```solidity
 function initialize(address _accessController, address _registry) external
 ```
-
-
-
-
-
-
-
 

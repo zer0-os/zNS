@@ -1,16 +1,13 @@
 ## IDistributionConfig
 
-
-**IDistributionConfig.sol - An interface containing all types required for 
+**IDistributionConfig.sol - An interface containing all types required for
 distribution configuration of a domain.**
-
-
 
 Types outlined in this config are stored on the `ZNSSubRegistrar` contract and are used to determine
 how subdomains are distributed for each parent domain.
 Below are docs for the types in this file:
  - `DistributionConfig`: Struct containing the configuration data for a parent domain:
-     + `pricerContract`: The address of the pricer contract chosen by the owner of the 
+     + `pricerContract`: The address of the pricer contract chosen by the owner of the
          parent domain (IZNSPricer type required!)
      + `paymentType`: The payment type chosen by the owner of the parent domain
      + `accessType`: The access type chosen by the owner of the parent domain
@@ -22,16 +19,7 @@ Below are docs for the types in this file:
      + `DIRECT`: The subdomains are paid for directly by the user to the beneficiary chosen by the owner
      + `STAKE`: The subdomains are paid for by staking an amount of token chosen by the owner to ZNSTreasury
 
-
-
 ### AccessType
-
-
-
-
-
-
-
 
 ```solidity
 enum AccessType {
@@ -43,13 +31,6 @@ enum AccessType {
 
 ### PaymentType
 
-
-
-
-
-
-
-
 ```solidity
 enum PaymentType {
   DIRECT,
@@ -59,13 +40,6 @@ enum PaymentType {
 
 ### DistributionConfig
 
-
-
-
-
-
-
-
 ```solidity
 struct DistributionConfig {
   contract IZNSPricer pricerContract;
@@ -73,5 +47,4 @@ struct DistributionConfig {
   enum IDistributionConfig.AccessType accessType;
 }
 ```
-
 

@@ -1,12 +1,5 @@
 ## PaymentConfig
 
-
-
-
-
-
-
-
 ```solidity
 struct PaymentConfig {
   contract IERC20 token;
@@ -16,10 +9,7 @@ struct PaymentConfig {
 
 ## IZNSTreasury
 
-
 **IZNSTreasury.sol - Interface for the ZNSTreasury contract responsible for managing payments and staking.**
-
-
 
 Below are docs for the types in this file:
  - `PaymentConfig`: Struct containing data for the payment configuration of the parent distributing subdomains:
@@ -29,16 +19,7 @@ Below are docs for the types in this file:
      + `token`: The address of the ERC-20 compliant staking token used to deposit a specific stake for domain
      + `amount`: The amount of the staking token above deposited by the user
 
-
-
 ### Stake
-
-
-
-
-
-
-
 
 ```solidity
 struct Stake {
@@ -53,9 +34,7 @@ struct Stake {
 event StakeDeposited(bytes32 parentHash, bytes32 domainHash, address depositor, address stakingToken, uint256 stakeAmount, uint256 stakeFee, uint256 protocolFee)
 ```
 
-
 Emitted when a new stake is deposited upon registration of a new domain.
-
 
 #### Parameters
 
@@ -69,16 +48,13 @@ Emitted when a new stake is deposited upon registration of a new domain.
 | stakeFee | uint256 | The registration fee paid by the user on top of the staked amount |
 | protocolFee | uint256 |  |
 
-
 ### StakeWithdrawn
 
 ```solidity
 event StakeWithdrawn(bytes32 domainHash, address owner, address stakingToken, uint256 stakeAmount)
 ```
 
-
 Emitted when a stake is withdrawn upon domain revocation.
-
 
 #### Parameters
 
@@ -89,16 +65,13 @@ Emitted when a stake is withdrawn upon domain revocation.
 | stakingToken | address |  |
 | stakeAmount | uint256 | The staked amount withdrawn to the user after revoking |
 
-
 ### DirectPaymentProcessed
 
 ```solidity
 event DirectPaymentProcessed(bytes32 parentHash, bytes32 domainHash, address payer, address beneficiary, uint256 amount, uint256 protocolFee)
 ```
 
-
 Emitted when a direct payment is processed upon registration of a new domain.
-
 
 #### Parameters
 
@@ -111,16 +84,13 @@ Emitted when a direct payment is processed upon registration of a new domain.
 | amount | uint256 | The amount paid by the user |
 | protocolFee | uint256 | The protocol fee paid by the user to Zero |
 
-
 ### CurvePricerSet
 
 ```solidity
 event CurvePricerSet(address curvePricer)
 ```
 
-
 Emitted when `curvePricer` is set in state.
-
 
 #### Parameters
 
@@ -128,16 +98,13 @@ Emitted when `curvePricer` is set in state.
 | ---- | ---- | ----------- |
 | curvePricer | address | The new address of the CurvePricer contract |
 
-
 ### PaymentTokenSet
 
 ```solidity
 event PaymentTokenSet(bytes32 domainHash, address token)
 ```
 
-
 Emitted when `stakingToken` is set in state.
-
 
 #### Parameters
 
@@ -146,16 +113,13 @@ Emitted when `stakingToken` is set in state.
 | domainHash | bytes32 |  |
 | token | address | The new address of the ERC-20 compliant payment token contract |
 
-
 ### BeneficiarySet
 
 ```solidity
 event BeneficiarySet(bytes32 domainHash, address beneficiary)
 ```
 
-
 Emitted when `zeroVault` is set in state.
-
 
 #### Parameters
 
@@ -164,18 +128,11 @@ Emitted when `zeroVault` is set in state.
 | domainHash | bytes32 |  |
 | beneficiary | address | The new address of the beneficiary contract or wallet |
 
-
 ### paymentConfigs
 
 ```solidity
 function paymentConfigs(bytes32 domainHash) external view returns (contract IERC20 token, address beneficiary)
 ```
-
-
-
-
-
-
 
 ### stakedForDomain
 
@@ -183,23 +140,11 @@ function paymentConfigs(bytes32 domainHash) external view returns (contract IERC
 function stakedForDomain(bytes32 domainHash) external view returns (contract IERC20, uint256)
 ```
 
-
-
-
-
-
-
 ### stakeForDomain
 
 ```solidity
 function stakeForDomain(bytes32 parentHash, bytes32 domainHash, address depositor, uint256 stakeAmount, uint256 stakeFee, uint256 protocolFee) external
 ```
-
-
-
-
-
-
 
 ### unstakeForDomain
 
@@ -207,23 +152,11 @@ function stakeForDomain(bytes32 parentHash, bytes32 domainHash, address deposito
 function unstakeForDomain(bytes32 domainHash, address owner) external
 ```
 
-
-
-
-
-
-
 ### processDirectPayment
 
 ```solidity
 function processDirectPayment(bytes32 parentHash, bytes32 domainHash, address payer, uint256 paymentAmount, uint256 protocolFee) external
 ```
-
-
-
-
-
-
 
 ### setPaymentConfig
 
@@ -231,23 +164,11 @@ function processDirectPayment(bytes32 parentHash, bytes32 domainHash, address pa
 function setPaymentConfig(bytes32 domainHash, struct PaymentConfig paymentConfig) external
 ```
 
-
-
-
-
-
-
 ### setBeneficiary
 
 ```solidity
 function setBeneficiary(bytes32 domainHash, address beneficiary) external
 ```
-
-
-
-
-
-
 
 ### setPaymentToken
 
@@ -255,34 +176,15 @@ function setBeneficiary(bytes32 domainHash, address beneficiary) external
 function setPaymentToken(bytes32 domainHash, address paymentToken) external
 ```
 
-
-
-
-
-
-
 ### setRegistry
 
 ```solidity
 function setRegistry(address registry_) external
 ```
 
-
-
-
-
-
-
 ### initialize
 
 ```solidity
 function initialize(address accessController_, address curvePricer_, address stakingToken_, address zeroVault_) external
 ```
-
-
-
-
-
-
-
 
