@@ -1,34 +1,39 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { TDeployArgs, TProxyKind } from "../missions/types";
+import { ITenderlyContractData, TDeployArgs, TProxyKind } from "../missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { DefenderHardhatUpgrades, HardhatUpgrades } from "@openzeppelin/hardhat-upgrades";
 import { ethers } from "ethers";
+import axios from "axios";
+import {
+  DefenderRelayProvider,
+  DefenderRelaySigner,
+} from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { ContractV6 } from "../campaign/types";
 
 export class HardhatDeployer {
   hre : HardhatRuntimeEnvironment;
   signer : SignerWithAddress | DefenderRelaySigner;
-  deployModule : HardhatUpgrades | DefenderHardhatUpgrades;
   env : string;
+  provider ?: DefenderRelayProvider;
 
-  constructor (signer : SignerWithAddress | DefenderRelaySigner, env : string) {
+  constructor (
+    signer : SignerWithAddress | DefenderRelaySigner,
+    env : string,
+    provider ?: DefenderRelayProvider,
+  ) {
     this.hre = hre;
     this.signer = signer;
     this.env = env;
-    this.deployModule = env === "dev" ? this.hre.upgrades : this.hre.defender;
+    this.provider = provider;
   }
 
   async getFactory (contractName : string, signer ?: SignerWithAddress | DefenderRelaySigner) {
-    // is this typecasting a problem at all?
-    // TS gets confused on the function typing here
-    // if we use the SignerWithAddress | DefenderRelaySigner type
-    return this.hre.ethers.getContractFactory(contractName, signer as ethers.Signer);
+    const attachedSigner = signer ?? this.signer;
+    return this.hre.ethers.getContractFactory(contractName, attachedSigner as ethers.Signer);
   }
 
   async getContractObject (contractName : string, address : string) {
-    const factory = await this.getFactory(contractName, this.signer);
+    const factory = await this.getFactory(contractName);
 
     return factory.attach(address);
   }
@@ -41,34 +46,42 @@ export class HardhatDeployer {
     contractName : string;
     args : TDeployArgs;
     kind : TProxyKind;
-  }) {
+  }) : Promise<ContractV6> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
-    const contract = await this.deployModule.deployProxy(contractFactory, args, {
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await this.hre.upgrades.deployProxy(contractFactory, args, {
       kind,
     });
 
-    await contract.waitForDeployment();
+    let receipt;
+    if (!this.provider) {
+      return deployment.waitForDeployment();
+    } else {
+      const tx = await deployment.deploymentTransaction();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      receipt = await this.provider.waitForTransaction(tx!.hash, 3);
 
-    return contract;
+      return contractFactory.attach(receipt.contractAddress);
+    }
   }
 
-  async deployContract (contractName : string, args : TDeployArgs) {
+  async deployContract (contractName : string, args : TDeployArgs) : Promise<ContractV6> {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const contractFactory = await this.hre.ethers.getContractFactory(contractName, this.signer);
+    const contractFactory = await this.getFactory(contractName);
+    const deployment = await contractFactory.deploy(...args);
 
-    let contract;
-    if (this.env !== "dev") {
-      contract = await (this.deployModule as DefenderHardhatUpgrades).deployContract(contractFactory, args);
+    let receipt;
+    if (!this.provider) {
+      return deployment.waitForDeployment();
     } else {
-      contract = await contractFactory.deploy(...args);
+      const tx = await deployment.deploymentTransaction();
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      receipt = await this.provider.waitForTransaction(tx!.hash, 3);
+
+      return contractFactory.attach(receipt.contractAddress);
     }
-
-    await contract.waitForDeployment();
-
-    return contract;
   }
 
   getContractArtifact (contractName : string) {
@@ -83,8 +96,23 @@ export class HardhatDeployer {
     return this.hre.ethers.provider.getCode(address);
   }
 
-  async tenderlyVerify (contracts : Array<ContractByName>) {
-    return this.hre.tenderly.verify(...contracts);
+  async tenderlyPush (contracts : Array<ITenderlyContractData>) {
+    const inst = axios.create({
+      baseURL: "https://api.tenderly.co/",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Key": process.env.TENDERLY_ACCESS_KEY,
+      },
+    });
+
+    const { data } = await inst.post(
+      `api/v2/accounts/${process.env.TENDERLY_ACCOUNT_ID}/projects/${process.env.TENDERLY_PROJECT_SLUG}/contracts`,
+      {
+        contracts,
+      }
+    );
+
+    return data;
   }
 
   async etherscanVerify ({
@@ -94,7 +122,6 @@ export class HardhatDeployer {
     address : string;
     ctorArgs ?: TDeployArgs;
   }) {
-    // TODO is there a smart way to check if already verified?
     return this.hre.run("verify:verify", {
       address,
       // this should only be used for non-proxied contracts

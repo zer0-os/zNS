@@ -84,7 +84,6 @@ export const deployRegistry = async (
   isTenderlyRun = false,
 ) : Promise<ZNSRegistry> => {
   const registryFactory = new ZNSRegistry__factory(deployer);
-  // TODO ethers: figure out why this is happening with OZ guys.
   const registry = await hre.upgrades.deployProxy(
     registryFactory,
     [
@@ -633,7 +632,6 @@ export const deployZNS = async ({
   await meowTokenMock.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
   await meowTokenMock.mint(await deployer.getAddress(), ethers.parseEther("5000000"));
 
-  // TODO This contract has a function `getAddress` that takes a param so this errors, have to rename function
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await addressResolver.getAddress());
 
   return znsContracts;

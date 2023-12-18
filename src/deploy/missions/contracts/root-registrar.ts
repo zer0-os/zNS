@@ -43,6 +43,10 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
       .connect(deployAdmin)
       .isRegistrar(await rootRegistrar.getAddress());
 
+    const msg = !isRegistrar ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
     return !isRegistrar;
   }
 
@@ -58,5 +62,7 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
     await accessController
       .connect(deployAdmin)
       .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }

@@ -7,6 +7,7 @@ require("dotenv").config();
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
 import "@nomicfoundation/hardhat-toolbox/network-helpers";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@openzeppelin/hardhat-upgrades";
@@ -107,7 +108,13 @@ const config : HardhatUserConfig = {
       // accounts: [ // Comment out for CI, uncomment this when using Sepolia
       //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
       // ],
+      // // Must have to avoid instead failing as `invalid length for result data` error
+      // throwOnCallFailures: false, // not sure if this even works
     },
     devnet: {
       // Add current URL that you spawned if not using automated spawning
@@ -116,11 +123,16 @@ const config : HardhatUserConfig = {
     },
   },
   defender: {
+    useDefenderDeploy: false,
     apiKey: `${process.env.DEFENDER_KEY}`,
     apiSecret: `${process.env.DEFENDER_SECRET}`,
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+  },
+  sourcify: {
+    // If set to "true", will try to verify the contracts after deployment
+    enabled: false,
   },
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,

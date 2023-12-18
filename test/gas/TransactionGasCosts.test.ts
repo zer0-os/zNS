@@ -10,9 +10,6 @@ import fs from "fs";
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
 
 
-// TODO sub: add more tests here for each tx with different configs
-//  so we can track gas changes better when developing
-//  OR just use hardhat gas profiler and remove these tests
 describe("Transaction Gas Costs Test", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
@@ -80,28 +77,6 @@ describe("Transaction Gas Costs Test", () => {
         priceConfig: DEFAULT_PRICE_CONFIG,
       },
     });
-
-    // TODO sub fee: add cases for subs under this !
-    // rootHashStake = await registrationWithSetup({
-    //   zns,
-    //   user: rootOwner,
-    //   domainLabel: "rootstake",
-    //   fullConfig: {
-    //     distrConfig: {
-    //       accessType: AccessType.OPEN,
-    //       pricerContract: zns.curvePricer.address,
-    //       paymentConfig: {
-    //         token: zns.zeroToken.address,
-    //         beneficiary: rootOwner.address,
-    //         paymentType: PaymentType.STAKE,
-    //       },
-    //     },
-    //     priceConfig: {
-    //       price: BigInt(ethers.parseEther("1375.612")),
-    //       feePercentage: BigInt(0),
-    //     },
-    //   },
-    // });
 
     fs.existsSync(gasCostFile) || fs.writeFileSync(gasCostFile, JSON.stringify({}));
   });

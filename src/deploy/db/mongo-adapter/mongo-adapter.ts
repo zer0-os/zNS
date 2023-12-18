@@ -118,7 +118,6 @@ export class MongoDBAdapter {
 
   // Versioning methods
   async configureVersioning (version ?: string) {
-    // TODO dep: add archiving logic once determined on how to handle it
     const tempV = await this.getTempVersion();
     const deployedV = await this.getDeployedVersion();
 

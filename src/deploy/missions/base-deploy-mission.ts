@@ -1,15 +1,14 @@
+/* eslint-disable camelcase */
 import { Contract } from "ethers";
 import {
   TDeployArgs,
   IProxyData,
-  IDeployMissionArgs,
+  IDeployMissionArgs, ITenderlyContractData,
 } from "./types";
 import { DeployCampaign } from "../campaign/deploy-campaign";
-import { IDeployCampaignConfig, TLogger } from "../campaign/types";
+import { ContractV6, IDeployCampaignConfig, TLogger } from "../campaign/types";
 import { IContractDbData } from "../db/types";
-import { erc1967ProxyName, transparentProxyName } from "./contracts/names";
-import { ProxyKinds } from "../constants";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { NetworkData } from "../deployer/constants";
 
 
 export class BaseDeployMission {
@@ -35,7 +34,7 @@ export class BaseDeployMission {
     return this.campaign.dbAdapter.getContract(this.contractName);
   }
 
-  async saveToDB (contract : Contract) {
+  async saveToDB (contract : ContractV6) {
     this.logger.debug(`Writing ${this.contractName} to DB...`);
 
     this.implAddress = this.proxyData.isProxy
@@ -45,10 +44,6 @@ export class BaseDeployMission {
     const contractDbDoc = await this.buildDbObject(contract, this.implAddress);
 
     return this.campaign.dbAdapter.writeContract(this.contractName, contractDbDoc);
-  }
-
-  async preDeploy () {
-    return Promise.resolve();
   }
 
   async needsDeploy () {
@@ -81,7 +76,10 @@ export class BaseDeployMission {
     return this.campaign.deployer.getContractArtifact(this.contractName);
   }
 
-  async buildDbObject (hhContract : Contract, implAddress : string | null) : Promise<Omit<IContractDbData, "version">> {
+  async buildDbObject (
+    hhContract : ContractV6,
+    implAddress : string | null
+  ) : Promise<Omit<IContractDbData, "version">> {
     const { abi, bytecode } = this.getArtifact();
     return {
       name: this.contractName,
@@ -96,24 +94,22 @@ export class BaseDeployMission {
     const deployArgs = await this.deployArgs();
     this.logger.info(`Deploying ${this.contractName} with arguments: ${deployArgs}`);
 
-    let baseContract;
+    let contract : ContractV6;
     if (this.proxyData.isProxy) {
-      baseContract = await this.campaign.deployer.deployProxy({
+      contract = await this.campaign.deployer.deployProxy({
         contractName: this.contractName,
         args: deployArgs,
         kind: this.proxyData.kind,
       });
     } else {
-      baseContract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
+      contract = await this.campaign.deployer.deployContract(this.contractName, deployArgs);
     }
-
-    const contract = new Contract(await baseContract.getAddress(), baseContract.interface, baseContract.runner);
 
     await this.saveToDB(contract);
 
     this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
 
-    this.logger.info(`Deployment success for ${this.contractName} at ${await baseContract.getAddress()}`);
+    this.logger.info(`Deployment success for ${this.contractName} at ${await contract.getAddress()}`);
   }
 
   async needsPostDeploy () {
@@ -126,7 +122,6 @@ export class BaseDeployMission {
 
   async execute () {
     if (await this.needsDeploy()) {
-      await this.preDeploy();
       await this.deploy();
     } else {
       this.logger.info(`Skipping ${this.contractName} deployment...`);
@@ -142,40 +137,49 @@ export class BaseDeployMission {
     const address = await this.campaign[this.instanceName].getAddress();
 
     const ctorArgs = !this.proxyData.isProxy ? await this.deployArgs() : undefined;
+    try {
+      await this.campaign.deployer.etherscanVerify({
+        address,
+        ctorArgs,
+      });
 
-    await this.campaign.deployer.etherscanVerify({
-      address,
-      ctorArgs,
-    });
-
-    this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
+      this.logger.debug(`Etherscan verification for ${this.contractName} finished successfully.`);
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    } catch (e : any) {
+      this.logger.error(`Etherscan verification for ${this.contractName} failed.`);
+      this.logger.error(e.message);
+      this.logger.debug("Continuing...");
+    }
   }
 
-  async getMonitoringData () : Promise<Array<ContractByName>> {
+  async getMonitoringData () : Promise<Array<ITenderlyContractData>> {
+    const networkId = NetworkData[this.campaign.config.env].id;
     const implName = this.contractName;
     let implAddress = await this.campaign[this.instanceName].getAddress();
 
     if (this.proxyData.isProxy) {
-      const proxyName = this.proxyData.kind === ProxyKinds.uups ? erc1967ProxyName : transparentProxyName;
       const proxyAddress = await this.campaign[this.instanceName].getAddress();
       implAddress = this.implAddress || await this.campaign.deployer.getProxyImplAddress(proxyAddress);
 
       return [
         {
-          name: proxyName,
+          display_name: `${this.contractName}Proxy`,
           address: proxyAddress,
+          network_id: networkId,
         },
         {
-          name: implName,
+          display_name: `${implName}Impl`,
           address: implAddress,
+          network_id: networkId,
         },
       ];
     }
 
     return [
       {
-        name: implName,
+        display_name: implName,
         address: implAddress,
+        network_id: networkId,
       },
     ];
   }
