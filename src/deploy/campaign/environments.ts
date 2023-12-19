@@ -18,10 +18,8 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { DEFAULT_MONGO_URI } from "../db/mongo-adapter/constants";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import env from "hardhat";
 
 
 const getCustomAddresses = (
@@ -164,7 +162,7 @@ export const validateEnv = (
     throw new Error("Must provide a default royalty fraction");
   }
 
-  if (!process.env.MONGO_URI) {
+  if (!process.env.MONGO_DB_URI) {
     throw new Error(`Must provide a Mongo URI used for ${envLevel} environment!`);
   }
 
@@ -174,7 +172,7 @@ export const validateEnv = (
   if (envLevel === "prod") {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
-    requires(!process.env.MONGO_URI.includes("localhost"), MONGO_URI_ERR);
+    requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
   }
 
   if (process.env.VERIFY_CONTRACTS === "true") {
