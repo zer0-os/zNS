@@ -1,4 +1,3 @@
-import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -6,62 +5,62 @@ export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO NAME ADDRESS";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNA";
 
-export const DEFAULT_ROYALTY_FRACTION = BigNumber.from("200");
+export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
-export const DEFAULT_REGISTRATION_FEE_PERCENT = BigNumber.from("222");
-export const DEFAULT_PERCENTAGE_BASIS = BigNumber.from("10000");
+export const DEFAULT_PROTOCOL_FEE_PERCENT = BigInt("222");
+export const DEFAULT_PERCENTAGE_BASIS = BigInt("10000");
 
-export const DEFAULT_DECIMALS = BigNumber.from(18);
-export const DECAULT_PRECISION = BigNumber.from(2);
-export const DEFAULT_PRECISION_MULTIPLIER = BigNumber.from(10).pow(DEFAULT_DECIMALS.sub(DECAULT_PRECISION));
-
-// eslint-disable-next-line no-shadow
-export enum AccessType {
-  LOCKED,
-  OPEN,
-  MINTLIST,
-}
+export const DEFAULT_DECIMALS = BigInt(18);
+export const DECAULT_PRECISION = BigInt(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DECAULT_PRECISION);
 
 // eslint-disable-next-line no-shadow
-export enum OwnerOf {
-  NAME,
-  TOKEN,
-  BOTH,
-}
+export const AccessType  = {
+  LOCKED: 0n,
+  OPEN: 1n,
+  MINTLIST: 2n,
+};
 
 // eslint-disable-next-line no-shadow
-export enum PaymentType {
-  DIRECT,
-  STAKE,
-}
+export const OwnerOf = {
+  NAME: 0n,
+  TOKEN: 1n,
+  BOTH: 2n,
+};
+
+// eslint-disable-next-line no-shadow
+export const PaymentType = {
+  DIRECT: 0n,
+  STAKE: 1n,
+};
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
-  maxPrice: ethers.utils.parseEther("25000"),
-  minPrice: ethers.utils.parseEther("2000"),
-  maxLength: BigNumber.from(50),
-  baseLength: BigNumber.from(4),
+  maxPrice: ethers.parseEther("25000"),
+  minPrice: ethers.parseEther("2000"),
+  maxLength: BigInt(50),
+  baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-  feePercentage: DEFAULT_REGISTRATION_FEE_PERCENT,
+  feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
   isSet: true,
 };
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
-  maxPrice: ethers.constants.Zero,
-  minPrice: ethers.constants.Zero,
-  maxLength: BigNumber.from(0),
-  baseLength: BigNumber.from(0),
-  precisionMultiplier: BigNumber.from(0),
-  feePercentage: BigNumber.from(0),
+  maxPrice: BigInt(0),
+  minPrice: BigInt(0),
+  maxLength: BigInt(0),
+  baseLength: BigInt(0),
+  precisionMultiplier: BigInt(0),
+  feePercentage: BigInt(0),
   isSet: true,
 };
 
 export const paymentConfigEmpty = {
-  token: ethers.constants.AddressZero,
-  beneficiary: ethers.constants.AddressZero,
+  token: ethers.ZeroAddress,
+  beneficiary: ethers.ZeroAddress,
 };
 
 export const distrConfigEmpty = {
-  pricerContract: ethers.constants.AddressZero,
+  pricerContract: ethers.ZeroAddress,
   paymentType: PaymentType.DIRECT,
   accessType: AccessType.LOCKED,
 };

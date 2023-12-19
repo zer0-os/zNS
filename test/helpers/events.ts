@@ -1,74 +1,28 @@
-import { BigNumber, ContractReceipt, Event } from "ethers";
 import { IZNSContracts } from "./types";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
 
-/**
- * Get a specific named event from a transaction log
- *
- * @param txReceipt The transaction receipt
- * @param eventName The name of the event to get
- * @returns The event data, if found
- */
-export const getEvent = async (
-  txReceipt : ContractReceipt,
-  eventName : string,
-) : Promise<Array<Event> | undefined> => {
-  const customEvent = txReceipt.events?.filter(event => {
-    if (event.event === eventName) return event;
-  });
-
-  return customEvent;
-};
-
-export const getDomainHashFromReceipt = async (
-  txReceipt : ContractReceipt,
-  eventName = "DomainRegistered",
-) : Promise<string> => {
-  const customEvent = txReceipt.events?.find(event => {
-    if (event.event === eventName) return event;
-  });
-
-  if (!customEvent) throw Error("Event not found");
-
-  let domainHash = customEvent.args?.domainHash;
-
-  if (!domainHash) {
-    domainHash = customEvent.args?.subdomainHash;
-  }
-
-  if (!domainHash) throw Error("Domain hash not found");
-
-  return domainHash;
-};
-
-export const getTokenIdFromReceipt = async (
-  txReceipt : ContractReceipt,
-  eventName = "DomainRegistered",
-) : Promise<BigNumber> => {
-  const tokenId = await getDomainHashFromReceipt(txReceipt, eventName);
-  return BigNumber.from(tokenId);
-};
 
 export const getDomainRegisteredEvents = async ({
   zns,
-  domainHash = null,
-  tokenId = null,
-  registrant = null,
+  domainHash = undefined,
+  tokenId = undefined,
+  registrant = undefined,
   blockRange = 50,
 } : {
   zns : IZNSContracts;
-  domainHash ?: string | null;
-  tokenId ?: BigNumber | null;
-  registrant ?: string | null;
+  domainHash ?: string | undefined;
+  tokenId ?: bigint | undefined;
+  registrant ?: string | undefined;
   blockRange ?: number;
-}) : Promise<Array<Event>> => {
+}) : Promise<Array<TypedEventLog<TypedContractEvent>>> => {
   const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
-    null,
+    undefined,
     domainHash,
     tokenId,
-    null,
+    undefined,
     registrant
   );
 
@@ -84,10 +38,10 @@ export const getDomainHashFromEvent = async ({
 }) : Promise<string> => {
   const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
-    null,
-    null,
-    null,
-    null,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
     user.address
   );
 

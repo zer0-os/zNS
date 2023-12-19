@@ -25,7 +25,6 @@ export const stopMongo = async () => {
   const logger = getLogger();
 
   try {
-    // TODO db: possibly change this to delete the container
     await execAsync("npm run mongo:stop");
     logger.info("MongoDB stopped");
   } catch (e) {

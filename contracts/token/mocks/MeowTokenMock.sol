@@ -3,6 +3,7 @@
 pragma solidity 0.8.3;
 
 import { MeowToken } from "@zero-tech/ztoken/contracts/MeowToken.sol";
+import { MeowTokenTest } from "@zero-tech/ztoken/contracts/MeowTokenTest.sol";
 
 
 contract MeowTokenMock is MeowToken {

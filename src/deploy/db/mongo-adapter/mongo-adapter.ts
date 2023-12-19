@@ -53,11 +53,11 @@ export class MongoDBAdapter {
       this.db = this.client.db(this.dbName);
 
       this.logger.info({
-        message: `MongoDB connected at ${this.dbUri}`,
+        message: "MongoDB connected",
       });
     } catch (e) {
       this.logger.error({
-        message: `MongoDB connection failed at ${this.dbUri}`,
+        message: "MongoDB connection failed",
         error: e,
       });
       throw e;
@@ -76,10 +76,10 @@ export class MongoDBAdapter {
   async close (forceClose = false) {
     try {
       await this.client.close(forceClose);
-      this.logger.info(`MongoDB connection closed at ${this.dbUri}`);
+      this.logger.info("MongoDB connection closed");
     } catch (e) {
       this.logger.error({
-        message: `MongoDB connection failed to close at ${this.dbUri}`,
+        message: "MongoDB connection failed to close",
         error: e,
       });
       throw e;
@@ -118,7 +118,6 @@ export class MongoDBAdapter {
 
   // Versioning methods
   async configureVersioning (version ?: string) {
-    // TODO dep: add archiving logic once determined on how to handle it
     const tempV = await this.getTempVersion();
     const deployedV = await this.getDeployedVersion();
 

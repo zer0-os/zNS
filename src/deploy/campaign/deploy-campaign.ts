@@ -5,13 +5,12 @@ import {
   TLogger,
   IMissionInstances,
   TZNSContractState,
+  ContractV6,
 } from "./types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { TDeployMissionCtor } from "../missions/types";
+import { ITenderlyContractData, TDeployMissionCtor } from "../missions/types";
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { Contract } from "ethers";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
 
 
 export class DeployCampaign {
@@ -20,7 +19,6 @@ export class DeployCampaign {
   dbAdapter : MongoDBAdapter;
   logger : TLogger;
   config : IDeployCampaignConfig;
-  version : string;
 
   // TODO dep: improve typing here so that methods of each contract type are resolved in Mission classes!
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +54,6 @@ export class DeployCampaign {
     this.dbAdapter = dbAdapter;
     this.logger = logger;
     this.config = config;
-    this.version = Date.now().toString();
 
     const campaignProxy = new Proxy(this, DeployCampaign.indexedHandler);
 
@@ -105,7 +102,7 @@ export class DeployCampaign {
     this.logger.info("Deploy Campaign execution finished successfully.");
   }
 
-  updateStateContract (instanceName : string, contractName : string, contract : Contract) {
+  updateStateContract (instanceName : string, contractName : string, contract : ContractV6) {
     this.state.contracts[instanceName] = contract;
     this.logger.debug(`Data of deployed contract '${contractName}' is added to Campaign state at '${instanceName}'.`);
   }
@@ -128,9 +125,9 @@ export class DeployCampaign {
 
     const contracts = await Object.values(this.state.instances).reduce(
       async (
-        acc : Promise<Array<ContractByName>>,
+        acc : Promise<Array<ITenderlyContractData>>,
         missionInstance : BaseDeployMission,
-      ) : Promise<Array<ContractByName>> => {
+      ) : Promise<Array<ITenderlyContractData>> => {
         const newAcc = await acc;
         const data = await missionInstance.getMonitoringData();
 
@@ -139,8 +136,18 @@ export class DeployCampaign {
       Promise.resolve([])
     );
 
-    await this.deployer.tenderlyVerify(contracts);
+    try {
+      const response = await this.deployer.tenderlyPush(contracts);
+      this.logger.info(
+        `Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}
+        with data: ${JSON.stringify(response, null, "\t")}`
+      );
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    } catch (e : any) {
+      this.logger.error("Tenderly push failed.");
+      this.logger.error(e.message);
+      this.logger.debug("Continuing...");
+    }
 
-    this.logger.info(`Tenderly push finished successfully for Project ${this.config.postDeploy.tenderlyProjectSlug}.`);
   }
 }

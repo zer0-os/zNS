@@ -16,3 +16,6 @@ deployments
 *.env
 docker
 docker*.tgz
+
+# We don't ever use the generated manifests
+.openzeppelin

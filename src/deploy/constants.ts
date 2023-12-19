@@ -8,19 +8,19 @@ export const ProxyKinds : IProxyKinds = {
 };
 
 // role names
-export const GOVERNOR_ROLE = ethers.utils.solidityKeccak256(
+export const GOVERNOR_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["GOVERNOR_ROLE"],
 );
-export const ADMIN_ROLE = ethers.utils.solidityKeccak256(
+export const ADMIN_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["ADMIN_ROLE"],
 );
-export const REGISTRAR_ROLE = ethers.utils.solidityKeccak256(
+export const REGISTRAR_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["REGISTRAR_ROLE"],
 );
-export const EXECUTOR_ROLE = ethers.utils.solidityKeccak256(
+export const EXECUTOR_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["EXECUTOR_ROLE"],
 );

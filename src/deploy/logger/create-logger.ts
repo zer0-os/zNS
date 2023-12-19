@@ -1,6 +1,5 @@
 import winston from "winston";
 import { TLogger } from "../campaign/types";
-import { includes } from "hardhat/internal/hardhat-network/provider/filter";
 
 let logger : TLogger | null = null;
 
@@ -15,7 +14,6 @@ export const createLogger = (logLevel ?: string, silent ?: boolean) => winston.c
   transports: [
     new winston.transports.Console(),
   ],
-  // TODO dep: do we need this to be set ?
   exitOnError: false,
   silent,
 });

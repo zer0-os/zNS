@@ -11,7 +11,7 @@ export class ZNSAccessControllerDM extends BaseDeployMission {
   contractName = znsNames.accessController.contract;
   instanceName = znsNames.accessController.instance;
 
-  deployArgs () {
+  async deployArgs () {
     const {
       governorAddresses,
       adminAddresses,

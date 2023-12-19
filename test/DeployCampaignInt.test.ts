@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/ban-ts-comment, max-classes-per-file */
 import * as hre from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { expect } from "chai";
 import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
@@ -10,9 +11,8 @@ import {
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
-  MONGO_URI_ERR, erc1967ProxyName,
+  MONGO_URI_ERR,
 } from "./helpers";
-import { expect } from "chai";
 import {
   MeowTokenDM,
   meowTokenName,
@@ -23,7 +23,7 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
-import { transparentProxyName, znsNames } from "../src/deploy/missions/contracts/names";
+import { znsNames } from "../src/deploy/missions/contracts/names";
 import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -31,19 +31,18 @@ import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
 import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
-import { ProxyKinds, ResolverTypes } from "../src/deploy/constants";
+import { ResolverTypes } from "../src/deploy/constants";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig, validate } from "../src/deploy/campaign/environments";
-import { ethers, BigNumber } from "ethers";
+import { getConfig } from "../src/deploy/campaign/environments";
+import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { TDeployArgs } from "../src/deploy/missions/types";
-import { ContractByName } from "@tenderly/hardhat-tenderly/dist/tenderly/types";
+import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 
-const execAsync = promisify(exec);
 
+const execAsync = promisify(exec);
 
 describe("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
@@ -58,14 +57,16 @@ describe("Deploy Campaign Test", () => {
 
   let mongoAdapter : MongoDBAdapter;
 
+  const env = "dev";
+
   before(async () => {
     [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
   });
 
   describe("MEOW Token Ops", () => {
     before(async () => {
-
       campaignConfig = {
+        env,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -94,15 +95,17 @@ describe("Deploy Campaign Test", () => {
 
       const { meowToken, dbAdapter } = campaign;
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
+
+      const balanceBefore = await meowToken.balanceOf(userA.address);
       // `mint()` only exists on the Mocked contract
       await meowToken.connect(deployAdmin).mint(
         userA.address,
         toMint
       );
 
-      const balance = await meowToken.balanceOf(userA.address);
-      expect(balance).to.equal(toMint);
+      const balanceAfter = await meowToken.balanceOf(userA.address);
+      expect(balanceAfter - balanceBefore).to.equal(toMint);
 
       await dbAdapter.dropDB();
     });
@@ -119,9 +122,9 @@ describe("Deploy Campaign Test", () => {
           kind: "transparent",
         });
 
-      await meow.deployed();
+      await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = meow.address;
+      campaignConfig.stakingTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -139,9 +142,8 @@ describe("Deploy Campaign Test", () => {
 
       expect(meowToken.address).to.equal(meow.address);
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
-      // TODO dep: what else ??
 
-      const toMint = hre.ethers.utils.parseEther("972315");
+      const toMint = hre.ethers.parseEther("972315");
       // `mint()` only exists on the Mocked contract
       try {
         await meowToken.connect(deployAdmin).mint(
@@ -156,6 +158,7 @@ describe("Deploy Campaign Test", () => {
         );
       }
 
+      // Cannot call to real db to
       await dbAdapter.dropDB();
     });
   });
@@ -195,7 +198,7 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer(deployAdmin);
+      const deployer = new HardhatDeployer(deployAdmin, env);
       let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
@@ -228,7 +231,7 @@ describe("Deploy Campaign Test", () => {
         expect(contracts[failingInstanceName]).to.be.undefined;
       } else {
         // it should deploy AddressResolver
-        expect(contracts[failingInstanceName].address).to.be.properAddress;
+        expect(await contracts[failingInstanceName].getAddress()).to.be.properAddress;
       }
 
       // check DB to verify we only deployed half
@@ -286,7 +289,7 @@ describe("Deploy Campaign Test", () => {
       expect(Object.keys(state.instances).length).to.equal(10);
       expect(state.missions.length).to.equal(10);
       // it should deploy AddressResolver
-      expect(state.contracts.addressResolver.address).to.be.properAddress;
+      expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
       // check DB to verify we deployed everything
       const allNames = deployedNames.concat(undeployedNames);
@@ -311,7 +314,7 @@ describe("Deploy Campaign Test", () => {
           const fromState = nextCampaign[instance];
 
           expect(fromDB?.address).to.equal(address);
-          expect(fromState.address).to.equal(address);
+          expect(await fromState.getAddress()).to.equal(address);
         },
         Promise.resolve()
       );
@@ -327,6 +330,7 @@ describe("Deploy Campaign Test", () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
       campaignConfig = {
+        env,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -439,7 +443,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not add resolverType to Registry
-        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.constants.AddressZero);
+        expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(ethers.ZeroAddress);
       };
 
       // check contracts are deployed correctly
@@ -470,7 +474,7 @@ describe("Deploy Campaign Test", () => {
         registry,
         addressResolver,
       } = nextCampaign;
-      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(addressResolver.address);
+      expect(await registry.getResolverType(ResolverTypes.address)).to.be.equal(await addressResolver.getAddress());
     });
 
     // eslint-disable-next-line max-len
@@ -557,7 +561,7 @@ describe("Deploy Campaign Test", () => {
         } = failingCampaign;
 
         // we are checking that postDeploy did not grant REGISTRAR_ROLE to RootRegistrar
-        expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.false;
+        expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.false;
       };
 
       // check contracts are deployed correctly
@@ -588,11 +592,21 @@ describe("Deploy Campaign Test", () => {
         accessController,
         rootRegistrar,
       } = nextCampaign;
-      expect(await accessController.isRegistrar(rootRegistrar.address)).to.be.true;
+      expect(await accessController.isRegistrar(await rootRegistrar.getAddress())).to.be.true;
     });
   });
 
   describe("Configurable Environment & Validation", () => {
+    let envInitial : string;
+
+    beforeEach(async () => {
+      envInitial = JSON.stringify(process.env);
+    });
+
+    afterEach(async () => {
+      process.env = JSON.parse(envInitial);
+    });
+
     // The `validate` function accepts the environment parameter only for the
     // purpose of testing here as manipulating actual environment variables
     // like `process.env.<VAR> = "value"` is not possible in a test environment
@@ -601,21 +615,21 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IDeployCampaignConfig = await getConfig(
-        deployAdmin,
-        zeroVault,
-        [governor.address],
-        [admin.address],
-      );
+      const localConfig : IDeployCampaignConfig = await getConfig({
+        deployer: deployAdmin,
+        zeroVaultAddress: zeroVault.address,
+        governors: [governor.address],
+        admins: [admin.address],
+      });
 
-      expect(localConfig.deployAdmin.address).to.eq(deployAdmin.address);
+      expect(await localConfig.deployAdmin.getAddress()).to.eq(deployAdmin.address);
       expect(localConfig.governorAddresses[0]).to.eq(governor.address);
-      expect(localConfig.governorAddresses[1]).to.be.undefined;
+      expect(localConfig.governorAddresses[1]).to.eq(deployAdmin.address);
       expect(localConfig.adminAddresses[0]).to.eq(admin.address);
-      expect(localConfig.adminAddresses[1]).to.be.undefined;
+      expect(localConfig.adminAddresses[1]).to.eq(deployAdmin.address);
       expect(localConfig.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
       expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
-      expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(deployAdmin.address);
+      expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(zeroVault.address);
       expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
       expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
     });
@@ -633,12 +647,12 @@ describe("Deploy Campaign Test", () => {
 
       let zns : TZNSContractState;
 
-      const config : IDeployCampaignConfig = getConfig(
-        userB,
-        userA,
-        [userB.address, admin.address], // governors
-        [userB.address, governor.address], // admins
-      );
+      const config : IDeployCampaignConfig = await getConfig({
+        deployer: userB,
+        zeroVaultAddress: userA.address,
+        governors: [userB.address, admin.address], // governors
+        admins: [userB.address, governor.address], // admins
+      });
 
       const campaign = await runZnsCampaign({
         config,
@@ -649,12 +663,12 @@ describe("Deploy Campaign Test", () => {
       /* eslint-disable-next-line prefer-const */
       zns = campaign.state.contracts;
 
-      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.constants.HashZero);
+      const rootPaymentConfig = await zns.treasury.paymentConfigs(ethers.ZeroHash);
 
       expect(await zns.accessController.isAdmin(userB.address)).to.be.true;
       expect(await zns.accessController.isAdmin(governor.address)).to.be.true;
       expect(await zns.accessController.isGovernor(admin.address)).to.be.true;
-      expect(rootPaymentConfig.token).to.eq(zns.meowToken.address);
+      expect(rootPaymentConfig.token).to.eq(await zns.meowToken.getAddress());
       expect(rootPaymentConfig.beneficiary).to.eq(userA.address);
 
       await dbAdapter.dropDB();
@@ -695,14 +709,12 @@ describe("Deploy Campaign Test", () => {
 
     it("Throws if env variable is invalid", async () => {
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-
-        validate(config, "other");
+        await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
@@ -711,16 +723,15 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate when mocking MEOW on prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "true";
+
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-        // Modify the config
-        config.mockMeowToken = true;
-        validate(config, "prod");
+        await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
 
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
@@ -729,18 +740,16 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = "0x123";
+
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = "0x123";
-
-        validate(config, "prod");
+        await getConfig({
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(STAKING_TOKEN_ERR);
@@ -748,22 +757,21 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if invalid curve for pricing", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.BASE_LENGTH = "3";
+      process.env.MAX_LENGTH = "5";
+      process.env.MAX_PRICE = "0";
+      process.env.MIN_PRICE = ethers.parseEther("3").toString();
+
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-        config.rootPriceConfig.baseLength = BigNumber.from(3);
-        config.rootPriceConfig.maxLength = BigNumber.from(5);
-        config.rootPriceConfig.maxPrice = ethers.constants.Zero;
-        config.rootPriceConfig.minPrice = ethers.utils.parseEther("3");
-
-        validate(config, "prod");
+        await getConfig({
+          env: "prod",
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(INVALID_CURVE_ERR);
@@ -771,42 +779,39 @@ describe("Deploy Campaign Test", () => {
     });
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      // Falls back onto the default URI which is for localhost and fails in prod
+      process.env.MONGO_URI = "";
+      process.env.ROYALTY_RECEIVER = "0x123";
+      process.env.ROYALTY_FRACTION = "100";
+
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-
-        // Normally we would call to an env variable to grab this value
-        const uri = "";
-
-        // Falls back onto the default URI which is for localhost and fails in prod
-        validate(config, "prod", uri);
+        await getConfig({
+          env: "prod",
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
-        expect(e.message).includes(MONGO_URI_ERR);
+        expect(e.message).includes("Must provide a Mongo URI used for prod environment!");
       }
 
+      process.env.MOCK_MEOW_TOKEN = "false";
+      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.MONGO_URI = "mongodb://localhost:27018";
+      process.env.ZERO_VAULT_ADDRESS = "0x123";
+
       try {
-        const config = await getConfig(
-          deployAdmin,
-          zeroVault,
-          [deployAdmin.address, governor.address],
-          [deployAdmin.address, admin.address],
-        );
-
-        config.mockMeowToken = false;
-        config.stakingTokenAddress = MeowMainnet.address;
-
-        // Normally we would call to an env variable to grab this value
-        const uri = "mongodb://localhost:27018";
-
-        validate(config, "prod", uri);
+        await getConfig({
+          env: "prod",
+          deployer: deployAdmin,
+          zeroVaultAddress: zeroVault.address,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+        });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(MONGO_URI_ERR);
@@ -814,7 +819,6 @@ describe("Deploy Campaign Test", () => {
     });
   });
 
-  // TODO dep: add more versioning tests here for DB versions!
   describe("Versioning", () => {
     let campaign : DeployCampaign;
 
@@ -822,8 +826,9 @@ describe("Deploy Campaign Test", () => {
       await saveTag();
 
       campaignConfig = {
+        env,
         deployAdmin,
-        governorAddresses: [deployAdmin.address],
+        governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
           name: ZNS_DOMAIN_TOKEN_NAME,
@@ -988,7 +993,7 @@ describe("Deploy Campaign Test", () => {
       expect(oldRegistryDocFromNewDB?.bytecode).to.equal(registryDocInitial?.bytecode);
 
       // make sure contracts in state have been picked up correctly from DB
-      expect(newContracts.registry.address).to.equal(registryDocInitial?.address);
+      expect(await newContracts.registry.getAddress()).to.equal(registryDocInitial?.address);
 
       // reset back to default
       process.env.MONGO_DB_VERSION = initialDBVersionVal;
@@ -999,11 +1004,12 @@ describe("Deploy Campaign Test", () => {
     let config : IDeployCampaignConfig;
 
     before (async () => {
-      [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
+      [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
 
       config = {
+        env: "dev",
         deployAdmin,
-        governorAddresses: [deployAdmin.address],
+        governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
           name: ZNS_DOMAIN_TOKEN_NAME,
@@ -1038,41 +1044,46 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin);
+      const deployer = new HardhatDeployerMock(deployAdmin, env);
 
       const campaign = await runZnsCampaign({
-        deployer,
         config,
+        deployer,
       });
 
       const { state: { contracts } } = campaign;
       ({ dbAdapter: mongoAdapter } = campaign);
 
-      Object.values(contracts).forEach(({ address }, idx) => {
-        if (idx === 0) {
-          expect(verifyData[idx].ctorArgs).to.be.deep.eq([config.governorAddresses, config.adminAddresses]);
-        }
+      await Object.values(contracts).reduce(
+        async (acc, contract, idx) => {
+          await acc;
 
-        expect(verifyData[idx].address).to.equal(address);
-      });
+          if (idx === 0) {
+            expect(verifyData[idx].ctorArgs).to.be.deep.eq([config.governorAddresses, config.adminAddresses]);
+          }
+
+          expect(verifyData[idx].address).to.equal(await contract.getAddress());
+        },
+        Promise.resolve()
+      );
     });
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
-      let tenderlyData : Array<ContractByName> = [];
+      let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer {
-        async tenderlyVerify (contracts : Array<ContractByName>) {
+        async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin);
+      const deployer = new HardhatDeployerMock(deployAdmin,  env);
 
       config.postDeploy.monitorContracts = true;
       config.postDeploy.verifyContracts = false;
 
       const campaign = await runZnsCampaign({
-        deployer,
         config,
+        deployer,
       });
 
       const { state: { instances } } = campaign;
@@ -1086,22 +1097,19 @@ describe("Deploy Campaign Test", () => {
           const dbData = await instance.getFromDB();
 
           if (instance.proxyData.isProxy) {
-            const proxyName = instance.proxyData.kind === ProxyKinds.uups
-              ? erc1967ProxyName
-              : transparentProxyName;
             // check proxy
             expect(tenderlyData[idx].address).to.be.eq(dbData?.address);
-            expect(tenderlyData[idx].name).to.be.eq(proxyName);
+            expect(tenderlyData[idx].display_name).to.be.eq(`${instance.contractName}Proxy`);
 
             // check impl
             expect(tenderlyData[idx + 1].address).to.be.eq(dbData?.implementation);
-            expect(tenderlyData[idx + 1].name).to.be.eq(dbData?.name);
-            expect(tenderlyData[idx + 1].name).to.be.eq(instance.contractName);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${dbData?.name}Impl`);
+            expect(tenderlyData[idx + 1].display_name).to.be.eq(`${instance.contractName}Impl`);
             idx += 2;
           } else {
             expect(tenderlyData[idx].address).to.equal(dbData?.address);
-            expect(tenderlyData[idx].name).to.equal(dbData?.name);
-            expect(tenderlyData[idx].name).to.equal(instance.contractName);
+            expect(tenderlyData[idx].display_name).to.equal(dbData?.name);
+            expect(tenderlyData[idx].display_name).to.equal(instance.contractName);
             idx++;
           }
         },

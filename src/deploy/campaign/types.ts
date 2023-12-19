@@ -1,22 +1,25 @@
 import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { BigNumber, Contract } from "ethers";
+import { BaseContract } from "ethers";
 import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
 import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../test/helpers/types";
 import { Logger as WinstonLogger } from "winston";
 import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
+import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
+export type ContractV6 = BaseContract & Omit<BaseContract, keyof BaseContract>;
 
 export interface IDeployCampaignConfig {
-  deployAdmin : SignerWithAddress;
+  env : string;
+  deployAdmin : HardhatEthersSigner | DefenderRelaySigner;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
     name : string;
     symbol : string;
     defaultRoyaltyReceiver : string;
-    defaultRoyaltyFraction : BigNumber;
+    defaultRoyaltyFraction : bigint;
   };
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
@@ -32,7 +35,7 @@ export interface IDeployCampaignConfig {
 export type TLogger = WinstonLogger | Console;
 
 export interface IContractState {
-  [key : string] : Contract;
+  [key : string] : ContractV6;
 }
 
 export interface IMissionInstances {

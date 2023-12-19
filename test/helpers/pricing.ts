@@ -1,4 +1,3 @@
-import { BigNumber } from "ethers";
 import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
@@ -15,7 +14,7 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 export const getCurvePrice = (
   name : string,
   priceConfig = DEFAULT_PRICE_CONFIG,
-) : BigNumber => {
+) : bigint => {
   // Get price configuration for contract
   const {
     maxPrice,
@@ -25,27 +24,25 @@ export const getCurvePrice = (
     precisionMultiplier,
   } = priceConfig;
 
-  if (baseLength.eq(0)) return maxPrice;
+  if (baseLength === 0n) return maxPrice;
 
-  if (BigNumber.from(name.length).lte(baseLength)) {
+  if (BigInt(name.length) <= baseLength) {
     return maxPrice;
   }
 
-  if (BigNumber.from(name.length).gt(maxLength)) {
+  if (BigInt(name.length) > maxLength) {
     return minPrice;
   }
 
-  const base = baseLength.mul(maxPrice).div(name.length);
+  const base = baseLength * maxPrice / BigInt(name.length);
 
-  return base.div(precisionMultiplier).mul(precisionMultiplier);
+  return base / precisionMultiplier * precisionMultiplier;
 };
 
 export const getStakingOrProtocolFee = (
-  forAmount : BigNumber,
-  feePercentage : BigNumber = DEFAULT_PRICE_CONFIG.feePercentage,
-) => forAmount
-  .mul(feePercentage)
-  .div(DEFAULT_PERCENTAGE_BASIS);
+  forAmount : bigint,
+  feePercentage : bigint = DEFAULT_PRICE_CONFIG.feePercentage,
+) => forAmount * feePercentage / DEFAULT_PERCENTAGE_BASIS;
 
 /**
  * Get the domain name price, the registration fee and the total
@@ -59,9 +56,9 @@ export const getPriceObject = (
   name : string,
   priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = DEFAULT_PRICE_CONFIG,
 ) : {
-  totalPrice : BigNumber;
-  expectedPrice : BigNumber;
-  stakeFee : BigNumber;
+  totalPrice : bigint;
+  expectedPrice : bigint;
+  stakeFee : bigint;
 } => {
   let expectedPrice;
   const configLen = Object.keys(priceConfig).length;
@@ -77,7 +74,7 @@ export const getPriceObject = (
 
   const stakeFee = getStakingOrProtocolFee(expectedPrice, feePercentage);
 
-  const totalPrice = expectedPrice.add(stakeFee);
+  const totalPrice = expectedPrice + stakeFee;
 
   return {
     totalPrice,

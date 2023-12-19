@@ -1,27 +1,37 @@
-import * as hre from "hardhat";
 import { getConfig } from "./campaign/environments";
-import { getLogger } from "./logger/create-logger";
 import { runZnsCampaign } from "./zns-campaign";
+import { Defender } from "@openzeppelin/defender-sdk";
+
+import { getLogger } from "./logger/create-logger";
 
 const logger = getLogger();
 
 const runCampaign = async () => {
-  const [deployer, zeroVault] = await hre.ethers.getSigners();
+  const credentials = {
+    apiKey: process.env.DEFENDER_KEY,
+    apiSecret: process.env.DEFENDER_SECRET,
+    relayerApiKey: process.env.RELAYER_KEY,
+    relayerApiSecret: process.env.RELAYER_SECRET,
+  };
 
-  // Reading `ENV_LEVEL` environment variable to determine rules to be enforced
-  const config = getConfig(
+  const client = new Defender(credentials);
+
+  const provider = client.relaySigner.getProvider();
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
+
+  const config = await getConfig({
     deployer,
-    zeroVault,
-  );
+  });
 
   await runZnsCampaign({
     config,
+    provider,
   });
 };
 
 runCampaign().catch(error => {
-  logger.error(error);
-  process.exitCode = 1;
+  logger.error(error.stack);
+  process.exit(1);
 }).finally(() => {
   process.exit(0);
 });

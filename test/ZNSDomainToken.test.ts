@@ -1,11 +1,11 @@
 import * as hre from "hardhat";
 import {
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSDomainToken__factory, ERC165__factory,
+  ZNSDomainToken__factory, ERC165__factory, ZNSDomainToken,
 } from "../typechain";
 import { expect } from "chai";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber, ethers } from "ethers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ethers } from "ethers";
 import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
@@ -20,7 +20,6 @@ import {
   DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
-import { parseEther } from "ethers/lib/utils";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
@@ -50,12 +49,12 @@ describe("ZNSDomainToken", () => {
   });
 
   it("should initialize correctly", async () => {
-    expect(await zns.domainToken.getAccessController()).to.equal(zns.accessController.address);
+    expect(await zns.domainToken.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
-    const royaltyInfo = await zns.domainToken.royaltyInfo("0", parseEther("100"));
+    const royaltyInfo = await zns.domainToken.royaltyInfo("0", ethers.parseEther("100"));
     expect(royaltyInfo[0]).to.equal(zns.zeroVaultAddress);
-    expect(royaltyInfo[1]).to.equal(parseEther("2"));
+    expect(royaltyInfo[1]).to.equal(ethers.parseEther("2"));
   });
 
   it("should NOT initialize twice", async () => {
@@ -70,8 +69,8 @@ describe("ZNSDomainToken", () => {
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSDomainToken__factory(deployer);
-    const impl = await getProxyImplAddress(zns.domainToken.address);
-    const implContract = factory.attach(impl);
+    const impl = await getProxyImplAddress(await zns.domainToken.getAddress());
+    const implContract = factory.attach(impl) as ZNSDomainToken;
 
     await expect(
       implContract.initialize(
@@ -86,13 +85,13 @@ describe("ZNSDomainToken", () => {
 
   describe("External functions", () => {
     it("Should register (mint) the token if caller has REGISTRAR_ROLE", async () => {
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       const tx = zns.domainToken
         .connect(mockRegistrar)
         .register(caller.address, tokenId, randomTokenURI);
 
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         caller.address,
         tokenId
       );
@@ -102,7 +101,7 @@ describe("ZNSDomainToken", () => {
     });
 
     it("Should revert when registering (minting) if caller does not have REGISTRAR_ROLE", async () => {
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       await expect(
         zns.domainToken
           .connect(caller)
@@ -114,7 +113,7 @@ describe("ZNSDomainToken", () => {
 
     it("Revokes a token", async () => {
       // Mint domain
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       await zns.domainToken
         .connect(mockRegistrar)
         .register(caller.address, tokenId, randomTokenURI);
@@ -129,7 +128,7 @@ describe("ZNSDomainToken", () => {
       // Verify Transfer event is emitted
       await expect(tx).to.emit(zns.domainToken, "Transfer").withArgs(
         caller.address,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         tokenId
       );
 
@@ -140,7 +139,7 @@ describe("ZNSDomainToken", () => {
 
   describe("Require Statement Validation", () => {
     it("Only the registrar can call to register a token", async () => {
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       const registerTx = zns.domainToken
         .connect(caller)
         .register(caller.address, tokenId, randomTokenURI);
@@ -151,7 +150,7 @@ describe("ZNSDomainToken", () => {
     });
 
     it("Only authorized can revoke a token", async () => {
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       // Mint domain
       await zns.domainToken
         .connect(mockRegistrar)
@@ -203,26 +202,26 @@ describe("ZNSDomainToken", () => {
       expect(
         await zns.domainToken.getAccessController()
       ).to.equal(
-        zns.accessController.address
+        await zns.accessController.getAddress()
       );
     });
   });
 
   describe("Royalties", () => {
     it("should set and correctly retrieve default royalty", async () => {
-      const assetPrice = parseEther("164");
+      const assetPrice = ethers.parseEther("164");
 
       const initialRoyaltyInfo = await zns.domainToken.royaltyInfo("0", assetPrice);
 
       // mint token
-      const tokenId = ethers.BigNumber.from("1326548");
+      const tokenId = BigInt("1326548");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
-      const royaltyPerc = BigNumber.from("237"); // 2.37%
+      const royaltyPerc = BigInt("237"); // 2.37%
 
       await zns.domainToken.connect(deployer).setDefaultRoyalty(beneficiary.address, royaltyPerc);
 
-      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(DEFAULT_PERCENTAGE_BASIS);
+      const royaltyAmountExp = assetPrice * royaltyPerc / DEFAULT_PERCENTAGE_BASIS;
 
       // try pulling with incorrect tokenID - should still return the correct amount
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
@@ -243,21 +242,21 @@ describe("ZNSDomainToken", () => {
 
     it("should set and correctly retrieve royalty for a specific token", async () => {
       // mint token
-      const tokenId = ethers.BigNumber.from("777356");
+      const tokenId = BigInt("777356");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
-      const assetPrice = parseEther("19");
-      const royaltyPerc = BigNumber.from("1013"); // 2.37%
+      const assetPrice = ethers.parseEther("19");
+      const royaltyPerc = BigInt("1013"); // 2.37%
 
       await zns.domainToken.connect(deployer).setTokenRoyalty(tokenId, beneficiary.address, royaltyPerc);
 
-      const royaltyAmountExp = assetPrice.mul(royaltyPerc).div(DEFAULT_PERCENTAGE_BASIS);
+      const royaltyAmountExp = assetPrice * royaltyPerc / DEFAULT_PERCENTAGE_BASIS;
 
       // try pulling with incorrect tokenID - should return default values from initizlize()
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
 
       expect(royaltyInfoNoID[0]).to.equal(zns.zeroVaultAddress);
-      expect(royaltyInfoNoID[1]).to.equal(assetPrice.mul(DEFAULT_ROYALTY_FRACTION).div(DEFAULT_PERCENTAGE_BASIS));
+      expect(royaltyInfoNoID[1]).to.equal(assetPrice * DEFAULT_ROYALTY_FRACTION / DEFAULT_PERCENTAGE_BASIS);
 
       // try pulling with correct tokenID - should return correct amount
       const royaltyInfo = await zns.domainToken.royaltyInfo(tokenId, assetPrice);
@@ -275,7 +274,7 @@ describe("ZNSDomainToken", () => {
 
     it("#setTokenRoyalty() should revert if called by anyone other than ADMIN_ROLE", async () => {
       // mint token
-      const tokenId = ethers.BigNumber.from("777356");
+      const tokenId = BigInt("777356");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
       await expect(
@@ -289,7 +288,7 @@ describe("ZNSDomainToken", () => {
   describe("Token URIs", () => {
     it("should support individual tokenURIs", async () => {
       // mint a token
-      const tokenId = ethers.BigNumber.from("13354684");
+      const tokenId = BigInt("13354684");
       const tokenURI = "https://www.zNS.domains/1a3c2f5";
 
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
@@ -302,7 +301,7 @@ describe("ZNSDomainToken", () => {
 
     it("should support baseURI method with tokenURI as 0", async () => {
       // mint a token
-      const tokenId = BigNumber.from("13354684");
+      const tokenId = BigInt("13354684");
       const baseURI = "https://www.zNS.domains/";
       const emptyTokenURI = "";
 
@@ -318,7 +317,7 @@ describe("ZNSDomainToken", () => {
 
     it("should support baseURI + tokenURI concatenation if both are set correctly", async () => {
       // mint a token
-      const tokenId = BigNumber.from("35226748");
+      const tokenId = BigInt("35226748");
       const baseURI = "https://www.zNS.domains/";
       const tokenURI = "1a3c2f5";
 
@@ -338,7 +337,7 @@ describe("ZNSDomainToken", () => {
     // ! proper checks should be added to the app to not let this happen !
     it("should return WRONG URI if both baseURI and tokenURI are set as separate links", async () => {
       // mint a token
-      const tokenId = BigNumber.from("777777");
+      const tokenId = BigInt("777777");
       const baseURI = "https://www.zNS.domains/";
       const tokenURI = "https://www.wilderworld.io/1a3c2f5";
 
@@ -357,7 +356,7 @@ describe("ZNSDomainToken", () => {
 
     it("should be able to switch from tokenURI to baseURI if tokenURI is deleted", async () => {
       // mint a token
-      const tokenId = BigNumber.from("333355");
+      const tokenId = BigInt("333355");
       const baseURI = "https://www.zNS.domains/";
       const tokenURI = "https://www.wilderworld.io/1a3c2f5";
 
@@ -383,7 +382,7 @@ describe("ZNSDomainToken", () => {
 
     it("#setTokenURI() should set tokenURI correctly", async () => {
       // mint a token
-      const tokenId = BigNumber.from("333355");
+      const tokenId = BigInt("333355");
       const tokenURI = "https://www.wilderworld.io/1a3c2f5";
       const newTokenURI = "https://www.zNS.domains/33fa57cd8";
 
@@ -408,7 +407,7 @@ describe("ZNSDomainToken", () => {
 
     it("#setTokenURI() should revert if called by anyone other than ADMIN_ROLE", async () => {
       // mint a token
-      const tokenId = BigNumber.from("333355");
+      const tokenId = BigInt("333355");
       const tokenURI = "https://www.wilderworld.io/1a3c2f5";
       const newTokenURI = "https://www.zNS.domains/33fa57cd8";
 
@@ -443,9 +442,9 @@ describe("ZNSDomainToken", () => {
 
     it("should support IERC165", async () => {
       const erc165Interface = ERC165__factory.createInterface();
-      const interfaceId = erc165Interface.getSighash(erc165Interface.functions["supportsInterface(bytes4)"]);
+      const fragment = erc165Interface.getFunction("supportsInterface");
 
-      expect(await zns.domainToken.supportsInterface(interfaceId)).to.be.true;
+      expect(await zns.domainToken.supportsInterface(fragment.selector)).to.be.true;
     });
 
     it("should not support random interface", async () => {
@@ -458,14 +457,14 @@ describe("ZNSDomainToken", () => {
       // DomainToken to upgrade to
       const factory = new ZNSDomainToken__factory(deployer);
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Confirm the deployer is a governor
       expect(
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(newDomainToken.address);
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(await newDomainToken.getAddress());
 
       await expect(upgradeTx).to.not.be.reverted;
     });
@@ -474,10 +473,10 @@ describe("ZNSDomainToken", () => {
       // DomainToken to upgrade to
       const factory = new ZNSDomainTokenUpgradeMock__factory(deployer);
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Call to register a token
-      const tokenId = ethers.BigNumber.from("1");
+      const tokenId = BigInt("1");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
       await zns.domainToken.connect(deployer).approve(caller.address, tokenId);
 
@@ -499,14 +498,14 @@ describe("ZNSDomainToken", () => {
 
       // DomainToken to upgrade to
       const newDomainToken = await factory.deploy();
-      await newDomainToken.deployed();
+      await newDomainToken.waitForDeployment();
 
       // Confirm the caller is not a governor
       await expect(zns.accessController.checkGovernor(caller.address)).to.be.revertedWith(
         getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
       );
 
-      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(newDomainToken.address);
+      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(await newDomainToken.getAddress());
 
       await expect(upgradeTx).to.be.revertedWith(
         getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
