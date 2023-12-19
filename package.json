@@ -29,6 +29,7 @@
     "gas-cost": "ts-node src/utils/gas-costs.ts",
     "docgen": "hardhat docgen",
     "save-tag": "chmod a+x ./src/utils/git-tag/save-tag.sh && bash ./src/utils/git-tag/save-tag.sh",
+    "base64": "ts-node src/utils/convert-base64.ts",
     "mongo:start": "docker-compose up -d",
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",

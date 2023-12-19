@@ -782,7 +782,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MOCK_MEOW_TOKEN = "false";
       process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
       // Falls back onto the default URI which is for localhost and fails in prod
-      process.env.MONGO_URI = "";
+      process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
       process.env.ROYALTY_FRACTION = "100";
 
@@ -801,7 +801,7 @@ describe("Deploy Campaign Test", () => {
 
       process.env.MOCK_MEOW_TOKEN = "false";
       process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
-      process.env.MONGO_URI = "mongodb://localhost:27018";
+      process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
       try {

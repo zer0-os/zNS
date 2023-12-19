@@ -56,17 +56,19 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * This can be 0 as this variable is not required to perform registration process
      * and can be set at a later time by the domain owner.
      * @param parentHash The hash of the parent domain (0x0 for root domains)
+     * @param label The name as the last part of the full domain string (level) registered
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
-     * @param label The name as the last part of the full domain string (level) registered
+     * @param tokenURI The tokenURI of the domain registered
      * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
-        uint256 indexed tokenId,
         string label,
+        uint256 indexed tokenId,
+        string tokenURI,
         address indexed registrant,
         address domainAddress
     );

@@ -473,8 +473,9 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.ZeroHash,
         lettersHash,
-        BigInt(lettersHash),
         letters,
+        BigInt(lettersHash),
+        DEFAULT_TOKEN_URI,
         deployer.address,
         ethers.ZeroAddress,
       );
@@ -493,8 +494,9 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.ZeroHash,
         alphaNumericHash,
-        BigInt(alphaNumericHash),
         alphaNumeric,
+        BigInt(alphaNumericHash),
+        DEFAULT_TOKEN_URI,
         deployer.address,
         ethers.ZeroAddress,
       );
@@ -513,8 +515,9 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.ZeroHash,
         withHyphenHash,
-        BigInt(withHyphenHash),
         withHyphen,
+        BigInt(withHyphenHash),
+        DEFAULT_TOKEN_URI,
         deployer.address,
         ethers.ZeroAddress,
       );
@@ -579,8 +582,9 @@ describe("ZNSRootRegistrar", () => {
       await expect(tx).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
         ethers.ZeroHash,
         hashFromTS,
-        BigInt(hashFromTS),
         defaultDomain,
+        BigInt(hashFromTS),
+        tokenURI,
         user.address,
         ethers.ZeroAddress,
       );

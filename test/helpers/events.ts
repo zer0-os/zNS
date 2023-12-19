@@ -21,9 +21,11 @@ export const getDomainRegisteredEvents = async ({
   const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
     domainHash,
+    undefined,
     tokenId,
     undefined,
-    registrant
+    registrant,
+    undefined
   );
 
   return zns.rootRegistrar.queryFilter(filter, latestBlock - blockRange, latestBlock);
@@ -42,7 +44,9 @@ export const getDomainHashFromEvent = async ({
     undefined,
     undefined,
     undefined,
-    user.address
+    undefined,
+    user.address,
+    undefined,
   );
 
   const events = await zns.rootRegistrar.queryFilter(filter, latestBlock - 2, latestBlock);
