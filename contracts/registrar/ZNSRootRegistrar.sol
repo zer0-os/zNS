@@ -198,8 +198,9 @@ contract ZNSRootRegistrar is
         emit DomainRegistered(
             args.parentHash,
             args.domainHash,
-            tokenId,
             args.label,
+            tokenId,
+            args.tokenURI,
             args.registrant,
             args.domainAddress
         );
