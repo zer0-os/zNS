@@ -9,6 +9,8 @@ import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { ICurvePriceConfig } from "../types/ICurvePriceConfig.sol";
+import { IZNSCurvePricer } from "../price/IZNSCurvePricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
@@ -66,6 +68,56 @@ contract ZNSRootRegistrar is
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
+    }
+
+    // If users *just* want a domain, they can use `registerRootDomain`, but this function will
+    // also setup a price config that allows other users to mint subdomains beneath them
+    // TODO Linearization issue with imports if ICurvePriceConfig added as `is` above
+    function registerRootDomainWithDefaults(
+        string calldata name,
+        address domainAddress,
+        string calldata tokenURI,
+        DistributionConfig calldata distributionConfig,
+        PaymentConfig calldata paymentConfig,
+        CurvePriceConfig calldata priceConfig
+    ) external override returns (bytes32) {
+        // Confirms string values are only [a-z0-9-]
+        name.validate();
+
+        // Create hash for given domain name
+        bytes32 domainHash = keccak256(bytes(name));
+
+        require(
+            !registry.exists(domainHash),
+            "ZNSRootRegistrar: Domain already exists"
+        );
+
+        // Get price for the domain
+        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
+
+        _coreRegister(
+            CoreRegisterArgs(
+                bytes32(0),
+                domainHash,
+                msg.sender,
+                domainAddress,
+                domainPrice,
+                0,
+                name,
+                tokenURI,
+                true,
+                paymentConfig
+            )
+        );
+
+        if (address(distributionConfig.pricerContract) != address(0)) {
+            // this adds additional gas to the register tx if passed
+            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+
+            IZNSCurvePricer(address(rootPricer)).setPriceConfig(domainHash, priceConfig);
+        }
+
+        return domainHash;
     }
 
     /**
