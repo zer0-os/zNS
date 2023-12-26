@@ -6,6 +6,8 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
 import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { ERC721EnumerableUpgradeable }
+    from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -18,7 +20,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  */
 contract ZNSDomainToken is
     AAccessControlled,
-    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
     ERC2981Upgradeable,
     ERC721URIStorageUpgradeable,
     UUPSUpgradeable,
@@ -85,7 +87,7 @@ contract ZNSDomainToken is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, ERC721Upgradeable, IZNSDomainToken)
     returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -157,7 +159,7 @@ contract ZNSDomainToken is
     public
     view
     virtual
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    override(ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
     }
@@ -168,7 +170,7 @@ contract ZNSDomainToken is
      */
     function _burn(uint256 tokenId)
     internal
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+    override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
     {
         super._burn(tokenId);
     }
@@ -178,6 +180,15 @@ contract ZNSDomainToken is
      */
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
+    }
+
+    function _beforeTokenTransfer(
+        address from, 
+        address to, 
+        uint256 firstTokenId, 
+        uint256 batchSize
+    ) internal virtual override(ERC721EnumerableUpgradeable, ERC721Upgradeable) {
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
     /**
