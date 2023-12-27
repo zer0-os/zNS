@@ -77,8 +77,8 @@ contract ZNSDomainToken is
      * @param _tokenURI The tokenURI to be set for the token minted.
      */
     function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
-        _safeMint(to, tokenId);
         ++_totalSupply;
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, _tokenURI);
     }
 
