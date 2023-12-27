@@ -10,6 +10,7 @@ import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { expect } from "chai";
 
 const { ZeroAddress } = ethers;
 
@@ -29,6 +30,8 @@ export const defaultRootRegistration = async ({
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
 }) : Promise<ContractTransactionReceipt | null> => {
+  const supplyBefore = await zns.domainToken.totalSupply();
+
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
@@ -36,6 +39,9 @@ export const defaultRootRegistration = async ({
     distrConfig,
     paymentConfigEmpty
   );
+
+  const supplyAfter = await zns.domainToken.totalSupply();
+  expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
 
   return tx.wait();
 };
@@ -92,6 +98,8 @@ export const defaultSubdomainRegistration = async ({
   tokenURI ?: string;
   distrConfig : IDistributionConfig;
 }) => {
+  const supplyBefore = await zns.domainToken.totalSupply();
+
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
@@ -100,6 +108,9 @@ export const defaultSubdomainRegistration = async ({
     distrConfig,
     paymentConfigEmpty
   );
+
+  const supplyAfter = await zns.domainToken.totalSupply();
+  expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
 
   return tx.wait();
 };

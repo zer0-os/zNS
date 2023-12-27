@@ -100,6 +100,34 @@ describe("ZNSDomainToken", () => {
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
+    it("Should increment the totalSupply when a domain is registered", async () => {
+      const tokenId = BigInt("1");
+
+      const supplyBefore = await zns.domainToken.totalSupply();
+
+      await zns.domainToken
+        .connect(mockRegistrar)
+        .register(caller.address, tokenId, randomTokenURI);
+
+      const supplyAfter = await zns.domainToken.totalSupply();
+      expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
+    });
+
+    it("Should decrement the totalSupply when a domain is revoked", async () => {
+      const tokenId = BigInt("1");
+
+      const supplyBefore = await zns.domainToken.totalSupply();
+
+      await zns.domainToken
+        .connect(mockRegistrar)
+        .register(caller.address, tokenId, randomTokenURI);
+
+      await zns.domainToken.connect(mockRegistrar).revoke(tokenId);
+
+      const supplyAfter = await zns.domainToken.totalSupply();
+      expect(supplyAfter).to.equal(supplyBefore);
+    });
+
     it("Should revert when registering (minting) if caller does not have REGISTRAR_ROLE", async () => {
       const tokenId = BigInt("1");
       await expect(
