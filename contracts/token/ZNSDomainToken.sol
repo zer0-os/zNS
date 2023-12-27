@@ -194,15 +194,6 @@ contract ZNSDomainToken is
         return baseURI;
     }
 
-    // function _beforeTokenTransfer(
-    //     address from, 
-    //     address to, 
-    //     uint256 firstTokenId, 
-    //     uint256 batchSize
-    // ) internal virtual override {
-    //     super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
-    // }
-
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
