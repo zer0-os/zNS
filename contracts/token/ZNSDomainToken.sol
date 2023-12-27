@@ -29,6 +29,11 @@ contract ZNSDomainToken is
     */
     string private baseURI;
 
+    /**
+     * @dev Total supply of all tokens
+     */
+    uint256 private _totalSupply;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -56,6 +61,13 @@ contract ZNSDomainToken is
     }
 
     /**
+     * @notice Returns the total supply of all tokens
+     */
+    function totalSupply() external view override returns (uint256) {
+        return _totalSupply;
+    }
+
+    /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
      * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`
      * or `ZNSSubRegistrar.registerSubdomain()` and sets the individual tokenURI for the token minted.
@@ -66,6 +78,7 @@ contract ZNSDomainToken is
      */
     function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
         _safeMint(to, tokenId);
+        ++_totalSupply;
         _setTokenURI(tokenId, _tokenURI);
     }
 
@@ -85,7 +98,7 @@ contract ZNSDomainToken is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, ERC721Upgradeable, IZNSDomainToken)
     returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -168,9 +181,10 @@ contract ZNSDomainToken is
      */
     function _burn(uint256 tokenId)
     internal
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+    override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
     {
         super._burn(tokenId);
+        --_totalSupply;
     }
 
     /**
@@ -179,6 +193,15 @@ contract ZNSDomainToken is
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
+
+    // function _beforeTokenTransfer(
+    //     address from, 
+    //     address to, 
+    //     uint256 firstTokenId, 
+    //     uint256 batchSize
+    // ) internal virtual override {
+    //     super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+    // }
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized

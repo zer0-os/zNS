@@ -73,7 +73,6 @@ describe("DeployCampaign - Integration", () => {
 
     let deployer;
     let provider;
-    let zeroVaultAddress;
 
     if (hre.network.name === "hardhat") {
       deployer = deployAdmin;

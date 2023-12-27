@@ -34,6 +34,8 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
         uint96 defaultRoyaltyFraction
     ) external;
 
+    function totalSupply() external view returns (uint256);
+
     function register(
         address to,
         uint256 tokenId,
