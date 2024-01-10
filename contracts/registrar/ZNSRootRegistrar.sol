@@ -281,7 +281,13 @@ contract ZNSRootRegistrar is
         bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
-            treasury.unstakeForDomain(domainHash, owner);
+            // To include stakeFee as part of this calculation would require a lot of unnecessary 
+            // overhead that creates a big price jump in gas for this transaction. We are intentionally
+            // not using it here and are comfortable with this protocol fee being minorly different
+            // than the original
+            uint256 protocolFee = rootPricer.getFeeForPrice(0x0, stakedAmount);
+
+            treasury.unstakeForDomain(domainHash, owner, protocolFee);
             stakeRefunded = true;
         }
 

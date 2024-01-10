@@ -966,6 +966,11 @@ describe("ZNSSubRegistrar", () => {
       const parentBalBefore = await zns.meowToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalBefore = await zns.meowToken.balanceOf(await zns.treasury.getAddress());
 
+      const stake = await zns.treasury.stakedForDomain(domainHash);
+      const protocolFee = getStakingOrProtocolFee(stake.amount);
+
+      await zns.meowToken.connect(lvl5SubOwner).approve(await zns.treasury.getAddress(), protocolFee);
+
       await zns.rootRegistrar.connect(lvl5SubOwner).revokeDomain(domainHash);
 
       const userBalAfter = await zns.meowToken.balanceOf(lvl5SubOwner.address);
@@ -977,7 +982,7 @@ describe("ZNSSubRegistrar", () => {
       expect(
         userBalAfter - userBalanceBefore
       ).to.eq(
-        expectedPrice
+        expectedPrice - protocolFee
       );
       expect(
         parentBalBefore - parentBalAfter
@@ -1080,6 +1085,11 @@ describe("ZNSSubRegistrar", () => {
       const childExists = await zns.registry.exists(lvl3Hash);
       assert.ok(childExists);
 
+      const stake = await zns.treasury.stakedForDomain(lvl2Hash);
+      const protocolFee = getStakingOrProtocolFee(stake.amount);
+
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), protocolFee);
+
       // revoke parent
       await zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
         lvl2Hash,
@@ -1126,6 +1136,11 @@ describe("ZNSSubRegistrar", () => {
 
       const userBalBefore = await zns.meowToken.balanceOf(lvl3SubOwner.address);
 
+      const subStake = await zns.treasury.stakedForDomain(lvl3Hash);
+      const subProtocolFee = getStakingOrProtocolFee(subStake.amount);
+
+      await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), subProtocolFee);
+
       // revoke child
       await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         lvl3Hash,
@@ -1133,7 +1148,7 @@ describe("ZNSSubRegistrar", () => {
 
       const userBalAfter = await zns.meowToken.balanceOf(lvl3SubOwner.address);
 
-      expect(userBalAfter - userBalBefore).to.eq(expectedPrice);
+      expect(userBalAfter - userBalBefore).to.eq(expectedPrice - subProtocolFee);
 
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
@@ -1479,7 +1494,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // send future child some tokens
-      await token5.connect(deployer).transfer(lvl3SubOwner.address, expectedPrice + stakeFee + protocolFee);
+      await token5.connect(deployer).transfer(lvl3SubOwner.address, expectedPrice + stakeFee + (protocolFee * 2n));
 
       const contractBalBefore = await token5.balanceOf(await zns.treasury.getAddress());
       const parentBalBefore = await token5.balanceOf(lvl2SubOwner.address);
@@ -1504,6 +1519,11 @@ describe("ZNSSubRegistrar", () => {
       expect(contractBalAfter - contractBalBefore).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
 
+      const stake = await zns.treasury.stakedForDomain(childHash);
+      const protocolFeeOut = getStakingOrProtocolFee(stake.amount);
+
+      await token5.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
       // revoke
       await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
@@ -1516,9 +1536,25 @@ describe("ZNSSubRegistrar", () => {
       const zeroVaultBalanceAfterRevoke = await token5.balanceOf(zeroVault.address);
 
       expect(contractBalAfter - contractBalAfterRevoke).to.eq(expectedPrice);
-      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice);
+      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice - protocolFeeOut);
       expect(parentBalAfterRevoke - parentBalAfter).to.eq(0);
-      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter).to.eq(0);
+      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter - protocolFeeOut).to.eq(0);
+    });
+
+    it("Does not charge the owner of a parent domain when they revoke a sbudomain", async () => {
+      const subdomainHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        parentHash: rootHash,
+        domainLabel: "subdomain",
+      });
+
+      const balanceBefore = await zns.meowToken.balanceOf(rootOwner.address);
+
+      await zns.rootRegistrar.connect(rootOwner).revokeDomain(subdomainHash);
+
+      const balanceAfter = await zns.meowToken.balanceOf(rootOwner.address);
+      expect(balanceBefore).to.eq(balanceAfter);
     });
 
     it("FixedPricer - StakePayment - no fee - 18 decimals", async () => {
@@ -1554,7 +1590,7 @@ describe("ZNSSubRegistrar", () => {
       // send future child some tokens
       await token18.connect(deployer).transfer(
         lvl3SubOwner.address,
-        expectedPrice + protocolFee
+        expectedPrice + (protocolFee * 2n)
       );
 
       const contractBalBefore = await token18.balanceOf(await zns.treasury.getAddress());
@@ -1579,6 +1615,8 @@ describe("ZNSSubRegistrar", () => {
       expect(contractBalAfter - contractBalBefore).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
 
+      await token18.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), protocolFee);
+
       // revoke
       await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
@@ -1591,9 +1629,9 @@ describe("ZNSSubRegistrar", () => {
       const zeroVaultBalanceAfterRevoke = await token18.balanceOf(zeroVault.address);
 
       expect(contractBalAfter - contractBalAfterRevoke).to.eq(expectedPrice);
-      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice);
+      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice - protocolFee);
       expect(parentBalAfterRevoke - parentBalAfter).to.eq(0);
-      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter).to.eq(0);
+      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter - protocolFee).to.eq(0);
     });
 
     it("FixedPricer - DirectPayment - no fee - 8 decimals", async () => {
@@ -1718,7 +1756,7 @@ describe("ZNSSubRegistrar", () => {
       // send future child some tokens
       await token13.connect(deployer).transfer(
         lvl3SubOwner.address,
-        expectedPrice + stakeFee + protocolFee
+        expectedPrice + stakeFee + (protocolFee * 2n)
       );
 
       const contractBalBefore = await token13.balanceOf(await zns.treasury.getAddress());
@@ -1744,10 +1782,11 @@ describe("ZNSSubRegistrar", () => {
       expect(contractBalAfter - contractBalBefore).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
 
+      const protocolFeeOut = getStakingOrProtocolFee(expectedPrice);
+      await token13.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), protocolFeeOut);
+
       // revoke
-      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
-        childHash,
-      );
+      await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(childHash);
 
       // should offer refund !
       const contractBalAfterRevoke = await token13.balanceOf(await zns.treasury.getAddress());
@@ -1756,9 +1795,9 @@ describe("ZNSSubRegistrar", () => {
       const zeroVaultBalanceAfterRevoke = await token13.balanceOf(zeroVault.address);
 
       expect(contractBalAfter - contractBalAfterRevoke).to.eq(expectedPrice);
-      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice);
+      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice - protocolFeeOut);
       expect(parentBalAfterRevoke - parentBalAfter).to.eq(0);
-      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter).to.eq(0);
+      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter - protocolFeeOut).to.eq(0);
     });
 
     it("CurvePricer - StakePayment - no fee - 2 decimals", async () => {
@@ -1799,7 +1838,7 @@ describe("ZNSSubRegistrar", () => {
       // send future child some tokens
       await token2.connect(deployer).transfer(
         lvl3SubOwner.address,
-        expectedPrice + protocolFee
+        expectedPrice + (protocolFee * 2n)
       );
 
       const contractBalBefore = await token2.balanceOf(await zns.treasury.getAddress());
@@ -1824,6 +1863,8 @@ describe("ZNSSubRegistrar", () => {
       expect(contractBalAfter - contractBalBefore).to.eq(expectedPrice);
       expect(zeroVaultBalanceAfter - zeroVaultBalanceBefore).to.eq(protocolFee);
 
+      await token2.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), protocolFee);
+
       // revoke
       await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         childHash,
@@ -1836,9 +1877,9 @@ describe("ZNSSubRegistrar", () => {
       const zeroVaultBalanceAfterRevoke = await token2.balanceOf(zeroVault.address);
 
       expect(contractBalAfter - contractBalAfterRevoke).to.eq(expectedPrice);
-      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice);
+      expect(childBalAfterRevoke - childBalAfter).to.eq(expectedPrice - protocolFee);
       expect(parentBalAfterRevoke - parentBalAfter).to.eq(0);
-      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter).to.eq(0);
+      expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter - protocolFee).to.eq(0);
     });
 
     it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
@@ -3281,6 +3322,9 @@ describe("ZNSSubRegistrar", () => {
 
       const userBalbefore = await zns.meowToken.balanceOf(lvl3SubOwner.address);
 
+      const protocolFee = getStakingOrProtocolFee(stakedAfter);
+
+      await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), protocolFee);
       // try revoking
       await zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
         regResults[1].domainHash,
@@ -3288,7 +3332,7 @@ describe("ZNSSubRegistrar", () => {
 
       // verify that refund has been acquired by the new owner
       const userBalAfter = await zns.meowToken.balanceOf(lvl3SubOwner.address);
-      expect(userBalAfter - userBalbefore).to.eq(fixedPrice);
+      expect(userBalAfter - userBalbefore).to.eq(fixedPrice - protocolFee);
     });
   });
 
