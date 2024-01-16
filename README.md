@@ -12,6 +12,11 @@ ________________________________________________________
 ### [Flow Diagrams](./docs/flows.md)
 ________________________________________________________
 
+## About
+Zer0 Name Service, or zNS, is a protocol that allows you to create domain and subdomain NFTs that focus on community building and creation of unique, on-chain identification.
+
+Read more at [zero.tech](https://zero.tech/)
+
 ## Developers
 
 ### Install Dependencies
@@ -37,13 +42,13 @@ The full ENV setup with descriptions can be found in the [.env.sample](./.env.sa
 ```bash
 yarn build
 ```
-This should compile all the contracts and add a git tag and a last commit for the current version of the contracts
+This will compile all the contracts and add a git tag and a last commit for the current version of the contracts
 that is **required** for the MongoDB where deployed contract data is stored.
 
 This will also run a bash script that will pull **tag and commit** from git and write
 it locally to `./artifacts/git-tag.txt` file. If you are using Windows, that script may fail. In that case you can
-pull git data manually and write it to the file or use the TS based script here: `./src/utils/save-tag.ts`.
-The resulted text in the `./artifacts/git-tag.txt` file should look like this:
+pull git data manually and write it to the file or use the TS based script here: `./src/utils/save-tag.ts` simply by running `yarn save-tag`
+The resulting text in the `./artifacts/git-tag.txt` file should look like this:
 ```
 v1.0.1:213334f3d4f47940779cb7e825aaf1fab77adb2e
 ```
@@ -53,6 +58,8 @@ v1.0.1:213334f3d4f47940779cb7e825aaf1fab77adb2e
 yarn test
 ```
 This will launch `docker-compose` with MongoDB instance on it, required for some tests. Then launch all the tests in the `./test` directory.
+
+> Note: If you do not have Docker installed this will fail.
 
 ### Submit Work
 All new code is submitted through Pull Requests **ONLY**. Please make sure that you have all the tests passing in CircleCI and that
