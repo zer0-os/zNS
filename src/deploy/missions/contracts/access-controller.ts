@@ -1,9 +1,13 @@
-import { BaseDeployMission } from "../base-deploy-mission";
+import { BaseDeployMission, IHardhatBase, IProviderBase, ISignerBase } from "@zero-tech/zdc";
 
 import { znsNames } from "./names";
 
 
-export class ZNSAccessControllerDM extends BaseDeployMission {
+export class ZNSAccessControllerDM <
+  H extends IHardhatBase,
+  S extends ISignerBase,
+  P extends IProviderBase,
+> extends BaseDeployMission<H, S, P> {
   proxyData = {
     isProxy: false,
   };
