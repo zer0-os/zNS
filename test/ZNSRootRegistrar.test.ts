@@ -2,6 +2,11 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  IDeployCampaignConfig,
+  TZNSContractState,
+  MongoDBAdapter,
+} from "@zero-tech/zdc";
+import {
   normalizeName,
   validateUpgrade,
   AccessType,
@@ -26,13 +31,12 @@ import {
   INVALID_NAME_ERR,
   paymentConfigEmpty,
 } from "./helpers";
-import { IDistributionConfig } from "./helpers/types";
+import { IDistributionConfig, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
@@ -44,7 +48,6 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -59,7 +62,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -83,7 +86,8 @@ describe("ZNSRootRegistrar", () => {
       config,
     });
 
-    zns = campaign.state.contracts;
+    // TODO iso: figure out typing here to not use unknown
+    zns = campaign.state.contracts as unknown as IZNSContracts;
 
     mongoAdapter = campaign.dbAdapter;
 
