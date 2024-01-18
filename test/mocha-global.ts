@@ -1,4 +1,4 @@
-import { getMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
+import { getMongoAdapter } from "@zero-tech/zdc";
 
 
 export const mochaGlobalSetup = async () => {

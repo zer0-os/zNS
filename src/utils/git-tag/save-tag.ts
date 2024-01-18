@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { promisify } from "util";
-import { getLogger } from "../../deploy/logger/create-logger";
+import { getLogger } from "@zero-tech/zdc";
 import fs from "fs";
 import { tagFilePath } from "./constants";
 

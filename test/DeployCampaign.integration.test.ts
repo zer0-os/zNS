@@ -1,9 +1,12 @@
+import {
+  getLogger,
+  IDeployCampaignConfig,
+  TZNSContractState,
+} from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getConfig } from "../src/deploy/campaign/environments";
-import { getLogger } from "../src/deploy/logger/create-logger";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
