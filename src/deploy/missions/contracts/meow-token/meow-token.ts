@@ -4,7 +4,7 @@ import {
   TDeployArgs,
   IHardhatBase,
   ISignerBase,
-  IProviderBase,
+  IProviderBase, IContractState,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
@@ -19,7 +19,8 @@ export class MeowTokenDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.transparent,
@@ -28,7 +29,7 @@ export class MeowTokenDM <
   contractName = znsNames.meowToken.contract;
   instanceName = znsNames.meowToken.instance;
 
-  constructor (args : IDeployMissionArgs<H, S, P>) {
+  constructor (args : IDeployMissionArgs<H, S, P, St>) {
     super(args);
 
     if (this.config.mockMeowToken) {

@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission,
+  BaseDeployMission, IContractState,
   IHardhatBase,
   IProviderBase,
   ISignerBase,
@@ -13,7 +13,8 @@ export class ZNSTreasuryDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,

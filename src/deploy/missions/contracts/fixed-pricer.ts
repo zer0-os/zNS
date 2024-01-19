@@ -1,6 +1,6 @@
 import { ProxyKinds } from "../../constants";
 import {
-  BaseDeployMission, IHardhatBase, IProviderBase, ISignerBase,
+  BaseDeployMission, IContractState, IHardhatBase, IProviderBase, ISignerBase,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
@@ -10,7 +10,8 @@ export class ZNSFixedPricerDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,

@@ -16,6 +16,7 @@ import {
 } from "./missions/contracts";
 import { IDeployCampaignConfig } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSContracts } from "../../test/helpers/types";
 
 
 export const runZnsCampaign = async ({
@@ -34,7 +35,7 @@ export const runZnsCampaign = async ({
   const logger = getLogger();
 
   if (!deployer) {
-    deployer = new HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>({
+    deployer = new HardhatDeployer({
       hre,
       signer: config.deployAdmin as SignerWithAddress,
       env: config.env,
@@ -44,7 +45,12 @@ export const runZnsCampaign = async ({
 
   const dbAdapter = await getMongoAdapter();
 
-  const campaign = new DeployCampaign({
+  const campaign = new DeployCampaign<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  DefenderRelayProvider,
+  IZNSContracts
+  >({
     missions: [
       ZNSAccessControllerDM,
       ZNSRegistryDM,

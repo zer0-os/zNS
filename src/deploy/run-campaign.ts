@@ -1,8 +1,7 @@
 import { getConfig } from "./campaign/environments";
 import { runZnsCampaign } from "./zns-campaign";
 import { Defender } from "@openzeppelin/defender-sdk";
-
-import { getLogger } from "./logger/create-logger";
+import { getLogger } from "@zero-tech/zdc";
 
 const logger = getLogger();
 

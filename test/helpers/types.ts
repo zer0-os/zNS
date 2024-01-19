@@ -25,9 +25,11 @@ import {
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
   MeowTokenMock,
+  MeowToken,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { IContractState } from "@zero-tech/zdc";
 
 
 export type Maybe<T> = T | undefined;
@@ -35,10 +37,10 @@ export type Maybe<T> = T | undefined;
 export type GeneralContractGetter = Promise<
 string
 | boolean
-| bigint
-| Array<bigint>
-| [string, bigint]
-& { token : string; amount : bigint; }
+| BigInt
+| Array<BigInt>
+| [string, BigInt]
+& { token : string; amount : BigInt; }
 | [string, string]
 & { token : string; beneficiary : string; }
 | ICurvePriceConfig
@@ -66,18 +68,21 @@ export type ZNSContractMock =
   ZNSDomainTokenUpgradeMock;
 
 export type ZNSContract =
-  ZNSRootRegistrar |
-  ZNSSubRegistrar |
-  ZNSCurvePricer |
-  ZNSFixedPricer |
-  ZNSTreasury |
+  ZNSAccessController |
   ZNSRegistry |
+  ZNSDomainToken |
+  MeowTokenMock |
+  MeowToken |
   ZNSAddressResolver |
-  ZNSDomainToken;
+  ZNSCurvePricer |
+  ZNSTreasury |
+  ZNSRootRegistrar |
+  ZNSFixedPricer |
+  ZNSSubRegistrar;
 
 export interface IFixedPriceConfig {
-  price : bigint;
-  feePercentage : bigint;
+  price : BigInt;
+  feePercentage : BigInt;
 }
 
 export interface RegistrarConfig {
@@ -87,7 +92,7 @@ export interface RegistrarConfig {
   domainTokenAddress : string;
 }
 
-export interface IZNSContracts {
+export interface IZNSContracts extends IContractState<ZNSContract> {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
@@ -98,7 +103,6 @@ export interface IZNSContracts {
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
-  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
@@ -106,15 +110,15 @@ export interface DeployZNSParams {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   priceConfig ?: ICurvePriceConfig;
-  registrationFeePerc ?: bigint;
+  registrationFeePerc ?: BigInt;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
 }
 
 export interface IDistributionConfig {
   pricerContract : string;
-  paymentType : bigint;
-  accessType : bigint;
+  paymentType : BigInt;
+  accessType : BigInt;
 }
 
 export interface IPaymentConfig {
@@ -139,13 +143,12 @@ export interface IDomainConfigForTest {
 
 export interface IPathRegResult {
   domainHash : string;
-  userBalanceBefore : bigint;
-  userBalanceAfter : bigint;
-  parentBalanceBefore : bigint;
-  parentBalanceAfter : bigint;
-  treasuryBalanceBefore : bigint;
-  treasuryBalanceAfter : bigint;
-  zeroVaultBalanceBefore : bigint;
-  zeroVaultBalanceAfter : bigint;
+  userBalanceBefore : BigInt;
+  userBalanceAfter : BigInt;
+  parentBalanceBefore : BigInt;
+  parentBalanceAfter : BigInt;
+  treasuryBalanceBefore : BigInt;
+  treasuryBalanceAfter : BigInt;
+  zeroVaultBalanceBefore : BigInt;
+  zeroVaultBalanceAfter : BigInt;
 }
-

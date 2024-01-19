@@ -3,7 +3,6 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDeployCampaignConfig,
-  TZNSContractState,
   MongoDBAdapter,
 } from "@zero-tech/zdc";
 import {
@@ -86,8 +85,7 @@ describe("ZNSRootRegistrar", () => {
       config,
     });
 
-    // TODO iso: figure out typing here to not use unknown
-    zns = campaign.state.contracts as unknown as IZNSContracts;
+    zns = campaign.state.contracts;
 
     mongoAdapter = campaign.dbAdapter;
 

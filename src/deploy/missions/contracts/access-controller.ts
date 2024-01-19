@@ -1,5 +1,10 @@
-import { BaseDeployMission, IHardhatBase, IProviderBase, ISignerBase } from "@zero-tech/zdc";
-
+import {
+  BaseDeployMission,
+  IContractState,
+  IHardhatBase,
+  IProviderBase,
+  ISignerBase,
+} from "@zero-tech/zdc";
 import { znsNames } from "./names";
 
 
@@ -7,7 +12,8 @@ export class ZNSAccessControllerDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: false,
   };

@@ -3,7 +3,7 @@ import {
   TDeployArgs,
   IHardhatBase,
   IProviderBase,
-  ISignerBase,
+  ISignerBase, IContractState,
 } from "@zero-tech/zdc";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { znsNames } from "./names";
@@ -13,7 +13,8 @@ export class ZNSAddressResolverDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,

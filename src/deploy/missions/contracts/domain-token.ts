@@ -1,4 +1,11 @@
-import { BaseDeployMission, IHardhatBase, IProviderBase, ISignerBase, TDeployArgs } from "@zero-tech/zdc";
+import {
+  BaseDeployMission,
+  IContractState,
+  IHardhatBase,
+  IProviderBase,
+  ISignerBase,
+  TDeployArgs,
+} from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
 
@@ -7,7 +14,8 @@ export class ZNSDomainTokenDM <
   H extends IHardhatBase,
   S extends ISignerBase,
   P extends IProviderBase,
-> extends BaseDeployMission<H, S, P> {
+  St extends IContractState,
+> extends BaseDeployMission<H, S, P, St> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
