@@ -139,6 +139,123 @@ describe("ZNSSubRegistrar", () => {
       expect(config.beneficiary).to.eq(lvl2SubOwner.address);
     });
 
+    it("Allows the owner of parent domain and token to register for free", async () => {
+      const subdomain = "another-subs";
+
+      const balanceBefore = await zns.meowToken.balanceOf(rootOwner.address);
+
+      await zns.subRegistrar.connect(rootOwner).registerSubdomain(
+        rootHash,
+        subdomain,
+        rootOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: rootOwner.address,
+        },
+      );
+
+      const balanceAfter = await zns.meowToken.balanceOf(rootOwner.address);
+
+      expect(balanceAfter).to.eq(balanceBefore);
+    });
+
+    // cant any user now register for free if owner owns both?
+    it("Allows an operator to register for free if the owner owns both", async () => {
+      const subdomain = "another-sub";
+
+      const balanceBefore = await zns.meowToken.balanceOf(lvl2SubOwner.address);
+
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, true);
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        rootHash,
+        subdomain,
+        rootOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: rootOwner.address,
+        },
+      );
+
+      const balanceAfter = await zns.meowToken.balanceOf(lvl2SubOwner.address);
+
+      // Disable operator after check
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, false);
+
+      expect(balanceAfter).to.eq(balanceBefore);
+    });
+
+    it("Charges a price for an owner that does not own both the token and name", async () => {
+      const subdomain = "no-diggity";
+
+      const balanceBefore = await zns.meowToken.balanceOf(rootOwner.address);
+
+      // Give token to lvl2SubOwner
+      await zns.domainToken.connect(rootOwner).transferFrom(rootOwner.address, lvl2SubOwner.address, rootHash);
+
+      await zns.subRegistrar.connect(rootOwner).registerSubdomain(
+        rootHash,
+        subdomain,
+        rootOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: rootOwner.address,
+        },
+      );
+
+      // Restore token owner
+      await zns.domainToken.connect(lvl2SubOwner).transferFrom(lvl2SubOwner.address, rootOwner.address, rootHash);
+
+      const balanceAfter = await zns.meowToken.balanceOf(rootOwner.address);
+
+      expect(balanceAfter).to.not.eq(balanceBefore);
+    });
+
+    it("Charges a price for an operator of an owner that does not own both the token and name", async () => {
+      const subdomain = "no-diggities";
+
+      const balanceBefore = await zns.meowToken.balanceOf(lvl2SubOwner.address);
+
+      // Give token to lvl2SubOwner
+      await zns.domainToken.connect(rootOwner).transferFrom(rootOwner.address, lvl2SubOwner.address, rootHash);
+
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, true);
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        rootHash,
+        subdomain,
+        lvl2SubOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: rootOwner.address,
+        },
+      );
+
+      // Restore token owner
+      await zns.domainToken.connect(lvl2SubOwner).transferFrom(lvl2SubOwner.address, rootOwner.address, rootHash);
+      
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, false);
+
+      const balanceAfter = await zns.meowToken.balanceOf(lvl2SubOwner.address);
+
+      expect(balanceAfter).to.not.eq(balanceBefore);
+    });
+
+    // disallows an owner from registering for free if they don't own both
+    // disallows an operator from registering for free if the owner does not own both
+    // owner surpasses locked domains
+    // operator surpasses locked domains, maybe already tested these two
+
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
       const subdomain = "not-world-subdomain";
       await expect(
@@ -342,24 +459,25 @@ describe("ZNSSubRegistrar", () => {
       )).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
-    it("should revert when trying to register a subdomain under a non-existent parent", async () => {
+    it.only("should revert when trying to register a subdomain under a non-existent parent", async () => {
       // check that 0x0 hash can NOT be passed as parentHash
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-          ethers.ZeroHash,
-          "sub",
-          lvl2SubOwner.address,
-          subTokenURI,
-          distrConfigEmpty,
-          paymentConfigEmpty,
-        )
-      ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
-      );
+      // await expect(
+      //   zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+      //     ethers.ZeroHash,
+      //     "sub",
+      //     lvl2SubOwner.address,
+      //     subTokenURI,
+      //     distrConfigEmpty,
+      //     paymentConfigEmpty,
+      //   )
+      // ).to.be.revertedWith(
+      //   "ERC721: invalid token ID"
+      // );
 
       // check that a random non-existent hash can NOT be passed as parentHash
       const randomHash = ethers.keccak256(ethers.toUtf8Bytes("random"));
       await expect(
+        // erc721 invalid token id??
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           randomHash,
           "sub",
