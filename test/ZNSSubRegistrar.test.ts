@@ -39,8 +39,6 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
-import { parentPort } from "worker_threads";
-
 
 describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
@@ -245,7 +243,7 @@ describe("ZNSSubRegistrar", () => {
 
       // Restore token owner
       await zns.domainToken.connect(lvl2SubOwner).transferFrom(lvl2SubOwner.address, rootOwner.address, rootHash);
-      
+
       await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, false);
 
       const balanceAfter = await zns.meowToken.balanceOf(lvl2SubOwner.address);
