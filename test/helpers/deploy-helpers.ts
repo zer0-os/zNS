@@ -117,7 +117,6 @@ export const registerRootDomainBulk = async (
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
 
-    // TODO figure out if we want to do this on prod?
     // To mint subdomains from this domain we must first set the price config and the payment config
     await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
 

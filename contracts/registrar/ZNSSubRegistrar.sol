@@ -37,8 +37,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         uint256 ownerIndex;
     }
 
-
-    // TODO natspec
     struct Ownership {
         address owner;
         bool ownsBoth;
