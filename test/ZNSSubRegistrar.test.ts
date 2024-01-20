@@ -6,7 +6,6 @@ import {
   DEFAULT_TOKEN_URI,
   deployZNS,
   distrConfigEmpty,
-  DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   getAccessRevertMsg,
   getPriceObject,
@@ -20,6 +19,8 @@ import {
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
+  PARENT_NOT_EXIST_ERR,
+  DISTRIBUTION_LOCKED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -38,6 +39,7 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
+import { parentPort } from "worker_threads";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -459,25 +461,24 @@ describe("ZNSSubRegistrar", () => {
       )).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
-    it.only("should revert when trying to register a subdomain under a non-existent parent", async () => {
+    it("should revert when trying to register a subdomain under a non-existent parent", async () => {
       // check that 0x0 hash can NOT be passed as parentHash
-      // await expect(
-      //   zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-      //     ethers.ZeroHash,
-      //     "sub",
-      //     lvl2SubOwner.address,
-      //     subTokenURI,
-      //     distrConfigEmpty,
-      //     paymentConfigEmpty,
-      //   )
-      // ).to.be.revertedWith(
-      //   "ERC721: invalid token ID"
-      // );
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          ethers.ZeroHash,
+          "sub",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+        )
+      ).to.be.revertedWith(
+        INVALID_TOKENID_ERC_ERR
+      );
 
       // check that a random non-existent hash can NOT be passed as parentHash
       const randomHash = ethers.keccak256(ethers.toUtf8Bytes("random"));
       await expect(
-        // erc721 invalid token id??
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           randomHash,
           "sub",
@@ -487,7 +488,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        // ERC721's `_requireMinted()` will fail when parent hash doesn't exist
+        PARENT_NOT_EXIST_ERR
       );
     });
 
@@ -1058,7 +1060,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_NOT_EXIST_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1123,7 +1125,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_NOT_EXIST_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1350,7 +1352,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+      ).to.be.revertedWith(PARENT_NOT_EXIST_ERR);
 
       // register root back for other tests
       await registrationWithSetup({
@@ -1382,7 +1384,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+      ).to.be.revertedWith(PARENT_NOT_EXIST_ERR);
     });
 
     // eslint-disable-next-line max-len
@@ -2662,7 +2664,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        DISTRIBUTION_LOCKED_ERR
       );
     });
 
@@ -2886,7 +2888,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        DISTRIBUTION_LOCKED_ERR
       );
 
       // switch to mintlist
@@ -2968,7 +2970,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        DISTRIBUTION_LOCKED_ERR
       );
     });
   });

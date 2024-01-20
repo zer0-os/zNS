@@ -107,6 +107,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             !registry.exists(domainHash),
             "ZNSSubRegistrar: Subdomain already exists"
         );
+        require(
+            registry.exists(parentHash),
+            "ZNSSubRegistrar: Parent domain does not exist"
+        );
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
@@ -124,7 +128,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 // Require that the parent owns both the token and the domain name
                 // as well as that the caller either is the parent owner, or an allowed operator
                 parent.ownsBoth && (parent.isOperatorForOwner || address(msg.sender) == parent.owner),
-                "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
+                "ZNSSubRegistrar: Parent domain's distribution is locked"
             );
         }
 
