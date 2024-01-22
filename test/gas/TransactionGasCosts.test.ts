@@ -119,16 +119,16 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff > 1000 || gasDiff < -1000) {
-      fs.writeFileSync(
-        gasCostFile,
-        JSON.stringify({
-          ...previous,
-          // eslint-disable-next-line no-invalid-this
-          [title]: gasUsed.toString(),
-        })
-      );
-    }
+    // if (gasDiff > 1000 || gasDiff < -1000) {
+    fs.writeFileSync(
+      gasCostFile,
+      JSON.stringify({
+        ...previous,
+        // eslint-disable-next-line no-invalid-this
+        [title]: gasUsed.toString(),
+      })
+    );
+    // }
   });
 
   it("Subdomain Price", async function () {
@@ -169,17 +169,17 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    if (gasDiff > 1000 || gasDiff < -1000) {
-      fs.writeFileSync(
-        gasCostFile,
-        JSON.stringify({
-          ...previous,
-          // eslint-disable-next-line no-invalid-this
-          [title]: gasUsed.toString(),
-        },
-        null,
-        "\t")
-      );
-    }
+    // if (gasDiff > 1000 || gasDiff < -1000) {
+    fs.writeFileSync(
+      gasCostFile,
+      JSON.stringify({
+        ...previous,
+        // eslint-disable-next-line no-invalid-this
+        [title]: gasUsed.toString(),
+      },
+      null,
+      "\t")
+    );
+    // }
   });
 });

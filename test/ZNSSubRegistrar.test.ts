@@ -19,7 +19,6 @@ import {
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
-  PARENT_NOT_EXIST_ERR,
   DISTRIBUTION_LOCKED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -251,11 +250,6 @@ describe("ZNSSubRegistrar", () => {
       expect(balanceAfter).to.not.eq(balanceBefore);
     });
 
-    // disallows an owner from registering for free if they don't own both
-    // disallows an operator from registering for free if the owner does not own both
-    // owner surpasses locked domains
-    // operator surpasses locked domains, maybe already tested these two
-
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
       const subdomain = "not-world-subdomain";
       await expect(
@@ -459,6 +453,11 @@ describe("ZNSSubRegistrar", () => {
       )).to.be.revertedWith(INVALID_NAME_ERR);
     });
 
+    // it("calls test functions", async () => {
+    //   const ownerthing = await zns.subRegistrar.connect(lvl2SubOwner).testFunction(ethers.ZeroHash);
+    //   console.log(ownerthing);
+    // });
+
     it("should revert when trying to register a subdomain under a non-existent parent", async () => {
       // check that 0x0 hash can NOT be passed as parentHash
       await expect(
@@ -487,7 +486,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWith(
         // ERC721's `_requireMinted()` will fail when parent hash doesn't exist
-        PARENT_NOT_EXIST_ERR
+        INVALID_TOKENID_ERC_ERR
       );
     });
 
@@ -1058,7 +1057,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        PARENT_NOT_EXIST_ERR
+        INVALID_TOKENID_ERC_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1123,7 +1122,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWith(
-        PARENT_NOT_EXIST_ERR
+        INVALID_TOKENID_ERC_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1350,7 +1349,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(PARENT_NOT_EXIST_ERR);
+      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
 
       // register root back for other tests
       await registrationWithSetup({
@@ -1382,7 +1381,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(PARENT_NOT_EXIST_ERR);
+      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
     });
 
     // eslint-disable-next-line max-len

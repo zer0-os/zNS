@@ -37,12 +37,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         uint256 ownerIndex;
     }
 
-    struct Ownership {
-        address owner;
-        bool ownsBoth;
-        bool isOperatorForOwner;
-    }
-
     /**
      * @notice Mapping of domainHash to mintlist set by the domain owner/operator.
      * These configs are used to determine who can register subdomains for every parent
@@ -105,10 +99,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             !registry.exists(domainHash),
             "ZNSSubRegistrar: Subdomain already exists"
         );
-        require(
-            registry.exists(parentHash),
-            "ZNSSubRegistrar: Parent domain does not exist"
-        );
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
@@ -154,7 +144,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         });
 
         // If parent owns both and caller is either parent or an operator, mint for free
-        // If parent does not own both or the call is not an operator or the owner, pay to mint
+        // If parent does not own both or the caller is not an operator or the owner, pay to mint
         if (!parent.ownsBoth || !(parent.isOperatorForOwner || address(msg.sender) == parent.owner)) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
