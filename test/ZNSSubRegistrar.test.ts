@@ -1541,7 +1541,7 @@ describe("ZNSSubRegistrar", () => {
       expect(zeroVaultBalanceAfterRevoke - zeroVaultBalanceAfter - protocolFeeOut).to.eq(0);
     });
 
-    it("Does not charge the owner of a parent domain when they revoke a sbudomain", async () => {
+    it("Does not charge the owner of a parent domain when they revoke a subdomain", async () => {
       const subdomainHash = await registrationWithSetup({
         zns,
         user: rootOwner,

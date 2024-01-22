@@ -994,7 +994,7 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("Revoking Domains", () => {
-    it("Sends a protocol fee as part of revoke flow", async () => {
+    it("Charges a protocol fee to the owner as part of the revoke flow", async () => {
       await defaultRootRegistration({
         user,
         zns,
@@ -1011,7 +1011,8 @@ describe("ZNSRootRegistrar", () => {
         user,
       });
 
-      const [ price, stakeFee ] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, defaultDomain, false);
+      const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
 
       const balanceBefore = await zns.meowToken.balanceOf(user.address);
 
@@ -1020,10 +1021,7 @@ describe("ZNSRootRegistrar", () => {
 
       const balanceAfter = await zns.meowToken.balanceOf(user.address);
 
-      // Stake fee and protocol fee are calculated the same way, so we can use
-      // stake fee here to represent that the difference in balance after revoking
-      // shows a protocol fee was sent as well
-      expect(balanceAfter).to.eq(balanceBefore + price - stakeFee);
+      expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
     });
 
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
