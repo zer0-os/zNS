@@ -119,7 +119,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    // if (gasDiff > 1000 || gasDiff < -1000) {
+    if (gasDiff > 1000 || gasDiff < -1000) {
     fs.writeFileSync(
       gasCostFile,
       JSON.stringify({
@@ -128,7 +128,7 @@ describe("Transaction Gas Costs Test", () => {
         [title]: gasUsed.toString(),
       })
     );
-    // }
+    }
   });
 
   it("Subdomain Price", async function () {
@@ -169,7 +169,7 @@ describe("Transaction Gas Costs Test", () => {
         Gas Diff: ${gasDiff.toString()}
       `);
 
-    // if (gasDiff > 1000 || gasDiff < -1000) {
+    if (gasDiff > 1000 || gasDiff < -1000) {
     fs.writeFileSync(
       gasCostFile,
       JSON.stringify({
@@ -180,6 +180,6 @@ describe("Transaction Gas Costs Test", () => {
       null,
       "\t")
     );
-    // }
+    }
   });
 });
