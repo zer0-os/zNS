@@ -37,10 +37,10 @@ export type Maybe<T> = T | undefined;
 export type GeneralContractGetter = Promise<
 string
 | boolean
-| BigInt
-| Array<BigInt>
-| [string, BigInt]
-& { token : string; amount : BigInt; }
+| bigint
+| Array<bigint>
+| [string, bigint]
+& { token : string; amount : bigint; }
 | [string, string]
 & { token : string; beneficiary : string; }
 | ICurvePriceConfig
@@ -81,8 +81,8 @@ export type ZNSContract =
   ZNSSubRegistrar;
 
 export interface IFixedPriceConfig {
-  price : BigInt;
-  feePercentage : BigInt;
+  price : bigint;
+  feePercentage : bigint;
 }
 
 export interface RegistrarConfig {
@@ -110,15 +110,15 @@ export interface DeployZNSParams {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   priceConfig ?: ICurvePriceConfig;
-  registrationFeePerc ?: BigInt;
+  registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
 }
 
 export interface IDistributionConfig {
   pricerContract : string;
-  paymentType : BigInt;
-  accessType : BigInt;
+  paymentType : bigint;
+  accessType : bigint;
 }
 
 export interface IPaymentConfig {
@@ -143,12 +143,12 @@ export interface IDomainConfigForTest {
 
 export interface IPathRegResult {
   domainHash : string;
-  userBalanceBefore : BigInt;
-  userBalanceAfter : BigInt;
-  parentBalanceBefore : BigInt;
-  parentBalanceAfter : BigInt;
-  treasuryBalanceBefore : BigInt;
-  treasuryBalanceAfter : BigInt;
-  zeroVaultBalanceBefore : BigInt;
-  zeroVaultBalanceAfter : BigInt;
+  userBalanceBefore : bigint;
+  userBalanceAfter : bigint;
+  parentBalanceBefore : bigint;
+  parentBalanceAfter : bigint;
+  treasuryBalanceBefore : bigint;
+  treasuryBalanceAfter : bigint;
+  zeroVaultBalanceBefore : bigint;
+  zeroVaultBalanceAfter : bigint;
 }
