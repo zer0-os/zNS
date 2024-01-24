@@ -14,7 +14,7 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
-import { IDeployCampaignConfig } from "./campaign/types";
+import { IZNSCampaignConfig } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "../../test/helpers/types";
 
@@ -25,7 +25,7 @@ export const runZnsCampaign = async ({
   dbVersion,
   deployer,
 } : {
-  config : IDeployCampaignConfig;
+  config : IZNSCampaignConfig;
   provider ?: DefenderRelayProvider;
   dbVersion ?: string;
   deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;

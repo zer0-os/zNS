@@ -2,7 +2,7 @@
 // For use in inegration test of deployment campaign
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDeployCampaignConfig, TLogger, TZNSContractState } from "../../src/deploy/campaign/types";
+import { IZNSCampaignConfig, TLogger, TZNSContractState } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./types";
 import { expect } from "chai";
@@ -83,7 +83,7 @@ export const getPriceBulk = async (
 export const registerRootDomainBulk = async (
   signers : Array<SignerWithAddress>,
   domains : Array<string>,
-  config : IDeployCampaignConfig,
+  config : IZNSCampaignConfig,
   tokenUri : string,
   distConfig : IDistributionConfig,
   priceConfig : ICurvePriceConfig,
