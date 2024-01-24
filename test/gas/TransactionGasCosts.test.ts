@@ -120,14 +120,14 @@ describe("Transaction Gas Costs Test", () => {
       `);
 
     if (gasDiff > 1000 || gasDiff < -1000) {
-    fs.writeFileSync(
-      gasCostFile,
-      JSON.stringify({
-        ...previous,
-        // eslint-disable-next-line no-invalid-this
-        [title]: gasUsed.toString(),
-      })
-    );
+      fs.writeFileSync(
+        gasCostFile,
+        JSON.stringify({
+          ...previous,
+          // eslint-disable-next-line no-invalid-this
+          [title]: gasUsed.toString(),
+        })
+      );
     }
   });
 
@@ -170,16 +170,16 @@ describe("Transaction Gas Costs Test", () => {
       `);
 
     if (gasDiff > 1000 || gasDiff < -1000) {
-    fs.writeFileSync(
-      gasCostFile,
-      JSON.stringify({
-        ...previous,
-        // eslint-disable-next-line no-invalid-this
-        [title]: gasUsed.toString(),
-      },
-      null,
-      "\t")
-    );
+      fs.writeFileSync(
+        gasCostFile,
+        JSON.stringify({
+          ...previous,
+          // eslint-disable-next-line no-invalid-this
+          [title]: gasUsed.toString(),
+        },
+        null,
+        "\t")
+      );
     }
   });
 });
