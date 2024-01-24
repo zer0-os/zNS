@@ -25,7 +25,7 @@ export const runZnsCampaign = async ({
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig;
+  config : IZNSCampaignConfig<SignerWithAddress>;
   provider ?: DefenderRelayProvider;
   dbVersion ?: string;
   deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;
@@ -37,7 +37,7 @@ export const runZnsCampaign = async ({
   if (!deployer) {
     deployer = new HardhatDeployer({
       hre,
-      signer: config.deployAdmin as SignerWithAddress,
+      signer: config.deployAdmin,
       env: config.env,
       provider,
     });

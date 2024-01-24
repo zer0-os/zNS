@@ -61,7 +61,7 @@ export class MeowTokenDM <
 
       const baseContract = await this.campaign.deployer.getContractObject(
         this.contractName,
-        this.config.stakingTokenAddress,
+        this.config.stakingTokenAddress as string,
       );
 
       await this.saveToDB(baseContract);
@@ -84,7 +84,7 @@ export class MeowTokenDM <
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken;
+    return this.config.mockMeowToken as boolean;
   }
 
   async postDeploy () {
@@ -97,7 +97,7 @@ export class MeowTokenDM <
 
     // Mint 100,000 MEOW to the deployer
     await meowToken.connect(deployAdmin).mint(
-      await deployAdmin.getAddress(),
+      await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );
 

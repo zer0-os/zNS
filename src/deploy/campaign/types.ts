@@ -1,14 +1,14 @@
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { IDeployCampaignConfig } from "@zero-tech/zdc";
 
 
-export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner;
+export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
-export interface IZNSCampaignConfig extends IDeployCampaignConfig<IZNSSigner> {
+export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
   env : string;
-  deployAdmin : IZNSSigner;
+  deployAdmin : Signer;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {

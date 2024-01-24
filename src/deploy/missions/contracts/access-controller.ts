@@ -3,7 +3,7 @@ import {
   IContractState,
   IHardhatBase,
   IProviderBase,
-  ISignerBase,
+  ISignerBase, TDeployArgs,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
 
