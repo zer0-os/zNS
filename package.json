@@ -75,7 +75,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "@zero-tech/zdc": "../zDC",
+    "@zero-tech/zdc": "0.1.0",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
     "mongodb": "^6.1.0",

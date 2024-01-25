@@ -2057,17 +2057,13 @@
     eslint-plugin-prefer-arrow "^1.2.3"
     typescript "^5.0.2"
 
-"@zero-tech/zdc@../zDC":
-  version "0.5.0"
+"@zero-tech/zdc@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@zero-tech/zdc/-/zdc-0.1.0.tgz#a7d48f59acd70d9cd7339d18655e9dea6cf3e3a2"
+  integrity sha512-tyc+wIoOOWYS+spEzB8r/E+g8QM52HCHDRqSXfCy7+cnohqhjyZFibwx4Gldfll9eGhOSsooeNsG+BFxSpralw==
   dependencies:
-    "@types/node" "^18.15.11"
-    "@zero-tech/eslint-config-cpt" "0.2.7"
     axios "^1.6.5"
-    eslint "^8.37.0"
-    ethers "^6.9.0"
     mongodb "^6.3.0"
-    ts-node "10.9.1"
-    typescript "^5.0.2"
     winston "^3.11.0"
 
 "@zero-tech/ztoken@2.0.0":
