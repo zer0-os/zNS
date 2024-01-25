@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContracts } from "./helpers/types";
+import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContractsLocal } from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -56,7 +56,7 @@ describe("ZNSSubRegistrar", () => {
   let operator : SignerWithAddress;
   let multiOwner : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
   let zeroVault : SignerWithAddress;
 
   describe("Single Subdomain Registration", () => {

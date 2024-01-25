@@ -3,14 +3,12 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import {
-  IDeployCampaignConfig,
-  TZNSContractState,
   TLogger,
   HardhatDeployer,
   DeployCampaign,
   getMongoAdapter,
   resetMongoAdapter,
-  BaseDeployMission,
+  TDeployMissionCtor,
   MongoDBAdapter,
   ITenderlyContractData,
   TDeployArgs,
@@ -46,6 +44,10 @@ import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { IZNSContractsLocal } from "./helpers/types";
 
 
 const execAsync = promisify(exec);
@@ -59,7 +61,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IDeployCampaignConfig;
+  let campaignConfig : IZNSCampaignConfig<SignerWithAddress>;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -196,15 +198,33 @@ describe("Deploy Campaign Test", () => {
       failingInstanceName,
       callback,
     } : {
-      missionList : Array<typeof BaseDeployMission>;
+      missionList : Array<TDeployMissionCtor<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider,
+      IZNSContracts
+      >>;
       placeOfFailure : string;
       deployedNames : Array<{ contract : string; instance : string; }>;
       undeployedNames : Array<{ contract : string; instance : string; }>;
       failingInstanceName : string;
       // eslint-disable-next-line no-shadow
-      callback ?: (failingCampaign : typeof DeployCampaign) => Promise<void>;
+      callback ?: (failingCampaign : DeployCampaign<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider,
+      IZNSContracts
+      >) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer(deployAdmin, env);
+      const deployer = new HardhatDeployer<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider
+      >({
+        hre,
+        signer: deployAdmin,
+        env,
+      });
       let dbAdapter = await getMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
@@ -212,7 +232,12 @@ describe("Deploy Campaign Test", () => {
         toMatchErr = errorMsgPostDeploy;
       }
 
-      const failingCampaign = new DeployCampaign({
+      const failingCampaign = new DeployCampaign<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider,
+      IZNSContracts
+      >({
         missions: missionList,
         deployer,
         dbAdapter,
@@ -369,11 +394,7 @@ describe("Deploy Campaign Test", () => {
     it("[in AddressResolver.deploy() hook] should ONLY deploy undeployed contracts in the run following a failed run", async () => {
       // ZNSAddressResolverDM sits in the middle of the Campaign deploy list
       // we override this class to add a failure to the deploy() method
-      class FailingZNSAddressResolverDM<
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends ZNSAddressResolverDM<H, S, P> {
+      class FailingZNSAddressResolverDM extends ZNSAddressResolverDM {
         async deploy () {
           throw new Error(errorMsgDeploy);
         }
@@ -421,11 +442,7 @@ describe("Deploy Campaign Test", () => {
 
     // eslint-disable-next-line max-len
     it("[in AddressResolver.postDeploy() hook] should start from post deploy sequence that failed on the previous run", async () => {
-      class FailingZNSAddressResolverDM<
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends ZNSAddressResolverDM<H, S, P> {
+      class FailingZNSAddressResolverDM extends ZNSAddressResolverDM {
         async postDeploy () {
           throw new Error(errorMsgPostDeploy);
         }
@@ -454,7 +471,12 @@ describe("Deploy Campaign Test", () => {
         H extends IHardhatBase,
         S extends ISignerBase,
         P extends IProviderBase,
-      > (failingCampaign : DeployCampaign<H, S, P>) => {
+      > (failingCampaign : DeployCampaign<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider,
+      IZNSContracts
+      >) => {
         const {
           // eslint-disable-next-line no-shadow
           registry,
@@ -497,11 +519,7 @@ describe("Deploy Campaign Test", () => {
 
     // eslint-disable-next-line max-len
     it("[in RootRegistrar.deploy() hook] should ONLY deploy undeployed contracts in the run following a failed run", async () => {
-      class FailingZNSRootRegistrarDM <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends ZNSRootRegistrarDM<H, S, P> {
+      class FailingZNSRootRegistrarDM extends ZNSRootRegistrarDM {
         async deploy () {
           throw new Error(errorMsgDeploy);
         }
@@ -549,11 +567,7 @@ describe("Deploy Campaign Test", () => {
 
     // eslint-disable-next-line max-len
     it("[in RootRegistrar.postDeploy() hook] should start from post deploy sequence that failed on the previous run", async () => {
-      class FailingZNSRootRegistrarDM <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends ZNSRootRegistrarDM<H, S, P> {
+      class FailingZNSRootRegistrarDM extends ZNSRootRegistrarDM {
         async postDeploy () {
           throw new Error(errorMsgPostDeploy);
         }
@@ -578,11 +592,12 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > (failingCampaign : DeployCampaign<H, S, P>) => {
+      const checkPostDeploy = async (failingCampaign : DeployCampaign<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider,
+      IZNSContracts
+      >) => {
         const {
           // eslint-disable-next-line no-shadow
           accessController,
@@ -645,7 +660,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IDeployCampaignConfig = await getConfig({
+      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -675,9 +690,9 @@ describe("Deploy Campaign Test", () => {
     it("Modifies config to use a random account as the deployer", async () => {
       // Run the deployment a second time, clear the DB so everything is deployed
 
-      let zns : TZNSContractState;
+      let zns : IZNSContracts;
 
-      const config : IDeployCampaignConfig = await getConfig({
+      const config : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -850,7 +865,12 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Versioning", () => {
-    let campaign : DeployCampaign;
+    let campaign : DeployCampaign<
+    HardhatRuntimeEnvironment,
+    SignerWithAddress,
+    DefenderRelayProvider,
+    IZNSContracts
+    >;
 
     before(async () => {
       await saveTag();
@@ -1031,7 +1051,7 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IDeployCampaignConfig;
+    let config : IZNSCampaignConfig<SignerWithAddress>;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
@@ -1065,11 +1085,11 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct data for each contract when verifying on Etherscan", async () => {
       const verifyData : Array<{ address : string; ctorArgs ?: TDeployArgs; }> = [];
-      class HardhatDeployerMock <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends HardhatDeployer<H, S, P> {
+      class HardhatDeployerMock extends HardhatDeployer<
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider
+      > {
         async etherscanVerify (args : {
           address : string;
           ctorArgs ?: TDeployArgs;
@@ -1108,11 +1128,11 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
-      class HardhatDeployerMock <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > extends HardhatDeployer<H, S, P> {
+      class HardhatDeployerMock extends HardhatDeployer<
+        HardhatRuntimeEnvironment,
+        SignerWithAddress,
+        DefenderRelayProvider
+      > {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }

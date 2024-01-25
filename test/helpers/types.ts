@@ -1,4 +1,5 @@
 import {
+  MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -24,12 +25,9 @@ import {
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
-  MeowTokenMock,
-  MeowToken,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-import { IContractState } from "@zero-tech/zdc";
 
 
 export type Maybe<T> = T | undefined;
@@ -67,19 +65,6 @@ export type ZNSContractMock =
   ZNSAddressResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock;
 
-export type ZNSContract =
-  ZNSAccessController |
-  ZNSRegistry |
-  ZNSDomainToken |
-  MeowTokenMock |
-  MeowToken |
-  ZNSAddressResolver |
-  ZNSCurvePricer |
-  ZNSTreasury |
-  ZNSRootRegistrar |
-  ZNSFixedPricer |
-  ZNSSubRegistrar;
-
 export interface IFixedPriceConfig {
   price : bigint;
   feePercentage : bigint;
@@ -92,7 +77,7 @@ export interface RegistrarConfig {
   domainTokenAddress : string;
 }
 
-export interface IZNSContracts extends IContractState<ZNSContract> {
+export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
@@ -103,6 +88,7 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
+  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {

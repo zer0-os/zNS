@@ -1,19 +1,19 @@
 import {
   BaseDeployMission,
-  IContractState,
-  IHardhatBase,
-  IProviderBase,
-  ISignerBase, TDeployArgs,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSAccessControllerDM <
-  H extends IHardhatBase,
-  S extends ISignerBase,
-  P extends IProviderBase,
-  St extends IContractState,
-> extends BaseDeployMission<H, S, P, St> {
+export class ZNSAccessControllerDM extends BaseDeployMission<
+HardhatRuntimeEnvironment,
+SignerWithAddress,
+DefenderRelayProvider,
+IZNSContracts
+> {
   proxyData = {
     isProxy: false,
   };

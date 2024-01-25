@@ -14,9 +14,8 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
-import { IZNSCampaignConfig } from "./campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSContracts } from "../../test/helpers/types";
 
 
 export const runZnsCampaign = async ({

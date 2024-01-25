@@ -1,4 +1,4 @@
-import { IDistributionConfig, IZNSContracts } from "../helpers/types";
+import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
 import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
@@ -18,7 +18,7 @@ describe("Transaction Gas Costs Test", () => {
   let lvl2SubOwner : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
 
   let rootHashDirect : string;
   // let rootHashStake : string;

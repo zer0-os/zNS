@@ -1,7 +1,5 @@
 import {
   getLogger,
-  IDeployCampaignConfig,
-  TZNSContractState,
 } from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -19,6 +17,8 @@ import {
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
 import { Defender } from "@openzeppelin/defender-sdk";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+
 
 describe("DeployCampaign - Integration", () => {
   // Minters
@@ -31,9 +31,9 @@ describe("DeployCampaign - Integration", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IDeployCampaignConfig;
+  let config : IZNSCampaignConfig<SignerWithAddress>;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;
 
   let users : Array<SignerWithAddress>;
@@ -93,9 +93,8 @@ describe("DeployCampaign - Integration", () => {
       deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
     }
 
-
     config = await getConfig({
-      deployer,
+      deployer: deployer as unknown as SignerWithAddress,
       zeroVaultAddress: zeroVault.address,
     });
 

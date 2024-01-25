@@ -1,6 +1,5 @@
-import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
-import { startMongo, stopMongo } from "../deploy/db/service/mongo-service";
-import { getLogger } from "../deploy/logger/create-logger";
+import { getMongoAdapter, getLogger } from "@zero-tech/zdc";
+import { startMongo, stopMongo } from "../deploy/mongo-service";
 
 
 const logger = getLogger();

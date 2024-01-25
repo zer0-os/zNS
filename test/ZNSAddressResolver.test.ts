@@ -5,7 +5,7 @@ import {
   ZNSAddressResolver__factory,
   ZNSAddressResolverUpgradeMock__factory,
 } from "../typechain";
-import { DeployZNSParams, IZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
@@ -29,7 +29,7 @@ describe("ZNSAddressResolver", () => {
   let operator : SignerWithAddress;
   let wilderDomainHash : string;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
 
   beforeEach(async () => {
     [

@@ -19,7 +19,7 @@ import {
   INITIALIZED_ERR,
   DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION,
 } from "./helpers";
-import { DeployZNSParams, IZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
@@ -29,7 +29,7 @@ describe("ZNSDomainToken", () => {
   let mockRegistrar : SignerWithAddress;
   let beneficiary : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
   let deployParams : DeployZNSParams;
 
   const randomTokenURI = "https://www.zNS.domains/1a3c2f5";

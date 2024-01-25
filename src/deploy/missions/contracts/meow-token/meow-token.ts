@@ -2,25 +2,26 @@ import {
   BaseDeployMission,
   IDeployMissionArgs,
   TDeployArgs,
-  IHardhatBase,
-  ISignerBase,
-  IProviderBase, IContractState,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { IZNSContracts } from "../../../campaign/types";
 
 
 export const meowTokenName = "MEOW";
 export const meowTokenSymbol = "MEOW";
 
 
-export class MeowTokenDM <
-  H extends IHardhatBase,
-  S extends ISignerBase,
-  P extends IProviderBase,
-  St extends IContractState,
-> extends BaseDeployMission<H, S, P, St> {
+export class MeowTokenDM extends BaseDeployMission<
+HardhatRuntimeEnvironment,
+SignerWithAddress,
+DefenderRelayProvider,
+IZNSContracts
+> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.transparent,
@@ -29,7 +30,12 @@ export class MeowTokenDM <
   contractName = znsNames.meowToken.contract;
   instanceName = znsNames.meowToken.instance;
 
-  constructor (args : IDeployMissionArgs<H, S, P, St>) {
+  constructor (args : IDeployMissionArgs<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  DefenderRelayProvider,
+  IZNSContracts
+  >) {
     super(args);
 
     if (this.config.mockMeowToken) {
