@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
+require("dotenv").config();
 
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
-require("dotenv").config();
 
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
