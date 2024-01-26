@@ -383,7 +383,9 @@ describe("Deploy Campaign Test", () => {
         },
       };
 
-      mongoAdapter = await getZnsMongoAdapter(loggerMock as TLogger);
+      mongoAdapter = await getZnsMongoAdapter({
+        logger: loggerMock as TLogger,
+      });
     });
 
     afterEach(async () => {
@@ -966,13 +968,7 @@ describe("Deploy Campaign Test", () => {
     });
 
     // eslint-disable-next-line max-len
-    it.only("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
-      // TODO iso: 1. this test is failing because the DB is not being wiped
-      //  2. and test the zDC not reading the ENV vars when creating a logger !!
-      //  3. merge all zDC changes
-      //  4. release new zDC version
-      //  5. deprecate the old version on NPM
-      //  6. update zNS to use new zDC version
+    it("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
       const { dbAdapter } = campaign;
 
       const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
@@ -1135,9 +1131,9 @@ describe("Deploy Campaign Test", () => {
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer<
-        HardhatRuntimeEnvironment,
-        SignerWithAddress,
-        DefenderRelayProvider
+      HardhatRuntimeEnvironment,
+      SignerWithAddress,
+      DefenderRelayProvider
       > {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
