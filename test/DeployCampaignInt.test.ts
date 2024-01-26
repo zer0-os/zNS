@@ -6,7 +6,6 @@ import {
   TLogger,
   HardhatDeployer,
   DeployCampaign,
-  getMongoAdapter,
   resetMongoAdapter,
   TDeployMissionCtor,
   MongoDBAdapter,
@@ -48,6 +47,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types"
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSContractsLocal } from "./helpers/types";
+import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
 const execAsync = promisify(exec);
@@ -225,7 +225,7 @@ describe("Deploy Campaign Test", () => {
         signer: deployAdmin,
         env,
       });
-      let dbAdapter = await getMongoAdapter();
+      let dbAdapter = await getZnsMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
       if (placeOfFailure === "postDeploy") {
@@ -383,7 +383,7 @@ describe("Deploy Campaign Test", () => {
         },
       };
 
-      mongoAdapter = await getMongoAdapter(loggerMock as TLogger);
+      mongoAdapter = await getZnsMongoAdapter(loggerMock as TLogger);
     });
 
     afterEach(async () => {
@@ -910,10 +910,10 @@ describe("Deploy Campaign Test", () => {
 
       const { dbAdapter } = campaign;
 
-      const versionDoc = await dbAdapter.getLatestVersion();
+      const versionDoc = await dbAdapter.versioner.getLatestVersion();
       expect(versionDoc?.contractsVersion).to.equal(fullGitTag);
 
-      const deployedVersion = await dbAdapter.getDeployedVersion();
+      const deployedVersion = await dbAdapter.versioner.getDeployedVersion();
       expect(deployedVersion?.contractsVersion).to.equal(fullGitTag);
     });
 
@@ -921,7 +921,7 @@ describe("Deploy Campaign Test", () => {
     it("should create new DB version and KEEP old data if ARCHIVE is true and no TEMP versions currently exist", async () => {
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -945,7 +945,7 @@ describe("Deploy Campaign Test", () => {
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
       expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
 
-      const versionDocNew = await newDbAdapter.getLatestVersion();
+      const versionDocNew = await newDbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
       expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
 
@@ -966,10 +966,16 @@ describe("Deploy Campaign Test", () => {
     });
 
     // eslint-disable-next-line max-len
-    it("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
+    it.only("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
+      // TODO iso: 1. this test is failing because the DB is not being wiped
+      //  2. and test the zDC not reading the ENV vars when creating a logger !!
+      //  3. merge all zDC changes
+      //  4. release new zDC version
+      //  5. deprecate the old version on NPM
+      //  6. update zNS to use new zDC version
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -993,7 +999,7 @@ describe("Deploy Campaign Test", () => {
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
       expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
 
-      const versionDocNew = await newDbAdapter.getLatestVersion();
+      const versionDocNew = await newDbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
       expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
 
@@ -1013,7 +1019,7 @@ describe("Deploy Campaign Test", () => {
     it("should pick up existing contracts and NOT deploy new ones into state if MONGO_DB_VERSION is specified", async () => {
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -1027,7 +1033,7 @@ describe("Deploy Campaign Test", () => {
       });
 
       // make sure we picked up the correct DB version
-      const versionDocNew = await dbAdapter.getLatestVersion();
+      const versionDocNew = await dbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.equal(initialDBVersion);
 
       // make sure old contracts from previous DB version are still there

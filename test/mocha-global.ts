@@ -1,12 +1,12 @@
-import { getMongoAdapter } from "@zero-tech/zdc";
+import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
 export const mochaGlobalSetup = async () => {
-  await getMongoAdapter();
+  await getZnsMongoAdapter();
 };
 
 export const mochaGlobalTeardown = async () => {
-  const mongoAdapter = await getMongoAdapter();
+  const mongoAdapter = await getZnsMongoAdapter();
   // the next line can be commented out to leave the DB after test to manually test
   await mongoAdapter.dropDB();
   await mongoAdapter.close();

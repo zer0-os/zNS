@@ -4,7 +4,6 @@ import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-c
 import {
   HardhatDeployer,
   DeployCampaign,
-  getMongoAdapter,
   getLogger,
 } from "@zero-tech/zdc";
 import {
@@ -16,6 +15,7 @@ import {
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZnsMongoAdapter } from "./mongo";
 
 
 export const runZnsCampaign = async ({
@@ -42,7 +42,7 @@ export const runZnsCampaign = async ({
     });
   }
 
-  const dbAdapter = await getMongoAdapter();
+  const dbAdapter = await getZnsMongoAdapter();
 
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,
