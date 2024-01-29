@@ -14,7 +14,7 @@ import {
   NOT_AUTHORIZED_TREASURY_ERR,
   getStakingOrProtocolFee,
 } from "./helpers";
-import { DeployZNSParams, IZNSContracts } from "./helpers/types";
+import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
@@ -33,7 +33,7 @@ describe("ZNSTreasury", () => {
   let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let randomAcc : SignerWithAddress;
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
 
   const domainName = "wilderrr";
   const domainHash = hashDomainLabel(domainName);

@@ -1,15 +1,27 @@
-import { BaseDeployMission } from "../../base-deploy-mission";
+import {
+  BaseDeployMission,
+  IDeployMissionArgs,
+  TDeployArgs,
+} from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
-import { IDeployMissionArgs, TDeployArgs } from "../../types";
-import { Contract, ethers } from "ethers";
+import { ethers } from "ethers";
 import { znsNames } from "../names";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { IZNSContracts } from "../../../campaign/types";
 
 
 export const meowTokenName = "MEOW";
 export const meowTokenSymbol = "MEOW";
 
 
-export class MeowTokenDM extends BaseDeployMission {
+export class MeowTokenDM extends BaseDeployMission<
+HardhatRuntimeEnvironment,
+SignerWithAddress,
+DefenderRelayProvider,
+IZNSContracts
+> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.transparent,
@@ -18,7 +30,12 @@ export class MeowTokenDM extends BaseDeployMission {
   contractName = znsNames.meowToken.contract;
   instanceName = znsNames.meowToken.instance;
 
-  constructor (args : IDeployMissionArgs) {
+  constructor (args : IDeployMissionArgs<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  DefenderRelayProvider,
+  IZNSContracts
+  >) {
     super(args);
 
     if (this.config.mockMeowToken) {
@@ -50,14 +67,12 @@ export class MeowTokenDM extends BaseDeployMission {
 
       const baseContract = await this.campaign.deployer.getContractObject(
         this.contractName,
-        this.config.stakingTokenAddress,
+        this.config.stakingTokenAddress as string,
       );
 
-      const contract = new Contract(baseContract.target.toString(), baseContract.interface, baseContract.runner);
+      await this.saveToDB(baseContract);
 
-      await this.saveToDB(contract);
-
-      this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
+      this.campaign.updateStateContract(this.instanceName, this.contractName, baseContract);
 
       // eslint-disable-next-line max-len
       this.logger.info(`Successfully created ${this.contractName} contract from Mainnet data at ${await baseContract.getAddress()}`);
@@ -75,7 +90,7 @@ export class MeowTokenDM extends BaseDeployMission {
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken;
+    return this.config.mockMeowToken as boolean;
   }
 
   async postDeploy () {
@@ -88,7 +103,7 @@ export class MeowTokenDM extends BaseDeployMission {
 
     // Mint 100,000 MEOW to the deployer
     await meowToken.connect(deployAdmin).mint(
-      await deployAdmin.getAddress(),
+      await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );
 

@@ -1,6 +1,6 @@
 import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { IDeployCampaignConfig } from "./types";
+import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
   DEFAULT_ROYALTY_FRACTION,
@@ -62,18 +62,18 @@ export const getConfig = async ({
   zeroVaultAddress,
   env, // this is ONLY used for tests!
 } : {
-  deployer : SignerWithAddress | DefenderRelaySigner;
+  deployer : SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
-}) : Promise<IDeployCampaignConfig> => {
+}) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
   let deployerAddress;
   if (deployer && Object.keys(deployer).includes("address")) {
-    deployerAddress = (deployer as HardhatEthersSigner).address;
+    deployerAddress = deployer.address;
   } else {
     deployerAddress = await deployer.getAddress();
   }
@@ -99,7 +99,7 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IDeployCampaignConfig = {
+  const config : IZNSCampaignConfig<SignerWithAddress> = {
     env: process.env.ENV_LEVEL!,
     deployAdmin: deployer,
     governorAddresses,

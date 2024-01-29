@@ -2,7 +2,6 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ethers } from "ethers";
-import { IZNSContracts } from "./helpers/types";
 import {
   deployZNS,
   getCurvePrice,
@@ -28,10 +27,12 @@ import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getProxyImplAddress } from "./helpers/utils";
+import { IZNSContractsLocal } from "./helpers/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 const { ZeroHash } = ethers;
+
 
 describe("ZNSCurvePricer", () => {
   let deployer : SignerWithAddress;
@@ -39,7 +40,7 @@ describe("ZNSCurvePricer", () => {
   let admin : SignerWithAddress;
   let randomAcc : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
   let domainHash : string;
 
   const defaultDomain = "wilder";

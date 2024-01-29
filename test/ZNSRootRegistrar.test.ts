@@ -2,6 +2,9 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  MongoDBAdapter,
+} from "@zero-tech/zdc";
+import {
   normalizeName,
   validateUpgrade,
   AccessType,
@@ -32,7 +35,6 @@ import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
@@ -44,8 +46,8 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -59,7 +61,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -72,7 +74,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    const config : IDeployCampaignConfig = await getConfig({
+    const config = await getConfig({
       deployer,
       zeroVaultAddress: zeroVault.address,
       governors: [deployer.address, governor.address],

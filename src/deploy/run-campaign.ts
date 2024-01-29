@@ -1,8 +1,8 @@
 import { getConfig } from "./campaign/environments";
 import { runZnsCampaign } from "./zns-campaign";
 import { Defender } from "@openzeppelin/defender-sdk";
-
-import { getLogger } from "./logger/create-logger";
+import { getLogger } from "@zero-tech/zdc";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 const logger = getLogger();
 
@@ -20,7 +20,7 @@ const runCampaign = async () => {
   const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
   const config = await getConfig({
-    deployer,
+    deployer: deployer as unknown as SignerWithAddress,
   });
 
   await runZnsCampaign({
