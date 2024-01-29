@@ -156,13 +156,23 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * Since we are clearing storage, gas refund from this operation makes Revoke transactions cheaper.
      * @param domainHash The hash of the domain for which the stake is being withdrawn.
      * @param owner The address of the user who is withdrawing the stake.
+     * @param protocolFee The protocol fee paid by the user to Zero.
      */
     function unstakeForDomain(
         bytes32 domainHash,
-        address owner
+        address owner,
+        uint256 protocolFee
     ) external override onlyRegistrar {
         Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
+
+        if (protocolFee > 0) {
+            stakeData.token.safeTransferFrom(
+                owner,
+                paymentConfigs[0x0].beneficiary,
+                protocolFee
+            );
+        }
 
         stakeData.token.safeTransfer(owner, stakeData.amount);
 

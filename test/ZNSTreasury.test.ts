@@ -10,7 +10,9 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   INITIALIZED_ERR,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, NOT_AUTHORIZED_TREASURY_ERR,
+  validateUpgrade,
+  NOT_AUTHORIZED_TREASURY_ERR,
+  getStakingOrProtocolFee,
 } from "./helpers";
 import { DeployZNSParams, IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
@@ -247,23 +249,26 @@ describe("ZNSTreasury", () => {
       const balanceBeforeUnstake = await zns.meowToken.balanceOf(user.address);
       const { token, amount: stake } = await zns.treasury.stakedForDomain(domainHash);
 
-      await zns.treasury.connect(mockRegistrar).unstakeForDomain(domainHash, user.address);
+      await zns.treasury.connect(mockRegistrar).unstakeForDomain(domainHash, user.address, protocolFee);
 
       await checkBalance({
         token: zns.meowToken,
         balanceBefore: balanceBeforeUnstake,
         userAddress: user.address,
-        target: stake,
+        target: stake - protocolFee,
         shouldDecrease: false,
       });
       expect(token).to.eq(await zns.meowToken.getAddress());
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
+      const { amount } = await zns.treasury.stakedForDomain(domainHash);
+      const protocolFee = getStakingOrProtocolFee(amount);
       await expect(
         zns.treasury.connect(user).unstakeForDomain(
           domainHash,
-          user.address
+          user.address,
+          protocolFee
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(user.address, REGISTRAR_ROLE)

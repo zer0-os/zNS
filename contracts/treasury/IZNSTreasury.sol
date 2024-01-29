@@ -121,7 +121,11 @@ interface IZNSTreasury {
         uint256 protocolFee
     ) external;
 
-    function unstakeForDomain(bytes32 domainHash, address owner) external;
+    function unstakeForDomain(
+        bytes32 domainHash,
+        address owner,
+        uint256 protocolFee
+    ) external;
 
     function processDirectPayment(
         bytes32 parentHash,
