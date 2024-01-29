@@ -125,6 +125,8 @@ contract ZNSRootRegistrar is
 
         if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
+            // TODO if distributionConfig specifies "mintlist", should we require to set it here?
+            // this would add extra args to this function. Maybe just make a separate call
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
         }
 

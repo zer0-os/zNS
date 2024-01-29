@@ -134,8 +134,7 @@ export const registrationWithSetup = async ({
   fullConfig ?: IFullDistributionConfig;
   setConfigs ?: boolean;
 }) => {
-  const hasConfig = !!fullConfig;
-  const distrConfig = hasConfig
+  const distrConfig = fullConfig
     ? fullConfig.distrConfig
     : distrConfigEmpty;
 
@@ -174,33 +173,36 @@ export const registrationWithSetup = async ({
     user,
   });
 
-  if (!hasConfig) return domainHash;
+  if (!fullConfig) return domainHash;
 
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    await zns.fixedPricer.connect(user).setPriceConfig(
-      domainHash,
-      {
-        ...fullConfig.priceConfig as IFixedPriceConfig,
-        isSet: true,
-      },
-    );
-  } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    await zns.curvePricer.connect(user).setPriceConfig(
-      domainHash,
-      {
-        ...fullConfig.priceConfig as ICurvePriceConfig,
-        isSet: true,
-      },
-    );
-  }
+  if(setConfigs) {
+    if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress()) {
+      await zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          ...fullConfig.priceConfig as IFixedPriceConfig,
+          isSet: true,
+        },
+      );
+    } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress()) {
+      await zns.curvePricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          ...fullConfig.priceConfig as ICurvePriceConfig,
+          isSet: true,
+        },
+      );
+    }
 
-  if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {
-    // set up payment config
-    await zns.treasury.connect(user).setPaymentConfig(
-      domainHash,
-      fullConfig.paymentConfig,
-    );
+    // TODO this is set in registration now, update this?
+    if (fullConfig.paymentConfig.token !== ZeroAddress) {
+      // set up payment config
+      await zns.treasury.connect(user).setPaymentConfig(
+        domainHash,
+        fullConfig.paymentConfig,
+      );
+    }
   }
 
   return domainHash;

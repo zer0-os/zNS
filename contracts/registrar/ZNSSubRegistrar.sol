@@ -10,6 +10,7 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { MerkleProofUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
@@ -32,9 +33,97 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
+    /**
+     * @notice Mapping of domainHash to mintlist merkleRoot set by the domain owner/operator.
+     */
+    mapping(bytes32 parentHash => bytes32 merkleRoot) private merkleRoots;
+
+    /**
+     * @notice Map how many domains have been minted by a user for a specific merkle tree
+     */
+    mapping(bytes32 merkleRoot => mapping(address user => uint256 count)) private subdomainsRegistered;
+
     struct Mintlist {
         mapping(uint256 idx => mapping(address candidate => bool allowed)) list;
         uint256 ownerIndex;
+    }
+
+    // New idea must allow for 
+    // small and large additions
+    // small and large removals
+    // total reset with single tx
+
+    // The id of the current mintlist being used
+    // domains are not allowed more than one mintlist concurrently
+    // ID is unique globally
+    mapping(bytes32 domainHash => bytes32 mintlistId) private mintlistIds;
+
+    // List of users per mintlist
+    mapping(bytes32 mintlistId => address[] userList) private userLists;
+    
+    // User index on that domain's mintlist
+    mapping(bytes32 mintlistId => mapping(address user => uint256 userIndex)) private userIndices;
+    
+    // what an individual users is allowed on a specific mintlist
+    // how do we do domainHash => mintListId => user => amount
+    mapping(bytes32 mintlistId => mapping(address user => uint256 amount)) private allowedPerDomain;
+
+    function insertOne(bytes32 domainHash, address user, uint256 amount) public {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubRegistrar: Not authorized"
+        );
+        // Get the id of the mintlist currently in use by that domain
+        bytes32 id = mintlistIds[domainHash];
+        
+        // First addition to mintlist
+        if (id == 0) {
+            // TODO a domain is only allowed one mintlist at a time
+            // is there an issue here if they try to create two in the same block?
+            id = keccak256(abi.encodePacked(domainHash, block.timestamp));
+            mintlistIds[domainHash] = id;
+        }
+
+        // Give the user the amount allowed
+        allowedPerDomain[id][user] = amount;
+
+        // Log that user as on the list
+        userLists[id].push(user);
+
+        // Store that users index in the list
+        userIndices[id][user] = userLists[id].length - 1;
+
+        // emit UserInserted
+        // insert many is just copy of this func with array types
+    }
+
+    function getMintlistIdForDomain(bytes32 domainHash) public view returns(bytes32) {
+        return mintlistIds[domainHash];
+    }
+
+    // get the index on the mintlist of a specific domain where that user exists
+    function getUserIndexForMintlist(bytes32 domainHash, address user) public view returns (uint256) {
+        bytes32 id = mintlistIds[domainHash];
+        return userIndices[id][user];
+    }
+
+    function getAllowedAmountForUser(bytes32 domainHash, address user) public view returns (uint256) {
+        bytes32 id = mintlistIds[domainHash];
+        uint256 amount = allowedPerDomain[id][user];
+
+        return amount;
+    }
+
+    // remove one user from current mintlist
+    function removeUser(bytes32 domainHash, address user) public {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubRegistrar: Not authorized"
+        );
+        // bulk tx remove many is loop delete
+        bytes32 id = mintlistIds[domainHash];
+        delete allowedPerDomain[id][user];
+        // emit UserRemoved
     }
 
     /**
@@ -89,7 +178,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        MerkleProof calldata merkleProof // can be zero, TODO update natspec
     ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
@@ -100,34 +190,56 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             "ZNSSubRegistrar: Subdomain already exists"
         );
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
-
-        Ownership memory parent = Ownership({
-            owner: registry.getDomainOwner(parentHash),
-            ownsBoth: false,
-            isOperatorForOwner: false
+        // We load the various data into a single object
+        // because doing so reduces the number of SLOADs
+        SubdomainConfig memory config = SubdomainConfig({
+            parentOwner: registry.getDomainOwner(parentHash),
+            parentOwnsBoth: false,
+            isOperatorForParentOwner: false,
+            distrConfig: distrConfigs[parentHash],
+            paymentConfig: paymentConfig,
+            merkleProof: merkleProof
         });
 
-        parent.ownsBoth = rootRegistrar.isOwnerOf(parentHash, parent.owner, IZNSRootRegistrar.OwnerOf.BOTH);
-        parent.isOperatorForOwner = registry.isOperatorFor(msg.sender, parent.owner);
+        config.parentOwnsBoth = rootRegistrar.isOwnerOf(parentHash, config.parentOwner, IZNSRootRegistrar.OwnerOf.BOTH);
+        config.isOperatorForParentOwner = registry.isOperatorFor(msg.sender, config.parentOwner);
 
-        if (parentConfig.accessType == AccessType.LOCKED) {
+        if (config.distrConfig.accessType == AccessType.LOCKED) {
             require(
                 // Require that the parent owns both the token and the domain name
                 // as well as that the caller either is the parent owner, or an allowed operator
-                parent.ownsBoth && (parent.isOperatorForOwner || address(msg.sender) == parent.owner),
+                config.parentOwnsBoth && (config.isOperatorForParentOwner || address(msg.sender) == config.parentOwner),
                 "ZNSSubRegistrar: Parent domain's distribution is locked"
             );
         }
 
-        if (parentConfig.accessType == AccessType.MINTLIST) {
-            require(
-                mintlist[parentHash]
-                    .list
-                    [mintlist[parentHash].ownerIndex]
-                    [msg.sender],
-                "ZNSSubRegistrar: Sender is not approved for purchase"
-            );
+        if (config.distrConfig.accessType == AccessType.MINTLIST) {
+            // If not owner of both token, or not either a valid operator or owner of parent, require mintlist
+            if (!config.parentOwnsBoth || !(config.isOperatorForParentOwner || address(msg.sender) == config.parentOwner)) {
+                // TODO should parent owner be required to own both to skip the mintlist checks?
+                // if we don't enforce this they can skip mintlist checks after selling
+                bytes32 parentMerkleRoot = merkleRoots[parentHash];
+
+                require(
+                    parentMerkleRoot != bytes32(0),
+                    "ZNSSubRegistrar: Mintlist merkle root not set for parent domain"
+                );
+
+                require(
+                    subdomainsRegistered[parentMerkleRoot][msg.sender] < merkleProof.amount,
+                    "ZNSSubRegistrar: Mintlist limit reached or not allowed to mint"
+                );
+
+                // Require the registering user is both listed in the mintlist and has not exceeded their limit
+                verifyMerkleProofForDomain(
+                    parentHash,
+                    msg.sender,
+                    merkleProof.amount,
+                    merkleProof.proof
+                );
+
+                subdomainsRegistered[parentMerkleRoot][msg.sender]++;
+            }
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
@@ -139,22 +251,22 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             stakeFee: 0,
             domainAddress: domainAddress,
             tokenURI: tokenURI,
-            isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
+            isStakePayment: config.distrConfig.paymentType == PaymentType.STAKE,
             paymentConfig: paymentConfig
         });
 
         // If parent owns both and caller is either parent or an operator, mint for free
         // If parent does not own both or the caller is not an operator or the owner, pay to mint
-        if (!parent.ownsBoth || !(parent.isOperatorForOwner || address(msg.sender) == parent.owner)) {
+        if (!config.parentOwnsBoth || !(config.isOperatorForParentOwner || address(msg.sender) == config.parentOwner)) {
             if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(config.distrConfig.pricerContract))
                     .getPriceAndFee(
                         parentHash,
                         label,
                         true
                     );
             } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+                coreRegisterArgs.price = IZNSPricer(address(config.distrConfig.pricerContract))
                     .getPrice(
                         parentHash,
                         label,
@@ -187,6 +299,60 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 keccak256(bytes(label))
             )
         );
+    }
+
+    /**
+     * 
+     * @param domainHash The domain hash to set this merkle root for
+     * @param root The merkle tree root
+     */
+    function setMerkleRootForDomain(bytes32 domainHash, bytes32 root) public override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubRegistrar: Cannot set merkle root for domain"
+        );
+
+        merkleRoots[domainHash] = root;
+        // update user counts
+    }
+
+    /**
+     * 
+     * @param domainHash The domain hash to delete the merkle root for
+     */
+    function deleteMerkleRootForDomain(bytes32 domainHash) public override {
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSSubRegistrar: Cannot unset merkle root for domain"
+        );
+
+        delete merkleRoots[domainHash];
+    }
+
+    // Get count a user has registered under a specific merkle root
+    function getCount(bytes32 domainHash, address user) public view returns(uint256) {
+        bytes32 domainMerkleRoot = merkleRoots[domainHash];
+        return subdomainsRegistered[domainMerkleRoot][user];
+    }
+
+    /**
+     * 
+     * @param parentHash The domain that specifies the merkle root to verify against
+     * @param candidate The registering user
+     * @param amount The amount of registrations the user is allowed
+     * @param proof The cryptographic proof generated by that merkle tree for this user
+     */
+    function verifyMerkleProofForDomain(
+        bytes32 parentHash,
+        address candidate,
+        uint256 amount,
+        bytes32[] calldata proof
+    ) public view override {
+        bytes32 node = keccak256(bytes.concat(keccak256(abi.encode(candidate, amount))));
+
+        bytes32 rootForDomain = merkleRoots[parentHash];
+
+        require(MerkleProofUpgradeable.verify(proof, rootForDomain, node), "ZNSSubRegistrar: Invalid proof");
     }
 
     /**

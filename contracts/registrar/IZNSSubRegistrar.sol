@@ -11,10 +11,18 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 */
 interface IZNSSubRegistrar is IDistributionConfig {
 
-    struct Ownership {
-        address owner;
-        bool ownsBoth;
-        bool isOperatorForOwner;
+    struct MerkleProof {
+        bytes32[] proof;
+        uint256 amount;
+    }
+
+    struct SubdomainConfig {
+        address parentOwner;
+        bool parentOwnsBoth;
+        bool isOperatorForParentOwner;
+        DistributionConfig distrConfig;
+        PaymentConfig paymentConfig;
+        MerkleProof merkleProof;
     }
 
     /**
@@ -71,6 +79,22 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     );
 
+    function setMerkleRootForDomain(
+        bytes32 domainHash,
+        bytes32 merkleRoot
+    ) external;
+
+    function deleteMerkleRootForDomain(
+        bytes32 domainHash
+    ) external;
+
+    function verifyMerkleProofForDomain(
+        bytes32 parentHash,
+        address candidate,
+        uint256 amount,
+        bytes32[] calldata proof
+    ) external view;
+
     function isMintlistedForDomain(
         bytes32 domainHash,
         address candidate
@@ -88,7 +112,8 @@ interface IZNSSubRegistrar is IDistributionConfig {
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        PaymentConfig calldata paymentConfig,
+        MerkleProof calldata merkleProof
     ) external returns (bytes32);
 
     function hashWithParent(

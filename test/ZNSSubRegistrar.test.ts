@@ -20,6 +20,9 @@ import {
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
   DISTRIBUTION_LOCKED_ERR,
+  MERKLE_NOT_SET_ERR,
+  MINTLIST_LIMIT_ERR,
+  INVALID_MERKLE_PROOF_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -38,6 +41,8 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
+
+import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 
 describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
@@ -71,6 +76,7 @@ describe("ZNSSubRegistrar", () => {
         admin,
         rootOwner,
         lvl2SubOwner,
+        lvl3SubOwner,
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -114,6 +120,259 @@ describe("ZNSSubRegistrar", () => {
         },
       });
     });
+
+    describe.only("Mintlists with merkle roots", () => {
+      let domainHash : string;
+      const label = "tld-mintlist"
+
+      before(async () => {
+        domainHash = await registrationWithSetup({
+          zns,
+          user: rootOwner,
+          parentHash: ethers.ZeroHash,
+          domainLabel: label,
+          fullConfig: {
+            distrConfig: {
+              accessType: AccessType.MINTLIST,
+              pricerContract: await zns.fixedPricer.getAddress(),
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: await zns.meowToken.getAddress(),
+              beneficiary: rootOwner.address,
+            },
+            priceConfig: {
+              price: BigInt(0),
+              feePercentage: BigInt(0),
+            },
+          },
+        });
+      });
+
+      it("Verifies a domain with a mintlist", async () => {  
+        const values = [
+          [lvl2SubOwner.address, "5"],
+          [lvl3SubOwner.address, "10"],
+          [lvl2SubOwner.address, "6"],
+          [lvl3SubOwner.address, "11"],
+          [lvl2SubOwner.address, "7"],
+          [lvl3SubOwner.address, "13"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        for (const [i, v] of tree.entries()) {
+          expect(
+            await zns.subRegistrar.verifyMerkleProofForDomain(
+              domainHash,
+              v[0], // address
+              v[1], // amount
+              tree.getProof(i)
+            )
+          ).to.not.be.reverted;
+        }
+      });
+
+      it("Allows registration of a subdomain when mintlisted and within limit", async () => {
+        const values = [
+          [lvl2SubOwner.address, "5"],
+          [lvl3SubOwner.address, "10"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          domainHash,
+          "lvl2sub-mintlist",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            amount: values[0][1],
+            proof: tree.getProof(0),
+          }
+        );
+  
+        const lvl2hash = await getDomainHashFromEvent({
+          zns,
+          user: lvl2SubOwner,
+        });
+  
+        expect(await zns.registry.exists(lvl2hash)).to.be.true;
+  
+        await zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
+          domainHash,
+          "lvl3sub-mintlist",
+          lvl3SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            amount: values[1][1],
+            proof: tree.getProof(1),
+          }
+        );
+  
+        const lvl3hash = await getDomainHashFromEvent({
+          zns,
+          user: lvl3SubOwner,
+        });
+  
+        expect(await zns.registry.exists(lvl3hash)).to.be.true;
+      });
+
+      it("Nobody can mint when the mintlist is not set", async () => {
+        await zns.subRegistrar.connect(rootOwner).deleteMerkleRootForDomain(rootHash);
+  
+        const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            amount: "1",
+            proof: [ethers.ZeroHash],
+          }
+        );
+  
+        await expect(tx).to.be.revertedWith(MERKLE_NOT_SET_ERR);
+      });
+
+      it("Fails when users on a mintlist have met their registration limit", async () => {  
+        const values = [
+          [lvl2SubOwner.address, "1"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        // Register subdomain successfully
+        await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist-inlimit",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            amount: values[0][1],
+            proof: tree.getProof(0),
+          }
+        );
+  
+        // Fail to register the second time, that user has hit their limit
+        const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist-beyond-limit",
+          lvl2SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            amount: values[0][1],
+            proof: tree.getProof(0),
+          }
+        );
+        await expect(tx).to.be.revertedWith(MINTLIST_LIMIT_ERR);
+      });
+
+      it("Fails when users not on the mintlist try to mint", async () => {
+        const values = [
+          [lvl2SubOwner.address, "1"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        const tx = zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist-not-on-list",
+          lvl3SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            // User gives fake data
+            amount: "1",
+            proof: [ethers.ZeroHash],
+          }
+        );
+  
+        await expect(tx).to.be.revertedWith(INVALID_MERKLE_PROOF_ERR)
+      });
+  
+      it("Fails when users spoof another mintlisted user's data", async () => {
+        const values = [
+          [lvl2SubOwner.address, "1"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        const tx = zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist-spoof",
+          lvl3SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            // Give a mintlisted user's data, call from a different user
+            amount: values[0][1],
+            proof: tree.getProof(0),
+          }
+        );
+  
+        await expect(tx).to.be.revertedWith(INVALID_MERKLE_PROOF_ERR)
+      });
+
+      // owner that specifies mintlist can mint, without being on the list
+      it("Fails when users spoof another mintlisted user's data", async () => {
+        const values = [
+          [lvl2SubOwner.address, "1"]
+        ];
+  
+        const tree = StandardMerkleTree.of(values, ["address", "uint256"]);
+  
+        await zns.subRegistrar.connect(rootOwner).setMerkleRootForDomain(domainHash, tree.root);
+  
+        const tx = zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
+          domainHash,
+          "my-sub-mintlist-spoof",
+          lvl3SubOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          paymentConfigEmpty,
+          {
+            // Give a mintlisted user's data, call from a different user
+            amount: values[0][1],
+            proof: tree.getProof(0),
+          }
+        );
+  
+        await expect(tx).to.be.revertedWith(INVALID_MERKLE_PROOF_ERR)
+      });
+      
+      // can a user just fake the data to mint more?
+      // like if they're mintlisted for 10, and they pass in 11 as their limit 
+      // it won't fail on the limit check, but it will fail on the verify step I think
+
+      // owner can set to 0
+      // an owner can unset their merkle root
+      // owner that specified mintlist can mint, when no list is present
+      // owner that does not own both but specified mintlist can mint for a fee, when not on list
+      // gas comparison of this type of mintlist vs. the old type
+    })
 
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";

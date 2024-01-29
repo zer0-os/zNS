@@ -27,6 +27,10 @@ export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both N
 // Subdomain Registrar
 // eslint-disable-next-line max-len
 export const DISTRIBUTION_LOCKED_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked";
+export const MERKLE_NOT_SET_ERR = "ZNSSubRegistrar: Mintlist merkle root not set for parent domain";
+export const MINTLIST_LIMIT_ERR = "ZNSSubRegistrar: Mintlist limit reached or not allowed to mint";
+export const INVALID_MERKLE_PROOF_ERR = "ZNSSubRegistrar: Invalid proof"
+export const OWNER_SET_MERKLE_ERR = "ZNSSubRegistrar: Cannot set merkle root for domain";
 
 // StringUtils
 export const INVALID_NAME_ERR = "StringUtils: Invalid domain label";
