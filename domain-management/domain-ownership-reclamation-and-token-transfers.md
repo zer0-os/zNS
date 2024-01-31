@@ -13,8 +13,8 @@ In the case of domain with split ownership of its record and NFT,  the domain's 
 
 There are certain domain functions that can only be performed by a user who owns both the domain's token and it's record. These are:
 
-* Domain revocation (see [Broken link](broken-reference "mention"))
-* Self-registrations of subdomains for free (see [Broken link](broken-reference "mention"))
+* Domain revocation (see [domain-revocation-destruction.md](domain-revocation-destruction.md "mention"))
+* Self-registrations of subdomains for free (see [domain-registration.md](../domain-registration.md "mention"))
 
 The requirement to own both tokens in these cases is intended to curtail potential abuse of domains by delegate record owners.
 
@@ -24,7 +24,7 @@ The domain reclamation flow is critical for the reestablishment of full ownershi
 
 Ownership of a specific `tokenId` verified in a call to ensure the caller is the domain token owner. Once this is verified as true, `ZNSRootRegistrar` calls `ZNSRegistry` to set the `owner` field in the Registry Record to the address of the caller (the token owner).
 
-<figure><img src="broken-reference" alt="" width="563"><figcaption><p>The core domain reclaim flow</p></figcaption></figure>
+<figure><img src="../.gitbook/assets/reclamation.jpg" alt=""><figcaption><p>The core domain reclaim flow</p></figcaption></figure>
 
 Note that reclamation is not necessary if the current delegation of ownership is beneficial to all parties involved; rather, the reclamation flow is intended as a simple means of restoring ownership to a single entity in the event that a domain token owner desires to restore 'full' ownership function to their individual account. Any user holding a ZNS domain token in their account is able to reclaim the domain's record from its owner at any time.
 

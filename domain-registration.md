@@ -2,7 +2,7 @@
 
 ### Registration Data
 
-<figure><img src="broken-reference" alt=""><figcaption><p>The complete ZNS architecture</p></figcaption></figure>
+<figure><img src=".gitbook/assets/full-architecture.jpg" alt=""><figcaption><p>The complete ZNS architecture</p></figcaption></figure>
 
 There are two contracts responsible for registering domains:
 
@@ -15,7 +15,7 @@ Domain registration at any level requires data to be passed from the buyer to th
 
 The only parameter **required** to register a domain is `name` or `label`, for the registration of top-level domains or subdomains respectively. These are the human-readable identifiers of a domain. In _0://john_   -- a top level domain -- both the `name` and `label` are _john._ In _0://john.art --_ a subdomain -- the `name` is _john.art_ and the `label` of the subdomain is just _art_.
 
-All optional parameters for registration data are outlined below, in [#distribution-config](domain-registration.md#distribution-config "mention")and [#payment-config](domain-registration.md#payment-config "mention").
+All optional parameters for registration data are outlined below, in [base-distribution-configuration.md](subdomain-distribution/base-distribution-configuration.md "mention") and [payments.md](subdomain-distribution/payments.md "mention") and [pricing.md](subdomain-distribution/pricing.md "mention").
 
 ### Warnings <a href="#registration" id="registration"></a>
 
@@ -43,7 +43,7 @@ The main configuration that links all of the distribution rules together when re
 * `PaymentType` - reflects how users will pay for subdomains
 * `AccessType` - signifies who (or no one at all) can create subdomains of a given domain.
 
-See [Broken link](broken-reference "mention") section for detailed explanation of this config.
+See [base-distribution-configuration.md](subdomain-distribution/base-distribution-configuration.md "mention") section for detailed explanation of this config.
 
 ### Payment Config
 
@@ -52,7 +52,7 @@ These configurations are optional when minting a domain, but necessary to allow 
 * `token` - The ERC-20  in which subdomain payments will be accepted
 * `beneficiary` - The address that will receive subdomain payments or fees related to staked payments.
 
-See the [Broken link](broken-reference "mention") section for detailed explanation of this config.
+See the [payments.md](subdomain-distribution/payments.md "mention") section for detailed explanation of this config.
 
 {% hint style="info" %}
 Please note that anyone who owns the domain's ERC-721 token and its record (see [Broken link](broken-reference "mention")) can bypass all the above-detailed distribution rules for subdomains when minting their own subdomains under the parent domain in question, i.e., a domain owner can register any number of subdomains at any time for free (less transaction fees) under their own parent domain.
@@ -60,7 +60,7 @@ Please note that anyone who owns the domain's ERC-721 token and its record (see 
 
 ### Domain Content
 
-Any domain in ZNS can be linked to specific on- or off-chain data. This data can be set during the domain registration process, or at any later point by the domain's owner. At present, ZNS only supports the address resolvers, allowing any domain in the system to be resolved to an Ethereum address. See [Broken link](broken-reference "mention")for more information.
+Any domain in ZNS can be linked to specific on- or off-chain data. This data can be set during the domain registration process, or at any later point by the domain's owner. At present, ZNS only supports the address resolvers, allowing any domain in the system to be resolved to an Ethereum address. See [domain-content-and-resolutions.md](domain-management/domain-content-and-resolutions.md "mention") for more information.
 
 ### Token URI
 
@@ -69,3 +69,7 @@ As every domain is in ZNS represented by an ERC-721 token, any domain can be poi
 > For full ZERO platform integration, it is recommended not to supply a custom `tokenURI` , but to use the one generated as part of registration via Explorer. ZERO does not currently support custom images and metadata.
 
 For more image generation and usage information, please refer to ZERO's Explorer documentation.
+
+{% hint style="info" %}
+Note that the full owner (Token + Name) or his operator can bypass all the distribution rules for subdomains when minting their own subdomains, meaning they can mint any amount of domains at any time for free under their own parent domain.
+{% endhint %}

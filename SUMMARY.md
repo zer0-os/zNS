@@ -12,6 +12,7 @@
   * [Domain Revocation (Destruction)](domain-management/domain-revocation-destruction.md)
   * [Operating Your Domains](domain-management/operating-your-domains.md)
   * [Domain Content and Resolutions](domain-management/domain-content-and-resolutions.md)
+* [Contract Upgradeability](contract-upgradeability.md)
 * [Smart Contracts](smart-contracts/README.md)
   * [Access Control](smart-contracts/access-control/README.md)
     * [ZNSRoles](smart-contracts/access-control/znsroles.md)
@@ -47,4 +48,3 @@
 * [Contract Addresses](contract-addresses.md)
 * [FAQ](faq.md)
 * [Common Problems and Solutions](common-problems-and-solutions.md)
-* [Contract Upgradeability](contract-upgradeability.md)

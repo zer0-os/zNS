@@ -20,7 +20,7 @@ Domain owners have total control over the subdomain distribution process for tha
 
 Once created, however, any child domain is fully emancipated from its parent domain. This means that the owner of the parent domain cannot revoke, or "rugpull", subdomains from under their current owners. They cannot otherwise affect or alter the subdomains registered under their parent. \
 \
-The trustful relationship between a parent domain and its child subdomain extends only to the registration process. After that, a subdomain owner has complete control over their domain regardless of the parent domain owner. For more information on ownership in ZNS, see [domain-ownership-reclamation-and-token-transfers.md](domain-management/domain-ownership-reclamation-and-token-transfers.md "mention") and [#domain-revocation](./#domain-revocation "mention").
+The trustful relationship between a parent domain and its child subdomain extends only to the registration process. After that, a subdomain owner has complete control over their domain regardless of the parent domain owner. For more information on ownership in ZNS, see [domain-ownership-reclamation-and-token-transfers.md](domain-management/domain-ownership-reclamation-and-token-transfers.md "mention") and [domain-revocation-destruction.md](domain-management/domain-revocation-destruction.md "mention").
 
 ### Domain Revocation
 

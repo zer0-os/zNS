@@ -53,3 +53,5 @@ As an example, consider when `baseLength == 3` and `maxLength == 30.`Domains wit
 Mathematically the division and following multiplication of the same number will cancel out, however this method takes advantage of the way Solidity stores numbers. Note that `x * (y / m)` is not always the same as `(y / m) * x` in Solidity. Because we do the division first, there is a forced truncation of the actual number, then the multiplication will bring it back to its original values, but with zeros beyond the specified digits of precision.
 
 The curve function uses the following formula:
+
+<figure><img src="../.gitbook/assets/image.png" alt=""><figcaption><p>The curved pricing function</p></figcaption></figure>
