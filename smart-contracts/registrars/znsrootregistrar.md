@@ -2,7 +2,7 @@
 
 **Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.**
 
-This contract serves as the "umbrella" for many ZNS operations, it is given REGISTRAR\_ROLE to combine multiple calls/operations between different modules to achieve atomic state changes and proper logic for the ZNS flows. You can see functions in other modules that are only allowed to be called by this contract to ensure proper management of ZNS data in multiple places. RRR - Register, Reclaim, Revoke start here and then call other modules to complete the flow. ZNSRootRegistrar.sol stores most of the other contract addresses and can communicate with other modules, but the relationship is one-sided, where other modules do not need to know about the ZNSRootRegistrar.sol, they only check REGISTRAR\_ROLE that can, in theory, be assigned to any other address.
+This contract serves as the "umbrella" for many ZNS operations, it is given REGISTRAR\_ROLE to combine multiple calls/operations between different modules to achieve atomic state changes and proper logic for the ZNS flows. You can see functions in other modules that are only allowed to be called by this contract to ensure proper management of ZNS data in multiple places. RRR - Register, Reclaim, Revoke start here and then call other modules to complete the flow. `ZNSRootRegistrar.sol` stores most of the other contract addresses and can communicate with other modules, but the relationship is one-sided, where other modules do not need to know about the `ZNSRootRegistrar.sol`, they only check `REGISTRAR_ROLE` that can, in theory, be assigned to any other address.
 
 This contract is also called at the last stage of registering subdomains, since it has the common logic required to be performed for any level domains.
 
@@ -42,9 +42,9 @@ constructor() public
 function initialize(address accessController_, address registry_, address rootPricer_, address treasury_, address domainToken_) external
 ```
 
-Create an instance of the ZNSRootRegistrar.sol for registering, reclaiming and revoking ZNS domains
+Create an instance of the `ZNSRootRegistrar.sol` for registering, reclaiming and revoking ZNS domains
 
-Instead of direct assignments, we are calling the setter functions to apply Access Control and ensure only the ADMIN can set the addresses.
+Instead of direct assignments, we are calling the setter functions to apply Access Control and ensure only the `ADMIN` can set the addresses.
 
 ### Parameters
 
