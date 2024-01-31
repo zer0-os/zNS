@@ -1,30 +1,27 @@
 # Overview
 
-A high level overview of ZNS
+### **ZERO Name Service**
 
-**ZNS (Zero Name Service**) is a naming system that provides unique identities and assigns human readable names for entities on the blockchain. It exists as its own system separated from those identities where at any point in time a user of the system can bind their blockchain wallet, smart contract, or any supported on or off-chain data to an available name they’ve chosen.
+**ZERO Name Service (ZNS**) is a naming system providing unique identities and human readable names for entities on the blockchain. ZNS exists as its own system separated from those identities; at any point ZNS users can bind blockchain wallets, smart contracts, or any other supported on or off-chain data to an available name they've registered. ZNS names are left-right dot-concatenated, and routed via the _0://_ prefix, e.g. _0://hello_ or _0://hello.goodbye_. For more information ZNS nomenclature, see [names-and-hashing.md](names-and-hashing.md "mention")
 
-These names come in the form of domains or subdomains (e.g. _wilder_ or _wilder.world_) that are represented on-chain as standard ERC-721 tokens and specific records on ZNSRegistry smart contract. Ownership of a domain is divided into two pieces, the ownership of the token for that domain, and also the ownership of the domain’s record. These are kept in the `ZNSDomainToken` and `ZNSRegistry`respectively. This is done because true ownership is shown by owning the ERC-721 token, but this allows management of the domain by third-party applications without forfeiting actual ownership. See more in [Domain Ownership, Reclamation, and Token Transfers](<.gitbook/assets/domain ownership reclamation and token transfers>).
+### ZNS Domains
 
-#### Smart Contract Upgradability <a href="#smart-contract-upgradability" id="smart-contract-upgradability"></a>
+Names in ZNS can be one of two designations: top-level domains or subdomains (which are infinitely iterative from the second-level and beyond).  ZNS domains are represented on-chain as standard ERC-721 tokens (NFTs) and as specific records in the `ZNSRegistry` smart contract. Domain ownership is bipartite, comprised of this NFT token ownership and the domain's record ownership. These are stored in the `ZNSDomainToken` and `ZNSRegistry` smart contracts, respectively. While true ownership of the domain is conferred to the owner of the ERC-721 token, ZNS users can delegate ownership of their domain's record, which allows for management of the domain by third-party applications _without forfeiting actual ownership_. This model is outlined further in [domain-ownership-reclamation-and-token-transfers.md](domain-management/domain-ownership-reclamation-and-token-transfers.md "mention")
 
-Most of the contracts in zNS (except `ZNSAccessController`) are upgradeable UUPS Proxies. We understand the limitations it entails, so please consider the following:
+### Domain Creation
 
-1.  1\.
+Ownership of any ZNS domain confers the ability to create subdomains underneath it. Top-level domains (_0://hello_) can spin out child domains (_0://hello.goodbye_). Likewise, child subdomains can create further subdomains underneath themselves (_0://hello.goodbye.bonjour_), which can create still further subdomains (_0://hello.goodbye.bonjour.adieu_) in an infinite chain from the top to twentieth or hundredth level and beyond. This extremely powerful paradigm makes ZNS ideal for building out systems of blockchain organization like DAO and sub-DAO communities, especially with the 'parental controls' in place governing subdomain minting and child Domain autonomy.
 
-    We decided to go with upgradeable pattern for zNS to ensure we are able to fix any potential problems that may arise in the system with usage. We also wanted to have an ability to evolve system over time with the help of user feedback and possibly add features that our users might find necessary.
-2.  2\.
+> In ZERO's native ZERO ID protocol and Explorer application, top-level ZNS domains are known as _"_Worlds" and any level of subdomain is referred to simply as a "Domain."&#x20;
 
-    Upgradability of contracts will be managed by the Zero DAO, which will directly control all aspects of zNS over time. The control will start with a Zero 6 of 12 multisig and slowly evolve into a full fledged DAO which will gain more and more control over time as the system logic finalizes.
-3.  3\.
+### Subdomain Parental Control
 
-    All upgradeable proxies are of UUPS kind. One of the main reasons to use UUPS here is to introduce a way to remove upgradability with time after the system is fully finalized and proven to be bug free or if the Zero DAO decides to do it themselves.
-4.  4\.
+Domain owners have total control over the subdomain distribution process for that domain, should they choose to allow it. While domain owners always have the ability to register child domains under their own parent domain, they can choose to open or restrict that same ability to the general public. Should a ZNS domain owner choose to 'open' their domain to public subdomain registration, they have power over the entire distribution process: subdomain pricing and fees, type of payment accepted (stake or direct, specific ERC-20 token), mint payment beneficiary, etc. Moreover, the owner of a domain that allows subdomain registration can change any of these configurations at any time.
 
-    Since Zero is an open-source platform, all smart contract changes coming with proxy upgrades will be public and available for anyone to see and analyze. In addition to that, any significant logic changes to existing contracts or addition of new contracts will be audited before they are deployed to Ethereum mainnet. When the DAO is fully functional, only the DAO will be able to approve a mainnet contract upgrade.
+Once created, however, any child domain is fully emancipated from its parent domain. This means that the owner of the parent domain cannot revoke, or "rugpull", subdomains from under their current owners. They cannot otherwise affect or alter the subdomains registered under their parent. \
+\
+The trustful relationship between a parent domain and its child subdomain extends only to the registration process. After that, a subdomain owner has complete control over their domain regardless of the parent domain owner. For more information on ownership in ZNS, see [domain-ownership-reclamation-and-token-transfers.md](domain-management/domain-ownership-reclamation-and-token-transfers.md "mention") and [#domain-revocation](./#domain-revocation "mention").
 
-#### Subdomain Parental Control <a href="#subdomain-parental-control" id="subdomain-parental-control"></a>
+### Domain Revocation
 
-Owners of parent domains that distribute subdomains have the power over the whole distribution process (type of payment, pricing, fees, access) and can change any of it at any time.
-
-However, created and existing subdomains are fully emancipated from the parent once they are registered, meaning that the owner of the parent domain can NOT revoke his children, "rugpull" domains from under current owners or do anything else at all to any existing subdomain. You only have to trust the parent owner when you are buying the subdomain, after that, the only person who can control existing domain is you and you only. For more information on ownership see [Ownership](https://about/zns-documentation/domain-management/domain-ownership-reclamation-and-token-transfers#ownership).
+ZNS allows for the registration of top-level domains and subdomains via stake-to-mint, as well as one-time, direct payments. In the event that a domain was registered via stake payments -- as with ZERO ID's Worlds -- that stake payment can be reclaimed by the domain owner at any time, functionally revoking the domain. A domain that has been revoked becomes available to register again by anyone; new subdomains cannot be minted under a revoked domain until it has been re-registered. As mentioned above in [#subdomain-parental-control](./#subdomain-parental-control "mention"), existing children domains under a revoked parent domain remain fully emancipated and intact.&#x20;

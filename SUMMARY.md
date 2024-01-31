@@ -2,7 +2,7 @@
 
 * [Overview](README.md)
 * [Domain Registration](domain-registration.md)
-* [Names and Hashes](names-and-hashes.md)
+* [Names and Hashing](names-and-hashing.md)
 * [Subdomain Distribution](subdomain-distribution/README.md)
   * [Base Distribution Configuration](subdomain-distribution/base-distribution-configuration.md)
   * [Payments](subdomain-distribution/payments.md)
@@ -47,3 +47,4 @@
 * [Contract Addresses](contract-addresses.md)
 * [FAQ](faq.md)
 * [Common Problems and Solutions](common-problems-and-solutions.md)
+* [Contract Upgradeability](contract-upgradeability.md)

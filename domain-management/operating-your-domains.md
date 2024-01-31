@@ -1,23 +1,29 @@
 # Operating Your Domains
 
-Functionality is made available to you as the owner of a domain that allows you to control how others will engage with it. Specifically, you can control the how users access your domain, what their payment looks like if they register a subdomain of your domain, who is allowed to register a subdomain, and so on.
+### Overview
 
-Within the `ZNSRegistry` specifically you are able to control the domain record for your domain which specifies the owner of that domain as well as the resolver being used for that domain. Read more on resolvers in [Domain Content and Resolutions](broken-reference)​
+Domain owners have access to functionality dictating how others can engage with that domain, e.g.,  how users can access that domain, what payment is for subdomain registration, who is allowed to register a subdomain, and so on. Within `ZNSRegistry`  a domain owner can specify the owner of that domain record, as well as the resolver being used for that domain. Read more on resolvers in [Broken link](broken-reference "mention").
 
-To create a complete picture of a domain, three configurations are to be set for it. At any time an owner is able to modify these configurations or remove them entirely. They are listed below as:
+Domain owners can set three discrete configurations for their domains. At any time an owner can modify these configurations, or remove them entirely. They are as follows:
 
-* Distribution configuration specifies who can register subdomains on your domain, how payment is made, and the pricing contract you use to generate prices for those domains. Read more in [Base Distribution Configuration](broken-reference)​
-* Payment configuration specifies what ERC20 token payment is to be made in and what address will receive funds related to the registration of subdomains on your domain. This address is referred to as the beneficiary. Read more in [Payments](broken-reference)​
-* Pricing configuration specifies the values that are required by the pricing contract defined in a domain's distribution configuration. These allow the contract to calculate prices in a way that is adjustable by the owner of that domain. These configurations could be complex or simple, depending on the needs of the chosen price contract. Read more in [Pricing](broken-reference)
+* **Distribution Configuration** - specifies who can register subdomains under a domain, how payment is made, and the pricing contract used to generate prices for those domains. Read more in [Broken link](broken-reference "mention")
+* **Payment Configuration** - specifies what ERC-20 token is accepted for payment and what address receives funds related to the registration of subdomains under that parent domain. This address is referred to as the beneficiary. Read more in [Broken link](broken-reference "mention")
+* **Pricing Configuration** - specifies the values required by the pricing contract as defined in a domain's distribution configuration. These allow the contract to calculate prices in a way that is adjustable by the owner of that domain. These configurations can complex or simple, depending on the needs of the chosen price contract. Read more in [Broken link](broken-reference "mention")&#x20;
 
-Ownership of a domain in ZNS is divided into two pieces. First is the ownership in the ERC-721 token which is recognized by all other public exchanges as the core ownership of an NFT. The second is the ownership as specified in that domain's record in the `ZNSRegistry.`
+### Operators
 
-This division is purposeful in that it allows third-party applications to make use of your domain while you still own it in the eyes of ZNS. To allow another user or a third-party application to make changes to your domain, you can add that address as an allowed operator in the `ZNSRegistry`.
+ZNS domain ownership is two-part:  ownership of the domain's ERC-721 standard token -- which is recognized by all other public exchanges as the core ownership of an NFT -- and  ownership as specified in that domain's record in the `ZNSRegistry` contract. This division is purposeful; it enables third-party applications to manage a user's domain all while that user remains the fundamental owner of the domain per ZNS definitions.&#x20;
 
-Specifying an operator is not required, however, in order to transfer part of the ownership to another user contract because that contract won't be making any changes to your domain. Only if you intend to allow another user or contract to make changes to any of the domains you own, you must add them as a valid operator.
+Users or third parties that manage a given domain's record -- but do not own its domain token -- are referred to as **operators** in ZNS. To enable another user or a third-party application to make changes to a domain, their address must be added as an allowed operator in the `ZNSRegistry` contract.
 
-Note: Be very careful when transferring your NFT to any other protocols. Be sure to verify that their contracts operate in the way you expect!
+That said, specifying an operator is not required in order to transfer ownership of a domain's record to another account. Operators are only required if the owner of the domain's record -- be it a contract or another user -- intends to make changes to that domain's management functions at any time.
 
-Once specified, an operator is then able to access all of the domain management functions besides any that modify ownership or add further operators. Specifically, operators are not able to call to revoke or reclaim a domain. Revoking is only available to a user that owns both the domain token as well as the name of that domain specified by the record in the `ZNSRegistry`. Reclaiming a domain is only available to the owner of that domain's token.
+{% hint style="danger" %}
+Be wary when transferring a ZNS domain's ownership to third-party protocols. Always verify that an application's contract operate in the expected manner!
+{% endhint %}
 
+Once specified, an operator can access all domain management functions for a given domain, less those that modify ownership or add further operators. To wit, operators cannot revoke or reclaim a domain. Revocation is only available to a user that owns both the domain token as well as the name of that domain specified by the record in the `ZNSRegistry`. See [Broken link](broken-reference "mention")for more details. Reclamation of a domain is only possible by the owner of that domain's token. Refer to [Broken link](broken-reference "mention")for more information.
+
+{% hint style="info" %}
 Note: Operators as assigned on a per user basis, not per domain. Allowing an operator means that address will be able to modify the configuration of all domains that that user owns, just as they could.
+{% endhint %}
