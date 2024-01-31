@@ -2,6 +2,9 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  MongoDBAdapter,
+} from "@zero-tech/zdc";
+import {
   normalizeName,
   validateUpgrade,
   AccessType,
@@ -30,9 +33,8 @@ import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { getPriceObject } from "./helpers/pricing";
+import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
@@ -44,8 +46,8 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -59,7 +61,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -72,7 +74,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    const config : IDeployCampaignConfig = await getConfig({
+    const config = await getConfig({
       deployer,
       zeroVaultAddress: zeroVault.address,
       governors: [deployer.address, governor.address],
@@ -92,7 +94,7 @@ describe("ZNSRootRegistrar", () => {
       ethers.MaxUint256
     );
 
-    userBalanceInitial = ethers.parseEther("100000000000");
+    userBalanceInitial = ethers.parseEther("1000000000000000000");
     // Give funds to user
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
@@ -984,14 +986,46 @@ describe("ZNSRootRegistrar", () => {
       expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.ZeroAddress);
 
+      const protocolFee = getStakingOrProtocolFee(staked);
+
       // Verify final balances
-      const computedFinalBalance = balance + staked;
+      const computedFinalBalance = balance + staked - protocolFee;
       const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedFinalBalance).to.equal(finalBalance);
     });
   });
 
   describe("Revoking Domains", () => {
+    it("Charges a protocol fee to the owner as part of the revoke flow", async () => {
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+        distrConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.OPEN,
+        },
+      });
+
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
+      const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
+
+      const balanceBefore = await zns.meowToken.balanceOf(user.address);
+
+      // is revoke meant to be free if owner of parent? register subdomain is
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+
+      const balanceAfter = await zns.meowToken.balanceOf(user.address);
+
+      expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
+    });
+
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
       await defaultRootRegistration({
@@ -1095,17 +1129,20 @@ describe("ZNSRootRegistrar", () => {
       // Revoke the domain
       await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
+
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
       expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.ZeroAddress);
+
+      const protocolFee = getStakingOrProtocolFee(staked);
 
       // Verify final balances
       const computedBalanceAfterStaking = balanceAfterStaking + staked;
       const balanceMinusFee = balance - expectedStakeFee;
       expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
       const finalBalance = await zns.meowToken.balanceOf(user.address);
-      expect(computedBalanceAfterStaking).to.equal(finalBalance);
+      expect(computedBalanceAfterStaking - protocolFee).to.equal(finalBalance);
     });
 
     it("Cannot revoke if Name is owned by another user", async () => {
