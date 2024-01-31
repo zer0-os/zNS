@@ -20,7 +20,7 @@ import { Defender } from "@openzeppelin/defender-sdk";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 
 
-describe("DeployCampaign - Integration", () => {
+describe("zNS + zDC Single Integration Test", () => {
   // Minters
   let deployAdmin : SignerWithAddress;
   let zeroVault : SignerWithAddress;
