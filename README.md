@@ -10,12 +10,14 @@ ________________________________________________________
 ### [System Architecture](./docs/architecture.md)
 ### [Smart Contract Docs](./docs/contracts)
 ### [Flow Diagrams](./docs/flows.md)
+
+**Full Protocol Documentation - [zero.study](https://zero.study)**
 ________________________________________________________
 
 ## About
 Zer0 Name Service, or zNS, is a protocol that allows you to create domain and subdomain NFTs that focus on community building and creation of unique, on-chain identification.
 
-Read more at [zero.tech](https://zero.tech/)
+Zero Website - [zero.tech](https://zero.tech/)
 
 ## Developers
 
