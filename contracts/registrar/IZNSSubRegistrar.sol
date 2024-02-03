@@ -11,6 +11,33 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 */
 interface IZNSSubRegistrar is IDistributionConfig {
 
+    struct RegistrationArgs {
+        bytes32 parentHash;
+        string label;
+        string tokenURI;
+        address domainAddress;
+    }
+
+    struct MintlistMessage {
+        bytes32 hash;
+        bytes signature;
+    }
+
+    /**
+     * @notice The Coupon deata required for a user's claim to register a subdomain within 
+     * a mintlist to be considered valid. These details are hashed and compared with the external
+     * hash to determine if the signer is the verified coupon signer
+     * @dev For type reasons internally all inputs for a coupon are strings
+     * @param parentHash The hash of the parent domain having a mintlist
+     * @param registrant The user seeking verification of the mintlist
+     * @param id The unique identifier for this coupon
+     */
+    // struct Coupon {
+    //     bytes32 parentHash;
+    //     address registrantAddress;
+    //     uint256 couponNumber;
+    // }
+
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
     */
@@ -77,12 +104,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        RegistrationArgs calldata args,
+        DistributionConfig calldata distrConfig,
+        PaymentConfig calldata paymentConfig,
+        MintlistMessage calldata message
     ) external returns (bytes32);
 
     function hashWithParent(

@@ -10,6 +10,13 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
+import { IEIP712Helper } from "./IEIP712Helper.sol";
+
+import { StringsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+
+import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
+import { ECDSAHelper } from "./ECDSAHelper.sol";
 
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
@@ -19,6 +26,17 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 */
 contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
     using StringUtils for string;
+    using ECDSAUpgradeable for bytes32;
+    using ECDSAHelper for uint256;
+
+    // called by lvl2subowner, confirm userCoupon.registrantAddress
+    // function testRecover(Coupon memory userCoupon, bytes memory signature) public view returns (address) {
+    //     bytes32 hash = createCoupon(userCoupon);
+    //     address signer = ECDSAUpgradeable.recover(hash, signature);
+    //     return signer;
+    // }
+
+    IEIP712Helper public eip712Helper;
 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
@@ -63,6 +81,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address _registry,
         address _rootRegistrar
     ) external override initializer {
+        // set the ecdsahelper here
+        // this change requires changing the deploy config stuff
         _setAccessController(_accessController);
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
@@ -74,59 +94,64 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * checks if the sender is allowed to register, check if subdomain is available,
      * acquires the price and other data needed to finalize the registration
      * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-     * @param parentHash The hash of the parent domain to register the subdomain under
-     * @param label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
-     * @param domainAddress (optional) The address to which the subdomain will be resolved to
-     * @param tokenURI (required) The tokenURI for the subdomain to be registered
+     * @ args parentHash The hash of the parent domain to register the subdomain under
+     * @ args label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
+     * @ args domainAddress (optional) The address to which the subdomain will be resolved to
+     * @ args tokenURI (required) The tokenURI for the subdomain to be registered
+     * @param args The above args packed into a struct
      * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
      * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     * @param message (optional) The unsigned hashed message and signature to validate the mintlist claim
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
     */
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
+        RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+        PaymentConfig calldata paymentConfig,
+        MintlistMessage calldata message
+    ) external override returns (bytes32) { // TODO replace override again
         // Confirms string values are only [a-z0-9-]
-        label.validate();
+        args.label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
         require(
             !registry.exists(domainHash),
             "ZNSSubRegistrar: Subdomain already exists"
         );
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
+        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(args.parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
+        // not possible to spoof coupons for other users if we form data here with
+        // msg.sender
         if (parentConfig.accessType == AccessType.MINTLIST) {
-            require(
-                mintlist[parentHash]
-                    .list
-                    [mintlist[parentHash].ownerIndex]
-                    [msg.sender],
-                "ZNSSubRegistrar: Sender is not approved for purchase"
-            );
+            // Coupon memory coupon = Coupon({
+            //     parentHash: StringsUpgradeable.toHexString(uint256(args.parentHash)),
+            //     registrantAddress: StringsUpgradeable.toHexString(msg.sender),
+            //     couponNumber: "1" // how to make this unique? get it off chain? take as arg?
+            // });
+
+            // require(
+            //     isValidClaim(coupon, message.hash, message.signature),
+            //     "ZNSSubRegistrar: Invalid claim for mintlist"
+            // );
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
+            parentHash: args.parentHash,
             domainHash: domainHash,
-            label: label,
+            label: args.label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: args.domainAddress,
+            tokenURI: args.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
             paymentConfig: paymentConfig
         });
@@ -135,15 +160,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        parentHash,
-                        label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        parentHash,
-                        label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             }

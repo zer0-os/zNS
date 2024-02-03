@@ -116,6 +116,135 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
+    it.only("ECDSA with EIP712", async () => {
+      const domain = {
+        name: "ZNS",
+        version: "1",
+        chainId: (await hre.ethers.provider.getNetwork()).chainId,
+        verifyingContract: await zns.subRegistrar.getAddress(),
+      }
+      const types = {
+        Coupon: [ 
+          { name: "parentHash", type: "bytes32" },
+          { name: "registrantAddress", type: "address" },
+          { name: "couponNumber", type: "uint256" },
+        ]
+      }
+
+      const coupon = {
+        parentHash: rootHash,
+        registrantAddress: lvl2SubOwner.address,
+        couponNumber: "1",
+      }
+
+      const signed = await rootOwner.signTypedData(
+        domain,
+        types,
+        coupon
+      );
+
+      const address = await zns.subRegistrar.testRecover(coupon, signed);
+
+      console.log(address)
+      console.log(rootOwner.address);
+    });
+
+    // Assume a domain owner signed a message that allows our signer to sign their coupons
+    // create message, sign it with our signer, verify on chain that that message was signed by our signer
+    // To create some form of uniqueness each coupon must include a counter for the user
+    // TODO where does this counter live? in the dApp?
+    // alternative would be to have coupons that have total count allowed for that user
+    // and then an on chain counter to hold them to that limit
+    // it.only("ECDSA OZ with data", async () => {
+
+    //   const message = `${rootHash}${lvl2SubOwner.address}1`;
+
+    //   const hashedMessage = await zns.subRegistrar.hashMessage(message);
+
+    //   const rawSigned = await rootOwner.signMessage(message);
+
+    //   console.log(await zns.subRegistrar.compareVals(rootHash))
+
+    //   const val = await zns.subRegistrar.connect(lvl2SubOwner).isValidClaim(
+    //     {
+    //       parentHash: rootHash,
+    //       registrantAddress: lvl2SubOwner.address,
+    //       couponNumber: "1",
+    //     },
+    //     hashedMessage,
+    //     rawSigned
+    //   )
+
+    //   expect(val).to.be.true;
+    // });
+
+    // it.only("registers a subdomain in a mintlist", async () => {
+    //   const newRootHash = await registrationWithSetup({
+    //     zns,
+    //     user: rootOwner,
+    //     domainLabel: "root-mint",
+    //     fullConfig: {
+    //       distrConfig: {
+    //         accessType: AccessType.MINTLIST,
+    //         pricerContract: await zns.fixedPricer.getAddress(),
+    //         paymentType: PaymentType.DIRECT,
+    //       },
+    //       paymentConfig: {
+    //         token: await zns.meowToken.getAddress(),
+    //         beneficiary: rootOwner.address,
+    //       },
+    //       priceConfig: rootPriceConfig,
+    //     },
+    //   });
+
+    //   const message = `${newRootHash}${lvl2SubOwner.address}1`;
+    //   const hashedMessage = await zns.subRegistrar.hashMessage(message);
+    //   const rawSigned = await rootOwner.signMessage(message);
+
+
+    //   // Assume we pre calculate the coupon data
+    //   const coupon = {
+    //     parentHash: newRootHash,
+    //     registrantAddress: lvl2SubOwner.address,
+    //     couponNumber: "1", // number for uniqueness
+    //   };
+
+    //   const valid = await zns.subRegistrar.connect(lvl2SubOwner).isValidClaim(
+    //     coupon,
+    //     hashedMessage,
+    //     rawSigned
+    //   );
+
+    //   console.log(valid);
+
+    //   const couponed = await zns.subRegistrar.connect(lvl2SubOwner).compareVals(
+    //     newRootHash,
+    //     hashedMessage,
+    //     rawSigned
+    //   );
+
+    //   console.log(couponed);
+
+    //   // await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+    //   //   {
+    //   //     parentHash: newRootHash,
+    //   //     label: "some-sub-label",
+    //   //     domainAddress: lvl2SubOwner.address,
+    //   //     tokenURI: subTokenURI,
+    //   //   },
+    //   //   distrConfigEmpty,
+    //   //   {
+    //   //     token: await zns.meowToken.getAddress(),
+    //   //     beneficiary: lvl2SubOwner.address,
+    //   //   },
+    //   //   {
+    //   //     hash: hashedMessage,
+    //   //     signature: rawSigned,
+    //   //   }
+        
+    //   // )
+    // })
+
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";
 
