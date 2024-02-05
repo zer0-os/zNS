@@ -147,5 +147,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
+    function setEIP712Helper(address eip712Helper_) external;
+
     function setRootRegistrar(address registrar_) external;
 }

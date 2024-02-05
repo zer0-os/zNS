@@ -18,24 +18,54 @@ import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cry
 import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import { ECDSAHelper } from "./ECDSAHelper.sol";
 
+import { IEIP712Helper } from "./IEIP712Helper.sol";
+import { EIP712Helper } from "./EIP712Helper.sol";
+
+// import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+
+
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
  * @dev This contract has the entry point for registering subdomains, but calls
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar, EIP712Upgradeable {
     using StringUtils for string;
     using ECDSAUpgradeable for bytes32;
     using ECDSAHelper for uint256;
 
-    // called by lvl2subowner, confirm userCoupon.registrantAddress
-    // function testRecover(Coupon memory userCoupon, bytes memory signature) public view returns (address) {
-    //     bytes32 hash = createCoupon(userCoupon);
-    //     address signer = ECDSAUpgradeable.recover(hash, signature);
-    //     return signer;
-    // }
+    address constant COUPON_SIGNER = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
 
+    bytes32 private constant COUPON_TYPEHASH = keccak256(
+        "Coupon(bytes32 parentHash,address registrantAddress,uint256 couponNumber)"
+    );
+
+    function createCoupon(IEIP712Helper.Coupon memory coupon) public view returns (bytes32) {
+		return
+			_hashTypedDataV4(
+				keccak256(
+					abi.encode(
+						COUPON_TYPEHASH,
+						coupon.parentHash,
+						coupon.registrantAddress,
+						coupon.couponNumber
+					)
+				)
+			);
+	}
+
+    // called by lvl2subowner, confirm userCoupon.registrantAddress
+    function testRecover(IEIP712Helper.Coupon memory userCoupon, bytes memory signature) public view returns (address) {
+        bytes32 hash = createCoupon(userCoupon);
+        address signer = ECDSAUpgradeable.recover(hash, signature);
+        return signer;
+    }
+
+    /**
+     * @notice Helper for mintlist coupon creation
+     */
     IEIP712Helper public eip712Helper;
 
     /**
@@ -80,10 +110,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address _accessController,
         address _registry,
         address _rootRegistrar
+        // address _eip712Helper
     ) external override initializer {
         // set the ecdsahelper here
         // this change requires changing the deploy config stuff
         _setAccessController(_accessController);
+        __EIP712_init("ZNS", "1"); // TODO figure out deploy campaign params
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
     }
@@ -361,6 +393,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
         _setRegistry(registry_);
+    }
+
+    /**
+     * @notice Set the helper used in cryptographic signing of mintlist data
+     * @param helper_ The address of the EIP712 helper to set
+     */
+    function setEIP712Helper(address helper_) public override onlyAdmin {
+        require(helper_ != address(0), "ZNSSubRegistrar: EIP712Helper can not be 0x0 address");
+        eip712Helper = IEIP712Helper(helper_);
     }
 
     /**

@@ -6,10 +6,12 @@ import  { IEIP712Helper } from "./IEIP712Helper.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-// interface?
 contract EIP712Helper is EIP712, IEIP712Helper {
-
 	// TODO make this real, not the HH rootOwner
+	// idea around creating signer in `createCoupon` or similar
+	// then storing that data, and in recreation we have to get the address that signed?
+	// how do we bulk sign?
+
     address constant COUPON_SIGNER = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
 
 	// do we need to keep this?
@@ -22,7 +24,7 @@ contract EIP712Helper is EIP712, IEIP712Helper {
         string memory version
     ) EIP712(name, version) {}
 
-	// TODO more accurate as "hashCoupon"
+	// // TODO more accurate as "hashCoupon"
     function createCoupon(Coupon memory coupon) public view override returns (bytes32) {
 		return 
 			_hashTypedDataV4(
@@ -45,9 +47,9 @@ contract EIP712Helper is EIP712, IEIP712Helper {
 		);
 	}
 
-	function isCouponSigner(Coupon memory coupon, bytes memory signature) public view override returns (bool) {
-		bytes32 hash = createCoupon(coupon);
-		address signer = ECDSA.recover(hash, signature);
-		return signer == COUPON_SIGNER;
-	}
+	// function isCouponSigner(Coupon memory coupon, bytes memory signature) public view override returns (bool) {
+	// 	bytes32 hash = createCoupon(coupon);
+	// 	address signer = ECDSA.recover(hash, signature);
+	// 	return signer == COUPON_SIGNER;
+	// }
 }
