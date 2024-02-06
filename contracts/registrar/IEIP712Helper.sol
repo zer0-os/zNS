@@ -2,16 +2,14 @@
 pragma solidity 0.8.18;
 
 
-
 interface IEIP712Helper {
-
 	struct Coupon {
         bytes32 parentHash;
         address registrantAddress;
-        uint256 couponNumber;
+        string domainLabel;
     }
 
-	function createCoupon(
+	function hashCoupon(
 		Coupon memory coupon
 	) external view returns (bytes32);
 
@@ -20,8 +18,8 @@ interface IEIP712Helper {
 		bytes memory signature
 	) external view returns (address);
 
-	// 	function isCouponSigner(
-	// 	Coupon memory coupon,
-	// 	bytes memory signature
-	// ) external view returns (bool);
+		function isCouponSigner(
+		Coupon memory coupon,
+		bytes memory signature
+	) external view returns (bool);
 }

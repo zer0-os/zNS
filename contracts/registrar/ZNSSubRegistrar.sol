@@ -9,21 +9,10 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-
-import { IEIP712Helper } from "./IEIP712Helper.sol";
-
 import { StringsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
-
-import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-import { ECDSAUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
-import { ECDSAHelper } from "./ECDSAHelper.sol";
 
 import { IEIP712Helper } from "./IEIP712Helper.sol";
 import { EIP712Helper } from "./EIP712Helper.sol";
-
-// import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
-
 
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
@@ -31,42 +20,13 @@ import { EIP712Upgradeable } from "@openzeppelin/contracts-upgradeable/utils/cry
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar, EIP712Upgradeable {
+contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
     using StringUtils for string;
-    using ECDSAUpgradeable for bytes32;
-    using ECDSAHelper for uint256;
-
-    address constant COUPON_SIGNER = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
-
-    bytes32 private constant COUPON_TYPEHASH = keccak256(
-        "Coupon(bytes32 parentHash,address registrantAddress,uint256 couponNumber)"
-    );
-
-    function createCoupon(IEIP712Helper.Coupon memory coupon) public view returns (bytes32) {
-		return
-			_hashTypedDataV4(
-				keccak256(
-					abi.encode(
-						COUPON_TYPEHASH,
-						coupon.parentHash,
-						coupon.registrantAddress,
-						coupon.couponNumber
-					)
-				)
-			);
-	}
-
-    // called by lvl2subowner, confirm userCoupon.registrantAddress
-    function testRecover(IEIP712Helper.Coupon memory userCoupon, bytes memory signature) public view returns (address) {
-        bytes32 hash = createCoupon(userCoupon);
-        address signer = ECDSAUpgradeable.recover(hash, signature);
-        return signer;
-    }
 
     /**
      * @notice Helper for mintlist coupon creation
      */
-    IEIP712Helper public eip712Helper;
+    IEIP712Helper public eip712Helper; // TODO naming?
 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
@@ -110,12 +70,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address _accessController,
         address _registry,
         address _rootRegistrar
-        // address _eip712Helper
     ) external override initializer {
+        _setAccessController(_accessController);
+        
+        // TODO adjust deploy campaign, remove above import
         // set the ecdsahelper here
         // this change requires changing the deploy config stuff
-        _setAccessController(_accessController);
-        __EIP712_init("ZNS", "1"); // TODO figure out deploy campaign params
+        eip712Helper = new EIP712Helper("ZNS", "1");
+        // TODO have this in a setter, have helper deployed through campaign
+
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
     }
@@ -133,7 +96,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param args The above args packed into a struct
      * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
      * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
-     * @param message (optional) The unsigned hashed message and signature to validate the mintlist claim
+     * @param message (optional) The signed message to validate the mintlist claim, if needed
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
     */
@@ -141,8 +104,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig,
-        MintlistMessage calldata message
-    ) external override returns (bytes32) { // TODO replace override again
+        bytes memory message
+    ) external returns (bytes32) { // TODO replace override again
         // Confirms string values are only [a-z0-9-]
         args.label.validate();
 
@@ -163,16 +126,16 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         // not possible to spoof coupons for other users if we form data here with
         // msg.sender
         if (parentConfig.accessType == AccessType.MINTLIST) {
-            // Coupon memory coupon = Coupon({
-            //     parentHash: StringsUpgradeable.toHexString(uint256(args.parentHash)),
-            //     registrantAddress: StringsUpgradeable.toHexString(msg.sender),
-            //     couponNumber: "1" // how to make this unique? get it off chain? take as arg?
-            // });
+            IEIP712Helper.Coupon memory coupon = IEIP712Helper.Coupon({
+                parentHash: args.parentHash,
+                registrantAddress: msg.sender,
+                domainLabel: args.label
+            });
 
-            // require(
-            //     isValidClaim(coupon, message.hash, message.signature),
-            //     "ZNSSubRegistrar: Invalid claim for mintlist"
-            // );
+            require(
+                eip712Helper.isCouponSigner(coupon, message),
+                "ZNSSubRegistrar: Invalid claim for mintlist"
+            );
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
@@ -230,6 +193,20 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 keccak256(bytes(label))
             )
         );
+    }
+
+    // TODO createCoupon and createCoupons functions
+    // Receive the coupon already formed
+    function recoverSigner(
+        IEIP712Helper.Coupon memory coupon,
+        bytes memory signature
+    ) public view returns (address) {
+        return eip712Helper.recoverSigner(coupon, signature);
+    }
+
+    // TODO temporary while the fixes for zdc haven't been added
+    function getEIP712AHelperAddress() public view returns (address) {
+        return address(eip712Helper);
     }
 
     /**

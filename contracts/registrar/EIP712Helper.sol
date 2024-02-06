@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-
 import  { IEIP712Helper } from "./IEIP712Helper.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
+
 contract EIP712Helper is EIP712, IEIP712Helper {
+    using ECDSA for bytes32;
+
 	// TODO make this real, not the HH rootOwner
-	// idea around creating signer in `createCoupon` or similar
+	// idea around creating signer in `hashCoupon` or similar
 	// then storing that data, and in recreation we have to get the address that signed?
 	// how do we bulk sign?
-
     address constant COUPON_SIGNER = 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65;
 
-	// do we need to keep this?
     bytes32 private constant COUPON_TYPEHASH = keccak256(
-        "Coupon(bytes32 parentHash,address registrantAddress,uint256 couponNumber)"
+        "Coupon(bytes32 parentHash,address registrantAddress,string domainLabel)"
     );
 
 	constructor(
@@ -24,8 +24,7 @@ contract EIP712Helper is EIP712, IEIP712Helper {
         string memory version
     ) EIP712(name, version) {}
 
-	// // TODO more accurate as "hashCoupon"
-    function createCoupon(Coupon memory coupon) public view override returns (bytes32) {
+    function hashCoupon(Coupon memory coupon) public view override returns (bytes32) {
 		return 
 			_hashTypedDataV4(
 				keccak256(
@@ -33,23 +32,25 @@ contract EIP712Helper is EIP712, IEIP712Helper {
 						COUPON_TYPEHASH,
 						coupon.parentHash,
 						coupon.registrantAddress,
-						coupon.couponNumber
+						coupon.domainLabel
 					)
 				)
 			);
 	}
 
+	// TODO natspec on these
 	function recoverSigner(Coupon memory coupon, bytes memory signature) public view override returns (address) {
-		bytes32 hash = createCoupon(coupon);
-		return ECDSA.recover(
-			hash,
-			signature
-		);
+		return _recoverSigner(coupon, signature);
 	}
 
-	// function isCouponSigner(Coupon memory coupon, bytes memory signature) public view override returns (bool) {
-	// 	bytes32 hash = createCoupon(coupon);
-	// 	address signer = ECDSA.recover(hash, signature);
-	// 	return signer == COUPON_SIGNER;
-	// }
+	// TODO `signedByCouponSigner` instead?
+	function isCouponSigner(Coupon memory coupon, bytes memory signature) public view override returns (bool) {
+		address signer = _recoverSigner(coupon, signature);
+		return signer == COUPON_SIGNER;
+	}
+
+	function _recoverSigner(Coupon memory coupon, bytes memory signature) internal view returns (address) {
+		bytes32 hash = hashCoupon(coupon);
+		return hash.recover(signature);
+	}
 }

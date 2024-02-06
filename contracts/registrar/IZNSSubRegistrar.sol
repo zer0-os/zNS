@@ -19,8 +19,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
     }
 
     struct MintlistMessage {
-        bytes32 hash;
+        // bytes32 hash;
         bytes signature;
+        // uint256 couponNumber; // for coupon number
     }
 
     /**
@@ -107,7 +108,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig,
-        MintlistMessage calldata message
+        bytes calldata message
     ) external returns (bytes32);
 
     function hashWithParent(

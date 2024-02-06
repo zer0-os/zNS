@@ -102,12 +102,19 @@ export const defaultSubdomainRegistration = async ({
   const supplyBefore = await zns.domainToken.totalSupply();
 
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
-    parentHash,
-    subdomainLabel,
-    domainContent, // Arbitrary address value
-    tokenURI,
+    {
+      parentHash: parentHash,
+      label: subdomainLabel,
+      domainAddress: domainContent, // Arbitrary address value
+      tokenURI: tokenURI,
+    },
     distrConfig,
-    paymentConfigEmpty
+    paymentConfigEmpty,
+    {
+      // No mintlist data
+      signature: "0x",
+      couponNumber: 0,
+    }
   );
 
   const supplyAfter = await zns.domainToken.totalSupply();

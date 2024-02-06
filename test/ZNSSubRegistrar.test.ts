@@ -61,10 +61,18 @@ describe("ZNSSubRegistrar", () => {
 
   describe("Single Subdomain Registration", () => {
     let rootHash : string;
+    let rootWithMintlistHash : string;
     let rootPriceConfig : IFixedPriceConfig;
     const subTokenURI = "https://token-uri.com/8756a4b6f";
 
-    before(async () => {
+    // Address of the EIP712 helper contract
+    let helperAddress : string;
+    let eip712Domain : ethers.TypedDataDomain;
+    let eip712Types : {
+      [key: string]: Array<{ name: string, type: string }>;
+    }
+
+    beforeEach(async () => {
       [
         deployer,
         zeroVault,
@@ -90,6 +98,7 @@ describe("ZNSSubRegistrar", () => {
           zns.meowToken.mint(address, ethers.parseEther("100000000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       rootPriceConfig = {
         price: ethers.parseEther("1375.612"),
@@ -114,136 +123,156 @@ describe("ZNSSubRegistrar", () => {
           priceConfig: rootPriceConfig,
         },
       });
-    });
 
-    it.only("ECDSA with EIP712", async () => {
-      const domain = {
+      rootWithMintlistHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "root-mint",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.MINTLIST,
+            pricerContract: await zns.fixedPricer.getAddress(),
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: rootPriceConfig,
+        },
+      });
+
+      // TODO add helper contract to campaign, then can access as
+      // `zns.eip712Helper.address`
+      helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
+
+      eip712Domain = {
         name: "ZNS",
         version: "1",
         chainId: (await hre.ethers.provider.getNetwork()).chainId,
-        verifyingContract: await zns.subRegistrar.getAddress(),
+        verifyingContract: helperAddress, // this must reflect the contract that inherits EIP712
       }
-      const types = {
+
+      eip712Types = {
         Coupon: [ 
           { name: "parentHash", type: "bytes32" },
           { name: "registrantAddress", type: "address" },
-          { name: "couponNumber", type: "uint256" },
+          { name: "domainLabel", type: "string" },
         ]
       }
+    });
 
+    it.only("Recovers the correct address with valid data", async () => {
       const coupon = {
         parentHash: rootHash,
         registrantAddress: lvl2SubOwner.address,
-        couponNumber: "1",
+        domainLabel: "label",
       }
 
       const signed = await rootOwner.signTypedData(
-        domain,
-        types,
+        eip712Domain,
+        eip712Types,
         coupon
       );
 
-      const address = await zns.subRegistrar.testRecover(coupon, signed);
-
-      console.log(address)
-      console.log(rootOwner.address);
+      const address = await zns.subRegistrar.recoverSigner(coupon, signed);      
+      expect(address).to.eq(rootOwner.address);
     });
 
     // Assume a domain owner signed a message that allows our signer to sign their coupons
     // create message, sign it with our signer, verify on chain that that message was signed by our signer
     // To create some form of uniqueness each coupon must include a counter for the user
-    // TODO where does this counter live? in the dApp?
-    // alternative would be to have coupons that have total count allowed for that user
-    // and then an on chain counter to hold them to that limit
-    // it.only("ECDSA OZ with data", async () => {
+    // TODO maybe make a "createCoupons" style function
+    it("Registers a subdomain in a mintlist", async () => {
+      
+      // Assume we pre-calculate the coupon data
+      const couponNumber = "1";
+      const coupon = {
+        parentHash: rootWithMintlistHash,
+        registrantAddress: lvl2SubOwner.address,
+        domainLabel: "coupon-mintlist-label", // number for uniqueness
+      };
 
-    //   const message = `${rootHash}${lvl2SubOwner.address}1`;
+      const signed = await rootOwner.signTypedData(
+        eip712Domain,
+        eip712Types,
+        coupon
+      );
 
-    //   const hashedMessage = await zns.subRegistrar.hashMessage(message);
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        {
+          parentHash: rootWithMintlistHash,
+          label: "coupon-mintlist-label",
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+        },
+        distrConfigEmpty,
+        paymentConfigEmpty,
+        signed
+      );
 
-    //   const rawSigned = await rootOwner.signMessage(message);
+      expect(await tx).to.not.be.reverted;
 
-    //   console.log(await zns.subRegistrar.compareVals(rootHash))
+      const hash = await getDomainHashFromEvent({
+        zns,
+        user: lvl2SubOwner,
+      });
 
-    //   const val = await zns.subRegistrar.connect(lvl2SubOwner).isValidClaim(
-    //     {
-    //       parentHash: rootHash,
-    //       registrantAddress: lvl2SubOwner.address,
-    //       couponNumber: "1",
-    //     },
-    //     hashedMessage,
-    //     rawSigned
-    //   )
+      expect(await zns.registry.exists(hash)).to.be.true;
+    });
 
-    //   expect(val).to.be.true;
-    // });
+    it("Doesn't allow using a coupon that's already been used", async () => {
+      // Assume we pre-calculate the coupon data
+      const couponNumber = "1"
+      const coupon = {
+        parentHash: rootWithMintlistHash,
+        registrantAddress: lvl2SubOwner.address,
+        couponNumber: couponNumber, // number for uniqueness
+      };
 
-    // it.only("registers a subdomain in a mintlist", async () => {
-    //   const newRootHash = await registrationWithSetup({
-    //     zns,
-    //     user: rootOwner,
-    //     domainLabel: "root-mint",
-    //     fullConfig: {
-    //       distrConfig: {
-    //         accessType: AccessType.MINTLIST,
-    //         pricerContract: await zns.fixedPricer.getAddress(),
-    //         paymentType: PaymentType.DIRECT,
-    //       },
-    //       paymentConfig: {
-    //         token: await zns.meowToken.getAddress(),
-    //         beneficiary: rootOwner.address,
-    //       },
-    //       priceConfig: rootPriceConfig,
-    //     },
-    //   });
+      const signed = await rootOwner.signTypedData(
+        eip712Domain,
+        eip712Types,
+        coupon
+      );
 
-    //   const message = `${newRootHash}${lvl2SubOwner.address}1`;
-    //   const hashedMessage = await zns.subRegistrar.hashMessage(message);
-    //   const rawSigned = await rootOwner.signMessage(message);
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        {
+          parentHash: rootWithMintlistHash,
+          label: "coupon-mintlist-label",
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+        },
+        distrConfigEmpty,
+        paymentConfigEmpty,
+        {
+          signature: signed,
+          couponNumber: couponNumber
+        }
+      );
 
+      expect(await tx).to.not.be.reverted;
 
-    //   // Assume we pre calculate the coupon data
-    //   const coupon = {
-    //     parentHash: newRootHash,
-    //     registrantAddress: lvl2SubOwner.address,
-    //     couponNumber: "1", // number for uniqueness
-    //   };
+      // Try to register again with the coupon we just used
 
-    //   const valid = await zns.subRegistrar.connect(lvl2SubOwner).isValidClaim(
-    //     coupon,
-    //     hashedMessage,
-    //     rawSigned
-    //   );
+      const txReuse = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        {
+          parentHash: rootWithMintlistHash,
+          label: "coupon-mintlist-label",
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+        },
+        distrConfigEmpty,
+        paymentConfigEmpty,
+        {
+          signature: signed,
+          couponNumber: couponNumber // what if you fake coupon number on input? invalid signer recovered
+        }
+      );
 
-    //   console.log(valid);
+      expect(await txReuse).to.be.revertedWith("ZNS: coupon has already been used");
 
-    //   const couponed = await zns.subRegistrar.connect(lvl2SubOwner).compareVals(
-    //     newRootHash,
-    //     hashedMessage,
-    //     rawSigned
-    //   );
-
-    //   console.log(couponed);
-
-    //   // await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-    //   //   {
-    //   //     parentHash: newRootHash,
-    //   //     label: "some-sub-label",
-    //   //     domainAddress: lvl2SubOwner.address,
-    //   //     tokenURI: subTokenURI,
-    //   //   },
-    //   //   distrConfigEmpty,
-    //   //   {
-    //   //     token: await zns.meowToken.getAddress(),
-    //   //     beneficiary: lvl2SubOwner.address,
-    //   //   },
-    //   //   {
-    //   //     hash: hashedMessage,
-    //   //     signature: rawSigned,
-    //   //   }
-        
-    //   // )
-    // })
+    })
 
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";
