@@ -108,7 +108,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig,
-        bytes calldata message
+        bytes calldata signature
     ) external returns (bytes32);
 
     function hashWithParent(

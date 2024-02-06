@@ -73,8 +73,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     ) external override initializer {
         _setAccessController(_accessController);
         
-        // TODO adjust deploy campaign, remove above import
-        // set the ecdsahelper here
+        // TODO adjust deploy campaign
         // this change requires changing the deploy config stuff
         eip712Helper = new EIP712Helper("ZNS", "1");
         // TODO have this in a setter, have helper deployed through campaign
@@ -96,7 +95,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param args The above args packed into a struct
      * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
      * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
-     * @param message (optional) The signed message to validate the mintlist claim, if needed
+     * @param signature (optional) The signed message to validate the mintlist claim, if needed
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
     */
@@ -104,7 +103,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig,
-        bytes memory message
+        bytes memory signature
     ) external returns (bytes32) { // TODO replace override again
         // Confirms string values are only [a-z0-9-]
         args.label.validate();
@@ -123,8 +122,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
-        // not possible to spoof coupons for other users if we form data here with
-        // msg.sender
+        // Not possible to spoof coupons meant for other users if we form data here with msg.sender
         if (parentConfig.accessType == AccessType.MINTLIST) {
             IEIP712Helper.Coupon memory coupon = IEIP712Helper.Coupon({
                 parentHash: args.parentHash,
@@ -132,8 +130,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 domainLabel: args.label
             });
 
+            // require coupon exists?
             require(
-                eip712Helper.isCouponSigner(coupon, message),
+                eip712Helper.isCouponSigner(coupon, signature),
                 "ZNSSubRegistrar: Invalid claim for mintlist"
             );
         }

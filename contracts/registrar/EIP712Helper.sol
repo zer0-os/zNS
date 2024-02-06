@@ -32,7 +32,7 @@ contract EIP712Helper is EIP712, IEIP712Helper {
 						COUPON_TYPEHASH,
 						coupon.parentHash,
 						coupon.registrantAddress,
-						coupon.domainLabel
+						keccak256(bytes(coupon.domainLabel))
 					)
 				)
 			);

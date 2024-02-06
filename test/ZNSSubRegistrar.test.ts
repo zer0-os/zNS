@@ -20,6 +20,7 @@ import {
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
+  INVALID_MINTLIST_CLAIM_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -80,6 +81,7 @@ describe("ZNSSubRegistrar", () => {
         admin,
         rootOwner,
         lvl2SubOwner,
+        lvl3SubOwner
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -94,11 +96,13 @@ describe("ZNSSubRegistrar", () => {
         [
           rootOwner,
           lvl2SubOwner,
+          lvl3SubOwner,
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("100000000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       rootPriceConfig = {
         price: ethers.parseEther("1375.612"),
@@ -132,7 +136,7 @@ describe("ZNSSubRegistrar", () => {
           distrConfig: {
             accessType: AccessType.MINTLIST,
             pricerContract: await zns.fixedPricer.getAddress(),
-            paymentType: PaymentType.DIRECT,
+            paymentType: PaymentType.STAKE,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -183,14 +187,13 @@ describe("ZNSSubRegistrar", () => {
     // create message, sign it with our signer, verify on chain that that message was signed by our signer
     // To create some form of uniqueness each coupon must include a counter for the user
     // TODO maybe make a "createCoupons" style function
-    it("Registers a subdomain in a mintlist", async () => {
-      
+    it.only("Registers a subdomain in a mintlist", async () => {
+      const sub = "coupon-mintlist-label";
       // Assume we pre-calculate the coupon data
-      const couponNumber = "1";
       const coupon = {
         parentHash: rootWithMintlistHash,
         registrantAddress: lvl2SubOwner.address,
-        domainLabel: "coupon-mintlist-label", // number for uniqueness
+        domainLabel: sub, // number for uniqueness
       };
 
       const signed = await rootOwner.signTypedData(
@@ -202,7 +205,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: "coupon-mintlist-label",
+          label: sub,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -221,13 +224,45 @@ describe("ZNSSubRegistrar", () => {
       expect(await zns.registry.exists(hash)).to.be.true;
     });
 
-    it("Doesn't allow using a coupon that's already been used", async () => {
+    it.only("Fails to register when caller is not in signed typed data", async () => {
+      const label = "failing-mintlist";
       // Assume we pre-calculate the coupon data
-      const couponNumber = "1"
       const coupon = {
         parentHash: rootWithMintlistHash,
         registrantAddress: lvl2SubOwner.address,
-        couponNumber: couponNumber, // number for uniqueness
+        domainLabel: label, // number for uniqueness
+      };
+
+      // Not signing as typed data, and so we will recover the wrong address
+      const signed = await rootOwner.signTypedData(
+        eip712Domain,
+        eip712Types,
+        coupon
+      );
+
+      // Users cannot use coupons that weren't signed for them
+      const tx = zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
+        {
+          parentHash: rootWithMintlistHash,
+          label: label,
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+        },
+        distrConfigEmpty,
+        paymentConfigEmpty,
+        signed
+      );
+
+      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR)
+    });
+
+    it.only("Fails to register when using a coupon that's already been used", async () => {
+      // Assume we pre-calculate the coupon data
+      const label = "my-mint-label"
+      const coupon = {
+        parentHash: rootWithMintlistHash,
+        registrantAddress: lvl2SubOwner.address,
+        domainLabel: label, // number for uniqueness
       };
 
       const signed = await rootOwner.signTypedData(
@@ -239,40 +274,67 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: "coupon-mintlist-label",
+          label: label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
         distrConfigEmpty,
         paymentConfigEmpty,
-        {
-          signature: signed,
-          couponNumber: couponNumber
-        }
+        signed
       );
 
-      expect(await tx).to.not.be.reverted;
+      await expect(tx).to.not.be.reverted;
 
-      // Try to register again with the coupon we just used
-
+      // Try to register again with the coupon we just used for a new domain
+      // The same domain label will fail because of the `registry.exists` check
+      // already in place
       const txReuse = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: "coupon-mintlist-label",
+          label: "diff-new-label",
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
         distrConfigEmpty,
         paymentConfigEmpty,
-        {
-          signature: signed,
-          couponNumber: couponNumber // what if you fake coupon number on input? invalid signer recovered
-        }
+        signed
       );
 
-      expect(await txReuse).to.be.revertedWith("ZNS: coupon has already been used");
+      await expect(txReuse).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR);
+    });
 
-    })
+    it.only("Fails to register when using the wrong domain hash", async () => {
+      const label = "uniquelabel";
+      const coupon = {
+        parentHash: rootHash,
+        registrantAddress: lvl2SubOwner.address,
+        domainLabel: label, // number for uniqueness
+      };
+
+      // Not signing as typed data, and so we will recover the wrong address
+      const signed = await rootOwner.signTypedData(
+        eip712Domain,
+        eip712Types,
+        coupon
+      );
+
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        {
+          parentHash: rootWithMintlistHash,
+          label: label,
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+        },
+        distrConfigEmpty,
+        paymentConfigEmpty,
+        signed
+      );
+
+      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR)
+    });
+      // fails when signed by wrong signer
+      // users cant use coupons to register domains not specified by the coupon
+      // owners of both can pass through mintlists
 
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";
