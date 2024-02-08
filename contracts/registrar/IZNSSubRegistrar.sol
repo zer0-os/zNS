@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-
+import { IEIP712Helper } from "./IEIP712Helper.sol";
 
 /**
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
@@ -17,27 +17,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
         string tokenURI;
         address domainAddress;
     }
-
-    struct MintlistMessage {
-        // bytes32 hash;
-        bytes signature;
-        // uint256 couponNumber; // for coupon number
-    }
-
-    /**
-     * @notice The Coupon deata required for a user's claim to register a subdomain within 
-     * a mintlist to be considered valid. These details are hashed and compared with the external
-     * hash to determine if the signer is the verified coupon signer
-     * @dev For type reasons internally all inputs for a coupon are strings
-     * @param parentHash The hash of the parent domain having a mintlist
-     * @param registrant The user seeking verification of the mintlist
-     * @param id The unique identifier for this coupon
-     */
-    // struct Coupon {
-    //     bytes32 parentHash;
-    //     address registrantAddress;
-    //     uint256 couponNumber;
-    // }
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
@@ -93,15 +72,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     );
 
-    function isMintlistedForDomain(
-        bytes32 domainHash,
-        address candidate
-    ) external view returns (bool);
-
     function initialize(
-        address _accessController,
-        address _registry,
-        address _rootRegistrar
+        address accessController,
+        address registry,
+        address rootRegistrar
     ) external;
 
     function registerSubdomain(
@@ -115,6 +89,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes32 parentHash,
         string calldata label
     ) external pure returns (bytes32);
+
+    function recoverSigner(
+        IEIP712Helper.Coupon memory coupon,
+        bytes memory signature
+    ) external view returns (address);
 
     function setDistributionConfigForDomain(
         bytes32 parentHash,
@@ -136,19 +115,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function updateMintlistForDomain(
-        bytes32 domainHash,
-        address[] calldata candidates,
-        bool[] calldata allowed
-    ) external;
+    function setRegistry(address registry) external;
 
-    function clearMintlistForDomain(bytes32 domainHash) external;
+    function setEIP712Helper(address helper) external;
 
-    function clearMintlistAndLock(bytes32 domainHash) external;
-
-    function setRegistry(address registry_) external;
-
-    function setEIP712Helper(address eip712Helper_) external;
-
-    function setRootRegistrar(address registrar_) external;
+    function setRootRegistrar(address registrar) external;
 }

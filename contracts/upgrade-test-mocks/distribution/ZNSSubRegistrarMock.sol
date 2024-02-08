@@ -12,6 +12,8 @@ import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
 import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
+import { IEIP712Helper } from "../../registrar/IEIP712Helper.sol";
+import { EIP712Helper } from "../../registrar/EIP712Helper.sol";
 
 
 enum AccessType {
@@ -25,6 +27,13 @@ enum PaymentType {
     STAKE
 }
 
+struct RegistrationArgs {
+    bytes32 parentHash;
+    string label;
+    string tokenURI;
+    address domainAddress;
+}
+
 struct DistributionConfig {
     IZNSPricer pricerContract;
     PaymentType paymentType;
@@ -35,11 +44,12 @@ struct DistributionConfig {
 
 
 contract ZNSSubRegistrarMainState {
+
     IZNSRootRegistrar public rootRegistrar;
 
     mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
-    mapping(bytes32 domainHash => mapping(address candidate => bool allowed)) public mintlist;
+    IEIP712Helper public eip712Helper;
 }
 
 
@@ -67,78 +77,92 @@ contract ZNSSubRegistrarUpgradeMock is
         address _rootRegistrar
     ) external initializer {
         _setAccessController(_accessController);
+        eip712Helper = new EIP712Helper("ZNS", "1");
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
     }
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string memory tokenURI,
+        RegistrationArgs calldata args,
         DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
-    ) external returns (bytes32) {
-        label.validate();
+        PaymentConfig calldata paymentConfig,
+        bytes memory signature
+    ) external returns (bytes32) { // TODO replace override again
+        // Confirms string values are only [a-z0-9-]
+        args.label.validate();
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
+        require(
+            !registry.exists(domainHash),
+            "ZNSSubRegistrar: Subdomain already exists"
+        );
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
+        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
+
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(args.parentHash, msg.sender);
         require(
             parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
             "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
         );
 
+        // Not possible to spoof coupons meant for other users if we form data here with msg.sender
         if (parentConfig.accessType == AccessType.MINTLIST) {
+            IEIP712Helper.Coupon memory coupon = IEIP712Helper.Coupon({
+                parentHash: args.parentHash,
+                registrantAddress: msg.sender,
+                domainLabel: args.label
+            });
+
+            // If the generated coupon data is incorrect in any way, the wrong address is recovered
+            // and this will fail the registration here.
             require(
-                mintlist[parentHash][msg.sender],
-                "ZNSSubRegistrar: Sender is not approved for purchase"
+                rootRegistrar.isOwnerOf(args.parentHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH)
+                ||
+                eip712Helper.isCouponSigner(coupon, signature),
+                "ZNSSubRegistrar: Invalid claim for mintlist"
             );
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
-            domainHash: hashWithParent(parentHash, label),
-            label: label,
+            parentHash: args.parentHash,
+            domainHash: domainHash,
+            label: args.label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: args.domainAddress,
+            tokenURI: args.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
             paymentConfig: paymentConfig
         });
 
-        require(
-            !registry.exists(coreRegisterArgs.domainHash),
-            "ZNSSubRegistrar: Subdomain already exists"
-        );
-
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-                .getPriceAndFee(
-                    parentHash,
-                    label,
-                    true
-                );
+                    .getPriceAndFee(
+                        args.parentHash,
+                        args.label,
+                        true
+                    );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                    parentHash,
-                    label,
-                    true
-                );
+                        args.parentHash,
+                        args.label,
+                        true
+                    );
             }
         }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
+        // ! note that the config is set ONLY if ALL values in it are set, specifically,
+        // without pricerContract being specified, the config will NOT be set
         if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
-        return coreRegisterArgs.domainHash;
+        return domainHash;
     }
 
     function hashWithParent(
@@ -151,6 +175,19 @@ contract ZNSSubRegistrarUpgradeMock is
                 keccak256(bytes(label))
             )
         );
+    }
+
+    // Receive the coupon already formed
+    function recoverSigner(
+        IEIP712Helper.Coupon memory coupon,
+        bytes memory signature
+    ) public view returns (address) {
+        return eip712Helper.recoverSigner(coupon, signature);
+    }
+
+    // // TODO temporary while the fixes for zdc haven't been added
+    function getEIP712AHelperAddress() public view returns (address) {
+        return address(eip712Helper);
     }
 
     function setDistributionConfigForDomain(
@@ -208,23 +245,13 @@ contract ZNSSubRegistrarUpgradeMock is
         _setAccessTypeForDomain(domainHash, accessType);
     }
 
-    function updateMintlistForDomain(
-        bytes32 domainHash,
-        address[] calldata candidates,
-        bool[] calldata allowed
-    ) external {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
-
-        for (uint256 i; i < candidates.length; i++) {
-            mintlist[domainHash][candidates[i]] = allowed[i];
-        }
-    }
-
     function setRegistry(address registry_) public override onlyAdmin {
         _setRegistry(registry_);
+    }
+
+    function setEIP712Helper(address helper) public onlyAdmin {
+        require(helper != address(0), "ZNSSubRegistrar: EIP712Helper can not be 0x0 address");
+        eip712Helper = IEIP712Helper(helper);
     }
 
     function setRootRegistrar(address registrar_) public onlyAdmin {

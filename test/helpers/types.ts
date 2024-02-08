@@ -138,3 +138,9 @@ export interface IPathRegResult {
   zeroVaultBalanceBefore : bigint;
   zeroVaultBalanceAfter : bigint;
 }
+
+export interface Coupon {
+  parentHash : string;
+  registrantAddress : string;
+  domainLabel : string;
+}

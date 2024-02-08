@@ -1,3 +1,6 @@
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { Coupon } from "./types";
+
 /* eslint-disable @typescript-eslint/no-var-requires */
 const ensjs = require("@ensdomains/ensjs");
 const namehash = require("eth-ens-namehash");
@@ -32,3 +35,40 @@ export const hashSubdomainName = (name : string) => {
  * Hashes last name label only.
  */
 export const hashDomainLabel = (label : string) => ensjs.labelhash(label);
+
+export const createCouponSignature = async (
+  parentHash : string,
+  registrantAddress : string,
+  label : string,
+  verifyingContract : string, // Address of the contract that verifies the coupon
+  signer : SignerWithAddress
+): Promise<string> => {
+  const domain = {
+    name: "ZNS",
+    version: "1",
+    chainId: (await signer.provider.getNetwork()).chainId,
+    verifyingContract: verifyingContract,
+  }
+
+  const types = {
+    Coupon: [ 
+      { name: "parentHash", type: "bytes32" },
+      { name: "registrantAddress", type: "address" },
+      { name: "domainLabel", type: "string" },
+    ]
+  }
+
+  const coupon : Coupon = {
+    parentHash: parentHash,
+    registrantAddress: registrantAddress,
+    domainLabel: label,
+  };
+
+  const signedCoupon = await signer.signTypedData(
+    domain,
+    types,
+    coupon
+  );
+
+  return signedCoupon;
+}

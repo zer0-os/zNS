@@ -113,7 +113,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         );
 
         // Transfer registration fee to the Zero Vault from this address
-        paymentConfigs[0x0].token.safeTransfer(
+        parentConfig.token.safeTransfer(
             paymentConfigs[0x0].beneficiary,
             protocolFee
         );
@@ -167,8 +167,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         delete stakedForDomain[domainHash];
 
         if (protocolFee > 0) {
-            // Always send protocol fee in MEOW
-            paymentConfigs[0x0].token.safeTransferFrom(
+            stakeData.token.safeTransferFrom(
                 owner,
                 paymentConfigs[0x0].beneficiary,
                 protocolFee

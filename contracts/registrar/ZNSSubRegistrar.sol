@@ -24,11 +24,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     using StringUtils for string;
 
     /**
-     * @notice Helper for mintlist coupon creation
-     */
-    IEIP712Helper public eip712Helper; // TODO naming?
-
-    /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
     */
     IZNSRootRegistrar public rootRegistrar;
@@ -40,17 +35,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
-    struct Mintlist {
-        mapping(uint256 idx => mapping(address candidate => bool allowed)) list;
-        uint256 ownerIndex;
-    }
-
     /**
-     * @notice Mapping of domainHash to mintlist set by the domain owner/operator.
-     * These configs are used to determine who can register subdomains for every parent
-     * in the case where parent's DistributionConfig.AccessType is set to AccessType.MINTLIST.
-    */
-    mapping(bytes32 domainHash => Mintlist mintStruct) public mintlist;
+     * @notice Helper for mintlist coupon creation
+     */
+    IEIP712Helper public eip712Helper;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         require(
@@ -104,7 +92,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig,
         bytes memory signature
-    ) external returns (bytes32) { // TODO replace override again
+    ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         args.label.validate();
 
@@ -130,8 +118,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 domainLabel: args.label
             });
 
-            // require coupon exists?
+            // If the generated coupon data is incorrect in any way, the wrong address is recovered
+            // and this will fail the registration here.
             require(
+                rootRegistrar.isOwnerOf(args.parentHash, msg.sender, IZNSRootRegistrar.OwnerOf.BOTH)
+                ||
                 eip712Helper.isCouponSigner(coupon, signature),
                 "ZNSSubRegistrar: Invalid claim for mintlist"
             );
@@ -194,12 +185,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         );
     }
 
-    // TODO createCoupon and createCoupons functions
     // Receive the coupon already formed
     function recoverSigner(
         IEIP712Helper.Coupon memory coupon,
         bytes memory signature
-    ) public view returns (address) {
+    ) public view override returns (address) {
         return eip712Helper.recoverSigner(coupon, signature);
     }
 
@@ -302,94 +292,32 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @notice Setter for `mintlist[domainHash][candidate]`. Only domain owner/operator can call this function.
-     * Adds or removes candidates from the mintlist for a domain. Should only be used when the domain's owner
-     * wants to limit subdomain registration to a specific set of addresses.
-     * Can be used to add/remove multiple candidates at once. Can only be called by the domain owner/operator.
-     * Fires `MintlistUpdated` event.
-     * @param domainHash The domain hash to set the mintlist for
-     * @param candidates The array of candidates to add/remove
-     * @param allowed The array of booleans indicating whether to add or remove the candidate
-    */
-    function updateMintlistForDomain(
-        bytes32 domainHash,
-        address[] calldata candidates,
-        bool[] calldata allowed
-    ) external override {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
-
-        Mintlist storage mintlistForDomain = mintlist[domainHash];
-        uint256 ownerIndex = mintlistForDomain.ownerIndex;
-
-        for (uint256 i; i < candidates.length; i++) {
-            mintlistForDomain.list[ownerIndex][candidates[i]] = allowed[i];
-        }
-
-        emit MintlistUpdated(domainHash, ownerIndex, candidates, allowed);
-    }
-
-    function isMintlistedForDomain(
-        bytes32 domainHash,
-        address candidate
-    ) external view override returns (bool) {
-        uint256 ownerIndex = mintlist[domainHash].ownerIndex;
-        return mintlist[domainHash].list[ownerIndex][candidate];
-    }
-
-    /*
-     * @notice Function to completely clear/remove the whole mintlist set for a given domain.
-     * Can only be called by the owner/operator of the domain or by `ZNSRootRegistrar` as a part of the
-     * `revokeDomain()` flow.
-     * Emits `MintlistCleared` event.
-     * @param domainHash The domain hash to clear the mintlist for
-     */
-    function clearMintlistForDomain(bytes32 domainHash)
-    public
-    override
-    onlyOwnerOperatorOrRegistrar(domainHash) {
-        mintlist[domainHash].ownerIndex = mintlist[domainHash].ownerIndex + 1;
-
-        emit MintlistCleared(domainHash);
-    }
-
-    function clearMintlistAndLock(bytes32 domainHash)
-    external
-    override
-    onlyOwnerOperatorOrRegistrar(domainHash) {
-        setAccessTypeForDomain(domainHash, AccessType.LOCKED);
-        clearMintlistForDomain(domainHash);
-    }
-
-    /**
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWired`.
     */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
-        _setRegistry(registry_);
+    function setRegistry(address registry) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
+        _setRegistry(registry);
     }
 
     /**
      * @notice Set the helper used in cryptographic signing of mintlist data
-     * @param helper_ The address of the EIP712 helper to set
+     * @param helper The address of the EIP712 helper to set
      */
-    function setEIP712Helper(address helper_) public override onlyAdmin {
-        require(helper_ != address(0), "ZNSSubRegistrar: EIP712Helper can not be 0x0 address");
-        eip712Helper = IEIP712Helper(helper_);
+    function setEIP712Helper(address helper) public override onlyAdmin {
+        require(helper != address(0), "ZNSSubRegistrar: EIP712Helper can not be 0x0 address");
+        eip712Helper = IEIP712Helper(helper);
     }
 
     /**
      * @notice Setter for `rootRegistrar`. Only admin can call this function.
      * Fires `RootRegistrarSet` event.
-     * @param registrar_ The new address of the ZNSRootRegistrar contract
+     * @param registrar The new address of the ZNSRootRegistrar contract
     */
-    function setRootRegistrar(address registrar_) public override onlyAdmin {
-        require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
-        rootRegistrar = IZNSRootRegistrar(registrar_);
+    function setRootRegistrar(address registrar) public override onlyAdmin {
+        require(registrar != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
+        rootRegistrar = IZNSRootRegistrar(registrar);
 
-        emit RootRegistrarSet(registrar_);
+        emit RootRegistrarSet(registrar);
     }
 
     /**

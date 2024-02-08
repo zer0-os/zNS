@@ -87,17 +87,19 @@ export const defaultSubdomainRegistration = async ({
   zns,
   parentHash,
   subdomainLabel,
+  distrConfig,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
-  distrConfig,
+  signature = ethers.ZeroHash,
 } : {
   user : SignerWithAddress;
   zns : IZNSContractsLocal;
   parentHash : string;
   subdomainLabel : string;
-  domainContent ?: string;
-  tokenURI ?: string;
   distrConfig : IDistributionConfig;
+  domainContent : string;
+  tokenURI : string;
+  signature : string;
 }) => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
@@ -110,11 +112,7 @@ export const defaultSubdomainRegistration = async ({
     },
     distrConfig,
     paymentConfigEmpty,
-    {
-      // No mintlist data
-      signature: "0x",
-      couponNumber: 0,
-    }
+    signature
   );
 
   const supplyAfter = await zns.domainToken.totalSupply();
@@ -132,15 +130,17 @@ export const registrationWithSetup = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   fullConfig = fullDistrConfigEmpty,
   setConfigs = true,
+  signature = ethers.ZeroHash,
 } : {
   zns : IZNSContractsLocal;
   user : SignerWithAddress;
-  parentHash ?: string;
   domainLabel : string;
+  parentHash ?: string;
   domainContent ?: string;
   tokenURI ?: string;
   fullConfig ?: IFullDistributionConfig;
   setConfigs ?: boolean;
+  signature ?: string;
 }) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
@@ -173,6 +173,7 @@ export const registrationWithSetup = async ({
       domainContent,
       tokenURI,
       distrConfig,
+      signature,
     });
   }
 
