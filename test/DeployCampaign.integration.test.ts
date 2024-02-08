@@ -104,14 +104,7 @@ describe("DeployCampaign - Integration", () => {
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
     const campaign = await runZnsCampaign({ config });
 
-    // TODO the zns.zeroVaultAddress is not set internally by the treasury, fix this
-    // because not new deployment?
-    // Using config.zeroVaultAddress in funcs for now, which is set properly
     zns = campaign.state.contracts;
-
-    // Surprised this typing works for signer of tx
-    // await zns.treasury.connect(deployer as unknown as Signer)
-    // .setBeneficiary(ethers.ZeroHash, config.zeroVaultAddress);
 
     //  CurvePricer, stake, open
     distConfig = {
