@@ -42,25 +42,25 @@ export const createCouponSignature = async (
   label : string,
   verifyingContract : string, // Address of the contract that verifies the coupon
   signer : SignerWithAddress
-): Promise<string> => {
+) : Promise<string> => {
   const domain = {
     name: "ZNS",
     version: "1",
     chainId: (await signer.provider.getNetwork()).chainId,
-    verifyingContract: verifyingContract,
-  }
+    verifyingContract,
+  };
 
   const types = {
-    Coupon: [ 
+    Coupon: [
       { name: "parentHash", type: "bytes32" },
       { name: "registrantAddress", type: "address" },
       { name: "domainLabel", type: "string" },
-    ]
-  }
+    ],
+  };
 
   const coupon : Coupon = {
-    parentHash: parentHash,
-    registrantAddress: registrantAddress,
+    parentHash,
+    registrantAddress,
     domainLabel: label,
   };
 
@@ -71,4 +71,4 @@ export const createCouponSignature = async (
   );
 
   return signedCoupon;
-}
+};

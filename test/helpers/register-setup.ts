@@ -105,10 +105,10 @@ export const defaultSubdomainRegistration = async ({
 
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     {
-      parentHash: parentHash,
+      parentHash,
       label: subdomainLabel,
       domainAddress: domainContent, // Arbitrary address value
-      tokenURI: tokenURI,
+      tokenURI,
     },
     distrConfig,
     paymentConfigEmpty,

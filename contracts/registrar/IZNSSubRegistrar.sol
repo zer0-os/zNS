@@ -95,6 +95,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes memory signature
     ) external view returns (address);
 
+    // TODO temporary while the fixes for zdc haven't been added
+    function getEIP712AHelperAddress() external view returns (address);
+
+
     function setDistributionConfigForDomain(
         bytes32 parentHash,
         DistributionConfig calldata config

@@ -147,23 +147,23 @@ describe("Transaction Gas Costs Test", () => {
       version: "1",
       chainId: (await hre.ethers.provider.getNetwork()).chainId,
       verifyingContract: helperAddress, // this must reflect the contract that inherits EIP712
-    }
+    };
 
     const eip712Types = {
-      Coupon: [ 
+      Coupon: [
         { name: "parentHash", type: "bytes32" },
         { name: "registrantAddress", type: "address" },
         { name: "domainLabel", type: "string" },
-      ]
-    }
+      ],
+    };
 
-    const domainLabel = "label"
+    const domainLabel = "label";
 
     const coupon = {
       parentHash: rootHash,
       registrantAddress: lvl2SubOwner.address,
-      domainLabel: domainLabel,
-    }
+      domainLabel,
+    };
 
     const signed = await rootOwner.signTypedData(
       eip712Domain,
@@ -176,7 +176,7 @@ describe("Transaction Gas Costs Test", () => {
         parentHash: rootHash,
         label: domainLabel,
         domainAddress: lvl2SubOwner.address,
-        tokenURI: DEFAULT_TOKEN_URI
+        tokenURI: DEFAULT_TOKEN_URI,
       },
       config,
       paymentConfig,

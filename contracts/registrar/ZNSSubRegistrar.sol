@@ -9,7 +9,6 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringsUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 
 import { IEIP712Helper } from "./IEIP712Helper.sol";
 import { EIP712Helper } from "./EIP712Helper.sol";
@@ -63,8 +62,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         
         // TODO adjust deploy campaign
         // this change requires changing the deploy config stuff
+        // have this in a setter, have helper deployed through campaign
         eip712Helper = new EIP712Helper("ZNS", "1");
-        // TODO have this in a setter, have helper deployed through campaign
 
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
@@ -194,7 +193,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     // TODO temporary while the fixes for zdc haven't been added
-    function getEIP712AHelperAddress() public view returns (address) {
+    function getEIP712AHelperAddress() public override view returns (address) {
         return address(eip712Helper);
     }
 

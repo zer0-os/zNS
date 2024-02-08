@@ -55,18 +55,18 @@ require("@nomicfoundation/hardhat-chai-matchers");
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
 describe("ZNSRootRegistrar", () => {
-  let deployer: SignerWithAddress;
-  let user: SignerWithAddress;
-  let governor: SignerWithAddress;
-  let admin: SignerWithAddress;
-  let randomUser: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let user : SignerWithAddress;
+  let governor : SignerWithAddress;
+  let admin : SignerWithAddress;
+  let randomUser : SignerWithAddress;
 
-  let zns: IZNSContracts;
-  let zeroVault: SignerWithAddress;
-  let operator: SignerWithAddress;
-  let userBalanceInitial: bigint;
+  let zns : IZNSContracts;
+  let zeroVault : SignerWithAddress;
+  let operator : SignerWithAddress;
+  let userBalanceInitial : bigint;
 
-  let mongoAdapter: MongoDBAdapter;
+  let mongoAdapter : MongoDBAdapter;
 
   const defaultDomain = normalizeName("wilder");
 
@@ -106,7 +106,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Sets the payment config when provided with the domain registration", async () => {
     const tokenURI = "https://example.com/817c64af";
-    const distrConfig: IDistributionConfig = {
+    const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
@@ -131,7 +131,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Does not set the payment config when the beneficiary is the zero address", async () => {
     const tokenURI = "https://example.com/817c64af";
-    const distrConfig: IDistributionConfig = {
+    const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
@@ -153,7 +153,7 @@ describe("ZNSRootRegistrar", () => {
 
   it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
-    const distrConfig: IDistributionConfig = {
+    const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
@@ -181,7 +181,7 @@ describe("ZNSRootRegistrar", () => {
         parentHash: domainHash,
         label: "subdomain",
         domainAddress: deployer.address,
-        tokenURI: tokenURI,
+        tokenURI,
       },
       distrConfigEmpty,
       paymentConfigEmpty,
@@ -214,7 +214,7 @@ describe("ZNSRootRegistrar", () => {
   it("Confirms a new 0x0 owner can modify the configs in the treasury and curve pricer", async () => {
     await zns.registry.updateDomainOwner(ethers.ZeroHash, user.address);
 
-    const newTreasuryConfig: PaymentConfigStruct = {
+    const newTreasuryConfig : PaymentConfigStruct = {
       token: zeroVault.address, // Just needs to be a different address
       beneficiary: user.address,
     };

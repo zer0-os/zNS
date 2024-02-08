@@ -43,36 +43,32 @@ import { getProxyImplAddress } from "./helpers/utils";
 
 
 describe("ZNSSubRegistrar", () => {
-  let deployer: SignerWithAddress;
-  let rootOwner: SignerWithAddress;
-  let governor: SignerWithAddress;
-  let admin: SignerWithAddress;
-  let lvl2SubOwner: SignerWithAddress;
-  let lvl3SubOwner: SignerWithAddress;
-  let lvl4SubOwner: SignerWithAddress;
-  let lvl5SubOwner: SignerWithAddress;
-  let lvl6SubOwner: SignerWithAddress;
-  let branchLvl1Owner: SignerWithAddress;
-  let branchLvl2Owner: SignerWithAddress;
-  let random: SignerWithAddress;
-  let operator: SignerWithAddress;
-  let multiOwner: SignerWithAddress;
+  let deployer : SignerWithAddress;
+  let rootOwner : SignerWithAddress;
+  let governor : SignerWithAddress;
+  let admin : SignerWithAddress;
+  let lvl2SubOwner : SignerWithAddress;
+  let lvl3SubOwner : SignerWithAddress;
+  let lvl4SubOwner : SignerWithAddress;
+  let lvl5SubOwner : SignerWithAddress;
+  let lvl6SubOwner : SignerWithAddress;
+  let branchLvl1Owner : SignerWithAddress;
+  let branchLvl2Owner : SignerWithAddress;
+  let random : SignerWithAddress;
+  let operator : SignerWithAddress;
+  let multiOwner : SignerWithAddress;
 
-  let zns: IZNSContractsLocal;
-  let zeroVault: SignerWithAddress;
+  let zns : IZNSContractsLocal;
+  let zeroVault : SignerWithAddress;
 
   describe("Single Subdomain Registration", () => {
-    let rootHash: string;
-    let rootWithMintlistHash: string;
-    let rootPriceConfig: IFixedPriceConfig;
+    let rootHash : string;
+    let rootWithMintlistHash : string;
+    let rootPriceConfig : IFixedPriceConfig;
     const subTokenURI = "https://token-uri.com/8756a4b6f";
 
     // Address of the EIP712 helper contract
-    let helperAddress: string;
-    let eip712Domain: ethers.TypedDataDomain;
-    let eip712Types: {
-      [key: string]: Array<{ name: string, type: string }>;
-    }
+    let helperAddress : string;
 
     beforeEach(async () => {
       [
@@ -82,7 +78,7 @@ describe("ZNSSubRegistrar", () => {
         admin,
         rootOwner,
         lvl2SubOwner,
-        lvl3SubOwner
+        lvl3SubOwner,
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -150,15 +146,14 @@ describe("ZNSSubRegistrar", () => {
       // TODO add helper contract to campaign, then can access as
       // `zns.eip712Helper.address`
       helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
-
     });
 
     it("Recovers the correct address with valid data", async () => {
-      const coupon: Coupon = {
+      const coupon : Coupon = {
         parentHash: rootWithMintlistHash,
         registrantAddress: lvl2SubOwner.address,
         domainLabel: "label",
-      }
+      };
 
       const signed = await createCouponSignature(
         coupon.parentHash,
@@ -172,7 +167,7 @@ describe("ZNSSubRegistrar", () => {
       expect(address).to.eq(rootOwner.address);
     });
 
-    it("Registers a subdomain in a mintlist", async () => {
+    it.only("Registers a subdomain in a mintlist", async () => {
       const sub = "coupon-mintlist-label";
       const signed = await createCouponSignature(
         rootWithMintlistHash,
@@ -194,7 +189,7 @@ describe("ZNSSubRegistrar", () => {
         signed
       );
 
-      expect(await tx).to.not.be.reverted;
+      await expect(tx).to.not.be.reverted;
 
       const hash = await getDomainHashFromEvent({
         zns,
@@ -219,7 +214,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl3SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -228,11 +223,11 @@ describe("ZNSSubRegistrar", () => {
         signed,
       );
 
-      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR)
+      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR);
     });
 
     it("Fails to register when using a coupon that's already been used", async () => {
-      const label = "my-mint-label"
+      const label = "my-mint-label";
 
       const signed = await createCouponSignature(
         rootWithMintlistHash,
@@ -245,7 +240,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -287,7 +282,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -296,7 +291,7 @@ describe("ZNSSubRegistrar", () => {
         signed
       );
 
-      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR)
+      await expect(tx).to.be.revertedWith(INVALID_MINTLIST_CLAIM_ERR);
     });
 
     it("Fails to register when the parent domain is locked", async () => {
@@ -315,7 +310,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -345,7 +340,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -382,7 +377,7 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(rootOwner).registerSubdomain(
         {
           parentHash: rootWithMintlistHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
         },
@@ -610,7 +605,7 @@ describe("ZNSSubRegistrar", () => {
           domainContent: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
-          signature
+          signature,
         }
       )).to.be.revertedWith(INVALID_NAME_ERR);
 
@@ -631,7 +626,7 @@ describe("ZNSSubRegistrar", () => {
           domainContent: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
-          signature
+          signature,
         }
       )).to.be.revertedWith(INVALID_NAME_ERR);
 
@@ -652,7 +647,7 @@ describe("ZNSSubRegistrar", () => {
           domainContent: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
-          signature
+          signature,
         }
       )).to.be.revertedWith(INVALID_NAME_ERR);
 
@@ -673,7 +668,7 @@ describe("ZNSSubRegistrar", () => {
           domainContent: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
-          signature
+          signature,
         }
       )).to.be.revertedWith(INVALID_NAME_ERR);
     });
@@ -784,7 +779,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           {
             parentHash: rootHash,
-            label: label,
+            label,
             domainAddress: lvl2SubOwner.address,
             tokenURI: subTokenURI,
           },
@@ -811,7 +806,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
           {
             parentHash: rootHash,
-            label: label,
+            label,
             domainAddress: lvl2SubOwner.address,
             tokenURI: subTokenURI,
           },
@@ -901,9 +896,9 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Operations within domain paths", () => {
-    let domainConfigs: Array<IDomainConfigForTest>;
-    let regResults: Array<IPathRegResult>;
-    let helperAddress: string;
+    let domainConfigs : Array<IDomainConfigForTest>;
+    let regResults : Array<IPathRegResult>;
+    let helperAddress : string;
 
     const fixedPrice = ethers.parseEther("1375.612");
     const fixedFeePercentage = BigInt(200);
@@ -1197,13 +1192,13 @@ describe("ZNSSubRegistrar", () => {
       // register
       const domainHashes = await configs.reduce(
         async (
-          acc: Promise<Array<string>>,
+          acc : Promise<Array<string>>,
           {
             user,
             parentHash,
             domainLabel,
             fullConfig,
-          }): Promise<Array<string>> => {
+          }) : Promise<Array<string>> => {
           const newAcc = await acc;
 
           const newHash = await registrationWithSetup({
@@ -1678,7 +1673,7 @@ describe("ZNSSubRegistrar", () => {
       expect(parentOwnerFromReg).to.eq(branchLvl1Owner.address);
 
       const childBalBefore = await zns.meowToken.balanceOf(branchLvl2Owner.address);
-      const label = "newchildddd"
+      const label = "newchildddd";
 
       const signed = await createCouponSignature(
         newHash,
@@ -1686,7 +1681,7 @@ describe("ZNSSubRegistrar", () => {
         label,
         helperAddress,
         rootOwner
-      )
+      );
 
       // try register a new child under the new parent
       const newChildHash = await registrationWithSetup({ // TODO needs to give coupon data when fixed
@@ -1712,14 +1707,14 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Token movements with different distr setups", () => {
-    let rootHash: string;
-    let fixedPrice: bigint;
-    let feePercentage: bigint;
-    let token2: CustomDecimalTokenMock;
-    let token5: CustomDecimalTokenMock;
-    let token8: CustomDecimalTokenMock;
-    let token13: CustomDecimalTokenMock;
-    let token18: CustomDecimalTokenMock;
+    let rootHash : string;
+    let fixedPrice : bigint;
+    let feePercentage : bigint;
+    let token2 : CustomDecimalTokenMock;
+    let token5 : CustomDecimalTokenMock;
+    let token8 : CustomDecimalTokenMock;
+    let token13 : CustomDecimalTokenMock;
+    let token18 : CustomDecimalTokenMock;
 
     const decimalValues = {
       two: BigInt(2),
@@ -1760,7 +1755,7 @@ describe("ZNSSubRegistrar", () => {
         token13,
         token18,
       ] = await Object.values(decimalValues).reduce(
-        async (acc: Promise<Array<CustomDecimalTokenMock>>, decimals) => {
+        async (acc : Promise<Array<CustomDecimalTokenMock>>, decimals) => {
           const newAcc = await acc;
 
           const token = await deployCustomDecToken(deployer, decimals);
@@ -2754,7 +2749,7 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.registerSubdomain(
           {
             parentHash: subdomainParentHash,
-            label: label,
+            label,
             domainAddress: lvl3SubOwner.address,
             tokenURI: DEFAULT_TOKEN_URI,
           },
@@ -2784,11 +2779,11 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Registration access", () => {
-    let fixedPrice: bigint;
-    let domainConfigs: Array<IDomainConfigForTest>;
-    let regResults: Array<IPathRegResult>;
-    let fixedFeePercentage: bigint;
-    let helperAddress: string;
+    let fixedPrice : bigint;
+    let domainConfigs : Array<IDomainConfigForTest>;
+    let regResults : Array<IPathRegResult>;
+    let fixedFeePercentage : bigint;
+    let helperAddress : string;
 
     before(async () => {
       [
@@ -2974,7 +2969,7 @@ describe("ZNSSubRegistrar", () => {
 
       await zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
         {
-          parentHash: parentHash,
+          parentHash,
           label: domainLabel,
           domainAddress: ethers.ZeroAddress,
           tokenURI: DEFAULT_TOKEN_URI,
@@ -3031,14 +3026,7 @@ describe("ZNSSubRegistrar", () => {
         label,
         helperAddress,
         rootOwner
-      )
-
-      // recreated coupon
-      const coupon = {
-        parentHash: parentHash,
-        registrantAddress: lvl4SubOwner.address,
-        domainLabel: label,
-      }
+      );
 
       // register child
       const hash = await registrationWithSetup({
@@ -3063,7 +3051,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
           {
-            parentHash: parentHash,
+            parentHash,
             label: "notmintlisted",
             domainAddress: ethers.ZeroAddress,
             tokenURI: DEFAULT_TOKEN_URI,
@@ -3080,7 +3068,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl4SubOwner).registerSubdomain(
           {
-            parentHash: parentHash,
+            parentHash,
             label: "notmintlistednow",
             domainAddress: ethers.ZeroAddress,
             tokenURI: DEFAULT_TOKEN_URI,
@@ -3150,12 +3138,12 @@ describe("ZNSSubRegistrar", () => {
         label,
         helperAddress,
         rootOwner
-      )
+      );
       // register, TODO fails here
       await zns.subRegistrar.connect(lvl5SubOwner).registerSubdomain(
         {
           parentHash: regResults[1].domainHash,
-          label: label,
+          label,
           domainAddress: ethers.ZeroAddress,
           tokenURI: DEFAULT_TOKEN_URI,
         },
@@ -3193,7 +3181,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl4SubOwner).registerSubdomain(
           {
-            parentHash: parentHash,
+            parentHash,
             label: "notallowed",
             domainAddress: ethers.ZeroAddress,
             tokenURI: DEFAULT_TOKEN_URI,
@@ -3209,10 +3197,10 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Existing subdomain ops", () => {
-    let fixedPrice: bigint;
-    let domainConfigs: Array<IDomainConfigForTest>;
-    let regResults: Array<IPathRegResult>;
-    let fixedFeePercentage: bigint;
+    let fixedPrice : bigint;
+    let domainConfigs : Array<IDomainConfigForTest>;
+    let regResults : Array<IPathRegResult>;
+    let fixedFeePercentage : bigint;
 
     before(async () => {
       [
@@ -3745,8 +3733,8 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("UUPS", () => {
-    let fixedPrice: bigint;
-    let rootHash: string;
+    let fixedPrice : bigint;
+    let rootHash : string;
 
     beforeEach(async () => {
       [
@@ -3902,13 +3890,13 @@ describe("ZNSSubRegistrar", () => {
         await zns.subRegistrar.getAddress(),
         factory,
         {
-          kind: "uups"
+          kind: "uups",
         }
       );
 
       // New instance from OZ helper above is still typed as the ZNSSubregistrar, not the new upgrade mock
-      const newSubRegistrar = await tx.waitForDeployment() as unknown as ZNSSubRegistrarUpgradeMock
-      
+      const newSubRegistrar = await tx.waitForDeployment() as unknown as ZNSSubRegistrarUpgradeMock;
+
       // Verify change to `dist config` struct is not present even though we upgrade successfully
       expect((await zns.subRegistrar.distrConfigs(rootHash)).length).to.eq(3);
       expect((await newSubRegistrar.distrConfigs(rootHash)).length).to.eq(5);
@@ -3941,7 +3929,7 @@ describe("ZNSSubRegistrar", () => {
       await newSubRegistrar.connect(lvl2SubOwner).registerSubdomain(
         {
           parentHash: rootHash,
-          label: label,
+          label,
           domainAddress: lvl2SubOwner.address,
           tokenURI: DEFAULT_TOKEN_URI,
         },

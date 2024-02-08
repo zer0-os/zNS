@@ -11,8 +11,8 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { TLogger } from "@zero-tech/zdc";
 
 export const approveBulk = async (
-  signers: Array<SignerWithAddress>,
-  zns: IZNSContractsLocal | IZNSContracts,
+  signers : Array<SignerWithAddress>,
+  zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
     // if (hre.network.name === "hardhat") {
@@ -31,9 +31,9 @@ export const approveBulk = async (
 };
 
 export const mintBulk = async (
-  signers: Array<SignerWithAddress>,
-  amount: bigint,
-  zns: IZNSContractsLocal | IZNSContracts,
+  signers : Array<SignerWithAddress>,
+  amount : bigint,
+  zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
     await zns.meowToken.connect(signer).mint(
@@ -44,9 +44,9 @@ export const mintBulk = async (
 };
 
 export const getPriceBulk = async (
-  domains: Array<string>,
-  zns: IZNSContractsLocal | IZNSContracts,
-  parentHashes?: Array<string>,
+  domains : Array<string>,
+  zns : IZNSContractsLocal | IZNSContracts,
+  parentHashes ?: Array<string>,
 ) => {
   let index = 0;
   const prices = [];
@@ -82,15 +82,15 @@ export const getPriceBulk = async (
 };
 
 export const registerRootDomainBulk = async (
-  signers: Array<SignerWithAddress>,
-  domains: Array<string>,
-  config: IZNSCampaignConfig<SignerWithAddress>,
-  tokenUri: string,
-  distConfig: IDistributionConfig,
-  priceConfig: ICurvePriceConfig,
-  zns: IZNSContractsLocal | IZNSContracts,
-  logger: TLogger,
-): Promise<void> => {
+  signers : Array<SignerWithAddress>,
+  domains : Array<string>,
+  config : IZNSCampaignConfig<SignerWithAddress>,
+  tokenUri : string,
+  distConfig : IDistributionConfig,
+  priceConfig : ICurvePriceConfig,
+  zns : IZNSContractsLocal | IZNSContracts,
+  logger : TLogger,
+) : Promise<void> => {
   let index = 0;
 
   for (const domain of domains) {
@@ -127,15 +127,15 @@ export const registerRootDomainBulk = async (
 };
 
 export const registerSubdomainBulk = async (
-  signers: Array<SignerWithAddress>,
-  parents: Array<string>,
-  subdomains: Array<string>,
-  subdomainHashes: Array<string>,
-  domainAddress: string,
-  tokenUri: string,
-  distConfig: IDistributionConfig,
-  zns: IZNSContractsLocal | IZNSContracts,
-  logger: TLogger,
+  signers : Array<SignerWithAddress>,
+  parents : Array<string>,
+  subdomains : Array<string>,
+  subdomainHashes : Array<string>,
+  domainAddress : string,
+  tokenUri : string,
+  distConfig : IDistributionConfig,
+  zns : IZNSContractsLocal | IZNSContracts,
+  logger : TLogger,
 ) => {
   let index = 0;
 
@@ -145,7 +145,7 @@ export const registerSubdomainBulk = async (
       {
         parentHash: parents[index],
         label: subdomain,
-        domainAddress: domainAddress,
+        domainAddress,
         tokenURI: `${tokenUri}${index}`,
       },
       distConfig,
@@ -153,28 +153,28 @@ export const registerSubdomainBulk = async (
       ethers.ZeroHash
     );
 
-logger.info("Deploy transaction submitted, waiting...");
+    logger.info("Deploy transaction submitted, waiting...");
 
-if (hre.network.name !== "hardhat") {
-  await tx.wait(3);
-  logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
-}
+    if (hre.network.name !== "hardhat") {
+      await tx.wait(3);
+      logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
+    }
 
-const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
 
-const owner = await zns.registry.getDomainOwner(parents[index]);
-if (signers[index].address === owner) {
-  expect(balanceAfter).to.be.eq(balanceBefore);
-} else {
-  const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
+    const owner = await zns.registry.getDomainOwner(parents[index]);
+    if (signers[index].address === owner) {
+      expect(balanceAfter).to.be.eq(balanceBefore);
+    } else {
+      const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
 
-  expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
-}
+      expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
+    }
 
 
-expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
+    expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
 
-index++;
+    index++;
   }
 };

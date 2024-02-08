@@ -185,7 +185,7 @@ contract ZNSSubRegistrarUpgradeMock is
         return eip712Helper.recoverSigner(coupon, signature);
     }
 
-    // // TODO temporary while the fixes for zdc haven't been added
+    // TODO temporary while the fixes for zdc haven't been added
     function getEIP712AHelperAddress() public view returns (address) {
         return address(eip712Helper);
     }
