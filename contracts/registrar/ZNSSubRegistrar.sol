@@ -9,9 +9,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-
 import { IEIP712Helper } from "./IEIP712Helper.sol";
-import { EIP712Helper } from "./EIP712Helper.sol";
 
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
@@ -56,17 +54,13 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function initialize(
         address _accessController,
         address _registry,
-        address _rootRegistrar
+        address _rootRegistrar,
+        address _eip712Helper
     ) external override initializer {
         _setAccessController(_accessController);
-        
-        // TODO adjust deploy campaign
-        // this change requires changing the deploy config stuff
-        // have this in a setter, have helper deployed through campaign
-        eip712Helper = new EIP712Helper("ZNS", "1");
-
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
+        setEIP712Helper(_eip712Helper);
     }
 
     /**
@@ -190,11 +184,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes memory signature
     ) public view override returns (address) {
         return eip712Helper.recoverSigner(coupon, signature);
-    }
-
-    // TODO temporary while the fixes for zdc haven't been added
-    function getEIP712AHelperAddress() public override view returns (address) {
-        return address(eip712Helper);
     }
 
     /**

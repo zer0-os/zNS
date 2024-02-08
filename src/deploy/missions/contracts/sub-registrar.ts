@@ -32,9 +32,15 @@ IZNSContracts
       accessController,
       registry,
       rootRegistrar,
+      eip712Helper,
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress(), await rootRegistrar.getAddress()];
+    return [
+      await accessController.getAddress(),
+      await registry.getAddress(),
+      await rootRegistrar.getAddress(),
+      await eip712Helper.getAddress(),
+    ];
   }
 
   async needsPostDeploy () {

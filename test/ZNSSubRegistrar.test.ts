@@ -143,9 +143,7 @@ describe("ZNSSubRegistrar", () => {
         },
       });
 
-      // TODO add helper contract to campaign, then can access as
-      // `zns.eip712Helper.address`
-      helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
+      helperAddress = await zns.eip712Helper.getAddress();
     });
 
     it("Recovers the correct address with valid data", async () => {
@@ -167,7 +165,7 @@ describe("ZNSSubRegistrar", () => {
       expect(address).to.eq(rootOwner.address);
     });
 
-    it.only("Registers a subdomain in a mintlist", async () => {
+    it("Registers a subdomain in a mintlist", async () => {
       const sub = "coupon-mintlist-label";
       const signed = await createCouponSignature(
         rootWithMintlistHash,
@@ -945,7 +943,7 @@ describe("ZNSSubRegistrar", () => {
       );
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
-      helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
+      helperAddress = await zns.eip712Helper.getAddress();
 
       domainConfigs = [
         {
@@ -2808,7 +2806,7 @@ describe("ZNSSubRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
+      helperAddress = await zns.eip712Helper.getAddress();
 
       fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
@@ -3664,6 +3662,7 @@ describe("ZNSSubRegistrar", () => {
           deployer.address,
           deployer.address,
           deployer.address,
+          deployer.address,
         )
       ).to.be.revertedWith(INITIALIZED_ERR);
     });
@@ -3805,6 +3804,7 @@ describe("ZNSSubRegistrar", () => {
           await zns.accessController.getAddress(),
           await zns.registry.getAddress(),
           await zns.rootRegistrar.getAddress(),
+          await zns.eip712Helper.getAddress(),
         )
       ).to.be.revertedWith(INITIALIZED_ERR);
     });

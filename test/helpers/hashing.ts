@@ -45,7 +45,7 @@ export const createCouponSignature = async (
 ) : Promise<string> => {
   const domain = {
     name: "ZNS",
-    version: "1",
+    version: "1.0",
     chainId: (await signer.provider.getNetwork()).chainId,
     verifyingContract,
   };

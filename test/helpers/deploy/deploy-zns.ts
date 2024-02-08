@@ -19,12 +19,15 @@ import {
   ZNSFixedPricer,
   ZNSSubRegistrar,
   MeowTokenMock,
+  EIP712Helper__factory,
+  EIP712Helper,
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig, IZNSContractsLocal } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  eip712HelperName,
   accessControllerName,
   addressResolverName,
   domainTokenName,
@@ -48,6 +51,29 @@ import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
+export const deployEIP712Helper = async (
+  deployer : SignerWithAddress,
+  domainName  = "ZNS",
+  domainVersion  = "1.0",
+  isTenderlyRun = false,
+) : Promise<EIP712Helper> => {
+  const eip712HelperFactory = new EIP712Helper__factory(deployer);
+  const eip712Helper = await eip712HelperFactory.deploy(domainName, domainVersion);
+
+  await eip712Helper.waitForDeployment();
+  const address = await eip712Helper.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: eip712HelperName,
+      address,
+    });
+
+    console.log(`AccessController deployed at: ${address}`);
+  }
+
+  return eip712Helper;
+};
 
 export const deployAccessController = async ({
   deployer,
@@ -453,16 +479,18 @@ export const deployFixedPricer = async ({
 
 export const deploySubRegistrar = async ({
   deployer,
-  accessController,
   registry,
   rootRegistrar,
+  accessController,
+  eip712Helper,
   admin,
   isTenderlyRun = false,
 } : {
   deployer : SignerWithAddress;
-  accessController : ZNSAccessController;
   registry : ZNSRegistry;
+  accessController : ZNSAccessController;
   rootRegistrar : ZNSRootRegistrar;
+  eip712Helper : EIP712Helper;
   admin : SignerWithAddress;
   isTenderlyRun ?: boolean;
 }) => {
@@ -473,6 +501,7 @@ export const deploySubRegistrar = async ({
       await accessController.getAddress(),
       await registry.getAddress(),
       await rootRegistrar.getAddress(),
+      await eip712Helper.getAddress(),
     ],
     {
       kind: "uups",
@@ -605,16 +634,25 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
+  const eip712Helper = await deployEIP712Helper(
+    deployer,
+    "ZNS",
+    "1.0",
+    isTenderlyRun
+  );
+
   const subRegistrar = await deploySubRegistrar({
     deployer,
     accessController,
     registry,
     rootRegistrar,
+    eip712Helper,
     admin: deployer,
     isTenderlyRun,
   });
 
   const znsContracts : IZNSContractsLocal = {
+    eip712Helper,
     accessController,
     registry,
     domainToken,

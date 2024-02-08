@@ -113,6 +113,10 @@ export const getConfig = async ({
     zeroVaultAddress: zeroVaultAddressConf,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
+    eip712Config: {
+      name: process.env.EIP712_NAME ?? "ZNS",
+      version: process.env.EIP712_VERSION ?? "1.0",
+    },
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",

@@ -3,6 +3,7 @@ import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-cli
 import { ICurvePriceConfig } from "../missions/types";
 import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
 import {
+  EIP712Helper,
   MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
@@ -18,7 +19,7 @@ import {
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
-export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
+export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig <Signer> {
   env : string;
   deployAdmin : Signer;
   governorAddresses : Array<string>;
@@ -33,6 +34,10 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
+  eip712Config : {
+    name : string;
+    version : string;
+  };
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -41,6 +46,7 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
 }
 
 export type ZNSContract =
+  EIP712Helper |
   ZNSAccessController |
   ZNSRegistry |
   ZNSDomainToken |
@@ -54,6 +60,7 @@ export type ZNSContract =
   ZNSSubRegistrar;
 
 export interface IZNSContracts extends IContractState<ZNSContract> {
+  eip712Helper : EIP712Helper;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;

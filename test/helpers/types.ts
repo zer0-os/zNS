@@ -1,4 +1,5 @@
 import {
+  EIP712Helper,
   MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
@@ -78,6 +79,7 @@ export interface RegistrarConfig {
 }
 
 export interface IZNSContractsLocal {
+  eip712Helper : EIP712Helper;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
