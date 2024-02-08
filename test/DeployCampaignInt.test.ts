@@ -38,7 +38,7 @@ import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -662,7 +662,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getCampaignConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -694,7 +694,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const config : IZNSCampaignConfig<SignerWithAddress> = await getCampaignConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -756,7 +756,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Throws if env variable is invalid", async () => {
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -773,7 +773,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MOCK_MEOW_TOKEN = "true";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -791,7 +791,7 @@ describe("Deploy Campaign Test", () => {
       process.env.STAKING_TOKEN_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -812,7 +812,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MIN_PRICE = ethers.parseEther("3").toString();
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -834,7 +834,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ROYALTY_FRACTION = "100";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -852,7 +852,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,

@@ -3,7 +3,7 @@ import {
 } from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
@@ -93,7 +93,7 @@ describe("zNS + zDC Single Integration Test", () => {
       deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
     }
 
-    config = await getConfig({
+    config = await getCampaignConfig({
       deployer: deployer as unknown as SignerWithAddress,
       zeroVaultAddress: zeroVault.address,
     });
