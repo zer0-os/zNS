@@ -1,10 +1,10 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, 
-  DEFAULT_TOKEN_URI, 
-  deployZNS, 
-  PaymentType, 
-  DEFAULT_PRICE_CONFIG, 
+import { AccessType,
+  DEFAULT_TOKEN_URI,
+  deployZNS,
+  PaymentType,
+  DEFAULT_PRICE_CONFIG,
   createCouponSignature,
 } from "../helpers";
 import * as ethers from "ethers";
