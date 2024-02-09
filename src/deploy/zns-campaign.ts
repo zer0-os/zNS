@@ -8,10 +8,16 @@ import {
 } from "@zero-tech/zdc";
 import {
   MeowTokenDM,
+  EIP712HelperDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
-  ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
-  ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
+  ZNSDomainTokenDM,
+  ZNSCurvePricerDM,
+  ZNSRootRegistrarDM,
+  ZNSRegistryDM,
+  ZNSTreasuryDM,
+  ZNSFixedPricerDM,
+  ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -52,6 +58,7 @@ export const runZnsCampaign = async ({
   >({
     missions: [
       ZNSAccessControllerDM,
+      EIP712HelperDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
       MeowTokenDM,

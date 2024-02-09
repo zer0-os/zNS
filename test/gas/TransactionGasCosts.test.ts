@@ -1,6 +1,12 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
+import { AccessType,
+  DEFAULT_TOKEN_URI,
+  deployZNS,
+  PaymentType,
+  DEFAULT_PRICE_CONFIG,
+  createCouponSignature,
+} from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -20,7 +26,7 @@ describe("Transaction Gas Costs Test", () => {
 
   let zns : IZNSContractsLocal;
 
-  let rootHashDirect : string;
+  let rootHash : string;
   // let rootHashStake : string;
   let config : IDistributionConfig;
 
@@ -60,15 +66,15 @@ describe("Transaction Gas Costs Test", () => {
     );
     await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
-    rootHashDirect = await registrationWithSetup({
+    rootHash = await registrationWithSetup({
       zns,
       user: rootOwner,
-      domainLabel: "rootdirect",
+      domainLabel: "rooty-roo",
       fullConfig: {
         distrConfig: {
-          accessType: AccessType.OPEN,
+          accessType: AccessType.MINTLIST,
           pricerContract: await zns.curvePricer.getAddress(),
-          paymentType: PaymentType.DIRECT,
+          paymentType: PaymentType.STAKE,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),
@@ -140,13 +146,26 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-      rootHashDirect,
-      "subdomain",
+    const domainLabel = "label";
+
+    const signed = await createCouponSignature(
+      rootHash,
       lvl2SubOwner.address,
-      DEFAULT_TOKEN_URI,
+      domainLabel,
+      await zns.subRegistrar.eip712Helper(),
+      rootOwner
+    );
+
+    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+      {
+        parentHash: rootHash,
+        label: domainLabel,
+        domainAddress: lvl2SubOwner.address,
+        tokenURI: DEFAULT_TOKEN_URI,
+      },
       config,
-      paymentConfig
+      paymentConfig,
+      signed
     );
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;

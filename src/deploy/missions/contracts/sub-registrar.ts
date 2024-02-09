@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission, IContractState, IHardhatBase, IProviderBase, ISignerBase,
+  BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
@@ -32,9 +32,15 @@ IZNSContracts
       accessController,
       registry,
       rootRegistrar,
+      eip712Helper,
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress(), await rootRegistrar.getAddress()];
+    return [
+      await accessController.getAddress(),
+      await registry.getAddress(),
+      await rootRegistrar.getAddress(),
+      await eip712Helper.getAddress(),
+    ];
   }
 
   async needsPostDeploy () {

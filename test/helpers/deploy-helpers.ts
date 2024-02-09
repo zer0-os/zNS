@@ -93,7 +93,7 @@ export const registerRootDomainBulk = async (
 ) : Promise<void> => {
   let index = 0;
 
-  for(const domain of domains) {
+  for (const domain of domains) {
     const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
     const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
       domain,
@@ -142,12 +142,15 @@ export const registerSubdomainBulk = async (
   for (const subdomain of subdomains) {
     const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
     const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain(
-      parents[index],
-      subdomain,
-      domainAddress,
-      `${tokenUri}${index}`,
+      {
+        parentHash: parents[index],
+        label: subdomain,
+        domainAddress,
+        tokenURI: `${tokenUri}${index}`,
+      },
       distConfig,
-      paymentConfigEmpty
+      paymentConfigEmpty,
+      ethers.ZeroHash
     );
 
     logger.info("Deploy transaction submitted, waiting...");

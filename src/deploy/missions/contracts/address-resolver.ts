@@ -1,9 +1,6 @@
 import {
   BaseDeployMission,
   TDeployArgs,
-  IHardhatBase,
-  IProviderBase,
-  ISignerBase, IContractState,
 } from "@zero-tech/zdc";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { znsNames } from "./names";

@@ -177,34 +177,15 @@ describe("ZNSRootRegistrar", () => {
 
     // Registering as deployer (owner of parent) and user is different gas values
     await zns.subRegistrar.connect(deployer).registerSubdomain(
-      domainHash,
-      "subdomain",
-      deployer.address,
-      tokenURI,
+      {
+        parentHash: domainHash,
+        label: "subdomain",
+        domainAddress: deployer.address,
+        tokenURI,
+      },
       distrConfigEmpty,
       paymentConfigEmpty,
-    );
-
-    const candidates = [
-      deployer.address,
-      user.address,
-      governor.address,
-      admin.address,
-      randomUser.address,
-    ];
-
-    const allowed = [
-      true,
-      true,
-      true,
-      true,
-      true,
-    ];
-
-    await zns.subRegistrar.updateMintlistForDomain(
-      domainHash,
-      candidates,
-      allowed
+      ethers.ZeroHash
     );
   });
 
@@ -1026,7 +1007,7 @@ describe("ZNSRootRegistrar", () => {
       expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
     });
 
-    it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
+    it("Revokes a Top level Domain, locks distribution", async () => {
       // Register Top level
       await defaultRootRegistration({
         user,
@@ -1043,13 +1024,6 @@ describe("ZNSRootRegistrar", () => {
         zns,
         user,
       });
-
-      // add mintlist to check revocation
-      await zns.subRegistrar.connect(user).updateMintlistForDomain(
-        domainHash,
-        [user.address, zeroVault.address],
-        [true, true]
-      );
 
       const ogPrice = BigInt(135);
       await zns.fixedPricer.connect(user).setPriceConfig(
@@ -1085,10 +1059,6 @@ describe("ZNSRootRegistrar", () => {
       // validate access type has been set to LOCKED
       const { accessType } = await zns.subRegistrar.distrConfigs(domainHash);
       expect(accessType).to.eq(AccessType.LOCKED);
-
-      // validate mintlist has been removed
-      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, user.address)).to.be.false;
-      expect(await zns.subRegistrar.isMintlistedForDomain(domainHash, zeroVault.address)).to.be.false;
     });
 
     it("Cannot revoke a domain that doesnt exist", async () => {

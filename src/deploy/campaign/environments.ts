@@ -1,4 +1,4 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { IZNSCampaignConfig } from "./types";
 import {
@@ -19,7 +19,6 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 
 const getCustomAddresses = (
@@ -114,6 +113,10 @@ export const getConfig = async ({
     zeroVaultAddress: zeroVaultAddressConf,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
+    eip712Config: {
+      name: process.env.EIP712_NAME ?? "ZNS",
+      version: process.env.EIP712_VERSION ?? "1.0",
+    },
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",

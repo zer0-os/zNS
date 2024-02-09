@@ -4,12 +4,19 @@ pragma solidity 0.8.18;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-
+import { IEIP712Helper } from "./IEIP712Helper.sol";
 
 /**
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
 */
 interface IZNSSubRegistrar is IDistributionConfig {
+
+    struct RegistrationArgs {
+        bytes32 parentHash;
+        string label;
+        string tokenURI;
+        address domainAddress;
+    }
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
@@ -65,30 +72,29 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     );
 
-    function isMintlistedForDomain(
-        bytes32 domainHash,
-        address candidate
-    ) external view returns (bool);
-
     function initialize(
-        address _accessController,
-        address _registry,
-        address _rootRegistrar
+        address accessController,
+        address registry,
+        address rootRegistrar,
+        address eip712Helper
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        RegistrationArgs calldata args,
+        DistributionConfig calldata distrConfig,
+        PaymentConfig calldata paymentConfig,
+        bytes calldata signature
     ) external returns (bytes32);
 
     function hashWithParent(
         bytes32 parentHash,
         string calldata label
     ) external pure returns (bytes32);
+
+    function recoverSigner(
+        IEIP712Helper.Coupon memory coupon,
+        bytes memory signature
+    ) external view returns (address);
 
     function setDistributionConfigForDomain(
         bytes32 parentHash,
@@ -110,17 +116,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
         AccessType accessType
     ) external;
 
-    function updateMintlistForDomain(
-        bytes32 domainHash,
-        address[] calldata candidates,
-        bool[] calldata allowed
-    ) external;
+    function setRegistry(address registry) external;
 
-    function clearMintlistForDomain(bytes32 domainHash) external;
+    function setEIP712Helper(address helper) external;
 
-    function clearMintlistAndLock(bytes32 domainHash) external;
-
-    function setRegistry(address registry_) external;
-
-    function setRootRegistrar(address registrar_) external;
+    function setRootRegistrar(address registrar) external;
 }

@@ -47,4 +47,8 @@ export const znsNames = {
     contract: erc1967ProxyName,
     instance: "erc1967Proxy",
   },
+  eip712Helper: {
+    contract: "EIP712Helper",
+    instance: "eip712Helper",
+  },
 };

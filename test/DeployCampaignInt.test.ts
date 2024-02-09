@@ -11,7 +11,7 @@ import {
   MongoDBAdapter,
   ITenderlyContractData,
   TDeployArgs,
-  VERSION_TYPES, IHardhatBase, ISignerBase, IProviderBase,
+  VERSION_TYPES,
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
@@ -25,6 +25,7 @@ import {
   MONGO_URI_ERR,
 } from "./helpers";
 import {
+  EIP712HelperDM,
   MeowTokenDM,
   meowTokenName,
   meowTokenSymbol,
@@ -46,7 +47,6 @@ import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContractsLocal } from "./helpers/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
@@ -86,6 +86,10 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         stakingTokenAddress: MeowMainnet.address,
         mockMeowToken: true,
         postDeploy: {
@@ -316,9 +320,9 @@ describe("Deploy Campaign Test", () => {
 
       // state should have 10 contracts in it
       const { state } = nextCampaign;
-      expect(Object.keys(state.contracts).length).to.equal(10);
-      expect(Object.keys(state.instances).length).to.equal(10);
-      expect(state.missions.length).to.equal(10);
+      expect(Object.keys(state.contracts).length).to.equal(11);
+      expect(Object.keys(state.instances).length).to.equal(11);
+      expect(state.missions.length).to.equal(11);
       // it should deploy AddressResolver
       expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
@@ -373,6 +377,10 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
         mockMeowToken: true, // 1700083028872
@@ -404,6 +412,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -425,6 +434,7 @@ describe("Deploy Campaign Test", () => {
       await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -452,6 +462,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -469,16 +480,14 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > (failingCampaign : DeployCampaign<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      DefenderRelayProvider,
-      IZNSContracts
-      >) => {
+      const checkPostDeploy = async (
+        failingCampaign : DeployCampaign<
+        HardhatRuntimeEnvironment,
+        SignerWithAddress,
+        DefenderRelayProvider,
+        IZNSContracts
+        >
+      ) => {
         const {
           // eslint-disable-next-line no-shadow
           registry,
@@ -494,6 +503,7 @@ describe("Deploy Campaign Test", () => {
       } = await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -529,6 +539,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -550,6 +561,7 @@ describe("Deploy Campaign Test", () => {
       await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -577,6 +589,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -617,6 +630,7 @@ describe("Deploy Campaign Test", () => {
       } = await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -891,6 +905,10 @@ describe("Deploy Campaign Test", () => {
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1072,6 +1090,10 @@ describe("Deploy Campaign Test", () => {
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",

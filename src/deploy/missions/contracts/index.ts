@@ -1,3 +1,4 @@
+export * from "./eip712-helper";
 export * from "./address-resolver";
 export * from "./registry";
 export * from "./root-registrar";
