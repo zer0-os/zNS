@@ -1,6 +1,6 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
+import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG, createCouponSignature } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -140,36 +140,15 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const helperAddress = await zns.subRegistrar.getEIP712AHelperAddress();
-
-    const eip712Domain = {
-      name: "ZNS",
-      version: "1",
-      chainId: (await hre.ethers.provider.getNetwork()).chainId,
-      verifyingContract: helperAddress, // this must reflect the contract that inherits EIP712
-    };
-
-    const eip712Types = {
-      Coupon: [
-        { name: "parentHash", type: "bytes32" },
-        { name: "registrantAddress", type: "address" },
-        { name: "domainLabel", type: "string" },
-      ],
-    };
-
     const domainLabel = "label";
 
-    const coupon = {
-      parentHash: rootHash,
-      registrantAddress: lvl2SubOwner.address,
+    const signed = await createCouponSignature(
+      rootHash,
+      lvl2SubOwner.address,
       domainLabel,
-    };
-
-    const signed = await rootOwner.signTypedData(
-      eip712Domain,
-      eip712Types,
-      coupon
-    );
+      await zns.subRegistrar.eip712Helper(),
+      rootOwner
+    )
 
     const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
       {
