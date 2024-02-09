@@ -57,8 +57,8 @@ export const runZnsCampaign = async ({
   IZNSContracts
   >({
     missions: [
-      EIP712HelperDM,
       ZNSAccessControllerDM,
+      EIP712HelperDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
       MeowTokenDM,

@@ -25,6 +25,7 @@ import {
   MONGO_URI_ERR,
 } from "./helpers";
 import {
+  EIP712HelperDM,
   MeowTokenDM,
   meowTokenName,
   meowTokenSymbol,
@@ -432,6 +433,7 @@ describe("Deploy Campaign Test", () => {
       await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -499,6 +501,7 @@ describe("Deploy Campaign Test", () => {
       } = await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -555,6 +558,7 @@ describe("Deploy Campaign Test", () => {
       await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,
@@ -622,6 +626,7 @@ describe("Deploy Campaign Test", () => {
       } = await runTest({
         missionList: [
           ZNSAccessControllerDM,
+          EIP712HelperDM,
           ZNSRegistryDM,
           ZNSDomainTokenDM,
           MeowTokenDM,

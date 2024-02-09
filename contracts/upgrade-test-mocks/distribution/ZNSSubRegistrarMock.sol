@@ -74,12 +74,13 @@ contract ZNSSubRegistrarUpgradeMock is
     function initialize(
         address _accessController,
         address _registry,
-        address _rootRegistrar
+        address _rootRegistrar,
+        address _eip712Helper
     ) external initializer {
-        _setAccessController(_accessController);
-        eip712Helper = new EIP712Helper("ZNS", "1");
+        _setAccessController(_accessController);        
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
+        setEIP712Helper(_eip712Helper);
     }
 
     function registerSubdomain(

@@ -3799,13 +3799,16 @@ describe("ZNSSubRegistrar", () => {
       const tx = zns.subRegistrar.connect(deployer).upgradeTo(await newRegistrar.getAddress());
       await expect(tx).to.not.be.reverted;
 
-      await expect(
-        zns.subRegistrar.connect(deployer).initialize(
-          await zns.accessController.getAddress(),
-          await zns.registry.getAddress(),
-          await zns.rootRegistrar.getAddress(),
-          await zns.eip712Helper.getAddress(),
-        )
+      // The subregistrar updated successfully but internally it's type doesn't change to reflect the upgrade mock
+      // Force this by connecting to the same address using the factory mock
+      const newSubRegistrar = factory.attach(await zns.subRegistrar.getAddress()) as ZNSSubRegistrarUpgradeMock;
+
+      await expect(newSubRegistrar.connect(deployer).initialize(
+        await zns.accessController.getAddress(),
+        await zns.registry.getAddress(),
+        await zns.rootRegistrar.getAddress(),
+        await zns.eip712Helper.getAddress(),
+      )
       ).to.be.revertedWith(INITIALIZED_ERR);
     });
 
