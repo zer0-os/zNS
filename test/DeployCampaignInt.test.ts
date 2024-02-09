@@ -320,9 +320,9 @@ describe("Deploy Campaign Test", () => {
 
       // state should have 10 contracts in it
       const { state } = nextCampaign;
-      expect(Object.keys(state.contracts).length).to.equal(10);
-      expect(Object.keys(state.instances).length).to.equal(10);
-      expect(state.missions.length).to.equal(10);
+      expect(Object.keys(state.contracts).length).to.equal(11);
+      expect(Object.keys(state.instances).length).to.equal(11);
+      expect(state.missions.length).to.equal(11);
       // it should deploy AddressResolver
       expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
@@ -412,6 +412,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -461,6 +462,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -537,6 +539,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
@@ -586,6 +589,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployedNames = [
         znsNames.accessController,
+        znsNames.eip712Helper,
         znsNames.registry,
         znsNames.domainToken,
         {
