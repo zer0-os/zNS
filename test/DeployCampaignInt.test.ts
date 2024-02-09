@@ -85,6 +85,10 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         stakingTokenAddress: MeowMainnet.address,
         mockMeowToken: true,
         postDeploy: {
@@ -372,6 +376,10 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
         mockMeowToken: true, // 1700083028872
@@ -888,6 +896,10 @@ describe("Deploy Campaign Test", () => {
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1069,6 +1081,10 @@ describe("Deploy Campaign Test", () => {
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MeowMainnet.address,
+        eip712Config: {
+          name: "ZNS",
+          version: "1.0",
+        },
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
