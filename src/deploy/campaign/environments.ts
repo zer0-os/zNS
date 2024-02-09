@@ -101,6 +101,7 @@ export const getCampaignConfig = async ({
 
   const config : IZNSCampaignConfig<SignerWithAddress> = {
     env: process.env.ENV_LEVEL!,
+    upgrade: process.env.UPGRADE === "true",
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
@@ -170,6 +171,10 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
+    requires(
+      process.env.UPGRADE === "true",
+      "Production contracts can ONLY be upgraded! Set UPGRADE='true' in .env"
+    );
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
