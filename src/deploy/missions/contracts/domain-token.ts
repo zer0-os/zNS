@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission,
+  BaseUpgradeMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
@@ -10,7 +10,7 @@ import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-c
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSDomainTokenDM extends BaseDeployMission<
+export class ZNSDomainTokenDM extends BaseUpgradeMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 DefenderRelayProvider,

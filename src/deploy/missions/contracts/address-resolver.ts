@@ -1,9 +1,6 @@
 import {
-  BaseDeployMission,
   TDeployArgs,
-  IHardhatBase,
-  IProviderBase,
-  ISignerBase, IContractState,
+  BaseUpgradeMission,
 } from "@zero-tech/zdc";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { znsNames } from "./names";
@@ -13,7 +10,7 @@ import { IZNSContracts } from "../../campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 
-export class ZNSAddressResolverDM extends BaseDeployMission<
+export class ZNSAddressResolverDM extends BaseUpgradeMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 DefenderRelayProvider,
