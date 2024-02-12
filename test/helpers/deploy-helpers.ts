@@ -2,16 +2,17 @@
 // For use in inegration test of deployment campaign
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDeployCampaignConfig, TLogger, TZNSContractState } from "../../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
-import { IDistributionConfig } from "./types";
+import { IDistributionConfig, IZNSContractsLocal } from "./types";
 import { expect } from "chai";
 import { hashDomainLabel, paymentConfigEmpty } from ".";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { TLogger } from "@zero-tech/zdc";
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
-  zns : TZNSContractState,
+  zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
     // if (hre.network.name === "hardhat") {
@@ -32,7 +33,7 @@ export const approveBulk = async (
 export const mintBulk = async (
   signers : Array<SignerWithAddress>,
   amount : bigint,
-  zns : TZNSContractState,
+  zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
     await zns.meowToken.connect(signer).mint(
@@ -44,7 +45,7 @@ export const mintBulk = async (
 
 export const getPriceBulk = async (
   domains : Array<string>,
-  zns : TZNSContractState,
+  zns : IZNSContractsLocal | IZNSContracts,
   parentHashes ?: Array<string>,
 ) => {
   let index = 0;
@@ -83,11 +84,11 @@ export const getPriceBulk = async (
 export const registerRootDomainBulk = async (
   signers : Array<SignerWithAddress>,
   domains : Array<string>,
-  config : IDeployCampaignConfig,
+  config : IZNSCampaignConfig<SignerWithAddress>,
   tokenUri : string,
   distConfig : IDistributionConfig,
   priceConfig : ICurvePriceConfig,
-  zns : TZNSContractState,
+  zns : IZNSContractsLocal | IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {
   let index = 0;
@@ -132,7 +133,7 @@ export const registerSubdomainBulk = async (
   domainAddress : string,
   tokenUri : string,
   distConfig : IDistributionConfig,
-  zns : TZNSContractState,
+  zns : IZNSContractsLocal | IZNSContracts,
   logger : TLogger,
 ) => {
   let index = 0;

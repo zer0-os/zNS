@@ -2,8 +2,8 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
   IFixedPriceConfig,
-  IFullDistributionConfig,
-  IZNSContracts,
+  IFullDistributionConfig, IZNSContractsLocal,
+
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -11,6 +11,7 @@ import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfi
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 const { ZeroAddress } = ethers;
 
@@ -24,7 +25,7 @@ export const defaultRootRegistration = async ({
   distrConfig = distrConfigEmpty,
 } : {
   user : SignerWithAddress;
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal | IZNSContracts;
   domainName : string;
   domainContent ?: string;
   tokenURI ?: string;
@@ -52,7 +53,7 @@ export const approveForParent = async ({
   user,
   domainLabel,
 } : {
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -91,7 +92,7 @@ export const defaultSubdomainRegistration = async ({
   distrConfig,
 } : {
   user : SignerWithAddress;
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal;
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
@@ -125,7 +126,7 @@ export const registrationWithSetup = async ({
   fullConfig = fullDistrConfigEmpty,
   setConfigs = true,
 } : {
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal;
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;

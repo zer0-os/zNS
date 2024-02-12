@@ -9,7 +9,7 @@ Uses a role-based access control scheme with levels:
 - EXECUTOR: Can be here to future proof, if we need a new role (managed by Governor)
 - REGISTRAR: This role is here specifically for the ZNSRootRegistrar.sol contract (managed by Admin)
 
-> This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
+> This contract is not proxied. When new implementation is needed, a new contract will be deployed
 and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.
 
 ### constructor

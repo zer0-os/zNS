@@ -1,7 +1,8 @@
-import { IZNSContracts } from "./types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
+import { IZNSContractsLocal } from "./types";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 
 export const getDomainRegisteredEvents = async ({
@@ -11,7 +12,7 @@ export const getDomainRegisteredEvents = async ({
   registrant = undefined,
   blockRange = 50,
 } : {
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal;
   domainHash ?: string | undefined;
   tokenId ?: bigint | undefined;
   registrant ?: string | undefined;
@@ -35,7 +36,7 @@ export const getDomainHashFromEvent = async ({
   zns,
   user,
 } : {
-  zns : IZNSContracts;
+  zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
 }) : Promise<string> => {
   const latestBlock = await time.latestBlock();

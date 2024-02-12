@@ -13,12 +13,12 @@ import {
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSContracts } from "./helpers/types";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
+import { IZNSContractsLocal } from "./helpers/types";
 
 
 describe("ZNSFixedPricer", () => {
@@ -28,7 +28,7 @@ describe("ZNSFixedPricer", () => {
   let random : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
   let domainHash : string;
   let parentPrice : bigint;
   let parentFeePercentage : bigint;

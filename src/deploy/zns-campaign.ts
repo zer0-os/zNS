@@ -1,9 +1,11 @@
 import * as hre from "hardhat";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-
-import { IDeployCampaignConfig } from "./campaign/types";
-import { HardhatDeployer } from "./deployer/hardhat-deployer";
-import { DeployCampaign } from "./campaign/deploy-campaign";
+import {
+  HardhatDeployer,
+  DeployCampaign,
+  getLogger,
+} from "@zero-tech/zdc";
 import {
   MeowTokenDM,
   ZNSAccessControllerDM,
@@ -11,32 +13,43 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
-import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
-import { getLogger } from "./logger/create-logger";
+import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZnsMongoAdapter } from "./mongo";
 
-// TODO how do we mock certain things for tests
+
 export const runZnsCampaign = async ({
   config,
   provider,
   dbVersion,
   deployer,
 } : {
-  config : IDeployCampaignConfig;
+  config : IZNSCampaignConfig<SignerWithAddress>;
   provider ?: DefenderRelayProvider;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;
 }) => {
   hre.upgrades.silenceWarnings();
 
   const logger = getLogger();
 
   if (!deployer) {
-    deployer = new HardhatDeployer(config.deployAdmin, config.env, provider);
+    deployer = new HardhatDeployer({
+      hre,
+      signer: config.deployAdmin,
+      env: config.env,
+      provider,
+    });
   }
 
-  const dbAdapter = await getMongoAdapter();
+  const dbAdapter = await getZnsMongoAdapter();
 
-  const campaign = new DeployCampaign({
+  const campaign = new DeployCampaign<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  DefenderRelayProvider,
+  IZNSContracts
+  >({
     missions: [
       ZNSAccessControllerDM,
       ZNSRegistryDM,
@@ -57,7 +70,7 @@ export const runZnsCampaign = async ({
 
   await campaign.execute();
 
-  await dbAdapter.finalizeDeployedVersion(dbVersion);
+  await dbAdapter.finalize(dbVersion);
 
   return campaign;
 };

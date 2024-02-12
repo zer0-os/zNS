@@ -1,4 +1,5 @@
 import {
+  MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -24,7 +25,6 @@ import {
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
-  MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
@@ -65,16 +65,6 @@ export type ZNSContractMock =
   ZNSAddressResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock;
 
-export type ZNSContract =
-  ZNSRootRegistrar |
-  ZNSSubRegistrar |
-  ZNSCurvePricer |
-  ZNSFixedPricer |
-  ZNSTreasury |
-  ZNSRegistry |
-  ZNSAddressResolver |
-  ZNSDomainToken;
-
 export interface IFixedPriceConfig {
   price : bigint;
   feePercentage : bigint;
@@ -87,7 +77,7 @@ export interface RegistrarConfig {
   domainTokenAddress : string;
 }
 
-export interface IZNSContracts {
+export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
@@ -148,4 +138,3 @@ export interface IPathRegResult {
   zeroVaultBalanceBefore : bigint;
   zeroVaultBalanceAfter : bigint;
 }
-

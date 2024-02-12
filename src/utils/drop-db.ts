@@ -1,13 +1,12 @@
-import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
-import { startMongo, stopMongo } from "../deploy/db/service/mongo-service";
-import { getLogger } from "../deploy/logger/create-logger";
+import { getLogger } from "@zero-tech/zdc";
+import { startMongo, stopMongo, getZnsMongoAdapter } from "../deploy/mongo";
 
 
 const logger = getLogger();
 
 export const dropDB = async () => {
   try {
-    const adapter = await getMongoAdapter();
+    const adapter = await getZnsMongoAdapter();
     await adapter.dropDB();
     await stopMongo();
   } catch (e) {
