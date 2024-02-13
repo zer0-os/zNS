@@ -17,8 +17,6 @@ export const meowTokenSymbol = "MEOW";
 
 
 export class MeowTokenDM extends BaseDeployMission<
-HardhatRuntimeEnvironment,
-SignerWithAddress,
 DefenderRelayProvider,
 IZNSContracts
 > {
@@ -31,8 +29,6 @@ IZNSContracts
   instanceName = znsNames.meowToken.instance;
 
   constructor (args : IDeployMissionArgs<
-  HardhatRuntimeEnvironment,
-  SignerWithAddress,
   DefenderRelayProvider,
   IZNSContracts
   >) {

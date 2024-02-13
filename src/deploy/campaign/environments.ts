@@ -1,4 +1,4 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { IZNSCampaignConfig } from "./types";
 import {
@@ -67,7 +67,7 @@ export const getCampaignConfig = async ({
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
-}) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
+}) : Promise<IZNSCampaignConfig> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
@@ -99,7 +99,7 @@ export const getCampaignConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig<SignerWithAddress> = {
+  const config : IZNSCampaignConfig = {
     env: process.env.ENV_LEVEL!,
     upgrade: process.env.UPGRADE === "true",
     deployAdmin: deployer,

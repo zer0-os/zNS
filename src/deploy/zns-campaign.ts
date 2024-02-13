@@ -24,10 +24,10 @@ export const runZnsCampaign = async ({
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig<SignerWithAddress>;
+  config : IZNSCampaignConfig;
   provider ?: DefenderRelayProvider;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;
+  deployer ?: HardhatDeployer<DefenderRelayProvider>;
 }) => {
   hre.upgrades.silenceWarnings();
 
@@ -45,8 +45,6 @@ export const runZnsCampaign = async ({
   const dbAdapter = await getZnsMongoAdapter();
 
   const campaign = new DeployCampaign<
-  HardhatRuntimeEnvironment,
-  SignerWithAddress,
   DefenderRelayProvider,
   IZNSContracts
   >({
