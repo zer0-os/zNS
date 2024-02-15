@@ -15,7 +15,8 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
-  validateUpgrade, INITIALIZED_ERR,
+  validateUpgrade,
+  INITIALIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -166,7 +167,6 @@ describe("ZNSAddressResolver", () => {
 
     const address = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(address).to.eq(hre.ethers.ZeroAddress);
-
   });
 
   it("Should resolve address correctly", async () => {

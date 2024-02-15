@@ -151,7 +151,7 @@ describe("ZNSRootRegistrar", () => {
     expect(config.beneficiary).to.eq(ethers.ZeroAddress);
   });
 
-  it.only("Gas tests", async () => {
+  it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),

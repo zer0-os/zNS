@@ -77,6 +77,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -356,6 +357,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -863,6 +865,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -1044,6 +1047,7 @@ describe("Deploy Campaign Test", () => {
       config = {
         env: "dev",
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
