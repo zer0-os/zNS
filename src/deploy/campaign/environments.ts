@@ -1,4 +1,4 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { IZNSCampaignConfig } from "./types";
 import {
@@ -55,7 +55,7 @@ const getCustomAddresses = (
 };
 
 // This function builds a config with default values but overrides them with any values that are set
-export const getConfig = async ({
+export const getCampaignConfig = async ({
   deployer,
   governors,
   admins,
@@ -67,7 +67,7 @@ export const getConfig = async ({
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
-}) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
+}) : Promise<IZNSCampaignConfig> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
@@ -99,8 +99,9 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig<SignerWithAddress> = {
+  const config : IZNSCampaignConfig = {
     env: process.env.ENV_LEVEL!,
+    upgrade: process.env.UPGRADE === "true",
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
@@ -170,6 +171,10 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
+    requires(
+      process.env.UPGRADE === "true",
+      "Production contracts can ONLY be upgraded! Set UPGRADE='true' in .env"
+    );
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
