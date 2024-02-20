@@ -7,6 +7,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 const logger = getLogger();
 
 const runCampaign = async () => {
+  // TODO: refactor to use getDefenderRelayer() here
   const credentials = {
     apiKey: process.env.DEFENDER_KEY,
     apiSecret: process.env.DEFENDER_SECRET,
