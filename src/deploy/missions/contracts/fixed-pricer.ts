@@ -1,6 +1,6 @@
 import { ProxyKinds } from "../../constants";
 import {
-  BaseDeployMission,
+  BaseUpgradeMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
@@ -8,7 +8,7 @@ import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-c
 import { IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSFixedPricerDM extends BaseDeployMission<
+export class ZNSFixedPricerDM extends BaseUpgradeMission<
 DefenderRelayProvider,
 IZNSContracts
 > {

@@ -1,13 +1,11 @@
 import {
-  BaseDeployMission,
+  BaseUpgradeMission,
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSContracts } from "../../../campaign/types";
 
@@ -16,7 +14,7 @@ export const meowTokenName = "MEOW";
 export const meowTokenSymbol = "MEOW";
 
 
-export class MeowTokenDM extends BaseDeployMission<
+export class MeowTokenDM extends BaseUpgradeMission<
 DefenderRelayProvider,
 IZNSContracts
 > {
