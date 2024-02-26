@@ -1,7 +1,9 @@
 
 
+// eslint-disable-next-line no-shadow
 const toBase64 = (str : string) => btoa(str);
 
+// eslint-disable-next-line no-shadow
 const fromBase64 = (str : string) => atob(str);
 
 const [
