@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission, IContractState, IHardhatBase, IProviderBase, ISignerBase,
+  BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";

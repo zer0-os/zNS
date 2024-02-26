@@ -45,6 +45,7 @@ const changeOwnerAndZeroVault = async () => {
 
   const treasuryFactory = await ethers.getContractFactory(
     // TODO: is this a problem ?? make sure function is called correctly
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     znsNames.treasury.contract,
     signer
@@ -70,6 +71,7 @@ const changeOwnerAndZeroVault = async () => {
   // 2. change owner of 0x0 hash in Registry
   const registryFactory = await ethers.getContractFactory(
     // TODO: is this a problem ?? make sure function is called correctly
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     znsNames.registry.contract,
     signer

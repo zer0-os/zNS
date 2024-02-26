@@ -11,7 +11,7 @@ import {
   MongoDBAdapter,
   ITenderlyContractData,
   TDeployArgs,
-  VERSION_TYPES, IHardhatBase, ISignerBase, IProviderBase,
+  VERSION_TYPES,
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
