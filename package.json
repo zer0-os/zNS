@@ -34,7 +34,8 @@
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
-    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia"
+    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
+    "run-owner-reset": "hardhat run src/utils/oz-defender/relayer-calls.ts --network sepolia"
   },
   "pre-commit": [
     "lint"

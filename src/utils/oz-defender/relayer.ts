@@ -7,12 +7,12 @@ export const getDefenderRelayer = ({
   signerOpts,
 } : {
   defenderCreds ?: {
-    apiKey ?: string,
-    apiSecret ?: string,
-    relayerApiKey ?: string,
-    relayerApiSecret ?: string,
-  },
-  signerOpts : DefenderRelaySignerOptions,
+    apiKey ?: string;
+    apiSecret ?: string;
+    relayerApiKey ?: string;
+    relayerApiSecret ?: string;
+  };
+  signerOpts : DefenderRelaySignerOptions;
 } = {
   signerOpts: { speed: "fast" },
 }) => {
