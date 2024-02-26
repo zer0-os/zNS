@@ -46,7 +46,6 @@ import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContractsLocal } from "./helpers/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
@@ -469,11 +468,7 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > (failingCampaign : DeployCampaign<
+      const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
       DefenderRelayProvider,
