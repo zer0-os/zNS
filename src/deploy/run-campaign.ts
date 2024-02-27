@@ -1,9 +1,9 @@
 import { getConfig } from "./campaign/environments";
 import { runZnsCampaign } from "./zns-campaign";
-import { Defender } from "@openzeppelin/defender-sdk";
 import { getLogger } from "@zero-tech/zdc";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getDefenderRelayer } from "../utils/oz-defender/relayer";
+
 
 const logger = getLogger();
 
