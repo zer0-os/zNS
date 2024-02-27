@@ -5,18 +5,16 @@ import { ZNSRegistry, ZNSTreasury } from "../../../typechain";
 import assert from "assert";
 
 
-// TODO:
-//  SET PROPER ENV FILE AND CHECK ALL THE KEYS AND SECRETS BEFORE RUNNING !!!
 const envMap = {
   mainnet: {
-    treasury: "0x8873Bc4461F16e4EA0594f11F7D2A4bd154b9206",
-    registry: "0x08ECF3f191C745a4dD2A18ec91D8301A54d75E7b",
+    treasury: null,
+    registry: null,
     zeroVault: null,
     newOwner: null,
   },
   sepolia: {
-    treasury: "0xbEEa52b4A4bbB2398Aec9FDEC7127025cfD81D7B",
-    registry: "0xA5274a2294a3DF7734525bf18eb8E74e98B85B9B",
+    treasury: null,
+    registry: null,
     zeroVault: null,
     newOwner: null,
   },
@@ -44,7 +42,6 @@ const changeOwnerAndZeroVault = async () => {
   }
 
   const treasuryFactory = await ethers.getContractFactory(
-    // TODO: is this a problem ?? make sure function is called correctly
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     znsNames.treasury.contract,
@@ -70,7 +67,6 @@ const changeOwnerAndZeroVault = async () => {
 
   // 2. change owner of 0x0 hash in Registry
   const registryFactory = await ethers.getContractFactory(
-    // TODO: is this a problem ?? make sure function is called correctly
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     znsNames.registry.contract,
