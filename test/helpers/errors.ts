@@ -26,7 +26,7 @@ export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both N
 
 // Subdomain Registrar
 // eslint-disable-next-line max-len
-export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist";
+export const DISTRIBUTION_LOCKED_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked";
 
 // StringUtils
 export const INVALID_NAME_ERR = "StringUtils: Invalid domain label";

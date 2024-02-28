@@ -102,11 +102,23 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        require(
-            parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
-        );
+        Ownership memory parent = Ownership({
+            owner: registry.getDomainOwner(parentHash),
+            ownsBoth: false,
+            isOperatorForOwner: false
+        });
+
+        parent.ownsBoth = rootRegistrar.isOwnerOf(parentHash, parent.owner, IZNSRootRegistrar.OwnerOf.BOTH);
+        parent.isOperatorForOwner = registry.isOperatorFor(msg.sender, parent.owner);
+
+        if (parentConfig.accessType == AccessType.LOCKED) {
+            require(
+                // Require that the parent owns both the token and the domain name
+                // as well as that the caller either is the parent owner, or an allowed operator
+                parent.ownsBoth && (parent.isOperatorForOwner || address(msg.sender) == parent.owner),
+                "ZNSSubRegistrar: Parent domain's distribution is locked"
+            );
+        }
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             require(
@@ -131,7 +143,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             paymentConfig: paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
+        // If parent owns both and caller is either parent or an operator, mint for free
+        // If parent does not own both or the caller is not an operator or the owner, pay to mint
+        if (!parent.ownsBoth || !(parent.isOperatorForOwner || address(msg.sender) == parent.owner)) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(

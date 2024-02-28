@@ -11,6 +11,12 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 */
 interface IZNSSubRegistrar is IDistributionConfig {
 
+    struct Ownership {
+        address owner;
+        bool ownsBoth;
+        bool isOperatorForOwner;
+    }
+
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
     */
