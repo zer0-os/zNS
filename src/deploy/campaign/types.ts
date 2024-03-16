@@ -14,6 +14,7 @@ import {
   ZNSSubRegistrar,
   ZNSTreasury,
   MeowToken,
+  ZNSStringResolver,
 } from "../../../typechain";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
@@ -47,6 +48,7 @@ export type ZNSContract =
   MeowTokenMock |
   MeowToken |
   ZNSAddressResolver |
+  ZNSStringResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |

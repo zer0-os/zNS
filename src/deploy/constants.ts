@@ -28,4 +28,5 @@ export const EXECUTOR_ROLE = ethers.solidityPackedKeccak256(
 
 export const ResolverTypes = {
   address: "address",
+  string: "string",
 };
