@@ -35,8 +35,8 @@
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
     "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
-    "get-balances": "ts-node src/utils/sec-sweep/check-balances.ts",
-    "tenderly-all": "ts-node src/utils/sec-sweep/tenderly-push-csv.ts"
+    "get-balances": "ts-node src/utils/external/check-balances.ts",
+    "tenderly-all": "ts-node src/utils/external/tenderly-push-csv.ts"
   },
   "pre-commit": [
     "lint"
