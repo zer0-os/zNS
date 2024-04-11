@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Registrar__factory } from "../../../../zNS-lgc/typechain";
+import { Registrar__factory } from "../typechain"; // legacy Registrar
 import { ethers } from "ethers";
 
 
