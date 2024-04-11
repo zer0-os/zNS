@@ -1,5 +1,6 @@
 import axios from "axios";
-import { Registrar__factory } from "../typechain";
+import { Registrar__factory } from "../../../../zNS-lgc/typechain";
+import { ethers } from "ethers";
 
 
 interface IEtherscanTx {
@@ -17,7 +18,7 @@ const getTransactionsForAddress = async (address : string) : Promise<Array<IEthe
   const inst = axios.create();
 
   const { data } = await inst.get(
-    `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10&sort=asc&apikey=${process.env.API_KEY}`
+    `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999999999&page=1&offset=10&sort=asc&apikey=${process.env.ETHERSCAN_API_KEY}`
   );
 
   return data.result;
@@ -29,7 +30,7 @@ const getControllersForAddress = async (address : string) => {
   const methodIdToCheck = "0xa7fc7a07";
   const functionNameToCheck = "addController(address newController)";
 
-  const inputs1 = txes.reduce(
+  const historicControllers = txes.reduce(
     (acc : Array<string>, tx : IEtherscanTx) => {
       if (tx.functionName === functionNameToCheck) {
         acc.push(`0x${tx.input.slice(-40)}`);
@@ -39,16 +40,25 @@ const getControllersForAddress = async (address : string) => {
     []
   );
 
-  const existingControllers = await inputs1.reduce(
-    async (acc, input) => {
-      await acc;
+  const signer = new ethers.providers.JsonRpcProvider(`https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`);
+  const contract = Registrar__factory.connect(address, signer);
 
-      const contract = Registrar__factory.connect(address, ethers.provider);
+  const existingControllers : Array<string> = await historicControllers.reduce(
+    async (acc : Promise<Array<string>>, input) => {
+      const newAcc = await acc;
+
+      const isController = await contract.controllers(input);
+
+      if (isController) {
+        return [...newAcc, input];
+      } else {
+        return newAcc;
+      }
     },
     Promise.resolve([])
   );
 
-  return inputs1;
+  return existingControllers;
 };
 
 
