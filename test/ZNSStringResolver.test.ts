@@ -28,7 +28,7 @@ import {
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
 } from "../typechain";
-import { DeployCampaign } from "@zero-tech/zdc";
+import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { getConfig } from "../src/deploy/campaign/environments";
@@ -61,6 +61,8 @@ describe("ZNSStringResolver", () => {
     const domainName = "lox";
     const domainNameHash = hashDomainLabel(domainName);
 
+    let mongoAdapter : MongoDBAdapter;
+
     before(async () => {
 
       [
@@ -87,12 +89,16 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({ stringResolver, registry, meowToken, treasury, rootRegistrar } = campaign);
+      ({ stringResolver, registry, meowToken, treasury, rootRegistrar, dbAdapter: mongoAdapter } = campaign);
 
 
       userBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(user.address, userBalance);
       await meowToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
+    });
+
+    after(async () => {
+      await mongoAdapter.dropDB();
     });
 
     it("Should not let initialize the contract", async () => {
@@ -166,7 +172,7 @@ describe("ZNSStringResolver", () => {
     });
   });
 
-  describe("One campaign for each test", () => {
+  describe("New campaign for each test", () => {
 
     let deployer : SignerWithAddress;
     let zeroVault : SignerWithAddress;
@@ -192,6 +198,7 @@ describe("ZNSStringResolver", () => {
     let userBalance : bigint;
     let deployerBalance : bigint;
 
+    let mongoAdapter : MongoDBAdapter;
 
     beforeEach(async () => {
 
@@ -220,7 +227,7 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({ stringResolver, registry, meowToken, treasury, accessController, domainToken } = campaign);
+      ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
 
       operatorBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(operator.address, operatorBalance);
@@ -233,6 +240,10 @@ describe("ZNSStringResolver", () => {
       deployerBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(deployer.address, deployerBalance);
       await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
+    });
+
+    afterEach(async () => {
+      await mongoAdapter.dropDB();
     });
 
     it("Should not allow non-owner address to setString (similar domain and string)", async () => {
