@@ -2,8 +2,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
   ADMIN_ROLE,
-  DEFAULT_PRICE_CONFIG,
-  DEFAULT_ROYALTY_FRACTION,
   distrConfigEmpty,
   getAccessRevertMsg,
   GOVERNOR_ROLE,
@@ -12,10 +10,7 @@ import {
   paymentConfigEmpty,
   REGISTRAR_ROLE,
   validateUpgrade,
-  ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL,
 } from "./helpers";
-import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
@@ -37,7 +32,6 @@ import { getConfig } from "../src/deploy/campaign/environments";
 describe("ZNSStringResolver", () => {
   describe("One campaign for everybody", () => {
     let zeroVault : SignerWithAddress;
-    let operator : SignerWithAddress;
     let user : SignerWithAddress;
     let deployAdmin : SignerWithAddress;
     let deployer : SignerWithAddress;
@@ -227,7 +221,15 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
+      ({
+        stringResolver,
+        registry,
+        meowToken,
+        treasury,
+        accessController,
+        domainToken,
+        dbAdapter: mongoAdapter,
+      } = campaign);
 
       operatorBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(operator.address, operatorBalance);
@@ -392,7 +394,6 @@ describe("ZNSStringResolver", () => {
         await stringResolver.supportsInterface("0xffffffff")
       ).to.be.false;
     });
-
 
     describe("UUPS", () => {
 

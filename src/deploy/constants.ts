@@ -28,5 +28,7 @@ export const EXECUTOR_ROLE = ethers.solidityPackedKeccak256(
 
 export const ResolverTypes = {
   address: "address",
+  // TODO: Which word to use for a string type of resolver??
+  // eslint-disable-next-line id-blacklist
   string: "string",
 };
