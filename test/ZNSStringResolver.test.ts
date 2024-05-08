@@ -29,7 +29,7 @@ import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-c
 import { getConfig } from "../src/deploy/campaign/environments";
 
 
-describe.only("ZNSStringResolver", () => {
+describe("ZNSStringResolver", () => {
   describe("Single state tests", () => {
     let zeroVault : SignerWithAddress;
     let user : SignerWithAddress;0;
