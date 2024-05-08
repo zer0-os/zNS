@@ -4,8 +4,8 @@ pragma solidity 0.8.18;
 
 interface IZNSStringResolver {
     /**
-     * @param newString The new domain owner
      * @param domainHash The identifying hash of a domain's name
+     * @param newString - content of string type set by the owner/operator to which a domain will resolve to
      */
     event StringSet(bytes32 indexed domainHash, string indexed newString);
 

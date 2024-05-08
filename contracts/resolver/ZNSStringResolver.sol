@@ -58,9 +58,7 @@ contract ZNSStringResolver is
     ) external override {
         // only owner or operator of the current domain can set the string
         require(
-            registry.isOwnerOrOperator(domainHash, msg.sender) ||
-            // TODO: decide, whether the registrar can set a string
-            accessController.isRegistrar(msg.sender),
+            registry.isOwnerOrOperator(domainHash, msg.sender),
             "ZNSStringResolver: Not authorized for this domain"
         );
 

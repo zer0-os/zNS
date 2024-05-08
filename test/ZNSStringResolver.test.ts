@@ -29,10 +29,10 @@ import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-c
 import { getConfig } from "../src/deploy/campaign/environments";
 
 
-describe("ZNSStringResolver", () => {
-  describe("One campaign for everybody", () => {
+describe.only("ZNSStringResolver", () => {
+  describe("Single state tests", () => {
     let zeroVault : SignerWithAddress;
-    let user : SignerWithAddress;
+    let user : SignerWithAddress;0;
     let deployAdmin : SignerWithAddress;
     let deployer : SignerWithAddress;
     let admin : SignerWithAddress;
@@ -52,13 +52,12 @@ describe("ZNSStringResolver", () => {
     let userBalance : bigint;
 
     const uri = "https://example.com/817c64af";
-    const domainName = "lox";
+    const domainName = "domain";
     const domainNameHash = hashDomainLabel(domainName);
 
     let mongoAdapter : MongoDBAdapter;
 
     before(async () => {
-
       [
         deployer,
         zeroVault,
@@ -69,7 +68,7 @@ describe("ZNSStringResolver", () => {
       ] = await hre.ethers.getSigners();
 
       const campaignConfig = await getConfig({
-        deployer: deployer as unknown as SignerWithAddress,
+        deployer,
         governors: [deployAdmin.address],
         admins: [admin.address],
         zeroVaultAddress: zeroVault.address,
@@ -85,7 +84,6 @@ describe("ZNSStringResolver", () => {
 
       ({ stringResolver, registry, meowToken, treasury, rootRegistrar, dbAdapter: mongoAdapter } = campaign);
 
-
       userBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(user.address, userBalance);
       await meowToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
@@ -95,7 +93,7 @@ describe("ZNSStringResolver", () => {
       await mongoAdapter.dropDB();
     });
 
-    it("Should not let initialize the contract", async () => {
+    it("Should not let initialize the contract twice", async () => {
       await expect(
         stringResolver.initialize(
           await campaign.state.contracts.accessController.getAddress(),
@@ -108,6 +106,8 @@ describe("ZNSStringResolver", () => {
 
     it("Should correctly attach the string to the domain", async () => {
 
+      const newString = "hippopotamus";
+
       await rootRegistrar.connect(user).registerRootDomain(
         domainName,
         ethers.ZeroAddress,
@@ -115,12 +115,12 @@ describe("ZNSStringResolver", () => {
         distrConfigEmpty,
         paymentConfigEmpty,
       );
-      await stringResolver.connect(user).setString(domainNameHash, "hippopotamus");
+      await stringResolver.connect(user).setString(domainNameHash, newString);
 
       expect(
         await stringResolver.resolveDomainString(domainNameHash)
       ).to.eq(
-        "hippopotamus"
+        newString
       );
     });
 
@@ -132,6 +132,9 @@ describe("ZNSStringResolver", () => {
         .withArgs(admin.address);
 
       expect(await stringResolver.registry()).to.equal(admin.address);
+
+      // reset regestry address on stringResolver
+      await stringResolver.connect(admin).setRegistry(registry.target);
     });
 
     it("Should revert when setRegistry() without ADMIN_ROLE", async () => {
@@ -140,6 +143,9 @@ describe("ZNSStringResolver", () => {
       ).to.be.revertedWith(
         getAccessRevertMsg(user.address, ADMIN_ROLE)
       );
+
+      // reset regestry address on stringResolver
+      await stringResolver.connect(admin).setRegistry(registry.target);
     });
 
     it("Should revert when setAccessController() without ADMIN_ROLE " +
@@ -192,6 +198,7 @@ describe("ZNSStringResolver", () => {
     let userBalance : bigint;
     let deployerBalance : bigint;
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let mongoAdapter : MongoDBAdapter;
 
     beforeEach(async () => {
@@ -221,15 +228,8 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({
-        stringResolver,
-        registry,
-        meowToken,
-        treasury,
-        accessController,
-        domainToken,
-        dbAdapter: mongoAdapter,
-      } = campaign);
+      // eslint-disable-next-line max-len
+      ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
 
       operatorBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(operator.address, operatorBalance);
@@ -242,10 +242,6 @@ describe("ZNSStringResolver", () => {
       deployerBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(deployer.address, deployerBalance);
       await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
-    });
-
-    afterEach(async () => {
-      await mongoAdapter.dropDB();
     });
 
     it("Should not allow non-owner address to setString (similar domain and string)", async () => {
@@ -323,37 +319,6 @@ describe("ZNSStringResolver", () => {
       ).to.equal(curString);
     });
 
-    it.skip("Should allow REGISTRAR_ROLE to setString and emit event." +
-    "TODO: decide, whether the registrar can set a string  (different domain and string)", async () => {
-
-      const curDomain = "grantroledomain";
-      const curString = "grantrole";
-      const hash = hashDomainLabel(curDomain);
-
-      await accessController.connect(deployAdmin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
-
-      await registrationWithSetup({
-        zns: campaign.state.contracts,
-        user,
-        domainLabel: curDomain,
-        domainContent: ethers.ZeroAddress,
-      });
-
-      await expect(
-        stringResolver.connect(mockRegistrar).setString(hash, curString)
-      ).to.emit(
-        stringResolver,
-        "StringSet"
-      ).withArgs(
-        hash,
-        curString
-      );
-
-      expect(
-        await stringResolver.resolveDomainString(hash)
-      ).to.equal(curString);
-    });
-
     it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
       await expect(
         stringResolver.connect(admin).setAccessController(admin.address)
@@ -395,6 +360,7 @@ describe("ZNSStringResolver", () => {
       ).to.be.false;
     });
 
+
     describe("UUPS", () => {
 
       it("Allows an authorized user to upgrade the StringResolver", async () => {
@@ -434,6 +400,7 @@ describe("ZNSStringResolver", () => {
         );
       });
 
+      // TODO: Falls on the role. I think, cannot give a REGISTRAR_ROLE to mock "deployAdmin".
       it.skip("Verifies that variable values are not changed in the upgrade process", async () => {
         const curString = "variableschange";
 

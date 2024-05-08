@@ -10,6 +10,7 @@ import {
   MeowTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
+  ZNSStringResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
@@ -56,6 +57,7 @@ export const runZnsCampaign = async ({
       ZNSDomainTokenDM,
       MeowTokenDM,
       ZNSAddressResolverDM,
+      ZNSStringResolverDM,
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,

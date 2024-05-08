@@ -61,6 +61,7 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   domainToken : ZNSDomainToken;
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;

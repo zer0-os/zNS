@@ -17,7 +17,7 @@ import {
   INVALID_TOKENID_ERC_ERR, NO_BENEFICIARY_ERR,
   ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
   PaymentType,
-  DECAULT_PRECISION,
+  DEFAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
 } from "./helpers";
@@ -1718,7 +1718,7 @@ describe("ZNSSubRegistrar", () => {
         maxLength: BigInt(50),
         baseLength: BigInt(4),
         precisionMultiplier: BigInt(10) ** (
-          decimalValues.thirteen - DECAULT_PRECISION
+          decimalValues.thirteen - DEFAULT_PRECISION
         ),
         feePercentage: BigInt(185),
         isSet: true,

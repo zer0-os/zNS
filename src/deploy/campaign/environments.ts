@@ -1,4 +1,5 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
@@ -6,7 +7,7 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
-  DECAULT_PRECISION,
+  DEFAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   getCurvePrice,
   NO_MOCK_PROD_ERR,
@@ -223,7 +224,7 @@ const getValidateRootPriceConfig = () => {
       : DEFAULT_PRICE_CONFIG.baseLength;
 
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DECAULT_PRECISION;
+  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
   const feePercentage =
