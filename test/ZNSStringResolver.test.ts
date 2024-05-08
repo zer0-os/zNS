@@ -35,6 +35,7 @@ describe.only("ZNSStringResolver", () => {
     let user : SignerWithAddress;0;
     let deployAdmin : SignerWithAddress;
     let deployer : SignerWithAddress;
+    let operator : SignerWithAddress;
     let admin : SignerWithAddress;
 
     const env = "dev";
