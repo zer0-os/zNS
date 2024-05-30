@@ -9,7 +9,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSContracts } from "../../campaign/types";
 
-
 export class ZNSFixedPricerDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,

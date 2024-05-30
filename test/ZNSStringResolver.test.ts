@@ -32,7 +32,7 @@ import { getConfig } from "../src/deploy/campaign/environments";
 describe("ZNSStringResolver", () => {
   describe("Single state tests", () => {
     let zeroVault : SignerWithAddress;
-    let user : SignerWithAddress;0;
+    let user : SignerWithAddress;
     let deployAdmin : SignerWithAddress;
     let deployer : SignerWithAddress;
     let operator : SignerWithAddress;
@@ -258,8 +258,9 @@ describe("ZNSStringResolver", () => {
 
       await expect(
         stringResolver.connect(user).setString(hashDomainLabel(curStringDomain), curStringDomain)
-      ).to.be.revertedWith(
-        "ZNSStringResolver: Not authorized for this domain"
+      ).to.be.revertedWithCustomError(
+        stringResolver,
+        "NotOwnerOrOperator"
       );
     });
 
@@ -402,11 +403,8 @@ describe("ZNSStringResolver", () => {
       });
 
       // TODO: Falls on the role. I think, cannot give a REGISTRAR_ROLE to mock "deployAdmin".
-      it.skip("Verifies that variable values are not changed in the upgrade process", async () => {
+      it("Verifies that variable values are not changed in the upgrade process", async () => {
         const curString = "variableschange";
-
-        await accessController.connect(deployAdmin)
-          .grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
         await registrationWithSetup({
           zns: campaign.state.contracts,
@@ -419,7 +417,7 @@ describe("ZNSStringResolver", () => {
         const newStringResolver = await factory.deploy();
         await newStringResolver.waitForDeployment();
 
-        await stringResolver.connect(mockRegistrar).setString(hashDomainLabel(curString), curString);
+        await stringResolver.connect(deployer).setString(hashDomainLabel(curString), curString);
 
         const contractCalls = [
           stringResolver.registry(),

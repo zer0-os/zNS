@@ -18,7 +18,7 @@ contract ZNSStringResolver is
     ERC165,
     IZNSStringResolver {
 
-    mapping(bytes32 domainHash => string resolvedString) internal domainStrings;
+    mapping(bytes32 domainHash => string resolvedString) internal resolvedStrings;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -44,8 +44,11 @@ contract ZNSStringResolver is
     function resolveDomainString(
         bytes32 domainHash
     ) external view override returns (string memory) {
-        return domainStrings[domainHash];
+        return resolvedStrings[domainHash];
     }
+
+    // custom error for setString
+    error NotOwnerOrOperator(bytes32 domainHash, address sender);
 
     /**
      * @dev Sets the string for a domain name hash.
@@ -57,12 +60,12 @@ contract ZNSStringResolver is
         string calldata newString
     ) external override {
         // only owner or operator of the current domain can set the string
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSStringResolver: Not authorized for this domain"
-        );
 
-        domainStrings[domainHash] = newString;
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender)) {
+            revert NotOwnerOrOperator(domainHash, msg.sender);
+        }
+
+        resolvedStrings[domainHash] = newString;
 
         emit StringSet(domainHash, newString);
     }
