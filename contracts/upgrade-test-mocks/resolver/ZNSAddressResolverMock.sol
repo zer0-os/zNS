@@ -5,4 +5,6 @@ import { ZNSAddressResolver } from "../../resolver/ZNSAddressResolver.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 
  /* solhint-disable */
-contract ZNSAddressResolverUpgradeMock is ZNSAddressResolver, UpgradeMock{}
+contract ZNSAddressResolverUpgradeMock is ZNSAddressResolver, UpgradeMock {
+    constructor(address accessController_, address registry_) ZNSAddressResolver(accessController_, registry_) {}
+}

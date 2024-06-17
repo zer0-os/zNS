@@ -6,4 +6,10 @@ import { UpgradeMock } from "../UpgradeMock.sol";
 
 
 // solhint-disable-next-line no-empty-blocks
-contract ZNSCurvePricerUpgradeMock is ZNSCurvePricer, UpgradeMock {}
+contract ZNSCurvePricerUpgradeMock is ZNSCurvePricer, UpgradeMock {
+    constructor(
+        address accessController_,
+        address registry_,
+        CurvePriceConfig memory zeroPriceConfig_
+    ) ZNSCurvePricer(accessController_, registry_, zeroPriceConfig_) {}
+}

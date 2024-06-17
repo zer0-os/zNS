@@ -27,8 +27,11 @@ contract ZNSAddressResolver is
         internal domainAddresses;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(address accessController_, address registry_) {
+        _setAccessController(accessController_);
+        setRegistry(registry_);
+        // TODO axe: set everything back when proxies are figured out !!!
+//        _disableInitializers();
     }
 
     /**

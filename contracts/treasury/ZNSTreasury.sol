@@ -38,8 +38,30 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     mapping(bytes32 domainHash => Stake stakeData) public override stakedForDomain;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address accessController_,
+        address registry_,
+        address paymentToken_,
+        address zeroVault_
+    ) {
+        _setAccessController(accessController_);
+        _setRegistry(registry_);
+
+        require(
+            paymentToken_ != address(0),
+            "ZNSTreasury: paymentToken_ passed as 0x0 address"
+        );
+        require(
+            zeroVault_ != address(0),
+            "ZNSTreasury: zeroVault_ passed as 0x0 address"
+        );
+
+        paymentConfigs[0x0] = PaymentConfig({
+            token: IERC20(paymentToken_),
+            beneficiary : zeroVault_
+        });
+        // TODO axe: set everything back when proxies are figured out !!!
+//        _disableInitializers();
     }
 
     /**
