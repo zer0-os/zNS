@@ -11,6 +11,8 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { AxelarExecutable } from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 /**
@@ -30,6 +32,7 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    AxelarExecutable,
     IZNSRootRegistrar {
     using StringUtils for string;
 
@@ -39,8 +42,22 @@ contract ZNSRootRegistrar is
     IZNSSubRegistrar public subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address accessController_,
+        address registry_,
+        address rootPricer_,
+        address treasury_,
+        address domainToken_,
+        address gateway_
+    ) AxelarExecutable(gateway_) {
+        // TODO axe: figure out a way to use proxies with Axelar and fix this !!!
+        //        this here is temporary because we are not deploying proxies
+//        _disableInitializers();
+        _setAccessController(accessController_);
+        setRegistry(registry_);
+        setRootPricer(rootPricer_);
+        setTreasury(treasury_);
+        setDomainToken(domainToken_);
     }
 
     /**
@@ -112,7 +129,7 @@ contract ZNSRootRegistrar is
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
-                msg.sender,
+                domainAddress,
                 domainAddress,
                 domainPrice,
                 0,
@@ -218,7 +235,7 @@ contract ZNSRootRegistrar is
             treasury.stakeForDomain(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                address(this),
                 args.price,
                 args.stakeFee,
                 protocolFee
@@ -227,7 +244,7 @@ contract ZNSRootRegistrar is
             treasury.processDirectPayment(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                address(this),
                 args.price,
                 protocolFee
             );
@@ -405,5 +422,34 @@ contract ZNSRootRegistrar is
     // solhint-disable-next-line
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
+    }
+
+    function _execute(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal override {
+        (bool success, bytes memory returnVal) = address(this).call(payload);
+
+        if (!success) {
+            revert CrossChainCallFailed(payload, returnVal);
+        }
+    }
+
+    function _executeWithToken(
+        string calldata,
+        string calldata,
+        bytes calldata payload,
+        string calldata tokenSymbol,
+        uint256 amount
+    ) internal override {
+        (IERC20 token,) = treasury.paymentConfigs(0x0);
+        token.approve(address(treasury), amount);
+
+        (bool success, bytes memory returnVal) = address(this).call(payload);
+
+        if (!success) {
+            revert CrossChainCallFailed(payload, returnVal);
+        }
     }
 }
