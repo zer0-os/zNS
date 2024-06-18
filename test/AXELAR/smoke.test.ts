@@ -3,14 +3,14 @@ import { Wallet, Contract, utils, BigNumber } from "ethers5";
 import { expect } from "chai";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-import SenderReceiver from "../../artifacts/contracts/TEST/SenderReceiver.sol/SenderReceiver.json";
+import SenderReceiver from "../../artifacts/contracts/AXELAR/SenderReceiver.sol/SenderReceiver.json";
 // import { ethers } from "ethers";
 
 const iface = new utils.Interface(SenderReceiver.abi);
 // const iface = new ethers.Interface(SenderReceiver.abi);
 
 
-describe.only("Axelar Tests", () => {
+describe("Axelar Basic Tests", () => {
   let ethereum : Network;
   let polygon : Network;
 
