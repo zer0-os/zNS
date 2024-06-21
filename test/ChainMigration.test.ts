@@ -19,6 +19,8 @@ import { MigrationRootPricerMock } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 
 
+const pricerRevertReason = "Domain registration is disabled because ZNS is migrating to another chain";
+
 describe.only("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
   describe("Ethereum Side", () => {
     let deployer : SignerWithAddress;
@@ -147,7 +149,7 @@ describe.only("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
           distrConfigEmpty,
           paymentConfigEmpty
         )
-      ).to.be.revertedWithCustomError(migrationPricer, "DomainRegistrationDisabled");
+      ).to.be.revertedWith(pricerRevertReason);
     });
 
     // eslint-disable-next-line max-len

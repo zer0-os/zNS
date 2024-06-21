@@ -5,14 +5,14 @@ import { IZNSPricer } from "../../types/IZNSPricer.sol";
 
 
 contract MigrationRootPricerMock is IZNSPricer {
-    error DomainRegistrationDisabled();
+    string public constant REVERT_REASON = "Domain registration is disabled because ZNS is migrating to another chain";
 
     function getPrice(
         bytes32 parentHash,
         string calldata label,
         bool skipValidityCheck
     ) external view returns (uint256) {
-        revert DomainRegistrationDisabled();
+        revert(REVERT_REASON);
     }
 
     function getPriceAndFee(
@@ -20,7 +20,7 @@ contract MigrationRootPricerMock is IZNSPricer {
         string calldata label,
         bool skipValidityCheck
     ) external view returns (uint256 price, uint256 fee) {
-        revert DomainRegistrationDisabled();
+        revert(REVERT_REASON);
     }
 
     function getFeeForPrice(
