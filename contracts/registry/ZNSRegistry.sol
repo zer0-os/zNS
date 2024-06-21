@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -183,7 +183,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Add a new resolver type option to the mapping of types
-     * This function can also be used to update the resolver mapping for an existing resolver 
+     * This function can also be used to update the resolver mapping for an existing resolver
      * simple by using an existing key like "address" with a new address
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract
