@@ -56,6 +56,25 @@ contract ZNSAddressResolver is
         return domainAddresses[domainHash];
     }
 
+    error Temp();
+
+    function toAsciiString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2*i] = char(hi);
+            s[2*i+1] = char(lo);            
+        }
+        return string(s);
+    }
+
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+
     /**
      * @dev Sets the address for a domain name hash. This function can only
      * be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
@@ -67,6 +86,7 @@ contract ZNSAddressResolver is
     function setAddress(
         bytes32 domainHash,
         address newAddress
+        // address registrant // remove after, have to somehow not have this as param
     ) external override {
         // only owner or operator of the current domain can set the address
         // also, ZNSRootRegistrar.sol can set the address as part of the registration process

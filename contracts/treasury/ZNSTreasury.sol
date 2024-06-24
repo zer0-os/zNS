@@ -9,6 +9,8 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { PaymentConfig } from "./IZNSTreasury.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
+import { console } from "hardhat/console.sol";
+
 
 /**
  * @title IZNSTreasury.sol - Interface for the ZNSTreasury contract responsible for managing payments and staking.
@@ -20,6 +22,8 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 */
 contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
+
+    error Testing(address staker);
 
     /**
      * @notice The mapping that stores the payment configurations for each domain.
@@ -99,6 +103,25 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         });
     }
 
+    error Tester(address address_);
+
+    function toAsciiString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2*i] = char(hi);
+            s[2*i+1] = char(lo);            
+        }
+        return string(s);
+    }
+
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+
     /**
      * @notice Performs all the transfers for the staking payment. This function is called by `ZNSRootRegistrar.sol`
      * when a user wants to register a domain. It transfers the stake amount and the registration fee
@@ -128,11 +151,29 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer stake amount and fees to this address
+        // insufficient allowance
+        // revert Tester(address(parentConfig.token));
+        // address polyAcc1 = 0xfECb7aC9d826Bbdf235871FA1d3df1D6B154A30B;
+
+        // revert(toAsciiString(depositor));
+        // if (depositor != polyAcc1) {
+        //     // revert Tester(depositor);
+        // }
+
+        // if (depositor == address(0)) {
+        // }
+
+
+        // Address isnow actally deoositor, not contract, retest
+        // (need to change this back when doing cross chain again)
         parentConfig.token.safeTransferFrom(
             depositor,
             address(this),
             stakeAmount + stakeFee + protocolFee
         );
+
+        // revert("after");
+
 
         // Transfer registration fee to the Zero Vault from this address
         parentConfig.token.safeTransfer(
