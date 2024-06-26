@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission,
+  BaseDeployMission, IContractArtifact,
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
@@ -10,6 +10,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSContracts } from "../../../campaign/types";
+import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
+import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
 
 
 export const meowTokenName = "MEOW";
@@ -65,10 +67,13 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const baseContract = await this.campaign.deployer.getContractObject(
-        this.contractName,
-        this.config.stakingTokenAddress as string,
-      );
+      const factory = new MeowToken__factory(this.config.deployAdmin);
+      const baseContract = factory.attach(this.config.stakingTokenAddress as string);
+      // TODO remove!
+      // const baseContract = await this.campaign.deployer.getContractObject(
+      //   this.contractName,
+      //   this.config.stakingTokenAddress as string,
+      // );
 
       await this.saveToDB(baseContract);
 
@@ -79,6 +84,10 @@ IZNSContracts
     } else {
       await super.deploy();
     }
+  }
+
+  getArtifact () {
+    return meowArtifact;
   }
 
   async deployArgs () : Promise<TDeployArgs> {
