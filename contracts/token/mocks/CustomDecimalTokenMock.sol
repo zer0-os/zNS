@@ -9,9 +9,9 @@ contract CustomDecimalTokenMock is ERC20 {
 
     uint256 private _totalSupplyBase = 10000000000000000000000;
 
-    constructor(address owner, uint256 decimals) ERC20("VariedDecimalTokenMock", "VDTM") {
-        _decimals = uint8(decimals);
-        _mint(owner, totalSupply());
+    constructor(address owner_, uint256 decimals_) ERC20("VariedDecimalTokenMock", "VDTM") {
+        _decimals = uint8(decimals_);
+        _mint(owner_, totalSupply());
     }
 
     function decimals() public view override returns (uint8) {

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
 import { ERC721URIStorageUpgradeable }
@@ -18,9 +17,8 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  */
 contract ZNSDomainToken is
     AAccessControlled,
-    ERC721Upgradeable,
-    ERC2981Upgradeable,
     ERC721URIStorageUpgradeable,
+    ERC2981Upgradeable,
     UUPSUpgradeable,
     IZNSDomainToken {
 
@@ -89,6 +87,7 @@ contract ZNSDomainToken is
      */
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
+        --_totalSupply;
         _resetTokenRoyalty(tokenId);
     }
 
@@ -98,7 +97,7 @@ contract ZNSDomainToken is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721URIStorageUpgradeable, ERC721Upgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, IZNSDomainToken)
     returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -170,21 +169,9 @@ contract ZNSDomainToken is
     public
     view
     virtual
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
-    }
-
-    /**
-     * @notice ERC721 `_burn` function
-     * @param tokenId The ID of the token to burn
-     */
-    function _burn(uint256 tokenId)
-    internal
-    override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
-    {
-        super._burn(tokenId);
-        --_totalSupply;
     }
 
     /**
