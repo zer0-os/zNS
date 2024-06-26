@@ -116,6 +116,7 @@ contract ZNSRootRegistrar is
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
+        revert("1");
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
 
@@ -280,8 +281,8 @@ contract ZNSRootRegistrar is
             treasury.stakeForDomain(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
-                // address(this), // needed when cross chain
+                // args.registrant,
+                address(this), // needed when cross chain
                 args.price,
                 args.stakeFee,
                 protocolFee
@@ -290,8 +291,8 @@ contract ZNSRootRegistrar is
             treasury.processDirectPayment(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
-                // address(this), // needed when cross chain
+                // args.registrant,
+                address(this), // needed when cross chain
                 args.price,
                 protocolFee
             );
@@ -492,6 +493,9 @@ contract ZNSRootRegistrar is
     ) internal override {
         (IERC20 token,) = treasury.paymentConfigs(0x0);
         token.approve(address(treasury), amount);
+
+        // have to double check balance of tokens before call
+        // figure out where the tokens are
 
         (bool success, bytes memory returnVal) = address(this).call(payload);
 

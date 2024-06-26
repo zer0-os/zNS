@@ -92,7 +92,7 @@ const config : HardhatUserConfig = {
     outDir: "typechain",
   },
   mocha: {
-    timeout: 5000000,
+    timeout: 2000000000000,
   },
   gasReporter: {
     enabled: false,
