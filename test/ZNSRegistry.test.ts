@@ -14,7 +14,7 @@ import {
   getAccessRevertMsg,
   validateUpgrade,
   NOT_AUTHORIZED_REG_ERR,
-  DEFAULT_RESOLVER_TYPE,
+  DEFAULT_RESOLVER_TYPE, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import {
   ONLY_NAME_OWNER_REG_ERR,
@@ -68,7 +68,8 @@ describe("ZNSRegistry", () => {
       zns.registry.initialize(
         await zns.accessController.getAddress()
       )
-    ).to.be.revertedWith(
+    ).to.be.revertedWithCustomError(
+      zns.registry,
       INITIALIZED_ERR
     );
   });
@@ -82,7 +83,7 @@ describe("ZNSRegistry", () => {
       implContract.initialize(
         deployer.address,
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   // eslint-disable-next-line max-len
@@ -121,9 +122,8 @@ describe("ZNSRegistry", () => {
   it("Should revert when setting access controller without ADMIN_ROLE", async () => {
     await expect(
       zns.registry.connect(randomUser).setAccessController(deployer.address)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
-    );
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+      .withArgs(randomUser.address, ADMIN_ROLE);
   });
 
   describe("Audit fix with approved address resolvers", () => {
@@ -315,9 +315,8 @@ describe("ZNSRegistry", () => {
         DEFAULT_RESOLVER_TYPE
       );
 
-      await expect(tx).to.be.revertedWith(
-        `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${REGISTRAR_ROLE}`
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(deployer.address, REGISTRAR_ROLE);
     });
   });
 
@@ -491,9 +490,8 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).deleteRecord(domainHash);
 
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address,REGISTRAR_ROLE);
     });
   });
 
@@ -595,7 +593,10 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(await registry.getAddress());
+      const upgradeTx = zns.registry.connect(deployer).upgradeToAndCall(
+        await registry.getAddress(),
+        "0x"
+      );
       await expect(upgradeTx).to.be.not.be.reverted;
     });
 
@@ -605,8 +606,13 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(randomUser).upgradeTo(await registry.getAddress());
-      await expect(upgradeTx).to.be.revertedWith(getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE));
+      const upgradeTx = zns.registry.connect(randomUser).upgradeToAndCall(
+        await registry.getAddress(),
+        "0x"
+      );
+
+      await expect(upgradeTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

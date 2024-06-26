@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
-import { deployAccessController } from "./helpers";
+import { AC_UNAUTHORIZED_ERR, deployAccessController } from "./helpers";
 import { expect } from "chai";
 import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
@@ -101,9 +101,8 @@ describe("ZNSAccessController", () => {
       const [ { address: newAdmin } ] = randomAccs;
       await expect(
         accessController.connect(admin).grantRole(ADMIN_ROLE, newAdmin)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(admin.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(admin.address, GOVERNOR_ROLE);
     });
 
     it("ADMIN_ROLE should NOT be able to revoke ADMIN_ROLE", async () => {
@@ -111,9 +110,8 @@ describe("ZNSAccessController", () => {
       const [ { address: existingAdmin } ] = adminAccs;
       await expect(
         accessController.connect(admin).revokeRole(ADMIN_ROLE, existingAdmin)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(admin.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(admin.address, GOVERNOR_ROLE);
     });
 
     it("ADMIN_ROLE should NOT be able to grant GOVERNOR_ROLE", async () => {
@@ -121,9 +119,8 @@ describe("ZNSAccessController", () => {
       const [ { address: newGovernor } ] = randomAccs;
       await expect(
         accessController.connect(admin).grantRole(GOVERNOR_ROLE, newGovernor)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(admin.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(admin.address, GOVERNOR_ROLE);
     });
 
     it("ADMIN_ROLE should NOT be able to revoke GOVERNOR_ROLE", async () => {
@@ -131,9 +128,8 @@ describe("ZNSAccessController", () => {
       const [ { address: existingGovernor } ] = governorAccs;
       await expect(
         accessController.connect(admin).revokeRole(GOVERNOR_ROLE, existingGovernor)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(admin.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(admin.address, GOVERNOR_ROLE);
     });
 
     it("ADMIN_ROLE should be able to grant REGISTRAR_ROLE", async () => {
@@ -180,9 +176,8 @@ describe("ZNSAccessController", () => {
       const [ random  ] = randomAccs;
       await expect(
         accessController.connect(random).setRoleAdmin(REGISTRAR_ROLE, EXECUTOR_ROLE)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, GOVERNOR_ROLE);
     });
   });
 
@@ -218,36 +213,32 @@ describe("ZNSAccessController", () => {
       const [ random ] = randomAccs;
       await expect(
         accessController.connect(random).checkGovernor(random.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, GOVERNOR_ROLE);
     });
 
     it("Should revert if account does not have ADMIN_ROLE", async () => {
       const [ random ] = randomAccs;
       await expect(
         accessController.connect(random).checkAdmin(random.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, ADMIN_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
     });
 
     it("Should revert if account does not have REGISTRAR_ROLE", async () => {
       const [ random ] = randomAccs;
       await expect(
         accessController.connect(random).checkRegistrar(random.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, REGISTRAR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, REGISTRAR_ROLE);
     });
 
     it("Should revert if account does not have EXECUTOR_ROLE", async () => {
       const [ random ] = randomAccs;
       await expect(
         accessController.connect(random).checkExecutor(random.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, EXECUTOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, EXECUTOR_ROLE);
     });
   });
 });

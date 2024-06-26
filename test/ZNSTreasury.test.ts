@@ -12,7 +12,7 @@ import {
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
   NOT_AUTHORIZED_TREASURY_ERR,
-  getStakingOrProtocolFee,
+  getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
@@ -105,7 +105,10 @@ describe("ZNSTreasury", () => {
       zns.zeroVaultAddress,
       await zns.accessController.getAddress()
     );
-    await expect(tx).to.be.revertedWith("Initializable: contract is already initialized");
+    await expect(tx).to.be.revertedWithCustomError(
+      zns.treasury,
+      INITIALIZED_ERR
+    );
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
@@ -120,7 +123,7 @@ describe("ZNSTreasury", () => {
         zns.zeroVaultAddress,
         await zns.accessController.getAddress()
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   it("should NOT deploy/initialize with 0x0 addresses as args", async () => {
@@ -186,18 +189,15 @@ describe("ZNSTreasury", () => {
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
-      await expect(
-        zns.treasury.connect(randomAcc).stakeForDomain(
-          ethers.ZeroHash,
-          domainHash,
-          user.address,
-          BigInt(0),
-          BigInt(0),
-          BigInt(0)
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(randomAcc).stakeForDomain(
+        ethers.ZeroHash,
+        domainHash,
+        user.address,
+        BigInt(0),
+        BigInt(0),
+        BigInt(0)
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomAcc.address,REGISTRAR_ROLE);
     });
 
     it("Should fire StakeDeposited event with correct params", async () => {
@@ -264,15 +264,12 @@ describe("ZNSTreasury", () => {
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
       const { amount } = await zns.treasury.stakedForDomain(domainHash);
       const protocolFee = getStakingOrProtocolFee(amount);
-      await expect(
-        zns.treasury.connect(user).unstakeForDomain(
-          domainHash,
-          user.address,
-          protocolFee
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(user.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(user).unstakeForDomain(
+        domainHash,
+        user.address,
+        protocolFee
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,REGISTRAR_ROLE);
     });
   });
 
@@ -347,17 +344,14 @@ describe("ZNSTreasury", () => {
     });
 
     it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
-      await expect(
-        zns.treasury.connect(randomAcc).processDirectPayment(
-          ethers.ZeroHash,
-          domainHash,
-          mockRegistrar.address,
-          "0",
-          "0"
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(randomAcc).processDirectPayment(
+        ethers.ZeroHash,
+        domainHash,
+        mockRegistrar.address,
+        "0",
+        "0"
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomAcc.address,REGISTRAR_ROLE);
     });
 
     it("should emit DirectPaymentProcessed event with correct params", async () => {
@@ -559,9 +553,8 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
       const tx = zns.treasury.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
 
     it("Should revert when accessController is address 0", async () => {
@@ -585,9 +578,8 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
       const tx = zns.treasury.connect(user).setRegistry(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
 
     it("Should revert when registry is address 0", async () => {
@@ -607,7 +599,10 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      await expect(zns.treasury.connect(deployer).upgradeTo(await treasury.getAddress())).to.not.be.reverted;
+      await expect(zns.treasury.connect(deployer).upgradeToAndCall(
+        await treasury.getAddress(),
+        "0x"
+      )).to.not.be.reverted;
     });
 
     it("Fails when an unauthorized user tries to upgrade the contract", async () => {
@@ -619,8 +614,12 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      const deployTx = zns.treasury.connect(user).upgradeTo(await treasury.getAddress());
-      await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
+      const deployTx = zns.treasury.connect(user).upgradeToAndCall(
+        await treasury.getAddress(),
+        "0x"
+      );
+      await expect(deployTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

@@ -15,9 +15,10 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   getAccessRevertMsg,
-  validateUpgrade, INITIALIZED_ERR,
+  validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
+import { ZeroHash } from "ethers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -71,7 +72,7 @@ describe("ZNSAddressResolver", () => {
         operator.address,
         mockRegistrar.address,
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   it("Should get the AddressResolver", async () => { // Copy of registry tests
@@ -104,9 +105,8 @@ describe("ZNSAddressResolver", () => {
   it("Should revert when setRegistry() without ADMIN_ROLE", async () => {
     await expect(
       zns.addressResolver.connect(operator).setRegistry(operator.address)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(operator.address, ADMIN_ROLE)
-    );
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+      .withArgs(operator.address, ADMIN_ROLE);
   });
 
   it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
@@ -120,9 +120,8 @@ describe("ZNSAddressResolver", () => {
   it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
     await expect(
       zns.addressResolver.connect(operator).setAccessController(operator.address)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(operator.address, ADMIN_ROLE)
-    );
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+      .withArgs(operator.address, ADMIN_ROLE);
   });
 
   it("Should not allow non-owner address to setAddress", async () => {
@@ -218,7 +217,10 @@ describe("ZNSAddressResolver", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(await newAddressResolver.getAddress());
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeToAndCall(
+        await newAddressResolver.getAddress(),
+        "0x"
+      );
 
       await expect(upgradeTx).to.not.be.reverted;
     });
@@ -233,15 +235,13 @@ describe("ZNSAddressResolver", () => {
       // Confirm the operator is not a governor
       await expect(
         zns.accessController.checkGovernor(operator.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
-      );
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(operator.address, GOVERNOR_ROLE);
 
-      const upgradeTx = zns.domainToken.connect(operator).upgradeTo(await newAddressResolver.getAddress());
+      const upgradeTx = zns.domainToken.connect(operator).upgradeToAndCall(await newAddressResolver.getAddress(), "0x");
 
-      await expect(upgradeTx).to.be.revertedWith(
-        getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
-      );
+      await expect(upgradeTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(operator.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

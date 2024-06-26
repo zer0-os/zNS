@@ -12,7 +12,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_NAME_ERR, INITIALIZED_ERR,
+  INVALID_NAME_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import {
   AccessType,
@@ -94,7 +94,7 @@ describe("ZNSCurvePricer", () => {
         await zns.registry.getAddress(),
         DEFAULT_PRICE_CONFIG
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   it("Confirms values were initially set correctly", async () => {
@@ -914,9 +914,8 @@ describe("ZNSCurvePricer", () => {
 
     it("Disallows an unauthorized user to set the access controller", async () => {
       const tx = zns.curvePricer.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
 
     it("Disallows setting the access controller to the zero address", async () => {
@@ -942,9 +941,8 @@ describe("ZNSCurvePricer", () => {
 
     it("Should NOT set the registry if called by anyone other than ADMIN_ROLE", async () => {
       const tx = zns.curvePricer.connect(user).setRegistry(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
   });
 
@@ -974,7 +972,10 @@ describe("ZNSCurvePricer", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.curvePricer.connect(deployer).upgradeTo(await newCurvePricer.getAddress());
+      const tx = zns.curvePricer.connect(deployer).upgradeToAndCall(
+        await newCurvePricer.getAddress(),
+        "0x"
+      );
       await expect(tx).to.not.be.reverted;
     });
 
@@ -987,11 +988,13 @@ describe("ZNSCurvePricer", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
 
-      const tx = zns.curvePricer.connect(randomAcc).upgradeTo(await newCurvePricer.getAddress());
-
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(randomAcc.address, GOVERNOR_ROLE)
+      const tx = zns.curvePricer.connect(randomAcc).upgradeToAndCall(
+        await newCurvePricer.getAddress(),
+        "0x"
       );
+
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomAcc.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

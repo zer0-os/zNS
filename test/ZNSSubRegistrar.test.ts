@@ -8,18 +8,17 @@ import {
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
-  getAccessRevertMsg,
   getPriceObject,
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
   INITIALIZED_ERR,
   INVALID_NAME_ERR,
-  INVALID_TOKENID_ERC_ERR, NO_BENEFICIARY_ERR,
+  NONEXISTENT_TOKEN_ERC_ERR, NO_BENEFICIARY_ERR,
   ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
   PaymentType,
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade,
+  validateUpgrade, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, INSUFFICIENT_ALLOWANCE_ERC_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -447,8 +446,9 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(
-        "ERC20: transfer amount exceeds balance"
+      ).to.be.revertedWithCustomError(
+        zns.meowToken,
+        INSUFFICIENT_BALANCE_ERC_ERR
       );
 
       // transfer back for other tests
@@ -471,8 +471,9 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith(
-        "ERC20: insufficient allowance"
+      ).to.be.revertedWithCustomError(
+        zns.meowToken,
+        INSUFFICIENT_ALLOWANCE_ERC_ERR
       );
     });
 
@@ -950,9 +951,10 @@ describe("ZNSSubRegistrar", () => {
       const tokenId = BigInt(domainHash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith(
-        INVALID_TOKENID_ERC_ERR
-      );
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      ).withArgs(tokenId);
 
       await expect(
         zns.registry.connect(lvl6SubOwner).updateDomainRecord(domainHash, rootOwner.address, lvl6SubOwner.address)
@@ -1020,9 +1022,10 @@ describe("ZNSSubRegistrar", () => {
       const tokenId = BigInt(domainHash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith(
-        INVALID_TOKENID_ERC_ERR
-      );
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      ).withArgs(tokenId);
 
       await expect(
         zns.registry.connect(lvl5SubOwner).updateDomainRecord(domainHash, rootOwner.address, lvl6SubOwner.address)
@@ -1163,9 +1166,10 @@ describe("ZNSSubRegistrar", () => {
       const tokenId = BigInt(lvl3Hash).toString();
       await expect(
         zns.domainToken.ownerOf(tokenId)
-      ).to.be.revertedWith(
-        INVALID_TOKENID_ERC_ERR
-      );
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      ).withArgs(tokenId);
 
       await expect(
         zns.registry.connect(lvl3SubOwner).updateDomainRecord(lvl3Hash, rootOwner.address, lvl4SubOwner.address)
@@ -2403,7 +2407,10 @@ describe("ZNSSubRegistrar", () => {
           distrConfigEmpty,
           paymentConfigEmpty,
         )
-      ).to.be.revertedWith("ERC20: insufficient allowance");
+      ).to.be.revertedWithCustomError(
+        zns.meowToken,
+        INSUFFICIENT_ALLOWANCE_ERC_ERR
+      );
 
       // let's try to buy with the incorrect price
       const userBalanceBefore = await token5.balanceOf(lvl3SubOwner.address);
@@ -3362,7 +3369,7 @@ describe("ZNSSubRegistrar", () => {
           deployer.address,
           deployer.address,
         )
-      ).to.be.revertedWith(INITIALIZED_ERR);
+      ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
     });
 
     it("#setRootRegistrar() should set the new root registrar correctly and emit #RootRegistrarSet event", async () => {
@@ -3374,11 +3381,9 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("#setRootRegistrar() should NOT be callable by anyone other than ADMIN_ROLE", async () => {
-      await expect(
-        zns.subRegistrar.connect(random).setRootRegistrar(random.address),
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, ADMIN_ROLE),
-      );
+      await expect(zns.subRegistrar.connect(random).setRootRegistrar(random.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
     });
 
     it("#setRootRegistrar should NOT set registrar as 0x0 address", async () => {
@@ -3398,19 +3403,15 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("#setRegistry() should not be callable by anyone other than ADMIN_ROLE", async () => {
-      await expect(
-        zns.subRegistrar.connect(random).setRegistry(random.address),
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, ADMIN_ROLE),
-      );
+      await expect(zns.subRegistrar.connect(random).setRegistry(random.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
     });
 
     it("#setAccessController() should not be callable by anyone other than ADMIN_ROLE", async () => {
-      await expect(
-        zns.subRegistrar.connect(random).setAccessController(random.address),
-      ).to.be.revertedWith(
-        getAccessRevertMsg(random.address, ADMIN_ROLE),
-      );
+      await expect(zns.subRegistrar.connect(random).setAccessController(random.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
     });
 
     it("#getAccessController() should return the correct access controller", async () => {
@@ -3494,7 +3495,10 @@ describe("ZNSSubRegistrar", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.subRegistrar.connect(deployer).upgradeTo(await newRegistrar.getAddress());
+      const tx = zns.subRegistrar.connect(deployer).upgradeToAndCall(
+        await newRegistrar.getAddress(),
+        "0x"
+      );
       await expect(tx).to.not.be.reverted;
 
       await expect(
@@ -3503,7 +3507,7 @@ describe("ZNSSubRegistrar", () => {
           await zns.registry.getAddress(),
           await zns.rootRegistrar.getAddress(),
         )
-      ).to.be.revertedWith(INITIALIZED_ERR);
+      ).to.be.revertedWithCustomError(zns.subRegistrar, INITIALIZED_ERR);
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {
@@ -3515,11 +3519,13 @@ describe("ZNSSubRegistrar", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(lvl2SubOwner.address)).to.be.reverted;
 
-      const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeTo(await newRegistrar.getAddress());
-
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(lvl2SubOwner.address, GOVERNOR_ROLE)
+      const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeToAndCall(
+        await newRegistrar.getAddress(),
+        "0x"
       );
+
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
@@ -3579,7 +3585,10 @@ describe("ZNSSubRegistrar", () => {
       const newRegistrar = await factory.deploy();
       await newRegistrar.waitForDeployment();
 
-      const tx = zns.subRegistrar.connect(deployer).upgradeTo(await newRegistrar.getAddress());
+      const tx = zns.subRegistrar.connect(deployer).upgradeToAndCall(
+        await newRegistrar.getAddress(),
+        "0x"
+      );
       await expect(tx).to.not.be.reverted;
 
       // create new proxy object

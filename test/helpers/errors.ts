@@ -5,6 +5,13 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 // When adding a revert test, check if this message is already present in other tests
 //  if it is, add a new constant here and use it in all tests
 
+// AccessControl
+export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
+
+// ERC20
+export const INSUFFICIENT_BALANCE_ERC_ERR = "ERC20InsufficientBalance";
+export const INSUFFICIENT_ALLOWANCE_ERC_ERR = "ERC20InsufficientAllowance";
+
 // ZNSCurvePricer.sol
 export const MULTIPLIER_BELOW_MIN_ERR = "ZNSCurvePricer: Multiplier must be >= baseLength + 1";
 export const NO_ZERO_MULTIPLIER_ERR = "ZNSCurvePricer: Multiplier cannot be 0";
@@ -37,8 +44,8 @@ export const NO_BENEFICIARY_ERR = "ZNSTreasury: parent domain has no beneficiary
 export const NOT_AUTHORIZED_TREASURY_ERR = "ZNSTreasury: Not authorized.";
 
 // OpenZeppelin
-export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
-export const INITIALIZED_ERR = "Initializable: contract is already initialized";
+export const NONEXISTENT_TOKEN_ERC_ERR = "ERC721NonexistentToken";
+export const INITIALIZED_ERR = "InvalidInitialization";
 
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";
