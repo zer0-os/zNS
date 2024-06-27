@@ -14,14 +14,13 @@ import {
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
-  getAccessRevertMsg,
   validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
-import { ZeroHash } from "ethers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
+
 
 describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;

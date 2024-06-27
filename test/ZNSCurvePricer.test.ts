@@ -12,7 +12,7 @@ import {
   NOT_AUTHORIZED_REG_WIRED_ERR,
   CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_NAME_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR,
+  INVALID_NAME_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR,
 } from "./helpers";
 import {
   AccessType,
@@ -20,9 +20,6 @@ import {
   DEFAULT_PRICE_CONFIG,
   DEFAULT_PROTOCOL_FEE_PERCENT,
 } from "./helpers/constants";
-import {
-  getAccessRevertMsg,
-} from "./helpers/errors";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
@@ -920,8 +917,9 @@ describe("ZNSCurvePricer", () => {
 
     it("Disallows setting the access controller to the zero address", async () => {
       const tx = zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith(
-        "AC: _accessController is 0x0 address"
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        ZERO_ADDRESS_ERR
       );
     });
   });

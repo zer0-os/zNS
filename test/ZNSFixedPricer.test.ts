@@ -2,7 +2,6 @@ import {
   ADMIN_ROLE,
   deployFixedPricer,
   deployZNS,
-  getAccessRevertMsg,
   GOVERNOR_ROLE,
   INITIALIZED_ERR, INVALID_NAME_ERR,
   NOT_AUTHORIZED_REG_WIRED_ERR,

@@ -18,7 +18,6 @@ import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 

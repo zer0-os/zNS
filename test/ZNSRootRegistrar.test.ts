@@ -10,7 +10,6 @@ import {
   AccessType,
   OwnerOf,
   PaymentType,
-  getAccessRevertMsg,
   hashDomainLabel,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,

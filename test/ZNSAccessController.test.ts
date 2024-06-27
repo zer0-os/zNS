@@ -3,7 +3,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { AC_UNAUTHORIZED_ERR, deployAccessController } from "./helpers";
 import { expect } from "chai";
-import { getAccessRevertMsg } from "./helpers/errors";
 import { ADMIN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
 
