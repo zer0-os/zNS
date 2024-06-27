@@ -26,6 +26,7 @@ struct PaymentConfig {
  *      + `amount`: The amount of the staking token above deposited by the user
 */
 interface IZNSTreasury {
+    error NoBeneficiarySetForParent(bytes32 domainHash);
 
     /**
      * @notice Describe a stake for a domain. This could be
