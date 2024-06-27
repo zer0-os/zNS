@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -36,10 +37,8 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSRegistry: Not authorized"
-        );
+        if (!isOwnerOrOperator(domainHash, msg.sender))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }
 
@@ -48,10 +47,8 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwner(bytes32 domainHash) {
-        require(
-            records[domainHash].owner == msg.sender,
-            "ZNSRegistry: Not the Name Owner"
-        );
+        if (!records[domainHash].owner == msg.sender)
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }
 
@@ -234,11 +231,10 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner
     ) external override {
-        require(
-            msg.sender == records[domainHash].owner ||
-            accessController.isRegistrar(msg.sender),
-            "ZNSRegistry: Only Name Owner or Registrar allowed to call"
-        );
+        if (
+            msg.sender != records[domainHash].owner ||
+            !accessController.isRegistrar(msg.sender)
+        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         _setDomainOwner(domainHash, owner);
     }
@@ -286,7 +282,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param owner The owner to set
      */
     function _setDomainOwner(bytes32 domainHash, address owner) internal {
-        require(owner != address(0), "ZNSRegistry: Owner cannot be zero address");
+        if (owner == address(0)) revert ZeroAddressPassed();
         records[domainHash].owner = owner;
         emit DomainOwnerSet(domainHash, owner);
     }

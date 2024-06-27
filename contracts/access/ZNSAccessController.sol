@@ -79,7 +79,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         uint256 length = addresses.length;
         for (uint256 i = 0; i < length; ++i) {
             if (addresses[i] == address(0)) revert ZeroAddressPassed();
-            );
+
             _grantRole(role, addresses[i]);
         }
     }

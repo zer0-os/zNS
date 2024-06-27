@@ -11,6 +11,7 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -100,10 +101,8 @@ contract ZNSRootRegistrar is
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
 
-        require(
-            !registry.exists(domainHash),
-            "ZNSRootRegistrar: Domain already exists"
-        );
+        if (registry.exists(domainHash))
+            revert DomainAlreadyExists(name, domainHash);
 
         // Get price for the domain
         uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
@@ -256,10 +255,8 @@ contract ZNSRootRegistrar is
     external
     override
     {
-        require(
-            isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
-            "ZNSRootRegistrar: Not the owner of both Name and Token"
-        );
+        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH))
+            revert NotTheOwnerOf(OwnerOf.BOTH, msg.sender, domainHash);
 
         subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
@@ -305,10 +302,9 @@ contract ZNSRootRegistrar is
     external
     override
     {
-        require(
-            isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN),
-            "ZNSRootRegistrar: Not the owner of the Token"
-        );
+        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN))
+            revert NotTheOwnerOf(OwnerOf.TOKEN, msg.sender, domainHash);
+
         registry.updateDomainOwner(domainHash, msg.sender);
 
         emit DomainReclaimed(domainHash, msg.sender);
@@ -348,10 +344,9 @@ contract ZNSRootRegistrar is
      * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
     */
     function setRootPricer(address rootPricer_) public override onlyAdmin {
-        require(
-            rootPricer_ != address(0),
-            "ZNSRootRegistrar: rootPricer_ is 0x0 address"
-        );
+        if (rootPricer_ == address(0))
+            revert ZeroAddressPassed();
+
         rootPricer = IZNSPricer(rootPricer_);
 
         emit RootPricerSet(rootPricer_);
@@ -363,10 +358,9 @@ contract ZNSRootRegistrar is
      * @param treasury_ Address of the `ZNSTreasury` contract
      */
     function setTreasury(address treasury_) public override onlyAdmin {
-        require(
-            treasury_ != address(0),
-            "ZNSRootRegistrar: treasury_ is 0x0 address"
-        );
+        if (treasury_ == address(0))
+            revert ZeroAddressPassed();
+
         treasury = IZNSTreasury(treasury_);
 
         emit TreasurySet(treasury_);
@@ -378,10 +372,9 @@ contract ZNSRootRegistrar is
      * @param domainToken_ Address of the `ZNSDomainToken` contract
      */
     function setDomainToken(address domainToken_) public override onlyAdmin {
-        require(
-            domainToken_ != address(0),
-            "ZNSRootRegistrar: domainToken_ is 0x0 address"
-        );
+        if (domainToken_ == address(0))
+            revert ZeroAddressPassed();
+
         domainToken = IZNSDomainToken(domainToken_);
 
         emit DomainTokenSet(domainToken_);
@@ -392,7 +385,8 @@ contract ZNSRootRegistrar is
      * @param subRegistrar_ Address of the `ZNSSubRegistrar` contract
     */
     function setSubRegistrar(address subRegistrar_) external override onlyAdmin {
-        require(subRegistrar_ != address(0), "ZNSRootRegistrar: subRegistrar_ is 0x0 address");
+        if (subRegistrar_ == address(0))
+            revert ZeroAddressPassed();
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);

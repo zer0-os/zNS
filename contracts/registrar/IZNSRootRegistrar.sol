@@ -42,13 +42,17 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    error NotTheOwnerOf(
+        OwnerOf ownerOf,
+        address candidate,
+        bytes32 domainHash
+    );
 
     enum OwnerOf {
         NAME,
         TOKEN,
         BOTH
     }
-
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.

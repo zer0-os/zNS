@@ -10,6 +10,9 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
 */
 interface IZNSSubRegistrar is IDistributionConfig {
+    error ParentLockedOrDoesntExist(bytes32 parentHash);
+
+    error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.

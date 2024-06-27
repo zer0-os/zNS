@@ -12,7 +12,6 @@ import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
  * this contract needs to be inherited by the module.
  */
 abstract contract AAccessControlled {
-
     /**
      * @notice Emitted when the access controller contract address is set.
      */

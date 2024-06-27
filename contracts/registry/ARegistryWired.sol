@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IZNSRegistry } from "./IZNSRegistry.sol";
+import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -10,7 +11,6 @@ import { IZNSRegistry } from "./IZNSRegistry.sol";
  * and is able to get AC and domain data from it or write to it.
 */
 abstract contract ARegistryWired {
-
     /**
      * @notice Emitted when the ZNSRegistry address is set in state of the child contract.
     */
@@ -22,10 +22,8 @@ abstract contract ARegistryWired {
     IZNSRegistry public registry;
 
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ARegistryWired: Not authorized. Only Owner or Operator allowed"
-        );
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }
 
@@ -33,7 +31,7 @@ abstract contract ARegistryWired {
      * @notice Internal function to set the ZNSRegistry address in the state of the child contract.
     */
     function _setRegistry(address registry_) internal {
-        require(registry_ != address(0), "ARegistryWired: _registry can not be 0x0 address");
+        if (registry_ == address(0)) revert ZeroAddressPassed();
         registry = IZNSRegistry(registry_);
         emit RegistrySet(registry_);
     }
