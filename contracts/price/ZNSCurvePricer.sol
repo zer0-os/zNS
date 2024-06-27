@@ -75,10 +75,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         string calldata label,
         bool skipValidityCheck
     ) public view override returns (uint256) {
-        require(
-            priceConfigs[parentHash].isSet,
-            "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
-        );
+        if (!priceConfigs[parentHash].isSet) revert ParentPriceConfigNotSet(parentHash);
 
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
@@ -256,8 +253,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 multiplier
     ) public override onlyOwnerOrOperator(domainHash) {
-        require(multiplier != 0, "ZNSCurvePricer: precisionMultiplier cannot be 0");
-        require(multiplier <= 10**18, "ZNSCurvePricer: precisionMultiplier cannot be greater than 10^18");
+        if (multiplier == 0 || multiplier > 10**18) revert InvalidMultiplierPassed(multiplier);
+
         priceConfigs[domainHash].precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(domainHash, multiplier);
@@ -275,10 +272,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     public
     override
     onlyOwnerOrOperator(domainHash) {
-        require(
-            feePercentage <= PERCENTAGE_BASIS,
-            "ZNSCurvePricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
-        );
+        if (feePercentage > PERCENTAGE_BASIS)
+            revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
 
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
@@ -337,10 +332,12 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function _validateConfig(bytes32 domainHash) internal view {
         uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
-        require(
-            priceConfigs[domainHash].minPrice <= prevToMinPrice,
-            "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
-        );
+        if (priceConfigs[domainHash].minPrice > prevToMinPrice)
+            revert InvalidConfigCausingPriceSpikes(
+                domainHash,
+                priceConfigs[domainHash].minPrice,
+                prevToMinPrice
+            );
     }
 
     /**

@@ -60,10 +60,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         string calldata label,
         bool skipValidityCheck
     ) public override view returns (uint256) {
-        require(
-            priceConfigs[parentHash].isSet,
-            "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
-        );
+        if (!priceConfigs[parentHash].isSet) revert ParentPriceConfigNotSet(parentHash);
 
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
@@ -161,10 +158,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The new feePercentage
      */
     function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
-        require(
-            feePercentage <= PERCENTAGE_BASIS,
-            "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
-        );
+        if (feePercentage > PERCENTAGE_BASIS)
+            revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
 
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);

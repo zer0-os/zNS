@@ -7,6 +7,15 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
+    error InvalidMultiplierPassed(uint256 multiplier);
+
+    // TODO upd: "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
+    error InvalidConfigCausingPriceSpikes(
+        bytes32 configsDomainHash,
+        uint256 minPrice,
+        uint256 previousToMinPrice
+    );
+
     /**
      * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
      * @param price The new maxPrice value

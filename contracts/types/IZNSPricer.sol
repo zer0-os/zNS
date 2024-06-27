@@ -7,6 +7,11 @@ pragma solidity 0.8.26;
  * @notice Base interface required to be inherited by all Pricing contracts to work with zNS
  */
 interface IZNSPricer {
+    // TODO upd: add natspec for all new errors !
+    error ParentPriceConfigNotSet(bytes32 parentHash);
+
+    error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
+
     /**
      * @dev `parentHash` param is here to allow pricer contracts
      *  to have different price configs for different subdomains
