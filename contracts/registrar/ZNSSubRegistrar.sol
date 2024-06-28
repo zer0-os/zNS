@@ -96,7 +96,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         bytes32 domainHash = hashWithParent(parentHash, label);
         if (registry.exists(domainHash))
-            revert DomainAlreadyExists(label, domainHash);
+            revert DomainAlreadyExists(domainHash);
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 

@@ -47,7 +47,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwner(bytes32 domainHash) {
-        if (!records[domainHash].owner == msg.sender)
+        if (records[domainHash].owner != msg.sender)
             revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }

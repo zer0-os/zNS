@@ -102,7 +102,7 @@ contract ZNSRootRegistrar is
         bytes32 domainHash = keccak256(bytes(name));
 
         if (registry.exists(domainHash))
-            revert DomainAlreadyExists(name, domainHash);
+            revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
         uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
