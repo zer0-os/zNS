@@ -48,7 +48,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         bytes32 domainHash
     );
 
-    error InvalidOwnerOfEnumValue();
+    error InvalidOwnerOfEnumValue(OwnerOf value);
 
     enum OwnerOf {
         NAME,
