@@ -448,7 +448,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: emptyName,
         })
-      ).to.be.revertedWith(INVALID_LENGTH_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LENGTH_ERR);
     });
 
     it("Can register a TLD with characters [a-z0-9-]", async () => {
@@ -538,7 +538,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameA,
         })
-      ).to.be.revertedWith(INVALID_LABEL_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -546,7 +546,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameB,
         })
-      ).to.be.revertedWith(INVALID_LABEL_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -554,7 +554,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameC,
         })
-      ).to.be.revertedWith(INVALID_LABEL_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -562,7 +562,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameD,
         })
-      ).to.be.revertedWith(INVALID_LABEL_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
     });
 
     // eslint-disable-next-line max-len
@@ -1235,9 +1235,7 @@ describe("ZNSRootRegistrar", () => {
           user.address,
           operator.address
         );
-      await expect(tx3).to.be.revertedWith(
-        NOT_AUTHORIZED_ERR
-      );
+      await expect(tx3).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
 
       const tx4 = zns.registry
         .connect(operator)
@@ -1245,9 +1243,7 @@ describe("ZNSRootRegistrar", () => {
           domainHash,
           zeroVault.address
         );
-      await expect(tx4).to.be.revertedWith(
-        NOT_AUTHORIZED_ERR
-      );
+      await expect(tx4).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
   });
 

@@ -485,9 +485,7 @@ describe("ZNSTreasury", () => {
         ethers.ZeroHash,
         mockRegistrar.address
       );
-      await expect(tx).to.be.revertedWith(
-        NOT_AUTHORIZED_ERR
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, NOT_AUTHORIZED_ERR);
     });
 
     it("Should revert when beneficiary is address 0", async () => {
@@ -495,7 +493,7 @@ describe("ZNSTreasury", () => {
         ethers.ZeroHash,
         ethers.ZeroAddress
       );
-      await expect(tx).to.be.revertedWith("ZNSTreasury: beneficiary passed as 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -523,14 +521,15 @@ describe("ZNSTreasury", () => {
         domainHash,
         randomAcc.address
       );
-      await expect(tx).to.be.revertedWith(
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.treasury,
         NOT_AUTHORIZED_ERR
       );
     });
 
     it("Should revert when paymentToken is address 0", async () => {
       const tx = zns.treasury.connect(user).setPaymentToken(domainHash, ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: paymentToken passed as 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -555,7 +554,7 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when accessController is address 0", async () => {
       const tx = zns.treasury.setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -580,7 +579,7 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when registry is address 0", async () => {
       const tx = zns.treasury.setRegistry(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 

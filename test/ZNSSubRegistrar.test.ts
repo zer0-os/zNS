@@ -547,7 +547,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash: parentHash2,
           domainLabel: "sub2",
         })
-      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+      ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
 
       // change stakeFee to 0
       await zns.curvePricer.connect(rootOwner).setFeePercentage(
