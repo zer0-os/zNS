@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
-import { AC_UNAUTHORIZED_ERR, deployAccessController } from "./helpers";
+import { AC_UNAUTHORIZED_ERR, deployAccessController, ZERO_ADDRESS_ERR } from "./helpers";
 import { expect } from "chai";
 import { ADMIN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
@@ -54,7 +54,7 @@ describe("ZNSAccessController", () => {
           governorAddresses: [ ethers.ZeroAddress ],
           adminAddresses: [ ethers.ZeroAddress ],
         })
-      ).to.be.revertedWith("ZNSAccessController: Can't grant role to zero address");
+      ).to.be.revertedWithCustomError(accessController, ZERO_ADDRESS_ERR);
     });
   });
 

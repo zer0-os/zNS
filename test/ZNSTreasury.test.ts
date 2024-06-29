@@ -7,12 +7,12 @@ import {
   distrConfigEmpty,
   getPriceObject,
   NO_BENEFICIARY_ERR,
-  NOT_AUTHORIZED_REG_WIRED_ERR,
+  NOT_AUTHORIZED_ERR,
   INITIALIZED_ERR,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
-  NOT_AUTHORIZED_TREASURY_ERR,
-  getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR,
+  NOT_AUTHORIZED_ERR,
+  getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
@@ -339,7 +339,10 @@ describe("ZNSTreasury", () => {
           paymentAmt,
           protocolFee
         )
-      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        NO_BENEFICIARY_ERR
+      );
     });
 
     it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
@@ -422,12 +425,10 @@ describe("ZNSTreasury", () => {
       };
 
       await expect(
-        zns.treasury.connect(randomAcc).setPaymentConfig(
-          domainHash,
-          configToSet,
-        )
-      ).to.be.revertedWith(
-        NOT_AUTHORIZED_TREASURY_ERR
+        zns.treasury.connect(randomAcc).setPaymentConfig(domainHash, configToSet)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        NOT_AUTHORIZED_ERR
       );
     });
 
@@ -438,12 +439,10 @@ describe("ZNSTreasury", () => {
       };
 
       await expect(
-        zns.treasury.connect(user).setPaymentConfig(
-          domainHash,
-          zeroBeneficiaryConf
-        )
-      ).to.be.revertedWith(
-        "ZNSTreasury: beneficiary passed as 0x0 address"
+        zns.treasury.connect(user).setPaymentConfig(domainHash, zeroBeneficiaryConf)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        ZERO_ADDRESS_ERR
       );
 
       const meowTokenConf = {
@@ -452,12 +451,10 @@ describe("ZNSTreasury", () => {
       };
 
       await expect(
-        zns.treasury.connect(user).setPaymentConfig(
-          domainHash,
-          meowTokenConf
-        )
-      ).to.be.revertedWith(
-        "ZNSTreasury: paymentToken passed as 0x0 address"
+        zns.treasury.connect(user).setPaymentConfig(domainHash, meowTokenConf)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        ZERO_ADDRESS_ERR
       );
     });
   });
@@ -489,7 +486,7 @@ describe("ZNSTreasury", () => {
         mockRegistrar.address
       );
       await expect(tx).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
+        NOT_AUTHORIZED_ERR
       );
     });
 
@@ -527,7 +524,7 @@ describe("ZNSTreasury", () => {
         randomAcc.address
       );
       await expect(tx).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
+        NOT_AUTHORIZED_ERR
       );
     });
 

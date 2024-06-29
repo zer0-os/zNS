@@ -14,7 +14,7 @@ import {
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
-  validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR,
+  validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, NOT_AUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -126,7 +126,7 @@ describe("ZNSAddressResolver", () => {
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
       zns.addressResolver.connect(user).setAddress(wilderDomainHash, user.address)
-    ).to.be.revertedWith("ZNSAddressResolver: Not authorized for this domain");
+    ).to.be.revertedWithCustomError(zns.addressResolver, NOT_AUTHORIZED_ERR);
   });
 
   it("Should allow owner to setAddress and emit event", async () => {

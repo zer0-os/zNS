@@ -12,13 +12,20 @@ import {
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
   INITIALIZED_ERR,
-  INVALID_NAME_ERR,
-  NONEXISTENT_TOKEN_ERC_ERR, NO_BENEFICIARY_ERR,
-  ONLY_NAME_OWNER_REG_ERR, paymentConfigEmpty,
+  INVALID_LABEL_ERR,
+  NONEXISTENT_TOKEN_ERC_ERR,
+  NO_BENEFICIARY_ERR,
+  NOT_AUTHORIZED_ERR,
+  paymentConfigEmpty,
   PaymentType,
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, INSUFFICIENT_ALLOWANCE_ERC_ERR,
+  validateUpgrade,
+  AC_UNAUTHORIZED_ERR,
+  INSUFFICIENT_BALANCE_ERC_ERR,
+  INSUFFICIENT_ALLOWANCE_ERC_ERR,
+  NOT_OWNER_OF_ERR,
+  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -192,10 +199,10 @@ describe("ZNSSubRegistrar", () => {
           {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
-          },
-        )
-      ).to.be.revertedWith(
-        "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+          })
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        PARENT_CONFIG_NOT_SET_ERR
       );
     });
 
@@ -228,10 +235,11 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
-        "ZNSCurvePricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        PARENT_CONFIG_NOT_SET_ERR
       );
     });
 
@@ -292,53 +300,57 @@ describe("ZNSSubRegistrar", () => {
       const nameC = "!%$#^*?!#👍3^29";
       const nameD = "wo.rld";
 
-      await expect(defaultSubdomainRegistration(
-        {
-          user: lvl2SubOwner,
-          zns,
-          parentHash: rootHash,
-          subdomainLabel: nameA,
-          domainContent: lvl2SubOwner.address,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-        }
-      )).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(
+        defaultSubdomainRegistration(
+          {
+            user: lvl2SubOwner,
+            zns,
+            parentHash: rootHash,
+            subdomainLabel: nameA,
+            domainContent: lvl2SubOwner.address,
+            tokenURI: subTokenURI,
+            distrConfig: distrConfigEmpty,
+          }
+        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
-      await expect(defaultSubdomainRegistration(
-        {
-          user: lvl2SubOwner,
-          zns,
-          parentHash: rootHash,
-          subdomainLabel: nameB,
-          domainContent: lvl2SubOwner.address,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-        }
-      )).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(
+        defaultSubdomainRegistration(
+          {
+            user: lvl2SubOwner,
+            zns,
+            parentHash: rootHash,
+            subdomainLabel: nameB,
+            domainContent: lvl2SubOwner.address,
+            tokenURI: subTokenURI,
+            distrConfig: distrConfigEmpty,
+          }
+        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
-      await expect(defaultSubdomainRegistration(
-        {
-          user: lvl2SubOwner,
-          zns,
-          parentHash: rootHash,
-          subdomainLabel: nameC,
-          domainContent: lvl2SubOwner.address,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-        }
-      )).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(
+        defaultSubdomainRegistration(
+          {
+            user: lvl2SubOwner,
+            zns,
+            parentHash: rootHash,
+            subdomainLabel: nameC,
+            domainContent: lvl2SubOwner.address,
+            tokenURI: subTokenURI,
+            distrConfig: distrConfigEmpty,
+          }
+        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
-      await expect(defaultSubdomainRegistration(
-        {
-          user: lvl2SubOwner,
-          zns,
-          parentHash: rootHash,
-          subdomainLabel: nameD,
-          domainContent: lvl2SubOwner.address,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-        }
-      )).to.be.revertedWith(INVALID_NAME_ERR);
+      await expect(
+        defaultSubdomainRegistration(
+          {
+            user: lvl2SubOwner,
+            zns,
+            parentHash: rootHash,
+            subdomainLabel: nameD,
+            domainContent: lvl2SubOwner.address,
+            tokenURI: subTokenURI,
+            distrConfig: distrConfigEmpty,
+          }
+        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
     });
 
     it("should revert when trying to register a subdomain under a non-existent parent", async () => {
@@ -350,9 +362,10 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
 
@@ -365,9 +378,10 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           subTokenURI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
     });
@@ -524,7 +538,7 @@ describe("ZNSSubRegistrar", () => {
           parentHash: parentHash1,
           domainLabel: "sub1",
         })
-      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+      ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
 
       await expect(
         registrationWithSetup({
@@ -938,9 +952,10 @@ describe("ZNSSubRegistrar", () => {
           lvl6SubOwner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
 
@@ -958,7 +973,10 @@ describe("ZNSSubRegistrar", () => {
 
       await expect(
         zns.registry.connect(lvl6SubOwner).updateDomainRecord(domainHash, rootOwner.address, lvl6SubOwner.address)
-      ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.registry,
+        NOT_AUTHORIZED_ERR
+      );
     });
 
     it("should revoke lvl 5 domain with refund", async () => {
@@ -1009,9 +1027,10 @@ describe("ZNSSubRegistrar", () => {
           lvl6SubOwner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
 
@@ -1028,8 +1047,11 @@ describe("ZNSSubRegistrar", () => {
       ).withArgs(tokenId);
 
       await expect(
-        zns.registry.connect(lvl5SubOwner).updateDomainRecord(domainHash, rootOwner.address, lvl6SubOwner.address)
-      ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+        zns.registry.connect(lvl5SubOwner).updateDomainRecord(domainHash,rootOwner.address,lvl6SubOwner.address)
+      ).to.be.revertedWithCustomError(
+        zns.registry,
+        NOT_AUTHORIZED_ERR
+      );
     });
 
     it("should register a new 2 lvl path at lvl 3 of the existing path", async () => {
@@ -1173,7 +1195,10 @@ describe("ZNSSubRegistrar", () => {
 
       await expect(
         zns.registry.connect(lvl3SubOwner).updateDomainRecord(lvl3Hash, rootOwner.address, lvl4SubOwner.address)
-      ).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.registry,
+        NOT_AUTHORIZED_ERR
+      );
     });
 
     it("should let anyone register a previously revoked domain", async () => {
@@ -1249,9 +1274,12 @@ describe("ZNSSubRegistrar", () => {
           branchLvl1Owner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+      );
 
       // register root back for other tests
       await registrationWithSetup({
@@ -1281,9 +1309,12 @@ describe("ZNSSubRegistrar", () => {
           branchLvl2Owner.address,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+      );
     });
 
     // eslint-disable-next-line max-len
@@ -2589,9 +2620,10 @@ describe("ZNSSubRegistrar", () => {
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
     });
@@ -2696,10 +2728,11 @@ describe("ZNSSubRegistrar", () => {
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
-        "ZNSSubRegistrar: Sender is not approved for purchase"
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        SENDER_NOT_APPROVED_ERR
       );
 
       // remove user from mintlist
@@ -2717,10 +2750,11 @@ describe("ZNSSubRegistrar", () => {
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
-        "ZNSSubRegistrar: Sender is not approved for purchase"
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        SENDER_NOT_APPROVED_ERR
       );
     });
 
@@ -2750,13 +2784,10 @@ describe("ZNSSubRegistrar", () => {
 
       // try with non-authorized
       await expect(
-        zns.subRegistrar.connect(lvl5SubOwner).updateMintlistForDomain(
-          domainHash,
-          [lvl5SubOwner.address],
-          [true],
-        )
-      ).to.be.revertedWith(
-        "ZNSSubRegistrar: Not authorized"
+        zns.subRegistrar.connect(lvl5SubOwner).updateMintlistForDomain(domainHash, [lvl5SubOwner.address], [true])
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        NOT_AUTHORIZED_ERR
       );
     });
 
@@ -2813,9 +2844,10 @@ describe("ZNSSubRegistrar", () => {
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
 
@@ -2895,9 +2927,10 @@ describe("ZNSSubRegistrar", () => {
           ethers.ZeroAddress,
           DEFAULT_TOKEN_URI,
           distrConfigEmpty,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
     });
@@ -3016,10 +3049,11 @@ describe("ZNSSubRegistrar", () => {
           lvl2SubOwner.address,
           DEFAULT_TOKEN_URI,
           domainConfigs[1].fullConfig.distrConfig,
-          paymentConfigEmpty,
+          paymentConfigEmpty
         )
-      ).to.be.revertedWith(
-        "ZNSSubRegistrar: Subdomain already exists"
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        DOMAIN_EXISTS_ERR
       );
     });
 
@@ -3032,12 +3066,11 @@ describe("ZNSSubRegistrar", () => {
 
       // fail
       await expect(
-        zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(
-          regResults[1].domainHash,
-        )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Not the owner of both Name and Token"
-      );
+        zns.rootRegistrar.connect(lvl3SubOwner).revokeDomain(regResults[1].domainHash)
+      ).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      ).withArgs(2n, lvl3SubOwner.address, regResults[1].domainHash);
 
       // change owner back
       await zns.registry.connect(rootOwner).updateDomainOwner(
@@ -3057,9 +3090,10 @@ describe("ZNSSubRegistrar", () => {
         zns.rootRegistrar.connect(lvl2SubOwner).revokeDomain(
           regResults[1].domainHash,
         )
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: Not the owner of both Name and Token"
-      );
+      ).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      ).withArgs(2n, lvl2SubOwner.address, regResults[1].domainHash);
 
       // give token back
       await zns.domainToken.connect(lvl3SubOwner).transferFrom(
@@ -3160,12 +3194,10 @@ describe("ZNSSubRegistrar", () => {
         };
 
         await expect(
-          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
-            domainHash,
-            newConfig,
-          )
-        ).to.be.revertedWith(
-          "ZNSSubRegistrar: Not authorized"
+          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(domainHash, newConfig)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR
         );
       });
 
@@ -3179,12 +3211,10 @@ describe("ZNSSubRegistrar", () => {
         };
 
         await expect(
-          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
-            domainHash,
-            newConfig,
-          )
-        ).to.be.revertedWith(
-          "ZNSSubRegistrar: pricerContract can not be 0x0 address"
+          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(domainHash, newConfig)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          ZERO_ADDRESS_ERR
         );
       });
     });
@@ -3215,12 +3245,10 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
-            domainHash,
-            await zns.curvePricer.getAddress(),
-          )
-        ).to.be.revertedWith(
-          "ZNSSubRegistrar: Not authorized"
+          zns.subRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(domainHash, await zns.curvePricer.getAddress())
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR
         );
       });
 
@@ -3228,12 +3256,10 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
-            domainHash,
-            ethers.ZeroAddress,
-          )
-        ).to.be.revertedWith(
-          "ZNSSubRegistrar: pricerContract can not be 0x0 address"
+          zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(domainHash, ethers.ZeroAddress)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          ZERO_ADDRESS_ERR
         );
       });
     });
@@ -3264,12 +3290,10 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl2SubOwner).setPaymentTypeForDomain(
-            domainHash,
-            PaymentType.STAKE,
-          )
-        ).to.be.revertedWith(
-          "ZNSSubRegistrar: Not authorized"
+          zns.subRegistrar.connect(lvl2SubOwner).setPaymentTypeForDomain(domainHash, PaymentType.STAKE)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR
         );
       });
 
@@ -3388,9 +3412,10 @@ describe("ZNSSubRegistrar", () => {
 
     it("#setRootRegistrar should NOT set registrar as 0x0 address", async () => {
       await expect(
-        zns.subRegistrar.connect(admin).setRootRegistrar(ethers.ZeroAddress),
-      ).to.be.revertedWith(
-        "ZNSSubRegistrar: _registrar can not be 0x0 address",
+        zns.subRegistrar.connect(admin).setRootRegistrar(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        ZERO_ADDRESS_ERR
       );
     });
 

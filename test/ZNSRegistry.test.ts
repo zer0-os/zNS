@@ -12,13 +12,13 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   validateUpgrade,
-  NOT_AUTHORIZED_REG_ERR,
-  DEFAULT_RESOLVER_TYPE, AC_UNAUTHORIZED_ERR,
+  NOT_AUTHORIZED_ERR,
+  DEFAULT_RESOLVER_TYPE, AC_UNAUTHORIZED_ERR, NOT_OWNER_OF_ERR,
 } from "./helpers";
 import {
-  ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR,
-  OWNER_NOT_ZERO_REG_ERR,
+  NOT_AUTHORIZED_ERR,
+  NOT_AUTHORIZED_ERR,
+  ZERO_ADDRESS_ERR,
 } from "./helpers/errors";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -232,12 +232,12 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(deployer).setOwnersOperator(operator.address, false);
 
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("#isOperatorFor() should return true for an operator", async () => {
@@ -326,7 +326,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainRecord(domainHash, deployer.address, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain record if the domain exists", async () => {
@@ -350,7 +350,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainOwner(domainHash, deployer.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(ONLY_OWNER_REGISTRAR_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain owner if the domain exists", async () => {
@@ -369,7 +369,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainResolver(domainHash, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain resolver if the domain exists", async () => {
@@ -392,7 +392,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.updateDomainRecord(domainHash, ethers.ZeroAddress, mockResolver.address);
 
-      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, ZERO_ADDRESS_ERR);
     });
 
     it("Can update a domain record if the resolver is zero address", async () => {
@@ -412,7 +412,7 @@ describe("ZNSRegistry", () => {
           ethers.ZeroAddress
         );
 
-      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, ZERO_ADDRESS_ERR);
     });
 
     it("Can update a domain resolver if resolver is zero address", async () => {
@@ -436,7 +436,7 @@ describe("ZNSRegistry", () => {
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update a domain's record if not an owner or operator", async () => {
@@ -449,7 +449,7 @@ describe("ZNSRegistry", () => {
         deployer.address
       );
 
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update an domain's owner if not an owner or operator", async () => {
@@ -458,9 +458,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
 
-      await expect(tx).to.be.revertedWith(
-        ONLY_OWNER_REGISTRAR_REG_ERR
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update a domain's resolver if not an owner or operator", async () => {
@@ -469,7 +467,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
 
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can delete record with REGISTRAR_ROLE", async () => {

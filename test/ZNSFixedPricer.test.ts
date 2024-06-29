@@ -3,12 +3,12 @@ import {
   deployFixedPricer,
   deployZNS,
   GOVERNOR_ROLE,
-  INITIALIZED_ERR, INVALID_NAME_ERR,
-  NOT_AUTHORIZED_REG_WIRED_ERR,
+  INITIALIZED_ERR, INVALID_LABEL_ERR,
+  NOT_AUTHORIZED_ERR,
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR,
+  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -162,7 +162,7 @@ describe("ZNSFixedPricer", () => {
   it("#getPrice() should revert for invalid label when not skipping the label validation", async () => {
     await expect(
       zns.fixedPricer.getPrice(domainHash, "tEstname", false)
-    ).to.be.revertedWith(INVALID_NAME_ERR);
+    ).to.be.revertedWithCustomError(zns.fixedPricer, INVALID_LABEL_ERR);
   });
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
@@ -183,8 +183,9 @@ describe("ZNSFixedPricer", () => {
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
     await expect(
       zns.fixedPricer.connect(random).setPrice(domainHash, ethers.parseEther("1"))
-    ).to.be.revertedWith(
-      NOT_AUTHORIZED_REG_WIRED_ERR
+    ).to.be.revertedWithCustomError(
+      zns.fixedPricer,
+      NOT_AUTHORIZED_ERR
     );
   });
 
@@ -203,16 +204,18 @@ describe("ZNSFixedPricer", () => {
   it("#setFeePercentage() should revert if called by anyone other than domain owner", async () => {
     await expect(
       zns.fixedPricer.connect(random).setFeePercentage(domainHash, BigInt(1))
-    ).to.be.revertedWith(
-      NOT_AUTHORIZED_REG_WIRED_ERR
+    ).to.be.revertedWithCustomError(
+      zns.fixedPricer,
+      NOT_AUTHORIZED_ERR
     );
   });
 
   it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
     await expect(
       zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS + 1n)
-    ).to.be.revertedWith(
-      "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+    ).to.be.revertedWithCustomError(
+      zns.fixedPricer,
+      FEE_TOO_LARGE_ERR
     );
   });
 
@@ -242,16 +245,14 @@ describe("ZNSFixedPricer", () => {
 
   it("#setPriceConfig() should revert if called by anyone other than domain owner or operator", async () => {
     await expect(
-      zns.fixedPricer.connect(random).setPriceConfig(
-        domainHash,
-        {
-          price: BigInt(1),
-          feePercentage: BigInt(1),
-          isSet: true,
-        }
-      )
-    ).to.be.revertedWith(
-      NOT_AUTHORIZED_REG_WIRED_ERR
+      zns.fixedPricer.connect(random).setPriceConfig(domainHash, {
+        price: BigInt(1),
+        feePercentage: BigInt(1),
+        isSet: true,
+      })
+    ).to.be.revertedWithCustomError(
+      zns.fixedPricer,
+      NOT_AUTHORIZED_ERR
     );
   });
 
