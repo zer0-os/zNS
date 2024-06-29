@@ -48,7 +48,7 @@ library StringUtils {
 
         // solhint-disable-next-line var-name-mixedcase
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        if (length <= 0 && length >= MAX_INT)
+        if (length == 0 || length >= MAX_INT)
             revert DomainLabelTooLongOrNonexistent(s);
 
         for (uint256 i; i < length;) {
