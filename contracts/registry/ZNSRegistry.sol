@@ -232,7 +232,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         address owner
     ) external override {
         if (
-            msg.sender != records[domainHash].owner ||
+            msg.sender != records[domainHash].owner &&
             !accessController.isRegistrar(msg.sender)
         ) revert NotAuthorizedForDomain(msg.sender, domainHash);
 

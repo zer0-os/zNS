@@ -48,7 +48,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         if (
             !registry.isOwnerOrOperator(domainHash, msg.sender)
-            || !accessController.isRegistrar(msg.sender)
+            && !accessController.isRegistrar(msg.sender)
         ) revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }
@@ -101,14 +101,16 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED || !isOwnerOrOperator)
+        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
             revert ParentLockedOrDoesntExist(parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
-            if (!mintlist[parentHash]
+            if (
+                !mintlist[parentHash]
                     .list
                     [mintlist[parentHash].ownerIndex]
-                    [msg.sender]) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
+                    [msg.sender]
+            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({

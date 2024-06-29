@@ -69,8 +69,8 @@ contract ZNSAddressResolver is
         // only owner or operator of the current domain can set the address
         // also, ZNSRootRegistrar.sol can set the address as part of the registration process
         if (
-            registry.isOwnerOrOperator(domainHash, msg.sender) ||
-            accessController.isRegistrar(msg.sender)
+            !registry.isOwnerOrOperator(domainHash, msg.sender) &&
+            !accessController.isRegistrar(msg.sender)
         ) revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         domainAddresses[domainHash] = newAddress;
