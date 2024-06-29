@@ -3245,7 +3245,10 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(domainHash, await zns.curvePricer.getAddress())
+          zns.subRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
+            domainHash,
+            await zns.curvePricer.getAddress()
+          )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           NOT_AUTHORIZED_ERR

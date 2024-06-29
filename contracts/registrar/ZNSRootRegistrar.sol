@@ -326,7 +326,7 @@ contract ZNSRootRegistrar is
                 && candidate == domainToken.ownerOf(uint256(domainHash));
         }
 
-        revert("Wrong enum value for `ownerOf`");
+        revert InvalidOwnerOfEnumValue(ownerOf);
     }
 
     /**

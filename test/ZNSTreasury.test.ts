@@ -7,7 +7,6 @@ import {
   distrConfigEmpty,
   getPriceObject,
   NO_BENEFICIARY_ERR,
-  NOT_AUTHORIZED_ERR,
   INITIALIZED_ERR,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,

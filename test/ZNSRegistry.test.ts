@@ -12,14 +12,11 @@ import {
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
   validateUpgrade,
-  NOT_AUTHORIZED_ERR,
-  DEFAULT_RESOLVER_TYPE, AC_UNAUTHORIZED_ERR, NOT_OWNER_OF_ERR,
-} from "./helpers";
-import {
-  NOT_AUTHORIZED_ERR,
+  DEFAULT_RESOLVER_TYPE,
+  AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   ZERO_ADDRESS_ERR,
-} from "./helpers/errors";
+} from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires

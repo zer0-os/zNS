@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission, IContractArtifact,
+  BaseDeployMission,
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
