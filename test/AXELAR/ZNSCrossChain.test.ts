@@ -22,10 +22,11 @@ import ZNSRootRegistrar from "../../artifacts/contracts/registrar/ZNSRootRegistr
 import ZNSSubRegistrar from "../../artifacts/contracts/registrar/ZNSSubRegistrar.sol/ZNSSubRegistrar.json";
 import ZNSPortal from "../../artifacts/contracts/AXELAR/ZNSPortal.sol/ZNSPortal.json";
 import testContractJson from "../../artifacts/contracts/AXELAR/SimpleTest.sol/SimpleTest.json";
-import { ethers } from "hardhat";
+// import { ethers } from "hardhat";
 
 
-const iface = new utils.Interface(testContractJson.abi);
+const testContractInterface = new utils.Interface(testContractJson.abi);
+const registrarIFace = new utils.Interface(ZNSRootRegistrar.abi);
 
 
 // import * as hre from "hardhat";
@@ -257,6 +258,11 @@ describe("ZNS Cross-Chain Test", () => {
 
     znsPortalTyped = new ZNSPortal__factory().attach(znsPortal.address) as ZNSPortalType;
 
+    znsPoly = await deployZNSCrossChain({
+      network: polygon,
+      deployer: deployerPoly,
+    });
+
     test = await deployContract(
       deployerPoly,
       testContractJson,
@@ -265,11 +271,24 @@ describe("ZNS Cross-Chain Test", () => {
 
     testTyped = new SimpleTest__factory().attach(test.address) as SimpleTest;
 
+    meowTokenEth = await deployContract(
+      deployerEth,
+      MeowTokenMock,
+      [meowTokenName, meowTokenSymbol]
+    );
+
     await ethereum.deployToken( // TODO who would be the owner of these tokens?
       meowTokenName,
       meowTokenSymbol,
       18,
       0n,
+      meowTokenEth.address
+    );
+
+    meowTokenPoly = await deployContract(
+      deployerPoly,
+      MeowTokenMock,
+      [meowTokenName, meowTokenSymbol]
     );
 
     await polygon.deployToken(
@@ -277,22 +296,49 @@ describe("ZNS Cross-Chain Test", () => {
       meowTokenSymbol,
       18,
       0n,
-      // meowTokenPoly.address
+      meowTokenPoly.address
     );
 
     meowTokenEth = await ethereum.getTokenContract(meowTokenSymbol);
     meowTokenPoly = await polygon.getTokenContract(meowTokenSymbol);
 
     // give user funds
-    await ethereum.giveToken(ethAcc1.address, meowTokenSymbol, utils.parseEther("100").toBigInt());
-    await polygon.giveToken(polyAcc1.address, meowTokenSymbol, utils.parseEther("100").toBigInt());
+    // await ethereum.giveToken(ethAcc1.address, meowTokenSymbol, utils.parseEther("100").toBigInt());
+    // await polygon.giveToken(polyAcc1.address, meowTokenSymbol, utils.parseEther("100").toBigInt());
+
+    try {
+      await meowTokenEth.connect(ethAcc1).mint(
+        ethAcc1.address,
+        utils.parseEther("100").toBigInt(),
+        {
+          gasLimit: 5000000
+        }
+        
+      );
+
+      await meowTokenPoly.connect(polyAcc1).mint(
+        polyAcc1.address,
+        utils.parseEther("100").toBigInt(),
+        {
+          gasLimit: 5000000
+        }
+      );
+    } catch (e) {
+      console.log((e as Error).message);
+      console.log((e as Error).stack);
+      console.log("")
+    }
   });
 
   it("should deploy ZNS contracts on Polygon and set correct gatway and gas service", async () => {
     expect(await znsPoly.rootRegistrar.gateway()).to.equal(polygon.gateway.address);
   });
 
-  it.only("smaller test", async () => {
+  it("add???", async () => {
+
+  })
+
+  it.only("test that works", async () => {
     // confirm balances
     const ethBal = await meowTokenEth.connect(ethAcc1).balanceOf(ethAcc1.address);
     const polyBal = await meowTokenPoly.connect(polyAcc1).balanceOf(polyAcc1.address);
@@ -306,7 +352,7 @@ describe("ZNS Cross-Chain Test", () => {
     const depositAmount = utils.parseEther("50").toBigInt();
 
     // try making it do a simple transfer instead
-    const testPayload = iface.encodeFunctionData(
+    const testPayload = testContractInterface.encodeFunctionData(
       "receiveToken",
       [
         meowTokenPoly.address,
@@ -315,28 +361,35 @@ describe("ZNS Cross-Chain Test", () => {
       ]
     );
 
-    await meowTokenEth.connect(ethAcc1).approve(await znsPortalTyped.getAddress(), ethers.MaxUint256);
+    await meowTokenEth.connect(ethAcc1).approve(await znsPortalTyped.getAddress(), constants.MaxUint256);
 
-    await znsPortalTyped.connect(ethAcc1).sendPayloadWithToken(
-      polygon.name,
-      await testTyped.getAddress(),
-      testPayload,
-      meowTokenSymbol, // asks for symbol before amount here, param order?
-      utils.parseEther("50").toBigInt(),
-      {
-        value: 1e18.toString(),
-        gasLimit: 5000000
-      }
-    )
-
-      // add "externalEvmNetworks" array
-      // const relayerMap : RelayerMap = {
-      //   "evm" : evmRelayer
-      // }
-      
-      // const ls = polygon.tokens;
-
-    await relay();
+    try {
+      await znsPortalTyped.connect(ethAcc1).sendPayloadWithToken(
+        polygon.name,
+        await testTyped.getAddress(), // maybe this? typed vs not typed
+        testPayload,
+        meowTokenSymbol, // asks for symbol before amount here, param order?
+        depositAmount,
+        {
+          value: utils.parseEther("1").toBigInt(),
+          gasLimit: 5000000n
+        }
+      )
+  
+        // add "externalEvmNetworks" array
+        // const relayerMap : RelayerMap = {
+        //   "evm" : evmRelayer
+        // }
+        
+        // const ls = polygon.tokens;
+  
+      await relay();
+    } catch (e) {
+      console.log((e as Error).message);
+      console.log((e as Error).stack);
+      console.log("")
+    }
+    
 
     const contractBal = await meowTokenPoly.connect(polyAcc1).balanceOf(await testTyped.getAddress());
     const ethAccBal = await meowTokenEth.connect(ethAcc1).balanceOf(ethAcc1.address);
@@ -345,34 +398,66 @@ describe("ZNS Cross-Chain Test", () => {
 });
 
   it("should register root domain on Polygon from Ethereum", async () => {
+
+    // confirm balances
+    const ethBal = await meowTokenEth.connect(ethAcc1).balanceOf(ethAcc1.address);
+    const polyBal = await meowTokenPoly.connect(polyAcc1).balanceOf(polyAcc1.address);
+
+    const tokensPoly = polygon.tokens;
+    const tokensEth = ethereum.tokens;
+
+    const depositAmount = utils.parseEther("50").toBigInt();
+
+
     const rootDomain = "axelar";
     const tokenURI = "https://example.com/817c64af";
 
     // create payload to register root domain
-    const registerPayload = new ZNSRootRegistrar__factory().interface.encodeFunctionData(
-      "registerRootDomain",
+    // const registerPayload = registrarIFace.encodeFunctionData(
+    //   "registerRootDomain",
+    //   [
+    //     rootDomain,
+    //     ethAcc1.address,
+    //     tokenURI,
+    //     {
+    //       pricerContract: ethers.ZeroAddress,
+    //       paymentType: "0",
+    //       accessType: "0",
+    //     },
+    //     paymentConfigEmpty,
+    //   ]
+    // );
+
+    const registerPayload = registrarIFace.encodeFunctionData(
+      "receiveToken",
       [
-        rootDomain,
-        ethAcc1.address,
-        tokenURI,
-        {
-          pricerContract: ethers.ZeroAddress,
-          paymentType: "0",
-          accessType: "0",
-        },
-        paymentConfigEmpty,
+        meowTokenPoly.address,
+        polyAcc1.address,
+        depositAmount
       ]
     );
 
-    const testPayload = new SimpleTest__factory().interface.encodeFunctionData(
-      "setValue",
-      [
-        8
-      ]
-    );
+    // maybe have to approve proxy AND implementation?
+    await meowTokenEth.connect(ethAcc1).approve(await znsPortalTyped.getAddress(), ethers.MaxUint256);
 
-    const testPayload2 = iface.encodeFunctionData("setValue", [8]);
+    await znsPortalTyped.connect(ethAcc1).sendPayloadWithToken(
+      polygon.name,
+      await znsPoly.rootRegistrar.getAddress(),
+      registerPayload,
+      meowTokenSymbol, // asks for symbol before amount here, param order?
+      utils.parseEther("50").toBigInt(),
+      {
+        value: 1e18.toString(),
+        gasLimit: 5000000
+      }
+    )
 
+    await relay();
+
+    const contractBal = await meowTokenPoly.connect(polyAcc1).balanceOf(await znsPoly.rootRegistrar.getAddress());
+    const ethAccBal = await meowTokenEth.connect(ethAcc1).balanceOf(ethAcc1.address);
+    expect(BigInt(contractBal)).eq(depositAmount);
+    expect(BigInt(ethAccBal)).eq(depositAmount);
 
 
     // figure out how much we need to pay for the domain
@@ -438,54 +523,54 @@ describe("ZNS Cross-Chain Test", () => {
 
 
 
-    try {
-      // await znsPortalTyped.connect(ethAcc1).sendPayloadWithToken(
-      //   polygon.name,
-      //   await znsPoly.rootRegistrar.getAddress(),
-      //   registerPayload,
-      //   meowTokenSymbol,
-      //   domainPrice + stakeFee,
-      //   {
-      //     value: 1e18.toString(),
-      //     gasLimit: 500000
-      //   }
-      // );
+    // try {
+    //   // await znsPortalTyped.connect(ethAcc1).sendPayloadWithToken(
+    //   //   polygon.name,
+    //   //   await znsPoly.rootRegistrar.getAddress(),
+    //   //   registerPayload,
+    //   //   meowTokenSymbol,
+    //   //   domainPrice + stakeFee,
+    //   //   {
+    //   //     value: 1e18.toString(),
+    //   //     gasLimit: 500000
+    //   //   }
+    //   // );
 
-      await znsPortalTyped.connect(ethAcc1).sendPayload(
-          polygon.name,
-          await testTyped.getAddress(),
-          testPayload2,
-          {
-            value: 1e18.toString(),
-            gasLimit: 5000000
-          }
-        );
+    //   await znsPortalTyped.connect(ethAcc1).sendPayload(
+    //       polygon.name,
+    //       await testTyped.getAddress(),
+    //       testPayload2,
+    //       {
+    //         value: 1e18.toString(),
+    //         gasLimit: 5000000
+    //       }
+    //     );
   
 
 
-      // use default `evmRelayer` by specifying undefined
-      // add "externalEvmNetworks" array
-      const relayerMap : RelayerMap = {
-        "evm" : evmRelayer
-      }
+    //   // use default `evmRelayer` by specifying undefined
+    //   // add "externalEvmNetworks" array
+    //   const relayerMap : RelayerMap = {
+    //     "evm" : evmRelayer
+    //   }
       
-      const ls = polygon.tokens;
+    //   const ls = polygon.tokens;
 
-      // expects "RelayersMap" as first param
-      await relay(relayerMap, [polygon]);
-    } catch (e) {
-      console.log((e as Error).message);
-      console.log((e as Error).stack);
-      exit(1);
-    }
+    //   // expects "RelayersMap" as first param
+    //   await relay(relayerMap, [polygon]);
+    // } catch (e) {
+    //   console.log((e as Error).message);
+    //   console.log((e as Error).stack);
+    //   exit(1);
+    // }
 
-    const val = await testTyped.connect(polyAcc1).value();
-    console.log(val);
+    // const val = await testTyped.connect(polyAcc1).value();
+    // console.log(val);
     // const filter = znsPoly.rootRegistrar.filters.DomainRegistered();
     // const events = await znsPoly.rootRegistrar.queryFilter(filter);
 
     // missing arg `destination token symbol` deep in library
-    const domainHash = hashDomainLabel(rootDomain);
+    // const domainHash = hashDomainLabel(rootDomain);
 
     // try registering regularly (same chain call)
     // send tokens to RootRegistrar

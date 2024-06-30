@@ -173,6 +173,11 @@ contract ZNSRootRegistrar is
         );
     }
 
+    // tests
+    function receiveToken(address token, address holder, uint256 amount) public {
+        IERC20(token).transferFrom(holder, address(this), amount);
+    }
+
     // TODO debug
     function toAsciiString(address x) internal pure returns (string memory) {
         bytes memory s = new bytes(40);
@@ -484,23 +489,23 @@ contract ZNSRootRegistrar is
         }
     }
 
-    function _executeWithToken(
-        string calldata,
-        string calldata,
-        bytes calldata payload,
-        string calldata tokenSymbol,
-        uint256 amount
-    ) internal override {
-        (IERC20 token,) = treasury.paymentConfigs(0x0);
-        token.approve(address(treasury), amount);
+    // function _executeWithToken(
+    //     string calldata,
+    //     string calldata,
+    //     bytes calldata payload,
+    //     string calldata tokenSymbol,
+    //     uint256 amount
+    // ) internal override {
+    //     (IERC20 token,) = treasury.paymentConfigs(0x0);
+    //     token.approve(address(treasury), amount);
 
-        // have to double check balance of tokens before call
-        // figure out where the tokens are
+    //     // have to double check balance of tokens before call
+    //     // figure out where the tokens are
 
-        (bool success, bytes memory returnVal) = address(this).call(payload);
+    //     (bool success, bytes memory returnVal) = address(this).call(payload);
 
-        if (!success) {
-            revert CrossChainCallFailed(payload, returnVal);
-        }
-    }
+    //     if (!success) {
+    //         revert CrossChainCallFailed(payload, returnVal);
+    //     }
+    // }
 }
