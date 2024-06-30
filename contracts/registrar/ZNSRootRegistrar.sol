@@ -11,6 +11,10 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { AxelarExecutable } from "@axelar-network/axelar-gmp-sdk-solidity/contracts/executable/AxelarExecutable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 
 /**
@@ -30,6 +34,7 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    AxelarExecutable,
     IZNSRootRegistrar {
     using StringUtils for string;
 
@@ -39,8 +44,22 @@ contract ZNSRootRegistrar is
     IZNSSubRegistrar public subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address accessController_,
+        address registry_,
+        address rootPricer_,
+        address treasury_,
+        address domainToken_,
+        address gateway_
+    ) AxelarExecutable(gateway_) {
+        // TODO axe: figure out a way to use proxies with Axelar and fix this !!!
+        //        this here is temporary because we are not deploying proxies
+//        _disableInitializers();
+        _setAccessController(accessController_);
+        setRegistry(registry_);
+        setRootPricer(rootPricer_);
+        setTreasury(treasury_);
+        setDomainToken(domainToken_);
     }
 
     /**
@@ -97,6 +116,7 @@ contract ZNSRootRegistrar is
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
+        revert("1");
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
 
@@ -153,6 +173,30 @@ contract ZNSRootRegistrar is
         );
     }
 
+    // tests
+    function receiveToken(address token, address holder, uint256 amount) public {
+        IERC20(token).transferFrom(holder, address(this), amount);
+    }
+
+    // TODO debug
+    function toAsciiString(address x) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
+            bytes1 hi = bytes1(uint8(b) / 16);
+            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+            s[2*i] = char(hi);
+            s[2*i+1] = char(lo);            
+        }
+        return string(s);
+    }
+
+    // TODO debug
+    function char(bytes1 b) internal pure returns (bytes1 c) {
+        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+        else return bytes1(uint8(b) + 0x57);
+    }
+
     /**
      * @dev Internal function that is called by this contract to finalize the registration of a domain.
      * This function as also called by the external `coreRegister()` function as a part of
@@ -181,19 +225,41 @@ contract ZNSRootRegistrar is
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
             registry.createDomainRecord(args.domainHash, args.registrant, "address");
+            address resolver = registry.getDomainResolver(args.domainHash);
 
-            IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
-                .setAddress(args.domainHash, args.domainAddress);
+            // getresolver type?
+
+            // revert(toAsciiString(resolver)); // why is this 0x0
+
+            // if (!registry.isOwnerOrOperator(args.domainHash, args.registrant)) {
+            //     revert("1");
+            // } else {
+            //     revert("2");
+            // }
+
+
+            IZNSAddressResolver(resolver)
+                .setAddress(
+                    args.domainHash, args.domainAddress); //, args.registrant);
+            // revert("1");
         } else {
+            // revert("3");
+
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
         }
+
+            // revert("4");
+
 
         // Because we check in the web app for the existance of both values in a payment config,
         // it's fine to just check for one here
         if (args.paymentConfig.beneficiary != address(0)) {
             treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
         }
+        // string memory converted = string(abi.encodePacked(tokenId));
+
+        // revert(Strings.toString(tokenId));
 
         emit DomainRegistered(
             args.parentHash,
@@ -215,10 +281,13 @@ contract ZNSRootRegistrar is
         uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
+            // revert("stake payment");
+
             treasury.stakeForDomain(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                // args.registrant,
+                address(this), // needed when cross chain
                 args.price,
                 args.stakeFee,
                 protocolFee
@@ -227,7 +296,8 @@ contract ZNSRootRegistrar is
             treasury.processDirectPayment(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                // args.registrant,
+                address(this), // needed when cross chain
                 args.price,
                 protocolFee
             );
@@ -406,4 +476,36 @@ contract ZNSRootRegistrar is
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
     }
+
+    function _execute(
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload
+    ) internal override {
+        (bool success, bytes memory returnVal) = address(this).call(payload);
+
+        if (!success) {
+            revert CrossChainCallFailed(payload, returnVal);
+        }
+    }
+
+    // function _executeWithToken(
+    //     string calldata,
+    //     string calldata,
+    //     bytes calldata payload,
+    //     string calldata tokenSymbol,
+    //     uint256 amount
+    // ) internal override {
+    //     (IERC20 token,) = treasury.paymentConfigs(0x0);
+    //     token.approve(address(treasury), amount);
+
+    //     // have to double check balance of tokens before call
+    //     // figure out where the tokens are
+
+    //     (bool success, bytes memory returnVal) = address(this).call(payload);
+
+    //     if (!success) {
+    //         revert CrossChainCallFailed(payload, returnVal);
+    //     }
+    // }
 }

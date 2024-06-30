@@ -31,8 +31,17 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address accessController_,
+        address registry_,
+        CurvePriceConfig memory zeroPriceConfig_
+    ) {
+        _setAccessController(accessController_);
+        _setRegistry(registry_);
+
+        setPriceConfig(0x0, zeroPriceConfig_);
+        // TODO axe: set everything back when proxies are figured out !!!
+//        _disableInitializers();
     }
 
     /**
@@ -135,7 +144,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function setPriceConfig(
         bytes32 domainHash,
-        CurvePriceConfig calldata priceConfig
+        CurvePriceConfig memory priceConfig
     ) public override {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;

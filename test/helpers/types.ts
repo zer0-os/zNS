@@ -29,6 +29,28 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
+import {
+  MeowTokenMock__factory,
+  MeowTokenMock as MeowTokenMockType,
+  ZNSAccessController__factory,
+  ZNSAccessController as ZNSAccessControllerType, 
+  ZNSAddressResolver__factory,
+  ZNSAddressResolver as ZNSAddressResolverType,
+  ZNSCurvePricer__factory, 
+  ZNSCurvePricer as ZNSCurvePricerType,
+  ZNSDomainToken__factory, 
+  ZNSDomainToken as ZNSDomainTokenType,
+  ZNSFixedPricer__factory,
+  ZNSFixedPricer as ZNSFixedPricerType,
+  ZNSRegistry__factory,
+  ZNSRegistry as ZNSRegistryType,
+  ZNSRootRegistrar__factory,
+  ZNSRootRegistrar as ZNSRootRegistrarType,
+  ZNSSubRegistrar__factory,
+  ZNSSubRegistrar as ZNSSubRegistrarType,
+  ZNSTreasury__factory,
+  ZNSTreasury as ZNSTreasuryType,
+} from "../../typechain";
 
 export type Maybe<T> = T | undefined;
 
@@ -78,16 +100,16 @@ export interface RegistrarConfig {
 }
 
 export interface IZNSContractsLocal {
-  accessController : ZNSAccessController;
-  registry : ZNSRegistry;
-  domainToken : ZNSDomainToken;
-  meowToken : MeowTokenMock;
-  addressResolver : ZNSAddressResolver;
-  curvePricer : ZNSCurvePricer;
-  treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
-  fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
+  accessController : ZNSAccessControllerType;
+  registry : ZNSRegistryType;
+  domainToken : ZNSDomainTokenType;
+  meowToken : MeowTokenMockType;
+  addressResolver : ZNSAddressResolverType;
+  curvePricer : ZNSCurvePricerType;
+  treasury : ZNSTreasuryType;
+  rootRegistrar : ZNSRootRegistrarType;
+  fixedPricer : ZNSFixedPricerType;
+  subRegistrar : ZNSSubRegistrarType;
   zeroVaultAddress : string;
 }
 

@@ -56,8 +56,11 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(address accessController_) {
+        records[0x0].owner = msg.sender;
+        _setAccessController(accessController_);
+        // TODO axe: set everything back when proxies are figured out !!!
+//        _disableInitializers();
     }
 
     /**
@@ -183,7 +186,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Add a new resolver type option to the mapping of types
-     * This function can also be used to update the resolver mapping for an existing resolver 
+     * This function can also be used to update the resolver mapping for an existing resolver
      * simple by using an existing key like "address" with a new address
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract

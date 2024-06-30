@@ -35,8 +35,18 @@ contract ZNSDomainToken is
     uint256 private _totalSupply;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address accessController_,
+        string memory name_,
+        string memory symbol_,
+        address defaultRoyaltyReceiver,
+        uint96 defaultRoyaltyFraction
+    ) {
+//        __ERC721_init(name_, symbol_);
+        _setAccessController(accessController_);
+        _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
+        // TODO axe: set everything back when proxies are figured out !!!
+//        _disableInitializers();
     }
 
     /**

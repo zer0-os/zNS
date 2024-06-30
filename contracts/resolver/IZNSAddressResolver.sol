@@ -17,6 +17,7 @@ interface IZNSAddressResolver {
     function setAddress(
         bytes32 domainHash,
         address newAddress
+        // address registrant
     ) external;
 
     function getInterfaceId() external pure returns (bytes4);

@@ -49,6 +49,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         BOTH
     }
 
+    error CrossChainCallFailed(bytes payload, bytes callReturnValue);
+
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.

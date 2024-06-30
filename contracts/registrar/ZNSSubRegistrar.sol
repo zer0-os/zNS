@@ -54,8 +54,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+    constructor(
+        address _accessController,
+        address _registry,
+        address _rootRegistrar
+    ) {
+        _setAccessController(_accessController);
+        setRegistry(_registry);
+        setRootRegistrar(_rootRegistrar);
+
+        // TODO axe: set everything back when proxies are figured out !!!
+//    _disableInitializers();
     }
 
     function initialize(
