@@ -421,7 +421,7 @@ describe("ZNSSubRegistrar", () => {
     });
 
     // ! this value can change based on the block gas limit !
-    it.skip("should register subdomain with a label length of 100000 chars", async () => {
+    it("should register subdomain with a label length of 100000 chars", async () => {
       const subHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
