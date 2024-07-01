@@ -23,7 +23,7 @@
     "test-local": "yarn test",
     "posttest": "yarn mongo:stop",
     "semantic-release": "semantic-release --tag-format='v${version}-dev'",
-    "coverage": "export NODE_OPTIONS=\"--max-old-space-size=8192\" && hardhat coverage",
+    "coverage": "hardhat coverage",
     "check-coverage": "istanbul check-coverage --statements 90 --branches 87 --functions 89 --lines 90",
     "devnet": "ts-node src/tenderly/devnet/devnet-execute.ts",
     "gas-cost": "ts-node src/utils/gas-costs.ts",
