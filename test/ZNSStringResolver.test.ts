@@ -26,6 +26,7 @@ import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { getConfig } from "../src/deploy/campaign/environments";
+import { IZNSContractsLocal } from "./helpers/types";
 
 
 describe("ZNSStringResolver", () => {
@@ -63,7 +64,6 @@ describe("ZNSStringResolver", () => {
         user,
         deployAdmin,
         admin,
-        operator,
       ] = await hre.ethers.getSigners();
 
       const campaignConfig = await getConfig({
@@ -196,6 +196,8 @@ describe("ZNSStringResolver", () => {
     let userBalance : bigint;
     let deployerBalance : bigint;
 
+    let zns : IZNSContractsLocal;
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let mongoAdapter : MongoDBAdapter;
 
@@ -208,7 +210,6 @@ describe("ZNSStringResolver", () => {
         deployAdmin,
         admin,
         operator,
-        mockRegistrar,
       ] = await hre.ethers.getSigners();
 
       const campaignConfig = await getConfig({
@@ -225,6 +226,8 @@ describe("ZNSStringResolver", () => {
 
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
+
+      zns = campaign.state.contracts as unknown as IZNSContractsLocal;
 
       // eslint-disable-next-line max-len
       ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
@@ -247,7 +250,7 @@ describe("ZNSStringResolver", () => {
       const curStringDomain = "shouldbrake";
 
       await registrationWithSetup({
-        zns: campaign.state.contracts,
+        zns,
         user: operator,
         domainLabel: curStringDomain,
         domainContent: ethers.ZeroAddress,
@@ -267,7 +270,7 @@ describe("ZNSStringResolver", () => {
       const hash = hashDomainLabel(curString);
 
       await registrationWithSetup({
-        zns: campaign.state.contracts,
+        zns,
         user,
         domainLabel: curString,
         domainContent: ethers.ZeroAddress,
@@ -295,7 +298,7 @@ describe("ZNSStringResolver", () => {
       const hash = hashDomainLabel(curDomain);
 
       await registrationWithSetup({
-        zns: campaign.state.contracts,
+        zns,
         user: deployer,
         domainLabel: curDomain,
         domainContent: ethers.ZeroAddress,
@@ -373,7 +376,7 @@ describe("ZNSStringResolver", () => {
           await accessController.hasRole(GOVERNOR_ROLE, deployAdmin.address)
         ).to.be.true;
 
-        const upgradeTx = domainToken.connect(deployAdmin).upgradeTo(await newStringResolver.getAddress());
+        const upgradeTx = domainToken.connect(deployAdmin).upgradeToAndCall(await newStringResolver.getAddress(), "0x");
 
         await expect(upgradeTx).to.not.be.reverted;
       });
@@ -392,7 +395,7 @@ describe("ZNSStringResolver", () => {
           getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
         );
 
-        const upgradeTx = domainToken.connect(operator).upgradeTo(await newStringResolver.getAddress());
+        const upgradeTx = domainToken.connect(operator).upgradeToAndCall(await newStringResolver.getAddress(), "0x");
 
         await expect(upgradeTx).to.be.revertedWith(
           getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
@@ -404,7 +407,7 @@ describe("ZNSStringResolver", () => {
         const curString = "variableschange";
 
         await registrationWithSetup({
-          zns: campaign.state.contracts,
+          zns,
           user: deployer,
           domainLabel: curString,
           domainContent: ethers.ZeroAddress,
