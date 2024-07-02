@@ -7,9 +7,15 @@ pragma solidity 0.8.26;
  * @notice Base interface required to be inherited by all Pricing contracts to work with zNS
  */
 interface IZNSPricer {
-    // TODO upd: add natspec for all new errors !
+    /**
+     * @notice Reverted when someone is trying to buy a subdomain under a parent that is not set up for distribution.
+     * Specifically it's prices for subdomains.
+     */
     error ParentPriceConfigNotSet(bytes32 parentHash);
 
+    /**
+     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% (uint256 "10,000").
+     */
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
 
     /**

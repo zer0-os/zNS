@@ -15,7 +15,7 @@ import { StringUtils } from "../../utils/StringUtils.sol";
 import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
 import { NotAuthorizedForDomain, ZeroAddressPassed, DomainAlreadyExists } from "../../utils/CommonErrors.sol";
 
-// TODO upd: convert all these errors as well !!
+
 enum AccessType {
     LOCKED,
     OPEN,

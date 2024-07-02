@@ -51,16 +51,11 @@ library StringUtils {
         if (length == 0 || length >= MAX_INT)
             revert DomainLabelTooLongOrNonexistent(s);
 
-        for (uint256 i; i < length;) {
+        for (uint256 i; i < length; ++i) {
             bytes1 b = nameBytes[i];
             // Valid strings are lower case a-z, 0-9, or a hyphen
             if (!((b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D))
                 revert DomainLabelContainsInvalidCharacters(s);
-
-            // TODO upd: remove all unchecked blocks everywhere !
-            unchecked {
-                ++i;
-            }
         }
     }
 }

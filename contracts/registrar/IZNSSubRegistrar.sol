@@ -10,8 +10,15 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
 */
 interface IZNSSubRegistrar is IDistributionConfig {
+    /**
+     * @notice Reverted when someone other than parent owner is trying to buy a subdomain under the parent that is locked\
+     * or when the parent provided does not exist.
+     */
     error ParentLockedOrDoesntExist(bytes32 parentHash);
 
+    /**
+     * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
+     */
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
 
     /**

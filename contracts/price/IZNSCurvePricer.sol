@@ -7,9 +7,17 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
+    /**
+     * @notice Reverted when multiplier passed by the domain owner
+     * is equal to 0 or more than 10^18, which is too large.
+     */
     error InvalidMultiplierPassed(uint256 multiplier);
 
-    // TODO upd: "ZNSCurvePricer: incorrect value set causes the price spike at maxLength."
+    /**
+     * @notice Reverted when `priceConfig` set by the owner does not result in a proper asymptotic curve
+     * and one of it's incorrect values causes the price spike at maxLength, meaning that the price
+     * for a domain label shorter than `baseLength` (the one before `minPrice`) becomes higher than `minPrice`.
+     */
     error InvalidConfigCausingPriceSpikes(
         bytes32 configsDomainHash,
         uint256 minPrice,
