@@ -81,7 +81,15 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({ accessController, stringResolver, registry, meowToken, treasury, rootRegistrar, dbAdapter: mongoAdapter } = campaign);
+      ({
+        accessController,
+        stringResolver,
+        registry,
+        meowToken,
+        treasury,
+        rootRegistrar,
+        dbAdapter: mongoAdapter,
+      } = campaign);
 
       userBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(user.address, userBalance);
