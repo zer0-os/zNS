@@ -1,12 +1,11 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
-  ADMIN_ROLE,
+  AC_UNAUTHORIZED_ERR,
   distrConfigEmpty,
-  getAccessRevertMsg,
   GOVERNOR_ROLE,
   hashDomainLabel,
-  INITIALIZED_ERR,
+  INITIALIZED_ERR, NOT_AUTHORIZED_ERR,
   paymentConfigEmpty,
   validateUpgrade,
 } from "./helpers";
@@ -48,6 +47,7 @@ describe("ZNSStringResolver", () => {
     IZNSContracts
     >;
     let rootRegistrar : ZNSRootRegistrar;
+    let accessController : ZNSAccessController;
 
     let userBalance : bigint;
 
@@ -81,7 +81,7 @@ describe("ZNSStringResolver", () => {
       let meowToken : MeowTokenMock;
       let treasury : ZNSTreasury;
 
-      ({ stringResolver, registry, meowToken, treasury, rootRegistrar, dbAdapter: mongoAdapter } = campaign);
+      ({ accessController, stringResolver, registry, meowToken, treasury, rootRegistrar, dbAdapter: mongoAdapter } = campaign);
 
       userBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(user.address, userBalance);
@@ -98,7 +98,8 @@ describe("ZNSStringResolver", () => {
           await campaign.state.contracts.accessController.getAddress(),
           await registry.getAddress(),
         )
-      ).to.be.revertedWith(
+      ).to.be.revertedWithCustomError(
+        stringResolver,
         INITIALIZED_ERR
       );
     });
@@ -139,8 +140,9 @@ describe("ZNSStringResolver", () => {
     it("Should revert when setRegistry() without ADMIN_ROLE", async () => {
       await expect(
         stringResolver.connect(user).setRegistry(user.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      ).to.be.revertedWithCustomError(
+        accessController,
+        AC_UNAUTHORIZED_ERR
       );
 
       // reset regestry address on stringResolver
@@ -151,8 +153,9 @@ describe("ZNSStringResolver", () => {
       "(It cannot rewrite AC address after an incorrect address has been submitted to it)", async () => {
       await expect(
         stringResolver.connect(user).setAccessController(user.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      ).to.be.revertedWithCustomError(
+        accessController,
+        AC_UNAUTHORIZED_ERR
       );
     });
 
@@ -260,7 +263,7 @@ describe("ZNSStringResolver", () => {
         stringResolver.connect(user).setString(hashDomainLabel(curStringDomain), curStringDomain)
       ).to.be.revertedWithCustomError(
         stringResolver,
-        "NotOwnerOrOperator"
+        NOT_AUTHORIZED_ERR
       );
     });
 
@@ -336,8 +339,9 @@ describe("ZNSStringResolver", () => {
     it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
       await expect(
         stringResolver.connect(user).setAccessController(user.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
+      ).to.be.revertedWithCustomError(
+        accessController,
+        AC_UNAUTHORIZED_ERR
       );
     });
 
@@ -391,14 +395,16 @@ describe("ZNSStringResolver", () => {
         // Confirm the operator is not a governor
         await expect(
           accessController.checkGovernor(operator.address)
-        ).to.be.revertedWith(
-          getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
+        ).to.be.revertedWithCustomError(
+          accessController,
+          AC_UNAUTHORIZED_ERR
         );
 
         const upgradeTx = domainToken.connect(operator).upgradeToAndCall(await newStringResolver.getAddress(), "0x");
 
-        await expect(upgradeTx).to.be.revertedWith(
-          getAccessRevertMsg(operator.address, GOVERNOR_ROLE)
+        await expect(upgradeTx).to.be.revertedWithCustomError(
+          accessController,
+          AC_UNAUTHORIZED_ERR
         );
       });
 
