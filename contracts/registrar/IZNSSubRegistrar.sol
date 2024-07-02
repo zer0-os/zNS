@@ -11,8 +11,8 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 */
 interface IZNSSubRegistrar is IDistributionConfig {
     /**
-     * @notice Reverted when someone other than parent owner is trying to buy a subdomain under the parent that is locked\
-     * or when the parent provided does not exist.
+     * @notice Reverted when someone other than parent owner is trying to buy a subdomain
+     * under the parent that is locked or when the parent provided does not exist.
      */
     error ParentLockedOrDoesntExist(bytes32 parentHash);
 

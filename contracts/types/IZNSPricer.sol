@@ -14,7 +14,8 @@ interface IZNSPricer {
     error ParentPriceConfigNotSet(bytes32 parentHash);
 
     /**
-     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% (uint256 "10,000").
+     * @notice Reverted when domain owner is trying to set it's stake fee percentage
+     * higher than 100% (uint256 "10,000").
      */
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
 

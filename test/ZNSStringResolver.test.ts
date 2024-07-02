@@ -8,7 +8,6 @@ import {
   hashDomainLabel,
   INITIALIZED_ERR,
   paymentConfigEmpty,
-  REGISTRAR_ROLE,
   validateUpgrade,
 } from "./helpers";
 import { IZNSContracts } from "../src/deploy/campaign/types";
@@ -35,7 +34,6 @@ describe("ZNSStringResolver", () => {
     let user : SignerWithAddress;
     let deployAdmin : SignerWithAddress;
     let deployer : SignerWithAddress;
-    let operator : SignerWithAddress;
     let admin : SignerWithAddress;
 
     const env = "dev";
@@ -181,7 +179,6 @@ describe("ZNSStringResolver", () => {
     let user : SignerWithAddress;
     let deployAdmin : SignerWithAddress;
     let admin : SignerWithAddress;
-    let mockRegistrar : SignerWithAddress;
 
     const env = "dev";
 
