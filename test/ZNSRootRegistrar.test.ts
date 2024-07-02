@@ -408,6 +408,12 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.reverted;
     });
 
+    it("#isOwnerOf() should revert if wrong enum value is passed", async () => {
+      await expect(
+        zns.rootRegistrar.isOwnerOf(ethers.ZeroHash, user.address, 3)
+      ).to.be.reverted;
+    });
+
     it("#setSubRegistrar() should revert if called by address without ADMIN_ROLE", async () => {
       const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
       expect(isAdmin).to.be.false;
@@ -1353,23 +1359,25 @@ describe("ZNSRootRegistrar", () => {
       });
     });
 
-    it("#setRootPricer() should set the rootPricer correctly", async () => {
-      const newPricer = zns.fixedPricer.target;
-      await zns.rootRegistrar.connect(admin).setRootPricer(newPricer);
+    describe("#setRootPricer", () => {
+      it("#setRootPricer() should set the rootPricer correctly", async () => {
+        const newPricer = zns.fixedPricer.target;
+        await zns.rootRegistrar.connect(admin).setRootPricer(newPricer);
 
-      expect(await zns.rootRegistrar.rootPricer()).to.eq(newPricer);
+        expect(await zns.rootRegistrar.rootPricer()).to.eq(newPricer);
 
-      // set back
-      await zns.rootRegistrar.connect(admin).setRootPricer(zns.curvePricer.target);
-    });
+        // set back
+        await zns.rootRegistrar.connect(admin).setRootPricer(zns.curvePricer.target);
+      });
 
-    it("#setRootPricer() should NOT let set 0x0 address as the new pricer", async () => {
-      await expect(
-        zns.rootRegistrar.connect(admin).setRootPricer(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        ZERO_ADDRESS_ERR
-      );
+      it("#setRootPricer() should NOT let set 0x0 address as the new pricer", async () => {
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPricer(ethers.ZeroAddress)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          ZERO_ADDRESS_ERR
+        );
+      });
     });
   });
 
