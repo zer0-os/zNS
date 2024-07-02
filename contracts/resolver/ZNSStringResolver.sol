@@ -6,6 +6,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSStringResolver } from "./IZNSStringResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -47,9 +48,6 @@ contract ZNSStringResolver is
         return resolvedStrings[domainHash];
     }
 
-    // custom error for setString
-    error NotOwnerOrOperator(bytes32 domainHash, address sender);
-
     /**
      * @dev Sets the string for a domain name hash.
      * @param domainHash The identifying hash of a domain's name
@@ -62,7 +60,7 @@ contract ZNSStringResolver is
         // only owner or operator of the current domain can set the string
 
         if (!registry.isOwnerOrOperator(domainHash, msg.sender)) {
-            revert NotOwnerOrOperator(domainHash, msg.sender);
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
         }
 
         resolvedStrings[domainHash] = newString;
