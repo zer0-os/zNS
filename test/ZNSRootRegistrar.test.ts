@@ -1352,6 +1352,25 @@ describe("ZNSRootRegistrar", () => {
         );
       });
     });
+
+    it("#setRootPricer() should set the rootPricer correctly", async () => {
+      const newPricer = zns.fixedPricer.target;
+      await zns.rootRegistrar.connect(admin).setRootPricer(newPricer);
+
+      expect(await zns.rootRegistrar.rootPricer()).to.eq(newPricer);
+
+      // set back
+      await zns.rootRegistrar.connect(admin).setRootPricer(zns.curvePricer.target);
+    });
+
+    it("#setRootPricer() should NOT let set 0x0 address as the new pricer", async () => {
+      await expect(
+        zns.rootRegistrar.connect(admin).setRootPricer(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        zns.subRegistrar,
+        ZERO_ADDRESS_ERR
+      );
+    });
   });
 
   describe("UUPS", () => {
