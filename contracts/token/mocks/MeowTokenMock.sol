@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 /* solhint-disable */
-pragma solidity 0.8.3;
+pragma solidity 0.8.26;
 
-import { MeowToken } from "@zero-tech/ztoken/contracts/MeowToken.sol";
-import { MeowTokenTest } from "@zero-tech/ztoken/contracts/MeowTokenTest.sol";
+import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 
-contract MeowTokenMock is MeowToken {
+contract MeowTokenMock is ERC20Upgradeable {
+    function initialize(string memory name_, string memory symbol_) external initializer {
+        __ERC20_init(name_, symbol_);
+    }
+
     function mint(address account, uint256 amount) public {
         _mint(account, amount);
     }

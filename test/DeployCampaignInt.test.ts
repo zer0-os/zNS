@@ -123,7 +123,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowToken");
+      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
       const meow = await hre.upgrades.deployProxy(
         factory,
         [meowTokenName, meowTokenSymbol],

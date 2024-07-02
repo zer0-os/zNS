@@ -43,11 +43,11 @@ const config : HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.18",
+        version: "0.8.26",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 20000,
           },
         },
       },
@@ -56,27 +56,27 @@ const config : HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 20000,
           },
         },
       },
     ],
     overrides: {
       "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
-        version: "0.8.9",
+        version: "0.8.20",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 20000,
           },
         },
       },
       "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
-        version: "0.8.9",
+        version: "0.8.20",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 20000,
           },
         },
       },
