@@ -11,7 +11,6 @@ import {
   ADMIN_ROLE, PARENT_LOCKED_NOT_EXIST_ERR,
   hashDomainLabel,
   normalizeName,
-  NOT_AUTHORIZED_ERR,
   PaymentType,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
@@ -20,7 +19,7 @@ import { ZeroAddress } from "ethers";
 import { getDomainHashFromEvent } from "./helpers/events";
 
 
-describe.only("Domain Migration Test", () => {
+describe.only("Domain Migration Flow Test", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -29,7 +28,6 @@ describe.only("Domain Migration Test", () => {
 
   let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
-  let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
 
   let mongoAdapter : MongoDBAdapter;
@@ -42,7 +40,7 @@ describe.only("Domain Migration Test", () => {
 
   before(async () => {
     // zeroVault address is used to hold the fee charged to the user when registering
-    [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
+    [deployer, zeroVault, user, governor, admin, randomUser] = await hre.ethers.getSigners();
 
     const config = await getConfig({
       deployer,
@@ -185,10 +183,86 @@ describe.only("Domain Migration Test", () => {
     expect(subSubOwner).to.be.equal(admin.address);
   });
 
+  // eslint-disable-next-line max-len
+  it("Should upgrade RootRegistrar to the previous version with unlocked access to root domain registration", async () => {
+    // get some OG state values
+    const stateReads = [
+      zns.rootRegistrar.registry(),
+      zns.rootRegistrar.getAccessController(),
+      zns.rootRegistrar.rootPricer(),
+      zns.rootRegistrar.treasury(),
+      zns.rootRegistrar.domainToken(),
+      zns.rootRegistrar.subRegistrar(),
+    ];
+
+    const statePreUpgrade = await Promise.all(stateReads);
+
+    // Confirm deployer has the correct role first
+    expect(await zns.accessController.isGovernor(deployer.address)).to.equal(true);
+
+    // upgrade to the contract that simalates the previous version of the RootRegistrar
+    // (the one that we will change to when ready)
+
+    // deploy impl first
+    const factory = await hre.ethers.getContractFactory("ZNSRootRegistrarPostMigrationMock");
+    const newRegistrar = await factory.deploy();
+    await newRegistrar.waitForDeployment();
+
+    // upgrade to the new impl
+    await zns.rootRegistrar.connect(deployer).upgradeToAndCall(await newRegistrar.getAddress(), "0x");
+
+    // validate the upgrade
+    const statePostUpgrade = await Promise.all(stateReads);
+
+    statePostUpgrade.forEach(
+      (value, index) => {
+        expect(value).to.be.equal(statePreUpgrade[index]);
+      }
+    );
+  });
+
+  it("Should let anyone register ROOT domains after the upgrade", async () => {
+    const newDomain = normalizeName("newdomain");
+
+    await zns.rootRegistrar.connect(user).registerRootDomain(
+      newDomain,
+      ZeroAddress,
+      tokenURI,
+      rootDistrConfig,
+      {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: user.address,
+      }
+    );
+
+    const newDomainHash = hashDomainLabel(newDomain);
+    const owner = await zns.registry.getDomainOwner(newDomainHash);
+    expect(owner).to.be.equal(user.address);
+
+    // try from another user
+
+    // Give funds to user
+    await zns.meowToken.connect(randomUser).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.meowToken.mint(randomUser.address, userBalanceInitial);
+
+    const newNewDomain = normalizeName("newnewdomain");
+    await zns.rootRegistrar.connect(randomUser).registerRootDomain(
+      newNewDomain,
+      ZeroAddress,
+      tokenURI,
+      rootDistrConfig,
+      {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: randomUser.address,
+      }
+    );
+
+    const newNewDomainHash = hashDomainLabel(newNewDomain);
+    const owner2 = await zns.registry.getDomainOwner(newNewDomainHash);
+    expect(owner2).to.be.equal(randomUser.address);
+  });
+
   // TODO mig: test cases:
-  // 1. Register subdomain for free by the same owner
   // 2. Send domain token to user
-  // 3. Upgrade back to the RootRegistrar that is unlocked
   // 4. User reclaims the full domain and can manage distribution and sell subs
-  // 5. New users can register new domains of every level
 });
