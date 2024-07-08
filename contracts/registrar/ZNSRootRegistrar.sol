@@ -94,7 +94,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) external override onlyAdmin returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
