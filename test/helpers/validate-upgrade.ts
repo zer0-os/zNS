@@ -2,7 +2,8 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
 import { ZNSContract } from "../../src/deploy/campaign/types";
-import { MeowToken, ZNSAccessController } from "../../typechain";
+import { ZNSAccessController } from "../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
 
 export const validateUpgrade = async (
