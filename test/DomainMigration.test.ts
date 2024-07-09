@@ -262,6 +262,73 @@ describe.only("Domain Migration Flow Test", () => {
     expect(owner2).to.be.equal(randomUser.address);
   });
 
+  it("Should send user the token and let user reclaim", async () => {
+    // send user the domain token
+    await zns.domainToken.connect(admin).transferFrom(admin.address, user.address, rootDomainHash);
+
+    // check that user has the domain token, but Name is still owned by admin
+    const tokenOwner = await zns.domainToken.ownerOf(rootDomainHash);
+    const nameOwner = await zns.registry.getDomainOwner(rootDomainHash);
+    expect(tokenOwner).to.be.equal(user.address);
+    expect(nameOwner).to.be.equal(admin.address);
+
+    // try to reclaim the domain
+    await zns.rootRegistrar.connect(user).reclaimDomain(rootDomainHash);
+    const nameOwnerAfterReclaim = await zns.registry.getDomainOwner(rootDomainHash);
+    expect(nameOwnerAfterReclaim).to.be.equal(user.address);
+  });
+
+  // eslint-disable-next-line max-len
+  it("Should give the user full domain access when they reclaim the domain upon receiving it from Zero Admin", async () => {
+    // user can change distribution config for the domain
+    const newDistrConfig = {
+      pricerContract: await zns.fixedPricer.getAddress(),
+      paymentType: PaymentType.DIRECT,
+      accessType: AccessType.OPEN,
+    };
+
+    await zns.subRegistrar.connect(user).setDistributionConfigForDomain(rootDomainHash, newDistrConfig);
+    const configFromContract = await zns.subRegistrar.distrConfigs(rootDomainHash);
+    expect(configFromContract.pricerContract).to.be.equal(newDistrConfig.pricerContract);
+    expect(configFromContract.paymentType).to.be.equal(newDistrConfig.paymentType);
+    expect(configFromContract.accessType).to.be.equal(newDistrConfig.accessType);
+
+    // user can change pricing for subdomains
+    const priceConfig = {
+      price: ethers.parseEther("7985"),
+      feePercentage: 13,
+      isSet: true,
+    };
+    await zns.fixedPricer.connect(user).setPriceConfig(rootDomainHash, priceConfig);
+
+    const priceConfigFromContract = await zns.fixedPricer.priceConfigs(rootDomainHash);
+    expect(priceConfigFromContract.price).to.be.equal(priceConfig.price);
+    expect(priceConfigFromContract.feePercentage).to.be.equal(priceConfig.feePercentage);
+    expect(priceConfigFromContract.isSet).to.be.equal(priceConfig.isSet);
+  });
+
+  it("Should let users register SUBdomains under the user reclaimed domain sent by Zero Admin", async () => {
+    const subdomainLabel = normalizeName("subby");
+
+    // try registering from user address
+    await zns.subRegistrar.connect(randomUser).registerSubdomain(
+      rootDomainHash,
+      subdomainLabel,
+      ZeroAddress,
+      `${tokenURI}/sub`,
+      rootDistrConfig,
+      {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: user.address,
+      }
+    );
+
+    // check domain existence
+    const subDomainHash = await getDomainHashFromEvent({ zns, user: randomUser });
+    const owner = await zns.registry.getDomainOwner(subDomainHash);
+    expect(owner).to.be.equal(randomUser.address);
+  });
+
   // TODO mig: test cases:
   // 2. Send domain token to user
   // 4. User reclaims the full domain and can manage distribution and sell subs
