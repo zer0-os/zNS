@@ -150,6 +150,20 @@ const config : HardhatUserConfig = {
       "oz-proxies/",
     ],
   },
+  // meowtestnet: {
+  //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
+  //   chainId: 883424730,
+  //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+  // `${process.env.DEPLOYER_PRIVATE_KEY}`,
+  // `${process.env.ZERO_VAULT_PRIVATE_KEY}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_E}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+  //   ],
+  // },
 };
 
 export default config;

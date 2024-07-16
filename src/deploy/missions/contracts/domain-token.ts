@@ -6,14 +6,13 @@ import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
 export class ZNSDomainTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig<SignerWithAddress>,
 IZNSContracts
 > {
   proxyData = {
@@ -33,7 +32,7 @@ IZNSContracts
         defaultRoyaltyReceiver,
         defaultRoyaltyFraction,
       },
-    } = this.config as IZNSCampaignConfig<SignerWithAddress>;
+    } = this.config ;
 
     return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
   }
