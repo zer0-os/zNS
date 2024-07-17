@@ -21,7 +21,7 @@ import { registrationWithSetup } from "./helpers/register-setup";
 
 const pricerRevertReason = "Domain registration is disabled because ZNS is migrating to another chain";
 
-describe.only("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
+describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
   describe("Ethereum Side", () => {
     let deployer : SignerWithAddress;
     let user : SignerWithAddress;
