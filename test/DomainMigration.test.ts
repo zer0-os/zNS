@@ -19,7 +19,7 @@ import { ZeroAddress } from "ethers";
 import { getDomainHashFromEvent } from "./helpers/events";
 
 
-describe.only("Domain Migration Flow Test", () => {
+describe("Domain Migration Flow Test", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
