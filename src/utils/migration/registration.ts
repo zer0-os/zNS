@@ -126,8 +126,6 @@ export const registerBase = async ({
 
   const txReceipt = await tx.wait(2);
 
-  logger.info(`Registration of ${domainType} successful! Transaction receipt: ${JSON.stringify(txReceipt)}`);
-
   const domainHash = await getEventDomainHash({
     label,
     tokenUri,
@@ -153,6 +151,8 @@ export const registerBase = async ({
     Token owner from ZNSDomainToken: ${tokenOwner}; Registering Admin: ${regAdmin.address}`
   );
 
+  logger.info(`Registration of ${domainType} successful! Transaction receipt: ${JSON.stringify(txReceipt)}`);
+
   return { domainHash, txReceipt };
 };
 
@@ -174,6 +174,37 @@ export const sendDomainToken = async ({
   logger.info(`Domain token sent successfully! Transaction receipt: ${JSON.stringify(txReceipt)}`);
 
   return { tokenId, txReceipt };
+};
+
+export const changeDomainOwner = async ({
+  domainHash,
+  regAdmin,
+  newOwnerAddress,
+} : {
+  domainHash : string;
+  regAdmin : SignerWithAddress;
+  newOwnerAddress : string;
+}) => {
+  const registry = await getContract(znsNames.registry.contract) as ZNSRegistry;
+
+  const tx = await registry.connect(regAdmin).updateDomainOwner(
+    domainHash,
+    newOwnerAddress
+  );
+  const txReceipt = await tx.wait(2);
+
+  // validate
+  const ownerFromReg = await registry.getDomainOwner(domainHash);
+  assert.equal(
+    ownerFromReg,
+    newOwnerAddress,
+    `Domain owner change validation failed!
+    Owner from ZNSRegistry: ${ownerFromReg}; New Owner: ${newOwnerAddress}`
+  );
+
+  logger.info(`Domain owner changed successfully! Transaction receipt: ${JSON.stringify(txReceipt)}`);
+
+  return txReceipt;
 };
 
 export const getEventDomainHash = async ({
