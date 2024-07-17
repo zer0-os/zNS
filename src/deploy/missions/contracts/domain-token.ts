@@ -32,7 +32,7 @@ IZNSContracts
         defaultRoyaltyReceiver,
         defaultRoyaltyFraction,
       },
-    } = this.config ;
+    } = this.config;
 
     return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
   }
