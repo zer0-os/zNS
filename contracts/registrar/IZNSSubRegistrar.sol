@@ -73,9 +73,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function distrConfigs(
         bytes32 domainHash
     )
-        external
-        view
-        returns (
+        external view returns (
             IZNSPricer pricerContract,
             PaymentType paymentType,
             AccessType accessType
