@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import {IDistributionConfig} from "../types/IDistributionConfig.sol";
-import {PaymentConfig} from "../treasury/IZNSTreasury.sol";
-import {IZNSPricer} from "../types/IZNSPricer.sol";
+import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 /**
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.

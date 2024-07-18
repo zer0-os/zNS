@@ -121,6 +121,12 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
+    meowtestnet: {
+      url: `${process.env.MEOWTESTNET_RPC_URL}`,
+      accounts: [
+        `${process.env.DEPLOYER_PRIVATE_KEY}`,
+      ],
+    },
   },
   defender: {
     useDefenderDeploy: false,
@@ -129,6 +135,16 @@ const config : HardhatUserConfig = {
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [
+      {
+        network: "meowtestnet",
+        chainId: 883424730,
+        urls: {
+          apiURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
   },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
