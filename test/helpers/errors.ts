@@ -30,7 +30,7 @@ export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";
 
 // Subdomain Registrar
 // eslint-disable-next-line max-len
-export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ParentLockedOrDoesntExist";
+export const PARENT_LOCKED_NOT_EXIST_ERR = "ParentLockedOrDoesntExist";
 export const SENDER_NOT_APPROVED_ERR = "SenderNotApprovedForPurchase";
 
 // StringUtils

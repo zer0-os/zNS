@@ -90,7 +90,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) external override onlyAdmin returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
 

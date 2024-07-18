@@ -6,7 +6,7 @@ import {
   DEFAULT_TOKEN_URI,
   deployZNS,
   distrConfigEmpty,
-  DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
+  PARENT_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   getPriceObject,
   getStakingOrProtocolFee,
@@ -366,7 +366,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
 
       // check that a random non-existent hash can NOT be passed as parentHash
@@ -382,7 +382,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
     });
 
@@ -956,7 +956,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1031,7 +1031,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1278,7 +1278,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
 
       // register root back for other tests
@@ -1313,7 +1313,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
     });
 
@@ -2624,7 +2624,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
     });
 
@@ -2848,7 +2848,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
 
       // switch to mintlist
@@ -2931,7 +2931,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        PARENT_LOCKED_NOT_EXIST_ERR
       );
     });
   });
