@@ -1,28 +1,14 @@
-import { getLogger, getMongoAdapter } from "@zero-tech/zdc";
+import { getLogger } from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { znsNames } from "../../deploy/missions/contracts/names";
 import { ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar, ZNSSubRegistrar } from "../../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 import assert from "assert";
+import { getContract, getEventDomainHash } from "./getters";
 
 
 const logger = getLogger();
-
-const getContract = async (name : string, version ?: string) => {
-  const dbAdapter = await getMongoAdapter();
-
-  const contract = await dbAdapter.getContract(
-    name,
-    version,
-  );
-  if (!contract) throw new Error("Contract not found in DB. Check name or version passed.");
-
-  const factory = await hre.ethers.getContractFactory(name);
-  if (!factory) throw new Error("Invalid contract name or db name is different than contract name");
-
-  return factory.attach(contract.address);
-};
 
 /**
  * @dev Have to provide domainData.parentHash as ZeroHash ("0x00000...") for root domain registration!
@@ -207,29 +193,3 @@ export const changeDomainOwner = async ({
   return txReceipt;
 };
 
-export const getEventDomainHash = async ({
-  label,
-  tokenUri,
-  registrantAddress,
-} : {
-  label : string;
-  tokenUri : string;
-  registrantAddress : string;
-}) => {
-  const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
-
-  const filter = rootRegistrar.filters.DomainRegistered(
-    hre.ethers.ZeroHash,
-    undefined,
-    label,
-    undefined,
-    tokenUri,
-    registrantAddress,
-    undefined,
-  );
-
-  const events = await rootRegistrar.queryFilter(filter);
-  const { args: { domainHash } } = events[events.length - 1];
-
-  return domainHash;
-};
