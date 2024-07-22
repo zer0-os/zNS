@@ -1,0 +1,11 @@
+export const QUERY_URL_DEV = "https://api.studio.thegraph.com/query/64879/zns-mainnet-dev/version/latest";
+
+// ZNS Contract Addresses used in validation
+export const REGISTRY_ADDR = "0x08ECF3f191C745a4dD2A18ec91D8301A54d75E7b";
+export const ROOT_REGISTRAR_ADDR = "0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05";
+export const SUBREGISTRAR_ADDR = "0x9071cf975E24dB9D619f1DF83B5B3EFA2C4BD09e";
+export const DOMAIN_TOKEN_ADDR = "0xC14ea65f0a478C649B7a037bC0aD0a765b49196B";
+export const ADDRESS_RESOLVER_ADDR = "0xC5eB66c2960088F07a4884747663A7315D9a58FA";
+
+// just get this from etheres?
+export const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
