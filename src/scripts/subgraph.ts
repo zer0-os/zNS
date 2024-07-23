@@ -12,13 +12,29 @@ export const createClient = (subgraphUri: string): apollo.ApolloClient<apollo.No
   return client;
 };
 
-export const getWorlds = async <T,>(client: apollo.ApolloClient<T>) => {
+export const simpleQuery = async <T,>(client: apollo.ApolloClient<T>, domainHash: string) => {
   const result = await client.query({
-    query: q.getWorlds
+    query: q.simpleQuery,
+    variables: {
+      domainHash
+    }
   });
 
   if (result.error) {
-    console.log("booooooooo")
+    console.log("Error in subgraph query `simpleQuery`")
+    exit(1);
+  }
+
+  return result.data.domains;
+}
+
+export const getDomains = async <T,>(client: apollo.ApolloClient<T>) => {
+  const result = await client.query({
+    query: q.getDomains
+  });
+
+  if (result.error) {
+    console.log("Error in subgraph query `getDomains`")
     exit(1);
   }
 

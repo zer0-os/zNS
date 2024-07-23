@@ -1,9 +1,9 @@
 import { gql } from "@apollo/client/core";
 
 // TODO remove first 5 after testing
-export const getWorlds = gql`
-  query WorldDomains {
-    domains(first: 5, where: {isWorld: false}) {
+export const getDomains = gql`
+  query Domains {
+    domains(first: 5, where: {curvePriceConfig_: {id_not: null}}) {
       id
       minter {
         id
@@ -11,6 +11,7 @@ export const getWorlds = gql`
       owner {
         id
       }
+      depth
       label
       isReclaimable
       reclaimableAddress {
@@ -19,11 +20,17 @@ export const getWorlds = gql`
       isWorld
       address
       parentHash
+      parent {
+        id
+        label
+      }
       accessType
       paymentType
       pricerContract
       paymentToken {
         id
+        name
+        symbol
       }
       curvePriceConfig {
         id
@@ -37,15 +44,21 @@ export const getWorlds = gql`
       tokenURI
       treasury {
         id
+        beneficiaryAddress
       }
       creationBlock
     }
   }
 `;
 
-
-
-
-{
-  
-}
+export const simpleQuery = gql`
+  query Domains ($domainHash: Bytes!){
+    domains(where: {id: $domainHash}) {
+      id
+      label
+      paymentToken {
+        id
+      }
+    }
+  }
+`;

@@ -2,6 +2,7 @@ export interface Domain {
   id: string;
   minter: User;
   owner: User;
+  depth: number
   label: string;
   isReclaimable: boolean;
   reclaimableAddress: string;
