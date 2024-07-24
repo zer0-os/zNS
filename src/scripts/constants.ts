@@ -10,5 +10,7 @@ export const CURVE_PRICER_ADDR = "0xA5E9a65bBc880BFB227561CBD644925918EF83a9";
 export const ACCESS_CONTROLLER_ADDR = "0x391C8237A0546567B946af2D1300cf60aef2667A";
 
 // just get this from ethers
+// TEMP TODO just for copy/paste in debug
+const zero_address = "0x0000000000000000000000000000000000000000"
 export const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
 // TODO do we need tokens to check balance of users before migration or anything?
