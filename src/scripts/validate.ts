@@ -2,10 +2,10 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { Domain } from "./types";
+import { Domain, SubgraphError } from "./types";
 import { getZNS } from "./helpers";
 
-export const validate = async (domain: Domain) => {
+export const validate = async (domain : Domain) => {
 
   const [deployer] = await hre.ethers.getSigners();
 
@@ -19,9 +19,15 @@ export const validate = async (domain: Domain) => {
   try {
     expect(await registry.exists(domain.id)).to.be.true;
 
-    expect((await registry.getDomainOwner(domain.id)).toLowerCase()).to.equal(domain.owner.id.toLowerCase());
-    expect((await domainToken.ownerOf(domain.tokenId)).toLowerCase()).to.equal(domain.domainToken.owner.id.toLowerCase());
-    expect((await addressResolver.resolveDomainAddress(domain.id)).toLowerCase()).to.equal(domain.address.toLowerCase());
+    expect(
+      (await registry.getDomainOwner(domain.id)).toLowerCase())
+      .to.equal(domain.owner.id.toLowerCase());
+    expect(
+      (await domainToken.ownerOf(domain.tokenId)).toLowerCase())
+      .to.equal(domain.domainToken.owner.id.toLowerCase());
+    expect(
+      (await addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
+      .to.equal(domain.address.toLowerCase());
 
     const distrConfig = await subRegistrar.distrConfigs(domain.id);
 
@@ -34,7 +40,7 @@ export const validate = async (domain: Domain) => {
     if (domain.isWorld) {
       expect(domain.parentHash).to.equal(ZeroHash);
       expect(!!domain.parent).to.be.false;
-      expect(domain.depth == 0)
+      expect(domain.depth === 0);
     } else {
       // When a domain is revoked, it's children will all still have the `parentHash` value
       // for that domain, even if the `parent` domain entity for each child is now null
@@ -42,13 +48,13 @@ export const validate = async (domain: Domain) => {
       expect(domain.parentHash).to.not.equal(ZeroHash);
       expect(domain.depth > 0);
     }
-  } catch (e : any) {
+  } catch (e) {
     return {
       label: domain.label,
       hash: domain.id,
       parentHash: domain.parentHash,
-      parent: domain.parent, 
-      error: (e as Error).message
-    };
+      parent: domain.parent,
+      error: e,
+    } as SubgraphError;
   }
-}
+};

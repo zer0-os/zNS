@@ -1,10 +1,10 @@
 import { createClient, getDomains } from "./subgraph";
-import { Domain } from "./types";
+import { Domain, SubgraphError } from "./types";
 import { validate } from "./validate";
 
 import * as fs from "fs";
 
-async function main() {
+const main = async () => {
   const url = process.env.SUBGRAPH_URL;
 
   if (!url) {
@@ -16,10 +16,10 @@ async function main() {
   let skip = 0;
   const first = 1000;
 
-  let domains: Array<Domain>;
+  let domains : Array<Domain>;
 
-  let validDomains = Array<Domain>();
-  let invalidDomains = Array<any>();
+  const validDomains = Array<Domain>();
+  const invalidDomains = Array<SubgraphError>();
   let count = 0;
 
   const start = Date.now();
@@ -57,9 +57,9 @@ async function main() {
 
   // Output validated domain data to a readable JSON file
   fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
-}
+};
 
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
