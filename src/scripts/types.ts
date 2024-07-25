@@ -2,6 +2,7 @@ export interface Domain {
   id: string;
   minter: User;
   owner: User;
+  domainToken: DomainToken;
   depth: number
   label: string;
   isReclaimable: boolean;
@@ -57,7 +58,7 @@ interface Treasury {
   domain: Domain // cyclic?
 }
 
-export interface DomainToken {
+interface DomainToken {
   baseURI: string
 	defaultRoyalty: string
 	owner: User

@@ -1,45 +1,61 @@
-import { createClient, getDomains, simpleQuery } from "./subgraph"; // fails probably
-import {
-  REGISTRY_ADDR
-} from "./constants";
-
-import { ZNSRegistry, ZNSRegistry__factory } from "../../typechain/index";
+import { createClient, getDomains } from "./subgraph";
 import { Domain } from "./types";
 import { validate } from "./validate";
 
 import * as fs from "fs";
-// import { simpleQuery } from "./queries";
-
-// todo helper function(s) in other file
 
 async function main() {
-  const url = process.env.SUBGRAPH_URL_DEV;
+  const url = process.env.SUBGRAPH_URL;
 
   if (!url) {
     throw new Error("Missing subgraph url");
   }
 
   const client = createClient(url);
-  const domains: Array<Domain> = await getDomains(client);
+  // For pagination
+  let skip = 0;
+  const first = 1000;
 
-  // lower vs upper
-  const domainLower = "0xef9635db14fb8c72740dfebb28ddcd22bdef9c49ef22a2311522dc33127c2182"
-  const domainUppwer = "0xEF9635DB14FB8C72740DFEBB28DDCD22BDEF9C49EF22A2311522DC33127C2182"
-  // const upperLower = await simpleQuery(client, domainUppwer);
+  let domains: Array<Domain>;
 
-  // console.log(upperLower)
-  // TODO top level 0x0 domain has a subdomain count of -72?
-  // TODO counter or progress on screen to track for bigger run
-  // why is this happening, and does it matter?
   let validDomains = Array<Domain>();
+  let invalidDomains = Array<any>();
+  let count = 0;
 
-  for (const domain of domains) {
-    // console.log(`Validating world ${world.id}`);
-    await validate(domain);
-    validDomains.push(domain);
+  const start = Date.now();
+
+  do {
+    domains = await getDomains(client, first, skip);
+
+    console.log(`Validating ${domains.length} domains`);
+
+    for (const domain of domains) {
+
+      // We only return a value when errors occur
+      const invalidDomain = await validate(domain);
+
+      validDomains.push(domain);
+      if (invalidDomain) {
+        invalidDomains.push(invalidDomain);
+      }
+
+      count++;
+      if (count % 100 === 0) {
+        console.log(`Validated ${count} domains`);
+      }
+    }
+    skip += first;
+  } while (domains.length === first);
+
+  const end = Date.now();
+  console.log(`Validated ${count} domains in ${end - start}ms`);
+
+  // If there are errors, log them to a file for triage
+  if (invalidDomains.length > 0) {
+    fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
   }
 
-  // write to json
+  // Output validated domain data to a readable JSON file
   fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
 }
 
