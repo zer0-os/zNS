@@ -1,5 +1,5 @@
-import { createClient, getDomains } from "./subgraph";
-import { Domain, SubgraphError } from "./types";
+import { createClient, getDomains } from "./subgraph/client";
+import { Domain, SubgraphError } from "./subgraph/types";
 import { validate } from "./validate";
 
 import * as fs from "fs";
@@ -14,7 +14,7 @@ const main = async () => {
   const client = createClient(url);
   // For pagination
   let skip = 0;
-  const first = 1000;
+  const first = 10;
 
   let domains : Array<Domain>;
 
@@ -44,8 +44,9 @@ const main = async () => {
         console.log(`Validated ${count} domains`);
       }
     }
+
     skip += first;
-  } while (domains.length === first);
+  } while (false); // domains.length === first);, just to make it run once while testing
 
   const end = Date.now();
   console.log(`Validated ${count} domains in ${end - start}ms`);
@@ -57,6 +58,9 @@ const main = async () => {
 
   // Output validated domain data to a readable JSON file
   fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
+
+  // NEXT should read from `validDomainsArray` and begin registration process
+  // only if `invalidDomains` array is empty
 };
 
 main().catch(error => {

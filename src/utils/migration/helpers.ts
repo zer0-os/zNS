@@ -15,7 +15,7 @@ import { ZNSAccessController,
   ZNSSubRegistrar,
   ZNSSubRegistrar__factory,
   ZNSTreasury,
-  ZNSTreasury__factory } from "../../typechain";
+  ZNSTreasury__factory } from "../../../typechain";
 import {
   REGISTRY_ADDR,
   ROOT_REGISTRAR_ADDR,

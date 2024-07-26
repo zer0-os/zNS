@@ -2,7 +2,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { Domain, SubgraphError } from "./types";
+import { Domain, SubgraphError } from "./subgraph/types";
 import { getZNS } from "./helpers";
 
 export const validate = async (domain : Domain) => {
