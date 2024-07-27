@@ -14,27 +14,10 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     error InvalidMultiplierPassed(uint256 multiplier);
 
     /**
-     * @notice Reverted when `priceConfig` set by the owner does not result in a proper asymptotic curve
-     * and one of it's incorrect values causes the price spike at maxLength, meaning that the price
-     * for a domain label shorter than `baseLength` (the one before `minPrice`) becomes higher than `minPrice`.
-     */
-    error InvalidConfigCausingPriceSpikes(
-        bytes32 configsDomainHash,
-        uint256 minPrice,
-        uint256 previousToMinPrice
-    );
-
-    /**
      * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
      * @param price The new maxPrice value
      */
     event MaxPriceSet(bytes32 domainHash, uint256 price);
-
-    /**
-     * @notice Emitted when the `minPrice` is set in `CurvePriceConfig`
-     * @param price The new minPrice value
-     */
-    event MinPriceSet(bytes32 domainHash, uint256 price);
 
     /**
      * @notice Emitted when the `baseLength` is set in `CurvePriceConfig`
@@ -63,7 +46,7 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     /**
      * @notice Emitted when the full `CurvePriceConfig` is set in state
      * @param maxPrice The new `maxPrice` value
-     * @param minPrice The new `minPrice` value
+     * @param bendMultiplier The new `bendMultiplier` value
      * @param maxLength The new `maxLength` value
      * @param baseLength The new `baseLength` value
      * @param precisionMultiplier The new `precisionMultiplier` value
@@ -71,7 +54,7 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     event PriceConfigSet(
         bytes32 domainHash,
         uint256 maxPrice,
-        uint256 minPrice,
+        uint256 bendMultiplier,
         uint256 maxLength,
         uint256 baseLength,
         uint256 precisionMultiplier,
@@ -110,8 +93,6 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     ) external;
 
     function setMaxPrice(bytes32 domainHash, uint256 maxPrice) external;
-
-    function setMinPrice(bytes32 domainHash, uint256 minPrice) external;
 
     function setBaseLength(bytes32 domainHash, uint256 length) external;
 

@@ -12,8 +12,8 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
  * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
- * It then decreases in price, using the calculated price function below, until it reaches `minPrice`
- * at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.
+ * It then decreases in price, using the calculated price function below.
+ * At `maxLength` length of the domain name. Price after `maxLength` is fixed and is determined using the formula where `length` = `maxLength`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
     using StringUtils for string;
@@ -137,7 +137,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        priceConfigs[domainHash].minPrice = priceConfig.minPrice;
+        priceConfigs[domainHash].bendMultiplier = priceConfig.bendMultiplier;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
         setFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
@@ -147,7 +147,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit PriceConfigSet(
             domainHash,
             priceConfig.maxPrice,
-            priceConfig.minPrice,
+            priceConfig.bendMultiplier,
             priceConfig.maxLength,
             priceConfig.baseLength,
             priceConfig.precisionMultiplier,
@@ -159,7 +159,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @notice Sets the max price for domains. Validates the config with the new price.
      * Fires `MaxPriceSet` event.
      * Only domain owner can call this function.
-     * > `maxPrice` can be set to 0 along with `baseLength` or `minPrice` to make all domains free!
+     * > `maxPrice` can be set to 0 along with `baseLength` to make all domains free!
      * @dev We are checking here for possible price spike at `maxLength` if the `maxPrice` values is NOT 0.
      * In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
      * @param maxPrice The maximum price to set
@@ -173,24 +173,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (maxPrice != 0) _validateConfig(domainHash);
 
         emit MaxPriceSet(domainHash, maxPrice);
-    }
-
-    /**
-     * @notice Sets the minimum price for domains. Validates the config with the new price.
-     * Fires `MinPriceSet` event.
-     * Only domain owner/operator can call this function.
-     * @param domainHash The domain hash to set the `minPrice` for
-     * @param minPrice The minimum price to set in $ZERO
-     */
-    function setMinPrice(
-        bytes32 domainHash,
-        uint256 minPrice
-    ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].minPrice = minPrice;
-
-        _validateConfig(domainHash);
-
-        emit MinPriceSet(domainHash, minPrice);
     }
 
     /**
@@ -218,12 +200,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Set the maximum length of a domain name to which price formula applies.
-     * All domain names (labels) that are longer than this value will cost the fixed price of `minPrice`,
-     * and the pricing formula will not apply to them.
+     * All domain names (labels) that are longer than this value will cost the lowest price at maxLength.
      * Validates the config with the new length.
      * Fires `MaxLengthSet` event.
      * Only domain owner/operator can call this function.
-     * > `maxLength` can be set to 0 to make all domains cost `minPrice`!
+     * > `maxLength` can be set to 0!
      * @param domainHash The domain hash to set the `maxLength` for
      * @param length The maximum length to set
      */
@@ -254,7 +235,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 multiplier
     ) public override onlyOwnerOrOperator(domainHash) {
         if (multiplier == 0 || multiplier > 10**18) revert InvalidMultiplierPassed(multiplier);
-
         priceConfigs[domainHash].precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(domainHash, multiplier);
@@ -274,7 +254,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     onlyOwnerOrOperator(domainHash) {
         if (feePercentage > PERCENTAGE_BASIS)
             revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
-
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
@@ -294,7 +273,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * 1. `maxPrice` is 0, which means all subdomains under this parent are free
      * 2. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
      * 3. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
-     * 4. `length` is greater than `maxLength`, which means a domain will cost `minPrice`
+     * 4. `length` is greater than `maxLength`, which means a domain will cost price by fomula at `maxLength`
      *
      * The formula itself creates an asymptotic curve that decreases in pricing based on domain name length,
      * base length and max price, the result is divided by the precision multiplier to remove numbers beyond
@@ -317,26 +296,27 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         // e.g. promotions or sales
         if (config.baseLength == 0) return config.maxPrice;
         if (length <= config.baseLength) return config.maxPrice;
-        if (length > config.maxLength) return config.minPrice;
 
-        return (config.baseLength * config.maxPrice / length)
-            / config.precisionMultiplier * config.precisionMultiplier;
+        if (length > config.maxLength) return
+        (config.baseLength * config.maxPrice / config.baseLength + config.bendMultiplier
+        * (config.maxLength - config.baseLength)) / config.precisionMultiplier * config.precisionMultiplier;
+
+        return (config.baseLength * config.maxPrice / config.baseLength + config.bendMultiplier
+        * (length - config.baseLength)) / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
      * @notice Internal function called every time we set props of `priceConfigs[domainHash]`
      * to make sure that values being set can not disrupt the price curve or zero out prices
      * for domains. If this validation fails, the parent function will revert.
-     * @dev We are checking here for possible price spike at `maxLength`
-     * which can occur if some of the config values are not properly chosen and set.
+     * @dev We are checking here for possible incorrect passed values: `maxLength` or `baselength`.
      */
-    function _validateConfig(bytes32 domainHash) internal view {
-        uint256 prevToMinPrice = _getPrice(domainHash, priceConfigs[domainHash].maxLength);
-        if (priceConfigs[domainHash].minPrice > prevToMinPrice)
-            revert InvalidConfigCausingPriceSpikes(
+    function _validateConfig(bytes32 domainHash, uint256 maxLength, uint256 baseLength) internal view {
+        if (priceConfigs[domainHash].maxLength <= priceConfigs[domainHash].baseLength)
+            revert InvalidBaseLengthOrMaxLength(
                 domainHash,
-                priceConfigs[domainHash].minPrice,
-                prevToMinPrice
+                maxLength,
+                baseLength
             );
     }
 

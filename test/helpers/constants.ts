@@ -2,8 +2,8 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZID";
+export const ZNS_DOMAIN_TOKEN_NAME = "Zero Name Service";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNS";
 
 export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
@@ -36,7 +36,7 @@ export const PaymentType = {
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
-  minPrice: ethers.parseEther("2000"),
+  bendMultiplier: ethers.parseEther("1"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -46,7 +46,7 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
-  minPrice: BigInt(0),
+  bendMultiplier: BigInt(0),
   maxLength: BigInt(0),
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
