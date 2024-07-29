@@ -2,6 +2,8 @@ import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
 export const mochaGlobalSetup = async () => {
+  if (!process.env.MONGO_DB_URI!.includes("localhost"))
+    throw new Error("Possibly running wrong .env file! MONGO_DB_URI must be 'localhost' for testing!");
   await getZnsMongoAdapter();
 };
 
