@@ -9,12 +9,18 @@ export const validate = async (domain : Domain) => {
 
   const [deployer] = await hre.ethers.getSigners();
 
+  if (!process.env.MONGO_DB_VERSION)
+    throw new Error("MONGO_DB_VERSION is not defined");
+
   const {
     registry,
     domainToken,
     addressResolver,
     subRegistrar,
-  } = getZNS(deployer);
+  } = await getZNS({
+    signer: deployer,
+    dbVersion: process.env.MONGO_DB_VERSION,
+  });
 
   try {
     expect(await registry.exists(domain.id)).to.be.true;

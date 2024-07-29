@@ -1,43 +1,46 @@
-import { ZNSAccessController,
-  ZNSAccessController__factory,
-  ZNSAddressResolver,
-  ZNSAddressResolver__factory,
-  ZNSCurvePricer,
-  ZNSCurvePricer__factory,
-  ZNSDomainToken,
-  ZNSDomainToken__factory,
-  ZNSFixedPricer,
-  ZNSFixedPricer__factory,
-  ZNSRegistry,
-  ZNSRegistry__factory,
-  ZNSRootRegistrar,
-  ZNSRootRegistrar__factory,
-  ZNSSubRegistrar,
-  ZNSSubRegistrar__factory,
-  ZNSTreasury,
-  ZNSTreasury__factory } from "../../../typechain";
-import {
-  REGISTRY_ADDR,
-  ROOT_REGISTRAR_ADDR,
-  DOMAIN_TOKEN_ADDR,
-  ADDRESS_RESOLVER_ADDR,
-  SUBREGISTRAR_ADDR,
-  TREASURY_ADDR,
-  FIXED_PRICER_ADDR,
-  ACCESS_CONTROLLER_ADDR,
-} from "./constants";
-
+import { znsNames } from "../../deploy/missions/contracts/names.ts";
+import { getContract } from "./getters.ts";
+import { IZNSContracts } from "../../deploy/campaign/types.ts";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-export const getZNS = (signer : SignerWithAddress) => ({
-  registry: ZNSRegistry__factory.connect(REGISTRY_ADDR, signer) as unknown as ZNSRegistry,
-  rootRegistrar: ZNSRootRegistrar__factory.connect(ROOT_REGISTRAR_ADDR, signer) as unknown as ZNSRootRegistrar,
-  domainToken: ZNSDomainToken__factory.connect(DOMAIN_TOKEN_ADDR, signer) as unknown as ZNSDomainToken,
-  addressResolver: ZNSAddressResolver__factory.connect(ADDRESS_RESOLVER_ADDR, signer) as unknown as ZNSAddressResolver,
-  subRegistrar: ZNSSubRegistrar__factory.connect(SUBREGISTRAR_ADDR, signer) as unknown as ZNSSubRegistrar,
-  treasury: ZNSTreasury__factory.connect(TREASURY_ADDR, signer) as unknown as ZNSTreasury,
-  fixedPricer: ZNSFixedPricer__factory.connect(FIXED_PRICER_ADDR, signer) as unknown as ZNSFixedPricer,
-  curvedPricer: ZNSCurvePricer__factory.connect(FIXED_PRICER_ADDR, signer) as unknown as ZNSCurvePricer,
-  /* eslint-disable max-len */
-  accessController: ZNSAccessController__factory.connect(ACCESS_CONTROLLER_ADDR, signer) as unknown as ZNSAccessController,
-});
+
+export const getZNS = async ({
+  signer,
+  dbVersion,
+} : {
+  signer ?: SignerWithAddress;
+  dbVersion : string;
+}) => Object.entries(znsNames).reduce(
+  async (acc : Promise<IZNSContracts>, [ key, { contract, instance } ]) => {
+    const newAcc = await acc;
+    if (key !== "erc1967Proxy") {
+      newAcc[instance] = await getContract({
+        name: contract,
+        version: dbVersion,
+        signer,
+      });
+    }
+
+    return newAcc;
+  }, Promise.resolve({} as IZNSContracts)
+);
+
+// TODO mig: below is test logic to make sure we pull correct data from DB.
+//  REMOVE THIS WHEN DONE !!!
+//  Currently the `initialize()` method on DB adapter is called always, creating a new `version` object!
+//  So be careful running this with the prod URI! We need a read-only access for this case and ONLY connect that way!
+//  Otherwise we can mess up the current Prod Mainnet Database!
+const getContracts = async () => {
+  const contracts = await getZNS({
+    dbVersion: "1703976278937", // current Mainnet DEPLOYED version we need to read from
+  });
+
+  console.log(contracts);
+};
+
+getContracts()
+  .then(() => process.exit(0))
+  .catch(err => {
+    console.error(err);
+    process.exit(1);
+  });

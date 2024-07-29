@@ -9,12 +9,25 @@ import {
   ZNSTreasury,
 } from "../../../typechain";
 import * as hre from "hardhat";
-import { getMongoAdapter } from "@zero-tech/zdc";
+import { getMongoAdapter, MongoDBAdapter } from "@zero-tech/zdc";
+import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
+let mongoAdapter : MongoDBAdapter | null = null;
+
+// TODO mig: !!! ADD A READ-ONLY MODE TO THE DB ADAPTER SO WE CAN'T MESS IT UP !!!
+const getDBAdapter = async () => {
+  if (!mongoAdapter) {
+    mongoAdapter = await getMongoAdapter();
+  }
+
+  return mongoAdapter;
+};
 
 export const getDomainRecord = async (
   domainHash : string,
 ) => {
+  // TODO mig: rework all these calls to cache the contracts if needed!
   const registry = await getContract(znsNames.registry.contract) as ZNSRegistry;
 
   return registry.getDomainRecord(domainHash);
@@ -59,8 +72,16 @@ export const getDomainAddress = async (domainHash : string) => {
   return resolver.resolveDomainAddress(domainHash);
 };
 
-export const getContract = async (name : string, version ?: string) => {
-  const dbAdapter = await getMongoAdapter();
+export const getContract = async ({
+  name,
+  version,
+  signer,
+} : {
+  name : string;
+  version ?: string;
+  signer ?: SignerWithAddress;
+}) => {
+  const dbAdapter = await getDBAdapter();
 
   const contract = await dbAdapter.getContract(
     name,
@@ -68,7 +89,13 @@ export const getContract = async (name : string, version ?: string) => {
   );
   if (!contract) throw new Error("Contract not found in DB. Check name or version passed.");
 
-  const factory = await hre.ethers.getContractFactory(name);
+  let factory;
+  if (name !== znsNames.meowToken.contract) {
+    factory = await hre.ethers.getContractFactory(name, signer);
+  } else {
+    factory = new MeowToken__factory(signer);
+  }
+
   if (!factory) throw new Error("Invalid contract name or db name is different than contract name");
 
   return factory.attach(contract.address);
