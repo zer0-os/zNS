@@ -1,7 +1,10 @@
 import { znsNames } from "../../deploy/missions/contracts/names.ts";
-import { getContract } from "./getters.ts";
 import { IZNSContracts } from "../../deploy/campaign/types.ts";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getContractFromDB } from "./database.ts";
+
+
+let znsCache : IZNSContracts | null = null;
 
 
 export const getZNS = async ({
@@ -10,20 +13,26 @@ export const getZNS = async ({
 } : {
   signer ?: SignerWithAddress;
   dbVersion : string;
-}) => Object.entries(znsNames).reduce(
-  async (acc : Promise<IZNSContracts>, [ key, { contract, instance } ]) => {
-    const newAcc = await acc;
-    if (key !== "erc1967Proxy") {
-      newAcc[instance] = await getContract({
-        name: contract,
-        version: dbVersion,
-        signer,
-      });
-    }
+}) => {
+  if (!znsCache || Object.values(znsCache).length < 10) {
+    znsCache = await Object.entries(znsNames).reduce(
+      async (acc : Promise<IZNSContracts>, [key, { contract, instance }]) => {
+        const newAcc = await acc;
+        if (key !== "erc1967Proxy") {
+          newAcc[instance] = await getContractFromDB({
+            name: contract,
+            version: dbVersion,
+            signer,
+          });
+        }
 
-    return newAcc;
-  }, Promise.resolve({} as IZNSContracts)
-);
+        return newAcc;
+      }, Promise.resolve({} as IZNSContracts)
+    );
+  }
+
+  return znsCache;
+};
 
 // TODO mig: below is test logic to make sure we pull correct data from DB.
 //  REMOVE THIS WHEN DONE !!!
