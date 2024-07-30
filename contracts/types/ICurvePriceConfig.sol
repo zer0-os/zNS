@@ -25,9 +25,9 @@ interface ICurvePriceConfig {
         */
         uint256 maxPrice;
         /**
-         * @notice Minimum price for a domain returned at > `maxLength`
+         * @notice Multiplier which we use to bend a curve of price on interval from `baseLength` to `maxLength`.
          */
-        uint256 minPrice;
+        uint256 curveMultiplier;
         /**
          * @notice Maximum length of a domain name. If the name is longer than this
          * value we return the `minPrice`

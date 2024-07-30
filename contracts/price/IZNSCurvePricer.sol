@@ -44,9 +44,16 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     event FeePercentageSet(bytes32 domainHash, uint256 feePercentage);
 
     /**
+     * @notice Emitted when the `curveMultiplier` is set in state
+     * @param curveMultiplier The new curveMultiplier value
+     */
+    event CurveMultiplierSet(bytes32 domainHash, uint256 curveMultiplier);
+    
+
+    /**
      * @notice Emitted when the full `CurvePriceConfig` is set in state
      * @param maxPrice The new `maxPrice` value
-     * @param bendMultiplier The new `bendMultiplier` value
+     * @param curveMultiplier The new `curveMultiplier` value
      * @param maxLength The new `maxLength` value
      * @param baseLength The new `baseLength` value
      * @param precisionMultiplier The new `precisionMultiplier` value
@@ -54,7 +61,7 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     event PriceConfigSet(
         bytes32 domainHash,
         uint256 maxPrice,
-        uint256 bendMultiplier,
+        uint256 curveMultiplier,
         uint256 maxLength,
         uint256 baseLength,
         uint256 precisionMultiplier,
@@ -97,6 +104,8 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     function setBaseLength(bytes32 domainHash, uint256 length) external;
 
     function setMaxLength(bytes32 domainHash, uint256 length) external;
+
+    function setCurveMultiplier(bytes32 domainHash, uint256 curveMultiplier) external;
 
     function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
 

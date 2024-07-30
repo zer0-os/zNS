@@ -21,7 +21,7 @@ interface IZNSPricer {
     /**
      * @notice Reverted when `maxLength` smaller or equal `baseLength`.
      */
-    error InvalidBaseLengthOrMaxLength(bytes32 domainHash, uint256 maxLength, uint256 baseLength);
+    error InvalidBaseLengthOrMaxLength(bytes32 domainHash);
 
     /**
      * @dev `parentHash` param is here to allow pricer contracts

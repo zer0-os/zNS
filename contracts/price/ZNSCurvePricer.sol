@@ -16,6 +16,10 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * At `maxLength` length of the domain name. Price after `maxLength` is fixed and is determined using the formula where `length` = `maxLength`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
+
+    event StringLengthLogged(uint256 length);
+
+
     using StringUtils for string;
 
     /**
@@ -137,7 +141,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         priceConfigs[domainHash].baseLength = priceConfig.baseLength;
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        priceConfigs[domainHash].bendMultiplier = priceConfig.bendMultiplier;
+        priceConfigs[domainHash].curveMultiplier = priceConfig.curveMultiplier;
         priceConfigs[domainHash].maxLength = priceConfig.maxLength;
         setFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
@@ -147,7 +151,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit PriceConfigSet(
             domainHash,
             priceConfig.maxPrice,
-            priceConfig.bendMultiplier,
+            priceConfig.curveMultiplier,
             priceConfig.maxLength,
             priceConfig.baseLength,
             priceConfig.precisionMultiplier,
@@ -173,6 +177,15 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (maxPrice != 0) _validateConfig(domainHash);
 
         emit MaxPriceSet(domainHash, maxPrice);
+    }
+
+    function setCurveMultiplier(
+        bytes32 domainHash,
+        uint256 curveMultiplier
+    ) external override onlyOwnerOrOperator(domainHash) {
+        priceConfigs[domainHash].curveMultiplier = curveMultiplier;
+
+        emit CurveMultiplierSet(domainHash, curveMultiplier);
     }
 
     /**
@@ -297,11 +310,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (config.baseLength == 0) return config.maxPrice;
         if (length <= config.baseLength) return config.maxPrice;
 
-        if (length > config.maxLength) return
-        (config.baseLength * config.maxPrice / config.baseLength + config.bendMultiplier
-        * (config.maxLength - config.baseLength)) / config.precisionMultiplier * config.precisionMultiplier;
+        if (length > config.maxLength) length = config.maxLength;
 
-        return (config.baseLength * config.maxPrice / config.baseLength + config.bendMultiplier
+
+        return (config.baseLength * config.maxPrice / config.baseLength + config.curveMultiplier
         * (length - config.baseLength)) / config.precisionMultiplier * config.precisionMultiplier;
     }
 
@@ -311,12 +323,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * for domains. If this validation fails, the parent function will revert.
      * @dev We are checking here for possible incorrect passed values: `maxLength` or `baselength`.
      */
-    function _validateConfig(bytes32 domainHash, uint256 maxLength, uint256 baseLength) internal view {
+    function _validateConfig(bytes32 domainHash) internal view {
         if (priceConfigs[domainHash].maxLength <= priceConfigs[domainHash].baseLength)
             revert InvalidBaseLengthOrMaxLength(
-                domainHash,
-                maxLength,
-                baseLength
+                domainHash
             );
     }
 

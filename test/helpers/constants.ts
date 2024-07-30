@@ -36,7 +36,7 @@ export const PaymentType = {
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
-  bendMultiplier: ethers.parseEther("1"),
+  curveMultiplier: BigInt("1"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -46,7 +46,7 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
-  bendMultiplier: BigInt(0),
+  curveMultiplier: BigInt(0),
   maxLength: BigInt(0),
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
