@@ -1,4 +1,5 @@
 // ZNS Contract Addresses used in validation
+// TODO mig: delete this when DB integration is complete!
 export const REGISTRY_ADDR = "0x08ECF3f191C745a4dD2A18ec91D8301A54d75E7b";
 export const ROOT_REGISTRAR_ADDR = "0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05";
 export const SUBREGISTRAR_ADDR = "0x9071cf975E24dB9D619f1DF83B5B3EFA2C4BD09e";

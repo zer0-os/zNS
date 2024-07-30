@@ -3,14 +3,12 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { Domain, SubgraphError } from "./subgraph/types";
-import { getZNS } from "./helpers";
+import { getZNS } from "./zns-contract-data.ts";
+
 
 export const validate = async (domain : Domain) => {
 
   const [deployer] = await hre.ethers.getSigners();
-
-  if (!process.env.MONGO_DB_VERSION)
-    throw new Error("MONGO_DB_VERSION is not defined");
 
   const {
     registry,

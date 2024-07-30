@@ -1,34 +1,20 @@
 import { znsNames } from "../../deploy/missions/contracts/names";
 import {
-  ZNSAddressResolver,
   ZNSCurvePricer,
   ZNSFixedPricer,
-  ZNSRegistry,
-  ZNSRootRegistrar,
-  ZNSSubRegistrar,
-  ZNSTreasury,
 } from "../../../typechain";
 import * as hre from "hardhat";
-import { getMongoAdapter, MongoDBAdapter } from "@zero-tech/zdc";
-import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZNS } from "./zns-contract-data.ts";
+import { dbVersion } from "./database.ts";
 
-let mongoAdapter : MongoDBAdapter | null = null;
-
-// TODO mig: !!! ADD A READ-ONLY MODE TO THE DB ADAPTER SO WE CAN'T MESS IT UP !!!
-const getDBAdapter = async () => {
-  if (!mongoAdapter) {
-    mongoAdapter = await getMongoAdapter();
-  }
-
-  return mongoAdapter;
-};
 
 export const getDomainRecord = async (
   domainHash : string,
 ) => {
   // TODO mig: rework all these calls to cache the contracts if needed!
-  const registry = await getContract(znsNames.registry.contract) as ZNSRegistry;
+  const { registry } = await getZNS({
+    dbVersion,
+  });
 
   return registry.getDomainRecord(domainHash);
 };
@@ -36,7 +22,9 @@ export const getDomainRecord = async (
 export const getDistributionConfig = async (
   domainHash : string
 ) => {
-  const subRegistrar = await getContract(znsNames.subRegistrar.contract) as ZNSSubRegistrar;
+  const { subRegistrar } = await getZNS({
+    dbVersion,
+  });
 
   return subRegistrar.distrConfigs(domainHash);
 };
@@ -44,7 +32,9 @@ export const getDistributionConfig = async (
 export const getPaymentConfig = async (
   domainHash : string
 ) => {
-  const treasury = await getContract(znsNames.treasury.contract) as ZNSTreasury;
+  const { treasury } = await getZNS({
+    dbVersion,
+  });
 
   return treasury.paymentConfigs(domainHash);
 };
@@ -67,38 +57,11 @@ export const getPriceConfig = async (
 };
 
 export const getDomainAddress = async (domainHash : string) => {
-  const resolver = await getContract(znsNames.addressResolver.contract) as ZNSAddressResolver;
+  const { resolver } = await getZNS({
+    dbVersion,
+  });
 
   return resolver.resolveDomainAddress(domainHash);
-};
-
-export const getContract = async ({
-  name,
-  version,
-  signer,
-} : {
-  name : string;
-  version ?: string;
-  signer ?: SignerWithAddress;
-}) => {
-  const dbAdapter = await getDBAdapter();
-
-  const contract = await dbAdapter.getContract(
-    name,
-    version,
-  );
-  if (!contract) throw new Error("Contract not found in DB. Check name or version passed.");
-
-  let factory;
-  if (name !== znsNames.meowToken.contract) {
-    factory = await hre.ethers.getContractFactory(name, signer);
-  } else {
-    factory = new MeowToken__factory(signer);
-  }
-
-  if (!factory) throw new Error("Invalid contract name or db name is different than contract name");
-
-  return factory.attach(contract.address);
 };
 
 export const getEventDomainHash = async ({
@@ -110,7 +73,9 @@ export const getEventDomainHash = async ({
   tokenUri : string;
   registrantAddress : string;
 }) => {
-  const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
+  const { rootRegistrar } = await getZNS({
+    dbVersion,
+  });
 
   const filter = rootRegistrar.filters.DomainRegistered(
     hre.ethers.ZeroHash,
