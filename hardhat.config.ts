@@ -113,6 +113,10 @@ const config : HardhatUserConfig = {
       url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,
     },
+    meowchain: { // Testnet info
+      url: `${process.env.MEOWCHAIN_RPC_URL}`,
+      chainId: 883424730,
+    },
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,

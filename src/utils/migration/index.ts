@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-
+import { createProvider } from "hardhat/internal/core/providers/construction";
 import { createClient, getDomains } from "./subgraph/client";
 import { Domain, SubgraphError } from "./types";
 import { validateDomain } from "./validate";
@@ -90,6 +90,21 @@ const main = async () => {
   // then we write verified data to a file and use a second
   // script to read from that file and register the domains
   // using `--network meowchain` flag
+  
+  // might fail because using dummy HH account but "real" meowchain?
+  // hre.changeNetwork("meowchain");
+
+  const networkName = "meowchain";
+  const provider = await createProvider(
+    hre.config,
+    "meowchain",
+  )
+
+  hre.network.name = networkName;
+  hre.network.config = hre.config.networks[networkName];
+  hre.network.provider = provider;
+
+  console.log("asdasdad: " + Object.values(hre.config.networks["meowchain"]))
   await registerRootDomain(registerParams);
 };
 
