@@ -75,6 +75,7 @@ const main = async () => {
     // be able to register domains
     // impersonateAccountWithBalance?
     // deploy meowTokenMock after disabling, then give self amount?
+    // could use "runZnsCampaign" from tests to deploy
     await hre.network.provider.request({
       method: "hardhat_reset",
       params: [
