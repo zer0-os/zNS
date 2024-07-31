@@ -1,14 +1,13 @@
 
-import * as hre from "hardhat";
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { Domain, SubgraphError } from "./subgraph/types";
+import { Domain, SubgraphError } from "./types";
 import { getZNS } from "./zns-contract-data.ts";
 
+// import { getZNS } from "./helpers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-export const validate = async (domain : Domain) => {
-
-  const [deployer] = await hre.ethers.getSigners();
+export const validateDomain = async (domain : Domain, deployer : SignerWithAddress) => {
 
   const {
     registry,
@@ -17,7 +16,7 @@ export const validate = async (domain : Domain) => {
     subRegistrar,
   } = await getZNS({
     signer: deployer,
-    dbVersion: process.env.MONGO_DB_VERSION,
+    dbVersion: process.env.MONGO_DB_VERSION!,
   });
 
   try {

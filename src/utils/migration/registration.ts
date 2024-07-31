@@ -6,6 +6,8 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 import assert from "assert";
 import { getContract, getEventDomainHash } from "./getters";
+import { DomainData } from "./types";
+import { getZNS } from "./helpers";
 
 
 const logger = getLogger();
@@ -27,6 +29,7 @@ export const registerRootDomain = async ({
     paymentConfig : IPaymentConfig;
   };
 }) => {
+  // const zns = getZNS(regAdmin);
   const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
 
   return registerBase({
@@ -44,14 +47,7 @@ export const registerSubdomain = async ({
   domainData,
 } : {
   regAdmin : SignerWithAddress;
-  domainData : {
-    parentHash : string;
-    label : string;
-    domainAddress : string;
-    tokenUri : string;
-    distrConfig : IDistributionConfig;
-    paymentConfig : IPaymentConfig;
-  };
+  domainData : DomainData;
 }) => {
   const subRegistrar = await getContract(znsNames.subRegistrar.contract) as ZNSSubRegistrar;
 
@@ -69,14 +65,7 @@ export const registerBase = async ({
 } : {
   contract : ZNSRootRegistrar | ZNSSubRegistrar;
   regAdmin : SignerWithAddress;
-  domainData : {
-    parentHash : string;
-    label : string;
-    domainAddress : string;
-    tokenUri : string;
-    distrConfig : IDistributionConfig;
-    paymentConfig : IPaymentConfig;
-  };
+  domainData : DomainData;
 }) => {
   const {
     parentHash,

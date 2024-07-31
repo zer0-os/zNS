@@ -98,11 +98,17 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    // hardhat: {
-    //   forking: {
-    //     url: `${process.env.MAINNET_RPC_URL}`,
-    //   },
-    // },
+    hardhat: {
+      // accounts: [
+      //   {
+      //     privateKey: `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      //     balance: "1000000000000000000000000",
+      //   }
+      // ],
+      forking: {
+        url: `${process.env.MAINNET_RPC_URL}`,
+      },
+    },
     mainnet: {
       url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,

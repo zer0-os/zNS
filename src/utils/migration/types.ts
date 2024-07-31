@@ -1,3 +1,5 @@
+import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
+
 export interface Domain {
   id : string;
   minter : User;
@@ -75,4 +77,13 @@ export interface SubgraphError {
   parentHash : string;
   parent : Domain | null;
   error : string;
+}
+
+export interface DomainData {
+  parentHash : string;
+  label : string;
+  domainAddress : string;
+  tokenUri : string;
+  distrConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
 }

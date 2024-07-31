@@ -32,6 +32,7 @@ export const getDomains = gql`
         name
         symbol
       }
+      paymentType
       curvePriceConfig {
         id
       }
