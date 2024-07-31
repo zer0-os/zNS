@@ -13,12 +13,10 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * based on its length and the rules set by Zero ADMIN.
  * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
  * It then decreases in price, using the calculated price function below.
- * At `maxLength` length of the domain name. Price after `maxLength` is fixed and is determined using the formula where `length` = `maxLength`.
+ * At `maxLength` length of the domain name. Price after `maxLength` is fixed 
+ * and is determined using the formula where `length` = `maxLength`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
-
-    event StringLengthLogged(uint256 length);
-
 
     using StringUtils for string;
 
@@ -312,20 +310,24 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
         if (length > config.maxLength) length = config.maxLength;
 
-
-        return (config.baseLength * config.maxPrice / config.baseLength + config.curveMultiplier
-        * (length - config.baseLength)) / config.precisionMultiplier * config.precisionMultiplier;
+        return (config.baseLength * config.maxPrice / (config.baseLength + config.curveMultiplier
+        * (length - config.baseLength))) / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
      * @notice Internal function called every time we set props of `priceConfigs[domainHash]`
      * to make sure that values being set can not disrupt the price curve or zero out prices
      * for domains. If this validation fails, the parent function will revert.
-     * @dev We are checking here for possible incorrect passed values: `maxLength` or `baselength`.
+     * @dev We are checking here for possible incorrect passed values: `maxLength`, `baselength` or `curveMultiplier`.
      */
     function _validateConfig(bytes32 domainHash) internal view {
-        if (priceConfigs[domainHash].maxLength <= priceConfigs[domainHash].baseLength)
+        if (priceConfigs[domainHash].maxLength < priceConfigs[domainHash].baseLength)
             revert InvalidBaseLengthOrMaxLength(
+                domainHash
+            );
+
+        if (priceConfigs[domainHash].baseLength == 0 && priceConfigs[domainHash].curveMultiplier == 0) 
+            revert DivisionByZero(
                 domainHash
             );
     }

@@ -36,8 +36,8 @@ export const getCurvePrice = (
     length = maxLength;
   }
 
-  const base = (baseLength * maxPrice / baseLength + curveMultiplier
-    * (length - baseLength));
+  const base = (baseLength * maxPrice / (baseLength + curveMultiplier
+    * (length - baseLength)));
 
   return base / precisionMultiplier * precisionMultiplier;
 };

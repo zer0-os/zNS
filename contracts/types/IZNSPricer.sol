@@ -14,14 +14,19 @@ interface IZNSPricer {
     error ParentPriceConfigNotSet(bytes32 parentHash);
 
     /**
-     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% (uint256 "10,000").
+     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% (uint256 "10,000")
      */
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
 
     /**
-     * @notice Reverted when `maxLength` smaller or equal `baseLength`.
+     * @notice Reverted when `maxLength` smaller than `baseLength`.
      */
     error InvalidBaseLengthOrMaxLength(bytes32 domainHash);
+
+    /**
+     * @notice Reverted when `curveMultiplier` AND (&&) `baseLength` is 0.
+     */
+    error DivisionByZero(bytes32 domainHash);
 
     /**
      * @dev `parentHash` param is here to allow pricer contracts
