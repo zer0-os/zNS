@@ -4,10 +4,10 @@ import { ZeroAddress, ZeroHash } from "ethers";
 import { Domain, SubgraphError } from "./types";
 import { getZNS } from "./zns-contract-data.ts";
 
-// import { getZNS } from "./helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-export const validateDomain = async (domain : Domain, deployer : SignerWithAddress) => {
+export const validateDomain = async (
+  domain : Domain, deployer : SignerWithAddress) => {
 
   const {
     registry,

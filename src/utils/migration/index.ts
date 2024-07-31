@@ -15,6 +15,7 @@ const main = async () => {
   }
 
   const client = createClient(url);
+
   // For pagination
   let skip = 0;
   const first = 1; // TODO just for debugging, make 1000 when code is ready
@@ -60,15 +61,57 @@ const main = async () => {
   if (invalidDomains.length > 0) {
     fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
   }
+  
+  let action; // TODO have set by migration level
+  if (process.env.MIGRATION_LEVEL === "local") {
+    // Reset the network to fork mainnet from before any registrations occured
+    // await hre.network.provider.send("hardhat_reset")
 
+    // TODO modify structure a bit to avoid two sets of DB calls
+    // If we're testing locally, we can use the same DB connection we had
+    // for validation step
+    // TODO if we stop forking, we have to deploy ZNS locally before recreating the data
+    // if we dont stop forking, we need to have a way to give an account tons of MEOW to
+    // be able to register domains
+    // impersonateAccountWithBalance?
+    // deploy meowTokenMock after disabling, then give self amount?
+    await hre.network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: process.env.MAINNET_RPC_URL,
+            blockNumber: 18901652,
+          },
+        },
+      ],
+    });
+  } else if (process.env.MIGRATION_LEVEL === "dev") {
+    // Modify network dynamically to use sepolia things
+    const networkName = "sepolia";
+    const provider = await createProvider(
+      hre.config,
+      networkName,
+    )
+    hre.network.name = networkName;
+    hre.network.config = hre.config.networks[networkName];
+    hre.network.provider = provider;
+  } else if (process.env.MIGRATION_LEVEL === "prod") {
+    // TODO implement
+    // Connect to meowchain for real recreation of domain tree
+  } else {
+    throw new Error("Invalid migration level");
+  }
 
-  // Output validated domain data to a readable JSON file
+  // If we can't jointly do both "read" and "write" steps together, we will
+  // output validated domain data to a readable JSON file for "write" step
   // fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
-  // const testDomain = validDomains[0];
+
   const testDomain = validDomains[0];
 
   const registerParams = {
     regAdmin: admin,
+    action: "read",
     domainData: {
       parentHash: testDomain.parentHash,
       label: testDomain.label,
@@ -86,25 +129,13 @@ const main = async () => {
     }
   };
 
-  // if not possible to change network during runtime,
-  // then we write verified data to a file and use a second
-  // script to read from that file and register the domains
-  // using `--network meowchain` flag
-  
-  // might fail because using dummy HH account but "real" meowchain?
-  // hre.changeNetwork("meowchain");
+  // call reset on chain, change things, then can do new network
+  // two in parallel? evm node starts HH chain but you can pass params to it
+  // start a second node in the child process  
+  // local => reset HH as is and don't access meowchain
+  // testnet => change to sepolia, call to register there
+  // meowchain => change to meowchain, call to register there
 
-  const networkName = "meowchain";
-  const provider = await createProvider(
-    hre.config,
-    "meowchain",
-  )
-
-  hre.network.name = networkName;
-  hre.network.config = hre.config.networks[networkName];
-  hre.network.provider = provider;
-
-  console.log("asdasdad: " + Object.values(hre.config.networks["meowchain"]))
   await registerRootDomain(registerParams);
 };
 

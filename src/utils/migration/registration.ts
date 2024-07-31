@@ -17,9 +17,11 @@ const logger = getLogger();
  */
 export const registerRootDomain = async ({
   regAdmin,
+  action,
   domainData,
 } : {
   regAdmin : SignerWithAddress;
+  action : string,
   domainData : {
     parentHash : string;
     label : string;
@@ -29,16 +31,19 @@ export const registerRootDomain = async ({
     paymentConfig : IPaymentConfig;
   };
 }) => {
+  // TODO dont call this a second time if `local`
+  // We don't need new contract addresses or new network
   const zns = await getZNS({
     signer: regAdmin, 
-    action: "write"
+    action: action
   });
-  // const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
 
-  // will this work with HH?
-  // contract address doesnt exist on mainnet, so it will fail
-  // trying to setup the contract tx
-  // are we able to modify the HH network at runtime?
+  // TODO we need to be forking for validation, but testing everything past that
+  // we don't have to be if the level is `local`, because forking means using 
+  // real meow token in a simulated environment, and the contract has no simple "mint"
+  // function
+  await zns.meowToken.connect(regAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
+
   return registerBase({
     contract: zns.rootRegistrar,
     regAdmin,
@@ -107,7 +112,9 @@ export const registerBase = async ({
     );
   }
 
-  const txReceipt = await tx.wait(2);
+  const txReceipt = await tx.wait();
+
+  console.log(txReceipt?.hash);
 
   const domainHash = await getEventDomainHash({
     label,

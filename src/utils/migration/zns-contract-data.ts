@@ -24,7 +24,10 @@ export const getZNS = async ({
     znsCache = await Object.entries(znsNames).reduce(
       async (acc : Promise<IZNSContracts>, [key, { contract, instance }]) => {
         const newAcc = await acc;
-        if (key !== "erc1967Proxy" && key !== "meowToken") { // TODO ignore meow token for now
+
+        // TODO ignore meow token for now, not in DB if not mainnet
+        // && !== "meowToken" or "meowTokenMock"
+        if (key !== "erc1967Proxy") {
           newAcc[instance] = await getContractFromDB({
             name: contract,
             signer,
