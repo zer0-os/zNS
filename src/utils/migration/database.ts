@@ -4,12 +4,23 @@ import { znsNames } from "../../deploy/missions/contracts/names.ts";
 import * as hre from "hardhat";
 import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 
+import { MongoClient, ServerApiVersion } from "mongodb";
 
 let mongoAdapter : MongoDBAdapter | null = null;
 export let dbVersion : string;
 
+const getDBAdapterLocal = async (): Promise<MongoClient> => {
+  const mongoClient = new MongoClient(process.env.MONGO_DB_WRITE_URI!, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    }
+  });
 
-// TODO mig: !!! ADD A READ-ONLY MODE TO THE DB ADAPTER SO WE CAN'T MESS IT UP !!!
+  return await mongoClient.connect();
+}
+
 const getDBAdapter = async () => {
   if (!process.env.MONGO_DB_VERSION)
     throw new Error("MONGO_DB_VERSION is not defined. A current version you want to read from is required!");
@@ -25,20 +36,39 @@ const getDBAdapter = async () => {
 
 export const getContractFromDB = async ({
   name,
-  version,
   signer,
+  action = "read" // Must be "read" or "write"
 } : {
   name : string;
-  version ?: string;
   signer ?: SignerWithAddress;
+  action : string;
 }) => {
-  const dbAdapter = await getDBAdapter();
 
-  const contract = await dbAdapter.getContract(
-    name,
-    version,
-  );
-  if (!contract) throw new Error("Contract not found in DB. Check name or version passed.");
+  let dbAdapter;
+  let contract;
+  let version;
+
+  // Get adapter based on "read" or "write" action
+  if (action === "write") { // make sure "write" is the intentional logic path, not default
+    version = process.env.MONGO_DB_WRITE_VERSION ?? "1716322943505";
+
+    dbAdapter = await getDBAdapterLocal();
+    const dbName = process.env.MONGO_DB_WRITE_NAME ?? "zns-meow-testnet-test";
+    const db = await dbAdapter.db(dbName);
+
+    // TODO wrap this in nicer code that abstracts the db call a bit
+    contract = await db.collection("contracts").findOne({ name, version });
+  } else {
+    version = process.env.MONGO_DB_VERSION ?? "1703976278937";
+
+    dbAdapter = await getDBAdapter();
+    contract = await dbAdapter.getContract(
+      name,
+      version,
+    );
+  }
+
+  if (!contract) throw new Error(`Contract "${name}" with version "${version}" not found in DB. Check name or version passed.`);
 
   let factory;
   if (name !== znsNames.meowToken.contract) {

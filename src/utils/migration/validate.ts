@@ -16,7 +16,7 @@ export const validateDomain = async (domain : Domain, deployer : SignerWithAddre
     subRegistrar,
   } = await getZNS({
     signer: deployer,
-    dbVersion: process.env.MONGO_DB_VERSION!,
+    action: "read"
   });
 
   try {

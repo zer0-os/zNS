@@ -1,0 +1,481 @@
+[
+  {
+    "__typename": "Domain",
+    "id": "0x00b006792572f794e80fd30d8fe9656e083bbfc0b87425918adcf42f57fb7887",
+    "minter": {
+      "__typename": "User",
+      "id": "0x235af0759ff046a231a60ec4d5df19ea97815282"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x235af0759ff046a231a60ec4d5df19ea97815282"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x235af0759ff046a231a60ec4d5df19ea97815282"
+      }
+    },
+    "depth": 0,
+    "label": "ethfish",
+    "isWorld": true,
+    "address": "0x235af0759ff046a231a60ec4d5df19ea97815282",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "parent": null,
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "311009759976472630635198337783243562672609726630243811647978427620970428551",
+    "tokenURI": "ar://5TqX0Yjulf8ho_ZMwL2zKGdD2mdQWYQ45Kw9SduT1UQ",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x00b006792572f794e80fd30d8fe9656e083bbfc0b87425918adcf42f57fb7887",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 18901899
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x00b82e947b9b8c5536ddd6361e86d67a51d77d46fd9f9fd93c4cfe5274f772cf",
+    "minter": {
+      "__typename": "User",
+      "id": "0x13718b5e63782bf4a7b1fe2aa933bafa5131cf0b"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x13718b5e63782bf4a7b1fe2aa933bafa5131cf0b"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x6f2c23e819229487428a5b4c059bdc0043116e1f"
+      }
+    },
+    "depth": 1,
+    "label": "nebur",
+    "isWorld": false,
+    "address": "0x13718b5e63782bf4a7b1fe2aa933bafa5131cf0b",
+    "parentHash": "0x97dcc66e7ef0eb03538719edede1fe51ddd18e4c57e975774730e2a28aca99db",
+    "parent": {
+      "__typename": "Domain",
+      "id": "0x97dcc66e7ef0eb03538719edede1fe51ddd18e4c57e975774730e2a28aca99db",
+      "label": "vip"
+    },
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "325421343340682503926136702075860612804656485166684474319378217718368400079",
+    "tokenURI": "ar://_bWWq7y1-hBHjLo1CykiNfIg9T2gmbqT2_qA1bFtFAA",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x00b82e947b9b8c5536ddd6361e86d67a51d77d46fd9f9fd93c4cfe5274f772cf",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 20202621
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x00c72ed476cd1b49bbd48e1b57eb91a90af388f2bbd3244cf55cd5db8db73f4c",
+    "minter": {
+      "__typename": "User",
+      "id": "0x3f7dfeefbdd51a2660973df407a2bc813bc0c780"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x3f7dfeefbdd51a2660973df407a2bc813bc0c780"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x3f7dfeefbdd51a2660973df407a2bc813bc0c780"
+      }
+    },
+    "depth": 1,
+    "label": "pals",
+    "isWorld": false,
+    "address": "0x3f7dfeefbdd51a2660973df407a2bc813bc0c780",
+    "parentHash": "0x79dc0d049c2834cd189188878cdd7b90bbdceb2aafd2f207406234bee0938d55",
+    "parent": {
+      "__typename": "Domain",
+      "id": "0x79dc0d049c2834cd189188878cdd7b90bbdceb2aafd2f207406234bee0938d55",
+      "label": "rentals"
+    },
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "351925774242770659070601579461821319736230560973916589580094511722740006732",
+    "tokenURI": "ar://zuYR9XNLsLDj-sc9MNApJFWQi2Ni6dx7Lox4v2MpUS8",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x00c72ed476cd1b49bbd48e1b57eb91a90af388f2bbd3244cf55cd5db8db73f4c",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 18902525
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x00ed97a15f4259f4c33378f6c2f0c01028badf4ec5a8df27cc3d64b664715565",
+    "minter": {
+      "__typename": "User",
+      "id": "0xcfd916ed63b653c067c4dc75543019612bacc98d"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0xcfd916ed63b653c067c4dc75543019612bacc98d"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0xcfd916ed63b653c067c4dc75543019612bacc98d"
+      }
+    },
+    "depth": 1,
+    "label": "btc",
+    "isWorld": false,
+    "address": "0xcfd916ed63b653c067c4dc75543019612bacc98d",
+    "parentHash": "0x8e44197ab27d270387332c02e9d19e504509374a270fc65c9c74f3ee10e03e18",
+    "parent": {
+      "__typename": "Domain",
+      "id": "0x8e44197ab27d270387332c02e9d19e504509374a270fc65c9c74f3ee10e03e18",
+      "label": "free"
+    },
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "419789268634218960089962392693801728273550689749551971651841710982194877797",
+    "tokenURI": "ar://s1wNt-GxXC3Lu3RqY3X5Xu10c6xqdXL994d1DOug-WM",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x00ed97a15f4259f4c33378f6c2f0c01028badf4ec5a8df27cc3d64b664715565",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 18913190
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x01260d30e6e7ceec123fc0148bf169ea6ee4e30aa00f1ccb1171734887279e7c",
+    "minter": {
+      "__typename": "User",
+      "id": "0x94178047212ad8fdcfe8115ae776726519b84375"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x94178047212ad8fdcfe8115ae776726519b84375"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x94178047212ad8fdcfe8115ae776726519b84375"
+      }
+    },
+    "depth": 1,
+    "label": "rentals",
+    "isWorld": false,
+    "address": "0x94178047212ad8fdcfe8115ae776726519b84375",
+    "parentHash": "0x56fffe58180f52df099573cdd2e23b24e7365c0d1e579189fb49092f65cdc67d",
+    "parent": {
+      "__typename": "Domain",
+      "id": "0x56fffe58180f52df099573cdd2e23b24e7365c0d1e579189fb49092f65cdc67d",
+      "label": "pink"
+    },
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "519544078141980776491480536489349255946790689564208560639229285345295572604",
+    "tokenURI": "ar://efyiAaryZ0ZZ-H-Dt6fsMRfXwS4pAqgguB4Y4EXOYYg",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x01260d30e6e7ceec123fc0148bf169ea6ee4e30aa00f1ccb1171734887279e7c",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 20217026
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x012bd4f74e70a501222e20ab655e7aee8020248537d00246b81431f23a2f1488",
+    "minter": {
+      "__typename": "User",
+      "id": "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f"
+      }
+    },
+    "depth": 0,
+    "label": "cinema",
+    "isWorld": true,
+    "address": "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "parent": null,
+    "accessType": 1,
+    "paymentType": 0,
+    "pricerContract": "0xa5e9a65bbc880bfb227561cbd644925918ef83a9",
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": {
+      "__typename": "CurvePriceConfig",
+      "id": "0x012bd4f74e70a501222e20ab655e7aee8020248537d00246b81431f23a2f1488"
+    },
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "529757109961781329921325926145693358010129676719684440599885855946280211592",
+    "tokenURI": "ar://RN1B_lNJ3_d6ngDhjfPi6Q99w6eGdlxcdVBr7U-6n2Q",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x012bd4f74e70a501222e20ab655e7aee8020248537d00246b81431f23a2f1488",
+      "beneficiaryAddress": "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f"
+    },
+    "creationBlock": 18905955
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x0144b03a9f213f42c974de61cf2bc229ea0e45254ceebf5781c95f16cbf14f39",
+    "minter": {
+      "__typename": "User",
+      "id": "0x4deee9e3dbdbfcec27c3e2ec004f551c12412a45"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x4deee9e3dbdbfcec27c3e2ec004f551c12412a45"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x4deee9e3dbdbfcec27c3e2ec004f551c12412a45"
+      }
+    },
+    "depth": 0,
+    "label": "meta",
+    "isWorld": true,
+    "address": "0x4deee9e3dbdbfcec27c3e2ec004f551c12412a45",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "parent": null,
+    "accessType": 1,
+    "paymentType": 0,
+    "pricerContract": "0xa5e9a65bbc880bfb227561cbd644925918ef83a9",
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": {
+      "__typename": "CurvePriceConfig",
+      "id": "0x0144b03a9f213f42c974de61cf2bc229ea0e45254ceebf5781c95f16cbf14f39"
+    },
+    "fixedPriceConfig": null,
+    "subdomainCount": 2,
+    "tokenId": "573674736780469800972379939789800666305936876046502141458099010555253706553",
+    "tokenURI": "ar://ddD2_TCvje4Y_4xTVGEPlI5qFMLF6uWU0xVMxNxR6FA",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x0144b03a9f213f42c974de61cf2bc229ea0e45254ceebf5781c95f16cbf14f39",
+      "beneficiaryAddress": "0x4deee9e3dbdbfcec27c3e2ec004f551c12412a45"
+    },
+    "creationBlock": 18901887
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x01544badb249bb61e3fa1c5ce16e082fa1344cdee4a7389bf5502178c1892d4e",
+    "minter": {
+      "__typename": "User",
+      "id": "0xa07192696c60821c1843cd95201a710ce591244b"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0xa07192696c60821c1843cd95201a710ce591244b"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0xa07192696c60821c1843cd95201a710ce591244b"
+      }
+    },
+    "depth": 0,
+    "label": "w",
+    "isWorld": true,
+    "address": "0xa07192696c60821c1843cd95201a710ce591244b",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "parent": null,
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "601250315847352868460478899563972268781825305771885524850677208894224805198",
+    "tokenURI": "ar://3iS3b0GIeejkJJ8gwO5X9lQXEvkVa5t8aju7rA1QbMc",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x01544badb249bb61e3fa1c5ce16e082fa1344cdee4a7389bf5502178c1892d4e",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 18901973
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x016dd70688550956654ea3efb00164f0304ebf5945ef81917574fa2656dd4962",
+    "minter": {
+      "__typename": "User",
+      "id": "0x1b99a6235337742ef1ee3f490d03b5b1298ee633"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0x1b99a6235337742ef1ee3f490d03b5b1298ee633"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0x1b99a6235337742ef1ee3f490d03b5b1298ee633"
+      }
+    },
+    "depth": 1,
+    "label": "wheels",
+    "isWorld": false,
+    "address": "0x1b99a6235337742ef1ee3f490d03b5b1298ee633",
+    "parentHash": "0x6c49661aab34fe4b4fb95cd2cbcfe9533a1c23f9aab2fbb695fd32be65487f6f",
+    "parent": {
+      "__typename": "Domain",
+      "id": "0x6c49661aab34fe4b4fb95cd2cbcfe9533a1c23f9aab2fbb695fd32be65487f6f",
+      "label": "sportsbook"
+    },
+    "accessType": 0,
+    "paymentType": null,
+    "pricerContract": null,
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": null,
+    "subdomainCount": 0,
+    "tokenId": "646383230225803897940086467408340707177457952112363888884232689969176332642",
+    "tokenURI": "ar://U-L4RSh5TxZB6SUvGGANT6BNsPWSTEsuwVA_RZanqk8",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x016dd70688550956654ea3efb00164f0304ebf5945ef81917574fa2656dd4962",
+      "beneficiaryAddress": null
+    },
+    "creationBlock": 18903569
+  },
+  {
+    "__typename": "Domain",
+    "id": "0x02ec5abcb9ca60134d4d480a221d437427bd58046e99a6343f7ca854d9a8de0e",
+    "minter": {
+      "__typename": "User",
+      "id": "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49"
+    },
+    "owner": {
+      "__typename": "User",
+      "id": "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49"
+    },
+    "domainToken": {
+      "__typename": "DomainToken",
+      "owner": {
+        "__typename": "User",
+        "id": "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49"
+      }
+    },
+    "depth": 0,
+    "label": "premierleague",
+    "isWorld": true,
+    "address": "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "parent": null,
+    "accessType": 1,
+    "paymentType": 1,
+    "pricerContract": "0x6c14b2ea18809bdfe2315c289faa1ceac172811f",
+    "paymentToken": {
+      "__typename": "PaymentToken",
+      "id": "0x0ec78ed49c2d27b315d462d43b5bab94d2c79bf8",
+      "name": "MEOW",
+      "symbol": "MEOW"
+    },
+    "curvePriceConfig": null,
+    "fixedPriceConfig": {
+      "__typename": "FixedPriceConfig",
+      "id": "0x02ec5abcb9ca60134d4d480a221d437427bd58046e99a6343f7ca854d9a8de0e"
+    },
+    "subdomainCount": 0,
+    "tokenId": "1322227849661442379629875929984338052266738709184841519400935976680882232846",
+    "tokenURI": "ar://6dqrEuBT_Hxm05OmQOSk52OFLDUU1ZMWnMIA3Girb5g",
+    "treasury": {
+      "__typename": "Treasury",
+      "id": "0x02ec5abcb9ca60134d4d480a221d437427bd58046e99a6343f7ca854d9a8de0e",
+      "beneficiaryAddress": "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49"
+    },
+    "creationBlock": 20260163
+  }
+]

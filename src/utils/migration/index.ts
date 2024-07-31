@@ -17,7 +17,7 @@ const main = async () => {
   const client = createClient(url);
   // For pagination
   let skip = 0;
-  const first = 1;
+  const first = 1; // TODO just for debugging, make 1000 when code is ready
 
   let domains : Array<Domain>;
 
@@ -32,19 +32,17 @@ const main = async () => {
   do {
     domains = await getDomains(client, first, skip);
 
-
-
     console.log(`Validating ${domains.length} domains`);
 
     for (const domain of domains) {
 
       // We only return a value when errors occur
-      // const invalidDomain = await validateDomain(domain, admin);
+      const invalidDomain = await validateDomain(domain, admin);
 
       validDomains.push(domain);
-      // if (invalidDomain) {
-      //   invalidDomains.push(invalidDomain);
-      // }
+      if (invalidDomain) {
+        invalidDomains.push(invalidDomain);
+      }
 
       count++;
       if (count % 100 === 0) {
@@ -82,15 +80,17 @@ const main = async () => {
         pricerContract: testDomain.pricerContract ?? hre.ethers.ZeroAddress,
       },
       paymentConfig: {
-        token: testDomain.paymentToken.id, // because not deployed contract vals, just strings?
-        beneficiary: testDomain.treasury.beneficiaryAddress,
+        token: testDomain.paymentToken.id ?? hre.ethers.ZeroAddress, // because not deployed contract vals, just strings?
+        beneficiary: testDomain.treasury.beneficiaryAddress ?? hre.ethers.ZeroAddress,
       },
     }
   };
 
+  // if not possible to change network during runtime,
+  // then we write verified data to a file and use a second
+  // script to read from that file and register the domains
+  // using `--network meowchain` flag
   await registerRootDomain(registerParams);
-  // NEXT should read from `validDomainsArray` and begin registration process
-  // only if `invalidDomains` array is empty
 };
 
 main().catch(error => {

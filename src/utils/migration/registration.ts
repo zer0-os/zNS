@@ -5,9 +5,9 @@ import { ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar, ZNSSubRegistrar } from "
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 import assert from "assert";
-import { getContract, getEventDomainHash } from "./getters";
+import { getEventDomainHash } from "./getters";
 import { DomainData } from "./types";
-import { getZNS } from "./helpers";
+import { getZNS } from "./zns-contract-data";
 
 
 const logger = getLogger();
@@ -29,11 +29,18 @@ export const registerRootDomain = async ({
     paymentConfig : IPaymentConfig;
   };
 }) => {
-  // const zns = getZNS(regAdmin);
-  const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
+  const zns = await getZNS({
+    signer: regAdmin, 
+    action: "write"
+  });
+  // const rootRegistrar = await getContract(znsNames.rootRegistrar.contract) as ZNSRootRegistrar;
 
+  // will this work with HH?
+  // contract address doesnt exist on mainnet, so it will fail
+  // trying to setup the contract tx
+  // are we able to modify the HH network at runtime?
   return registerBase({
-    contract: rootRegistrar,
+    contract: zns.rootRegistrar,
     regAdmin,
     domainData,
   });
@@ -80,6 +87,7 @@ export const registerBase = async ({
   let domainType;
   if (parentHash === hre.ethers.ZeroHash) {
     domainType = "Root Domain";
+    // will fail if forking mainnet, not on meowchain
     tx = await (contract as ZNSRootRegistrar).connect(regAdmin).registerRootDomain(
       label,
       domainAddress,
