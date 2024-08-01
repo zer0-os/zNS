@@ -1,8 +1,8 @@
 
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { Domain, SubgraphError } from "./types";
-import { getZNS } from "./zns-contract-data.ts";
+import { Domain, SubgraphError } from "../types.ts";
+import { getZNS } from "../zns-contract-data.ts";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 

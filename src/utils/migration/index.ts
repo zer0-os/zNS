@@ -2,68 +2,62 @@ import * as hre from "hardhat";
 import { createProvider } from "hardhat/internal/core/providers/construction";
 import { createClient, getDomains } from "./subgraph/client";
 import { Domain, SubgraphError } from "./types";
-import { validateDomain } from "./validate";
+import { validateDomain } from "./subgraph/validate";
 
 import { registerRootDomain } from "./registration";
 import * as fs from "fs";
+import { validateDomains } from "./subgraph";
+import { getConfig } from "../../deploy/campaign/environments";
+import { runZnsCampaign } from "../../deploy/zns-campaign";
+import { deployZNS } from "../../../test/helpers";
 
 const main = async () => {
-  const url = process.env.SUBGRAPH_URL;
-
-  if (!url) {
-    throw new Error("Missing subgraph url");
-  }
-
-  const client = createClient(url);
-
-  // For pagination
-  let skip = 0;
-  const first = 1; // TODO just for debugging, make 1000 when code is ready
-
-  let domains : Array<Domain>;
-
-  const validDomains = Array<Domain>();
-  const invalidDomains = Array<SubgraphError>();
-  let count = 0;
-
   const [admin] = await hre.ethers.getSigners();
 
-  const start = Date.now();
-
-  do {
-    domains = await getDomains(client, first, skip);
-
-    console.log(`Validating ${domains.length} domains`);
-
-    for (const domain of domains) {
-
-      // We only return a value when errors occur
-      const invalidDomain = await validateDomain(domain, admin);
-
-      validDomains.push(domain);
-      if (invalidDomain) {
-        invalidDomains.push(invalidDomain);
-      }
-
-      count++;
-      if (count % 100 === 0) {
-        console.log(`Validated ${count} domains`);
-      }
-    }
-
-    skip += first;
-  } while (false); // domains.length === first);, just to make it run once while testing
-
-  const end = Date.now();
-  console.log(`Validated ${count} domains in ${end - start}ms`);
+  // First, validate domain data from subgraph against mainnet
+  const { validDomains, invalidDomains } = await validateDomains(admin, 1, 0);
 
   // If there are errors, log them to a file for triage
   if (invalidDomains.length > 0) {
     fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
+    // exit?
   }
   
   let action; // TODO have set by migration level
+  let zns; // TODO figure out where to put this flow
+  let mongoAdapter;
   if (process.env.MIGRATION_LEVEL === "local") {
+
+    // Reset the network to stop forking from mainnet
+    // Use the `runZnsCampaign` function to deploy locally
+    // then call to register rootdomain / subdomain from here
+    await hre.network.provider.request({
+      method: "hardhat_reset",
+      params: [],
+    });
+
+    const [migrationAdmin, zeroVault, governor, admin ] = await hre.ethers.getSigners();
+
+    const params = {
+      deployer: migrationAdmin,
+      governorAddresses: [migrationAdmin.address, governor.address],
+      adminAddresses: [migrationAdmin.address, admin.address],
+    };
+    zns = await deployZNS(params);
+
+    // "Bad data" errors from ZDC ?
+    // const campaign = await runZnsCampaign({
+    //   config,
+    // });
+
+    await zns.meowToken.connect(migrationAdmin).approve(
+      await zns.treasury.getAddress(),
+      hre.ethers.MaxUint256
+    );
+
+    // migration admin should get balance for being deployer
+    console.log(`balanceOf: ${await zns.meowToken.balanceOf(migrationAdmin.address)}`);
+
     // Reset the network to fork mainnet from before any registrations occured
     // await hre.network.provider.send("hardhat_reset")
 
@@ -75,20 +69,12 @@ const main = async () => {
     // be able to register domains
     // impersonateAccountWithBalance?
     // deploy meowTokenMock after disabling, then give self amount?
-    // could use "runZnsCampaign" from tests to deploy
-    await hre.network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.MAINNET_RPC_URL,
-            blockNumber: 18901652,
-          },
-        },
-      ],
-    });
+    // could use "runZnsCampaign" from tests to deploy?
+
   } else if (process.env.MIGRATION_LEVEL === "dev") {
+    // TODO implement and verify
     // Modify network dynamically to use sepolia things
+    // We have several ZNS instances on sepolia already
     const networkName = "sepolia";
     const provider = await createProvider(
       hre.config,
@@ -137,7 +123,7 @@ const main = async () => {
   // testnet => change to sepolia, call to register there
   // meowchain => change to meowchain, call to register there
 
-  await registerRootDomain(registerParams);
+  // await registerRootDomain(registerParams);
 };
 
 main().catch(error => {
