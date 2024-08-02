@@ -1,4 +1,4 @@
-import { getMongoAdapter, MongoDBAdapter } from "@zero-tech/zdc";
+import { DEFAULT_MONGO_DB_NAME, getMongoAdapter, MongoDBAdapter } from "@zero-tech/zdc";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { znsNames } from "../../deploy/missions/contracts/names.ts";
 import * as hre from "hardhat";
@@ -9,8 +9,8 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 let mongoAdapter : MongoDBAdapter | null = null;
 export let dbVersion : string;
 
-const getDBAdapterLocal = async (): Promise<MongoClient> => {
-  const mongoClient = new MongoClient(process.env.MONGO_DB_WRITE_URI!, {
+const getDBAdapter = async (connectionString : string): Promise<MongoClient> => {
+  const mongoClient = new MongoClient(connectionString, {
     serverApi: {
       version: ServerApiVersion.v1,
       strict: true,
@@ -21,17 +21,35 @@ const getDBAdapterLocal = async (): Promise<MongoClient> => {
   return await mongoClient.connect();
 }
 
-const getDBAdapter = async () => {
-  if (!process.env.MONGO_DB_VERSION)
-    throw new Error("MONGO_DB_VERSION is not defined. A current version you want to read from is required!");
+// const getDBAdapter = async () => {
+//   if (!process.env.MONGO_DB_VERSION)
+//     throw new Error("MONGO_DB_VERSION is not defined. A current version you want to read from is required!");
 
-  dbVersion = process.env.MONGO_DB_VERSION;
+//   dbVersion = process.env.MONGO_DB_VERSION;
 
-  if (!mongoAdapter) {
-    mongoAdapter = await getMongoAdapter();
-  }
+//   if (!mongoAdapter) {
+//     mongoAdapter = await getMongoAdapter();
+//   }
 
-  return mongoAdapter;
+//   return mongoAdapter;
+// };
+
+export const getZNSFromDB = async () => {
+  let version = process.env.MONGO_DB_TESTNET_VERSION ?? process.env.MONGO_DB_VERSION;
+  let uri = process.env.MONGO_DB_TESTNET_URI ?? process.env.MONGO_DB_URI;
+
+  let dbAdapter = await getDBAdapter(uri!);
+
+  const dbName = process.env.MONGO_DB_TESTNET_NAME ?? process.env.MONGO_DB_NAME
+  const db = await dbAdapter.db(dbName);
+
+  let zns = await db.collection("contracts").find(
+    { version }
+  ).toArray();
+
+  console.log(zns.length);
+
+  return zns;
 };
 
 export const getContractFromDB = async ({
@@ -47,28 +65,30 @@ export const getContractFromDB = async ({
   let dbAdapter;
   let contract;
   let version;
-
+  let uri;
   // Get adapter based on "read" or "write" action
   if (action === "write") { // make sure "write" is the intentional logic path, not default
-    version = process.env.MONGO_DB_WRITE_VERSION ?? "1716322943505";
+    version = process.env.MONGO_DB_TESTNET_VERSION ?? "1716322943505";
 
-    dbAdapter = await getDBAdapterLocal();
+    uri = process.env.MONGO_DB_TESTNET_URI;
+    dbAdapter = await getDBAdapter(uri!);
+
     const dbName = process.env.MONGO_DB_WRITE_NAME ?? "zns-meow-testnet-test";
     const db = await dbAdapter.db(dbName);
 
     // TODO wrap this in nicer code that abstracts the db call a bit
     contract = await db.collection("contracts").findOne({ name, version });
   } else {
-    version = process.env.MONGO_DB_VERSION ?? "1703976278937";
+    version = process.env.MONGO_DB_TESTNET_VERSION ?? process.env.MONGO_DB_VERSION;
 
-    dbAdapter = await getDBAdapter();
-    contract = await dbAdapter.getContract(
-      name,
-      version,
-    );
+    // TODO clean this up and remove the "write" " read" logic
+    uri = process.env.MONGO_DB_TESTNET_URI;
+    dbAdapter = await getDBAdapter(uri!);
   }
 
-  if (!contract) throw new Error(`Contract "${name}" with version "${version}" not found in DB. Check name or version passed.`);
+  // get all contracts in one call with version filter
+
+  // if (!contract) throw new Error(`Contract "${name}" with version "${version}" not found in DB. Check name or version passed.`);
 
   let factory;
   if (name !== znsNames.meowToken.contract) {

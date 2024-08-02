@@ -55,7 +55,7 @@ export const registerDomains = async ({
   domains,
 } : {
   regAdmin : SignerWithAddress;
-  zns : IZNSContractsLocal; // TODO cant do `TypeA || TypeB` here??
+  zns : IZNSContracts; // TODO cant do `TypeA || TypeB` here??
   domains : Array<Domain>
 }) => {
   for (const domain of domains) {
@@ -77,7 +77,6 @@ export const registerDomains = async ({
     const { domainHash, txReceipt} = await registerBase({
       regAdmin,
       zns,
-      // action: "read", // TODO need still? not for local
       domainData: domainData,
     });
   }
@@ -88,7 +87,7 @@ export const registerBase = async ({
   regAdmin,
   domainData,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   regAdmin : SignerWithAddress;
   domainData : DomainData;
 }) => {

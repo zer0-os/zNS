@@ -11,14 +11,16 @@ import { getConfig } from "../../deploy/campaign/environments";
 import { runZnsCampaign } from "../../deploy/zns-campaign";
 import { deployZNS } from "../../../test/helpers";
 import { IZNSContractsLocal } from "../../../test/helpers/types";
-import { registerDomainsLocal } from "./registration";
+import { registerDomains, registerDomainsLocal } from "./registration";
+import { getZNS } from "./zns-contract-data";
+import { getZNSFromDB } from "./database";
 
 const main = async () => {
 
   const [migrationAdmin, zeroVault, governor, admin ] = await hre.ethers.getSigners();
 
   // For pagination of data in subgraph
-  let first = 1000;
+  let first = 1;
   let skip = 0;
 
   // First, validate domain data from subgraph against mainnet
@@ -36,17 +38,35 @@ const main = async () => {
   if (process.env.MIGRATION_LEVEL === "local") {
     await registerDomainsLocal(migrationAdmin, governor, admin, validDomains);
   } else if (process.env.MIGRATION_LEVEL === "dev") {
-    // TODO implement and verify
     // Modify network dynamically to use sepolia things
     // We have several ZNS instances on sepolia already
-    // const networkName = "sepolia";
-    // const provider = await createProvider(
-    //   hre.config,
-    //   networkName,
-    // )
-    // hre.network.name = networkName;
-    // hre.network.config = hre.config.networks[networkName];
-    // hre.network.provider = provider;
+    const networkName = "sepolia";
+    const provider = await createProvider(
+      hre.config,
+      networkName,
+    )
+    hre.network.name = networkName;
+    hre.network.config = hre.config.networks[networkName];
+    hre.network.provider = provider;
+    
+    // Have to get signers again after modifying HH config
+    const [ migrationAdmin ] = await hre.ethers.getSigners();
+
+    // not typed right
+    const zns = getZNSFromDB();
+    
+    // const zns = await getZNS({
+    //   signer: migrationAdmin,
+    //   action: "read"
+    // });
+
+    // console.log(await zns.rootRegistrar.getAddress())
+    // first confirm network change works
+    // await registerDomains({
+    //   regAdmin: migrationAdmin,
+    //   zns,
+    //   domains: validDomains,
+    // });
   } else if (process.env.MIGRATION_LEVEL === "prod") {
     // TODO implement
     // Connect to meowchain for real recreation of domain tree

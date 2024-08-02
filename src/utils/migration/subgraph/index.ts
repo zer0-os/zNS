@@ -4,9 +4,10 @@ import { createClient, getDomains } from "./client";
 import { Domain, SubgraphError } from "../types";
 import { validateDomain } from "./validate";
 
-import { registerRootDomain } from "../registration";
+// import { registerRootDomain } from "../registration";
 import * as fs from "fs";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZNS } from "../zns-contract-data";
 
 
 // Grab domain data from the subgraph and validate against what's actually on mainnet
@@ -34,6 +35,11 @@ export const validateDomains = async (
   // how do we ignore revokes of parent domains for now?
   domains = await getDomains(client, first, skip);
 
+  const zns = await getZNS({
+    signer: admin,
+    action: "read"
+  });
+
   while (domains.length > 0) { // TODO for debugging, change to match domains.length against skip
 
     console.log(`Validating ${domains.length} domains`);
@@ -41,7 +47,7 @@ export const validateDomains = async (
     for (const domain of domains) {
 
       // We only return a value when errors occur
-      const invalidDomain = await validateDomain(domain, admin);
+      const invalidDomain = await validateDomain(domain, admin, zns);
 
       validDomains.push(domain);
       if (invalidDomain) {
@@ -52,11 +58,12 @@ export const validateDomains = async (
       if (count % 100 === 0) {
         console.log(`Validated ${count} domains`);
       }
-      // TODO Exit the loop after one iteration, temporary for debug
     }
     skip += first;
 
-    domains = await getDomains(client, first, skip);
+    // domains = await getDomains(client, first, skip);
+    // TODO temp to make only iterate once
+    domains = [];
 
     break;
   }

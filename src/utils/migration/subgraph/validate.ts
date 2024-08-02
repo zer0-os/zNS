@@ -5,38 +5,35 @@ import { Domain, SubgraphError } from "../types.ts";
 import { getZNS } from "../zns-contract-data.ts";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSContracts } from "../../../deploy/campaign/types.ts";
+import { IZNSContractsLocal } from "../../../../test/helpers/types.ts";
 
 export const validateDomain = async (
-  domain : Domain, deployer : SignerWithAddress) => {
-
-  const {
-    registry,
-    domainToken,
-    addressResolver,
-    subRegistrar,
-  } = await getZNS({
-    signer: deployer,
-    action: "read"
-  });
+  domain : Domain, 
+  deployer : SignerWithAddress,
+  zns : IZNSContracts | IZNSContractsLocal
+) => {
 
   try {
-    if (domain.id === "0xe12a787be240346e45d09eaa9359fd7a7962820c2ded8f05a5a859bcdd303579") {
-      console.log("special case here");
-      console.log(`domain: ${Object.values(domain)}`);
-    }
-    expect(await registry.exists(domain.id)).to.be.true;
+    // TODO this domainHash is of the broken parent domain that gets deleted and breaks tree recreation
+    // When we can deploy a new subgraph, fix this
+    // if (domain.id === "zns.0xe12a787be240346e45d09eaa9359fd7a7962820c2ded8f05a5a859bcdd303579") {
+    //   console.log("special case here");
+    //   console.log(`domain: ${Object.values(domain)}`);
+    // }
+    expect(await zns.registry.exists(domain.id)).to.be.true;
 
     expect(
-      (await registry.getDomainOwner(domain.id)).toLowerCase())
+      (await zns.registry.getDomainOwner(domain.id)).toLowerCase())
       .to.equal(domain.owner.id.toLowerCase());
     expect(
-      (await domainToken.ownerOf(domain.tokenId)).toLowerCase())
+      (await zns.domainToken.ownerOf(domain.tokenId)).toLowerCase())
       .to.equal(domain.domainToken.owner.id.toLowerCase());
     expect(
-      (await addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
+      (await zns.addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
       .to.equal(domain.address.toLowerCase());
 
-    const distrConfig = await subRegistrar.distrConfigs(domain.id);
+    const distrConfig = await zns.subRegistrar.distrConfigs(domain.id);
 
     // Props not yet set in the subgraph return null, but in the contract it will
     // be 0 value, so we must mediate here
@@ -52,6 +49,7 @@ export const validateDomain = async (
       // When a domain is revoked, it's children will all still have the `parentHash` value
       // for that domain, even if the `parent` domain entity for each child is now null
       // so we can't expect `!!domain.parent == true` here
+      // TODO update to check for parent entity when we can update the subgraph
       expect(domain.parentHash).to.not.equal(ZeroHash);
       expect(domain.depth > 0);
     }

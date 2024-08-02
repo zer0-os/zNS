@@ -1,8 +1,22 @@
 import { znsNames } from "../../deploy/missions/contracts/names.ts";
 import { IZNSContracts } from "../../deploy/campaign/types.ts";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getContractFromDB } from "./database.ts";
+import { getContractFromDB, getZNSFromDB } from "./database.ts";
 
+import * as hre from "hardhat";
+import {
+  ZNSAccessController,
+  ZNSRegistry,
+  ZNSDomainToken,
+  MeowTokenMock,
+  ZNSAddressResolver,
+  ZNSCurvePricer,
+  ZNSTreasury,
+  ZNSRootRegistrar,
+  ZNSFixedPricer,
+  ZNSSubRegistrar,
+  Initializable__factory
+} from "../../../typechain/index.ts";
 
 let znsCache : IZNSContracts | null = null;
 
@@ -21,23 +35,61 @@ export const getZNS = async ({
   action : string;
 }) => {
   if (!znsCache || Object.values(znsCache).length < 10) {
-    znsCache = await Object.entries(znsNames).reduce(
-      async (acc : Promise<IZNSContracts>, [key, { contract, instance }]) => {
-        const newAcc = await acc;
+    const zns = await getZNSFromDB();
 
-        // TODO ignore meow token for now, not in DB if not mainnet
-        // && !== "meowToken" or "meowTokenMock"
-        if (key !== "erc1967Proxy") {
-          newAcc[instance] = await getContractFromDB({
-            name: contract,
-            signer,
-            action
-          });
-        }
+    zns.forEach(async (contract) => { console.log(contract.name)});
 
-        return newAcc;
-      }, Promise.resolve({} as IZNSContracts)
-    );
+    // zns.forEach(async (contract) => {
+    //   const factory = await hre.ethers.getContractFactory(contract.name, signer)
+    //   // const factory = await hre.ethers.getContractFactory(contract.name, signer);
+    //   const instance = factory.attach(contract.address);
+    //   console.log(instance);
+    
+    const acFromDb = zns.find((contract) => contract.name === znsNames.accessController.contract);
+    const reg = zns.find((contract) => contract.name === znsNames.registry.contract);
+    
+    const acFactory : Initializable__factory = await hre.ethers.getContractFactory(acFromDb!.name, signer);
+    const regFactory : Initializable__factory = await hre.ethers.getContractFactory(reg!.name, signer);
+
+    // const regContract = regFactory.connect(reg!.address) as ZNSRegistry;
+    // const acContract = acFactory.connect(acFromDb!.address) as ZNSAccessController;
+    // });
+
+    // console.log(`is acContract nukk? : ${Object.keys(acContract)}`);
+    // console.log(`is acContract nukk? : ${Object.values(acContract)}`);
+
+    znsCache = {
+      accessController: zns.find((contract) => contract.name === znsNames.accessController.contract) as unknown as ZNSAccessController,
+      registry: zns.find((contract) => contract.name === znsNames.registry.contract) as unknown as ZNSRegistry,
+      domainToken: zns.find((contract) => contract.name === znsNames.domainToken.contract) as unknown as ZNSDomainToken,
+      meowToken: zns.find((contract) => contract.name === znsNames.meowToken.contract) as unknown as MeowTokenMock,
+      addressResolver: zns.find((contract) => contract.name === znsNames.addressResolver.contract) as unknown as ZNSAddressResolver,
+      curvePricer: zns.find((contract) => contract.name === znsNames.curvePricer.contract) as unknown as ZNSCurvePricer,
+      treasury: zns.find((contract) => contract.name === znsNames.treasury.contract) as unknown as ZNSTreasury,
+      rootRegistrar: zns.find((contract) => contract.name === znsNames.rootRegistrar.contract) as unknown as ZNSRootRegistrar,
+      fixedPricer: zns.find((contract) => contract.name === znsNames.fixedPricer.contract) as unknown as ZNSFixedPricer,
+      subRegistrar: zns.find((contract) => contract.name === znsNames.subRegistrar.contract) as unknown as ZNSSubRegistrar,
+    }
+    
+    // console.log(znsCache.accessController.add);
+    // const znsCache = await Object.entries(znsNames).reduce(
+    // znsCache = await Object.entries(znsNames).reduce(
+    //   async (acc : Promise<IZNSContracts>, [key, { contract, instance }]) => {
+    //     const newAcc = await acc;
+
+    //     // TODO ignore meow token for now, not in DB if not mainnet
+    //     // && !== "meowToken" or "meowTokenMock"
+    //     if (key !== "erc1967Proxy") {
+    //       // newAcc[instance] = await getContractFromDB({
+    //       //   name: contract,
+    //       //   signer,
+    //       //   action
+    //       // });
+    //     }
+
+    //     return newAcc;
+    //   }, Promise.resolve({} as IZNSContracts)
+    // );
   }
 
   return znsCache;
