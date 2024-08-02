@@ -20,6 +20,10 @@ export const validateDomain = async (
   });
 
   try {
+    if (domain.id === "0xe12a787be240346e45d09eaa9359fd7a7962820c2ded8f05a5a859bcdd303579") {
+      console.log("special case here");
+      console.log(`domain: ${Object.values(domain)}`);
+    }
     expect(await registry.exists(domain.id)).to.be.true;
 
     expect(

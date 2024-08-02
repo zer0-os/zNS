@@ -31,8 +31,10 @@ export const validateDomains = async (
 
   const start = Date.now();
 
-  while (true) { // TODO for debugging, change to match domains.length against skip
-    domains = await getDomains(client, first, skip);
+  // how do we ignore revokes of parent domains for now?
+  domains = await getDomains(client, first, skip);
+
+  while (domains.length > 0) { // TODO for debugging, change to match domains.length against skip
 
     console.log(`Validating ${domains.length} domains`);
 
@@ -53,6 +55,9 @@ export const validateDomains = async (
       // TODO Exit the loop after one iteration, temporary for debug
     }
     skip += first;
+
+    domains = await getDomains(client, first, skip);
+
     break;
   }
 
