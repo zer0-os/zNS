@@ -2,6 +2,7 @@ import { znsNames } from "../../deploy/missions/contracts/names";
 import {
   ZNSCurvePricer,
   ZNSFixedPricer,
+  ZNSRootRegistrar,
 } from "../../../typechain";
 import * as hre from "hardhat";
 import { getZNS } from "./zns-contract-data.ts";
@@ -67,22 +68,20 @@ export const getDomainAddress = async (domainHash : string) => {
 export const getEventDomainHash = async ({
   label,
   tokenUri,
+  rootRegistrar,
   registrantAddress,
 } : {
   label : string;
   tokenUri : string;
+  rootRegistrar : ZNSRootRegistrar;
   registrantAddress : string;
 }) => {
-  const { rootRegistrar } = await getZNS({
-    dbVersion,
-  });
-
   const filter = rootRegistrar.filters.DomainRegistered(
-    hre.ethers.ZeroHash,
     undefined,
-    label,
     undefined,
-    tokenUri,
+    undefined,
+    undefined,
+    undefined,
     registrantAddress,
     undefined,
   );

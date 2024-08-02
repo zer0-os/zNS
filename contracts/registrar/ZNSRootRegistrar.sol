@@ -13,7 +13,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
-import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -96,7 +95,6 @@ contract ZNSRootRegistrar is
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
-        console.log("registerRootDomain");
         // Confirms string values are only [a-z0-9-]
         name.validate();
 

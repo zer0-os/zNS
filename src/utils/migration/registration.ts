@@ -3,25 +3,66 @@ import * as hre from "hardhat";
 import { znsNames } from "../../deploy/missions/contracts/names";
 import { ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar, ZNSSubRegistrar } from "../../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
+import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
 import assert from "assert";
 import { getEventDomainHash } from "./getters";
 import { DomainData } from "./types";
 import { getZNS } from "./zns-contract-data";
+import { IZNSContracts } from "../../deploy/campaign/types";
+import { Domain } from "./types"; // TODO filter to `DomainData`?
 
 
 const logger = getLogger();
+
+export const registerRootDomainBulk = async ({
+  regAdmin,
+  zns,
+  domains,
+} : {
+  regAdmin : SignerWithAddress;
+  zns : IZNSContractsLocal; // TODO cant do `TypeA || TypeB` here??
+  domains : Array<Domain>
+}) => {
+  for (const domain of domains) {
+    const domainData = {
+      parentHash: domain.parentHash,
+      label: domain.label,
+      domainAddress: domain.address,
+      tokenUri: domain.tokenURI,
+      distrConfig: {
+        accessType: BigInt(domain.accessType ?? 0),
+        paymentType: BigInt(domain.paymentType ?? 0),
+        pricerContract: domain.pricerContract ?? hre.ethers.ZeroAddress,
+      },
+      paymentConfig: {
+        token: domain.paymentToken.id ?? hre.ethers.ZeroAddress, // because not deployed contract vals, just strings?
+        beneficiary: domain.treasury.beneficiaryAddress ?? hre.ethers.ZeroAddress,
+      },
+    }
+    const { domainHash, txReceipt} = await registerRootDomain({
+      regAdmin,
+      zns,
+      action: "read", // TODO need still? not for local
+      domainData: domainData,
+    });
+    // console.log(`Domain registered with hash: ${domainHash}`);
+    // console.log(`Transaction receipt: ${txReceipt?.hash}`);
+  }
+  // console.log("Done recreating domain tree")
+};
 
 /**
  * @dev Have to provide domainData.parentHash as ZeroHash ("0x00000...") for root domain registration!
  */
 export const registerRootDomain = async ({
   regAdmin,
+  zns,
   action,
   domainData,
 } : {
   regAdmin : SignerWithAddress;
-  action : string,
+  zns : IZNSContractsLocal; // TODO cant do `TypeA || TypeB` here??
+  action : string;
   domainData : {
     parentHash : string;
     label : string;
@@ -31,21 +72,8 @@ export const registerRootDomain = async ({
     paymentConfig : IPaymentConfig;
   };
 }) => {
-  // TODO dont call this a second time if `local`
-  // We don't need new contract addresses or new network
-  const zns = await getZNS({
-    signer: regAdmin, 
-    action: action
-  });
-
-  // TODO we need to be forking for validation, but testing everything past that
-  // we don't have to be if the level is `local`, because forking means using 
-  // real meow token in a simulated environment, and the contract has no simple "mint"
-  // function
-  await zns.meowToken.connect(regAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
-
   return registerBase({
-    contract: zns.rootRegistrar,
+    zns,
     regAdmin,
     domainData,
   });
@@ -71,11 +99,11 @@ export const registerSubdomain = async ({
 };
 
 export const registerBase = async ({
-  contract,
+  zns,
   regAdmin,
   domainData,
 } : {
-  contract : ZNSRootRegistrar | ZNSSubRegistrar;
+  zns : IZNSContractsLocal;
   regAdmin : SignerWithAddress;
   domainData : DomainData;
 }) => {
@@ -93,7 +121,7 @@ export const registerBase = async ({
   if (parentHash === hre.ethers.ZeroHash) {
     domainType = "Root Domain";
     // will fail if forking mainnet, not on meowchain
-    tx = await (contract as ZNSRootRegistrar).connect(regAdmin).registerRootDomain(
+    tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
       label,
       domainAddress,
       tokenUri,
@@ -102,7 +130,7 @@ export const registerBase = async ({
     );
   } else {
     domainType = "Subdomain";
-    tx = await (contract as ZNSSubRegistrar).connect(regAdmin).registerSubdomain(
+    tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
       parentHash,
       label,
       domainAddress,
@@ -114,26 +142,26 @@ export const registerBase = async ({
 
   const txReceipt = await tx.wait();
 
-  console.log(txReceipt?.hash);
+  // console.log(`txReceipt.hash: ${txReceipt?.hash}`);
 
   const domainHash = await getEventDomainHash({
     label,
     tokenUri,
+    rootRegistrar: zns.rootRegistrar,
     registrantAddress: regAdmin.address,
   });
 
-  // verify domain created properly
-  const registry = await getContract(znsNames.registry.contract) as ZNSRegistry;
-  const ownerFromReg = await registry.getDomainOwner(domainHash);
+  // console.log(`domainHash: ${domainHash}`);
+
+  const ownerFromReg = await zns.registry.getDomainOwner(domainHash);
   assert.equal(
     ownerFromReg,
-    regAdmin.address,
+    regAdmin.address, // TODO doubling up on domain validation??
     `Domain validation failed!
     Owner from ZNSRegistry: ${ownerFromReg}; Registering Admin: ${regAdmin.address}`
   );
 
-  const domainToken = await getContract(znsNames.domainToken.contract) as ZNSDomainToken;
-  const tokenOwner = await domainToken.ownerOf(BigInt(domainHash));
+  const tokenOwner = await zns.domainToken.ownerOf(BigInt(domainHash));
   assert.equal(
     tokenOwner,
     regAdmin.address,
