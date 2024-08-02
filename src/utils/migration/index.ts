@@ -21,6 +21,7 @@ const main = async () => {
   if (invalidDomains.length > 0) {
     fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
     // exit?
+    // exit as soon as we find a single one?
   }
   
   let action; // TODO have set by migration level
