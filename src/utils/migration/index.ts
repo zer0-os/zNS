@@ -14,14 +14,19 @@ import { IZNSContractsLocal } from "../../../test/helpers/types";
 import { registerDomains, registerDomainsLocal } from "./registration";
 import { getZNS } from "./zns-contract-data";
 import { getZNSFromDB } from "./database";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-const main = async () => {
+// For pagination of data in subgraph we use 'first' and 'skip'
+const main = async (
+  first : number, 
+  skip : number,
+  migrationAdmin ?: SignerWithAddress,
+  governor ?: SignerWithAddress,
+  admin ?: SignerWithAddress,
+) => {
 
-  const [migrationAdmin, zeroVault, governor, admin ] = await hre.ethers.getSigners();
+  [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
 
-  // For pagination of data in subgraph
-  let first = 1;
-  let skip = 0;
 
   // First, validate domain data from subgraph against mainnet
   const { validDomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
@@ -32,11 +37,16 @@ const main = async () => {
     throw new Error("ivnalid domains! Check invalid-domains.json");
   }
 
-  let mongoAdapter;
-
-  // TODO figure out where this flow goes
   if (process.env.MIGRATION_LEVEL === "local") {
-    await registerDomainsLocal(migrationAdmin, governor, admin, validDomains);
+    const params = {
+      deployer: migrationAdmin,
+      governorAddresses: [migrationAdmin.address, governor.address],
+      adminAddresses: [migrationAdmin.address, admin.address],
+    };
+
+    const zns = await deployZNS(params);
+
+    await registerDomainsLocal(migrationAdmin, governor, admin, validDomains, zns);
   } else if (process.env.MIGRATION_LEVEL === "dev") {
     // Modify network dynamically to use sepolia things
     // We have several ZNS instances on sepolia already
@@ -81,7 +91,9 @@ const main = async () => {
   // fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
 };
 
-main().catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// Comment out to run in tests
+// Uncomment to run as a script
+// main().catch(error => {
+//   console.error(error);
+//   process.exitCode = 1;
+// });

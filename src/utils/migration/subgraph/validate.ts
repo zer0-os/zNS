@@ -15,12 +15,6 @@ export const validateDomain = async (
 ) => {
 
   try {
-    // TODO this domainHash is of the broken parent domain that gets deleted and breaks tree recreation
-    // When we can deploy a new subgraph, fix this
-    // if (domain.id === "zns.0xe12a787be240346e45d09eaa9359fd7a7962820c2ded8f05a5a859bcdd303579") {
-    //   console.log("special case here");
-    //   console.log(`domain: ${Object.values(domain)}`);
-    // }
     expect(await zns.registry.exists(domain.id)).to.be.true;
 
     expect(
@@ -54,6 +48,7 @@ export const validateDomain = async (
       expect(domain.depth > 0);
     }
   } catch (e) {
+    console.log((e as Error).message)
     return {
       label: domain.label,
       hash: domain.id,

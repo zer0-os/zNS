@@ -4,6 +4,8 @@ import { createClient, getDomains } from "./client";
 import { Domain, SubgraphError } from "../types";
 import { validateDomain } from "./validate";
 
+import { IZNSContracts } from "../../../deploy/campaign/types";
+
 // import { registerRootDomain } from "../registration";
 import * as fs from "fs";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -72,4 +74,10 @@ export const validateDomains = async (
   console.log(`Validated ${count} domains in ${end - start}ms`);
 
   return { validDomains, invalidDomains };
+}
+
+export const validateDomainsPostMigration = async (
+  zns : IZNSContracts,
+) => {
+  
 }

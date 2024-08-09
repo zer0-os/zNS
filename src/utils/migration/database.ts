@@ -21,22 +21,9 @@ const getDBAdapter = async (connectionString : string): Promise<MongoClient> => 
   return await mongoClient.connect();
 }
 
-// const getDBAdapter = async () => {
-//   if (!process.env.MONGO_DB_VERSION)
-//     throw new Error("MONGO_DB_VERSION is not defined. A current version you want to read from is required!");
-
-//   dbVersion = process.env.MONGO_DB_VERSION;
-
-//   if (!mongoAdapter) {
-//     mongoAdapter = await getMongoAdapter();
-//   }
-
-//   return mongoAdapter;
-// };
-
 export const getZNSFromDB = async () => {
-  let version = process.env.MONGO_DB_TESTNET_VERSION ?? process.env.MONGO_DB_VERSION;
-  let uri = process.env.MONGO_DB_TESTNET_URI ?? process.env.MONGO_DB_URI;
+  let version = process.env.MONGO_DB_VERSION ?? process.env.MONGO_DB_TESTNET_VERSION;
+  let uri = process.env.MONGO_DB_URI ?? process.env.MONGO_DB_TESTNET_URI;
 
   let dbAdapter = await getDBAdapter(uri!);
 

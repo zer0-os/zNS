@@ -15,7 +15,17 @@ import {
   ZNSRootRegistrar,
   ZNSFixedPricer,
   ZNSSubRegistrar,
-  Initializable__factory
+  Initializable__factory,
+  ZNSAccessController__factory,
+  ZNSRegistry__factory,
+  MeowTokenMock__factory,
+  ZNSAddressResolver__factory,
+  ZNSCurvePricer__factory,
+  ZNSDomainToken__factory,
+  ZNSFixedPricer__factory,
+  ZNSRootRegistrar__factory,
+  ZNSSubRegistrar__factory,
+  ZNSTreasury__factory
 } from "../../../typechain/index.ts";
 
 let znsCache : IZNSContracts | null = null;
@@ -37,59 +47,31 @@ export const getZNS = async ({
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
 
-    zns.forEach(async (contract) => { console.log(contract.name)});
-
-    // zns.forEach(async (contract) => {
-    //   const factory = await hre.ethers.getContractFactory(contract.name, signer)
-    //   // const factory = await hre.ethers.getContractFactory(contract.name, signer);
-    //   const instance = factory.attach(contract.address);
-    //   console.log(instance);
-    
-    const acFromDb = zns.find((contract) => contract.name === znsNames.accessController.contract);
-    const reg = zns.find((contract) => contract.name === znsNames.registry.contract);
-    
-    const acFactory : Initializable__factory = await hre.ethers.getContractFactory(acFromDb!.name, signer);
-    const regFactory : Initializable__factory = await hre.ethers.getContractFactory(reg!.name, signer);
-
-    // const regContract = regFactory.connect(reg!.address) as ZNSRegistry;
-    // const acContract = acFactory.connect(acFromDb!.address) as ZNSAccessController;
-    // });
-
-    // console.log(`is acContract nukk? : ${Object.keys(acContract)}`);
-    // console.log(`is acContract nukk? : ${Object.values(acContract)}`);
+    // Tried using a smart method with `getContractFactory(znsNames)` but results in a type 
+    // of contract factory that cannot be connected properly to an existing contract.
+    const acAddress = zns.find((contract) => contract.name === znsNames.accessController.contract);
+    const regAddress = zns.find((contract) => contract.name === znsNames.registry.contract);
+    const domainTokenAddress = zns.find((contract) => contract.name === znsNames.domainToken.contract);
+    const meowTokenAddress = zns.find((contract) => contract.name === znsNames.meowToken.contract); // fails
+    const addressResolverAddress = zns.find((contract) => contract.name === znsNames.addressResolver.contract);
+    const curvePricerAddress = zns.find((contract) => contract.name === znsNames.curvePricer.contract);
+    const treasuryAddress = zns.find((contract) => contract.name === znsNames.treasury.contract);
+    const rootRegistrarAddress = zns.find((contract) => contract.name === znsNames.rootRegistrar.contract);
+    const fixedPricerAddress = zns.find((contract) => contract.name === znsNames.fixedPricer.contract);
+    const subRegistrarAddress = zns.find((contract) => contract.name === znsNames.subRegistrar.contract);
 
     znsCache = {
-      accessController: zns.find((contract) => contract.name === znsNames.accessController.contract) as unknown as ZNSAccessController,
-      registry: zns.find((contract) => contract.name === znsNames.registry.contract) as unknown as ZNSRegistry,
-      domainToken: zns.find((contract) => contract.name === znsNames.domainToken.contract) as unknown as ZNSDomainToken,
-      meowToken: zns.find((contract) => contract.name === znsNames.meowToken.contract) as unknown as MeowTokenMock,
-      addressResolver: zns.find((contract) => contract.name === znsNames.addressResolver.contract) as unknown as ZNSAddressResolver,
-      curvePricer: zns.find((contract) => contract.name === znsNames.curvePricer.contract) as unknown as ZNSCurvePricer,
-      treasury: zns.find((contract) => contract.name === znsNames.treasury.contract) as unknown as ZNSTreasury,
-      rootRegistrar: zns.find((contract) => contract.name === znsNames.rootRegistrar.contract) as unknown as ZNSRootRegistrar,
-      fixedPricer: zns.find((contract) => contract.name === znsNames.fixedPricer.contract) as unknown as ZNSFixedPricer,
-      subRegistrar: zns.find((contract) => contract.name === znsNames.subRegistrar.contract) as unknown as ZNSSubRegistrar,
+      accessController: ZNSAccessController__factory.connect(acAddress!.address, signer),
+      registry: ZNSRegistry__factory.connect(regAddress!.address, signer),
+      domainToken: ZNSDomainToken__factory.connect(domainTokenAddress!.address, signer),
+      meowToken: MeowTokenMock__factory.connect(meowTokenAddress!.address, signer),
+      addressResolver: ZNSAddressResolver__factory.connect(addressResolverAddress!.address, signer),
+      curvePricer: ZNSCurvePricer__factory.connect(curvePricerAddress!.address, signer),
+      treasury: ZNSTreasury__factory.connect(treasuryAddress!.address, signer),
+      rootRegistrar: ZNSRootRegistrar__factory.connect(rootRegistrarAddress!.address, signer),
+      fixedPricer: ZNSFixedPricer__factory.connect(fixedPricerAddress!.address, signer),
+      subRegistrar: ZNSSubRegistrar__factory.connect(subRegistrarAddress!.address, signer),
     }
-    
-    // console.log(znsCache.accessController.add);
-    // const znsCache = await Object.entries(znsNames).reduce(
-    // znsCache = await Object.entries(znsNames).reduce(
-    //   async (acc : Promise<IZNSContracts>, [key, { contract, instance }]) => {
-    //     const newAcc = await acc;
-
-    //     // TODO ignore meow token for now, not in DB if not mainnet
-    //     // && !== "meowToken" or "meowTokenMock"
-    //     if (key !== "erc1967Proxy") {
-    //       // newAcc[instance] = await getContractFromDB({
-    //       //   name: contract,
-    //       //   signer,
-    //       //   action
-    //       // });
-    //     }
-
-    //     return newAcc;
-    //   }, Promise.resolve({} as IZNSContracts)
-    // );
   }
 
   return znsCache;

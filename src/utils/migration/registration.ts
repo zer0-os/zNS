@@ -6,12 +6,16 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
 import assert from "assert";
 import { getEventDomainHash } from "./getters";
-import { DomainData } from "./types";
+import { DomainData, RegisteredDomain } from "./types";
 import { getZNS } from "./zns-contract-data";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { Domain } from "./types"; // TODO filter to `DomainData`?
 
 import { deployZNS } from "../../../test/helpers";
+import { ContractTransactionReceipt } from "ethers";
+import { register } from "module";
+import { TypedContractEvent } from "../../../typechain/common";
+// import { ZNSRootRegistrar } from "../../../typechain";
 
 const logger = getLogger();
 
@@ -19,20 +23,14 @@ export const registerDomainsLocal = async (
   migrationAdmin : SignerWithAddress,
   governor : SignerWithAddress,
   admin : SignerWithAddress,
-  validDomains : Array<Domain>
+  validDomains : Array<Domain>,
+  zns : IZNSContractsLocal,
 ) => {
+  // Reset hardhat to clear state and stop forking
   await hre.network.provider.request({
     method: "hardhat_reset",
     params: [],
   });
-
-  const params = {
-    deployer: migrationAdmin,
-    governorAddresses: [migrationAdmin.address, governor.address],
-    adminAddresses: [migrationAdmin.address, admin.address],
-  };
-
-  let zns : IZNSContractsLocal = await deployZNS(params); 
 
   // Give minter balance and approval for registrations
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
@@ -40,13 +38,15 @@ export const registerDomainsLocal = async (
   
   console.log("Registering domains");
   const start = Date.now();
-  await registerDomains({
-    zns,
+  const registeredDomains = await registerDomains({
     regAdmin: migrationAdmin,
+    zns,
     domains: validDomains,
   });
   const end = Date.now();
   console.log(`Time taken: ${end - start}ms`);
+
+  return registeredDomains;
 };
 
 export const registerDomains = async ({
@@ -55,9 +55,11 @@ export const registerDomains = async ({
   domains,
 } : {
   regAdmin : SignerWithAddress;
-  zns : IZNSContracts; // TODO cant do `TypeA || TypeB` here??
+  zns : IZNSContracts;
   domains : Array<Domain>
 }) => {
+  const registeredDomains = Array<RegisteredDomain>();
+
   for (const domain of domains) {
     const domainData = {
       parentHash: domain.parentHash,
@@ -74,12 +76,17 @@ export const registerDomains = async ({
         beneficiary: domain.treasury.beneficiaryAddress ?? hre.ethers.ZeroAddress,
       },
     }
-    const { domainHash, txReceipt} = await registerBase({
+
+    const { domainHash, txReceipt } = await registerBase({
       regAdmin,
       zns,
       domainData: domainData,
     });
+
+    registeredDomains.push({ domainHash, txReceipt });
   }
+
+  return registeredDomains;
 };
 
 export const registerBase = async ({
@@ -103,9 +110,11 @@ export const registerBase = async ({
   let tx;
   let domainType;
   try {
-  if (parentHash === hre.ethers.ZeroHash) {
-    domainType = "Root Domain";
-    // will fail if forking mainnet, not on meowchain
+    if (parentHash === hre.ethers.ZeroHash) {
+      domainType = "Root Domain";
+
+      
+      // will fail if forking mainnet, not on meowchain
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
         label,
         domainAddress,
@@ -113,6 +122,21 @@ export const registerBase = async ({
         distrConfig,
         paymentConfig,
       );
+
+      const txReceipt = await tx.wait();
+
+      const filter = zns.rootRegistrar.filters.DomainRegistered(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      const events = await zns.rootRegistrar.queryFilter(filter);
+      console.log();
     } else {
       domainType = "Subdomain";
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
@@ -125,19 +149,29 @@ export const registerBase = async ({
       );
     }
   } catch (e) {
-    console.log(`parentnotexist: ${label}`);
     console.log(e)
     process.exit(1);
   }
 
   const txReceipt = await tx.wait();
 
-  const domainHash = await getEventDomainHash({
-    label,
-    tokenUri,
-    rootRegistrar: zns.rootRegistrar,
-    registrantAddress: regAdmin.address,
+  txReceipt!.events?.forEach((event) => { console.log(event) });
+  const x = await hre.ethers.provider.getTransaction(txReceipt!.hash);
+
+
+  const g = await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, label, registrant, tokenUri, parent, admin, pricer, distrConfig, paymentConfig) => {
+    console.log(domainHash);
   });
+
+  
+  // const subevents = await zns.subRegistrar.queryFilter(filter);
+
+  // const domainHash = await getEventDomainHash({
+  //   label,
+  //   tokenUri,
+  //   rootRegistrar: zns.rootRegistrar,
+  //   registrantAddress: regAdmin.address,
+  // });
 
   const ownerFromReg = await zns.registry.getDomainOwner(domainHash);
   assert.equal(
@@ -159,55 +193,3 @@ export const registerBase = async ({
 
   return { domainHash, txReceipt };
 };
-
-export const sendDomainToken = async ({
-  domainHash,
-  fromSigner,
-  toAddress,
-} : {
-  domainHash : string;
-  fromSigner : SignerWithAddress;
-  toAddress : string;
-}) => {
-  const tokenId = BigInt(domainHash);
-
-  const domainToken = await getContract(znsNames.domainToken.contract) as ZNSDomainToken;
-  const tx = await domainToken.connect(fromSigner).transferFrom(fromSigner.address, toAddress, tokenId);
-  const txReceipt = await tx.wait(2);
-
-  logger.info(`Domain token sent successfully! Transaction receipt: ${JSON.stringify(txReceipt)}`);
-
-  return { tokenId, txReceipt };
-};
-
-export const changeDomainOwner = async ({
-  domainHash,
-  regAdmin,
-  newOwnerAddress,
-} : {
-  domainHash : string;
-  regAdmin : SignerWithAddress;
-  newOwnerAddress : string;
-}) => {
-  const registry = await getContract(znsNames.registry.contract) as ZNSRegistry;
-
-  const tx = await registry.connect(regAdmin).updateDomainOwner(
-    domainHash,
-    newOwnerAddress
-  );
-  const txReceipt = await tx.wait(2);
-
-  // validate
-  const ownerFromReg = await registry.getDomainOwner(domainHash);
-  assert.equal(
-    ownerFromReg,
-    newOwnerAddress,
-    `Domain owner change validation failed!
-    Owner from ZNSRegistry: ${ownerFromReg}; New Owner: ${newOwnerAddress}`
-  );
-
-  logger.info(`Domain owner changed successfully! Transaction receipt: ${JSON.stringify(txReceipt)}`);
-
-  return txReceipt;
-};
-

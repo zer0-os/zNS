@@ -1,3 +1,4 @@
+import { ContractTransactionReceipt } from "ethers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 
 export interface Domain {
@@ -86,4 +87,9 @@ export interface DomainData {
   tokenUri : string;
   distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
+}
+
+export interface RegisteredDomain {
+  domainHash: string,
+  txReceipt : ContractTransactionReceipt | null
 }

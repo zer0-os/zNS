@@ -9,61 +9,61 @@ import { getZNS } from "./zns-contract-data.ts";
 import { dbVersion } from "./database.ts";
 
 
-export const getDomainRecord = async (
-  domainHash : string,
-) => {
-  // TODO mig: rework all these calls to cache the contracts if needed!
-  const { registry } = await getZNS({
-    dbVersion,
-  });
+// export const getDomainRecord = async (
+//   domainHash : string,
+// ) => {
+//   // TODO mig: rework all these calls to cache the contracts if needed!
+//   const { registry } = await getZNS({
+//     dbVersion,
+//   });
 
-  return registry.getDomainRecord(domainHash);
-};
+//   return registry.getDomainRecord(domainHash);
+// };
 
-export const getDistributionConfig = async (
-  domainHash : string
-) => {
-  const { subRegistrar } = await getZNS({
-    dbVersion,
-  });
+// export const getDistributionConfig = async (
+//   domainHash : string
+// ) => {
+//   const { subRegistrar } = await getZNS({
+//     dbVersion,
+//   });
 
-  return subRegistrar.distrConfigs(domainHash);
-};
+//   return subRegistrar.distrConfigs(domainHash);
+// };
 
-export const getPaymentConfig = async (
-  domainHash : string
-) => {
-  const { treasury } = await getZNS({
-    dbVersion,
-  });
+// export const getPaymentConfig = async (
+//   domainHash : string
+// ) => {
+//   const { treasury } = await getZNS({
+//     dbVersion,
+//   });
 
-  return treasury.paymentConfigs(domainHash);
-};
+//   return treasury.paymentConfigs(domainHash);
+// };
 
-export const getPriceConfig = async (
-  domainHash : string
-) => {
-  const { pricerContract } = await getDistributionConfig(domainHash);
+// export const getPriceConfig = async (
+//   domainHash : string
+// ) => {
+//   const { pricerContract } = await getDistributionConfig(domainHash);
 
-  const curveFactory = await hre.ethers.getContractFactory(znsNames.curvePricer.contract);
-  const fixedFactory = await hre.ethers.getContractFactory(znsNames.fixedPricer.contract);
+//   const curveFactory = await hre.ethers.getContractFactory(znsNames.curvePricer.contract);
+//   const fixedFactory = await hre.ethers.getContractFactory(znsNames.fixedPricer.contract);
 
-  try {
-    const curvePricer = curveFactory.attach(pricerContract) as ZNSCurvePricer;
-    return curvePricer.priceConfigs(domainHash);
-  } catch (e) {
-    const fixedPricer = fixedFactory.attach(pricerContract) as ZNSFixedPricer;
-    return fixedPricer.priceConfigs(domainHash);
-  }
-};
+//   try {
+//     const curvePricer = curveFactory.attach(pricerContract) as ZNSCurvePricer;
+//     return curvePricer.priceConfigs(domainHash);
+//   } catch (e) {
+//     const fixedPricer = fixedFactory.attach(pricerContract) as ZNSFixedPricer;
+//     return fixedPricer.priceConfigs(domainHash);
+//   }
+// };
 
-export const getDomainAddress = async (domainHash : string) => {
-  const { resolver } = await getZNS({
-    dbVersion,
-  });
+// export const getDomainAddress = async (domainHash : string) => {
+//   const { resolver } = await getZNS({
+//     dbVersion,
+//   });
 
-  return resolver.resolveDomainAddress(domainHash);
-};
+//   return resolver.resolveDomainAddress(domainHash);
+// };
 
 export const getEventDomainHash = async ({
   label,
