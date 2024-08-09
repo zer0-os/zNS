@@ -1,21 +1,21 @@
 {
-  "ts-node": {
-    "compilerOptions": {
-      "module": "node16"
-    }
-  },
-  "compilerOptions": {
-    "outDir": "dist",
-    "target": "es2022",
-    "module": "node16",
-    "moduleResolution": "NodeNext",
-    "allowImportingTsExtensions": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "strictPropertyInitialization": true,
-    "noImplicitAny": true
-  }
+	"ts-node": {
+		"compilerOptions": {
+			"module": "node16"
+		}
+	},
+	"compilerOptions": {
+		"outDir": "dist",
+		"target": "es2022",
+		"module": "node16",
+		"moduleResolution": "NodeNext",
+		// "allowImportingTsExtensions": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"resolveJsonModule": true,
+		"strictPropertyInitialization": true,
+		"noImplicitAny": true
+	}
 }

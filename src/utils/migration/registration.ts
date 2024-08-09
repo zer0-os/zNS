@@ -12,7 +12,7 @@ import { IZNSContracts } from "../../deploy/campaign/types";
 import { Domain } from "./types"; // TODO filter to `DomainData`?
 
 import { deployZNS } from "../../../test/helpers";
-import { ContractTransactionReceipt } from "ethers";
+// import { ContractTransactionReceipt } from "ethers";
 import { register } from "module";
 import { TypedContractEvent } from "../../../typechain/common";
 // import { ZNSRootRegistrar } from "../../../typechain";
@@ -80,7 +80,7 @@ export const registerDomains = async ({
     const { domainHash, txReceipt } = await registerBase({
       regAdmin,
       zns,
-      domainData: domainData,
+      domainData,
     });
 
     registeredDomains.push({ domainHash, txReceipt });
@@ -113,6 +113,8 @@ export const registerBase = async ({
     if (parentHash === hre.ethers.ZeroHash) {
       domainType = "Root Domain";
 
+      const filter = zns.rootRegistrar.filters.DomainRegistered();
+
       
       // will fail if forking mainnet, not on meowchain
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
@@ -125,18 +127,9 @@ export const registerBase = async ({
 
       const txReceipt = await tx.wait();
 
-      const filter = zns.rootRegistrar.filters.DomainRegistered(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-      );
 
-      const events = await zns.rootRegistrar.queryFilter(filter);
-      console.log();
+      const events = await zns.rootRegistrar.queryFilter(filter, tx.blockNumber! - 1, tx.blockNumber! + 1);
+      console.log(`EVENTS LENGTH ${events.length}`);
     } else {
       domainType = "Subdomain";
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
@@ -155,13 +148,26 @@ export const registerBase = async ({
 
   const txReceipt = await tx.wait();
 
-  txReceipt!.events?.forEach((event) => { console.log(event) });
-  const x = await hre.ethers.provider.getTransaction(txReceipt!.hash);
+  // txReceipt!.events?.forEach((event) => { console.log(event) });
+  // const x = await hre.ethers.provider.getTransaction(txReceipt!.hash);
 
+  const filter = zns.rootRegistrar.filters.DomainRegistered(
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    regAdmin.address,
+    undefined,
+  );
 
-  const g = await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, label, registrant, tokenUri, parent, admin, pricer, distrConfig, paymentConfig) => {
-    console.log(domainHash);
-  });
+  const events = await zns.rootRegistrar.queryFilter(filter);
+  console.log(events.length)
+  // const { args: { domainHash } } = events[events.length - 1];
+
+  // const g = await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, label, registrant, tokenUri, parent, admin, pricer, distrConfig, paymentConfig) => {
+  //   console.log(domainHash);
+  // });
 
   
   // const subevents = await zns.subRegistrar.queryFilter(filter);

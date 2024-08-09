@@ -39,10 +39,12 @@ export const getZNSMeowChain = async (
 
 export const getZNS = async ({
   signer,
+  dbVersion,
   action = "read" // Must be "read" or "write"
 } : {
   signer ?: SignerWithAddress;
-  action : string;
+  dbVersion ?: string;
+  action ?: string;
 }) => {
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();

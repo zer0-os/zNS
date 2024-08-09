@@ -19,13 +19,10 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 // For pagination of data in subgraph we use 'first' and 'skip'
 const main = async (
   first : number, 
-  skip : number,
-  migrationAdmin ?: SignerWithAddress,
-  governor ?: SignerWithAddress,
-  admin ?: SignerWithAddress,
+  skip : number
 ) => {
 
-  [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
+  const [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
 
 
   // First, validate domain data from subgraph against mainnet
@@ -46,7 +43,7 @@ const main = async (
 
     const zns = await deployZNS(params);
 
-    await registerDomainsLocal(migrationAdmin, governor, admin, validDomains, zns);
+    const registeredDomains = await registerDomainsLocal(migrationAdmin, governor, admin, validDomains, zns);
   } else if (process.env.MIGRATION_LEVEL === "dev") {
     // Modify network dynamically to use sepolia things
     // We have several ZNS instances on sepolia already
@@ -93,7 +90,7 @@ const main = async (
 
 // Comment out to run in tests
 // Uncomment to run as a script
-// main().catch(error => {
-//   console.error(error);
-//   process.exitCode = 1;
-// });
+main(1, 0).catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

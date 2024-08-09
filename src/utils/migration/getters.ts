@@ -68,14 +68,16 @@ import { dbVersion } from "./database.ts";
 export const getEventDomainHash = async ({
   label,
   tokenUri,
-  rootRegistrar,
   registrantAddress,
 } : {
   label : string;
   tokenUri : string;
-  rootRegistrar : ZNSRootRegistrar;
   registrantAddress : string;
 }) => {
+  const { rootRegistrar } = await getZNS({
+    dbVersion,
+  });
+
   const filter = rootRegistrar.filters.DomainRegistered(
     undefined,
     undefined,
