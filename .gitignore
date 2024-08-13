@@ -20,3 +20,7 @@ docker*.tgz
 
 # We don't ever use the generated manifests
 .openzeppelin
+
+# Ignore the output files of migration
+valid-domains.json
+invalid-domains.json

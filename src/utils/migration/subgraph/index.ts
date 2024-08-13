@@ -1,5 +1,3 @@
-import * as hre from "hardhat";
-import { createProvider } from "hardhat/internal/core/providers/construction";
 import { createClient, getDomains } from "./client";
 import { Domain, SubgraphError } from "../types";
 import { validateDomain } from "./validate";
@@ -37,12 +35,16 @@ export const validateDomains = async (
   // how do we ignore revokes of parent domains for now?
   domains = await getDomains(client, first, skip);
 
+  // const domains2 = await getDomains(client, first, skip);
+  // console.log(`Domains: ${domains.length}`);
+  // console.log(`Domains2: ${domains2.length}`);
+
   const zns = await getZNS({
     signer: admin,
     action: "read"
   });
 
-  while (domains.length > 0) { // TODO for debugging, change to match domains.length against skip
+  while (domains.length > 0) {
 
     console.log(`Validating ${domains.length} domains`);
 
@@ -61,13 +63,14 @@ export const validateDomains = async (
         console.log(`Validated ${count} domains`);
       }
     }
-    skip += first;
 
-    // domains = await getDomains(client, first, skip);
-    // TODO temp to make only iterate once
-    domains = [];
+    // Add 1000 to skip for all future iterations to get as many entities 
+    // as possible from a single query
+    skip += 1000;
 
-    break;
+    console.log(`Getting more domains with first: ${first}, skip: ${skip}`);
+    domains = await getDomains(client, first, skip);
+    console.log(`Found ${domains.length} more domains`);
   }
 
   const end = Date.now();

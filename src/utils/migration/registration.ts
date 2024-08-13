@@ -11,10 +11,11 @@ import { getZNS } from "./zns-contract-data";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { Domain } from "./types"; // TODO filter to `DomainData`?
 
-import { deployZNS } from "../../../test/helpers";
+import { deployZNS, paymentConfigEmpty } from "../../../test/helpers";
 // import { ContractTransactionReceipt } from "ethers";
 import { register } from "module";
 import { TypedContractEvent } from "../../../typechain/common";
+import { expect } from "chai";
 // import { ZNSRootRegistrar } from "../../../typechain";
 
 const logger = getLogger();
@@ -26,12 +27,6 @@ export const registerDomainsLocal = async (
   validDomains : Array<Domain>,
   zns : IZNSContractsLocal,
 ) => {
-  // Reset hardhat to clear state and stop forking
-  await hre.network.provider.request({
-    method: "hardhat_reset",
-    params: [],
-  });
-
   // Give minter balance and approval for registrations
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
   await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
@@ -59,7 +54,13 @@ export const registerDomains = async ({
   domains : Array<Domain>
 }) => {
   const registeredDomains = Array<RegisteredDomain>();
+  
+  // When domains fail they are added to this array to retry
+  // after all other domains have been attempted
+  const retryDomains = Array<DomainData>();
 
+  let count = 0;
+  const start = Date.now();
   for (const domain of domains) {
     const domainData = {
       parentHash: domain.parentHash,
@@ -77,15 +78,43 @@ export const registerDomains = async ({
       },
     }
 
-    const { domainHash, txReceipt } = await registerBase({
+    const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
       regAdmin,
       zns,
       domainData,
     });
 
-    registeredDomains.push({ domainHash, txReceipt });
+    if (retryDomainData) {
+      retryDomains.push(retryDomainData);
+    } else {
+      registeredDomains.push({ domainHash, txReceipt });
+    }
+
+    count++;
+    
+    // gives misleading results, lots in a row fail and 900 appears multiple times
+    if (count % 100 === 0) {
+      console.log(`Registered ${registeredDomains.length} domains`);
+    };
   }
 
+  if (retryDomains.length > 0) { 
+    console.log("we retry these")
+    const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
+      regAdmin,
+      zns,
+      domainData: retryDomains[0],
+    });
+
+    if (retryDomainData) {
+      console.log("Failed to register domain after retry, something else is wrong")
+    }
+    // TODO get domain and txReceipt, add to registeredDomains
+  }
+
+  const end = Date.now();
+
+  console.log(`Registered ${registeredDomains.length} domains in ${end} - ${start}`);
   return registeredDomains;
 };
 
@@ -104,32 +133,23 @@ export const registerBase = async ({
     domainAddress,
     tokenUri,
     distrConfig,
-    paymentConfig,
+    paymentConfig, // dont use payment config for recreation, will break if parent isnt registered yet
   } = domainData;
 
   let tx;
   let domainType;
+  // const filter = zns.rootRegistrar.filters.DomainRegistered();
   try {
     if (parentHash === hre.ethers.ZeroHash) {
       domainType = "Root Domain";
-
-      const filter = zns.rootRegistrar.filters.DomainRegistered();
-
-      
       // will fail if forking mainnet, not on meowchain
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
         label,
         domainAddress,
         tokenUri,
         distrConfig,
-        paymentConfig,
+        paymentConfigEmpty, // TODO set configs as empty to avoid parent issues?
       );
-
-      const txReceipt = await tx.wait();
-
-
-      const events = await zns.rootRegistrar.queryFilter(filter, tx.blockNumber! - 1, tx.blockNumber! + 1);
-      console.log(`EVENTS LENGTH ${events.length}`);
     } else {
       domainType = "Subdomain";
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
@@ -138,64 +158,35 @@ export const registerBase = async ({
         domainAddress,
         tokenUri,
         distrConfig,
-        paymentConfig,
+        paymentConfigEmpty,
       );
     }
   } catch (e) {
-    console.log(e)
-    process.exit(1);
+    // maybe return and add retry logic for failed domains?
+    // console.log(e)
+    return {
+      domainHash: undefined,
+      txReceipt: undefined,
+      domainData: domainData 
+    }
   }
 
   const txReceipt = await tx.wait();
+  const domainHash = await getEventDomainHash({
+    registrantAddress: regAdmin.address,
+    zns,
+  });
 
-  // txReceipt!.events?.forEach((event) => { console.log(event) });
-  // const x = await hre.ethers.provider.getTransaction(txReceipt!.hash);
+  // console.log(`Domain hash: ${domainHash}`);
 
-  const filter = zns.rootRegistrar.filters.DomainRegistered(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    regAdmin.address,
-    undefined,
-  );
+  // Post deploy validation of domain
+  // TODO include data from subgraph pre-validation to
+  // TODO do this here per domain? or in a script afterward?
 
-  const events = await zns.rootRegistrar.queryFilter(filter);
-  console.log(events.length)
-  // const { args: { domainHash } } = events[events.length - 1];
+  expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
+  expect(await zns.registry.exists(domainHash)).to.be.true;
+  expect(await zns.registry.getDomainOwner(domainHash)).to.equal(regAdmin.address);
+  expect(await zns.domainToken.ownerOf(BigInt(domainHash))).to.equal(regAdmin.address);
 
-  // const g = await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, label, registrant, tokenUri, parent, admin, pricer, distrConfig, paymentConfig) => {
-  //   console.log(domainHash);
-  // });
-
-  
-  // const subevents = await zns.subRegistrar.queryFilter(filter);
-
-  // const domainHash = await getEventDomainHash({
-  //   label,
-  //   tokenUri,
-  //   rootRegistrar: zns.rootRegistrar,
-  //   registrantAddress: regAdmin.address,
-  // });
-
-  const ownerFromReg = await zns.registry.getDomainOwner(domainHash);
-  assert.equal(
-    ownerFromReg,
-    regAdmin.address, // TODO doubling up on domain validation??
-    `Domain validation failed!
-    Owner from ZNSRegistry: ${ownerFromReg}; Registering Admin: ${regAdmin.address}`
-  );
-
-  const tokenOwner = await zns.domainToken.ownerOf(BigInt(domainHash));
-  assert.equal(
-    tokenOwner,
-    regAdmin.address,
-    `Domain token validation failed!
-    Token owner from ZNSDomainToken: ${tokenOwner}; Registering Admin: ${regAdmin.address}`
-  );
-
-  logger.info(`Registration of ${domainType} successful! Transaction receipt: ${JSON.stringify(txReceipt)}`);
-
-  return { domainHash, txReceipt };
+  return { domainHash, txReceipt, domainData: undefined };
 };

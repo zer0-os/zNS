@@ -7,6 +7,8 @@ import {
 import * as hre from "hardhat";
 import { getZNS } from "./zns-contract-data.ts";
 import { dbVersion } from "./database.ts";
+import { IZNSContractsLocal } from "../../../test/helpers/types";
+import { IZNSContracts } from "../../deploy/campaign/types";
 
 
 // export const getDomainRecord = async (
@@ -66,19 +68,13 @@ import { dbVersion } from "./database.ts";
 // };
 
 export const getEventDomainHash = async ({
-  label,
-  tokenUri,
   registrantAddress,
+  zns,
 } : {
-  label : string;
-  tokenUri : string;
   registrantAddress : string;
+  zns : IZNSContractsLocal | IZNSContracts;
 }) => {
-  const { rootRegistrar } = await getZNS({
-    dbVersion,
-  });
-
-  const filter = rootRegistrar.filters.DomainRegistered(
+  const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
     undefined,
     undefined,
@@ -88,7 +84,7 @@ export const getEventDomainHash = async ({
     undefined,
   );
 
-  const events = await rootRegistrar.queryFilter(filter);
+  const events = await zns.rootRegistrar.queryFilter(filter);
   const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;

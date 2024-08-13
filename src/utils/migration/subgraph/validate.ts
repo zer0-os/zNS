@@ -1,12 +1,12 @@
 
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { Domain, SubgraphError } from "../types.ts";
-import { getZNS } from "../zns-contract-data.ts";
+import { Domain, SubgraphError } from "../types";
+import { getZNS } from "../zns-contract-data";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSContracts } from "../../../deploy/campaign/types.ts";
-import { IZNSContractsLocal } from "../../../../test/helpers/types.ts";
+import { IZNSContracts } from "../../../deploy/campaign/types";
+import { IZNSContractsLocal } from "../../../../test/helpers/types";
 
 export const validateDomain = async (
   domain : Domain, 

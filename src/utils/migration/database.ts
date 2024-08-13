@@ -34,8 +34,6 @@ export const getZNSFromDB = async () => {
     { version }
   ).toArray();
 
-  console.log(zns.length);
-
   return zns;
 };
 
