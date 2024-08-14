@@ -40,6 +40,10 @@ const main = async () => {
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
     await registerDomainsLocal(migrationAdmin, governor, admin, domains, zns);
+
+    // can we enable forking again for post-migration validation?
+    // better, can we do this in the above function?
+    // but also in a way to do this for all migrations?
   } else if (process.env.MIGRATION_LEVEL === "dev") {
     
   } else if (process.env.MIGRATION_LEVEL === "prod") {

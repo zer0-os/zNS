@@ -31,7 +31,7 @@ export const registerDomainsLocal = async (
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
   await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
   
-  console.log("Registering domains");
+  console.log(`Registering ${validDomains.length} domains`);
   const start = Date.now();
   const registeredDomains = await registerDomains({
     regAdmin: migrationAdmin,
@@ -59,22 +59,36 @@ export const registerDomains = async ({
   // after all other domains have been attempted
   const retryDomains = Array<DomainData>();
 
+  const curvePricerAddress = await zns.curvePricer.getAddress();
+  const fixedPricerAddress = await zns.fixedPricer.getAddress();
+
   let count = 0;
   const start = Date.now();
   for (const domain of domains) {
+
+    // Init as zero, then compare
+    let pricerContractAddress = hre.ethers.ZeroAddress;
+
+    // If user hasn't set a pricer contract, neither do we.
+    // If they have, we select between the two available options
+    if (domain.pricerContract !== hre.ethers.ZeroAddress) {
+      pricerContractAddress = domain.pricerContract === curvePricerAddress ? curvePricerAddress : fixedPricerAddress;
+    }
+
     const domainData = {
       parentHash: domain.parentHash,
       label: domain.label,
       domainAddress: domain.address,
       tokenUri: domain.tokenURI,
       distrConfig: {
-        accessType: BigInt(domain.accessType ?? 0),
+        accessType: BigInt(1), // For recreating the domain tree, all domains are set as `open` initially
         paymentType: BigInt(domain.paymentType ?? 0),
-        pricerContract: domain.pricerContract ?? hre.ethers.ZeroAddress,
+        pricerContract: pricerContractAddress
       },
       paymentConfig: {
-        token: domain.paymentToken.id ?? hre.ethers.ZeroAddress, // because not deployed contract vals, just strings?
-        beneficiary: domain.treasury.beneficiaryAddress ?? hre.ethers.ZeroAddress,
+        // We don't set payment config for recreated domains
+        token: hre.ethers.ZeroAddress,
+        beneficiary: hre.ethers.ZeroAddress,
       },
     }
 
@@ -99,22 +113,20 @@ export const registerDomains = async ({
   }
 
   if (retryDomains.length > 0) { 
-    console.log("we retry these")
-    const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
-      regAdmin,
-      zns,
-      domainData: retryDomains[0],
-    });
-
-    if (retryDomainData) {
-      console.log("Failed to register domain after retry, something else is wrong")
-    }
-    // TODO get domain and txReceipt, add to registeredDomains
+    // TODO In subgraph queries we completely remove a domain from the data store when it is revoked.
+    // To ZNS, this means we can't remint the domain when recreating the tree, and so we can;t
+    // mint any of the still existing subdomains either. To fix this, we need to change the behaviour in 
+    // the subgraph to not remove the domain when it is revoked and instead set `isRevoked = true`
+    // Currently there is a BLOCKING deploy error in the subgraph where it fails but tricks itself
+    // into passing and will deploy but be unable to sync.
+    // This is a known issue and at time of writing they are actively addressing it.
+    // Until then, focus on post-deploy validation of domains that were successfully registered
+    // 08/14/2024
   }
 
   const end = Date.now();
 
-  console.log(`Registered ${registeredDomains.length} domains in ${end} - ${start}`);
+  console.log(`Registered ${registeredDomains.length} domains in ${end - start}s`);
   return registeredDomains;
 };
 
@@ -182,6 +194,8 @@ export const registerBase = async ({
   // Post deploy validation of domain
   // TODO include data from subgraph pre-validation to
   // TODO do this here per domain? or in a script afterward?
+  // TODO how do we validate against the actual mainnet data here?
+  // Right now, ZNS is a local instance
 
   expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
   expect(await zns.registry.exists(domainHash)).to.be.true;

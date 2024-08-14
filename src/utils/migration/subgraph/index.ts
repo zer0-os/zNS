@@ -5,7 +5,6 @@ import { validateDomain } from "./validate";
 import { IZNSContracts } from "../../../deploy/campaign/types";
 
 // import { registerRootDomain } from "../registration";
-import * as fs from "fs";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZNS } from "../zns-contract-data";
 
@@ -16,6 +15,7 @@ export const validateDomains = async (
   first : number,
   skip : number
 ) => {
+  // mainnet, not mainnet-dev
   const url = process.env.SUBGRAPH_URL;
 
   if (!url) {
@@ -32,12 +32,9 @@ export const validateDomains = async (
 
   const start = Date.now();
 
-  // how do we ignore revokes of parent domains for now?
+  // TODO fix revokes when subgraph can be updated. 
+  // This is a blocker on their end I can't fix
   domains = await getDomains(client, first, skip);
-
-  // const domains2 = await getDomains(client, first, skip);
-  // console.log(`Domains: ${domains.length}`);
-  // console.log(`Domains2: ${domains2.length}`);
 
   const zns = await getZNS({
     signer: admin,

@@ -23,7 +23,7 @@ const main = async () => {
   // Max value for `first` is 1000
   // Use `skip` to paginate through the data
   const first = 1000;
-  const skip = 0; 
+  const skip = 1000;
 
   // First, validate domain data from subgraph against mainnet
   const { validDomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
