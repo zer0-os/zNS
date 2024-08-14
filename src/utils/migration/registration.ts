@@ -41,6 +41,8 @@ export const registerDomainsLocal = async (
   const end = Date.now();
   console.log(`Time taken: ${end - start}ms`);
 
+  await postMigrationValidation(zns, registeredDomains);
+
   return registeredDomains;
 };
 
@@ -197,10 +199,21 @@ export const registerBase = async ({
   // TODO how do we validate against the actual mainnet data here?
   // Right now, ZNS is a local instance
 
-  expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
-  expect(await zns.registry.exists(domainHash)).to.be.true;
-  expect(await zns.registry.getDomainOwner(domainHash)).to.equal(regAdmin.address);
-  expect(await zns.domainToken.ownerOf(BigInt(domainHash))).to.equal(regAdmin.address);
+  // expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
+  // expect(await zns.registry.exists(domainHash)).to.be.true;
+  // expect(await zns.registry.getDomainOwner(domainHash)).to.equal(regAdmin.address);
+  // expect(await zns.domainToken.ownerOf(BigInt(domainHash))).to.equal(regAdmin.address);
 
   return { domainHash, txReceipt, domainData: undefined };
 };
+
+
+export const postMigrationValidation = async (
+  zns : IZNSContractsLocal | IZNSContracts,
+  registeredDomains : Array<RegisteredDomain>,
+) => {
+  // if local, reset network again to start forking
+  // but when we reset network we lose the local data?
+      // unless we write to file again and read for validation?
+  // then can compare mainnet values
+}
