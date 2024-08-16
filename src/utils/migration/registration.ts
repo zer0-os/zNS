@@ -1,32 +1,14 @@
-import { getLogger } from "@zero-tech/zdc";
 import * as hre from "hardhat";
-import { znsNames } from "../../deploy/missions/contracts/names";
-import { ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar, ZNSSubRegistrar } from "../../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
-import assert from "assert";
 import { getEventDomainHash } from "./getters";
-import { DomainData, RegisteredDomain } from "./types";
-import { getZNS } from "./zns-contract-data";
+import { DomainData, RegisteredDomain, Domain } from "./types";
 import { IZNSContracts } from "../../deploy/campaign/types";
-import { Domain } from "./types"; // TODO filter to `DomainData`?
+import { distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
+import { IZNSContractsLocal } from "../../../test/helpers/types";
 
-import { AccessType, deployZNS, distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
-// import { ContractTransactionReceipt } from "ethers";
-import { register } from "module";
-import { TypedContractEvent } from "../../../typechain/common";
-import { expect } from "chai";
-import { fstat } from "fs";
-// import { ZNSRootRegistrar } from "../../../typechain";
-
-import * as fs from "fs";
-
-const logger = getLogger();
 
 export const registerDomainsLocal = async (
   migrationAdmin : SignerWithAddress,
-  governor : SignerWithAddress,
-  admin : SignerWithAddress,
   validDomains : Array<Domain>,
   zns : IZNSContractsLocal,
 ) => {
@@ -120,58 +102,6 @@ export const registerDomains = async ({
 
   if (retryDomains.length > 0) {
     console.log(`Retrying ${retryDomains.length} domains`);
-    // TODO In subgraph queries we completely remove a domain from the data store when it is revoked.
-    // To ZNS, this means we can't remint the domain when recreating the tree, and so we can;t
-    // mint any of the still existing subdomains either. To fix this, we need to change the behaviour in 
-    // the subgraph to not remove the domain when it is revoked and instead set `isRevoked = true`
-    // Currently there is a BLOCKING deploy error in the subgraph where it fails but tricks itself
-    // into passing and will deploy but be unable to sync.
-    // This is a known issue and at time of writing they are actively addressing it.
-    // Until then, focus on post-deploy validation of domains that were successfully registered
-    // 08/14/2024
-
-    // Init as zero, then compare
-    let pricerContractAddress = hre.ethers.ZeroAddress;
-
-    // If user hasn't set a pricer contract, neither do we.
-    // If they have, we select between the two available options
-    
-    for (const domain of retryDomains) {
-      if (domain.pricerContract !== hre.ethers.ZeroAddress) {
-        pricerContractAddress = domain.pricerContract === curvePricerAddress ? curvePricerAddress : fixedPricerAddress;
-      }
-      const domainData = {
-        parentHash: domain.parentHash,
-        label: domain.label,
-        domainAddress: domain.address,
-        tokenUri: domain.tokenURI,
-        distrConfig: {
-          accessType: AccessType.OPEN, // For recreating the domain tree, all domains are set as `open` initially
-          paymentType: BigInt(domain.paymentType ?? 0),
-          pricerContract: pricerContractAddress
-        },
-        paymentConfig: {
-          // We don't set payment config for recreated domains
-          token: hre.ethers.ZeroAddress,
-          beneficiary: hre.ethers.ZeroAddress,
-        },
-      }
-
-      const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
-        regAdmin,
-        zns,
-        domainData,
-      });
-
-      if (retryDomainData) {
-        console.log("wtf m8?")
-        console.log(retryDomainData)
-      } else {
-        registeredDomains.push({ domainHash, txReceipt });
-      }
-    }
-    // fs.writeFileSync("retry-domains.json", JSON.stringify(retryDomains, null, 2));
-    console.log(`Still ${BigInt(retryDomains.length).toString()} domains to retry`);
   }
 
   const end = Date.now();
@@ -194,23 +124,22 @@ export const registerBase = async ({
     label,
     domainAddress,
     tokenUri,
-    distrConfig,
-    paymentConfig, // dont use payment config for recreation, will break if parent isnt registered yet
   } = domainData;
 
   let tx;
   let domainType;
-  // const filter = zns.rootRegistrar.filters.DomainRegistered();
+
   try {
     if (parentHash === hre.ethers.ZeroHash) {
       domainType = "Root Domain";
-      // will fail if forking mainnet, not on meowchain
+
+      // We aren't setting configs intentionally.
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
         label,
         domainAddress,
         tokenUri,
         distrConfigEmpty,
-        paymentConfigEmpty, // TODO set configs as empty to avoid parent issues?
+        paymentConfigEmpty,
       );
     } else {
       domainType = "Subdomain";
@@ -224,18 +153,8 @@ export const registerBase = async ({
       );
     }
   } catch (e) {
-    console.log(`label: ${label}`);
-    console.log(`parentHash: ${parentHash}`);
-    console.log(`regAdmin: ${regAdmin.address}`);
-
-    const exists = await zns.registry.exists(parentHash);
-    if (exists) {
-      console.log("exists");
-    } else {
-      // It might just be order thing? worlds may have to go first
-      console.log("not exist");
-      console.log(e)
-    }
+    // Return the domainData if something failed so we can log it
+    // for debugging purposes
     return {
       domainHash: undefined,
       txReceipt: undefined,
@@ -249,19 +168,6 @@ export const registerBase = async ({
     zns,
   });
 
-  // console.log(`Domain hash: ${domainHash}`);
-
-  // Post deploy validation of domain
-  // TODO include data from subgraph pre-validation to
-  // TODO do this here per domain? or in a script afterward?
-  // TODO how do we validate against the actual mainnet data here?
-  // Right now, ZNS is a local instance
-
-  // expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
-  // expect(await zns.registry.exists(domainHash)).to.be.true;
-  // expect(await zns.registry.getDomainOwner(domainHash)).to.equal(regAdmin.address);
-  // expect(await zns.domainToken.ownerOf(BigInt(domainHash))).to.equal(regAdmin.address);
-
   return { domainHash, txReceipt, domainData: undefined };
 };
 
@@ -270,8 +176,13 @@ export const postMigrationValidation = async (
   zns : IZNSContractsLocal | IZNSContracts,
   registeredDomains : Array<RegisteredDomain>,
 ) => {
+  // TODO impl
   // if local, reset network again to start forking
   // but when we reset network we lose the local data?
       // unless we write to file again and read for validation?
   // then can compare mainnet values
+  // expect(domainHash).to.not.equal(hre.ethers.ZeroHash);
+  // expect(await zns.registry.exists(domainHash)).to.be.true;
+  // expect(await zns.registry.getDomainOwner(domainHash)).to.equal(regAdmin.address);
+  // expect(await zns.domainToken.ownerOf(BigInt(domainHash))).to.equal(regAdmin.address);
 }

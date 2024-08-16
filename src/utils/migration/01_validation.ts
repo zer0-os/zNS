@@ -17,7 +17,7 @@ const main = async () => {
   // If there are errors, log them to a file for triage
   if (invalidDomains.length > 0) {
     fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
-    throw new Error("invalid domains! Check invalid-domains.json");
+    throw new Error("Some domains failed validation! Check invalid-domains.json");
   }
 
   fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));

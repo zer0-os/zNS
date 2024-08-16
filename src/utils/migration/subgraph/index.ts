@@ -1,10 +1,7 @@
 import { createClient, getDomains } from "./client";
 import { Domain, SubgraphError } from "../types";
 import { validateDomain } from "./validate";
-
 import { IZNSContracts } from "../../../deploy/campaign/types";
-
-// import { registerRootDomain } from "../registration";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZNS } from "../zns-contract-data";
 
@@ -15,7 +12,7 @@ export const validateDomains = async (
   first : number,
   skip : number
 ) => {
-  // mainnet, not mainnet-dev
+  // TODO mainnet dev for now, should be
   const url = process.env.SUBGRAPH_URL_DEV;
 
   if (!url) {
@@ -34,20 +31,19 @@ export const validateDomains = async (
 
   domains = await getDomains(client, first, skip);
 
+  // Get ZNS contracts from the MongoDB instance to validate against
   const zns = await getZNS({
     signer: admin,
     action: "read"
   });
 
   while (domains.length > 0) {
-
     console.log(`Validating ${domains.length} domains`);
 
     for (const domain of domains) {
 
       // We only return a value when errors occur
-      // TODO remove admin here, we dont need signer on the validation side
-      const invalidDomain = await validateDomain(domain, admin, zns);
+      const invalidDomain = await validateDomain(domain, zns);
 
       validDomains.push(domain);
       if (invalidDomain) {
@@ -73,10 +69,4 @@ export const validateDomains = async (
   console.log(`Validated ${count} domains in ${end - start}ms`);
 
   return { validDomains, invalidDomains };
-}
-
-export const validateDomainsPostMigration = async (
-  zns : IZNSContracts,
-) => {
-  
 }

@@ -10,7 +10,6 @@ import { IZNSContractsLocal } from "../../../../test/helpers/types";
 
 export const validateDomain = async (
   domain : Domain, 
-  deployer : SignerWithAddress,
   zns : IZNSContracts | IZNSContractsLocal
 ) => {
 
@@ -43,10 +42,9 @@ export const validateDomain = async (
       expect(!!domain.parent).to.be.false;
       expect(domain.depth === 0);
     } else {
-      // When a domain is revoked, it's children will all still have the `parentHash` value
-      // for that domain, even if the `parent` domain entity for each child is now null
-      // so we can't expect `!!domain.parent == true` here
-      // TODO update to check for parent entity when we can update the subgraph
+      // Because we no longer delete from the subgraph store on revoke, the domain is always present
+      // even if `isRevoked` is true
+      expect(!!domain.parent).to.be.true;
       expect(domain.parentHash).to.not.equal(ZeroHash);
       expect(domain.depth > 0);
     }

@@ -1,6 +1,6 @@
 import * as apollo from "@apollo/client/core";
 
-import * as q from "./queries.ts";
+import * as q from "./queries";
 import { exit } from "process";
 
 export const createClient = (subgraphUri : string) : apollo.ApolloClient<apollo.NormalizedCacheObject> => {

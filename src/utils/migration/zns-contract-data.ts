@@ -1,21 +1,8 @@
-import { znsNames } from "../../deploy/missions/contracts/names.ts";
-import { IZNSContracts } from "../../deploy/campaign/types.ts";
+import { znsNames } from "../../deploy/missions/contracts/names";
+import { IZNSContracts } from "../../deploy/campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getContractFromDB, getZNSFromDB } from "./database.ts";
-
-import * as hre from "hardhat";
+import { getZNSFromDB } from "./database";
 import {
-  ZNSAccessController,
-  ZNSRegistry,
-  ZNSDomainToken,
-  MeowTokenMock,
-  ZNSAddressResolver,
-  ZNSCurvePricer,
-  ZNSTreasury,
-  ZNSRootRegistrar,
-  ZNSFixedPricer,
-  ZNSSubRegistrar,
-  Initializable__factory,
   ZNSAccessController__factory,
   ZNSRegistry__factory,
   MeowTokenMock__factory,
@@ -26,16 +13,9 @@ import {
   ZNSRootRegistrar__factory,
   ZNSSubRegistrar__factory,
   ZNSTreasury__factory
-} from "../../../typechain/index.ts";
+} from "../../../typechain/index";
 
 let znsCache : IZNSContracts | null = null;
-
-export const getZNSMeowChain = async (
-  signer : SignerWithAddress,
-  dbVersion : string,
-) => {
-
-}
 
 export const getZNS = async ({
   signer,
@@ -49,8 +29,8 @@ export const getZNS = async ({
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
 
-    // Tried using a smart method with `getContractFactory(znsNames)` but results in a type 
-    // of contract factory that cannot be connected properly to an existing contract.
+    // Get each contract and manually connect to a factory.
+    // Using `getContractFactory()` returns an incorrect type of factory here
     const acAddress = zns.find((contract) => contract.name === znsNames.accessController.contract);
     const regAddress = zns.find((contract) => contract.name === znsNames.registry.contract);
     const domainTokenAddress = zns.find((contract) => contract.name === znsNames.domainToken.contract);
@@ -78,23 +58,3 @@ export const getZNS = async ({
 
   return znsCache;
 };
-
-// TODO mig: below is test logic to make sure we pull correct data from DB.
-//  REMOVE THIS WHEN DONE !!!
-//  Currently the `initialize()` method on DB adapter is called always, creating a new `version` object!
-//  So be careful running this with the prod URI! We need a read-only access for this case and ONLY connect that way!
-//  Otherwise we can mess up the current Prod Mainnet Database!
-// const getContracts = async () => {
-//   const contracts = await getZNS({
-//     dbVersion: process.env.MONGO_DB_VERSION ?? "1703976278937", // current Mainnet DEPLOYED version we need to read from
-//   });
-
-//   console.log(contracts);
-// };
-
-// getContracts()
-//   .then(() => process.exit(0))
-//   .catch(err => {
-//     console.error(err);
-//     process.exit(1);
-//   });
