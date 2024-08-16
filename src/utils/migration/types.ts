@@ -8,6 +8,7 @@ export interface Domain {
   domainToken : DomainToken;
   depth : number;
   label : string;
+  isRevoked : boolean;
   isReclaimable : boolean;
   reclaimableAddress : string;
   isWorld : boolean;

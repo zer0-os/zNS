@@ -2,7 +2,7 @@ import { gql } from "@apollo/client/core";
 
 export const getDomains = gql`
   query Domains($first: Int!, $skip: Int!) {
-    domains(first: $first, skip: $skip, orderBy: creationTimestamp, orderDirection: asc) {
+    domains(first: $first, skip: $skip, orderBy: depth, orderDirection: asc) {
       id
       minter {
         id
@@ -15,6 +15,7 @@ export const getDomains = gql`
           id
         }
       }
+      isRevoked
       depth
       label
       isWorld
@@ -22,6 +23,7 @@ export const getDomains = gql`
       parentHash
       parent {
         id
+        isRevoked
         label
       }
       accessType

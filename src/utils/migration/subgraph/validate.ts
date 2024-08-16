@@ -15,17 +15,20 @@ export const validateDomain = async (
 ) => {
 
   try {
-    expect(await zns.registry.exists(domain.id)).to.be.true;
-
-    expect(
-      (await zns.registry.getDomainOwner(domain.id)).toLowerCase())
-      .to.equal(domain.owner.id.toLowerCase());
-    expect(
-      (await zns.domainToken.ownerOf(domain.tokenId)).toLowerCase())
-      .to.equal(domain.domainToken.owner.id.toLowerCase());
-    expect(
-      (await zns.addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
-      .to.equal(domain.address.toLowerCase());
+    // Because we no longer delete from the store in the subgraph when a domain is revoked
+    // we have to first check `isRevoked` before checking the registry
+    if (!domain.isRevoked) {
+      expect(await zns.registry.exists(domain.id)).to.be.true;
+      expect(
+        (await zns.registry.getDomainOwner(domain.id)).toLowerCase())
+        .to.equal(domain.owner.id.toLowerCase());
+      expect(
+        (await zns.domainToken.ownerOf(domain.tokenId)).toLowerCase())
+        .to.equal(domain.domainToken.owner.id.toLowerCase());
+      expect(
+        (await zns.addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
+        .to.equal(domain.address.toLowerCase());
+    }
 
     const distrConfig = await zns.subRegistrar.distrConfigs(domain.id);
 

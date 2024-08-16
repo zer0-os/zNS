@@ -11,12 +11,15 @@ import { getZNS } from "./zns-contract-data";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { Domain } from "./types"; // TODO filter to `DomainData`?
 
-import { deployZNS, paymentConfigEmpty } from "../../../test/helpers";
+import { AccessType, deployZNS, distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
 // import { ContractTransactionReceipt } from "ethers";
 import { register } from "module";
 import { TypedContractEvent } from "../../../typechain/common";
 import { expect } from "chai";
+import { fstat } from "fs";
 // import { ZNSRootRegistrar } from "../../../typechain";
+
+import * as fs from "fs";
 
 const logger = getLogger();
 
@@ -59,7 +62,7 @@ export const registerDomains = async ({
   
   // When domains fail they are added to this array to retry
   // after all other domains have been attempted
-  const retryDomains = Array<DomainData>();
+  const retryDomains = Array<Domain>();
 
   const curvePricerAddress = await zns.curvePricer.getAddress();
   const fixedPricerAddress = await zns.fixedPricer.getAddress();
@@ -101,7 +104,8 @@ export const registerDomains = async ({
     });
 
     if (retryDomainData) {
-      retryDomains.push(retryDomainData);
+      console.log("failed? why?")
+      retryDomains.push(domain);
     } else {
       registeredDomains.push({ domainHash, txReceipt });
     }
@@ -114,7 +118,8 @@ export const registerDomains = async ({
     };
   }
 
-  if (retryDomains.length > 0) { 
+  if (retryDomains.length > 0) {
+    console.log(`Retrying ${retryDomains.length} domains`);
     // TODO In subgraph queries we completely remove a domain from the data store when it is revoked.
     // To ZNS, this means we can't remint the domain when recreating the tree, and so we can;t
     // mint any of the still existing subdomains either. To fix this, we need to change the behaviour in 
@@ -124,11 +129,54 @@ export const registerDomains = async ({
     // This is a known issue and at time of writing they are actively addressing it.
     // Until then, focus on post-deploy validation of domains that were successfully registered
     // 08/14/2024
+
+    // Init as zero, then compare
+    let pricerContractAddress = hre.ethers.ZeroAddress;
+
+    // If user hasn't set a pricer contract, neither do we.
+    // If they have, we select between the two available options
+    
+    for (const domain of retryDomains) {
+      if (domain.pricerContract !== hre.ethers.ZeroAddress) {
+        pricerContractAddress = domain.pricerContract === curvePricerAddress ? curvePricerAddress : fixedPricerAddress;
+      }
+      const domainData = {
+        parentHash: domain.parentHash,
+        label: domain.label,
+        domainAddress: domain.address,
+        tokenUri: domain.tokenURI,
+        distrConfig: {
+          accessType: AccessType.OPEN, // For recreating the domain tree, all domains are set as `open` initially
+          paymentType: BigInt(domain.paymentType ?? 0),
+          pricerContract: pricerContractAddress
+        },
+        paymentConfig: {
+          // We don't set payment config for recreated domains
+          token: hre.ethers.ZeroAddress,
+          beneficiary: hre.ethers.ZeroAddress,
+        },
+      }
+
+      const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
+        regAdmin,
+        zns,
+        domainData,
+      });
+
+      if (retryDomainData) {
+        console.log("wtf m8?")
+        console.log(retryDomainData)
+      } else {
+        registeredDomains.push({ domainHash, txReceipt });
+      }
+    }
+    // fs.writeFileSync("retry-domains.json", JSON.stringify(retryDomains, null, 2));
+    console.log(`Still ${BigInt(retryDomains.length).toString()} domains to retry`);
   }
 
   const end = Date.now();
 
-  console.log(`Registered ${registeredDomains.length} domains in ${end - start}s`);
+  console.log(`Registered ${registeredDomains.length} domains in ${end - start}ms`);
   return registeredDomains;
 };
 
@@ -161,7 +209,7 @@ export const registerBase = async ({
         label,
         domainAddress,
         tokenUri,
-        distrConfig,
+        distrConfigEmpty,
         paymentConfigEmpty, // TODO set configs as empty to avoid parent issues?
       );
     } else {
@@ -171,13 +219,23 @@ export const registerBase = async ({
         label,
         domainAddress,
         tokenUri,
-        distrConfig,
+        distrConfigEmpty,
         paymentConfigEmpty,
       );
     }
   } catch (e) {
-    // maybe return and add retry logic for failed domains?
-    // console.log(e)
+    console.log(`label: ${label}`);
+    console.log(`parentHash: ${parentHash}`);
+    console.log(`regAdmin: ${regAdmin.address}`);
+
+    const exists = await zns.registry.exists(parentHash);
+    if (exists) {
+      console.log("exists");
+    } else {
+      // It might just be order thing? worlds may have to go first
+      console.log("not exist");
+      console.log(e)
+    }
     return {
       domainHash: undefined,
       txReceipt: undefined,

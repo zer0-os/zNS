@@ -16,7 +16,7 @@ export const validateDomains = async (
   skip : number
 ) => {
   // mainnet, not mainnet-dev
-  const url = process.env.SUBGRAPH_URL;
+  const url = process.env.SUBGRAPH_URL_DEV;
 
   if (!url) {
     throw new Error("Missing subgraph url");
@@ -32,8 +32,6 @@ export const validateDomains = async (
 
   const start = Date.now();
 
-  // TODO fix revokes when subgraph can be updated. 
-  // This is a blocker on their end I can't fix
   domains = await getDomains(client, first, skip);
 
   const zns = await getZNS({
@@ -48,6 +46,7 @@ export const validateDomains = async (
     for (const domain of domains) {
 
       // We only return a value when errors occur
+      // TODO remove admin here, we dont need signer on the validation side
       const invalidDomain = await validateDomain(domain, admin, zns);
 
       validDomains.push(domain);
