@@ -22,10 +22,22 @@ const getDBAdapter = async (connectionString : string): Promise<MongoClient> => 
 }
 
 export const getZNSFromDB = async () => {
-  let version = process.env.MONGO_DB_VERSION ?? process.env.MONGO_DB_TESTNET_VERSION;
-  let uri = process.env.MONGO_DB_URI ?? process.env.MONGO_DB_TESTNET_URI;
+  let version;
+  let uri;
+  if (hre.network.name === "hardhat") {
+    // forking mainnet
+    version = process.env.MONGO_DB_VERSION;
+    uri = process.env.MONGO_DB_URI;
+  } else if (hre.network.name === "sepolia") {
+    // real spolia
+    version = process.env.MONGO_DB_VERSION;
+    uri = process.env.MONGO_DB_URI;
+  } else {
+    // TODO impl meowchain
+    throw new Error("Invalid network name");
+  }
 
-  if (!uri) {
+  if (!uri || !version) {
     throw new Error("Failed to connect: missing MongoDB URI");
   }
 

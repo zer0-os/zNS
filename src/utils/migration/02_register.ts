@@ -12,7 +12,8 @@ const main = async () => {
     encoding: "utf8"
   })) as Array<Domain>;
 
-  if (process.env.MIGRATION_LEVEL === "local") {
+  if (hre.network.name === "hardhat") {
+    console.log("hh network");
     // Reset the network to be sure we are not forking.
     await hre.network.provider.request({
       method: "hardhat_reset",
@@ -29,11 +30,11 @@ const main = async () => {
     const zns = await deployZNS(params);
     await registerDomainsLocal(migrationAdmin, domains, zns);
 
-    // can we enable forking again for post-migration validation?
-    // better, can we do this in the above function?
-    // but also in a way to do this for all migrations?
-  } else if (process.env.MIGRATION_LEVEL === "dev") {
-    // TODO impl
+    // TODO post-migration validation?
+  } else if (hre.network.name === "sepolia") {
+
+    console.log("sepolia network");
+
   } else if (process.env.MIGRATION_LEVEL === "prod") {
     // TODO impl
   } else {
