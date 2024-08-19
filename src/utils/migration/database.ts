@@ -1,8 +1,5 @@
 import { MongoDBAdapter } from "@zero-tech/zdc";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { znsNames } from "../../deploy/missions/contracts/names";
 import * as hre from "hardhat";
-import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 
 import { MongoClient, ServerApiVersion } from "mongodb";
 
@@ -36,7 +33,7 @@ export const getZNSFromDB = async () => {
     uri = process.env.MONGO_DB_SEPOLIA_URI;
     dbName = process.env.MONGO_DB_SEPOLIA_NAME;
   } else {
-    // TODO impl meowchain
+    // TODO impl zchain when ready
     throw new Error("Invalid network name");
   }
 

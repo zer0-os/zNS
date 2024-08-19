@@ -1,6 +1,5 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getEventDomainHash } from "./getters";
 import { DomainData, RegisteredDomain, Domain } from "./types";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
@@ -114,11 +113,8 @@ export const registerBase = async ({
   } = domainData;
 
   let tx;
-  let domainType;
   try {
     if (parentHash === hre.ethers.ZeroHash) {
-      domainType = "Root Domain";
-
       await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, registrant, label, parent, domainType, tokenUri, distrConfig, paymentConfig) => {
         return domainHash;
       });
@@ -132,7 +128,6 @@ export const registerBase = async ({
         paymentConfigEmpty,
       );
     } else {
-      domainType = "Subdomain";
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
         parentHash,
         label,
@@ -152,32 +147,15 @@ export const registerBase = async ({
     }
   }
 
+  // Providing a number on hardhat will cause it to hang
   const blocks = hre.network.name === "hardhat" ? 0 : 2;
   const txReceipt = await tx.wait(blocks);
 
-  // console.log(`receipt: ${txReceipt}`);
-  // console.log(`receipt.logs: ${txReceipt!.logs}`);
-  // console.log(`receipt.logs.length: ${txReceipt!.logs.length}`);
-  // const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
-  // console.log(`receiptLastLog: ${lastLog}`);
-  // console.log(`receiptLastLogValues: ${Object.values(lastLog)}`);
-  // console.log(`receiptLastLogKeys: ${Object.keys(lastLog)}`);
-  // console.log(`receiptLastLog.data: ${lastLog.data}`);
-
-  // const keys = Object.keys(lastLog)
-  // const vals = Object.values(lastLog)
-  // for (let i = 0; i < keys.length; i++) {
-  //   console.log(`key: ${keys[i]}, val: ${vals[i]}`);
-  // }
-  // console.log("tx logs ",txReceipt?.logs.length);
-  // const log = txReceipt?.logs[txReceipt?.logs.length - 1];
-  // console.log("log: ", log)
-  // console.log("log.args: ", log!.args[1])
-
-  // We know from the event that the second argument is always domainHash
+  // TODO can we make this nicer? Reading from `topics` is not ideal
   const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
   const domainHash = lastLog.topics[1];
-  console.log(`domainHash: ${domainHash}`)
+
+  // console.log(`domainHash: ${domainHash}`)
 
   return { domainHash, txReceipt, domainData: undefined };
 };

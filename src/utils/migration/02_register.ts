@@ -37,7 +37,7 @@ const main = async () => {
     const registeredDomains = await registerDomains({
       regAdmin: migrationAdmin,
       zns, 
-      domains: domains.slice(0, 10) // Register 10 domains (end index is exclusive, so we do 0-9)
+      domains: domains.slice(10, 20) // Register 10 domains (end index is exclusive)
     });
     console.log(registeredDomains.length);
   } else if (process.env.MIGRATION_LEVEL === "prod") {
