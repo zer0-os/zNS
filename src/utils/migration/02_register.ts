@@ -3,6 +3,7 @@ import { Domain } from "./types";
 import * as fs from "fs";
 import { deployZNS } from "../../../test/helpers";
 import { registerDomains, registerDomainsLocal } from "./registration";
+import { getZNS } from "./zns-contract-data";
 
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
@@ -28,15 +29,19 @@ const main = async () => {
 
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
-    await registerDomainsLocal(migrationAdmin, domains, zns);
+    await registerDomainsLocal(migrationAdmin, [domains[0]], zns);
 
-    // TODO post-migration validation?
   } else if (hre.network.name === "sepolia") {
+    const zns = await getZNS(migrationAdmin);
 
-    console.log("sepolia network");
-
+    const registeredDomains = await registerDomains({
+      regAdmin: migrationAdmin,
+      zns, 
+      domains: domains.slice(0, 10) // Register 10 domains (end index is exclusive, so we do 0-9)
+    });
+    console.log(registeredDomains.length);
   } else if (process.env.MIGRATION_LEVEL === "prod") {
-    // TODO impl
+    // TODO impl when deployed on zchain
   } else {
     throw new Error("Invalid migration level env variable. Must specify 'local', 'dev', or 'prod'");
   }

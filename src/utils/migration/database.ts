@@ -24,14 +24,17 @@ const getDBAdapter = async (connectionString : string): Promise<MongoClient> => 
 export const getZNSFromDB = async () => {
   let version;
   let uri;
+  let dbName;
+
   if (hre.network.name === "hardhat") {
-    // forking mainnet
+    // Forking queries the prod mainnet for real data
     version = process.env.MONGO_DB_VERSION;
     uri = process.env.MONGO_DB_URI;
+    dbName = process.env.MONGO_DB_NAME;
   } else if (hre.network.name === "sepolia") {
-    // real spolia
-    version = process.env.MONGO_DB_VERSION;
-    uri = process.env.MONGO_DB_URI;
+    version = process.env.MONGO_DB_SEPOLIA_VERSION;
+    uri = process.env.MONGO_DB_SEPOLIA_URI;
+    dbName = process.env.MONGO_DB_SEPOLIA_NAME;
   } else {
     // TODO impl meowchain
     throw new Error("Invalid network name");
@@ -42,8 +45,6 @@ export const getZNSFromDB = async () => {
   }
 
   let dbAdapter = await getDBAdapter(uri);
-
-  const dbName = process.env.MONGO_DB_TESTNET_NAME ?? process.env.MONGO_DB_NAME
 
   if(!dbName) {
     throw new Error(`Failed to connect: database "${dbName}" not found`);

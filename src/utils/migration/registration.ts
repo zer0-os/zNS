@@ -46,21 +46,9 @@ export const registerDomains = async ({
   // after all other domains have been attempted
   const retryDomains = Array<Domain>();
 
-  const curvePricerAddress = await zns.curvePricer.getAddress();
-  const fixedPricerAddress = await zns.fixedPricer.getAddress();
-
   let count = 0;
   const start = Date.now();
   for (const domain of domains) {
-
-    // Init as zero, then compare
-    let pricerContractAddress = hre.ethers.ZeroAddress;
-
-    // If user hasn't set a pricer contract, neither do we.
-    // If they have, we select between the two available options
-    if (domain.pricerContract !== hre.ethers.ZeroAddress) {
-      pricerContractAddress = domain.pricerContract === curvePricerAddress ? curvePricerAddress : fixedPricerAddress;
-    }
 
     const domainData = {
       parentHash: domain.parentHash,
@@ -70,7 +58,7 @@ export const registerDomains = async ({
       distrConfig: {
         accessType: BigInt(1), // For recreating the domain tree, all domains are set as `open` initially
         paymentType: BigInt(domain.paymentType ?? 0),
-        pricerContract: pricerContractAddress
+        pricerContract: hre.ethers.ZeroAddress
       },
       paymentConfig: {
         // We don't set payment config for recreated domains
@@ -93,8 +81,7 @@ export const registerDomains = async ({
     }
 
     count++;
-    
-    // gives misleading results, lots in a row fail and 900 appears multiple times
+
     if (count % 100 === 0) {
       console.log(`Registered ${registeredDomains.length} domains`);
     };
@@ -128,10 +115,13 @@ export const registerBase = async ({
 
   let tx;
   let domainType;
-
   try {
     if (parentHash === hre.ethers.ZeroHash) {
       domainType = "Root Domain";
+
+      await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, registrant, label, parent, domainType, tokenUri, distrConfig, paymentConfig) => {
+        return domainHash;
+      });
 
       // We aren't setting configs intentionally.
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
@@ -162,11 +152,32 @@ export const registerBase = async ({
     }
   }
 
-  const txReceipt = await tx.wait();
-  const domainHash = await getEventDomainHash({
-    registrantAddress: regAdmin.address,
-    zns,
-  });
+  const blocks = hre.network.name === "hardhat" ? 0 : 2;
+  const txReceipt = await tx.wait(blocks);
+
+  // console.log(`receipt: ${txReceipt}`);
+  // console.log(`receipt.logs: ${txReceipt!.logs}`);
+  // console.log(`receipt.logs.length: ${txReceipt!.logs.length}`);
+  // const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
+  // console.log(`receiptLastLog: ${lastLog}`);
+  // console.log(`receiptLastLogValues: ${Object.values(lastLog)}`);
+  // console.log(`receiptLastLogKeys: ${Object.keys(lastLog)}`);
+  // console.log(`receiptLastLog.data: ${lastLog.data}`);
+
+  // const keys = Object.keys(lastLog)
+  // const vals = Object.values(lastLog)
+  // for (let i = 0; i < keys.length; i++) {
+  //   console.log(`key: ${keys[i]}, val: ${vals[i]}`);
+  // }
+  // console.log("tx logs ",txReceipt?.logs.length);
+  // const log = txReceipt?.logs[txReceipt?.logs.length - 1];
+  // console.log("log: ", log)
+  // console.log("log.args: ", log!.args[1])
+
+  // We know from the event that the second argument is always domainHash
+  const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
+  const domainHash = lastLog.topics[1];
+  console.log(`domainHash: ${domainHash}`)
 
   return { domainHash, txReceipt, domainData: undefined };
 };

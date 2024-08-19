@@ -17,15 +17,7 @@ import {
 
 let znsCache : IZNSContracts | null = null;
 
-export const getZNS = async ({
-  signer,
-  dbVersion,
-  action = "read" // Must be "read" or "write"
-} : {
-  signer ?: SignerWithAddress;
-  dbVersion ?: string;
-  action ?: string;
-}) => {
+export const getZNS = async (signer : SignerWithAddress) => {
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
 

@@ -18,8 +18,15 @@ export const getEventDomainHash = async ({
     undefined,
   );
 
-  const events = await zns.rootRegistrar.queryFilter(filter);
-  const { args: { domainHash } } = events[events.length - 1];
+  const events = await zns.rootRegistrar.queryFilter(filter, 6532288);
+  console.log("eventsLength ", events.length);
 
-  return domainHash;
+  const mostRecentEvent = events[events.length - 1];
+  console.log("most recent event ", mostRecentEvent);
+
+  if (mostRecentEvent.args) {
+    return mostRecentEvent.args.domainHash;
+  } else {
+    throw new Error("no event data?")
+  }
 };
