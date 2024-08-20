@@ -13,8 +13,13 @@ const main = async () => {
     encoding: "utf8"
   })) as Array<Domain>;
 
+  console.log(`Registering ${domains.length} domains`);
+
+  const registeredDomains : Array<Domain> = [];
+
+  const start = Date.now();
+
   if (hre.network.name === "hardhat") {
-    console.log("hh network");
     // Reset the network to be sure we are not forking.
     await hre.network.provider.request({
       method: "hardhat_reset",
@@ -29,16 +34,19 @@ const main = async () => {
 
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
-    // await registerDomainsLocal(migrationAdmin, domains.splice(0, 10), zns);
-    // console.log(domains[0].label);
-    const registeredDomains = await registerDomains({
-      regAdmin: migrationAdmin,
-      zns,
-      domains: [domains[0], domains[1]]
-    })
 
-    // tokenID will be different than "real", cant compare to data before...
-    console.log(await zns.domainToken.ownerOf(registeredDomains[0].tokenId));
+    for (let i = 0; i < 1; i += 100) { // have only iterate once for now
+      const slice = domains.slice(i, i + 100);
+
+      // add console logs here to track is something fails
+      const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
+
+      // registeredDomains.concat(localRegisteredDomains);
+
+      console.log(`Registered ${localRegisteredDomains.domainHashes!.length} domains...`);
+    }
+
+    console.log();
   } else if (hre.network.name === "sepolia") {
     const zns = await getZNS(migrationAdmin);
 
@@ -53,6 +61,11 @@ const main = async () => {
   } else {
     throw new Error("Invalid migration level env variable. Must specify 'local', 'dev', or 'prod'");
   }
+
+  const end = Date.now();
+  console.log(`Registered ${registeredDomains.length} domains in ${end - start}ms`);
+
+
 
   // It seems the HH script process hangs at completion
   // Manually exit here

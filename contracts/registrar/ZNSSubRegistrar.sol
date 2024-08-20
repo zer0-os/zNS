@@ -68,6 +68,31 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         setRootRegistrar(_rootRegistrar);
     }
 
+    function registerSubdomainBulk(
+        bytes32[] calldata parentHashes,
+        string[] calldata labels,
+        address[] calldata domainAddresses,
+        string[] calldata tokenURIs,
+        DistributionConfig calldata emptyDistrConfig,
+        PaymentConfig calldata emptyPaymentConfig
+    ) public onlyAdmin {
+        // For the migration specifically so we setup with empty configs
+        for (uint256 i = 0; i < parentHashes.length;) {
+            registerSubdomain(
+                parentHashes[i],
+                labels[i],
+                domainAddresses[i],
+                tokenURIs[i],
+                emptyDistrConfig,
+                emptyPaymentConfig
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     /**
      * @notice Entry point to register a subdomain under a parent domain specified.
      * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
@@ -90,7 +115,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
 

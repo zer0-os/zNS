@@ -15,19 +15,13 @@ export const registerDomainsLocal = async (
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
   await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
   
-  console.log(`Registering ${validDomains.length} domains`);
-  const start = Date.now();
-  const registeredDomains = await registerDomains({
+  return await registerDomains({
     regAdmin: migrationAdmin,
     zns,
     domains: validDomains,
   });
-  const end = Date.now();
-  console.log(`Time taken: ${end - start}ms`);
 
-  await postMigrationValidation(zns, registeredDomains);
-
-  return registeredDomains;
+  // await postMigrationValidation(zns, registeredDomains);
 };
 
 export const registerDomains = async ({
@@ -45,23 +39,12 @@ export const registerDomains = async ({
   // after all other domains have been attempted
   const retryDomains = Array<Domain>();
 
-  let count = 0;
-  const start = Date.now();
-
     const parentHashes = domains.map((domain) => { return domain.parentHash });
     const labels = domains.map((domain) => { return domain.label });
     const domainAddresses = domains.map((domain) => {return domain.address });
     const tokenURIs = domains.map((domain) => { return domain.tokenURI });
 
-    console.log(parentHashes.length)
-    console.log(labels.length)
-    console.log(domainAddresses.length)
-    console.log(tokenURIs.length)
-
-    // console.log(domainDataArray.length)
-
-    // const { domainHash, txReceipt, domainData: retryDomainData } = 
-    await registerBase({
+    const { domainHashes, txReceipt, retryData } = await registerBase({
       regAdmin,
       zns,
       parentHashes,
@@ -88,10 +71,16 @@ export const registerDomains = async ({
   //   console.log(`Retrying ${retryDomains.length} domains`);
   // }
 
-  const end = Date.now();
+  // const end = Date.now();
 
-  console.log(`Registered ${registeredDomains.length} domains in ${end - start}ms`);
-  return domains;
+  if (retryData) {
+    // TODO impl retry logic
+    // Have to record how many TXs we've done and have a standard number of domains to register per tx
+    // this way we can calculate where to begin again
+    // if we 10 sets of 50 domains each and the 11th failed, we know we can skip 500 domains 
+  }
+
+  return { domainHashes, txReceipt }
 };
 
 export const registerBase = async ({
@@ -109,13 +98,6 @@ export const registerBase = async ({
   domainAddresses : Array<string>;
   tokenURIs : Array<string>;
 }) => {
-  // const {
-  //   parentHash,
-  //   label,
-  //   domainAddress,
-  //   tokenUri,
-  // } = domainData;
-
   let tx;
   try {
     // if (parentHash === hre.ethers.ZeroHash) {
@@ -154,21 +136,36 @@ export const registerBase = async ({
   const txReceipt = await tx.wait(blocks);
 
   // console.log(txReceipt)
-  console.log(txReceipt!.logs.length)
+  // console.log(txReceipt!.logs.length)
   
   // TODO can we make this nicer? Reading from `topics` is not ideal
   const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
   const firstLog = txReceipt!.logs[0];
 
-  for (let i = 0; i < Object.keys(firstLog).length; i++) {
-    console.log(`key: ${Object.keys(firstLog)[i]}`)
-    console.log(`value: ${Object.values(firstLog)[i]}`)
+  const domainHashes = Array<string>();
+
+  for (let i = 0; i < txReceipt!.logs.length; i++) {
+    // console.log(`log: ${i}`) 
+    // 9 logs per single tx, 3rd log is first to have domainhash
+    // 2, 11, 20, 29, 38, 47, 56, 65, 74
+    if (i % 9 === 2) {
+      // console.log("Domain hashes")
+      domainHashes.push(txReceipt!.logs[i].topics[2])
+    }
+
+    // const keys = Object.keys(txReceipt!.logs[i]);
+    // const values = Object.values(txReceipt!.logs[i]);
+
+    // for (let j = 0; j < keys.length; j++) {
+    //   console.log(`k: ${keys[j]}, v: ${values[j]}`)
+    // }
   }
+
   const domainHash = lastLog.topics[1];
 
   // console.log(`domainHash: ${domainHash}`)
 
-  return { domainHash, txReceipt, domainData: undefined };
+  return { domainHashes, txReceipt, retryData: undefined };
 };
 
 
