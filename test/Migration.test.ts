@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { validateDomains } from "../src/utils/migration/subgraph";
+import { validateDomainsBulk } from "../src/utils/migration/subgraph";
 import { registerDomainsLocal } from "../src/utils/migration/registration";
 import { expect } from "chai";
 import { IZNSContractsLocal } from "./helpers/types";
@@ -35,7 +35,7 @@ describe('Migration', () => {
     skip = 0;
 
     // Validate that the subgraph matches the real on-chain data
-    const { validDomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
+    const { validDomains, invalidDomains } = await validateDomainsBulk(migrationAdmin, first, skip);
 
     expect(invalidDomains.length).to.equal(0);
 

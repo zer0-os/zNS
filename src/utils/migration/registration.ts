@@ -106,7 +106,7 @@ export const registerBase = async ({
         labels,
         domainAddresses,
         tokenURIs,
-        distrConfigEmpty,
+        distrConfigEmpty, // TODO want to still keep their access type to indicate whether or not it's been paid for
         paymentConfigEmpty,
       );
     // } 

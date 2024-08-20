@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client/core";
 
 export const getDomains = gql`
-  query Domains($first: Int!, $skip: Int!) {
-    domains(first: $first, skip: $skip, orderBy: depth, orderDirection: asc) {
+  query Domains($first: Int!, $skip: Int!, $isWorld: Boolean!) {
+    domains(first: $first, skip: $skip, orderBy: depth, orderDirection: asc, where: {isWorld: $isWorld}) {
       id
       minter {
         id

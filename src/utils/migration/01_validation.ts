@@ -12,7 +12,7 @@ const main = async () => {
   const skip = 0;
 
   // First, validate domain data from subgraph against mainnet
-  const { validDomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
+  const { validRootDomains, validSubdomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
 
   // If there are errors, log them to a file for triage
   if (invalidDomains.length > 0) {
@@ -20,8 +20,11 @@ const main = async () => {
     throw new Error("Some domains failed validation! Check invalid-domains.json");
   }
 
-  fs.writeFileSync("valid-domains.json", JSON.stringify(validDomains, null, 2));
+  // TODO make filenames constants
+  fs.writeFileSync("valid-root-domains.json", JSON.stringify(validRootDomains, null, 2));
+  fs.writeFileSync("valid-subdomains.json", JSON.stringify(validSubdomains, null, 2));
   
+  // Doesnt seem to be exiting HH process automatically?
   process.exit(0);
 };
 

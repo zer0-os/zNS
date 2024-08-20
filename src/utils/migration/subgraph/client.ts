@@ -1,7 +1,6 @@
 import * as apollo from "@apollo/client/core";
 
 import * as q from "./queries";
-import { exit } from "process";
 
 export const createClient = (subgraphUri : string) : apollo.ApolloClient<apollo.NormalizedCacheObject> => {
   const client = new apollo.ApolloClient({
@@ -12,18 +11,18 @@ export const createClient = (subgraphUri : string) : apollo.ApolloClient<apollo.
   return client;
 };
 
-export const getDomains = async <T,>(client : apollo.ApolloClient<T>, first : number, skip : number) => {
+export const getDomains = async <T,>(client : apollo.ApolloClient<T>, first : number, skip : number, isWorld : boolean) => {
   const result = await client.query({
     query: q.getDomains,
     variables: {
       first,
       skip,
+      isWorld
     },
   });
 
   if (result.error) {
-    console.log("Error in subgraph query `getDomains`");
-    exit(1);
+    throw new Error("Error in subgraph query `getDomains`");
   }
 
   return result.data.domains;

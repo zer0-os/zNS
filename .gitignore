@@ -22,5 +22,6 @@ docker*.tgz
 .openzeppelin
 
 # Ignore the output files of migration
-valid-domains.json
+valid-root-domains.json
+valid-subdomains.json
 invalid-domains.json
