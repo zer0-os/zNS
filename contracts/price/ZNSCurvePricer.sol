@@ -27,6 +27,12 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     /**
+     * @notice Value used as a basis to multiply the multiplier,
+     * since Solidity does not support fractions.
+     */
+    uint256 public constant MULTIPLIER_BASIS = 1000;
+
+    /**
      * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
      * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
     */
@@ -43,7 +49,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev > Note the for PriceConfig we set each value individually and calling
      * 2 important functions that validate all of the config's values against the formula:
      * - `setPrecisionMultiplier()` to validate precision multiplier
-     * - `_validateConfig()` to validate the whole config in order to avoid price spikes
      * @param accessController_ the address of the ZNSAccessController contract.
      * @param registry_ the address of the ZNSRegistry contract.
      * @param zeroPriceConfig_ a number of variables that participate in the price calculation for subdomains.
@@ -124,9 +129,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
-     * @dev Validates the value of the `precisionMultiplier` and the whole config in order to avoid price spikes,
+     * @dev Validates the value of the `precisionMultiplier`.
      * fires `PriceConfigSet` event.
-     * Only the owner of the domain or an allowed operator can call this function
+     * Only the owner of the domain or an allowed operator can call this function.
      * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
      * > Use the other individual setters to modify only, since they do not set this variable!
      * @param domainHash The domain hash to set the price config for
@@ -162,8 +167,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Fires `MaxPriceSet` event.
      * Only domain owner can call this function.
      * > `maxPrice` can be set to 0 along with `baseLength` to make all domains free!
-     * @dev We are checking here for possible price spike at `maxLength` if the `maxPrice` values is NOT 0.
-     * In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
+     * @dev In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
+     * @param domainHash The domain hash to set the `maxPrice` for it
      * @param maxPrice The maximum price to set
      */
     function setMaxPrice(
@@ -177,11 +182,22 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         emit MaxPriceSet(domainHash, maxPrice);
     }
 
+    /**
+     * @notice Sets the multiplier for domains calculations.
+     * Validates the config with the new multiplier in case where `baseLength` is 0 too.
+     * Fires `CurveMultiplier` event.
+     * Only domain owner can call this function.
+     * > `curveMultiplier` can be set to 0 to set a maximum price for all domains!
+     * @param domainHash The domain hash to set the price config for
+     * @param curveMultiplier Multiplier for bending the price function (graph)
+     */
     function setCurveMultiplier(
         bytes32 domainHash,
         uint256 curveMultiplier
     ) external override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].curveMultiplier = curveMultiplier;
+
+        _validateConfig(domainHash);
 
         emit CurveMultiplierSet(domainHash, curveMultiplier);
     }
@@ -225,6 +241,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) external override onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxLength = length;
 
+        _validateConfig(domainHash);
+
         if (length != 0) _validateConfig(domainHash);
 
         emit MaxLengthSet(domainHash, length);
@@ -239,6 +257,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Fires `PrecisionMultiplierSet` event.
      * Only domain owner/operator can call this function.
      * > Multiplier should be less or equal to 10^18 and greater than 0!
+     * @param domainHash The domain hash to set `PrecisionMultiplier`
      * @param multiplier The multiplier to set
      */
     function setPrecisionMultiplier(
@@ -291,6 +310,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * what we care about, then multiplied by the same precision multiplier to get the actual value
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
+     * @param parentHash The parent hash
      * @param length The length of the domain name
      */
     function _getPrice(
@@ -310,8 +330,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
         if (length > config.maxLength) length = config.maxLength;
 
-        return (config.baseLength * config.maxPrice / (config.baseLength + config.curveMultiplier
-        * (length - config.baseLength))) / config.precisionMultiplier * config.precisionMultiplier;
+        return ((config.baseLength * config.maxPrice * MULTIPLIER_BASIS) / (
+                    config.baseLength * MULTIPLIER_BASIS + config.curveMultiplier * (length - config.baseLength)
+                ))
+        / config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
@@ -319,6 +341,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * to make sure that values being set can not disrupt the price curve or zero out prices
      * for domains. If this validation fails, the parent function will revert.
      * @dev We are checking here for possible incorrect passed values: `maxLength`, `baselength` or `curveMultiplier`.
+     * @param domainHash The domain hash to validate its config
      */
     function _validateConfig(bytes32 domainHash) internal view {
         if (priceConfigs[domainHash].maxLength < priceConfigs[domainHash].baseLength)
