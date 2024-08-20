@@ -22,6 +22,15 @@ struct CoreRegisterArgs {
     PaymentConfig paymentConfig;
 }
 
+// Args for bulk tx
+struct DomainData {
+    string[] names;
+    address[] domainAddresses;
+    string [] tokenURIs;
+    IDistributionConfig.DistributionConfig[] distributionConfigs;
+    PaymentConfig[] paymentConfigs;
+}
+
 /**
  * @title IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.
  * @notice Below are docs for the types in this file:

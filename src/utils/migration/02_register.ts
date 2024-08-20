@@ -29,8 +29,16 @@ const main = async () => {
 
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
-    await registerDomainsLocal(migrationAdmin, [domains[0]], zns);
+    // await registerDomainsLocal(migrationAdmin, domains.splice(0, 10), zns);
+    // console.log(domains[0].label);
+    const registeredDomains = await registerDomains({
+      regAdmin: migrationAdmin,
+      zns,
+      domains: [domains[0], domains[1]]
+    })
 
+    // tokenID will be different than "real", cant compare to data before...
+    console.log(await zns.domainToken.ownerOf(registeredDomains[0].tokenId));
   } else if (hre.network.name === "sepolia") {
     const zns = await getZNS(migrationAdmin);
 

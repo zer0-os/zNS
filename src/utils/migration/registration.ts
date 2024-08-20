@@ -47,103 +47,105 @@ export const registerDomains = async ({
 
   let count = 0;
   const start = Date.now();
-  for (const domain of domains) {
 
-    const domainData = {
-      parentHash: domain.parentHash,
-      label: domain.label,
-      domainAddress: domain.address,
-      tokenUri: domain.tokenURI,
-      distrConfig: {
-        accessType: BigInt(1), // For recreating the domain tree, all domains are set as `open` initially
-        paymentType: BigInt(domain.paymentType ?? 0),
-        pricerContract: hre.ethers.ZeroAddress
-      },
-      paymentConfig: {
-        // We don't set payment config for recreated domains
-        token: hre.ethers.ZeroAddress,
-        beneficiary: hre.ethers.ZeroAddress,
-      },
-    }
+    const parentHashes = domains.map((domain) => { return domain.parentHash });
+    const labels = domains.map((domain) => { return domain.label });
+    const domainAddresses = domains.map((domain) => {return domain.address });
+    const tokenURIs = domains.map((domain) => { return domain.tokenURI });
 
-    const { domainHash, txReceipt, domainData: retryDomainData } = await registerBase({
+    console.log(parentHashes.length)
+    console.log(labels.length)
+    console.log(domainAddresses.length)
+    console.log(tokenURIs.length)
+
+    // console.log(domainDataArray.length)
+
+    // const { domainHash, txReceipt, domainData: retryDomainData } = 
+    await registerBase({
       regAdmin,
       zns,
-      domainData,
+      parentHashes,
+      labels,
+      domainAddresses,
+      tokenURIs,
     });
 
-    if (retryDomainData) {
-      console.log("failed? why?")
-      retryDomains.push(domain);
-    } else {
-      registeredDomains.push({ domainHash, txReceipt });
-    }
+    // if (retryDomainData) {
+    //   console.log("failed? why?")
+    //   retryDomains.push(domain);
+    // } else {
+    //   registeredDomains.push({ domainHash, txReceipt });
+    // }
 
-    count++;
+    // count++;
 
-    if (count % 100 === 0) {
-      console.log(`Registered ${registeredDomains.length} domains`);
-    };
-  }
+    // if (count % 100 === 0) {
+    //   console.log(`Registered ${registeredDomains.length} domains`);
+    // };
+  // }
 
-  if (retryDomains.length > 0) {
-    console.log(`Retrying ${retryDomains.length} domains`);
-  }
+  // if (retryDomains.length > 0) {
+  //   console.log(`Retrying ${retryDomains.length} domains`);
+  // }
 
   const end = Date.now();
 
   console.log(`Registered ${registeredDomains.length} domains in ${end - start}ms`);
-  return registeredDomains;
+  return domains;
 };
 
 export const registerBase = async ({
   zns,
   regAdmin,
-  domainData,
+  parentHashes,
+  labels,
+  domainAddresses,
+  tokenURIs,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   regAdmin : SignerWithAddress;
-  domainData : DomainData;
+  parentHashes : Array<string>;
+  labels : Array<string>;
+  domainAddresses : Array<string>;
+  tokenURIs : Array<string>;
 }) => {
-  const {
-    parentHash,
-    label,
-    domainAddress,
-    tokenUri,
-  } = domainData;
+  // const {
+  //   parentHash,
+  //   label,
+  //   domainAddress,
+  //   tokenUri,
+  // } = domainData;
 
   let tx;
   try {
-    if (parentHash === hre.ethers.ZeroHash) {
-      await zns.rootRegistrar.addListener("DomainRegistered", (domainHash, registrant, label, parent, domainType, tokenUri, distrConfig, paymentConfig) => {
-        return domainHash;
-      });
-
+    // if (parentHash === hre.ethers.ZeroHash) {
       // We aren't setting configs intentionally.
-      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
-        label,
-        domainAddress,
-        tokenUri,
+      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
+        labels,
+        domainAddresses,
+        tokenURIs,
         distrConfigEmpty,
         paymentConfigEmpty,
       );
-    } else {
-      tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
-        parentHash,
-        label,
-        domainAddress,
-        tokenUri,
-        distrConfigEmpty,
-        paymentConfigEmpty,
-      );
-    }
+    // } 
+    // Filter worlds vs. subdomains
+    // else {
+    //   tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
+    //     parentHash,
+    //     label,
+    //     domainAddress,
+    //     tokenUri,
+    //     distrConfigEmpty,
+    //     paymentConfigEmpty,
+    //   );
+    // }
   } catch (e) {
     // Return the domainData if something failed so we can log it
     // for debugging purposes
     return {
       domainHash: undefined,
       txReceipt: undefined,
-      domainData: domainData 
+      domainData: undefined // TODO temp debug
     }
   }
 
@@ -151,8 +153,17 @@ export const registerBase = async ({
   const blocks = hre.network.name === "hardhat" ? 0 : 2;
   const txReceipt = await tx.wait(blocks);
 
+  // console.log(txReceipt)
+  console.log(txReceipt!.logs.length)
+  
   // TODO can we make this nicer? Reading from `topics` is not ideal
   const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
+  const firstLog = txReceipt!.logs[0];
+
+  for (let i = 0; i < Object.keys(firstLog).length; i++) {
+    console.log(`key: ${Object.keys(firstLog)[i]}`)
+    console.log(`value: ${Object.values(firstLog)[i]}`)
+  }
   const domainHash = lastLog.topics[1];
 
   // console.log(`domainHash: ${domainHash}`)

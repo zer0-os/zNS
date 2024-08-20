@@ -13,6 +13,9 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -69,6 +72,32 @@ contract ZNSRootRegistrar is
         setDomainToken(domainToken_);
     }
 
+    function registerRootDomainBulk(
+        string[] calldata names,
+        address[] calldata domainAddresses,
+        string [] calldata tokenURIs,
+        DistributionConfig calldata emptyDistrConfig,
+        PaymentConfig calldata emptyPaymentConfig
+    ) public onlyAdmin {
+        // Expect all arrays are the same length
+        // TODO is this enough to rely on?
+        for (uint256 i = 0; i < names.length;) {
+            // DistributionConfig memory distrConfig = DistributionConfig(IZNSPricer(address(0)), PaymentType.DIRECT, AccessType.OPEN);
+            // PaymentConfig memory paymentConfig = PaymentConfig(IERC20(address(0)), address(0));
+            registerRootDomain(
+                names[i],
+                domainAddresses[i],
+                tokenURIs[i],
+                emptyDistrConfig,
+                emptyPaymentConfig
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     /**
      * @notice This function is the main entry point for the Register Root Domain flow.
      * Registers a new root domain such as `0://wilder`.
@@ -94,7 +123,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
