@@ -183,7 +183,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Sets the multiplier for domains calculations.
+     * @notice Sets the multiplier for domains calculations
+     * to allow the hyperbolic price curve to be bent all the way to a straight line.
      * Validates the config with the new multiplier in case where `baseLength` is 0 too.
      * Fires `CurveMultiplier` event.
      * Only domain owner can call this function.
@@ -299,14 +300,21 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Internal function to calculate price based on the config set,
      * and the length of the domain label.
-     * @dev Before we calculate the price, 4 different cases are possible:
+     * @dev Before we calculate the price, 6 different cases are possible:
      * 1. `maxPrice` is 0, which means all subdomains under this parent are free
      * 2. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
      * 3. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
      * 4. `length` is greater than `maxLength`, which means a domain will cost price by fomula at `maxLength`
+     * 5. The numerator can be less than the denominator, which is achieved by setting a huge value
+     * for `curveMultiplier` or by decreasing the `baseLength` and `maxPrice`, which means all domains 
+     * which are longer than `baseLength` will be for free.
+     * 6. `curveMultiplier` is 0,which means all domains will cost `maxPrice`.
      *
-     * The formula itself creates an asymptotic curve that decreases in pricing based on domain name length,
-     * base length and max price, the result is divided by the precision multiplier to remove numbers beyond
+     * The formula itself creates an hyperbolic curve that decreases in pricing based on domain name length,
+     * base length, max price and curve multiplier. 
+     * `MULTIPLIER_BASIS` allows to perceive `curveMultiplier` as fraction number in regular formula,
+     * which helps to bend a curve of price chart.
+     * The result is divided by the precision multiplier to remove numbers beyond
      * what we care about, then multiplied by the same precision multiplier to get the actual value
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
@@ -330,6 +338,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
         if (length > config.maxLength) length = config.maxLength;
 
+        // 
         return ((config.baseLength * config.maxPrice * MULTIPLIER_BASIS) / (
                     config.baseLength * MULTIPLIER_BASIS + config.curveMultiplier * (length - config.baseLength)
                 ))

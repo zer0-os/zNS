@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { ethers, parseEther } from "ethers";
 import {
   deployZNS,
   getCurvePrice,
@@ -454,6 +454,58 @@ describe.only("ZNSCurvePricer", () => {
         deployer,
         domainHash
       );
+    });
+
+    it("Should return max price for base length domain labels and 0 for other, which longer", async () => {
+      // Case where we can set domain strings longer than `baseLength` for free
+      // (numerator must be less than denominator)
+      // constants for playing the scenario (one of many cases):
+      // `maxPrice` = 25 000
+      // `baseLength` <= 40
+      // `curveMultiplier` >= 10 000 000 000
+
+      const newConfig = {
+        maxPrice: ethers.parseEther("25000"),
+        curveMultiplier: BigInt("10000000000"),
+        maxLength: BigInt(100),
+        baseLength: BigInt(40),
+        precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+        isSet: true,
+      };
+
+      await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
+
+      const check = async (label : string, res : bigint) => {
+        const price = await zns.curvePricer.getPrice(
+          domainHash,
+          label,
+          false
+        );
+
+        expect(
+          price
+        ).to.equal(
+          res
+        );
+      };
+
+      for (let i = 1; i <= newConfig.baseLength / 10n; i++) {
+        await check(
+          getRandomString(i * 10),
+          DEFAULT_PRICE_CONFIG.maxPrice
+        );
+      }
+
+      for (let i = 5; i <= 15; i++) {
+        await check(
+          getRandomString(i * 10),
+          0n
+        );
+      }
+
+      await zns.curvePricer.connect(user).setPriceConfig(domainHash, DEFAULT_PRICE_CONFIG);
+
     });
 
     // TODO myself: need to check behavior of price when price is 0.9 or like that
