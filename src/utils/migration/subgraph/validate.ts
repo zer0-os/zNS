@@ -2,31 +2,10 @@
 import { expect } from "chai";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { Domain, SubgraphError } from "../types";
-import { getZNS } from "../zns-contract-data";
 
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSContracts } from "../../../deploy/campaign/types";
 import { IZNSContractsLocal } from "../../../../test/helpers/types";
 
-export const validateDomainBulk = async (
-  domains : Array<Domain>,
-  zns : IZNSContracts | IZNSContractsLocal
-) => {
-  const validDomains = Array<Domain>();
-  const invalidDomains = Array<SubgraphError>();
-
-  for (const domain of domains) {
-    // We only return if an error occurred
-    const error = await validateDomain(domain, zns);
-
-    if (error) {
-      invalidDomains.push(error);
-    } else {
-      validDomains.push(domain);
-    }
-  }
-  return { validDomains, invalidDomainsLocal: invalidDomains };
-}
 
 export const validateDomain = async (
   domain : Domain, 

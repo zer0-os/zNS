@@ -1,6 +1,6 @@
 import { createClient, getDomains } from "./client";
 import { Domain, SubgraphError } from "../types";
-import { validateDomain, validateDomainBulk } from "./validate";
+import { validateDomain } from "./validate";
 import { IZNSContracts } from "../../../deploy/campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZNS } from "../zns-contract-data";
@@ -12,7 +12,8 @@ export const validateDomains = async (
   first : number,
   skip : number,
 ) => {
-  // TODO mainnet dev for now, should be
+  // TODO mainnet dev for now, should be just mainnet
+  // both use the same data though
   const url = process.env.SUBGRAPH_URL_DEV;
 
   if (!url) {
@@ -23,7 +24,6 @@ export const validateDomains = async (
 
   let rootDomains : Array<Domain>;
   let subdomains : Array<Domain>;
-  let count = 0;
 
   const validRootDomains = Array<Domain>();
   const validSubdomains = Array<Domain>();
@@ -38,23 +38,16 @@ export const validateDomains = async (
   // Get ZNS contracts from the MongoDB instance to validate against
   const zns = await getZNS(admin);
 
-  let count = 0length;
+  
   // Validate root domains
   while (rootDomains.length > 0) {
     console.log(`Validating ${rootDomains.length} root domains`);
-    const { validDomains, invalidDomainsLocal } = await validateDomainBulk(rootDomains, zns);
-    validRootDomains.concat(validDomains);
 
-    // Log any invalid domains
-    if (invalidDomains.length > 0) {
-      invalidDomains.concat(invalidDomainsLocal);
-    }
+    // If any domains are invalid, they will be returned in an array
+    invalidDomains.concat(await validateEach(rootDomains, zns));
 
     // We always get 1000 domains at a time, so we can just increment by that
     skip += 1000;
-
-    count++;
-    if (count % 100 === 0) console.log(`Validated ${count} root domains...`);
 
     console.log(`Getting more root domains with first: ${first}, skip: ${skip}`);
     rootDomains = await getDomains(client, first, skip, true);
@@ -62,30 +55,40 @@ export const validateDomains = async (
   }
 
   // Validate subdomains
-  count = 0;
+  let subCount = 0;
   while (subdomains.length > 0) {
     console.log(`Validating ${subdomains.length} subdomains`);
 
-    const { validDomains, invalidDomainsLocal } = await validateDomainBulk(subdomains, zns);
-    validSubdomains.concat(validDomains);
-
-    // Log any invalid domains
-    if (invalidDomains.length > 0) {
-      invalidDomains.concat(invalidDomainsLocal);
-    }
-
-    count++;
-    if (count % 100 === 0) console.log(`Validated ${count} subdomains...`);
+    // If any domains are invalid, they will be returned in an array
+    invalidDomains.concat(await validateEach(subdomains, zns));
 
     skip += 1000;
 
     console.log(`Getting more subdomains with first: ${first}, skip: ${skip}`);
     subdomains = await getDomains(client, first, skip, false);
-    console.log(`Found ${subdomains.length} more root domains`);
+    console.log(`Found ${subdomains.length} more subdomains`);
   }
 
   const end = Date.now();
   console.log(`Validated all domains in ${end - start}ms`);
 
   return { validRootDomains, validSubdomains, invalidDomains };
+}
+
+const validateEach = async (domains : Array<Domain>, zns : IZNSContracts) => {
+  const invalidDomains = Array<SubgraphError>();
+
+  for (const [index, domain] of domains.entries()) {
+    // Log any invalid domains
+    const invalidDomain = await validateDomain(domain, zns);
+
+    if (invalidDomain) {
+      invalidDomains.push(invalidDomain);
+    }
+
+    if ((index + 1) % 100 === 0) console.log(`Validated ${index + 1} subdomains...`);
+  }
+
+  // Could be empty
+  return invalidDomains;
 }
