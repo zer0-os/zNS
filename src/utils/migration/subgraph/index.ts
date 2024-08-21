@@ -4,6 +4,9 @@ import { validateDomain } from "./validate";
 import { IZNSContracts } from "../../../deploy/campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZNS } from "../zns-contract-data";
+import { ApolloClient, NormalizedCacheObject } from "@apollo/client"; // CommonJS error?
+// import {ApolloClient } from "@apollo/client/core";
+
 
 
 // Grab domain data from the subgraph and validate against what's actually on mainnet
@@ -22,73 +25,61 @@ export const validateDomains = async (
 
   const client = createClient(url);
 
-  let rootDomains : Array<Domain>;
-  let subdomains : Array<Domain>;
-
-  const validRootDomains = Array<Domain>();
-  const validSubdomains = Array<Domain>();
-  const invalidDomains = Array<SubgraphError>();
-
   const start = Date.now();
-
-  // Get root domains and subdomains from the subgraph
-  rootDomains = await getDomains(client, first, skip, true);
-  subdomains = await getDomains(client, first, skip, false);
 
   // Get ZNS contracts from the MongoDB instance to validate against
   const zns = await getZNS(admin);
 
-  
-  // Validate root domains
-  while (rootDomains.length > 0) {
-    console.log(`Validating ${rootDomains.length} root domains`);
-
-    // If any domains are invalid, they will be returned in an array
-    invalidDomains.concat(await validateEach(rootDomains, zns));
-
-    // We always get 1000 domains at a time, so we can just increment by that
-    skip += 1000;
-
-    console.log(`Getting more root domains with first: ${first}, skip: ${skip}`);
-    rootDomains = await getDomains(client, first, skip, true);
-    console.log(`Found ${rootDomains.length} more root domains`);
-  }
-
-  // Validate subdomains
-  let subCount = 0;
-  while (subdomains.length > 0) {
-    console.log(`Validating ${subdomains.length} subdomains`);
-
-    // If any domains are invalid, they will be returned in an array
-    invalidDomains.concat(await validateEach(subdomains, zns));
-
-    skip += 1000;
-
-    console.log(`Getting more subdomains with first: ${first}, skip: ${skip}`);
-    subdomains = await getDomains(client, first, skip, false);
-    console.log(`Found ${subdomains.length} more subdomains`);
-  }
+  // Validate root domains then subdomains
+  const roots = await validateEach(client, zns, first, skip, true);
+  const subs = await validateEach(client, zns, first, skip, false);
 
   const end = Date.now();
   console.log(`Validated all domains in ${end - start}ms`);
 
-  return { validRootDomains, validSubdomains, invalidDomains };
+  return { 
+    validRoots : roots.validDomains,
+    validSubs : subs.validDomains,
+    invalidDomains : roots.invalidDomains.concat(subs.invalidDomains)
+  };
 }
 
-const validateEach = async (domains : Array<Domain>, zns : IZNSContracts) => {
+const validateEach = async (
+  client : ApolloClient<NormalizedCacheObject>,
+  zns : IZNSContracts,
+  first : number,
+  skip : number,
+  isWorld : boolean
+) => {
   const invalidDomains = Array<SubgraphError>();
+  const validDomains = Array<Domain>();
 
-  for (const [index, domain] of domains.entries()) {
-    // Log any invalid domains
-    const invalidDomain = await validateDomain(domain, zns);
+  let domains = await getDomains(client, first, skip, isWorld);
 
-    if (invalidDomain) {
-      invalidDomains.push(invalidDomain);
+  while (domains.length > 0) {
+    console.log(`Validating ${domains.length} domains`);
+
+    for (const [index, domain] of domains.entries()) {
+      // `validateDomain` only returns a value if there is an error
+      const invalidDomain = await validateDomain(domain, zns);
+  
+      if (invalidDomain) {
+        invalidDomains.push(invalidDomain);
+      } else {
+        validDomains.push(domain);
+      }
+  
+      if ((index + 1) % 100 === 0) console.log(`Validated ${index + 1} subdomains...`);
     }
 
-    if ((index + 1) % 100 === 0) console.log(`Validated ${index + 1} subdomains...`);
-  }
+    // We always get 1000 domains at a time, so we can just increment by that
+    skip += 1000;
 
-  // Could be empty
-  return invalidDomains;
+    console.log(`Getting more domains with first: ${first}, skip: ${skip}`);
+    domains = await getDomains(client, first, skip, isWorld);
+    console.log(`Found ${domains.length} more root domains`);
+  }
+  
+  // Invalid domains could be empty
+  return { validDomains, invalidDomains };
 }

@@ -37,6 +37,7 @@ export const registerDomains = async ({
   
   // When domains fail they are added to this array to retry
   // after all other domains have been attempted
+  // TODO impl
   const retryDomains = Array<Domain>();
 
     const parentHashes = domains.map((domain) => { return domain.parentHash });
@@ -146,8 +147,8 @@ export const registerBase = async ({
 
   for (let i = 0; i < txReceipt!.logs.length; i++) {
     // console.log(`log: ${i}`) 
-    // 9 logs per single tx, 3rd log is first to have domainhash
-    // 2, 11, 20, 29, 38, 47, 56, 65, 74
+    // 9 logs per domain, 3rd log is first to have domainhash
+    // So indexes 2, 11, 20, 29, 38, 47, 56, 65, 74
     if (i % 9 === 2) {
       // console.log("Domain hashes")
       domainHashes.push(txReceipt!.logs[i].topics[2])

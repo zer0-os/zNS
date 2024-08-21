@@ -1,6 +1,7 @@
 import * as hre from "hardhat";
 import * as fs from "fs";
 import { validateDomains } from "./subgraph";
+import { INV_FILENAME, ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 
 // For pagination of data in subgraph we use 'first' and 'skip'
 const main = async () => {
@@ -12,17 +13,16 @@ const main = async () => {
   const skip = 0;
 
   // First, validate domain data from subgraph against mainnet
-  const { validRootDomains, validSubdomains, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
+  const { validRoots, validSubs, invalidDomains } = await validateDomains(migrationAdmin, first, skip);
 
   // If there are errors, log them to a file for triage
   if (invalidDomains.length > 0) {
-    fs.writeFileSync("invalid-domains.json", JSON.stringify(invalidDomains, null, 2));
-    throw new Error("Some domains failed validation! Check invalid-domains.json");
+    fs.writeFileSync(INV_FILENAME, JSON.stringify(invalidDomains, null, 2));
+    throw new Error(`Some domains failed validation! Check '${INV_FILENAME}'`);
   }
 
-  // TODO make filenames constants
-  fs.writeFileSync("valid-root-domains.json", JSON.stringify(validRootDomains, null, 2));
-  fs.writeFileSync("valid-subdomains.json", JSON.stringify(validSubdomains, null, 2));
+  fs.writeFileSync(ROOTS_FILENAME, JSON.stringify(validRoots, null, 2));
+  fs.writeFileSync(SUBS_FILENAME, JSON.stringify(validSubs, null, 2));
   
   // Doesnt seem to be exiting HH process automatically?
   process.exit(0);
