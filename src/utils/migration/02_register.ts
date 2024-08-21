@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { deployZNS } from "../../../test/helpers";
 import { registerDomains, registerDomainsLocal } from "./registration";
 import { getZNS } from "./zns-contract-data";
-import { ROOTS_FILENAME } from "./constants";
+import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
@@ -14,13 +14,14 @@ const main = async () => {
     encoding: "utf8"
   })) as Array<Domain>;
 
-  const subdomains = JSON.parse(fs.readFileSync(ROOTS_FILENAME, {
-    encoding: "utf8"
-  })) as Array<Domain>;
+  // const subdomains = JSON.parse(fs.readFileSync(SUBS_FILENAME, {
+  //   encoding: "utf8"
+  // })) as Array<Domain>;
 
   console.log(`Registering ${rootDomains.length} root domains`);
 
-  const registeredDomains : Array<Domain> = [];
+  const registeredDomains : Array<string> = [];
+  // const registeredDomains : Array<Domain> = [];
 
   const start = Date.now();
 
@@ -39,28 +40,43 @@ const main = async () => {
 
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
+    const sliceSize = 1;
 
-    const sliceSize = 100;
     for (let i = 0; i < 1; i += sliceSize) { // have only iterate once for now
+    // for (let i = 0; i < rootDomains.length; i += sliceSize) { // have only iterate once for now
+      // console.log(rootDomains.length);
+      console.log(i)
+      console.log(i + sliceSize)
+      
       const slice = rootDomains.slice(i, i + sliceSize);
-
-      // add console logs here to track is something fails
       const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
+      console.log(localRegisteredDomains.txReceipt!.hash);
+      console.log(localRegisteredDomains.domainHashes!.length);
 
-      // registeredDomains.concat(localRegisteredDomains);
-
-      console.log(`Registered ${localRegisteredDomains.domainHashes!.length} domains...`);
+      registeredDomains.concat(localRegisteredDomains.domainHashes!);
+      // console.log(`Registered ${registeredDomains.length} root domains...`);
     }
 
-    console.log();
-  } else if (hre.network.name === "sepolia") {
-    // const zns = await getZNS(migrationAdmin);
+    // for (let i = 0; i < subdomains.length; i += sliceSize) { // have only iterate once for now
+    //   const slice = subdomains.slice(i, i + sliceSize);
+    //   const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
 
-    // const registeredDomains = await registerDomains({
-    //   regAdmin: migrationAdmin,
-    //   zns, 
-    //   domains: domains.slice(10, 20) // Register 10 domains (end index is exclusive)
-    // });
+    //   registeredDomains.concat(localRegisteredDomains.domainHashes!);
+    //   console.log(`Registered ${registeredDomains.length} subdomains...`);
+    // }
+
+    // console.log(`Registered ${registeredDomains.length} domains in ${Date.now() - start}ms`);
+    // then do the same for subdomains
+  } else if (hre.network.name === "sepolia") {
+    const zns = await getZNS(migrationAdmin);
+
+    const registeredDomains = await registerDomains({
+      regAdmin: migrationAdmin,
+      zns, 
+      domains: [rootDomains[26]] 
+      // one by one testing, this is the amount on sepolia currently.
+      // will fail when doing bulk TXs until we deploy those changes
+    });
     // console.log(registeredDomains.length);
   } else if (process.env.MIGRATION_LEVEL === "prod") {
     // TODO impl when deployed on zchain

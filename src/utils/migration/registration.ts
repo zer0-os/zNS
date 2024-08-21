@@ -15,11 +15,13 @@ export const registerDomainsLocal = async (
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
   await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
   
-  return await registerDomains({
+  const domains = await registerDomains({
     regAdmin: migrationAdmin,
     zns,
     domains: validDomains,
   });
+
+  return domains;
 
   // await postMigrationValidation(zns, registeredDomains);
 };
@@ -40,19 +42,19 @@ export const registerDomains = async ({
   // TODO impl
   const retryDomains = Array<Domain>();
 
-    const parentHashes = domains.map((domain) => { return domain.parentHash });
-    const labels = domains.map((domain) => { return domain.label });
-    const domainAddresses = domains.map((domain) => {return domain.address });
-    const tokenURIs = domains.map((domain) => { return domain.tokenURI });
+  const parentHashes = domains.map((domain) => { return domain.parentHash });
+  const labels = domains.map((domain) => { return domain.label });
+  const domainAddresses = domains.map((domain) => {return domain.address });
+  const tokenURIs = domains.map((domain) => { return domain.tokenURI });
 
-    const { domainHashes, txReceipt, retryData } = await registerBase({
-      regAdmin,
-      zns,
-      parentHashes,
-      labels,
-      domainAddresses,
-      tokenURIs,
-    });
+  const { domainHashes, txReceipt, retryData } = await registerBase({
+    regAdmin,
+    zns,
+    parentHashes,
+    labels,
+    domainAddresses,
+    tokenURIs,
+  });
 
     // if (retryDomainData) {
     //   console.log("failed? why?")
@@ -101,28 +103,43 @@ export const registerBase = async ({
 }) => {
   let tx;
   try {
-    // if (parentHash === hre.ethers.ZeroHash) {
+    // We separate domains by root and subdomains upstream, so here
+    // we know with confidence that if one parent hash is the zero address
+    // all of them are
+    console.log("ph length: ", parentHashes.length)
+    console.log("lbls length: ", labels.length)
+    console.log("dmnaddrseslength: ", domainAddresses.length)
+    // parentHashes.forEach((parentHash) => { console.log(parentHash) });
+
+    console.log("parentHashes[0]: ", parentHashes[0])
+    console.log("labels[0]: ", labels[0])
+    console.log("domainAddresses[0]: ", domainAddresses[0])
+    console.log("tokenURIs[0]: ", tokenURIs[0])
+
+    // if (parentHashes[0] === hre.ethers.ZeroHash) {
+      console.log("inrootdomain")
       // We aren't setting configs intentionally.
-      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
-        labels,
-        domainAddresses,
-        tokenURIs,
-        distrConfigEmpty, // TODO want to still keep their access type to indicate whether or not it's been paid for
+      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
+        labels[0],
+        domainAddresses[0],
+        tokenURIs[0],
+        distrConfigEmpty, // TODO what should this be? stake vs, direct should be upheld maybe?
         paymentConfigEmpty,
       );
-    // } 
-    // Filter worlds vs. subdomains
-    // else {
-    //   tx = await zns.subRegistrar.connect(regAdmin).registerSubdomain(
-    //     parentHash,
-    //     label,
-    //     domainAddress,
-    //     tokenUri,
-    //     distrConfigEmpty,
-    //     paymentConfigEmpty,
-    //   );
+    // } else { 
+    //   console.log("insubdomain")
+
+    //   // tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
+    //   //   parentHashes,
+    //   //   labels,
+    //   //   domainAddresses,
+    //   //   tokenURIs,
+    //   //   distrConfigEmpty,
+    //   //   paymentConfigEmpty,
+    //   // );
     // }
   } catch (e) {
+    console.log("Error registering domain: ", e);
     // Return the domainData if something failed so we can log it
     // for debugging purposes
     return {
@@ -133,8 +150,32 @@ export const registerBase = async ({
   }
 
   // Providing a number on hardhat will cause it to hang
-  const blocks = hre.network.name === "hardhat" ? 0 : 2;
+  const blocks = hre.network.name === "hardhat" ? 0 : 7;
   const txReceipt = await tx.wait(blocks);
+  console.log("txhash: ", txReceipt!.hash)
+  console.log("logslength: ",txReceipt!.logs.length)
+  console.log("logs: ",txReceipt!.logs)
+
+
+  // For now just hardhat or sepolia, a third "real" address will be introduced when we deploy
+  // const eventAddress = hre.network.name === "hardhat" ? regAdmin.address : process.env.TESTNET_PRIVATE_KEY_A;
+
+  // const filter = zns.rootRegistrar.filters.DomainRegistered( 
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   eventAddress,
+  //   undefined,
+  // );
+
+  // const events = await zns.rootRegistrar.queryFilter(filter);
+  
+
+  // console.log("eventslength: ", events.length)
+  // console.log("events[0]: ", events[0].args)
+
 
   // console.log(txReceipt)
   // console.log(txReceipt!.logs.length)
@@ -144,15 +185,15 @@ export const registerBase = async ({
   const firstLog = txReceipt!.logs[0];
 
   const domainHashes = Array<string>();
-
-  for (let i = 0; i < txReceipt!.logs.length; i++) {
-    // console.log(`log: ${i}`) 
+  // for (let i = 0; i < txReceipt!.logs.length; i++) {
+    // console.log(txReceipt!.logs[i]);
     // 9 logs per domain, 3rd log is first to have domainhash
     // So indexes 2, 11, 20, 29, 38, 47, 56, 65, 74
-    if (i % 9 === 2) {
+    // console.log("i: ", i)
+    // if (i % 9 === 2) {
       // console.log("Domain hashes")
-      domainHashes.push(txReceipt!.logs[i].topics[2])
-    }
+      // domainHashes.push(txReceipt!.logs[i].topics[2])
+    // }
 
     // const keys = Object.keys(txReceipt!.logs[i]);
     // const values = Object.values(txReceipt!.logs[i]);
@@ -160,11 +201,11 @@ export const registerBase = async ({
     // for (let j = 0; j < keys.length; j++) {
     //   console.log(`k: ${keys[j]}, v: ${values[j]}`)
     // }
-  }
+  // }
 
-  const domainHash = lastLog.topics[1];
+  // const domainHash = lastLog.topics[1];
 
-  // console.log(`domainHash: ${domainHash}`)
+  // console.log(`domainHashes: ${domainHashes.length}`)
 
   return { domainHashes, txReceipt, retryData: undefined };
 };
