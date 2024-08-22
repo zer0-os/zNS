@@ -5,6 +5,7 @@ import { deployZNS } from "../../../test/helpers";
 import { registerDomains, registerDomainsLocal } from "./registration";
 import { getZNS } from "./zns-contract-data";
 import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
+import { ContractTransactionReceipt } from "ethers/contract";
 
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
@@ -14,18 +15,36 @@ const main = async () => {
     encoding: "utf8"
   })) as Array<Domain>;
 
-  // const subdomains = JSON.parse(fs.readFileSync(SUBS_FILENAME, {
-  //   encoding: "utf8"
-  // })) as Array<Domain>;
+  const subdomains = JSON.parse(fs.readFileSync(SUBS_FILENAME, {
+    encoding: "utf8"
+  })) as Array<Domain>;
 
   console.log(`Registering ${rootDomains.length} root domains`);
 
-  const registeredDomains : Array<string> = [];
-  // const registeredDomains : Array<Domain> = [];
+  const registeredDomains : Array<{ 
+    domainHashes : Array<string> | undefined, 
+    txReceipt : ContractTransactionReceipt | null | undefined
+  }> = [];
 
   const start = Date.now();
+  const sliceSize = 30; // TODO whats the most data we can fit in a real tx?
 
-  if (hre.network.name === "hardhat") {
+  if (hre.network.name === "sepolia") {
+    const zns = await getZNS(migrationAdmin);
+    
+    // one by one testing, this is the amount on sepolia currently.
+    // will fail when doing bulk TXs until we deploy those changes
+    const registeredDomains = await registerDomains({
+      regAdmin: migrationAdmin,
+      zns, 
+      domains: [rootDomains[27]]
+    });
+
+    // TODO then do again for subdomains
+  } else if (hre.network.name === "zchain") {
+    // TODO impl for when deployed on zchain
+  } else {
+    // Default to hardhat
     // Reset the network to be sure we are not forking.
     await hre.network.provider.request({
       method: "hardhat_reset",
@@ -40,54 +59,47 @@ const main = async () => {
 
     // Recreate the domain tree with local ZNS
     const zns = await deployZNS(params);
-    const sliceSize = 1;
 
-    for (let i = 0; i < 1; i += sliceSize) { // have only iterate once for now
-    // for (let i = 0; i < rootDomains.length; i += sliceSize) { // have only iterate once for now
-      // console.log(rootDomains.length);
-      console.log(i)
-      console.log(i + sliceSize)
-      
+    console.log(`Registering ${rootDomains.length} root domains with slice size ${sliceSize}`);
+    for (let i = 0; i < rootDomains.length; i += sliceSize) {
       const slice = rootDomains.slice(i, i + sliceSize);
       const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
-      console.log(localRegisteredDomains.txReceipt!.hash);
-      console.log(localRegisteredDomains.domainHashes!.length);
 
-      registeredDomains.concat(localRegisteredDomains.domainHashes!);
-      // console.log(`Registered ${registeredDomains.length} root domains...`);
+      registeredDomains.push(localRegisteredDomains!);
+
+      // Log every 5 sets of domains we register
+      console.log(`Registered ${registeredDomains.length} set${i === 0 ? "" : "s"} of root domains...`);
     }
 
-    // for (let i = 0; i < subdomains.length; i += sliceSize) { // have only iterate once for now
-    //   const slice = subdomains.slice(i, i + sliceSize);
-    //   const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
+    console.log(`rds length: ${registeredDomains.length}`);
+    // For logging to read correctly we capture the length
+    const snapshotLength = registeredDomains.length;
 
-    //   registeredDomains.concat(localRegisteredDomains.domainHashes!);
-    //   console.log(`Registered ${registeredDomains.length} subdomains...`);
-    // }
+    // Now subdomains
+    console.log(`Registering ${subdomains.length} subdomains with slice size ${sliceSize}`);
+    for (let i = 0; i < subdomains.length; i += sliceSize) {
+      const slice = subdomains.slice(i, i + sliceSize);
+      const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
 
-    // console.log(`Registered ${registeredDomains.length} domains in ${Date.now() - start}ms`);
-    // then do the same for subdomains
-  } else if (hre.network.name === "sepolia") {
-    const zns = await getZNS(migrationAdmin);
+      registeredDomains.push(localRegisteredDomains!);
 
-    const registeredDomains = await registerDomains({
-      regAdmin: migrationAdmin,
-      zns, 
-      domains: [rootDomains[26]] 
-      // one by one testing, this is the amount on sepolia currently.
-      // will fail when doing bulk TXs until we deploy those changes
-    });
-    // console.log(registeredDomains.length);
-  } else if (process.env.MIGRATION_LEVEL === "prod") {
-    // TODO impl when deployed on zchain
-  } else {
-    throw new Error("Invalid migration level env variable. Must specify 'local', 'dev', or 'prod'");
+      // Show progress as we register
+      console.log(`Registered ${registeredDomains.length - snapshotLength} set${i === 0 ? "" : "s"} of subdomains...`);
+    }
   }
 
   const end = Date.now();
-  console.log(`Registered ${registeredDomains.length} domains in ${end - start}ms`);
 
+  console.log(`Registered ${registeredDomains.length} sets of domains in ${end - start}ms`);
 
+  // double check count is correct!
+
+  let runningTotal = 0;
+  for (const entry of registeredDomains) {
+    runningTotal += entry.domainHashes?.length || 0;
+    // console.log(`entry length: ${entry.domainHashes ? entry.domainHashes.length : 0}`);
+  }
+  console.log(`Registered ${runningTotal} domains in total`);
 
   // It seems the HH script process hangs at completion
   // Manually exit here

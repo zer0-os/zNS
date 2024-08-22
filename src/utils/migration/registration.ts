@@ -4,26 +4,25 @@ import { DomainData, RegisteredDomain, Domain } from "./types";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
 import { IZNSContractsLocal } from "../../../test/helpers/types";
+import { ContractTransactionReceipt } from "ethers";
 
 
 export const registerDomainsLocal = async (
   migrationAdmin : SignerWithAddress,
-  validDomains : Array<Domain>,
+  domains : Array<Domain>,
   zns : IZNSContractsLocal,
 ) => {
   // Give minter balance and approval for registrations
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
   await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
-  
-  const domains = await registerDomains({
+
+  const registeredDomains = await registerDomains({
     regAdmin: migrationAdmin,
     zns,
-    domains: validDomains,
+    domains,
   });
 
-  return domains;
-
-  // await postMigrationValidation(zns, registeredDomains);
+  return registeredDomains;
 };
 
 export const registerDomains = async ({
@@ -35,46 +34,25 @@ export const registerDomains = async ({
   zns : IZNSContracts;
   domains : Array<Domain>
 }) => {
-  const registeredDomains = Array<RegisteredDomain>();
-  
   // When domains fail they are added to this array to retry
   // after all other domains have been attempted
-  // TODO impl
-  const retryDomains = Array<Domain>();
+  // TODO impl retry 
 
-  const parentHashes = domains.map((domain) => { return domain.parentHash });
-  const labels = domains.map((domain) => { return domain.label });
-  const domainAddresses = domains.map((domain) => {return domain.address });
-  const tokenURIs = domains.map((domain) => { return domain.tokenURI });
+  const retryDomains = Array<Domain>();
 
   const { domainHashes, txReceipt, retryData } = await registerBase({
     regAdmin,
     zns,
-    parentHashes,
-    labels,
-    domainAddresses,
-    tokenURIs,
+    domains
   });
 
-    // if (retryDomainData) {
-    //   console.log("failed? why?")
-    //   retryDomains.push(domain);
-    // } else {
-    //   registeredDomains.push({ domainHash, txReceipt });
-    // }
-
-    // count++;
-
-    // if (count % 100 === 0) {
-    //   console.log(`Registered ${registeredDomains.length} domains`);
-    // };
-  // }
-
-  // if (retryDomains.length > 0) {
-  //   console.log(`Retrying ${retryDomains.length} domains`);
-  // }
-
-  // const end = Date.now();
+    if (retryData) {
+      console.log("failed? why?")
+      throw new Error("Failed to register domains");
+      // TODO impl, this could fail because of external reasons
+      // we need to track to know exactly where we failed and where to start again
+      // also we need to know why because maybe it will happen again
+    }
 
   if (retryData) {
     // TODO impl retry logic
@@ -89,55 +67,41 @@ export const registerDomains = async ({
 export const registerBase = async ({
   zns,
   regAdmin,
-  parentHashes,
-  labels,
-  domainAddresses,
-  tokenURIs,
+  domains
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   regAdmin : SignerWithAddress;
-  parentHashes : Array<string>;
-  labels : Array<string>;
-  domainAddresses : Array<string>;
-  tokenURIs : Array<string>;
+  domains : Array<Domain>;
 }) => {
   let tx;
+
+  const parentHashes = domains.map((domain) => { return domain.parentHash });
+  const labels = domains.map((domain) => { return domain.label });
+  const domainAddresses = domains.map((domain) => {return domain.address });
+  const tokenURIs = domains.map((domain) => { return domain.tokenURI });
+
   try {
-    // We separate domains by root and subdomains upstream, so here
-    // we know with confidence that if one parent hash is the zero address
-    // all of them are
-    console.log("ph length: ", parentHashes.length)
-    console.log("lbls length: ", labels.length)
-    console.log("dmnaddrseslength: ", domainAddresses.length)
-    // parentHashes.forEach((parentHash) => { console.log(parentHash) });
-
-    console.log("parentHashes[0]: ", parentHashes[0])
-    console.log("labels[0]: ", labels[0])
-    console.log("domainAddresses[0]: ", domainAddresses[0])
-    console.log("tokenURIs[0]: ", tokenURIs[0])
-
-    // if (parentHashes[0] === hre.ethers.ZeroHash) {
-      console.log("inrootdomain")
+    // Because we pre-filter using the query into sets of just root domains and just subdomains
+    // (ordered by depth) we know with certainty that if one parent hash is zero, they all are
+    if (parentHashes[0] === hre.ethers.ZeroHash) {
       // We aren't setting configs intentionally.
-      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomain(
-        labels[0],
-        domainAddresses[0],
-        tokenURIs[0],
+      tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
+        labels,
+        domainAddresses,
+        tokenURIs,
         distrConfigEmpty, // TODO what should this be? stake vs, direct should be upheld maybe?
         paymentConfigEmpty,
       );
-    // } else { 
-    //   console.log("insubdomain")
-
-    //   // tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
-    //   //   parentHashes,
-    //   //   labels,
-    //   //   domainAddresses,
-    //   //   tokenURIs,
-    //   //   distrConfigEmpty,
-    //   //   paymentConfigEmpty,
-    //   // );
-    // }
+    } else {
+      tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
+        parentHashes,
+        labels,
+        domainAddresses,
+        tokenURIs,
+        distrConfigEmpty,
+        paymentConfigEmpty,
+      );
+    }
   } catch (e) {
     console.log("Error registering domain: ", e);
     // Return the domainData if something failed so we can log it
@@ -145,67 +109,35 @@ export const registerBase = async ({
     return {
       domainHash: undefined,
       txReceipt: undefined,
-      domainData: undefined // TODO temp debug
+      domainData: domains
     }
   }
 
   // Providing a number on hardhat will cause it to hang
-  const blocks = hre.network.name === "hardhat" ? 0 : 7;
-  const txReceipt = await tx.wait(blocks);
-  console.log("txhash: ", txReceipt!.hash)
-  console.log("logslength: ",txReceipt!.logs.length)
-  console.log("logs: ",txReceipt!.logs)
+  const blocks = hre.network.name === "hardhat" ? 0 : 10;
+  const txReceipt = await tx!.wait(blocks);
 
-
-  // For now just hardhat or sepolia, a third "real" address will be introduced when we deploy
-  // const eventAddress = hre.network.name === "hardhat" ? regAdmin.address : process.env.TESTNET_PRIVATE_KEY_A;
-
-  // const filter = zns.rootRegistrar.filters.DomainRegistered( 
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   eventAddress,
-  //   undefined,
-  // );
-
-  // const events = await zns.rootRegistrar.queryFilter(filter);
-  
-
-  // console.log("eventslength: ", events.length)
-  // console.log("events[0]: ", events[0].args)
-
-
-  // console.log(txReceipt)
-  // console.log(txReceipt!.logs.length)
-  
-  // TODO can we make this nicer? Reading from `topics` is not ideal
-  const lastLog = txReceipt!.logs[txReceipt!.logs.length - 1];
-  const firstLog = txReceipt!.logs[0];
-
+  // Collected the registered domains
   const domainHashes = Array<string>();
-  // for (let i = 0; i < txReceipt!.logs.length; i++) {
-    // console.log(txReceipt!.logs[i]);
-    // 9 logs per domain, 3rd log is first to have domainhash
-    // So indexes 2, 11, 20, 29, 38, 47, 56, 65, 74
-    // console.log("i: ", i)
-    // if (i % 9 === 2) {
-      // console.log("Domain hashes")
-      // domainHashes.push(txReceipt!.logs[i].topics[2])
-    // }
 
-    // const keys = Object.keys(txReceipt!.logs[i]);
-    // const values = Object.values(txReceipt!.logs[i]);
+  // A root registration creates 9 logs and a subdomain registration creates 6,
+  // and we can get the domainhash from the last log in both to only read relevant events
+  // This accounts for the difference in size to be able to read the
+  // domain hash from the `DomainRegistered` event correctly in bulk txs
+  let i = 0;
+  let inc = 0;
+  if (parentHashes[0] === hre.ethers.ZeroHash) {
+    i = 8; // 0 based, the index to query of a log
+    inc = 9; // 1 based, the number of logs per registration
+  } else {
+    i = 5;
+    inc = 6;
+  }
 
-    // for (let j = 0; j < keys.length; j++) {
-    //   console.log(`k: ${keys[j]}, v: ${values[j]}`)
-    // }
-  // }
-
-  // const domainHash = lastLog.topics[1];
-
-  // console.log(`domainHashes: ${domainHashes.length}`)
+  for (i; i <= txReceipt!.logs.length; i += inc) {
+    const domainHash = txReceipt!.logs[i].topics[2];
+    domainHashes.push(domainHash);
+  }
 
   return { domainHashes, txReceipt, retryData: undefined };
 };
