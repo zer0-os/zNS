@@ -35,7 +35,8 @@
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
     "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
-    "db-test": "hardhat run src/utils/migration/helpers.ts --network hardhat"
+    "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
+    "run-meowtestnet": "hardhat run src/deploy/run-campaign.ts --network meowtestnet"
   },
   "pre-commit": [
     "lint"
@@ -79,7 +80,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "@zero-tech/zdc": "0.1.3",
+    "@zero-tech/zdc": "0.1.6",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
     "mongodb": "^6.1.0",
