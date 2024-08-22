@@ -11,9 +11,10 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
- * This module uses an asymptotic curve that starts from `maxPrice` for all domains <= `baseLength`.
- * It then decreases in price, using the calculated price function below.
- * At `maxLength` length of the domain name. Price after `maxLength` is fixed 
+ * This module uses an hyperbolic curve that starts at (`baseLength`; `maxPrice`) 
+ * for all domains <= `baseLength`.
+ * Then the price is reduced using the price calculation function below.
+ * The price after `maxLength` is fixed and equals the price on the hyperbola graph at the point `maxLength`
  * and is determined using the formula where `length` = `maxLength`.
  */
 contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
@@ -27,10 +28,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     /**
-     * @notice Value used as a basis to multiply the multiplier,
-     * since Solidity does not support fractions.
+     * @notice Multiply the entire hyperbola formula by this number to be able to reduce the `curveMultiplier` 
+     * by 3 digits, which gives us more flexibility in defining the hyperbola function.
+     * @dev > Canot be "0".
      */
-    uint256 public constant MULTIPLIER_BASIS = 1000;
+    uint256 public constant FACTOR_SCALE = 1000;
 
     /**
      * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
@@ -142,14 +144,12 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         CurvePriceConfig calldata priceConfig
     ) public override {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
-        priceConfigs[domainHash].baseLength = priceConfig.baseLength;
-        priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        priceConfigs[domainHash].curveMultiplier = priceConfig.curveMultiplier;
-        priceConfigs[domainHash].maxLength = priceConfig.maxLength;
+        setBaseLength(domainHash, priceConfig.baseLength);
+        setMaxPrice(domainHash, priceConfig.maxPrice);
+        setCurveMultiplier(domainHash, priceConfig.curveMultiplier);
+        setMaxLength(domainHash, priceConfig.length);
         setFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
-
-        _validateConfig(domainHash);
 
         emit PriceConfigSet(
             domainHash,
@@ -167,6 +167,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Fires `MaxPriceSet` event.
      * Only domain owner can call this function.
      * > `maxPrice` can be set to 0 along with `baseLength` to make all domains free!
+     * > `maxPrice` cannot be 0 when:
+     *   - `maxLength` is 0;
+     *   - `baseLength` AND `curveMultiplier` are 0;
      * @dev In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
      * @param domainHash The domain hash to set the `maxPrice` for it
      * @param maxPrice The maximum price to set
@@ -175,9 +178,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 maxPrice
     ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].maxPrice = maxPrice;
+        if (maxPrice == 0 && priceConfigs[domainHash].maxLength == 0) {
+            revert InvalidMaxPrice (domainHash);
+        }
 
-        if (maxPrice != 0) _validateConfig(domainHash);
+        priceConfigs[domainHash].maxPrice = maxPrice;
 
         emit MaxPriceSet(domainHash, maxPrice);
     }
@@ -188,7 +193,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Validates the config with the new multiplier in case where `baseLength` is 0 too.
      * Fires `CurveMultiplier` event.
      * Only domain owner can call this function.
-     * > `curveMultiplier` can be set to 0 to set a maximum price for all domains!
+     * - If `curveMultiplier` = 1.000 - default. Makes a canonical hyperbola fucntion.
+     * - It can be "0", which makes all domain prices max.
+     * - If it is less than 1.000, then it pulls the bend towards the straight line.
+     * - If it is bigger than 1.000, then it makes bigger slope on the chart.
      * @param domainHash The domain hash to set the price config for
      * @param curveMultiplier Multiplier for bending the price function (graph)
      */
@@ -196,9 +204,21 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 curveMultiplier
     ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].curveMultiplier = curveMultiplier;
 
-        _validateConfig(domainHash);
+        if (curveMultiplier == 0) {
+            if (priceConfigs[domainHash].baseLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+
+            if (priceConfigs[domainHash].maxLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+
+        }
+        
+        priceConfigs[domainHash].curveMultiplier = curveMultiplier;
 
         emit CurveMultiplierSet(domainHash, curveMultiplier);
     }
@@ -208,7 +228,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * e.g. A value of '5' means all domains <= 5 in length cost the `maxPrice` price
      * Validates the config with the new length. Fires `BaseLengthSet` event.
      * Only domain owner/operator can call this function.
-     * > `baseLength` can be set to 0 to make all domains cost `maxPrice`!
+     * > `baseLength` can be set to 0 to make all domains free.
+     * > `baseLength` can be = `maxLength` to make all domain prices max.
      * > This indicates to the system that we are
      * > currently in a special phase where we define an exact price for all domains
      * > e.g. promotions or sales
@@ -219,9 +240,20 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 length
     ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].baseLength = length;
 
-        _validateConfig(domainHash);
+        if (length == 0) {
+            if (priceConfigs[domainHash].curveMultiplier == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+
+            if (priceConfigs[domainHash].maxLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+        }
+
+        priceConfigs[domainHash].baseLength = length;
 
         emit BaseLengthSet(domainHash, length);
     }
@@ -232,21 +264,24 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Validates the config with the new length.
      * Fires `MaxLengthSet` event.
      * Only domain owner/operator can call this function.
-     * > `maxLength` can be set to 0!
+     * > `maxLength` can't be set to 0 or less than `baseLength`!
+     * > If `maxLength` = `baseLength` it makes all domain prices max.
      * @param domainHash The domain hash to set the `maxLength` for
      * @param length The maximum length to set
      */
     function setMaxLength(
         bytes32 domainHash,
-        uint256 length
+        uint256 maxLength
     ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].maxLength = length;
 
-        _validateConfig(domainHash);
+    if (maxLength < priceConfigs[domainHash].baseLength)
+            revert InvalidBaseLengthOrMaxLength(
+                domainHash
+            );
 
-        if (length != 0) _validateConfig(domainHash);
+        priceConfigs[domainHash].maxLength = maxLength;
 
-        emit MaxLengthSet(domainHash, length);
+        emit MaxLengthSet(domainHash, maxLength);
     }
 
     /**
@@ -302,17 +337,17 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * and the length of the domain label.
      * @dev Before we calculate the price, 6 different cases are possible:
      * 1. `maxPrice` is 0, which means all subdomains under this parent are free
-     * 2. `baseLength` is 0, which means we are returning `maxPrice` as a specific price for all domains
-     * 3. `length` is less than or equal to `baseLength`, which means a domain will cost `maxPrice`
+     * 2. `baseLength` is 0, which means prices for all domains = 0 (free).
+     * 3. `length` is less or equal to `baseLength`, which means a domain will cost `maxPrice`
      * 4. `length` is greater than `maxLength`, which means a domain will cost price by fomula at `maxLength`
      * 5. The numerator can be less than the denominator, which is achieved by setting a huge value
-     * for `curveMultiplier` or by decreasing the `baseLength` and `maxPrice`, which means all domains 
-     * which are longer than `baseLength` will be for free.
-     * 6. `curveMultiplier` is 0,which means all domains will cost `maxPrice`.
+     * for `curveMultiplier` or by decreasing the `baseLength` and `maxPrice`, which means all domains
+     * which are longer than `baseLength` will be free.
+     * 6. `curveMultiplier` is 0, which means all domains will cost `maxPrice`.
      *
      * The formula itself creates an hyperbolic curve that decreases in pricing based on domain name length,
-     * base length, max price and curve multiplier. 
-     * `MULTIPLIER_BASIS` allows to perceive `curveMultiplier` as fraction number in regular formula,
+     * base length, max price and curve multiplier.
+     * `FACTOR_SCALE` allows to perceive `curveMultiplier` as fraction number in regular formula,
      * which helps to bend a curve of price chart.
      * The result is divided by the precision multiplier to remove numbers beyond
      * what we care about, then multiplied by the same precision multiplier to get the actual value
@@ -339,29 +374,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (length > config.maxLength) length = config.maxLength;
 
         // 
-        return ((config.baseLength * config.maxPrice * MULTIPLIER_BASIS) / (
-                    config.baseLength * MULTIPLIER_BASIS + config.curveMultiplier * (length - config.baseLength)
+        return ((config.baseLength * config.maxPrice * FACTOR_SCALE) / (
+                    config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength)
                 ))
         / config.precisionMultiplier * config.precisionMultiplier;
-    }
-
-    /**
-     * @notice Internal function called every time we set props of `priceConfigs[domainHash]`
-     * to make sure that values being set can not disrupt the price curve or zero out prices
-     * for domains. If this validation fails, the parent function will revert.
-     * @dev We are checking here for possible incorrect passed values: `maxLength`, `baselength` or `curveMultiplier`.
-     * @param domainHash The domain hash to validate its config
-     */
-    function _validateConfig(bytes32 domainHash) internal view {
-        if (priceConfigs[domainHash].maxLength < priceConfigs[domainHash].baseLength)
-            revert InvalidBaseLengthOrMaxLength(
-                domainHash
-            );
-
-        if (priceConfigs[domainHash].baseLength == 0 && priceConfigs[domainHash].curveMultiplier == 0) 
-            revert DivisionByZero(
-                domainHash
-            );
     }
 
     /**

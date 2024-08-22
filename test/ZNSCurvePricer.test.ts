@@ -459,6 +459,7 @@ describe.only("ZNSCurvePricer", () => {
     it("Should return max price for base length domain labels and 0 for other, which longer", async () => {
       // Case where we can set domain strings longer than `baseLength` for free
       // (numerator must be less than denominator)
+
       // constants for playing the scenario (one of many cases):
       // `maxPrice` = 25 000
       // `baseLength` <= 40
@@ -507,9 +508,6 @@ describe.only("ZNSCurvePricer", () => {
       await zns.curvePricer.connect(user).setPriceConfig(domainHash, DEFAULT_PRICE_CONFIG);
 
     });
-
-    // TODO myself: need to check behavior of price when price is 0.9 or like that
-
   });
 
   describe("#setPrecisionMultiplier", () => {
