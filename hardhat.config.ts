@@ -143,8 +143,8 @@ const config : HardhatUserConfig = {
     //   ],
     // },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   //   customChains: [
   //     {
   //       network: "meowtestnet",
@@ -155,7 +155,7 @@ const config : HardhatUserConfig = {
   //       },
   //     },
   //   ],
-  // },
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
