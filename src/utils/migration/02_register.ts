@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { Domain } from "./types";
 import * as fs from "fs";
 import { deployZNS } from "../../../test/helpers";
-import { registerDomains, registerDomainsLocal } from "./registration";
+import { registerDomainsBulk, registerDomainsLocal } from "./registration";
 import { getZNS } from "./zns-contract-data";
 import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 import { ContractTransactionReceipt } from "ethers/contract";
@@ -34,21 +34,36 @@ const main = async () => {
 
     // Only need to do this once on sepolia, unless new contracts are deployed
     // await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
-    // await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
+    
+    const allowance = await zns.meowToken.connect(migrationAdmin).allowance(
+      migrationAdmin.address,
+      await zns.treasury.getAddress()
+    );
 
-    const sliceSize = 5;
-    const start = 10;
-    const slice = rootDomains.slice(start, sliceSize + start);
+    // Approve migration admin for maximum possible amount
+    if (allowance < (hre.ethers.MaxUint256)) {
+      await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
+    }
+
+
+    const sliceSize = 50;
+    const start = 90;
 
     // one by one testing, this is the amount on sepolia currently.
     // will fail when doing bulk TXs until we deploy those changes
-    const registeredDomains = await registerDomains({
-      regAdmin: migrationAdmin,
+    const registeredDomains = await registerDomainsBulk(
+      migrationAdmin,
+      rootDomains,
       zns, 
-      domains: slice
-    });
-
-    console.log(`txRecipt: ${registeredDomains.txReceipt?.hash}`);
+      sliceSize,
+      start
+    );
+    console.log(`registeredDomains: ${registeredDomains[0].txHash}`);
+    console.log(`registeredDomains: ${registeredDomains[1].txHash}`);
+    // console.log(`registeredDomains: ${registeredDomains[0].domainHashes}`);
+    console.log(`done`);
+    
+    // console.log(`txRecipt: ${registeredDomains[0].txHash}`);
 
     // TODO then do again for subdomains
   } else if (hre.network.name === "zchain") {

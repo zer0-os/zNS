@@ -90,7 +90,7 @@ export interface DomainData {
   paymentConfig : IPaymentConfig;
 }
 
-export interface RegisteredDomain {
-  domainHash: string,
-  txReceipt : ContractTransactionReceipt | null
+export interface RegisteredDomains {
+  domainHashes : Array<string>,
+  txHash : string
 }
