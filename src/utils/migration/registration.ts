@@ -5,6 +5,7 @@ import { IZNSContracts } from "../../deploy/campaign/types";
 import { distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
 import { IZNSContractsLocal } from "../../../test/helpers/types";
 import { ContractTransactionReceipt } from "ethers";
+import { DOMAIN_REGISTERED_TOPIC_SEPOLIA } from "./constants";
 
 
 export const registerDomainsLocal = async (
@@ -36,7 +37,7 @@ export const registerDomains = async ({
 }) => {
   // When domains fail they are added to this array to retry
   // after all other domains have been attempted
-  // TODO impl retry 
+  // TODO impl retry
 
   const retryDomains = Array<Domain>();
 
@@ -85,6 +86,7 @@ export const registerBase = async ({
     // (ordered by depth) we know with certainty that if one parent hash is zero, they all are
     if (parentHashes[0] === hre.ethers.ZeroHash) {
       // We aren't setting configs intentionally.
+      console.log("Registering root domains");
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
         labels,
         domainAddresses,
@@ -93,6 +95,7 @@ export const registerBase = async ({
         paymentConfigEmpty,
       );
     } else {
+      console.log("Registering subdomains");
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
         parentHashes,
         labels,
@@ -103,7 +106,7 @@ export const registerBase = async ({
       );
     }
   } catch (e) {
-    console.log("Error registering domain: ", e);
+    console.log("Error registering domains: ", e);
     // Return the domainData if something failed so we can log it
     // for debugging purposes
     return {
@@ -134,9 +137,20 @@ export const registerBase = async ({
     inc = 6;
   }
 
-  for (i; i <= txReceipt!.logs.length; i += inc) {
-    const domainHash = txReceipt!.logs[i].topics[2];
-    domainHashes.push(domainHash);
+  const drEvents = txReceipt!.logs.filter((log) => {
+    return log.topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA;
+  })
+
+  console.log(`DREVENTS: ${drEvents.length}`);
+
+  for (let i = 0; i <= txReceipt!.logs.length; i++) {
+    if (txReceipt!.logs[i].topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA) {
+      console.log("Domain registered event found");
+      // topics[1] is always domainHash
+      const domainHash = txReceipt!.logs[i].topics[1];
+      console.log(domainHash);
+      domainHashes.push(domainHash);
+    }
   }
 
   return { domainHashes, txReceipt, retryData: undefined };

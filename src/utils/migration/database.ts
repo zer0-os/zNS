@@ -38,7 +38,7 @@ export const getZNSFromDB = async () => {
   }
 
   if (!uri || !version) {
-    throw new Error("Failed to connect: missing MongoDB URI");
+    throw new Error("Failed to connect: missing MongoDB URI or version");
   }
 
   let dbAdapter = await getDBAdapter(uri);

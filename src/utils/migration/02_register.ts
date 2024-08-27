@@ -31,14 +31,33 @@ const main = async () => {
 
   if (hre.network.name === "sepolia") {
     const zns = await getZNS(migrationAdmin);
+
+    // Only need to do this once on sepolia, unless new contracts are deployed
+    // await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
+    // await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
+    console.log(await zns.meowToken.balanceOf(migrationAdmin.address));
+    console.log(await zns.registry.getDomainRecord(hre.ethers.ZeroHash));
     
+    const sliceSize = 5;
+    const slice = rootDomains.slice(5, sliceSize);
+
+
+    // 00B006792572F794E80FD30D8FE9656E083BBFC0B87425918ADCF42F57FB7887
+    console.log(await zns.rootRegistrar);
+
     // one by one testing, this is the amount on sepolia currently.
     // will fail when doing bulk TXs until we deploy those changes
     const registeredDomains = await registerDomains({
       regAdmin: migrationAdmin,
       zns, 
-      domains: [rootDomains[27]]
+      domains: slice
     });
+
+    console.log(registeredDomains.txReceipt);
+
+    for (const hash of registeredDomains.domainHashes!) {
+      console.log(`Registered domain with hash: ${hash}`);
+    }
 
     // TODO then do again for subdomains
   } else if (hre.network.name === "zchain") {

@@ -26,7 +26,7 @@ export const getZNS = async (signer : SignerWithAddress) => {
     const acAddress = zns.find((contract) => contract.name === znsNames.accessController.contract);
     const regAddress = zns.find((contract) => contract.name === znsNames.registry.contract);
     const domainTokenAddress = zns.find((contract) => contract.name === znsNames.domainToken.contract);
-    const meowTokenAddress = zns.find((contract) => contract.name === znsNames.meowToken.contract); // fails
+    const meowTokenAddress = zns.find((contract) => contract.name === znsNames.meowToken.contractMock); // contract on prod, contractMock on testnet
     const addressResolverAddress = zns.find((contract) => contract.name === znsNames.addressResolver.contract);
     const curvePricerAddress = zns.find((contract) => contract.name === znsNames.curvePricer.contract);
     const treasuryAddress = zns.find((contract) => contract.name === znsNames.treasury.contract);
