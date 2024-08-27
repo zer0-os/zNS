@@ -7,6 +7,7 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
+import { console } from "hardhat/console.sol";
 
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
@@ -144,12 +145,14 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         CurvePriceConfig calldata priceConfig
     ) public override {
         setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
-        setBaseLength(domainHash, priceConfig.baseLength);
-        setMaxPrice(domainHash, priceConfig.maxPrice);
-        setCurveMultiplier(domainHash, priceConfig.curveMultiplier);
-        setMaxLength(domainHash, priceConfig.length);
+        priceConfigs[domainHash].baseLength = priceConfig.baseLength;
+        priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
+        priceConfigs[domainHash].curveMultiplier = priceConfig.curveMultiplier;
+        priceConfigs[domainHash].maxLength = priceConfig.maxLength;
         setFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
+
+        validateConfig(domainHash);
 
         emit PriceConfigSet(
             domainHash,
@@ -178,9 +181,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 maxPrice
     ) external override onlyOwnerOrOperator(domainHash) {
-        if (maxPrice == 0 && priceConfigs[domainHash].maxLength == 0) {
-            revert InvalidMaxPrice (domainHash);
-        }
+        validateConfig(domainHash);
 
         priceConfigs[domainHash].maxPrice = maxPrice;
 
@@ -204,19 +205,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 curveMultiplier
     ) external override onlyOwnerOrOperator(domainHash) {
-
-        if (curveMultiplier == 0) {
-            if (priceConfigs[domainHash].baseLength == 0) 
-                revert DivisionByZero(
-                    domainHash
-                );
-
-            if (priceConfigs[domainHash].maxLength == 0) 
-                revert DivisionByZero(
-                    domainHash
-                );
-
-        }
+        validateConfig(domainHash);
         
         priceConfigs[domainHash].curveMultiplier = curveMultiplier;
 
@@ -240,18 +229,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 length
     ) external override onlyOwnerOrOperator(domainHash) {
-
-        if (length == 0) {
-            if (priceConfigs[domainHash].curveMultiplier == 0) 
-                revert DivisionByZero(
-                    domainHash
-                );
-
-            if (priceConfigs[domainHash].maxLength == 0) 
-                revert DivisionByZero(
-                    domainHash
-                );
-        }
+        validateConfig(domainHash);
 
         priceConfigs[domainHash].baseLength = length;
 
@@ -267,17 +245,13 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * > `maxLength` can't be set to 0 or less than `baseLength`!
      * > If `maxLength` = `baseLength` it makes all domain prices max.
      * @param domainHash The domain hash to set the `maxLength` for
-     * @param length The maximum length to set
+     * @param maxLength The maximum length to set
      */
     function setMaxLength(
         bytes32 domainHash,
         uint256 maxLength
     ) external override onlyOwnerOrOperator(domainHash) {
-
-    if (maxLength < priceConfigs[domainHash].baseLength)
-            revert InvalidBaseLengthOrMaxLength(
-                domainHash
-            );
+        validateConfig(domainHash);
 
         priceConfigs[domainHash].maxLength = maxLength;
 
@@ -300,7 +274,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 multiplier
     ) public override onlyOwnerOrOperator(domainHash) {
-        if (multiplier == 0 || multiplier > 10**18) revert InvalidMultiplierPassed(multiplier);
+        validateConfig(domainHash);
+
         priceConfigs[domainHash].precisionMultiplier = multiplier;
 
         emit PrecisionMultiplierSet(domainHash, multiplier);
@@ -318,8 +293,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     public
     override
     onlyOwnerOrOperator(domainHash) {
-        if (feePercentage > PERCENTAGE_BASIS)
-            revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
+        validateConfig(domainHash);
+
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
@@ -330,6 +305,57 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
         _setRegistry(registry_);
+    }
+
+    function validateConfig (
+        bytes32 domainHash
+    ) internal view {
+        if (priceConfigs[domainHash].maxLength < priceConfigs[domainHash].baseLength)
+            revert InvalidBaseLengthOrMaxLength(
+                domainHash
+            );
+
+        if (
+            priceConfigs[domainHash].maxPrice == 0 &&
+            priceConfigs[domainHash].maxLength == 0
+        ) {
+            revert InvalidMaxPrice(domainHash);
+        }
+
+        if (priceConfigs[domainHash].curveMultiplier == 0) {
+            if (priceConfigs[domainHash].baseLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+
+            if (priceConfigs[domainHash].maxLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+        }
+
+        if (priceConfigs[domainHash].baseLength == 0) {
+            if (priceConfigs[domainHash].curveMultiplier == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+
+            if (priceConfigs[domainHash].maxLength == 0) 
+                revert DivisionByZero(
+                    domainHash
+                );
+        }
+
+        if (priceConfigs[domainHash].feePercentage > PERCENTAGE_BASIS)
+            revert FeePercentageValueTooLarge(
+                priceConfigs[domainHash].feePercentage,
+                PERCENTAGE_BASIS
+            );
+
+        if (
+            priceConfigs[domainHash].precisionMultiplier == 0 ||
+            priceConfigs[domainHash].precisionMultiplier > 10**18
+            ) revert InvalidMultiplierPassed(priceConfigs[domainHash].precisionMultiplier);
     }
 
     /**
@@ -368,12 +394,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         // Setting baseLength to 0 indicates to the system that we are
         // currently in a special phase where we define an exact price for all domains
         // e.g. promotions or sales
-        if (config.baseLength == 0) return config.maxPrice;
+        if (config.baseLength == 0) return 0;
         if (length <= config.baseLength) return config.maxPrice;
 
         if (length > config.maxLength) length = config.maxLength;
 
-        // 
         return ((config.baseLength * config.maxPrice * FACTOR_SCALE) / (
                     config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength)
                 ))

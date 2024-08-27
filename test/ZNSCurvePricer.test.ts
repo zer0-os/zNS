@@ -421,7 +421,7 @@ describe.only("ZNSCurvePricer", () => {
     });
   });
 
-  describe.only("#setCurveMultiplier", async () => {
+  describe("#setCurveMultiplier", async () => {
     it("Return max price if curve multiplier set to 0", async () => {
       const newMultiplier = BigInt("0");
 
@@ -824,6 +824,53 @@ describe.only("ZNSCurvePricer", () => {
       await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
         .withArgs(user.address,ADMIN_ROLE);
     });
+  });
+
+  describe("Correct validate variables", () => {
+    it("Should revert when all passed variables are 0", async () => {
+      await expect(
+        zns.curvePricer.connect(user).setPriceConfig(
+          domainHash,
+          {
+            maxPrice: 0n,
+            curveMultiplier: 0n,
+            maxLength: 0n,
+            baseLength: 0n,
+            precisionMultiplier: 0n,
+            feePercentage: 0n,
+            isSet: true,
+          }
+        )
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        "InvalidMaxPrice"
+      ).withArgs(domainHash);
+    });
+
+    it("Should revert when `baseLength` and `maxLength` are 0", async () => {
+      await zns.curvePricer.connect(user).setBaseLength(
+        domainHash,
+
+      );
+    });
+    // it("Should revert when `baseLength` and `curveMultiplier` are 0", async () => {
+    //   await zns.curvePricer.connect(user)
+    // });
+    // it("Should revert when `maxLength` is 0", async () => {
+    //   await zns.curvePricer.connect(user).
+    // });
+    // it("Should revert when `maxPrice`, `baseLength` and `maxLength` are 0", async () => {
+    //   await zns.curvePricer.connect(user).
+    // });
+    // it("Should revert when `maxPrice`, `baseLength` and `curveMultiplier` are 0", async () => {
+    //   await zns.curvePricer.connect(user).
+    // });
+    // it("Should revert when `maxPrice` and `maxLength` are 0", async () => {
+    //   await zns.curvePricer.connect(user).
+    // });
+    // it("Should revert when `maxLength` smaller than `baseLength`", async () => {
+    //   await zns.curvePricer.connect(user).
+    // });
   });
 
   describe("Events", () => {
