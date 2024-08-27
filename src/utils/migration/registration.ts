@@ -121,37 +121,20 @@ export const registerBase = async ({
   const txReceipt = await tx!.wait(blocks);
 
   // Collected the registered domains
-  const domainHashes = Array<string>();
-
-  // A root registration creates 9 logs and a subdomain registration creates 6,
-  // and we can get the domainhash from the last log in both to only read relevant events
-  // This accounts for the difference in size to be able to read the
-  // domain hash from the `DomainRegistered` event correctly in bulk txs
-  let i = 0;
-  let inc = 0;
-  if (parentHashes[0] === hre.ethers.ZeroHash) {
-    i = 8; // 0 based, the index to query of a log
-    inc = 9; // 1 based, the number of logs per registration
-  } else {
-    i = 5;
-    inc = 6;
-  }
+  let domainHashes = Array<string>();
 
   const drEvents = txReceipt!.logs.filter((log) => {
-    return log.topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA;
+    if (log.topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA) {
+      return log.topics[1]; // domainHash is always index 1 in this log
+    }
   })
-
   console.log(`DREVENTS: ${drEvents.length}`);
 
-  for (let i = 0; i <= txReceipt!.logs.length; i++) {
-    if (txReceipt!.logs[i].topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA) {
-      console.log("Domain registered event found");
-      // topics[1] is always domainHash
-      const domainHash = txReceipt!.logs[i].topics[1];
-      console.log(domainHash);
-      domainHashes.push(domainHash);
-    }
-  }
+  drEvents.forEach((log) => {
+    domainHashes.push(log.topics[1]);
+  });
+
+  console.log(`DOMAINHASHES: ${domainHashes.length}`);
 
   return { domainHashes, txReceipt, retryData: undefined };
 };

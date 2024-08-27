@@ -25,3 +25,6 @@ docker*.tgz
 valid-root-domains.json
 valid-subdomains.json
 invalid-domains.json
+
+# Deploy logs
+deploy-*.log
