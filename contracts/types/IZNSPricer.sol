@@ -21,7 +21,7 @@ interface IZNSPricer {
     /**
      * @notice Reverted when `maxLength` smaller than `baseLength`.
      */
-    error InvalidBaseLengthOrMaxLength(bytes32 domainHash);
+    error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
 
     /**
      * @notice Reverted when: 

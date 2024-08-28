@@ -26,8 +26,6 @@ export const getCurvePrice = (
 
   let length = BigInt(name.length);
 
-  if (baseLength === 0n) return maxPrice;
-
   if (length <= baseLength) {
     return maxPrice;
   }
