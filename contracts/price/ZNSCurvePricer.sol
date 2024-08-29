@@ -311,19 +311,14 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
                 domainHash
             );
 
-        if (config.maxPrice == 0 &&
-            config.maxLength == 0
-        ) revert InvalidMaxPrice(domainHash);
+        if (config.maxPrice == 0 && config.maxLength == 0)
+            revert InvalidMaxPrice(domainHash);
 
-        if (config.curveMultiplier == 0 &&
-                (config.baseLength == 0 ||
-                config.maxLength == 0)
-            ) revert DivisionByZero(domainHash);
+        if (config.curveMultiplier == 0 && (config.baseLength == 0 || config.maxLength == 0))
+            revert DivisionByZero(domainHash);
 
-        if (config.baseLength == 0 &&
-                (config.curveMultiplier == 0 ||
-                config.maxLength == 0)
-            ) revert DivisionByZero(domainHash);
+        if (config.baseLength == 0 && (config.curveMultiplier == 0 || config.maxLength == 0))
+            revert DivisionByZero(domainHash);
 
         if (config.feePercentage > PERCENTAGE_BASIS)
             revert FeePercentageValueTooLarge(
@@ -331,8 +326,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
                 PERCENTAGE_BASIS
             );
 
-        if (config.precisionMultiplier == 0 ||
-            config.precisionMultiplier > 10**18
+        if (config.precisionMultiplier == 0 || config.precisionMultiplier > 10**18
             ) revert InvalidMultiplierPassed(config.precisionMultiplier);
     }
 

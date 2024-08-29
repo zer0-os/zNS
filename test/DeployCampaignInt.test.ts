@@ -804,7 +804,7 @@ describe("Deploy Campaign Test", () => {
       process.env.BASE_LENGTH = "3";
       process.env.MAX_LENGTH = "5";
       process.env.MAX_PRICE = "0";
-      process.env.MIN_PRICE = ethers.parseEther("3").toString();
+      process.env.CURVE_MULTIPLIER = "1000";
 
       try {
         await getConfig({

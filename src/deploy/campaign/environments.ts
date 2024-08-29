@@ -207,10 +207,10 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  const minPrice =
-    process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
-      : DEFAULT_PRICE_CONFIG.minPrice;
+  const curveMultiplier =
+    process.env.curveMultiplier
+      ? process.env.curveMultiplier
+      : DEFAULT_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
     process.env.MAX_LENGTH
@@ -233,7 +233,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    minPrice,
+    curveMultiplier,
     maxLength,
     baseLength,
     precisionMultiplier,
