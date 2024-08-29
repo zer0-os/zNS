@@ -6,6 +6,7 @@ import { registerDomainsBulk, registerDomainsLocal } from "./registration";
 import { getZNS } from "./zns-contract-data";
 import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 import { ContractTransactionReceipt } from "ethers/contract";
+import { IZNSContracts } from "../../deploy/campaign/types";
 
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
@@ -21,56 +22,16 @@ const main = async () => {
 
   console.log(`Registering ${rootDomains.length} root domains`);
 
-  const registeredDomains : Array<{ 
-    domainHashes : Array<string> | undefined, 
-    txReceipt : ContractTransactionReceipt | null | undefined
-  }> = [];
+  // const registeredDomains : Array<{ 
+  //   domainHashes : Array<string> | undefined, 
+  //   txReceipt : ContractTransactionReceipt | null | undefined
+  // }> = [];
 
-  const start = Date.now();
-  const sliceSize = 30; // TODO whats the most data we can fit in a real tx?
+  let zns : IZNSContracts;
 
-  if (hre.network.name === "sepolia") {
-    const zns = await getZNS(migrationAdmin);
-
-    // Only need to do this once on sepolia, unless new contracts are deployed
-    // await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
-    
-    const allowance = await zns.meowToken.connect(migrationAdmin).allowance(
-      migrationAdmin.address,
-      await zns.treasury.getAddress()
-    );
-
-    // Approve migration admin for maximum possible amount
-    if (allowance < (hre.ethers.MaxUint256)) {
-      await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
-    }
-
-
-    const sliceSize = 50;
-    const start = 90;
-
-    // one by one testing, this is the amount on sepolia currently.
-    // will fail when doing bulk TXs until we deploy those changes
-    const registeredDomains = await registerDomainsBulk(
-      migrationAdmin,
-      rootDomains,
-      zns, 
-      sliceSize,
-      start
-    );
-    console.log(`registeredDomains: ${registeredDomains[0].txHash}`);
-    console.log(`registeredDomains: ${registeredDomains[1].txHash}`);
-    // console.log(`registeredDomains: ${registeredDomains[0].domainHashes}`);
-    console.log(`done`);
-    
-    // console.log(`txRecipt: ${registeredDomains[0].txHash}`);
-
-    // TODO then do again for subdomains
-  } else if (hre.network.name === "zchain") {
-    // TODO impl for when deployed on zchain
-  } else {
-    // Default to hardhat
-    // Reset the network to be sure we are not forking.
+  // for hardhat
+  if (hre.network.name === "hardhat") {
+    // Ensure we aren't forking
     await hre.network.provider.request({
       method: "hardhat_reset",
       params: [],
@@ -83,51 +44,61 @@ const main = async () => {
     };
 
     // Recreate the domain tree with local ZNS
-    const zns = await deployZNS(params);
-
-    console.log(`Registering ${rootDomains.length} root domains with slice size ${sliceSize}`);
-    for (let i = 0; i < rootDomains.length; i += sliceSize) {
-      // TODO put this loop logic in a helper function that any network can use
-      const slice = rootDomains.slice(i, i + sliceSize);
-      const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
-
-      registeredDomains.push(localRegisteredDomains!);
-
-      // Log every 5 sets of domains we register
-      console.log(`Registered ${registeredDomains.length} set${i === 0 ? "" : "s"} of root domains...`);
-    }
-
-    console.log(`rds length: ${registeredDomains.length}`);
-    // For logging to read correctly we capture the length
-    const snapshotLength = registeredDomains.length;
-
-    // Now subdomains
-    console.log(`Registering ${subdomains.length} subdomains with slice size ${sliceSize}`);
-    for (let i = 0; i < subdomains.length; i += sliceSize) {
-      const slice = subdomains.slice(i, i + sliceSize);
-      const localRegisteredDomains = await registerDomainsLocal(migrationAdmin, slice, zns);
-
-      registeredDomains.push(localRegisteredDomains!);
-
-      // Show progress as we register
-      console.log(`Registered ${registeredDomains.length - snapshotLength} set${i === 0 ? "" : "s"} of subdomains...`);
-    }
+    zns = await deployZNS(params);
+  } else if (hre.network.name === "sepolia") {
+    // Get instance of ZNS from DB
+    zns = await getZNS(migrationAdmin);
+  } else {
+    // TODO make sure we have enough funds to register domains when we use zchain
+    throw new Error(`Network ${hre.network.name} not supported`);
   }
 
-  const end = Date.now();
+  // Only need to do this once on sepolia, unless new contracts are deployed    
+  const allowance = await zns.meowToken.connect(migrationAdmin).allowance(
+    migrationAdmin.address,
+    await zns.treasury.getAddress()
+  );
 
-  console.log(`Registered ${registeredDomains.length} sets of domains in ${end - start}ms`);
-
-  // double check count is correct!
-
-  let runningTotal = 0;
-  for (const entry of registeredDomains) {
-    runningTotal += entry.domainHashes?.length || 0;
-    // console.log(`entry length: ${entry.domainHashes ? entry.domainHashes.length : 0}`);
+  // Approve migration admin for maximum possible amount
+  if (allowance < (hre.ethers.MaxUint256)) {
+    await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
   }
-  console.log(`Registered ${runningTotal} domains in total`);
 
-  // It seems the HH script process hangs at completion
+  // TODO fix, On real chain we wont use the mock that can simply mint tokens
+  await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
+
+  const startTime = Date.now();
+
+  // How many domains we will register in a single transaction
+  const sliceSize = 50;
+
+  // How many domains have been registered so far
+  // We use this for retry logic.
+  const start = 0;
+
+  console.log(`Registering ${rootDomains.length} root domains with slice size ${sliceSize}`);
+  const registeredDomains = await registerDomainsBulk(
+    migrationAdmin,
+    rootDomains,
+    zns,
+    sliceSize,
+    start
+  );
+
+  console.log(`Registering ${subdomains.length} subdomains with slice size ${sliceSize}`);
+  const registeredSubdomains = await registerDomainsBulk(
+    migrationAdmin,
+    subdomains,
+    zns,
+    sliceSize,
+    start
+  );
+
+  // ms -> s -> min
+  const totalTime = (Date.now() - startTime) / 1000 / 60;
+  console.log(`Registered ${registeredDomains.length + registeredSubdomains.length} groups of domains in ${totalTime} minutes`);
+  console.log("Done")
+
   // Manually exit here
   process.exit(0);
 };

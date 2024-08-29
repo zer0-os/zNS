@@ -35,29 +35,47 @@ export const registerDomainsBulk = async (
 ) => {
   const registeredDomains = Array<RegisteredDomains>();
 
+  // If not 0 will be the number of domains already minted
   const isStart = start ? start : 0;
+  const numIters = Math.floor((domains.length - isStart) / sliceSize);
 
-  const numIters = 2;
-  // only two sets of domains for now
-  for (let i = isStart; i < isStart + (sliceSize * numIters); i += sliceSize) {
+  // Because the terminator represents the *total* number of domains to register,
+  // we add `isStart` back in
+  const terminator = isStart + (sliceSize * numIters);
 
-    console.log("i: ", i)
-    console.log("i + sliceSize: ", i + sliceSize);
-    const slice = domains.slice(i, i + sliceSize);
 
-    // const slice = domains.slice(i, i + sliceSize);
+  for (let i = isStart; i < terminator; i += sliceSize) {
+    const d = domains.slice(i, i + sliceSize)
+    // console.log(`i: ${i}`)
+    // console.log(`isStart: ${isStart}`)
+    // console.log(`terminator: ${terminator}`)
+    // console.log(`sliceSize: ${sliceSize}`)
+    // d.forEach((domain) => { console.log(domain.label) });
     const { domainHashes, txHash, retryData } = await registerBase({
       regAdmin,
       zns,
-      domains: slice
+      domains: domains.slice(i, i + sliceSize)
     })
 
     if (retryData) {
-      throw new Error("???")
+      throw new Error("??? handle")
     }
 
     registeredDomains.push({ domainHashes, txHash });
   };
+
+  // Do last set of domains as well
+  const { domainHashes, txHash, retryData } = await registerBase({
+    regAdmin,
+    zns,
+    domains: domains.slice(terminator) // until end of array
+  })
+
+  if (retryData) {
+    throw new Error("???")
+  }
+
+  registeredDomains.push({ domainHashes, txHash });
 
   return registeredDomains;
 };
@@ -73,31 +91,38 @@ export const registerBase = async ({
 }) => {
   let tx;
 
-  console.log("DEBUG");
+  // console.log("DEBUG");
 
   const parentHashes = domains.map((domain) => { return domain.parentHash });
   const labels = domains.map((domain) => { return domain.label });
   const domainAddresses = domains.map((domain) => {return domain.address });
   const tokenURIs = domains.map((domain) => { return domain.tokenURI });
 
+  // 100000 000000000 000000000
   try {
     // Because we pre-filter using the query into sets of just root domains and just subdomains
     // (ordered by depth) we know with certainty that if one parent hash is zero, they all are
     if (parentHashes[0] === hre.ethers.ZeroHash) {
+
+      // console.log(await zns.rootRegistrar.getAddress());
       // We aren't setting configs intentionally.
-      console.log("Registering root domains");
+      // console.log(`Registering ${domains.length} root domains...`);
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
         labels,
         domainAddresses,
         tokenURIs,
         distrConfigEmpty, // TODO what should this be? stake vs, direct should be upheld maybe?
         paymentConfigEmpty,
+        // {
+        //   // TODO Debug, force the TX
+        //   gasLimit: 1000000
+        // }
       );
       // if a domain paid for a direct subdomain, they don't get any funds
       // if a domain staked, they get funds back
       // does any of this matter? If we are burning and replacing all meow tokens?
     } else {
-      console.log("Registering subdomains");
+      // console.log(`Registering ${domains.length} subdomains`);
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
         parentHashes,
         labels,
@@ -138,13 +163,13 @@ export const registerBase = async ({
       return log.topics[1]; // domainHash is always index 1 in this log
     }
   })
-  console.log(`DREVENTS: ${drEvents.length}`);
+  // console.log(`DREVENTS: ${drEvents.length}`);
 
   drEvents.forEach((log) => {
     domainHashes.push(log.topics[1]);
   });
 
-  console.log(`DOMAINHASHES: ${domainHashes.length}`);
+  // console.log(`DOMAINHASHES: ${domainHashes.length}`);
 
   return { domainHashes, txHash: txReceipt.hash, retryData: undefined };
 };
