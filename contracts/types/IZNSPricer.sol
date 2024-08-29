@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-
 /**
  * @title IZNSPricer.sol
  * @notice Base interface required to be inherited by all Pricing contracts to work with zNS
@@ -14,7 +13,8 @@ interface IZNSPricer {
     error ParentPriceConfigNotSet(bytes32 parentHash);
 
     /**
-     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% (uint256 "10,000")
+     * @notice Reverted when domain owner is trying to set it's stake fee percentage higher than 100% 
+     (uint256 "10,000").
      */
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
 
@@ -65,7 +65,7 @@ interface IZNSPricer {
     /**
      * @notice Returns the fee for a given price.
      * @dev Fees are only supported for PaymentType.STAKE !
-    */
+     */
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price
