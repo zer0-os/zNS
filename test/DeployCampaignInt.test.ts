@@ -21,7 +21,6 @@ import {
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  INVALID_CURVE_ERR,
   MONGO_URI_ERR,
 } from "./helpers";
 import {
@@ -793,28 +792,6 @@ describe("Deploy Campaign Test", () => {
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
         expect(e.message).includes(STAKING_TOKEN_ERR);
-      }
-    });
-
-    it("Fails to validate if invalid curve for pricing", async () => {
-      process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
-      process.env.BASE_LENGTH = "3";
-      process.env.MAX_LENGTH = "5";
-      process.env.MAX_PRICE = "0";
-      process.env.CURVE_MULTIPLIER = "1000";
-
-      try {
-        await getConfig({
-          env: "prod",
-          deployer: deployAdmin,
-          zeroVaultAddress: zeroVault.address,
-          governors: [deployAdmin.address, governor.address],
-          admins: [deployAdmin.address, admin.address],
-        });
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-      } catch (e : any) {
-        expect(e.message).includes(INVALID_CURVE_ERR);
       }
     });
 

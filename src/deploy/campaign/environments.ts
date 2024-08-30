@@ -237,7 +237,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    curveMultiplier,
+    curveMultiplier: BigInt(curveMultiplier),
     maxLength,
     baseLength,
     precisionMultiplier,
@@ -257,6 +257,7 @@ const requires = (condition : boolean, message : string) => {
 };
 
 // No price spike before `minPrice` kicks in at `maxLength`
+// TODO: do we still need this?
 const validatePrice = (config : ICurvePriceConfig) => {
   const strA = "a".repeat(Number(config.maxLength));
   const strB = "b".repeat(Number(config.maxLength + 1n));
