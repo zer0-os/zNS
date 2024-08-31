@@ -24,12 +24,6 @@ interface IZNSPricer {
     error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
 
     /**
-     * @notice Reverted when: 
-     *  - `maxPrice` AND `maxLength` are 0.
-     */
-    error InvalidMaxPrice(bytes32 domainHash);
-
-    /**
      * @notice Reverted when `curveMultiplier` AND `baseLength` are 0.
      */
     error DivisionByZero(bytes32 domainHash);

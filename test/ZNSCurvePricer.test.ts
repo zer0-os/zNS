@@ -9,11 +9,10 @@ import {
   validateUpgrade,
   PaymentType,
   NOT_AUTHORIZED_ERR,
-  INVALID_MULTIPLIER_ERR,
+  INVALID_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
   INVALID_LABEL_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR, FEE_TOO_LARGE_ERR,
   INVALID_BASE_OR_MAX_LENGTH_ERR,
-  INVALID_MAX_PRICE_ERR,
   DIVISION_BY_ZERO_ERR,
 } from "./helpers";
 import {
@@ -529,7 +528,7 @@ describe("ZNSCurvePricer", () => {
       await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
     });
 
-    it("Fails when setting to zero", async () => {
+    it("Fails when setting `precisionMultiplier` to zero", async () => {
       const zeroMultiplier = BigInt("0");
 
       await expect(
@@ -539,8 +538,8 @@ describe("ZNSCurvePricer", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        INVALID_MULTIPLIER_ERR
-      ).withArgs(0n);
+        INVALID_PRECISION_MULTIPLIER_ERR
+      ).withArgs(domainHash);
     });
 
     it("Successfuly sets the precision multiplier when above 0", async () => {
@@ -579,7 +578,7 @@ describe("ZNSCurvePricer", () => {
         zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newMultiplier)
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        INVALID_MULTIPLIER_ERR
+        INVALID_PRECISION_MULTIPLIER_ERR
       );
     });
   });
@@ -846,7 +845,8 @@ describe("ZNSCurvePricer", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        INVALID_MAX_PRICE_ERR
+        // because it first check
+        INVALID_PRECISION_MULTIPLIER_ERR
       ).withArgs(domainHash);
     });
 
@@ -863,7 +863,7 @@ describe("ZNSCurvePricer", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        DIVISION_BY_ZERO_ERR
+        INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
     it("Should revert when `baseLength` and `curveMultiplier` are 0", async () => {
@@ -912,7 +912,7 @@ describe("ZNSCurvePricer", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        INVALID_MAX_PRICE_ERR
+        INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
 

@@ -11,7 +11,7 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
      * @notice Reverted when multiplier passed by the domain owner
      * is equal to 0 or more than 10^18, which is too large.
      */
-    error InvalidMultiplierPassed(uint256 multiplier);
+    error InvalidPrecisionMultiplierPassed(bytes32 domainHash);
 
     /**
      * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
