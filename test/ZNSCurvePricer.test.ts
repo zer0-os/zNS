@@ -428,6 +428,7 @@ describe("ZNSCurvePricer", () => {
 
       await zns.curvePricer.connect(user).setCurveMultiplier(domainHash, newMultiplier);
 
+      // run 5 times to cover it more
       for (let i = 1; i < 6; i++) {
         const domainString = getRandomString(i * i);
 
@@ -492,10 +493,11 @@ describe("ZNSCurvePricer", () => {
         );
       };
 
+      // `baseLength` = 40, so run this 4 times
       for (let i = 1; i <= newConfig.baseLength / 10n; i++) {
         await check(
           getRandomString(i * 10),
-          DEFAULT_PRICE_CONFIG.maxPrice
+          newConfig.maxPrice
         );
       }
 
@@ -845,7 +847,7 @@ describe("ZNSCurvePricer", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
-        // because it first check
+        // because its a first check
         INVALID_PRECISION_MULTIPLIER_ERR
       ).withArgs(domainHash);
     });
@@ -866,6 +868,7 @@ describe("ZNSCurvePricer", () => {
         INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
+
     it("Should revert when `baseLength` and `curveMultiplier` are 0", async () => {
       await zns.curvePricer.connect(user).setBaseLength(
         domainHash,
@@ -880,6 +883,23 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
         DIVISION_BY_ZERO_ERR
+      );
+    });
+
+    it("Should revert when `maxLength` and `curveMultiplier` are 0", async () => {
+      await zns.curvePricer.connect(user).setCurveMultiplier(
+        domainHash,
+        0n
+      );
+
+      await expect(
+        zns.curvePricer.connect(user).setMaxLength(
+          domainHash,
+          0n
+        )
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
 
