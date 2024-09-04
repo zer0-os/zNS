@@ -73,6 +73,7 @@ contract ZNSRootRegistrar is
     }
 
     function registerRootDomainBulk(
+        address[] calldata owners, // for post registration, we transfer to actual owner
         string[] calldata names,
         address[] calldata domainAddresses,
         string [] calldata tokenURIs,
@@ -84,13 +85,19 @@ contract ZNSRootRegistrar is
         for (uint256 i = 0; i < names.length;) {
             // DistributionConfig memory distrConfig = DistributionConfig(IZNSPricer(address(0)), PaymentType.DIRECT, AccessType.OPEN);
             // PaymentConfig memory paymentConfig = PaymentConfig(IERC20(address(0)), address(0));
-            registerRootDomain(
+            bytes32 domainHash = registerRootDomain(
                 names[i],
                 domainAddresses[i],
                 tokenURIs[i],
                 emptyDistrConfig,
                 emptyPaymentConfig
             );
+
+            // Transfer ERC721 to actual owner
+            domainToken.transferFrom(msg.sender, owners[i], uint256(domainHash));
+
+            // This call breaks subdomain registration right now
+            // registry.updateDomainOwnerForMigration(domainHash, owners[i]);
 
             unchecked {
                 ++i;

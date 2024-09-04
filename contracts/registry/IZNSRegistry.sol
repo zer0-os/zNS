@@ -142,6 +142,11 @@ interface IZNSRegistry {
 
     function updateDomainOwner(bytes32 domainHash, address owner) external;
 
+    function updateDomainOwnerForMigration(
+            bytes32 domainHash,
+            address owner
+        ) external;
+
     function updateDomainResolver(
         bytes32 domainHash,
         string calldata resolverType

@@ -239,6 +239,14 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         _setDomainOwner(domainHash, owner);
     }
 
+    // TODO for remove after migration. This is to allow a no contact airdrop to users in migration
+    function updateDomainOwnerForMigration(
+        bytes32 domainHash,
+        address owner
+    ) external override {
+        _setDomainOwner(domainHash, owner);
+    }
+
     /**
      * @notice Updates the resolver of an existing domain in `records`.
      * Can be called by either the owner of the Name or an allowed operator.

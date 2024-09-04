@@ -93,6 +93,7 @@ export const registerBase = async ({
 
   // console.log("DEBUG");
 
+  const owners = domains.map((domain) => { return domain.owner.id });
   const parentHashes = domains.map((domain) => { return domain.parentHash });
   const labels = domains.map((domain) => { return domain.label });
   const domainAddresses = domains.map((domain) => {return domain.address });
@@ -108,10 +109,16 @@ export const registerBase = async ({
       // We aren't setting configs intentionally.
       // console.log(`Registering ${domains.length} root domains...`);
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
+        owners,
         labels,
         domainAddresses,
         tokenURIs,
-        distrConfigEmpty, // TODO what should this be? stake vs, direct should be upheld maybe?
+        {
+          pricerContract: hre.ethers.ZeroAddress,
+          paymentType: 0n, // Direct
+          accessType: 1n, // Open
+
+        }, // TODO what should this be? stake vs, direct should be upheld maybe?
         paymentConfigEmpty,
         // {
         //   // TODO Debug, force the TX
@@ -170,6 +177,8 @@ export const registerBase = async ({
   });
 
   // console.log(`DOMAINHASHES: ${domainHashes.length}`);
+
+  // console.log(txReceipt.hash);
 
   return { domainHashes, txHash: txReceipt.hash, retryData: undefined };
 };

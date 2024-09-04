@@ -64,6 +64,8 @@ const main = async () => {
     await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
   }
 
+  await zns.domainToken.connect(migrationAdmin).setApprovalForAll(await zns.rootRegistrar.getAddress(), true);
+
   // TODO fix, On real chain we wont use the mock that can simply mint tokens
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
 
@@ -93,6 +95,9 @@ const main = async () => {
     sliceSize,
     start
   );
+
+  const tid = rootDomains[0].tokenId;
+  const ownerBefore = await zns.domainToken.ownerOf(tid);
 
   // ms -> s -> min
   const totalTime = (Date.now() - startTime) / 1000 / 60;
