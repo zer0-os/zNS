@@ -375,6 +375,24 @@ describe("ZNSCurvePricer", () => {
       expect(params.maxPrice).to.eq(newMaxPrice);
     });
 
+    it("Return 0 price for any domain when maxPrice is 0", async () => {
+      const newMaxPrice = BigInt("0");
+
+      await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
+
+      // run 5 times to cover it more
+      for (let i = 1; i < 6; i++) {
+        const label = getRandomString(i * 2);
+        expect(
+          await zns.curvePricer.getPrice(
+            domainHash,
+            label,
+            false
+          )
+        ).to.eq(0n);
+      }
+    });
+
     it("Correctly sets max price", async () => {
       const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("553");
       await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
@@ -609,6 +627,24 @@ describe("ZNSCurvePricer", () => {
       const params = await zns.curvePricer.priceConfigs(domainHash);
 
       expect(params.baseLength).to.eq(newLength);
+    });
+
+    it("Make all domain prices = 0 when baseLength is 0", async () => {
+      const newLength = 0;
+
+      await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
+
+      // run 5 times to cover it more
+      for (let i = 1; i < 6; i++) {
+        const label = getRandomString(i * 2);
+        expect(
+          await zns.curvePricer.getPrice(
+            domainHash,
+            label,
+            false
+          )
+        ).to.eq(0n);
+      }
     });
 
     it("Causes any length domain to cost the base fee when set to max length of 255", async () => {
@@ -852,23 +888,6 @@ describe("ZNSCurvePricer", () => {
       ).withArgs(domainHash);
     });
 
-    it("Should revert when `baseLength` and `maxLength` are 0", async () => {
-      await zns.curvePricer.connect(user).setBaseLength(
-        domainHash,
-        0n
-      );
-
-      await expect(
-        zns.curvePricer.connect(user).setMaxLength(
-          domainHash,
-          0n
-        )
-      ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        INVALID_BASE_OR_MAX_LENGTH_ERR
-      );
-    });
-
     it("Should revert when `baseLength` and `curveMultiplier` are 0", async () => {
       await zns.curvePricer.connect(user).setBaseLength(
         domainHash,
@@ -883,35 +902,6 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
         DIVISION_BY_ZERO_ERR
-      );
-    });
-
-    it("Should revert when `maxLength` and `curveMultiplier` are 0", async () => {
-      await zns.curvePricer.connect(user).setCurveMultiplier(
-        domainHash,
-        0n
-      );
-
-      await expect(
-        zns.curvePricer.connect(user).setMaxLength(
-          domainHash,
-          0n
-        )
-      ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        INVALID_BASE_OR_MAX_LENGTH_ERR
-      );
-    });
-
-    it("Should revert when `maxLength` is 0", async () => {
-      await expect(
-        zns.curvePricer.connect(user).setMaxLength(
-          domainHash,
-          0n
-        )
-      ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
 
@@ -954,23 +944,6 @@ describe("ZNSCurvePricer", () => {
       ).to.be.revertedWithCustomError(
         zns.curvePricer,
         DIVISION_BY_ZERO_ERR
-      );
-    });
-
-    it("Should revert when `maxPrice` and `maxLength` are 0", async () => {
-      await zns.curvePricer.connect(user).setMaxPrice(
-        domainHash,
-        0n
-      );
-
-      await expect(
-        zns.curvePricer.connect(user).setMaxLength(
-          domainHash,
-          0n
-        )
-      ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        INVALID_BASE_OR_MAX_LENGTH_ERR
       );
     });
 

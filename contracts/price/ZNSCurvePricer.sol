@@ -208,10 +208,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 curveMultiplier,
         CurvePriceConfig memory config
     ) internal onlyOwnerOrOperator(domainHash) {
-        if (
-            (curveMultiplier == 0 && config.baseLength == 0) ||
-            (curveMultiplier == 0 && config.maxLength == 0)
-        ) revert DivisionByZero(domainHash);
+        if (curveMultiplier == 0 && config.baseLength == 0) 
+            revert DivisionByZero(domainHash);
 
         priceConfigs[domainHash].curveMultiplier = curveMultiplier;
     }
@@ -247,10 +245,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (config.maxLength < baseLength)
             revert MaxLengthSmallerThanBaseLength(domainHash);
 
-        if (
-            (baseLength == 0 && config.curveMultiplier == 0) || 
-            (baseLength == 0 && config.maxLength == 0)
-        ) revert DivisionByZero(domainHash);
+        if (baseLength == 0 && config.curveMultiplier == 0) 
+            revert DivisionByZero(domainHash);
 
         priceConfigs[domainHash].baseLength = baseLength;
     }
