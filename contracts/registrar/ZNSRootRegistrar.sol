@@ -15,7 +15,7 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
+import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -85,6 +85,10 @@ contract ZNSRootRegistrar is
         for (uint256 i = 0; i < names.length;) {
             // DistributionConfig memory distrConfig = DistributionConfig(IZNSPricer(address(0)), PaymentType.DIRECT, AccessType.OPEN);
             // PaymentConfig memory paymentConfig = PaymentConfig(IERC20(address(0)), address(0));
+            
+            // we are passing the right access type for each tx, where is it missing?
+            // console.logUint(uint256(emptyDistrConfig.accessType));
+            
             bytes32 domainHash = registerRootDomain(
                 names[i],
                 domainAddresses[i],
@@ -158,10 +162,10 @@ contract ZNSRootRegistrar is
             )
         );
 
-        if (address(distributionConfig.pricerContract) != address(0)) {
+        // if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
-        }
+        // }
 
         return domainHash;
     }

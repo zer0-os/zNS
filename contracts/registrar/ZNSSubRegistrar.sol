@@ -11,7 +11,7 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
-
+import { console } from "hardhat/console.sol";
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
  * @dev This contract has the entry point for registering subdomains, but calls
@@ -93,6 +93,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         }
     }
 
+
+    error ParentNotExist(bytes32 parentHash);
+    error CallerNotOwner(address caller);
+
     /**
      * @notice Entry point to register a subdomain under a parent domain specified.
      * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
@@ -125,9 +129,28 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
+        if (!registry.exists(parentHash))
+            revert ParentNotExist(parentHash);
+
+        // console.logBytes32(parentHash);
+
+
+        // This returns 0, locked, but we dont register domains locked, why does this happen?
+        if(uint256(parentConfig.accessType) == 0) {
+            console.log("fail here");
+            // Because we do
+            console.logBytes32(parentHash);
+            console.logBytes32(domainHash);
+            console.log(registry.exists(parentHash));
+        }
+
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
+
+        if (parentConfig.accessType == AccessType.LOCKED)
             revert ParentLockedOrDoesntExist(parentHash);
+
+        if (!isOwnerOrOperator)
+            revert CallerNotOwner(msg.sender);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
@@ -151,31 +174,36 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             paymentConfig: paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
-            if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPriceAndFee(
-                        parentHash,
-                        label,
-                        true
-                    );
-            } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPrice(
-                        parentHash,
-                        label,
-                        true
-                    );
-            }
-        }
+        // Because we transfer root ownership right after registration, the caller here is not the owner
+        // causes errors
+        // console.log("here");
+        // if (!isOwnerOrOperator) { // TODO no payment considerations for migration
+        //     // console.log("here too");
+            
+        //     if (coreRegisterArgs.isStakePayment) {
+        //         (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+        //             .getPriceAndFee(
+        //                 parentHash,
+        //                 label,
+        //                 true
+        //             );
+        //     } else {
+        //         coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
+        //             .getPrice(
+        //                 parentHash,
+        //                 label,
+        //                 true
+        //             );
+        //     }
+        // }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        if (address(distrConfig.pricerContract) != address(0)) {
+        // if (address(distrConfig.pricerContract) != address(0)) {
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
-        }
+        // }
 
         return domainHash;
     }
@@ -208,8 +236,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        if (address(config.pricerContract) == address(0))
-            revert ZeroAddressPassed();
+        // TODO uncomment after migration
+        // We allow this because we don't set a pricer but we want to register still
+
+        // TODO should we just set the pricer properly for everyone?
+        // Should we copy each persons configs if we can?
+        // Same with issue around staking vs. direct pay
+        // if migration happens then users unstake later they would expect to be refunded
+        // if (address(config.pricerContract) == address(0))
+        //     revert ZeroAddressPassed();
 
         distrConfigs[domainHash] = config;
 

@@ -45,7 +45,7 @@ export const registerDomainsBulk = async (
 
 
   for (let i = isStart; i < terminator; i += sliceSize) {
-    const d = domains.slice(i, i + sliceSize)
+    // const d = domains.slice(i, i + sliceSize)
     // console.log(`i: ${i}`)
     // console.log(`isStart: ${isStart}`)
     // console.log(`terminator: ${terminator}`)
@@ -115,9 +115,8 @@ export const registerBase = async ({
         tokenURIs,
         {
           pricerContract: hre.ethers.ZeroAddress,
-          paymentType: 0n, // Direct
+          paymentType: 0n, // Direct, but dont use
           accessType: 1n, // Open
-
         }, // TODO what should this be? stake vs, direct should be upheld maybe?
         paymentConfigEmpty,
         // {
@@ -135,7 +134,11 @@ export const registerBase = async ({
         labels,
         domainAddresses,
         tokenURIs,
-        distrConfigEmpty,
+        {
+          pricerContract: hre.ethers.ZeroAddress,
+          paymentType: 0n, // Direct, but dont use
+          accessType: 1n, // Open
+        }, 
         paymentConfigEmpty,
       );
     }

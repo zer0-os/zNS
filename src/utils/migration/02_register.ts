@@ -87,21 +87,47 @@ const main = async () => {
     start
   );
 
-  console.log(`Registering ${subdomains.length} subdomains with slice size ${sliceSize}`);
+  // first parent where sub breaks
+  const testHash = "0x917bfe1ea42168e4af332ce632be56891eaa882894dcb19d4474d7db2ac1783f";
+  // const config = await zns.subRegistrar.distrConfigs(testHash);
+  // console.log(config.accessType);
+  const firstLevelSubs = subdomains.filter((sub) => { if (sub.depth === 1) return sub });
+  // console.log(subdomains.length);
+  // console.log(firstLevelSubs.length); // should be -17 regular subs
+
+  const secondSubs = subdomains.filter((sub) => { if (sub.depth === 2) return sub });
+  // console.log(secondSubs.length); // should be -17 regular subs
+
+
+  console.log(`Registering ${firstLevelSubs.length} 1st level subdomains with slice size ${sliceSize}`);
   const registeredSubdomains = await registerDomainsBulk(
     migrationAdmin,
-    subdomains,
+    firstLevelSubs,
     zns,
     sliceSize,
     start
   );
 
-  const tid = rootDomains[0].tokenId;
-  const ownerBefore = await zns.domainToken.ownerOf(tid);
+  // console.log("Exists check befpre 2nd level subdomains call")
+  // console.log(await zns.registry.exists(testHash))
+  // const config = await zns.subRegistrar.distrConfigs(testHash);
+  // console.log(config.accessType); // comes back 0, how?
+
+  console.log(`Registering ${secondSubs.length} 2nd level subdomains with slice size ${sliceSize}`);
+  const registeredSecondSubdomains = await registerDomainsBulk(
+    migrationAdmin,
+    secondSubs,
+    zns,
+    sliceSize,
+    start
+  );
+
+  // const tid = rootDomains[0].tokenId;
+  // const ownerBefore = await zns.domainToken.ownerOf(tid);
 
   // ms -> s -> min
   const totalTime = (Date.now() - startTime) / 1000 / 60;
-  console.log(`Registered ${registeredDomains.length + registeredSubdomains.length} groups of domains in ${totalTime} minutes`);
+  console.log(`Registered ${registeredDomains.length + registeredSubdomains.length + registeredSecondSubdomains.length} groups of domains in ${totalTime} minutes`);
   console.log("Done")
 
   // Manually exit here
