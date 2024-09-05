@@ -129,16 +129,24 @@ export const registerBase = async ({
       // does any of this matter? If we are burning and replacing all meow tokens?
     } else {
       // console.log(`Registering ${domains.length} subdomains`);
+
+      const bulkMigrationArgs = {
+        domainToken: await zns.domainToken.getAddress(),
+        owners: owners,
+        parentHashes: parentHashes,
+        labels: labels,
+        domainAddresses: domainAddresses,
+        tokenURIs: tokenURIs,
+      };
+      const distConfig = {
+        pricerContract: hre.ethers.ZeroAddress,
+        paymentType: 0n, // Direct, but dont use
+        accessType: 1n, // Open
+      };
+
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
-        parentHashes,
-        labels,
-        domainAddresses,
-        tokenURIs,
-        {
-          pricerContract: hre.ethers.ZeroAddress,
-          paymentType: 0n, // Direct, but dont use
-          accessType: 1n, // Open
-        }, 
+        bulkMigrationArgs,
+        distConfig,
         paymentConfigEmpty,
       );
     }

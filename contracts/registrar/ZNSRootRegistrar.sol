@@ -101,7 +101,7 @@ contract ZNSRootRegistrar is
             domainToken.transferFrom(msg.sender, owners[i], uint256(domainHash));
 
             // This call breaks subdomain registration right now
-            // registry.updateDomainOwnerForMigration(domainHash, owners[i]);
+            registry.updateDomainOwnerForMigration(domainHash, owners[i]);
 
             unchecked {
                 ++i;

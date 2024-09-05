@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
@@ -69,22 +70,32 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     function registerSubdomainBulk(
-        bytes32[] calldata parentHashes,
-        string[] calldata labels,
-        address[] calldata domainAddresses,
-        string[] calldata tokenURIs,
+        BulkMigrationArgs calldata args,
         DistributionConfig calldata emptyDistrConfig,
         PaymentConfig calldata emptyPaymentConfig
     ) public onlyAdmin {
         // For the migration specifically so we setup with empty configs
-        for (uint256 i = 0; i < parentHashes.length;) {
-            registerSubdomain(
-                parentHashes[i],
-                labels[i],
-                domainAddresses[i],
-                tokenURIs[i],
+        for (uint256 i = 0; i < args.parentHashes.length;) {
+            bytes32 domainHash = registerSubdomain(
+                args.parentHashes[i],
+                args.labels[i],
+                args.domainAddresses[i],
+                args.tokenURIs[i],
                 emptyDistrConfig,
                 emptyPaymentConfig
+            );
+
+            // transfer domain token
+            IZNSDomainToken(args.domainToken).transferFrom(
+                msg.sender,
+                args.owners[i],
+                uint256(domainHash)
+            );
+
+            // update registry domain record
+            registry.updateDomainOwnerForMigration(
+                domainHash,
+                args.owners[i]
             );
 
             unchecked {
@@ -149,8 +160,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (parentConfig.accessType == AccessType.LOCKED)
             revert ParentLockedOrDoesntExist(parentHash);
 
-        if (!isOwnerOrOperator)
-            revert CallerNotOwner(msg.sender);
+        // if (!isOwnerOrOperator)
+        //     revert CallerNotOwner(msg.sender);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (

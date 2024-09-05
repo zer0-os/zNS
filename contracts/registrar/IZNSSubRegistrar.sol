@@ -9,6 +9,17 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
+
+    // TODO TEMP DELETE after migration
+    struct BulkMigrationArgs {
+        address domainToken; // DomainToken contract for transfers
+        address[] owners;
+        bytes32[] parentHashes;
+        string[] labels;
+        address[]domainAddresses;
+        string[] tokenURIs;
+    }
+
     /**
      * @notice Reverted when someone other than parent owner is trying to buy 
      a subdomain under the parent that is locked\

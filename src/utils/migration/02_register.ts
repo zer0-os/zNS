@@ -65,6 +65,7 @@ const main = async () => {
   }
 
   await zns.domainToken.connect(migrationAdmin).setApprovalForAll(await zns.rootRegistrar.getAddress(), true);
+  await zns.domainToken.connect(migrationAdmin).setApprovalForAll(await zns.subRegistrar.getAddress(), true);
 
   // TODO fix, On real chain we wont use the mock that can simply mint tokens
   await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
