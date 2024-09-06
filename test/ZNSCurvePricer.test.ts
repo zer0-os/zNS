@@ -647,13 +647,13 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Should revert when `curveMultiplier` is already 0 and we pass `baseLength` as 0", async () => {
-      await zns.curvePricer.connect(user).setBaseLength(
+      await zns.curvePricer.connect(user).setCurveMultiplier(
         domainHash,
         0n
       );
 
       await expect(
-        zns.curvePricer.connect(user).setCurveMultiplier(
+        zns.curvePricer.connect(user).setBaseLength(
           domainHash,
           0n
         )
@@ -800,8 +800,11 @@ describe("ZNSCurvePricer", () => {
       await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
     });
 
-    it("Doesn't allow setting the max length to zero", async () => {
+    it("Doesn't allow setting the `maxLength` to zero", async () => {
+      // require setting `baseLength` smaller or equal `maxLength`
       const newLength = 0;
+
+      await zns.curvePricer.connect(user).setBaseLength(domainHash, 0n);
 
       await expect(
         zns.curvePricer.connect(user).setMaxLength(domainHash, newLength)
