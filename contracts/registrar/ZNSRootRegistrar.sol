@@ -204,9 +204,10 @@ contract ZNSRootRegistrar is
         CoreRegisterArgs memory args
     ) internal {
         // payment part of the logic
-        if (args.price > 0) {
-            _processPayment(args);
-        }
+        // TODO uncomment after migration
+        // if (args.price > 0) {
+        //     _processPayment(args);
+        // }
 
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);

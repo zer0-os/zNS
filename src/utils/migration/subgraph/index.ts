@@ -56,18 +56,6 @@ const validateEach = async (
 
   let domains = await getDomains(client, first, skip, isWorld);
 
-  // while (true) {
-  //   let localDomains = await getDomains(client, first, skip, isWorld);
-  //   console.log(`Got ${localDomains.length} domains`);
-  //   if (localDomains.length === 0) break;
-  //   domains.concat(localDomains);
-  //   console.log("inside: ", domains.length);
-  //   skip += 1000;
-  // }
-
-  // // temp get all domains
-  // console.log("outside: ",domains.length);
-  // process.exit(1);
   while (domains.length > 0) {
     console.log(`Validating ${domains.length} domains`);
 

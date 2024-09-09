@@ -1,56 +1,33 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DomainData, RegisteredDomains, Domain } from "./types";
+import { RegisteredDomains, Domain } from "./types";
 import { IZNSContracts } from "../../deploy/campaign/types";
-import { distrConfigEmpty, paymentConfigEmpty } from "../../../test/helpers";
+import { paymentConfigEmpty } from "../../../test/helpers";
 import { IZNSContractsLocal } from "../../../test/helpers/types";
-import { ContractTransactionReceipt } from "ethers";
 import { DOMAIN_REGISTERED_TOPIC_SEPOLIA } from "./constants";
 
-
-export const registerDomainsLocal = async (
-  migrationAdmin : SignerWithAddress,
-  domains : Array<Domain>,
-  zns : IZNSContractsLocal,
-) => {
-  // Give minter balance and approval for registrations
-  await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("99999999999999999999"));
-  await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
-
-  // const registeredDomains = await registerDomains({
-  //   regAdmin: migrationAdmin,
-  //   zns,
-  //   domains,
-  // });
-
-  // return registeredDomains;
-};
 
 export const registerDomainsBulk = async (
   regAdmin : SignerWithAddress,
   domains : Array<Domain>, // imagine this is ALL domains
   zns : IZNSContracts,
   sliceSize : number,
-  start ?: number, // If we have already minted some domains
+  start ?: number,
 ) => {
   const registeredDomains = Array<RegisteredDomains>();
 
-  // If not 0 will be the number of domains already minted
-  const isStart = start ? start : 0;
+  // 'start' is used for retry logic and represents the number of domains
+  // we have already minted
+  let isStart = start ? start : 0;
+
+  // The number of iterations to do based on the size of the incoming domain array
   const numIters = Math.floor((domains.length - isStart) / sliceSize);
 
   // Because the terminator represents the *total* number of domains to register,
   // we add `isStart` back in
   const terminator = isStart + (sliceSize * numIters);
 
-
   for (let i = isStart; i < terminator; i += sliceSize) {
-    // const d = domains.slice(i, i + sliceSize)
-    // console.log(`i: ${i}`)
-    // console.log(`isStart: ${isStart}`)
-    // console.log(`terminator: ${terminator}`)
-    // console.log(`sliceSize: ${sliceSize}`)
-    // d.forEach((domain) => { console.log(domain.label) });
     const { domainHashes, txHash, retryData } = await registerBase({
       regAdmin,
       zns,
@@ -60,20 +37,25 @@ export const registerDomainsBulk = async (
     if (retryData) {
       throw new Error("??? handle")
     }
-
     registeredDomains.push({ domainHashes, txHash });
+
+    isStart += domainHashes.length;
+
+    console.log("Registered domains: ", isStart);
   };
 
   // Do last set of domains as well
   const { domainHashes, txHash, retryData } = await registerBase({
     regAdmin,
     zns,
-    domains: domains.slice(terminator) // until end of array
+    domains: domains.slice(terminator) // terminator -> end of array
   })
 
   if (retryData) {
     throw new Error("???")
   }
+
+  console.log("Registered domains: ", isStart + domainHashes.length);
 
   registeredDomains.push({ domainHashes, txHash });
 
@@ -99,15 +81,13 @@ export const registerBase = async ({
   const domainAddresses = domains.map((domain) => {return domain.address });
   const tokenURIs = domains.map((domain) => { return domain.tokenURI });
 
-  // 100000 000000000 000000000
   try {
     // Because we pre-filter using the query into sets of just root domains and just subdomains
     // (ordered by depth) we know with certainty that if one parent hash is zero, they all are
     if (parentHashes[0] === hre.ethers.ZeroHash) {
 
-      // console.log(await zns.rootRegistrar.getAddress());
-      // We aren't setting configs intentionally.
-      // console.log(`Registering ${domains.length} root domains...`);
+      // It is by intention that we aren't recreating user configs
+      // We are just focusing on recreating the domain tree
       tx = await zns.rootRegistrar.connect(regAdmin).registerRootDomainBulk(
         owners,
         labels,
@@ -117,19 +97,10 @@ export const registerBase = async ({
           pricerContract: hre.ethers.ZeroAddress,
           paymentType: 0n, // Direct, but dont use
           accessType: 1n, // Open
-        }, // TODO what should this be? stake vs, direct should be upheld maybe?
+        },
         paymentConfigEmpty,
-        // {
-        //   // TODO Debug, force the TX
-        //   gasLimit: 1000000
-        // }
       );
-      // if a domain paid for a direct subdomain, they don't get any funds
-      // if a domain staked, they get funds back
-      // does any of this matter? If we are burning and replacing all meow tokens?
     } else {
-      // console.log(`Registering ${domains.length} subdomains`);
-
       const bulkMigrationArgs = {
         domainToken: await zns.domainToken.getAddress(),
         owners: owners,
@@ -154,14 +125,11 @@ export const registerBase = async ({
     console.log("Error registering domains: ", e);
     // Return the domainData if something failed so we can log it
     // for debugging purposes
-    // TODO when retry data is setup this will be different.
-    // throw error for now to avoid returning possibly undefined values
-    throw new Error("Error registering domains");
-    // return {
-    //   domainHash: undefined,
-    //   txHash: undefined,
-    //   retryData: domains
-    // }
+    return {
+      domainHash: undefined,
+      txHash: undefined,
+      retryData: domains
+    }
   }
 
   // Providing a number on hardhat will cause it to hang

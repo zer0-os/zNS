@@ -85,14 +85,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 emptyPaymentConfig
             );
 
-            // transfer domain token
+            // Transfer domain token
             IZNSDomainToken(args.domainToken).transferFrom(
                 msg.sender,
                 args.owners[i],
                 uint256(domainHash)
             );
 
-            // update registry domain record
+            // Update registry domain record
             registry.updateDomainOwnerForMigration(
                 domainHash,
                 args.owners[i]
