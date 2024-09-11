@@ -143,11 +143,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         CurvePriceConfig calldata priceConfig
     ) public override {
         _setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
-        _validateBaseLength(domainHash, priceConfig.baseLength, priceConfig);
+        _validateSetBaseLength(domainHash, priceConfig.baseLength, priceConfig);
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        _validateCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
-        _validateMaxLength(domainHash, priceConfig.maxLength, priceConfig);
-        _validateFeePercentage(domainHash, priceConfig.feePercentage);
+        _validateSetCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
+        _validateSetMaxLength(domainHash, priceConfig.maxLength, priceConfig);
+        _validateSetFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
 
         emit PriceConfigSet(
@@ -199,11 +199,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 curveMultiplier
     ) external override onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateCurveMultiplier(domainHash, curveMultiplier, config);
+        _validateSetCurveMultiplier(domainHash, curveMultiplier, config);
         emit CurveMultiplierSet(domainHash, curveMultiplier);
     }
 
-    function _validateCurveMultiplier(
+    function _validateSetCurveMultiplier(
         bytes32 domainHash,
         uint256 curveMultiplier,
         CurvePriceConfig memory config
@@ -232,11 +232,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 baseLength
     ) external override onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateBaseLength(domainHash, baseLength, config);
+        _validateSetBaseLength(domainHash, baseLength, config);
         emit BaseLengthSet(domainHash, baseLength);
     }
 
-    function _validateBaseLength(
+    function _validateSetBaseLength(
         bytes32 domainHash,
         uint256 baseLength,
         CurvePriceConfig memory config
@@ -267,11 +267,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 maxLength
     ) external override onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateMaxLength(domainHash, maxLength, config);
+        _validateSetMaxLength(domainHash, maxLength, config);
         emit MaxLengthSet(domainHash, maxLength);
     }
 
-    function _validateMaxLength(
+    function _validateSetMaxLength(
         bytes32 domainHash,
         uint256 maxLength,
         CurvePriceConfig memory config
@@ -308,8 +308,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 multiplier
     ) internal {
-        if (multiplier == 0 || multiplier > 10**18
-        ) revert InvalidPrecisionMultiplierPassed(domainHash);
+        if (multiplier == 0 || multiplier > 10**18) revert InvalidPrecisionMultiplierPassed(domainHash);
 
         priceConfigs[domainHash].precisionMultiplier = multiplier;
     }
@@ -326,11 +325,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 feePercentage
     ) public override onlyOwnerOrOperator(domainHash) {
-        _validateFeePercentage(domainHash, feePercentage);
+        _validateSetFeePercentage(domainHash, feePercentage);
         emit FeePercentageSet(domainHash, feePercentage);
     }
 
-    function _validateFeePercentage(
+    function _validateSetFeePercentage(
         bytes32 domainHash,
         uint256 feePercentage
     ) internal onlyOwnerOrOperator(domainHash) {
@@ -391,10 +390,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
         if (length > config.maxLength) length = config.maxLength;
 
-        return ((config.baseLength * config.maxPrice * FACTOR_SCALE) / (
-                    config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength)
-                ))
-        / config.precisionMultiplier * config.precisionMultiplier;
+        return ((config.baseLength * config.maxPrice * FACTOR_SCALE) /
+        (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))) /
+        config.precisionMultiplier * config.precisionMultiplier;
     }
 
     /**
