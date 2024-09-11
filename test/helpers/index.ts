@@ -6,6 +6,7 @@ export * from "./constants";
 export * from "./balances";
 export * from "./errors";
 export * from "./validate-upgrade";
+export * from "./utils";
 export { EXECUTOR_ROLE } from "../../src/deploy/constants";
 export { REGISTRAR_ROLE } from "../../src/deploy/constants";
 export { ADMIN_ROLE } from "../../src/deploy/constants";

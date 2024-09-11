@@ -8,7 +8,6 @@ import {
   DEFAULT_DECIMALS,
   DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
-  getCurvePrice,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
@@ -109,11 +108,12 @@ export const getConfig = async ({
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver!,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    zeroVaultAddress: zeroVaultAddressConf!,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
@@ -211,10 +211,10 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  const minPrice =
-    process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
-      : DEFAULT_PRICE_CONFIG.minPrice;
+  const curveMultiplier =
+    process.env.curveMultiplier
+      ? process.env.curveMultiplier
+      : DEFAULT_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
     process.env.MAX_LENGTH
@@ -237,7 +237,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    minPrice,
+    curveMultiplier: BigInt(curveMultiplier),
     maxLength,
     baseLength,
     precisionMultiplier,
@@ -245,7 +245,7 @@ const getValidateRootPriceConfig = () => {
     isSet: true,
   };
 
-  requires(validatePrice(priceConfig), INVALID_CURVE_ERR);
+  validateConfig(priceConfig);
 
   return priceConfig;
 };
@@ -256,14 +256,16 @@ const requires = (condition : boolean, message : string) => {
   }
 };
 
-// No price spike before `minPrice` kicks in at `maxLength`
-const validatePrice = (config : ICurvePriceConfig) => {
-  const strA = "a".repeat(Number(config.maxLength));
-  const strB = "b".repeat(Number(config.maxLength + 1n));
+const validateConfig = (config : ICurvePriceConfig) => {
+  const PERCENTAGE_BASIS = 10000n;
 
-  const priceA = getCurvePrice(strA, config);
-  const priceB = getCurvePrice(strB, config);
-
-  // if B > A, then the price spike is invalid
-  return (priceB <= priceA);
+  if (
+    (config.curveMultiplier === 0n && config.baseLength === 0n) ||
+    (config.maxLength < config.baseLength) ||
+    ((config.maxLength < config.baseLength) || config.maxLength === 0n) ||
+    (config.curveMultiplier === 0n || config.curveMultiplier > 10n**18n) ||
+    (config.feePercentage > PERCENTAGE_BASIS)
+  ) {
+    requires(false, INVALID_CURVE_ERR);
+  }
 };

@@ -119,7 +119,7 @@ export const validatePathRegistration = async ({
 
     const {
       maxPrice: curveMaxPrice,
-      minPrice: curveMinPrice,
+      curveMultiplier,
       maxLength: curveMaxLength,
       baseLength: curveBaseLength,
       precisionMultiplier: curvePrecisionMultiplier,
@@ -136,7 +136,7 @@ export const validatePathRegistration = async ({
         domainLabel,
         {
           maxPrice: curveMaxPrice,
-          minPrice: curveMinPrice,
+          curveMultiplier,
           maxLength: curveMaxLength,
           baseLength: curveBaseLength,
           precisionMultiplier: curvePrecisionMultiplier,
@@ -160,7 +160,7 @@ export const validatePathRegistration = async ({
       } else {
         const {
           maxPrice,
-          minPrice,
+          curveMultiplier,
           maxLength,
           baseLength,
           precisionMultiplier,
@@ -174,7 +174,7 @@ export const validatePathRegistration = async ({
           domainLabel,
           {
             maxPrice,
-            minPrice,
+            curveMultiplier,
             maxLength,
             baseLength,
             precisionMultiplier,

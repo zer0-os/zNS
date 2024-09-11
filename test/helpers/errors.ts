@@ -22,8 +22,10 @@ export const PARENT_CONFIG_NOT_SET_ERR = "ParentPriceConfigNotSet";
 export const FEE_TOO_LARGE_ERR = "FeePercentageValueTooLarge";
 
 // ZNSCurvePricer.sol
-export const INVALID_MULTIPLIER_ERR = "InvalidMultiplierPassed";
+export const INVALID_PRECISION_MULTIPLIER_ERR = "InvalidPrecisionMultiplierPassed";
 export const INVALID_PRICE_CONFIG_ERR = "InvalidConfigCausingPriceSpikes";
+export const INVALID_BASE_OR_MAX_LENGTH_ERR = "MaxLengthSmallerThanBaseLength";
+export const DIVISION_BY_ZERO_ERR = "DivisionByZero";
 
 // ZNSRootRegistrar.sol
 export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";

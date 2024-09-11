@@ -1148,10 +1148,6 @@ describe("ZNSSubRegistrar", () => {
       if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig!) {
         expect(priceConfig.maxPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.maxPrice);
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      if ("minPrice" in domainConfigs[1].fullConfig.priceConfig!) {
-        expect(priceConfig.minPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.minPrice);
-      }
 
       // make sure the child's stake is still there
       const { amount: childStakedAmt } = await zns.treasury.stakedForDomain(lvl3Hash);
@@ -1749,7 +1745,7 @@ describe("ZNSSubRegistrar", () => {
     it("CurvePricer - StakePayment - stake fee - 13 decimals", async () => {
       const priceConfig = {
         maxPrice: ethers.parseUnits("30000.93", decimalValues.thirteen),
-        minPrice: ethers.parseUnits("2000.11", decimalValues.thirteen),
+        curveMultiplier: BigInt(1000),
         maxLength: BigInt(50),
         baseLength: BigInt(4),
         precisionMultiplier: BigInt(10) ** (
@@ -1838,7 +1834,7 @@ describe("ZNSSubRegistrar", () => {
     it("CurvePricer - StakePayment - no fee - 2 decimals", async () => {
       const priceConfig = {
         maxPrice: ethers.parseUnits("234.46", decimalValues.two),
-        minPrice: ethers.parseUnits("3.37", decimalValues.two),
+        curveMultiplier: BigInt(1000),
         maxLength: BigInt(20),
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
@@ -2076,7 +2072,6 @@ describe("ZNSSubRegistrar", () => {
       const priceConfig = {
         ...DEFAULT_PRICE_CONFIG,
         maxPrice: BigInt(0),
-        minPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2165,7 +2160,6 @@ describe("ZNSSubRegistrar", () => {
       const priceConfig = {
         ...DEFAULT_PRICE_CONFIG,
         maxPrice: BigInt(0),
-        minPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
@@ -2338,7 +2332,7 @@ describe("ZNSSubRegistrar", () => {
       // we will use token with 5 decimals, but set prices in 18 decimals
       const priceConfigIncorrect = {
         maxPrice: ethers.parseUnits("234.46", decimalValues.eighteen),
-        minPrice: ethers.parseUnits("3.37", decimalValues.eighteen),
+        curveMultiplier: BigInt(1000),
         maxLength: BigInt(20),
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
@@ -2372,7 +2366,6 @@ describe("ZNSSubRegistrar", () => {
       const priceConfigCorrect = {
         ...priceConfigIncorrect,
         maxPrice: ethers.parseUnits("234.46", decimalValues.five),
-        minPrice: ethers.parseUnits("3.37", decimalValues.five),
       };
 
       // calc prices off-chain
