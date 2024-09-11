@@ -9,7 +9,7 @@ import {
   paymentConfigEmpty,
   validateUpgrade,
 } from "./helpers";
-import { IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
 import * as ethers from "ethers";
@@ -43,7 +43,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    DefenderRelayProvider,
+    IZNSCampaignConfig<SignerWithAddress>,
     IZNSContracts
     >;
     let rootRegistrar : ZNSRootRegistrar;
@@ -198,7 +198,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    DefenderRelayProvider,
+    IZNSCampaignConfig<SignerWithAddress>,
     IZNSContracts
     >;
     let accessController : ZNSAccessController;

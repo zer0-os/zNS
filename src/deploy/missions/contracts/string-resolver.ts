@@ -1,8 +1,7 @@
 import { BaseDeployMission, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { znsNames } from "./names";
 
@@ -10,7 +9,7 @@ import { znsNames } from "./names";
 export class ZNSStringResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig<SignerWithAddress>,
 IZNSContracts
 > {
   proxyData = {
