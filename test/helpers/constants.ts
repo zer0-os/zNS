@@ -11,8 +11,8 @@ export const DEFAULT_PROTOCOL_FEE_PERCENT = BigInt("222");
 export const DEFAULT_PERCENTAGE_BASIS = BigInt("10000");
 
 export const DEFAULT_DECIMALS = BigInt(18);
-export const DECAULT_PRECISION = BigInt(2);
-export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DECAULT_PRECISION);
+export const DEFAULT_PRECISION = BigInt(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DEFAULT_PRECISION);
 
 // eslint-disable-next-line no-shadow
 export const AccessType  = {

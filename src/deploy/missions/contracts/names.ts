@@ -23,6 +23,10 @@ export const znsNames = {
     contract: "ZNSAddressResolver",
     instance: "addressResolver",
   },
+  stringResolver: {
+    contract: "ZNSStringResolver",
+    instance: "stringResolver",
+  },
   curvePricer: {
     contract: "ZNSCurvePricer",
     instance: "curvePricer",

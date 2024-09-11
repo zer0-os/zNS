@@ -8,7 +8,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
-
 export class ZNSFixedPricerDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,

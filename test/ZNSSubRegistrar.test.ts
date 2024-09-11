@@ -18,7 +18,7 @@ import {
   NOT_AUTHORIZED_ERR,
   paymentConfigEmpty,
   PaymentType,
-  DECAULT_PRECISION,
+  DEFAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
   AC_UNAUTHORIZED_ERR,
@@ -1753,7 +1753,7 @@ describe("ZNSSubRegistrar", () => {
         maxLength: BigInt(50),
         baseLength: BigInt(4),
         precisionMultiplier: BigInt(10) ** (
-          decimalValues.thirteen - DECAULT_PRECISION
+          decimalValues.thirteen - DEFAULT_PRECISION
         ),
         feePercentage: BigInt(185),
         isSet: true,
