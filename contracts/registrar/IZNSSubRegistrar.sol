@@ -5,13 +5,14 @@ import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
+
 /**
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
     /**
-     * @notice Reverted when someone other than parent owner is trying to buy 
-     a subdomain under the parent that is locked\
+     * @notice Reverted when someone other than parent owner is trying to buy
+     * a subdomain under the parent that is locked
      * or when the parent provided does not exist.
      */
     error ParentLockedOrDoesntExist(bytes32 parentHash);
@@ -72,12 +73,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
 
     function distrConfigs(
         bytes32 domainHash
-    )
-        external view returns (
-            IZNSPricer pricerContract,
-            PaymentType paymentType,
-            AccessType accessType
-        );
+    ) external view returns (
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
 
     function isMintlistedForDomain(
         bytes32 domainHash,
