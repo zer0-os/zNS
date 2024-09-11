@@ -50,7 +50,7 @@ interface IZNSPricer {
     /**
      * @notice Returns the fee for a given price.
      * @dev Fees are only supported for PaymentType.STAKE !
-    */
+     */
     function getFeeForPrice(
         bytes32 parentHash,
         uint256 price

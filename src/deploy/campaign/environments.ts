@@ -77,13 +77,17 @@ export const getConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
-  }
+  let zeroVaultAddressConf;
 
-  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
-    ? zeroVaultAddress!
-    : process.env.ZERO_VAULT_ADDRESS!;
+  if (process.env.ENV_LEVEL === "dev") {
+    requires(
+      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+  } else {
+    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+  }
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
