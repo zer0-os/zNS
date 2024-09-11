@@ -121,15 +121,26 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
+    // meowtestnet: {
+    //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
+    //   accounts: [
+    //     `${process.env.DEPLOYER_PRIVATE_KEY}`,
+    //   ],
+    // },
   },
-  defender: {
-    useDefenderDeploy: false,
-    apiKey: `${process.env.DEFENDER_KEY}`,
-    apiSecret: `${process.env.DEFENDER_SECRET}`,
-  },
-  etherscan: {
-    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  },
+  // etherscan: {
+  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+  //   customChains: [
+  //     {
+  //       network: "meowtestnet",
+  //       chainId: 883424730,
+  //       urls: {
+  //         apiURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
+  //         browserURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/",
+  //       },
+  //     },
+  //   ],
+  // },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
@@ -150,6 +161,20 @@ const config : HardhatUserConfig = {
       "oz-proxies/",
     ],
   },
+  // meowtestnet: {
+  //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
+  //   chainId: 883424730,
+  //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+  // `${process.env.DEPLOYER_PRIVATE_KEY}`,
+  // `${process.env.ZERO_VAULT_PRIVATE_KEY}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_E}`,
+  // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+  //   ],
+  // },
 };
 
 export default config;
