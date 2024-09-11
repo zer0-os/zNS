@@ -2,7 +2,8 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
 import { ZNSContract } from "../../src/deploy/campaign/types";
-import { MeowToken, ZNSAccessController } from "../../typechain";
+import { ZNSAccessController } from "../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
 
 export const validateUpgrade = async (
@@ -14,6 +15,8 @@ export const validateUpgrade = async (
 ) => {
   const preVals = await Promise.all(getters);
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   await contract.connect(deployer).upgradeToAndCall(await upgradeContract.getAddress(), "0x");
 
   // Typechain doesn't update the generated interface for the contract after upgrading
