@@ -13,8 +13,8 @@ import {
   ZNSRootRegistrar,
   ZNSSubRegistrar,
   ZNSTreasury,
-  MeowToken,
 } from "../../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 

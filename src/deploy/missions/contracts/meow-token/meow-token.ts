@@ -8,8 +8,9 @@ import { ethers } from "ethers";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
+import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
 
 
 export const meowTokenName = "MEOW";
@@ -19,7 +20,7 @@ export const meowTokenSymbol = "MEOW";
 export class MeowTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig<SignerWithAddress>,
 IZNSContracts
 > {
   proxyData = {
@@ -33,7 +34,7 @@ IZNSContracts
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  DefenderRelayProvider,
+  IZNSCampaignConfig<SignerWithAddress>,
   IZNSContracts
   >) {
     super(args);
@@ -65,10 +66,13 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const baseContract = await this.campaign.deployer.getContractObject(
-        this.contractName,
-        this.config.stakingTokenAddress as string,
-      );
+      const factory = new MeowToken__factory(this.config.deployAdmin);
+      const baseContract = factory.attach(this.config.stakingTokenAddress);
+      // TODO remove!
+      // const baseContract = await this.campaign.deployer.getContractObject(
+      //   this.contractName,
+      //   this.config.stakingTokenAddress as string,
+      // );
 
       await this.saveToDB(baseContract);
 
@@ -81,6 +85,10 @@ IZNSContracts
     }
   }
 
+  getArtifact () {
+    return meowArtifact;
+  }
+
   async deployArgs () : Promise<TDeployArgs> {
     return [meowTokenName, meowTokenSymbol];
   }
@@ -90,7 +98,7 @@ IZNSContracts
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken as boolean;
+    return this.config.mockMeowToken ;
   }
 
   async postDeploy () {
