@@ -82,13 +82,13 @@ describe("ZNSFixedPricer", () => {
     const contr = await fact.deploy(
       "ZMock",
       "ZM",
-      "0x123",
-      2,
-      "0x1234",
-      "0x12345",
-      100,
-      [900, 765, 650],
-      600
+      deployer.address,
+      2n,
+      deployer.address,
+      deployer.address,
+      100n,
+      [900n, 765n, 650n],
+      600n
     );
     await contr.waitForDeployment();
 
