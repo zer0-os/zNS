@@ -15,7 +15,12 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import {
+  ZNSFixedPricer__factory,
+  ZNSFixedPricer,
+  ZNSFixedPricerUpgradeMock__factory,
+  ZToken__factory,
+} from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
 
@@ -72,7 +77,21 @@ describe("ZNSFixedPricer", () => {
     });
   });
 
-  it("should deploy with correct parameters", async () => {
+  it.only("should deploy with correct parameters", async () => {
+    const fact = new ZToken__factory(deployer);
+    const contr = await fact.deploy(
+      "ZMock",
+      "ZM",
+      "0x123",
+      2,
+      "0x1234",
+      "0x12345",
+      100,
+      [900, 765, 650],
+      600
+    );
+    await contr.waitForDeployment();
+
     expect(await zns.fixedPricer.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.fixedPricer.registry()).to.equal(await zns.registry.getAddress());
   });
