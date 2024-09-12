@@ -4,12 +4,11 @@ import {
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
 export class ZNSDomainTokenDM extends BaseUpgradeMission<
-DefenderRelayProvider,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -29,7 +28,7 @@ IZNSContracts
         defaultRoyaltyReceiver,
         defaultRoyaltyFraction,
       },
-    } = this.config as IZNSCampaignConfig;
+    } = this.config;
 
     return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
   }

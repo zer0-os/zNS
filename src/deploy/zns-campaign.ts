@@ -1,6 +1,4 @@
 import * as hre from "hardhat";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import {
   HardhatDeployer,
   DeployCampaign,
@@ -14,20 +12,17 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 
 
 export const runZnsCampaign = async ({
   config,
-  provider,
   dbVersion,
   deployer,
 } : {
   config : IZNSCampaignConfig;
-  provider ?: DefenderRelayProvider;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<DefenderRelayProvider>;
+  deployer ?: HardhatDeployer;
 }) => {
   hre.upgrades.silenceWarnings();
 
@@ -38,14 +33,13 @@ export const runZnsCampaign = async ({
       hre,
       signer: config.deployAdmin,
       env: config.env,
-      provider,
     });
   }
 
   const dbAdapter = await getZnsMongoAdapter();
 
   const campaign = new DeployCampaign<
-  DefenderRelayProvider,
+  IZNSCampaignConfig,
   IZNSContracts
   >({
     missions: [

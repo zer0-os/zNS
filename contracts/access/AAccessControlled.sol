@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
+import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -11,7 +12,6 @@ import { IZNSAccessController } from "./IZNSAccessController.sol";
  * this contract needs to be inherited by the module.
  */
 abstract contract AAccessControlled {
-
     /**
      * @notice Emitted when the access controller contract address is set.
      */
@@ -66,7 +66,7 @@ abstract contract AAccessControlled {
      * @param _accessController Address of the ZNSAccessController contract.
      */
     function _setAccessController(address _accessController) internal {
-        require(_accessController != address(0), "AC: _accessController is 0x0 address");
+        if (_accessController == address(0)) revert ZeroAddressPassed();
         accessController = IZNSAccessController(_accessController);
         emit AccessControllerSet(_accessController);
     }

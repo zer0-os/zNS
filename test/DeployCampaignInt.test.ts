@@ -12,7 +12,6 @@ import {
   ITenderlyContractData,
   TDeployArgs,
   VERSION_TYPES,
-  IProviderBase,
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
@@ -46,8 +45,6 @@ import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContractsLocal } from "./helpers/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
@@ -124,7 +121,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowToken");
+      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
       const meow = await hre.upgrades.deployProxy(
         factory,
         [meowTokenName, meowTokenSymbol],
@@ -201,7 +198,7 @@ describe("Deploy Campaign Test", () => {
       callback,
     } : {
       missionList : Array<TDeployMissionCtor<
-      DefenderRelayProvider,
+      IZNSCampaignConfig,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -210,13 +207,11 @@ describe("Deploy Campaign Test", () => {
       failingInstanceName : string;
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign<
-      DefenderRelayProvider,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer<
-      DefenderRelayProvider
-      >({
+      const deployer = new HardhatDeployer({
         hre,
         signer: deployAdmin,
         env,
@@ -229,7 +224,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       const failingCampaign = new DeployCampaign<
-      DefenderRelayProvider,
+      IZNSCampaignConfig,
       IZNSContracts
       >({
         missions: missionList,
@@ -465,7 +460,7 @@ describe("Deploy Campaign Test", () => {
       ];
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
-      DefenderRelayProvider,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -584,7 +579,7 @@ describe("Deploy Campaign Test", () => {
       ];
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
-      DefenderRelayProvider,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -855,7 +850,7 @@ describe("Deploy Campaign Test", () => {
 
   describe("Versioning", () => {
     let campaign : DeployCampaign<
-    DefenderRelayProvider,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
 
@@ -1074,9 +1069,7 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct data for each contract when verifying on Etherscan", async () => {
       const verifyData : Array<{ address : string; ctorArgs ?: TDeployArgs; }> = [];
-      class HardhatDeployerMock extends HardhatDeployer<
-      DefenderRelayProvider
-      > {
+      class HardhatDeployerMock extends HardhatDeployer {
         async etherscanVerify (args : {
           address : string;
           ctorArgs ?: TDeployArgs;
@@ -1115,9 +1108,7 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
-      class HardhatDeployerMock extends HardhatDeployer<
-      DefenderRelayProvider
-      > {
+      class HardhatDeployerMock extends HardhatDeployer {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }

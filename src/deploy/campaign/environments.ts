@@ -1,5 +1,4 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-
 import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
@@ -19,7 +18,6 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 
 const getCustomAddresses = (
@@ -78,13 +76,17 @@ export const getCampaignConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
-  }
+  let zeroVaultAddressConf;
 
-  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
-    ? zeroVaultAddress!
-    : process.env.ZERO_VAULT_ADDRESS!;
+  if (process.env.ENV_LEVEL === "dev") {
+    requires(
+      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+  } else {
+    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+  }
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
@@ -108,11 +110,11 @@ export const getCampaignConfig = async ({
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver!,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf,
+    zeroVaultAddress: zeroVaultAddressConf as string,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {

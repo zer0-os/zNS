@@ -4,12 +4,11 @@ import {
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
 export class ZNSTreasuryDM extends BaseUpgradeMission<
-DefenderRelayProvider,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

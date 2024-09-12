@@ -16,7 +16,6 @@ import {
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
@@ -9,6 +9,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -45,11 +46,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     mapping(bytes32 domainHash => Mintlist mintStruct) public mintlist;
 
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender)
-            || accessController.isRegistrar(msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
+        if (
+            !registry.isOwnerOrOperator(domainHash, msg.sender)
+            && !accessController.isRegistrar(msg.sender)
+        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
         _;
     }
 
@@ -95,27 +95,22 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         label.validate();
 
         bytes32 domainHash = hashWithParent(parentHash, label);
-        require(
-            !registry.exists(domainHash),
-            "ZNSSubRegistrar: Subdomain already exists"
-        );
+        if (registry.exists(domainHash))
+            revert DomainAlreadyExists(domainHash);
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        require(
-            parentConfig.accessType != AccessType.LOCKED || isOwnerOrOperator,
-            "ZNSSubRegistrar: Parent domain's distribution is locked or parent does not exist"
-        );
+        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
+            revert ParentLockedOrDoesntExist(parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
-            require(
-                mintlist[parentHash]
+            if (
+                !mintlist[parentHash]
                     .list
                     [mintlist[parentHash].ownerIndex]
-                    [msg.sender],
-                "ZNSSubRegistrar: Sender is not approved for purchase"
-            );
+                    [msg.sender]
+            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
@@ -188,10 +183,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        require(
-            address(config.pricerContract) != address(0),
-            "ZNSSubRegistrar: pricerContract can not be 0x0 address"
-        );
+        if (address(config.pricerContract) == address(0))
+            revert ZeroAddressPassed();
 
         distrConfigs[domainHash] = config;
 
@@ -215,15 +208,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         IZNSPricer pricerContract
     ) public override {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
-        require(
-            address(pricerContract) != address(0),
-            "ZNSSubRegistrar: pricerContract can not be 0x0 address"
-        );
+        if (address(pricerContract) == address(0))
+            revert ZeroAddressPassed();
 
         distrConfigs[domainHash].pricerContract = pricerContract;
 
@@ -242,10 +231,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         PaymentType paymentType
     ) public override {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         distrConfigs[domainHash].paymentType = paymentType;
 
@@ -283,10 +270,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         address[] calldata candidates,
         bool[] calldata allowed
     ) external override {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender),
-            "ZNSSubRegistrar: Not authorized"
-        );
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         Mintlist storage mintlistForDomain = mintlist[domainHash];
         uint256 ownerIndex = mintlistForDomain.ownerIndex;
@@ -344,7 +329,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @param registrar_ The new address of the ZNSRootRegistrar contract
     */
     function setRootRegistrar(address registrar_) public override onlyAdmin {
-        require(registrar_ != address(0), "ZNSSubRegistrar: _registrar can not be 0x0 address");
+        if (registrar_ == address(0)) revert ZeroAddressPassed();
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);

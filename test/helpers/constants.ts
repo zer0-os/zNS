@@ -2,8 +2,8 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "Zero Name Service";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNS";
+export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZID";
 
 export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
