@@ -1,12 +1,11 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { setDefaultEnv, setEnvVars } from "./helpers/env";
-import { DeployCampaign, getLogger, HardhatDeployer, MongoDBAdapter } from "@zero-tech/zdc";
+import { DeployCampaign, getLogger, HardhatDeployer, MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import {
   MeowTokenDM,
   ZNSAccessControllerDM,
@@ -21,6 +20,7 @@ import {
 } from "./helpers/upgrade/mock-dms";
 import { expect } from "chai";
 
+
 describe("ZNS Upgrade Smoke Test", () => {
   let deployAdmin : SignerWithAddress;
   let user : SignerWithAddress;
@@ -32,8 +32,8 @@ describe("ZNS Upgrade Smoke Test", () => {
   let znsUpgraded : IZNSContracts;
 
   let dbAdapter : MongoDBAdapter;
-  let campaignInitial : DeployCampaign<DefenderRelayProvider, IZNSContracts>;
-  let campaignUpgraded : DeployCampaign<DefenderRelayProvider, IZNSContracts>;
+  let campaignInitial : DeployCampaign<IZNSCampaignConfig, IZNSContracts>;
+  let campaignUpgraded : DeployCampaign<IZNSCampaignConfig, IZNSContracts>;
 
   before(async () => {
     setEnvVars({
@@ -43,7 +43,7 @@ describe("ZNS Upgrade Smoke Test", () => {
 
     [deployAdmin, zeroVault, user, governor, admin] = await hre.ethers.getSigners();
 
-    const config = await getCampaignConfig({
+    let config = await getCampaignConfig({
       deployer: deployAdmin,
       zeroVaultAddress: zeroVault.address,
       governors: [deployAdmin.address, governor.address],
@@ -59,6 +59,13 @@ describe("ZNS Upgrade Smoke Test", () => {
     process.env.UPGRADE = "true";
 
     // make upgrade campaign
+    config = await getCampaignConfig({
+      deployer: deployAdmin,
+      zeroVaultAddress: zeroVault.address,
+      governors: [deployAdmin.address, governor.address],
+      admins: [deployAdmin.address, admin.address],
+    });
+
     const logger = getLogger();
 
     const deployer = new HardhatDeployer({
@@ -67,10 +74,12 @@ describe("ZNS Upgrade Smoke Test", () => {
       env: config.env,
     });
 
+    resetMongoAdapter();
+
     dbAdapter = await getZnsMongoAdapter();
 
     campaignUpgraded = new DeployCampaign<
-    DefenderRelayProvider,
+    IZNSCampaignConfig,
     IZNSContracts
     >({
       missions: [
