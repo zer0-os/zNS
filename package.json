@@ -16,6 +16,7 @@
     "lint": "yarn lint-sol & yarn lint-ts --no-error-on-unmatched-pattern",
     "clean": "hardhat clean",
     "build": "yarn run clean && yarn run compile && tsc",
+    "reinstall": "yarn cache clean && rm -rf node_modules && yarn",
     "postbuild": "yarn save-tag",
     "typechain": "hardhat typechain",
     "pretest": "yarn mongo:start",
@@ -77,6 +78,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
+    "@zero-tech/z-token": "/home/bb/projects/meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz",
     "@zero-tech/zdc": "0.1.6",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",

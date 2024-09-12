@@ -1926,6 +1926,10 @@
     eslint-plugin-prefer-arrow "^1.2.3"
     typescript "^5.0.2"
 
+"@zero-tech/z-token@file:../meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz":
+  version "1.0.0"
+  resolved "file:../meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz#ba56c7e269e399e029cca69d1d54357220a2d08f"
+
 "@zero-tech/zdc@0.1.6":
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/@zero-tech/zdc/-/zdc-0.1.6.tgz#131d13a128c494b7b5d32c208f3afdb775bf3ba2"
