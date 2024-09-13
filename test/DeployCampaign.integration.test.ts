@@ -78,7 +78,7 @@ describe("zNS + zDC Single Integration Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    config.mockMeowToken = hre.network.name === "hardhat";
+    config.mockZToken = hre.network.name === "hardhat";
 
     // First run the `run-campaign` script, then modify the `MONGO_DB_VERSION` environment variable
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
@@ -119,7 +119,7 @@ describe("zNS + zDC Single Integration Test", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (hre.network.name === "hardhat" && config.mockMeowToken) {
+    if (hre.network.name === "hardhat" && config.mockZToken) {
       await mintBulk(
         users,
         mintAmount,
@@ -198,9 +198,9 @@ describe("zNS + zDC Single Integration Test", () => {
     const subdomains = [paidShortSubdomain, paidMediumSubdomain, paidLongSubdomain];
 
     const balancePromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [
@@ -239,9 +239,9 @@ describe("zNS + zDC Single Integration Test", () => {
     );
 
     const balanceAfterPromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [

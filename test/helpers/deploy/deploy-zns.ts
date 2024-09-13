@@ -1,5 +1,5 @@
 import {
-  MeowTokenMock__factory,
+  ZTokenMock__factory,
   ZNSAccessController,
   ZNSAccessController__factory,
   ZNSAddressResolver,
@@ -18,7 +18,7 @@ import {
   ZNSTreasury__factory,
   ZNSFixedPricer,
   ZNSSubRegistrar,
-  MeowTokenMock,
+  ZTokenMock,
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig, IZNSContractsLocal } from "../types";
 import * as hre from "hardhat";
@@ -36,7 +36,7 @@ import {
   registryName,
   subRegistrarName,
   treasuryName,
-  meowTokenMockName,
+  zTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
@@ -45,7 +45,7 @@ import {
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
-import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
+import { zTokenName, zTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
 
@@ -164,25 +164,25 @@ export const deployDomainToken = async (
   return domainToken as unknown as ZNSDomainToken;
 };
 
-export const deployMeowToken = async (
+export const deployZToken = async (
   deployer : SignerWithAddress,
   isTenderlyRun : boolean
-) : Promise<MeowTokenMock> => {
-  const factory = new MeowTokenMock__factory(deployer);
+) : Promise<ZTokenMock> => {
+  const factory = new ZTokenMock__factory(deployer);
 
-  const meowToken = await hre.upgrades.deployProxy(
+  const zToken = await hre.upgrades.deployProxy(
     factory,
     [
-      meowTokenName,
-      meowTokenSymbol,
+      zTokenName,
+      zTokenSymbol,
     ],
     {
       kind: "transparent",
     }
-  ) as unknown as MeowTokenMock;
+  ) as unknown as ZTokenMock;
 
-  await meowToken.waitForDeployment();
-  const proxyAddress = await meowToken.getAddress();
+  await zToken.waitForDeployment();
+  const proxyAddress = await zToken.getAddress();
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -193,19 +193,19 @@ export const deployMeowToken = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: meowTokenMockName,
+      name: zTokenMockName,
       address: impl,
     });
 
-    console.log(`${meowTokenMockName} deployed at:
+    console.log(`${zTokenMockName} deployed at:
                 proxy: ${proxyAddress}
                 implementation: ${impl}`);
   }
 
   // Mint 10,000 ZERO for self
-  await meowToken.mint(proxyAddress, ethers.parseEther("10000"));
+  await zToken.mint(proxyAddress, ethers.parseEther("10000"));
 
-  return meowToken as unknown as MeowTokenMock;
+  return zToken as unknown as ZTokenMock;
 };
 
 export const deployAddressResolver = async (
@@ -558,7 +558,7 @@ export const deployZNS = async ({
   // While we do use the real ZeroToken contract, it is only deployed as a mock here
   // for testing purposes that verify expected behavior of other contracts.
   // This should not be used in any other context than deploying to a local hardhat testnet.
-  const meowTokenMock = await deployMeowToken(deployer, isTenderlyRun);
+  const zTokenMock = await deployZToken(deployer, isTenderlyRun);
 
   const addressResolver = await deployAddressResolver(
     deployer,
@@ -579,7 +579,7 @@ export const deployZNS = async ({
     deployer,
     accessControllerAddress: await accessController.getAddress(),
     registryAddress: await registry.getAddress(),
-    zTokenMockAddress: await meowTokenMock.getAddress(),
+    zTokenMockAddress: await zTokenMock.getAddress(),
     zeroVaultAddress,
     isTenderlyRun,
   });
@@ -618,7 +618,7 @@ export const deployZNS = async ({
     accessController,
     registry,
     domainToken,
-    meowToken: meowTokenMock,
+    zToken: zTokenMock,
     addressResolver,
     curvePricer,
     treasury,
@@ -629,8 +629,8 @@ export const deployZNS = async ({
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury
-  await meowTokenMock.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
-  await meowTokenMock.mint(await deployer.getAddress(), ethers.parseEther("5000000"));
+  await zTokenMock.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
+  await zTokenMock.mint(await deployer.getAddress(), ethers.parseEther("5000000"));
 
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await addressResolver.getAddress());
 

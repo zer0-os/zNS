@@ -16,11 +16,11 @@ export const approveBulk = async (
 ) => {
   for (const signer of signers) {
     // if (hre.network.name === "hardhat") {
-    const hasApproval = await zns.meowToken.allowance(signer.address, await zns.treasury.getAddress());
+    const hasApproval = await zns.zToken.allowance(signer.address, await zns.treasury.getAddress());
 
     // To avoid resending the approval repeatedly we first check the allowance
     if (hasApproval === BigInt(0)) {
-      const tx = await zns.meowToken.connect(signer).approve(
+      const tx = await zns.zToken.connect(signer).approve(
         await zns.treasury.getAddress(),
         ethers.MaxUint256,
       );
@@ -36,7 +36,7 @@ export const mintBulk = async (
   zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
-    await zns.meowToken.connect(signer).mint(
+    await zns.zToken.connect(signer).mint(
       signer.address,
       amount
     );

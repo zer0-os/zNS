@@ -9,15 +9,15 @@ import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
-import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
+import { ZToken__factory } from "../../../../../typechain";
+import zArtifact from "../../../../../artifacts/@zero-tech/z-token/contracts/ZToken.sol/ZToken.json";
 
 
-export const meowTokenName = "MEOW";
-export const meowTokenSymbol = "MEOW";
+export const zTokenName = "Z-Token";
+export const zTokenSymbol = "Z";
 
 
-export class MeowTokenDM extends BaseDeployMission<
+export class ZTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 IZNSCampaignConfig<SignerWithAddress>,
@@ -28,8 +28,8 @@ IZNSContracts
     kind: ProxyKinds.transparent,
   };
 
-  contractName = znsNames.meowToken.contract;
-  instanceName = znsNames.meowToken.instance;
+  contractName = znsNames.zToken.contract;
+  instanceName = znsNames.zToken.instance;
 
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
@@ -39,15 +39,15 @@ IZNSContracts
   >) {
     super(args);
 
-    if (this.config.mockMeowToken) {
-      this.contractName = znsNames.meowToken.contractMock;
+    if (this.config.mockZToken) {
+      this.contractName = znsNames.zToken.contractMock;
     } else {
-      this.contractName = znsNames.meowToken.contract;
+      this.contractName = znsNames.zToken.contract;
     }
   }
 
   async deploy () {
-    if (!this.config.mockMeowToken) {
+    if (!this.config.mockZToken) {
       this.logger.info("Using MEOW token from Mainnet");
 
       // TODO dep: add proper bytecode comparison here and throw if different!
@@ -66,7 +66,7 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const factory = new MeowToken__factory(this.config.deployAdmin);
+      const factory = new ZToken__factory(this.config.deployAdmin);
       const baseContract = factory.attach(this.config.stakingTokenAddress);
       // TODO remove!
       // const baseContract = await this.campaign.deployer.getContractObject(
@@ -86,31 +86,31 @@ IZNSContracts
   }
 
   getArtifact () {
-    return meowArtifact;
+    return zArtifact;
   }
 
   async deployArgs () : Promise<TDeployArgs> {
-    return [meowTokenName, meowTokenSymbol];
+    return [zTokenName, zTokenSymbol];
   }
 
   async needsPostDeploy () {
-    const msg = this.config.mockMeowToken ? "needs" : "doesn't need";
+    const msg = this.config.ZToken ? "needs" : "doesn't need";
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken ;
+    return this.config.mockZToken;
   }
 
   async postDeploy () {
     const {
-      meowToken,
+      zToken,
       config: {
         deployAdmin,
       },
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await meowToken.connect(deployAdmin).mint(
+    await zToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );

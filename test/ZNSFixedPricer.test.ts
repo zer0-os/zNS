@@ -8,7 +8,10 @@ import {
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
+  validateUpgrade,
+  AccessType,
+  AC_UNAUTHORIZED_ERR,
+  FEE_TOO_LARGE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -19,7 +22,6 @@ import {
   ZNSFixedPricer__factory,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock__factory,
-  ZToken__factory,
 } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
@@ -50,8 +52,8 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.zToken.mint(user.address, ethers.parseEther("10000000000000"));
 
     const fullConfig = {
       distrConfig: {
@@ -60,7 +62,7 @@ describe("ZNSFixedPricer", () => {
         accessType: AccessType.OPEN,
       },
       paymentConfig: {
-        token: await zns.meowToken.getAddress(),
+        token: await zns.zToken.getAddress(),
         beneficiary: user.address,
       },
       priceConfig: {
@@ -77,21 +79,7 @@ describe("ZNSFixedPricer", () => {
     });
   });
 
-  it.only("should deploy with correct parameters", async () => {
-    const fact = new ZToken__factory(deployer);
-    const contr = await fact.deploy(
-      "ZMock",
-      "ZM",
-      deployer.address,
-      2n,
-      deployer.address,
-      deployer.address,
-      100n,
-      [900n, 765n, 650n],
-      600n
-    );
-    await contr.waitForDeployment();
-
+  it("should deploy with correct parameters", async () => {
     expect(await zns.fixedPricer.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.fixedPricer.registry()).to.equal(await zns.registry.getAddress());
   });
@@ -319,8 +307,8 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-      await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
+      await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.zToken.mint(user.address, ethers.parseEther("10000000000000"));
 
       const fullConfig = {
         distrConfig: {
@@ -329,7 +317,7 @@ describe("ZNSFixedPricer", () => {
           accessType: AccessType.OPEN,
         },
         paymentConfig: {
-          token: await zns.meowToken.getAddress(),
+          token: await zns.zToken.getAddress(),
           beneficiary: user.address,
         },
         priceConfig: {
