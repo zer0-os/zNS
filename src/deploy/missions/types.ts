@@ -8,3 +8,10 @@ export interface ICurvePriceConfig {
   feePercentage : bigint;
   isSet : boolean;
 }
+
+export interface IZTokenConfig {
+  initialAdminDelay : bigint;
+  initialSupplyBase : bigint;
+  inflationRates : Array<bigint>;
+  finalInflationRate : bigint;
+}

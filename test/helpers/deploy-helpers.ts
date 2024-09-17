@@ -94,14 +94,14 @@ export const registerRootDomainBulk = async (
   let index = 0;
 
   for(const domain of domains) {
-    const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
+    const balanceBefore = await zns.zToken.balanceOf(signers[index].address);
     const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
       domain,
       config.zeroVaultAddress,
       `${tokenUri}${index}`,
       distConfig,
       {
-        token: await zns.meowToken.getAddress(),
+        token: await zns.zToken.getAddress(),
         beneficiary: config.zeroVaultAddress,
       }
     );
@@ -111,7 +111,7 @@ export const registerRootDomainBulk = async (
       logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
-    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+    const balanceAfter = await zns.zToken.balanceOf(signers[index].address);
     const [price, protocolFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
     expect(balanceAfter).to.be.eq(balanceBefore - price - protocolFee);
 
@@ -140,7 +140,7 @@ export const registerSubdomainBulk = async (
   let index = 0;
 
   for (const subdomain of subdomains) {
-    const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
+    const balanceBefore = await zns.zToken.balanceOf(signers[index].address);
     const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain(
       parents[index],
       subdomain,
@@ -157,7 +157,7 @@ export const registerSubdomainBulk = async (
       logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
-    const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
+    const balanceAfter = await zns.zToken.balanceOf(signers[index].address);
 
     const owner = await zns.registry.getDomainOwner(parents[index]);
     if (signers[index].address === owner) {

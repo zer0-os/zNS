@@ -14,10 +14,14 @@ import {
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
   INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
+  INITIAL_ADMIN_DELAY_DEFAULT,
+  INITIAL_SUPPLY_DEFAULT,
+  INFLATION_RATES_DEFAULT,
+  FINAL_INFLATION_RATE_DEFAULT,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+import { MeowMainnet } from "../missions/contracts/z-token/mainnet-data";
 
 
 const getCustomAddresses = (
@@ -88,6 +92,17 @@ export const getConfig = async ({
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }
 
+
+  let zConfig;
+  if (process.env.MOCK_Z_TOKEN === "true") {
+    zConfig = {
+      initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+      initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+      inflationRates: INFLATION_RATES_DEFAULT,
+      finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+    };
+  }
+
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
   const royaltyFraction =
@@ -113,8 +128,9 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
+    zTokenConfig: zConfig,
     zeroVaultAddress: zeroVaultAddressConf as string,
-    mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
+    mockZToken: process.env.MOCK_Z_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
@@ -146,8 +162,8 @@ export const validateEnv = (
   if (envLevel === "dev") return priceConfig;
 
   if (envLevel === "test" || envLevel === "dev") {
-    if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
-      throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
+    if (process.env.MOCK_Z_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
+      throw new Error("Must provide a staking token address if not mocking Z token in `dev` environment");
     }
   }
 
@@ -172,7 +188,7 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
-    requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
+    requires(process.env.MOCK_Z_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
   }

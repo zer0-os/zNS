@@ -56,8 +56,8 @@ describe("ZNSCurvePricer", () => {
       adminAddresses: [admin.address],
     });
 
-    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.meowToken.mint(user.address, DEFAULT_PRICE_CONFIG.maxPrice);
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.zToken.mint(user.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
     const fullConfig = {
       distrConfig: {
@@ -66,7 +66,7 @@ describe("ZNSCurvePricer", () => {
         accessType: AccessType.OPEN,
       },
       paymentConfig: {
-        token: await zns.meowToken.getAddress(),
+        token: await zns.zToken.getAddress(),
         beneficiary: user.address,
       },
       priceConfig: DEFAULT_PRICE_CONFIG,

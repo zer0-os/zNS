@@ -34,7 +34,7 @@ Create `.env` file in the root directory and add the following variables:
 ENV_LEVEL: "dev" # local dev environment
 MONGO_DB_URI: "mongodb://localhost:27018" # local instance of MongoDB in the Docker
 MONGO_DB_NAME: "zns-campaign" # name of the database
-MOCK_MEOW_TOKEN: "true" # use mock ZToken contract for local testing
+MOCK_Z_TOKEN: "true" # use mock ZToken contract for local testing
 SILENT_LOGGER: "true" # disable logging for tests
 ```
 

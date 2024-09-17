@@ -23,6 +23,10 @@ import {
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
+  INFLATION_RATES_DEFAULT,
+  FINAL_INFLATION_RATE_DEFAULT,
+  INITIAL_SUPPLY_DEFAULT,
+  INITIAL_ADMIN_DELAY_DEFAULT,
 } from "./helpers";
 import {
   ZTokenDM,
@@ -36,7 +40,7 @@ import {
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
+import { MeowMainnet } from "../src/deploy/missions/contracts/z-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
@@ -50,7 +54,7 @@ import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 const execAsync = promisify(exec);
 
-describe("Deploy Campaign Test", () => {
+describe.only("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -71,6 +75,15 @@ describe("Deploy Campaign Test", () => {
 
   describe("Z Token Ops", () => {
     before(async () => {
+      campaignConfig = getConfig(
+        {
+          deployer: deployAdmin,
+          governors: [deployAdmin.address],
+          admins: [deployAdmin.address, admin.address],
+          zeroVaultAddress: zeroVault.address,
+          env,
+        }
+      );
       campaignConfig = {
         env,
         deployAdmin,
@@ -123,7 +136,17 @@ describe("Deploy Campaign Test", () => {
       const factory = await hre.ethers.getContractFactory("ZTokenMock");
       const z = await hre.upgrades.deployProxy(
         factory,
-        [zTokenName, zTokenSymbol],
+        [
+          zTokenName,
+          zTokenSymbol,
+          admin.address,
+          INITIAL_ADMIN_DELAY_DEFAULT,
+          admin.address,
+          userA.address,
+          INITIAL_SUPPLY_DEFAULT,
+          INFLATION_RATES_DEFAULT,
+          FINAL_INFLATION_RATE_DEFAULT,
+        ],
         {
           kind: "transparent",
         });

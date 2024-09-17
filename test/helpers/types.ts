@@ -1,5 +1,4 @@
 import {
-  ZTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,

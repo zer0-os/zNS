@@ -85,3 +85,9 @@ export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const subRegistrarName = "ZNSSubRegistrar";
+
+// zToken mock deploy params
+export const INITIAL_SUPPLY_DEFAULT = 369000000n;
+export const INFLATION_RATES_DEFAULT = [0n, 900n, 765n, 650n, 552n, 469n, 398n, 338n, 287n, 243n, 206n, 175n];
+export const FINAL_INFLATION_RATE_DEFAULT = 150n;
+export const INITIAL_ADMIN_DELAY_DEFAULT = 5n;

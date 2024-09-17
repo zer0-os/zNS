@@ -24,7 +24,7 @@ export const validateUpgrade = async (
 
   // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead
-  const upgradedContract = upgradeContractFactory.attach(await contract.getAddress()) ;
+  const upgradedContract = upgradeContractFactory.attach(await contract.getAddress()) as ZNSContractMock;
 
   // Because every upgraded contract will have the same additions to it,
   // we can be sure these functions exist

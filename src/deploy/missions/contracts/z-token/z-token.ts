@@ -48,7 +48,7 @@ IZNSContracts
 
   async deploy () {
     if (!this.config.mockZToken) {
-      this.logger.info("Using MEOW token from Mainnet");
+      this.logger.info("Using Z token from Mainnet");
 
       // TODO dep: add proper bytecode comparison here and throw if different!
       // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.stakingTokenAddress);
@@ -58,9 +58,9 @@ IZNSContracts
       // } = this.getArtifact();
 
       // if (!compareBytecodeStrict(bytecode, bytecodeFromChain)) {
-      //   this.logger.error("MEOW token bytecode compiled in this module differs from Mainnet");
+      //   this.logger.error("Z token bytecode compiled in this module differs from Mainnet");
       //   throw new Error(
-      //     "MEOW token bytecode compiled in this module differs from Mainnet"
+      //     "Z token bytecode compiled in this module differs from Mainnet"
       //   );
       // }
 
@@ -90,7 +90,17 @@ IZNSContracts
   }
 
   async deployArgs () : Promise<TDeployArgs> {
-    return [zTokenName, zTokenSymbol];
+    return [
+      zTokenName,
+      zTokenSymbol,
+      this.config.adminAddresses[0],
+      this.config.zTokenConfig.initialAdminDelay,
+      admin.address,
+      userA.address,
+      this.config.zTokenConfig.initialSupplyBase,
+      this.config.zTokenConfig.inflationRates,
+      this.config.zTokenConfig.finalInflationRate,
+    ];
   }
 
   async needsPostDeploy () {
@@ -109,7 +119,7 @@ IZNSContracts
       },
     } = this.campaign;
 
-    // Mint 100,000 MEOW to the deployer
+    // Mint 100,000 Z to the deployer
     await zToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
