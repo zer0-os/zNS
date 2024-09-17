@@ -3,7 +3,7 @@ import * as hre from "hardhat";
 import path from "path";
 
 
-const networkIDzkEVM = 1;
+const networkIDzChainTest = 1668201165;
 
 const deployData = path.join(__dirname, "./addresses.json");
 export const { senderAddress, receiverAddress } = require(deployData);
@@ -19,7 +19,7 @@ const main = async () => {
   const message = "0://zero-bridge";
 
   const tx = await bridgeSender.bridgeMessage(
-    networkIDzkEVM,
+    networkIDzChainTest,
     receiverAddress,
     forceUpdateGlobalExitRoot,
     message
