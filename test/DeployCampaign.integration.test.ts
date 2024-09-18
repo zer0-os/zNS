@@ -12,7 +12,7 @@ import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
-  mintBulk,
+  transferBulk,
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
@@ -120,9 +120,11 @@ describe("zNS + zDC Single Integration Test", () => {
 
     // Give the user funds
     if (hre.network.name === "hardhat" && config.mockZToken) {
-      await mintBulk(
+      const userBalanceInitial = await zns.zToken.balanceOf(deployAdmin.address) / BigInt(users.length);
+      await transferBulk(
         users,
-        mintAmount,
+        deployAdmin,
+        userBalanceInitial,
         zns
       );
     }

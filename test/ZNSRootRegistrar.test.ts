@@ -51,7 +51,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
-describe.only("ZNSRootRegistrar", () => {
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -91,11 +91,10 @@ describe.only("ZNSRootRegistrar", () => {
       ethers.MaxUint256
     );
 
-    userBalanceInitial = await zns.zToken.balanceOf(deployer.address);
-    // Give funds to user
-    await zns.zToken.connect(user).approve(deployer.address, userBalanceInitial);
-    await zns.zToken.connect(deployer).transfer(user.address, userBalanceInitial);
+    // Give funds to user. leave half of the amount in the deployer wallet
+    userBalanceInitial = await zns.zToken.balanceOf(deployer.address) / 2n;
     await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.zToken.connect(deployer).transfer(user.address, userBalanceInitial);
   });
 
   afterEach(async () => {
@@ -1424,7 +1423,7 @@ describe.only("ZNSRootRegistrar", () => {
       const domainHash = hashDomainLabel(domainName);
 
       await zns.zToken.connect(randomUser).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-      await zns.zToken.mint(randomUser.address, DEFAULT_PRICE_CONFIG.maxPrice);
+      await zns.zToken.connect(deployer).transfer(randomUser.address, DEFAULT_PRICE_CONFIG.maxPrice);
 
       await zns.rootRegistrar.connect(randomUser).registerRootDomain(
         domainName,

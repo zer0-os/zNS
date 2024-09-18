@@ -30,16 +30,15 @@ export const approveBulk = async (
   }
 };
 
-export const mintBulk = async (
-  signers : Array<SignerWithAddress>,
+export const transferBulk = async (
+  users : Array<SignerWithAddress>,
+  admin : SignerWithAddress,
   amount : bigint,
   zns : IZNSContractsLocal | IZNSContracts,
 ) => {
-  for (const signer of signers) {
-    await zns.zToken.connect(signer).mint(
-      signer.address,
-      amount
-    );
+  for (const user of users) {
+    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.zToken.connect(admin).transfer(user.address, amount);
   }
 };
 
