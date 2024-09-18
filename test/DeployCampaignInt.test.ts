@@ -54,7 +54,7 @@ import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 const execAsync = promisify(exec);
 
-describe.only("Deploy Campaign Test", () => {
+describe("Deploy Campaign Test", () => {
   let deployAdmin : SignerWithAddress;
   let admin : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -75,7 +75,7 @@ describe.only("Deploy Campaign Test", () => {
 
   describe("Z Token Ops", () => {
     before(async () => {
-      campaignConfig = getConfig(
+      campaignConfig = await getConfig(
         {
           deployer: deployAdmin,
           governors: [deployAdmin.address],
@@ -84,27 +84,8 @@ describe.only("Deploy Campaign Test", () => {
           env,
         }
       );
-      campaignConfig = {
-        env,
-        deployAdmin,
-        governorAddresses: [deployAdmin.address],
-        adminAddresses: [deployAdmin.address, admin.address],
-        domainToken: {
-          name: ZNS_DOMAIN_TOKEN_NAME,
-          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-          defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
-        },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
-        zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockZToken: true,
-        postDeploy: {
-          tenderlyProjectSlug: "",
-          monitorContracts: false,
-          verifyContracts: false,
-        },
-      };
+      campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
+      campaignConfig.postDeploy.tenderlyProjectSlug = "";
     });
 
     it("should deploy new ZTokenMock when `mockZToken` is true", async () => {
@@ -114,17 +95,17 @@ describe.only("Deploy Campaign Test", () => {
 
       const { zToken, dbAdapter } = campaign;
 
-      const toMint = hre.ethers.parseEther("972315");
+      expect(
+        await zToken.getAddress()
+      ).to.properAddress;
 
-      const balanceBefore = await zToken.balanceOf(userA.address);
-      // `mint()` only exists on the Mocked contract
-      await zToken.connect(deployAdmin).mint(
-        userA.address,
-        toMint
-      );
+      expect(
+        await zToken.name()
+      ).to.equal("Z-Token");
 
-      const balanceAfter = await zToken.balanceOf(userA.address);
-      expect(balanceAfter - balanceBefore).to.equal(toMint);
+      expect(
+        await zToken.symbol()
+      ).to.equal("Z");
 
       await dbAdapter.dropDB();
     });
@@ -133,23 +114,18 @@ describe.only("Deploy Campaign Test", () => {
       campaignConfig.mockZToken = false;
 
       // deploy ZToken contract
-      const factory = await hre.ethers.getContractFactory("ZTokenMock");
-      const z = await hre.upgrades.deployProxy(
-        factory,
-        [
-          zTokenName,
-          zTokenSymbol,
-          admin.address,
-          INITIAL_ADMIN_DELAY_DEFAULT,
-          admin.address,
-          userA.address,
-          INITIAL_SUPPLY_DEFAULT,
-          INFLATION_RATES_DEFAULT,
-          FINAL_INFLATION_RATE_DEFAULT,
-        ],
-        {
-          kind: "transparent",
-        });
+      const Factory = await hre.ethers.getContractFactory("ZTokenMock");
+      const z = await Factory.deploy(
+        zTokenName,
+        zTokenSymbol,
+        admin.address,
+        INITIAL_ADMIN_DELAY_DEFAULT,
+        admin.address,
+        userA.address,
+        INITIAL_SUPPLY_DEFAULT,
+        INFLATION_RATES_DEFAULT,
+        FINAL_INFLATION_RATE_DEFAULT,
+      );
 
       await z.waitForDeployment();
 
@@ -171,21 +147,6 @@ describe.only("Deploy Campaign Test", () => {
 
       expect(zToken.address).to.equal(z.address);
       expect(zDMInstance.contractName).to.equal(znsNames.zToken.contract);
-
-      const toMint = hre.ethers.parseEther("972315");
-      // `mint()` only exists on the Mocked contract
-      try {
-        await zToken.connect(deployAdmin).mint(
-          userA.address,
-          toMint
-        );
-      } catch (e) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        expect(e.message).to.include(
-          ".mint is not a function"
-        );
-      }
 
       // Cannot call to real db to
       await dbAdapter.dropDB();
@@ -380,28 +341,19 @@ describe.only("Deploy Campaign Test", () => {
     beforeEach(async () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
-      campaignConfig = {
-        env,
-        deployAdmin,
-        governorAddresses: [deployAdmin.address],
-        adminAddresses: [deployAdmin.address, admin.address],
-        domainToken: {
-          name: ZNS_DOMAIN_TOKEN_NAME,
-          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-          defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
-        },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
-        zeroVaultAddress: zeroVault.address,
-        // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
-        stakingTokenAddress: "",
-        mockZToken: true, // 1700083028872
-        postDeploy: {
-          tenderlyProjectSlug: "",
-          monitorContracts: false,
-          verifyContracts: false,
-        },
-      };
+      campaignConfig = await getConfig(
+        {
+          deployer: deployAdmin,
+          governors: [deployAdmin.address],
+          admins: [deployAdmin.address, admin.address],
+          zeroVaultAddress: zeroVault.address,
+          env,
+        }
+      );
+      campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
+      // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
+      campaignConfig.stakingTokenAddress = "";
+      campaignConfig.postDeploy.tenderlyProjectSlug = "";
 
       mongoAdapter = await getZnsMongoAdapter({
         logger: loggerMock as TLogger,
@@ -893,27 +845,20 @@ describe.only("Deploy Campaign Test", () => {
     before(async () => {
       await saveTag();
 
-      campaignConfig = {
-        env,
-        deployAdmin,
-        governorAddresses: [deployAdmin.address, governor.address],
-        adminAddresses: [deployAdmin.address, admin.address],
-        domainToken: {
-          name: ZNS_DOMAIN_TOKEN_NAME,
-          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-          defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
-        },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
-        zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockZToken: true,
-        postDeploy: {
-          tenderlyProjectSlug: "",
-          monitorContracts: false,
-          verifyContracts: false,
-        },
-      };
+      campaignConfig = await getConfig(
+        {
+          deployer: deployAdmin,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+          zeroVaultAddress: zeroVault.address,
+          env,
+        }
+      );
+
+      campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
+      // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
+      campaignConfig.stakingTokenAddress = MeowMainnet.address;
+      campaignConfig.postDeploy.tenderlyProjectSlug = "";
 
       campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -1074,27 +1019,19 @@ describe.only("Deploy Campaign Test", () => {
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
 
-      config = {
-        env: "dev",
-        deployAdmin,
-        governorAddresses: [deployAdmin.address, governor.address],
-        adminAddresses: [deployAdmin.address, admin.address],
-        domainToken: {
-          name: ZNS_DOMAIN_TOKEN_NAME,
-          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
-          defaultRoyaltyReceiver: deployAdmin.address,
-          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
-        },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
-        zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockZToken: true,
-        postDeploy: {
-          tenderlyProjectSlug: "",
-          monitorContracts: false,
-          verifyContracts: true,
-        },
-      };
+      config = await getConfig(
+        {
+          deployer: deployAdmin,
+          governors: [deployAdmin.address, governor.address],
+          admins: [deployAdmin.address, admin.address],
+          zeroVaultAddress: zeroVault.address,
+          env,
+        }
+      );
+      config.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
+      config.stakingTokenAddress = MeowMainnet.address;
+      config.postDeploy.tenderlyProjectSlug = "";
+      config.postDeploy.verifyContracts = true;
     });
 
     afterEach(async () => {

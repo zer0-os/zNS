@@ -24,7 +24,7 @@ IZNSCampaignConfig<SignerWithAddress>,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: true,
+    isProxy: false,
     kind: ProxyKinds.transparent,
   };
 
@@ -89,14 +89,16 @@ IZNSContracts
     return zArtifact;
   }
 
+  // it will choose the governon as `admin` argument
+  // and deployAdmin as `minter` and first passed admin as `mintBeneficiary`.
   async deployArgs () : Promise<TDeployArgs> {
     return [
       zTokenName,
       zTokenSymbol,
-      this.config.adminAddresses[0],
+      this.config.governorAddresses[0],
       this.config.zTokenConfig.initialAdminDelay,
-      admin.address,
-      userA.address,
+      this.config.deployAdmin.address,
+      this.config.adminAddresses[0],
       this.config.zTokenConfig.initialSupplyBase,
       this.config.zTokenConfig.inflationRates,
       this.config.zTokenConfig.finalInflationRate,
@@ -109,22 +111,5 @@ IZNSContracts
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
     return this.config.mockZToken;
-  }
-
-  async postDeploy () {
-    const {
-      zToken,
-      config: {
-        deployAdmin,
-      },
-    } = this.campaign;
-
-    // Mint 100,000 Z to the deployer
-    await zToken.connect(deployAdmin).mint(
-      await deployAdmin.getAddress?.(),
-      ethers.parseEther("100000")
-    );
-
-    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }

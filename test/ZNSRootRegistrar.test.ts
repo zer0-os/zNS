@@ -51,7 +51,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
-describe("ZNSRootRegistrar", () => {
+describe.only("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -91,10 +91,11 @@ describe("ZNSRootRegistrar", () => {
       ethers.MaxUint256
     );
 
-    userBalanceInitial = ethers.parseEther("1000000000000000000");
+    userBalanceInitial = await zns.zToken.balanceOf(deployer.address);
     // Give funds to user
+    await zns.zToken.connect(user).approve(deployer.address, userBalanceInitial);
+    await zns.zToken.connect(deployer).transfer(user.address, userBalanceInitial);
     await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.zToken.mint(user.address, userBalanceInitial);
   });
 
   afterEach(async () => {
