@@ -1926,9 +1926,10 @@
     eslint-plugin-prefer-arrow "^1.2.3"
     typescript "^5.0.2"
 
-"@zero-tech/z-token@file:../meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz":
+"@zero-tech/z-token@1.0.0":
   version "1.0.0"
-  resolved "file:../meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz#ba56c7e269e399e029cca69d1d54357220a2d08f"
+  resolved "https://registry.yarnpkg.com/@zero-tech/z-token/-/z-token-1.0.0.tgz#ba56c7e269e399e029cca69d1d54357220a2d08f"
+  integrity sha512-hbUmgKZ6G4Z4dLzvI0SR5n/O6OaWpWh2utG5DHDZZd6P6G5HBdeELUKVVQxecTsPQY0GnVvevxaEoLBMcyW9Xw==
 
 "@zero-tech/zdc@0.1.6":
   version "0.1.6"

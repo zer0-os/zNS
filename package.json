@@ -78,7 +78,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "@zero-tech/z-token": "/home/bb/projects/meow-tokens_ACTUAL/zero-tech-z-token-1.0.0.tgz",
+    "@zero-tech/z-token": "1.0.0",
     "@zero-tech/zdc": "0.1.6",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
