@@ -77,7 +77,7 @@
     "ts-node": "10.9.1",
     "typechain": "^8.3.2",
     "typescript": "^5.0.2",
-    "zkevm-contracts": "../PKG/zkevm-contracts-6.0.0-rc.1-fork.9.tar.gz"
+    "@zero-tech/zkevm-contracts": "6.0.0-fork-9"
   },
   "dependencies": {
     "@zero-tech/zdc": "0.1.6",

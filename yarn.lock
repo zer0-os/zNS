@@ -1935,6 +1935,11 @@
     mongodb "^6.3.0"
     winston "^3.11.0"
 
+"@zero-tech/zkevm-contracts@6.0.0-fork-9":
+  version "6.0.0-fork-9"
+  resolved "https://registry.yarnpkg.com/@zero-tech/zkevm-contracts/-/zkevm-contracts-6.0.0-fork-9.tgz#6ef7c889762542562485bf2ba3c6124ea00c0aa2"
+  integrity sha512-iSBm3wEvzkHAnqJYIWJlvIuBU1rKnnI8+IlqHLvz2r+3Ml228KaSNZi0SG8O1DW/oqNnHnMTDZzKv7NPR9wIrQ==
+
 "@zero-tech/ztoken@2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@zero-tech/ztoken/-/ztoken-2.1.0.tgz#71f50b532c258588ade488644fd75d1b8028a256"
@@ -9506,10 +9511,6 @@ yocto-queue@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-1.0.0.tgz#7f816433fb2cbc511ec8bf7d263c3b58a1a3c251"
   integrity sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==
-
-zkevm-contracts@../PKG/zkevm-contracts-6.0.0-rc.1-fork.9.tar.gz:
-  version "3.0.0"
-  resolved "../PKG/zkevm-contracts-6.0.0-rc.1-fork.9.tar.gz#ea7d8ff20f8654a3c65189b26b7a009345320d10"
 
 zksync-web3@^0.14.3:
   version "0.14.4"
