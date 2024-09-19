@@ -6,8 +6,6 @@ import {
   ZNSAccessController,
   ZToken,
 } from "../../typechain";
-import {  } from "@zero-tech/ztoken/typechain-js";
-
 
 export const validateUpgrade = async (
   deployer : SignerWithAddress,

@@ -4,13 +4,13 @@ import {
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
-import { ethers } from "ethers";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { ZToken__factory } from "../../../../../typechain";
 import zArtifact from "../../../../../artifacts/@zero-tech/z-token/contracts/ZToken.sol/ZToken.json";
+import { IZTokenConfig } from "../../types";
 
 
 export const zTokenName = "Z-Token";
@@ -92,16 +92,22 @@ IZNSContracts
   // it will choose the governon as `admin` argument
   // and deployAdmin as `minter` and first passed admin as `mintBeneficiary`.
   async deployArgs () : Promise<TDeployArgs> {
+    const {
+      initialAdminDelay,
+      initialSupplyBase,
+      inflationRates,
+      finalInflationRate,
+    } = this.config.zTokenConfig as unknown as IZTokenConfig;
     return [
       zTokenName,
       zTokenSymbol,
       this.config.governorAddresses[0],
-      this.config.zTokenConfig.initialAdminDelay,
+      initialAdminDelay,
       this.config.deployAdmin.address,
       this.config.adminAddresses[0],
-      this.config.zTokenConfig.initialSupplyBase,
-      this.config.zTokenConfig.inflationRates,
-      this.config.zTokenConfig.finalInflationRate,
+      initialSupplyBase,
+      inflationRates,
+      finalInflationRate,
     ];
   }
 

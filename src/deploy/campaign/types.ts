@@ -31,7 +31,7 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
     defaultRoyaltyFraction : bigint;
   };
   rootPriceConfig : ICurvePriceConfig;
-  zTokenConfig : IZTokenConfig;
+  zTokenConfig ?: IZTokenConfig;
   zeroVaultAddress : string;
   mockZToken : boolean;
   stakingTokenAddress : string;

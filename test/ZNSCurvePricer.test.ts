@@ -52,8 +52,8 @@ describe("ZNSCurvePricer", () => {
     ] = await hre.ethers.getSigners();
 
     const priceConfig : ICurvePriceConfig  = DEFAULT_PRICE_CONFIG;
-    const zeroVaultAddress : SignerWithAddress = deployer.address;
-    const isTenderlyRun : boolean = false;
+    const zeroVaultAddress : string = deployer.address;
+    const isTenderlyRun  = false;
 
     zns = await deployZNS({
       deployer,
@@ -61,7 +61,7 @@ describe("ZNSCurvePricer", () => {
       adminAddresses: [admin.address],
       priceConfig,
       zeroVaultAddress,
-      isTenderlyRun
+      isTenderlyRun,
     });
 
     const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;

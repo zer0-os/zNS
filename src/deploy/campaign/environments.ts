@@ -20,7 +20,7 @@ import {
   FINAL_INFLATION_RATE_DEFAULT,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
-import { ICurvePriceConfig } from "../missions/types";
+import { ICurvePriceConfig, IZTokenConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/z-token/mainnet-data";
 
 
@@ -92,7 +92,7 @@ export const getConfig = async ({
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }
 
-  let zConfig;
+  let zConfig : IZTokenConfig | undefined;
   if (process.env.MOCK_Z_TOKEN === "true") {
     zConfig = {
       initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
