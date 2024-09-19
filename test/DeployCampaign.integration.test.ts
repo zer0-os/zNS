@@ -64,8 +64,6 @@ describe("zNS + zDC Single Integration Test", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.parseEther("10000000");
-
   const domains = [shortDomain, mediumDomain, longDomain];
 
   before(async () => {

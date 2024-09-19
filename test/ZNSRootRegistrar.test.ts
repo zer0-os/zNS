@@ -93,7 +93,7 @@ describe("ZNSRootRegistrar", () => {
 
     // Give funds to user. leave half of the amount in the deployer wallet
     userBalanceInitial = await zns.zToken.balanceOf(deployer.address) / 2n;
-    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
     await zns.zToken.connect(deployer).transfer(user.address, userBalanceInitial);
   });
 
@@ -285,7 +285,7 @@ describe("ZNSRootRegistrar", () => {
     expect(balance).to.eq(userBalanceInitial);
 
     const allowance = await zns.zToken.allowance(user.address, await zns.treasury.getAddress());
-    expect(allowance).to.eq(ethers.MaxUint256);
+    expect(allowance).to.eq(userBalanceInitial);
   });
 
   it("Should revert when initialize() without ADMIN_ROLE", async () => {

@@ -52,8 +52,9 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.zToken.mint(user.address, ethers.parseEther("10000000000000"));
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
     const fullConfig = {
       distrConfig: {
@@ -307,8 +308,9 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-      await zns.zToken.mint(user.address, ethers.parseEther("10000000000000"));
+      const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+      await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+      await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
       const fullConfig = {
         distrConfig: {

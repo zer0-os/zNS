@@ -41,6 +41,10 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
+  INITIAL_ADMIN_DELAY_DEFAULT,
+  INITIAL_SUPPLY_DEFAULT,
+  INFLATION_RATES_DEFAULT,
+  FINAL_INFLATION_RATE_DEFAULT,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
@@ -166,19 +170,21 @@ export const deployDomainToken = async (
 
 export const deployZToken = async (
   deployer : SignerWithAddress,
+  governorAddresses : Array<string>,
+  adminAddresses : Array<string>,
   isTenderlyRun : boolean
 ) : Promise<ZTokenMock> => {
-  const factory = new ZTokenMock__factory(deployer);
-
-  const zToken = await hre.upgrades.deployProxy(
-    factory,
-    [
-      zTokenName,
-      zTokenSymbol,
-    ],
-    {
-      kind: "transparent",
-    }
+  const Factory = new ZTokenMock__factory(deployer);
+  const zToken = await Factory.deploy(
+    zTokenName,
+    zTokenSymbol,
+    governorAddresses[0],
+    INITIAL_ADMIN_DELAY_DEFAULT,
+    deployer.address,
+    adminAddresses[0],
+    INITIAL_SUPPLY_DEFAULT,
+    INFLATION_RATES_DEFAULT,
+    FINAL_INFLATION_RATE_DEFAULT
   ) as unknown as ZTokenMock;
 
   await zToken.waitForDeployment();
@@ -201,9 +207,6 @@ export const deployZToken = async (
                 proxy: ${proxyAddress}
                 implementation: ${impl}`);
   }
-
-  // Mint 10,000 ZERO for self
-  await zToken.mint(proxyAddress, ethers.parseEther("10000"));
 
   return zToken as unknown as ZTokenMock;
 };
@@ -558,7 +561,12 @@ export const deployZNS = async ({
   // While we do use the real ZeroToken contract, it is only deployed as a mock here
   // for testing purposes that verify expected behavior of other contracts.
   // This should not be used in any other context than deploying to a local hardhat testnet.
-  const zTokenMock = await deployZToken(deployer, isTenderlyRun);
+  const zTokenMock = await deployZToken(
+    deployer,
+    governorAddresses,
+    adminAddresses,
+    isTenderlyRun,
+  );
 
   const addressResolver = await deployAddressResolver(
     deployer,
@@ -627,10 +635,6 @@ export const deployZNS = async ({
     subRegistrar,
     zeroVaultAddress,
   };
-
-  // Give 15 ZERO to the deployer and allowance to the treasury
-  await zTokenMock.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
-  await zTokenMock.mint(await deployer.getAddress(), ethers.parseEther("5000000"));
 
   await registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await addressResolver.getAddress());
 

@@ -88,13 +88,20 @@ describe("ZNSSubRegistrar", () => {
         zeroVaultAddress: zeroVault.address,
       });
       // Give funds to users
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+      ];
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("100000000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       rootPriceConfig = {
@@ -600,20 +607,28 @@ describe("ZNSSubRegistrar", () => {
       });
 
       // Give funds to users
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+        lvl6SubOwner,
+        branchLvl1Owner,
+        branchLvl2Owner,
+        multiOwner,
+      ];
+
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-          lvl3SubOwner,
-          lvl4SubOwner,
-          lvl5SubOwner,
-          lvl6SubOwner,
-          branchLvl1Owner,
-          branchLvl2Owner,
-          multiOwner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("1000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       domainConfigs = [
@@ -1449,19 +1464,26 @@ describe("ZNSSubRegistrar", () => {
       ));
 
       // Give funds to users
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+        lvl6SubOwner,
+        branchLvl1Owner,
+        branchLvl2Owner,
+      ];
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-          lvl3SubOwner,
-          lvl4SubOwner,
-          lvl5SubOwner,
-          lvl6SubOwner,
-          branchLvl1Owner,
-          branchLvl2Owner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("1000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain
@@ -2494,17 +2516,24 @@ describe("ZNSSubRegistrar", () => {
       fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
 
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+        lvl6SubOwner,
+      ];
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-          lvl3SubOwner,
-          lvl4SubOwner,
-          lvl5SubOwner,
-          lvl6SubOwner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("1000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain and 1 subdomain
@@ -2968,17 +2997,24 @@ describe("ZNSSubRegistrar", () => {
       fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
 
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+        lvl3SubOwner,
+        lvl4SubOwner,
+        lvl5SubOwner,
+        lvl6SubOwner,
+      ];
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-          lvl3SubOwner,
-          lvl4SubOwner,
-          lvl5SubOwner,
-          lvl6SubOwner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("1000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain and 1 subdomain
@@ -3481,13 +3517,20 @@ describe("ZNSSubRegistrar", () => {
       });
 
       // Give funds to users
+      const users = [
+        rootOwner,
+        lvl2SubOwner,
+      ];
+      const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+      const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
       await Promise.all(
-        [
-          rootOwner,
-          lvl2SubOwner,
-        ].map(async ({ address }) =>
-          zns.zToken.mint(address, ethers.parseEther("1000000")))
+        users.map(async ({ address }) =>
+          zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+        )
       );
+
       await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       fixedPrice = ethers.parseEther("397.13");
@@ -3566,9 +3609,6 @@ describe("ZNSSubRegistrar", () => {
 
       const domainLabel = "world";
 
-      await zns.zToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-      await zns.zToken.mint(lvl2SubOwner.address, ethers.parseEther("1000000"));
-
       const domainHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
@@ -3628,7 +3668,6 @@ describe("ZNSSubRegistrar", () => {
       expect(rootConfigBefore.pricerContract).to.eq(await zns.fixedPricer.getAddress());
       expect(rootConfigBefore.paymentType).to.eq(PaymentType.DIRECT);
 
-      await zns.zToken.mint(lvl2SubOwner.address, ethers.parseEther("1000000"));
       await zns.zToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.parseEther("1000000"));
 
       const subConfigToSet = {

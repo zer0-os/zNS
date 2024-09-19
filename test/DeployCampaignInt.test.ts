@@ -145,7 +145,11 @@ describe("Deploy Campaign Test", () => {
         },
       } = campaign;
 
-      expect(zToken.address).to.equal(z.address);
+      expect(
+        await zToken.getAddress()
+      ).to.equal(
+        await z.getAddress()
+      );
       expect(zDMInstance.contractName).to.equal(znsNames.zToken.contract);
 
       // Cannot call to real db to

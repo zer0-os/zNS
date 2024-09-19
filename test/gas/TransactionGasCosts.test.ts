@@ -51,12 +51,18 @@ describe("Transaction Gas Costs Test", () => {
     };
 
     // Give funds to users
+    const users = [
+      rootOwner,
+      lvl2SubOwner,
+    ];
+    const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
+    const userBalanceInitial = totalAdminBalance / BigInt(users.length);
+    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
+
     await Promise.all(
-      [
-        rootOwner,
-        lvl2SubOwner,
-      ].map(async ({ address }) =>
-        zns.zToken.mint(address, ethers.parseEther("1000000")))
+      users.map(async ({ address }) =>
+        zns.zToken.connect(admin).transfer(address, userBalanceInitial)
+      )
     );
     await zns.zToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 

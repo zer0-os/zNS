@@ -92,7 +92,6 @@ export const getConfig = async ({
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }
 
-
   let zConfig;
   if (process.env.MOCK_Z_TOKEN === "true") {
     zConfig = {

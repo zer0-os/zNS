@@ -25,6 +25,7 @@ import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__fac
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
+import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -50,14 +51,22 @@ describe("ZNSCurvePricer", () => {
       randomAcc,
     ] = await hre.ethers.getSigners();
 
+    const priceConfig : ICurvePriceConfig  = DEFAULT_PRICE_CONFIG;
+    const zeroVaultAddress : SignerWithAddress = deployer.address;
+    const isTenderlyRun : boolean = false;
+
     zns = await deployZNS({
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [admin.address],
+      priceConfig,
+      zeroVaultAddress,
+      isTenderlyRun
     });
 
-    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.zToken.mint(user.address, DEFAULT_PRICE_CONFIG.maxPrice);
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
     const fullConfig = {
       distrConfig: {

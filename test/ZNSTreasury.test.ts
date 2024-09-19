@@ -69,8 +69,13 @@ describe("ZNSTreasury", () => {
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
     // Give funds to user
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 3n;
+    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(user, userBalanceInitial);
+    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(deployer, userBalanceInitial);
     await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.zToken.mint(user.address, ethers.parseEther("50000"));
+
 
     // register random domain
     await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -627,6 +632,8 @@ describe("ZNSTreasury", () => {
       const newLabel = "world";
       const newHash = hashSubdomainName(newLabel);
       const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
+
+      await zns.zToken.connect(deployer).approve(await zns.treasury.getAddress(), ethers.MaxInt256);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,
