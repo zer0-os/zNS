@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IBridgeMessageReceiver } from "zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
+import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
@@ -15,7 +16,7 @@ contract BridgeReceiver is IBridgeMessageReceiver {
     error NotPolygonZkEVMBridge();
 
     // Global Exit Root address
-    IPolygonZkEVMBridge public immutable polygonZkEVMBridge;
+    IPolygonZkEVMBridgeV2Ext public immutable polygonZkEVMBridge;
 
     // Current network identifier
     uint32 public immutable networkID;
@@ -24,7 +25,7 @@ contract BridgeReceiver is IBridgeMessageReceiver {
 
     address public senderContract;
 
-    constructor(IPolygonZkEVMBridge bridgeAddress) {
+    constructor(IPolygonZkEVMBridgeV2Ext bridgeAddress) {
         if (address(bridgeAddress) == address(0)) revert ZeroAddressPassed();
         polygonZkEVMBridge = bridgeAddress;
         networkID = polygonZkEVMBridge.networkID();
@@ -34,11 +35,8 @@ contract BridgeReceiver is IBridgeMessageReceiver {
         address originAddress,
         uint32 originNetwork,
         bytes memory data
-    ) external override {
+    ) external payable override {
         // Can only be called by the bridge
-        if (msg.sender == address(polygonZkEVMBridge))
-            revert NotPolygonZkEVMBridge();
-
         // Can only be called by the sender on the other network
         // require(
         //    pingSender == originAddress,
@@ -46,6 +44,8 @@ contract BridgeReceiver is IBridgeMessageReceiver {
         // );
 
         string memory message = abi.decode(data, (string));
+        messageState = message;
+        senderContract = originAddress;
 
         emit MessageReceived(originAddress, originNetwork, message);
     }

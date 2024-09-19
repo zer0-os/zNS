@@ -10,13 +10,13 @@ contract BridgeSender {
     event MessageBridged(
         uint32 destinationNetwork,
         address destinationAddress,
-        string memory message
+        string message
     );
 
     // Global Exit Root address
-    IPolygonZkEVMBridge public immutable polygonZkEVMBridge;
+    IPolygonZkEVMBridgeV2 public immutable polygonZkEVMBridge;
 
-    cosntrcutor(IPolygonZkEVMBridgeV2 bridgeAddress) {
+    constructor(IPolygonZkEVMBridgeV2 bridgeAddress) {
         if (address(bridgeAddress) == address(0)) revert ZeroAddressPassed();
         polygonZkEVMBridge = bridgeAddress;
     }
