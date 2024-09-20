@@ -92,15 +92,13 @@ export const getConfig = async ({
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }
 
-  let zConfig : IZTokenConfig | undefined;
-  if (process.env.MOCK_Z_TOKEN === "true") {
-    zConfig = {
-      initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
-      initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
-      inflationRates: INFLATION_RATES_DEFAULT,
-      finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
-    };
-  }
+  process.env.MOCK_Z_TOKEN === "true";
+  const zConfig = {
+    initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+    initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+    inflationRates: INFLATION_RATES_DEFAULT,
+    finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+  };
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
@@ -129,7 +127,7 @@ export const getConfig = async ({
     rootPriceConfig: priceConfig,
     zTokenConfig: zConfig,
     zeroVaultAddress: zeroVaultAddressConf as string,
-    mockZToken: process.env.MOCK_Z_TOKEN === "true",
+    mockZToken: !!process.env.MOCK_Z_TOKEN,
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
@@ -161,7 +159,7 @@ export const validateEnv = (
   if (envLevel === "dev") return priceConfig;
 
   if (envLevel === "test" || envLevel === "dev") {
-    if (process.env.MOCK_Z_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
+    if (!process.env.MOCK_Z_TOKEN && !process.env.STAKING_TOKEN_ADDRESS) {
       throw new Error("Must provide a staking token address if not mocking Z token in `dev` environment");
     }
   }
@@ -187,16 +185,16 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
-    requires(process.env.MOCK_Z_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
+    requires(!process.env.MOCK_Z_TOKEN, NO_MOCK_PROD_ERR);
+    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
   }
 
-  if (process.env.VERIFY_CONTRACTS === "true") {
+  if (process.env.VERIFY_CONTRACTS) {
     requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
   }
 
-  if (process.env.MONITOR_CONTRACTS === "true") {
+  if (process.env.MONITOR_CONTRACTS) {
     requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
     requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
     requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");

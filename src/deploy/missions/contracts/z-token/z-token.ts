@@ -97,7 +97,7 @@ IZNSContracts
       initialSupplyBase,
       inflationRates,
       finalInflationRate,
-    } = this.config.zTokenConfig as unknown as IZTokenConfig;
+    } = this.config.zTokenConfig as IZTokenConfig;
     return [
       zTokenName,
       zTokenSymbol,

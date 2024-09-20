@@ -15,7 +15,6 @@ import {
   ZToken,
   ZTokenMock,
 } from "../../../typechain";
-import { bigint } from "hardhat/internal/core/params/argumentTypes";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
