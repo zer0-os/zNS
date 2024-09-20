@@ -134,15 +134,15 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         CurvePriceConfig calldata priceConfig
     ) public override {
-        setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
-        priceConfigs[domainHash].baseLength = priceConfig.baseLength;
-        priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        priceConfigs[domainHash].minPrice = priceConfig.minPrice;
-        priceConfigs[domainHash].maxLength = priceConfig.maxLength;
-        setFeePercentage(domainHash, priceConfig.feePercentage);
-        priceConfigs[domainHash].isSet = true;
+        // Validate a new or existing config
+        _setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
+        _validateCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
+        // _validateBaseLength
+        // _validateMaxPrice
+        // _validateMaxLength
+        // _validateFeePercentage
 
-        _validateConfig(domainHash);
+        priceConfigs[domainHash].isSet = true;
 
         emit PriceConfigSet(
             domainHash,
@@ -186,11 +186,27 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 minPrice
     ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].minPrice = minPrice;
+        // Grab an existing config
+        CurvePriceConfig memory config = priceConfigs[domainHash];
 
-        _validateConfig(domainHash);
+        _validateCurveMultiplier(domainHash, curveMultiplier, config);
 
-        emit MinPriceSet(domainHash, minPrice);
+        emit CurveMultiplierSet(domainHash, curveMultiplier);
+    }
+
+    function _validateCurveMultiplier(
+        bytes32 domainHash,
+        uint256 curveMultiplier,
+        CurvePriceConfig memory config
+    ) internal {
+        if (
+            (curveMultiplier == 0 && config.baseLength == 0) || 
+            (curveMultiplier == 0 && config.maxLength == 0)
+        ) {
+            revert DivisionByZero(0x0);
+        }
+
+        priceConfigs[domainHash].curveMultiplier = curveMultiplier;
     }
 
     /**
@@ -285,6 +301,44 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     */
     function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
         _setRegistry(registry_);
+    }
+
+    function validateConfig (
+        bytes32 domainHash
+    ) internal view {
+        CurvePriceConfig memory config = priceConfigs[domainHash];
+
+        if (config.maxLength < config.baseLength)
+            revert MaxLengthSmallerThanBaseLength(
+                domainHash
+            );
+
+        if (config.maxPrice == 0 && config.maxLength == 0)
+            revert InvalidMaxPrice(domainHash);
+
+        // curveMultiplier = 0 && baseLength = 0
+        // curveMultiplier = 0 && maxLength = 0
+        // baseLength = 0 && curveMultiplier == 0
+        // baseLength = 0 && maxLength = 0
+
+        if (
+            (config.curveMultiplier == 0 && config.baseLength == 0) || 
+            (config.curveMultiplier == 0 && config.maxLength == 0) ||
+            (config.baseLength == 0 && config.maxLength == 0)
+        )
+            revert DivisionByZero(domainHash);
+
+        // if (config.baseLength == 0 && (config.curveMultiplier == 0 || config.maxLength == 0))
+        //     revert DivisionByZero(domainHash);
+
+        if (config.feePercentage > PERCENTAGE_BASIS)
+            revert FeePercentageValueTooLarge(
+                config.feePercentage,
+                PERCENTAGE_BASIS
+            );
+
+        if (config.precisionMultiplier == 0 || config.precisionMultiplier > 10**18
+            ) revert InvalidMultiplierPassed(config.precisionMultiplier);
     }
 
     /**

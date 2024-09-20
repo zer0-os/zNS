@@ -48,7 +48,6 @@ const getCustomAddresses = (
     addresses.push(deployerAddress);
   }
 
-
   return addresses;
 };
 
@@ -67,7 +66,13 @@ export const getConfig = async ({
   env ?: string;
 }) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
-  const priceConfig = validateEnv(env);
+  let priceConfig;
+  try {
+    priceConfig = validateEnv(env);
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
 
   let deployerAddress;
   if (deployer && Object.keys(deployer).includes("address")) {
@@ -167,6 +172,7 @@ export const validateEnv = (
   if (!process.env.MONGO_DB_URI) {
     throw new Error(`Must provide a Mongo URI used for ${envLevel} environment!`);
   }
+
 
   requires(!!process.env.ZERO_VAULT_ADDRESS, NO_ZERO_VAULT_ERR);
 

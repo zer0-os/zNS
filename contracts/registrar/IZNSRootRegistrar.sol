@@ -22,6 +22,15 @@ struct CoreRegisterArgs {
     PaymentConfig paymentConfig;
 }
 
+// Args for bulk tx
+struct DomainData {
+    string[] names;
+    address[] domainAddresses;
+    string [] tokenURIs;
+    IDistributionConfig.DistributionConfig[] distributionConfigs;
+    PaymentConfig[] paymentConfigs;
+}
+
 /**
  * @title IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.
  * @notice Below are docs for the types in this file:
@@ -42,6 +51,16 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    // TODO TEMP DELETE after migration
+    struct RootBulkMigrationArgs {
+        address[] tokenOwners;
+        address[] recordOwners;
+        string[] names;
+        address[] domainAddresses;
+        string[] tokenURIs;
+        DistributionConfig[] distributionConfigs;
+        PaymentConfig[] paymentConfigs;
+    }
     error NotTheOwnerOf(
         OwnerOf ownerOf,
         address candidate,

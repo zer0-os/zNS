@@ -98,22 +98,37 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
+    hardhat: {
+      // accounts: [
+      //   {
+      //     privateKey: `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      //     balance: "1000000000000000000000000",
+      //   }
+      // ],
+      forking: {
+        url: `${process.env.MAINNET_RPC_URL}`,
+      },
+    },
     mainnet: {
       url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,
     },
+    meowchain: { // Testnet info
+      url: `${process.env.MEOWCHAIN_RPC_URL}`,
+      chainId: 883424730,
+    },
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.TESTNET_PRIVATE_KEY}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
-      // // Must have to avoid instead failing as `invalid length for result data` error
+      ],
+      // Must have to avoid instead failing as `invalid length for result data` error
       // throwOnCallFailures: false, // not sure if this even works
     },
     devnet: {
@@ -128,8 +143,8 @@ const config : HardhatUserConfig = {
     //   ],
     // },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   //   customChains: [
   //     {
   //       network: "meowtestnet",
@@ -140,7 +155,7 @@ const config : HardhatUserConfig = {
   //       },
   //     },
   //   ],
-  // },
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,

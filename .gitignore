@@ -20,3 +20,11 @@ docker*.tgz
 
 # We don't ever use the generated manifests
 .openzeppelin
+
+# Ignore the output files of migration
+valid-root-domains.json
+valid-subdomains.json
+invalid-domains.json
+
+# Deploy logs
+deploy-*.log
