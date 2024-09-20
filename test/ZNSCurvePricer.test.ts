@@ -51,7 +51,6 @@ describe("ZNSCurvePricer", () => {
       randomAcc,
     ] = await hre.ethers.getSigners();
 
-    const priceConfig : ICurvePriceConfig  = DEFAULT_PRICE_CONFIG;
     const zeroVaultAddress : string = deployer.address;
     const isTenderlyRun  = false;
 
@@ -59,12 +58,13 @@ describe("ZNSCurvePricer", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [admin.address],
-      priceConfig,
+      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress,
       isTenderlyRun,
     });
 
-    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+    // transfer funds from admin to user
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address);
     await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
     await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
