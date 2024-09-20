@@ -13,6 +13,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
+// import { BulkMigrationArgs } from "./IZNSRootRegistrar.sol"; 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { console } from "hardhat/console.sol";
@@ -73,35 +74,23 @@ contract ZNSRootRegistrar is
     }
 
     function registerRootDomainBulk(
-        address[] calldata owners, // for post registration, we transfer to actual owner
-        string[] calldata names,
-        address[] calldata domainAddresses,
-        string [] calldata tokenURIs,
-        DistributionConfig calldata emptyDistrConfig,
-        PaymentConfig calldata emptyPaymentConfig
+        RootBulkMigrationArgs calldata args
     ) public onlyAdmin {
         // Expect all arrays are the same length
-        // TODO is this enough to rely on?
-        for (uint256 i = 0; i < names.length;) {
-            // DistributionConfig memory distrConfig = DistributionConfig(IZNSPricer(address(0)), PaymentType.DIRECT, AccessType.OPEN);
-            // PaymentConfig memory paymentConfig = PaymentConfig(IERC20(address(0)), address(0));
-            
-            // we are passing the right access type for each tx, where is it missing?
-            // console.logUint(uint256(emptyDistrConfig.accessType));
-            
+        for (uint256 i = 0; i < args.names.length;) {
             bytes32 domainHash = registerRootDomain(
-                names[i],
-                domainAddresses[i],
-                tokenURIs[i],
-                emptyDistrConfig,
-                emptyPaymentConfig
+                args.names[i],
+                args.domainAddresses[i],
+                args.tokenURIs[i],
+                args.distributionConfigs[i],
+                args.paymentConfigs[i]
             );
 
-            // Transfer ERC721 to actual owner
-            domainToken.transferFrom(msg.sender, owners[i], uint256(domainHash));
+            // Transfer ERC721 to domain token owner
+            domainToken.transferFrom(msg.sender, args.tokenOwners[i], uint256(domainHash));
 
-            // This call breaks subdomain registration right now
-            registry.updateDomainOwnerForMigration(domainHash, owners[i]);
+            // Update the domain record in the registry with the proper record owner
+            registry.updateDomainOwnerForMigration(domainHash, args.recordOwners[i]);
 
             unchecked {
                 ++i;
@@ -134,7 +123,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) public override returns (bytes32) {
+    ) public override onlyAdmin returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -162,10 +151,10 @@ contract ZNSRootRegistrar is
             )
         );
 
-        // if (address(distributionConfig.pricerContract) != address(0)) {
+        if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
-        // }
+        }
 
         return domainHash;
     }
@@ -205,9 +194,9 @@ contract ZNSRootRegistrar is
     ) internal {
         // payment part of the logic
         // TODO uncomment after migration
-        // if (args.price > 0) {
-        //     _processPayment(args);
-        // }
+        if (args.price > 0) {
+            _processPayment(args);
+        }
 
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);

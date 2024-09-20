@@ -51,6 +51,16 @@ struct DomainData {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    // TODO TEMP DELETE after migration
+    struct RootBulkMigrationArgs {
+        address[] tokenOwners;
+        address[] recordOwners;
+        string[] names;
+        address[] domainAddresses;
+        string[] tokenURIs;
+        DistributionConfig[] distributionConfigs;
+        PaymentConfig[] paymentConfigs;
+    }
     error NotTheOwnerOf(
         OwnerOf ownerOf,
         address candidate,

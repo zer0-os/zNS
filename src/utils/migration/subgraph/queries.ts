@@ -27,7 +27,6 @@ export const getDomains = gql`
         label
       }
       accessType
-      paymentType
       pricerContract
       paymentToken {
         id

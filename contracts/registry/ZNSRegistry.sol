@@ -243,7 +243,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function updateDomainOwnerForMigration(
         bytes32 domainHash,
         address owner
-    ) external override {
+    ) external override onlyRegistrar{
         _setDomainOwner(domainHash, owner);
     }
 

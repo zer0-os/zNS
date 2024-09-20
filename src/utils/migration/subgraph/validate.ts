@@ -5,11 +5,17 @@ import { Domain, SubgraphError } from "../types";
 
 import { IZNSContracts } from "../../../deploy/campaign/types";
 import { IZNSContractsLocal } from "../../../../test/helpers/types";
+import {
+  AccessType,
+  PaymentType,
+} from "../../../../test/helpers";
+// import { ZeroAddress } from "ethers";
 
 
 export const validateDomain = async (
   domain : Domain, 
-  zns : IZNSContracts | IZNSContractsLocal
+  zns : IZNSContracts | IZNSContractsLocal,
+  postMigration : boolean = false
 ) => {
 
   try {
@@ -20,9 +26,10 @@ export const validateDomain = async (
       expect(
         (await zns.registry.getDomainOwner(domain.id)).toLowerCase())
         .to.equal(domain.owner.id.toLowerCase());
-      expect(
+        expect(
         (await zns.domainToken.ownerOf(domain.tokenId)).toLowerCase())
         .to.equal(domain.domainToken.owner.id.toLowerCase());
+
       expect(
         (await zns.addressResolver.resolveDomainAddress(domain.id)).toLowerCase())
         .to.equal(domain.address.toLowerCase());
@@ -32,9 +39,16 @@ export const validateDomain = async (
 
     // Props not yet set in the subgraph return null, but in the contract it will
     // be 0 value, so we must mediate here
-    expect(distrConfig.accessType).to.equal(domain.accessType ?? 0n);
-    expect(distrConfig.paymentType).to.equal(domain.paymentType ?? 0n);
-    expect(distrConfig.pricerContract.toLowerCase()).to.equal(domain.pricerContract?.toLowerCase() ?? ZeroAddress);
+
+    if (postMigration) {
+      expect(distrConfig.accessType).to.equal(AccessType.OPEN);
+      expect(distrConfig.paymentType).to.equal(PaymentType.DIRECT);
+      expect(distrConfig.pricerContract.toLowerCase()).to.equal(ZeroAddress);  
+    } else {
+      expect(distrConfig.accessType).to.equal(domain.accessType ?? 0n);
+      expect(distrConfig.paymentType).to.equal(domain.paymentType ?? 0n);
+      expect(distrConfig.pricerContract.toLowerCase()).to.equal(domain.pricerContract?.toLowerCase() ?? ZeroAddress);  
+    }
 
     if (domain.isWorld) {
       expect(domain.parentHash).to.equal(ZeroHash);

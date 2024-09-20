@@ -70,32 +70,40 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     function registerSubdomainBulk(
-        BulkMigrationArgs calldata args,
-        DistributionConfig calldata emptyDistrConfig,
-        PaymentConfig calldata emptyPaymentConfig
+        SubBulkMigrationArgs calldata args
     ) public onlyAdmin {
         // For the migration specifically so we setup with empty configs
         for (uint256 i = 0; i < args.parentHashes.length;) {
-            bytes32 domainHash = registerSubdomain(
-                args.parentHashes[i],
-                args.labels[i],
-                args.domainAddresses[i],
-                args.tokenURIs[i],
-                emptyDistrConfig,
-                emptyPaymentConfig
-            );
+            RegisterSubdomainArgs memory singleArgs = RegisterSubdomainArgs({
+                parentHash: args.parentHashes[i],
+                label: args.labels[i],
+                domainAddress: args.domainAddresses[i],
+                recordOwner: args.recordOwners[i],
+                tokenURI: args.tokenURIs[i],
+                distrConfig: DistributionConfig({
+                    pricerContract: args.distributionConfigs[i].pricerContract,
+                    paymentType: args.distributionConfigs[i].paymentType,
+                    accessType: args.distributionConfigs[i].accessType
+                }),
+                paymentConfig: PaymentConfig({
+                    token: args.paymentConfigs[i].token,
+                    beneficiary: args.paymentConfigs[i].beneficiary
+                })
+            });
+            // calldata => memory not allowed, how else to reduce stack?
+            bytes32 domainHash = registerSubdomain(singleArgs);
 
             // Transfer domain token
             IZNSDomainToken(args.domainToken).transferFrom(
                 msg.sender,
-                args.owners[i],
+                args.tokenOwners[i],
                 uint256(domainHash)
             );
 
             // Update registry domain record
             registry.updateDomainOwnerForMigration(
                 domainHash,
-                args.owners[i]
+                args.recordOwners[i]
             );
 
             unchecked {
@@ -108,113 +116,99 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     error ParentNotExist(bytes32 parentHash);
     error CallerNotOwner(address caller);
 
-    /**
-     * @notice Entry point to register a subdomain under a parent domain specified.
-     * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
-     * checks if the sender is allowed to register, check if subdomain is available,
-     * acquires the price and other data needed to finalize the registration
-     * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-     * @param parentHash The hash of the parent domain to register the subdomain under
-     * @param label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
-     * @param domainAddress (optional) The address to which the subdomain will be resolved to
-     * @param tokenURI (required) The tokenURI for the subdomain to be registered
-     * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
-     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
-     *  but all the parameters inside are required.
-    */
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
+        RegisterSubdomainArgs calldata args
     ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        label.validate();
+        args.label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
+        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
 
-        if (!registry.exists(parentHash))
-            revert ParentNotExist(parentHash);
-
-        // console.logBytes32(parentHash);
-
+        if (!registry.exists(args.parentHash))
+            revert ParentNotExist(args.parentHash);
 
         // This returns 0, locked, but we dont register domains locked, why does this happen?
-        if(uint256(parentConfig.accessType) == 0) {
-            console.log("fail here");
-            // Because we do
-            console.logBytes32(parentHash);
-            console.logBytes32(domainHash);
-            console.log(registry.exists(parentHash));
-        }
-
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
+        // if(uint256(parentConfig.accessType) == 0) {
+            // console.log("fail here");
+            // // Because we do
+            // console.logBytes32(parentHash);
+            // console.logBytes32(domainHash);
+            // console.log(registry.exists(parentHash));
+        // }
 
         if (parentConfig.accessType == AccessType.LOCKED)
-            revert ParentLockedOrDoesntExist(parentHash);
-
-        // if (!isOwnerOrOperator)
+            revert ParentLockedOrDoesntExist(args.parentHash);
+        
+        // // make ! after, check this for now
+        // if (isParentOwnerOrOperator)
         //     revert CallerNotOwner(msg.sender);
 
-        if (parentConfig.accessType == AccessType.MINTLIST) {
-            if (
-                !mintlist[parentHash]
-                    .list
-                    [mintlist[parentHash].ownerIndex]
-                    [msg.sender]
-            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
-        }
+        // TODO uncomment this block after migration
+        // We comment here to avoid stack depth issues
+        // if (parentConfig.accessType == AccessType.MINTLIST) {
+        //     if (
+        //         !mintlist[parentHash]
+        //             .list
+        //             [mintlist[parentHash].ownerIndex]
+        //             [msg.sender]
+        //     ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
+        // }
+        
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
+            parentHash: args.parentHash,
             domainHash: domainHash,
-            label: label,
+            label: args.label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: args.domainAddress,
+            tokenURI: args.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: args.paymentConfig
         });
 
-        // Because we transfer root ownership right after registration, the caller here is not the owner
-        // causes errors
-        // console.log("here");
-        // if (!isOwnerOrOperator) { // TODO no payment considerations for migration
-        //     // console.log("here too");
-            
-        //     if (coreRegisterArgs.isStakePayment) {
-        //         (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-        //             .getPriceAndFee(
-        //                 parentHash,
-        //                 label,
-        //                 true
-        //             );
-        //     } else {
-        //         coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
-        //             .getPrice(
-        //                 parentHash,
-        //                 label,
-        //                 true
-        //             );
-        //     }
-        // }
+        // bool isParentOwnerOrOperator = registry.isOwnerOrOperator(parentHash, recordOwner);
+
+        if (!registry.isOwnerOrOperator(args.parentHash, args.recordOwner)) {
+            if (coreRegisterArgs.isStakePayment) {
+                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                    .getPriceAndFee(
+                        args.parentHash,
+                        args.label,
+                        true
+                    );
+            } else {
+                // address pricerContract = address(parentConfig.pricerContract);
+                // console.log("pricerContract", address(parentConfig.pricerContract));
+                console.log("pricerContract.getPrice", 
+                    parentConfig.pricerContract.getPrice(
+                        args.parentHash,
+                        args.label,
+                        true
+                    )
+                );
+
+                coreRegisterArgs.price = parentConfig.pricerContract
+                    .getPrice(
+                        args.parentHash,
+                        args.label,
+                        true
+                    );
+            }
+        }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        // if (address(distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
-        // }
+        if (address(args.distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, args.distrConfig);
+        }
 
         return domainHash;
     }
@@ -247,15 +241,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         DistributionConfig calldata config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
-        // TODO uncomment after migration
-        // We allow this because we don't set a pricer but we want to register still
-
-        // TODO should we just set the pricer properly for everyone?
-        // Should we copy each persons configs if we can?
-        // Same with issue around staking vs. direct pay
-        // if migration happens then users unstake later they would expect to be refunded
-        // if (address(config.pricerContract) == address(0))
-        //     revert ZeroAddressPassed();
+        if (address(config.pricerContract) == address(0))
+            revert ZeroAddressPassed();
 
         distrConfigs[domainHash] = config;
 

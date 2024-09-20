@@ -11,13 +11,26 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 interface IZNSSubRegistrar is IDistributionConfig {
 
     // TODO TEMP DELETE after migration
-    struct BulkMigrationArgs {
+    struct SubBulkMigrationArgs {
         address domainToken; // DomainToken contract for transfers
-        address[] owners;
+        address[] tokenOwners;
+        address[] recordOwners;
         bytes32[] parentHashes;
         string[] labels;
-        address[]domainAddresses;
+        address[] domainAddresses;
         string[] tokenURIs;
+        DistributionConfig[] distributionConfigs;
+        PaymentConfig[] paymentConfigs;
+    }
+
+    struct RegisterSubdomainArgs {
+        bytes32 parentHash;
+        string label;
+        address domainAddress;
+        address recordOwner;
+        string tokenURI;
+        DistributionConfig distrConfig;
+        PaymentConfig paymentConfig;
     }
 
     /**
@@ -102,12 +115,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        RegisterSubdomainArgs calldata args
     ) external returns (bytes32);
 
     function hashWithParent(
