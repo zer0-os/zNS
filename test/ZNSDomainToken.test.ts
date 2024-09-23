@@ -62,7 +62,8 @@ describe("ZNSDomainToken", () => {
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
       zns.zeroVaultAddress,
-      DEFAULT_ROYALTY_FRACTION
+      DEFAULT_ROYALTY_FRACTION,
+      await zns.registry.getAddress()
     )).to.be.revertedWithCustomError(zns.domainToken, INITIALIZED_ERR);
   });
 
@@ -77,7 +78,8 @@ describe("ZNSDomainToken", () => {
         ZNS_DOMAIN_TOKEN_NAME,
         ZNS_DOMAIN_TOKEN_SYMBOL,
         zns.zeroVaultAddress,
-        DEFAULT_ROYALTY_FRACTION
+        DEFAULT_ROYALTY_FRACTION,
+      await zns.registry.getAddress()
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
@@ -162,6 +164,35 @@ describe("ZNSDomainToken", () => {
         zns.domainToken,
         NONEXISTENT_TOKEN_ERC_ERR
       );
+    });
+  });
+
+  describe.only("Transfers",  () => {
+    it("Should modify the owner in DomainToken and in Registry when transferred", async () => {
+      const tokenId = BigInt("1");
+      const domainHash = ethers.solidityPacked(["uint256"], [tokenId]);
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+
+      await zns.domainToken.connect(caller).transferFrom(caller.address, deployer.address, tokenId);
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
+
+      // After calling `transferTokenFrom` the reg owner will be the same but the token owner is different
+      await zns.domainToken.connect(deployer).transferTokenFrom(deployer.address, caller.address, tokenId);
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
+
+      // The owner of the reg record can update the owner as well
+      await zns.registry.connect(deployer).updateDomainOwner(domainHash, caller.address);
+
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
     });
   });
 
