@@ -79,7 +79,7 @@ describe("ZNSDomainToken", () => {
         ZNS_DOMAIN_TOKEN_SYMBOL,
         zns.zeroVaultAddress,
         DEFAULT_ROYALTY_FRACTION,
-      await zns.registry.getAddress()
+        await zns.registry.getAddress()
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
@@ -167,7 +167,7 @@ describe("ZNSDomainToken", () => {
     });
   });
 
-  describe.only("Transfers",  () => {
+  describe("Transfers",  () => {
     it("Should modify the owner in DomainToken and in Registry when transferred", async () => {
       const tokenId = BigInt("1");
       const domainHash = ethers.solidityPacked(["uint256"], [tokenId]);

@@ -58,6 +58,8 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
 
+    function transferTokenFrom(address from, address to, uint256 tokenId) external;
+
     function setTokenRoyalty(
         uint256 tokenId,
         address receiver,

@@ -193,7 +193,7 @@ contract ZNSDomainToken is
      * @param to Address to send the token to
      * @param tokenId The token being transferred
      */
-    function transferTokenFrom(address from, address to, uint256 tokenId) external {
+    function transferTokenFrom(address from, address to, uint256 tokenId) public override {
         _transfer(from, to, tokenId);
     }
 
