@@ -24,7 +24,7 @@ IZNSContracts
   instanceName = znsNames.domainToken.instance;
 
   async deployArgs () : Promise<TDeployArgs> {
-    const { accessController } = this.campaign;
+    const { accessController, registry } = this.campaign;
     const {
       domainToken: {
         name,
@@ -34,6 +34,13 @@ IZNSContracts
       },
     } = this.config;
 
-    return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
+    return [ 
+      await accessController.getAddress(),
+      name,
+      symbol,
+      defaultRoyaltyReceiver,
+      defaultRoyaltyFraction,
+      await registry.getAddress(),
+    ];
   }
 }

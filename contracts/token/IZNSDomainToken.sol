@@ -34,7 +34,7 @@ interface IZNSDomainToken is IERC2981, IERC721 {
         string calldata tokenSymbol,
         address defaultRoyaltyReceiver,
         uint96 defaultRoyaltyFraction,
-        IZNSRegistry registry
+        address registry
     ) external;
 
     function totalSupply() external view returns (uint256);
@@ -65,6 +65,8 @@ interface IZNSDomainToken is IERC2981, IERC721 {
         address receiver,
         uint96 royaltyFraction
     ) external;
+
+    function setRegistry(address registry_) external;
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

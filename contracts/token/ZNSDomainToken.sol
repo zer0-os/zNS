@@ -8,6 +8,7 @@ import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
@@ -23,6 +24,7 @@ contract ZNSDomainToken is
     ERC721URIStorageUpgradeable,
     ERC2981Upgradeable,
     UUPSUpgradeable,
+    ARegistryWired,
     IZNSDomainToken {
 
     /**
@@ -34,11 +36,6 @@ contract ZNSDomainToken is
      * @dev Total supply of all tokens
      */
     uint256 private _totalSupply;
-
-    /**
-     * @notice The ZNSRegistry contract to update on transfers
-     */
-    IZNSRegistry public registry;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -60,13 +57,12 @@ contract ZNSDomainToken is
         string memory symbol_,
         address defaultRoyaltyReceiver,
         uint96 defaultRoyaltyFraction,
-        IZNSRegistry registry_ // TODO consistent naming
+        address registry_
     ) external override initializer {
         __ERC721_init(name_, symbol_);
         _setAccessController(accessController_);
         _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
-
-        registry = registry_;
+        _setRegistry(registry_);
     }
 
     /**
@@ -169,6 +165,15 @@ contract ZNSDomainToken is
         _setTokenRoyalty(tokenId, receiver, royaltyFraction);
 
         emit TokenRoyaltySet(tokenId, royaltyFraction);
+    }
+
+    /**
+     * @notice Setter function for the `ZNSRegistry` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param registry_ Address of the `ZNSRegistry` contract
+     */
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSDomainToken) onlyAdmin {
+        _setRegistry(registry_);
     }
 
     /**

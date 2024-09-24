@@ -3,9 +3,8 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
 import { AC_UNAUTHORIZED_ERR, deployAccessController, ZERO_ADDRESS_ERR } from "./helpers";
 import { expect } from "chai";
-import { ADMIN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
+import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
-
 
 describe("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
@@ -47,7 +46,7 @@ describe("ZNSAccessController", () => {
       );
     });
 
-    it("Should revert when passing 0x0 address to assing roles", async () => {
+    it("Should revert when passing 0x0 address to assign roles", async () => {
       await expect(
         deployAccessController({
           deployer,
@@ -139,6 +138,14 @@ describe("ZNSAccessController", () => {
       expect(has).to.be.true;
     });
 
+    it("ADMIN_ROLE should be able to grant DOMAIN_TOKEN_ROLE", async () => {
+      const [ admin ] = adminAccs;
+      const [ { address: newDomainToken } ] = randomAccs;
+      await accessController.connect(admin).grantRole(DOMAIN_TOKEN_ROLE, newDomainToken);
+      const has = await accessController.hasRole(DOMAIN_TOKEN_ROLE, newDomainToken);
+      expect(has).to.be.true;
+    });
+
     it("ADMIN_ROLE should be able to revoke REGISTRAR_ROLE", async () => {
       const [ admin ] = adminAccs;
       const [ { address: newRegistrar } ] = randomAccs;
@@ -146,6 +153,16 @@ describe("ZNSAccessController", () => {
 
       await accessController.connect(admin).revokeRole(REGISTRAR_ROLE, newRegistrar);
       const has = await accessController.hasRole(REGISTRAR_ROLE, newRegistrar);
+      expect(has).to.be.false;
+    });
+
+    it("ADMIN_ROLE should be able to revoke DOMAIN_TOKEN_ROLE", async () => {
+      const [ admin ] = adminAccs;
+      const [ { address: newDomainToken } ] = randomAccs;
+      await accessController.connect(admin).grantRole(DOMAIN_TOKEN_ROLE, newDomainToken);
+
+      await accessController.connect(admin).revokeRole(DOMAIN_TOKEN_ROLE, newDomainToken);
+      const has = await accessController.hasRole(DOMAIN_TOKEN_ROLE, newDomainToken);
       expect(has).to.be.false;
     });
 
@@ -157,6 +174,13 @@ describe("ZNSAccessController", () => {
       expect(registrarAdminRole).to.be.equal(EXECUTOR_ROLE);
     });
 
+      it("GOVERNOR_ROLE should be able to assign new EXECUTOR_ROLE as admin for DOMAIN_TOKEN_ROLE", async () => {
+        const [ governor ] = governorAccs;
+        await accessController.connect(governor).setRoleAdmin(DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE);
+  
+        const domainTokenAdminRole = await accessController.getRoleAdmin(DOMAIN_TOKEN_ROLE);
+        expect(domainTokenAdminRole).to.be.equal(EXECUTOR_ROLE);
+      });
     // eslint-disable-next-line max-len
     it("GOVERNOR_ROLE should be able to make himself a new EXECUTOR_ROLE's admin and assign this role to anyone", async () => {
       const [ governor ] = governorAccs;
@@ -192,6 +216,13 @@ describe("ZNSAccessController", () => {
       await accessController.connect(adminAccs[0]).grantRole(REGISTRAR_ROLE, registrar.address);
       const isRegistrar = await accessController.isRegistrar(registrar.address);
       expect(isRegistrar).to.be.true;
+    });
+
+    it("#isDomainToken() should return true for DOMAIN_TOKEN_ROLE", async () => {
+      const [ domainToken ] = randomAccs;
+      await accessController.connect(adminAccs[0]).grantRole(DOMAIN_TOKEN_ROLE, domainToken.address);
+      const isDomainToken = await accessController.isRegistrar(domainToken.address);
+      expect(isDomainToken).to.be.true;
     });
 
     it("#isGovernor() should return true for GOVERNOR_ROLE", async () => {
@@ -230,6 +261,14 @@ describe("ZNSAccessController", () => {
         accessController.connect(random).checkRegistrar(random.address)
       ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
         .withArgs(random.address, REGISTRAR_ROLE);
+    });
+
+    it("Should revert if account does not have DOMAIN_TOKEN_ROLE", async () => {
+      const [ random ] = randomAccs;
+      await expect(
+        accessController.connect(random).checkDomainToken(random.address)
+      ).to.be.revertedWithCustomError(accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, DOMAIN_TOKEN_ROLE);
     });
 
     it("Should revert if account does not have EXECUTOR_ROLE", async () => {
