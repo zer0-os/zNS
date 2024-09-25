@@ -16,8 +16,10 @@ const main = async () => {
   // launch HH script with "--network zchaintest" flag to get this!
   const [deployerZChain] = await hre.ethers.getSigners();
 
-  const bridgeArt = require("./PolygonZkEVMBridgeV2.json");
-  const bridgeContract = new hre.ethers.Contract(zChainTestBridgeAddress, bridgeArt.abi, deployerZChain);
+  // const bridgeArt = require("./PolygonZkEVMBridgeV2.json");
+  // const bridgeContract = new hre.ethers.Contract(zChainTestBridgeAddress, bridgeArt.abi, deployerZChain);
+  const bridgeFactory = await hre.ethers.getContractFactory("PolygonZkEVMBridgeV2", deployerZChain);
+  const bridgeContract = bridgeFactory.attach(zChainTestBridgeAddress) as PolygonZkEVMBridgeV2;
 
   const axio = axios.create({ baseURL: zChainBridgeApiUrl });
   const result = await axio.get(
@@ -75,7 +77,7 @@ const main = async () => {
   console.log("Claim process completed successfully!");
 };
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+// main().catch(error => {
+//   console.error(error);
+//   process.exit(1);
+// });

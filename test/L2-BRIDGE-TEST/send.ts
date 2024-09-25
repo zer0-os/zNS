@@ -31,7 +31,7 @@ const main = async () => {
   console.log("Message bridged successfully!");
 };
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+// main().catch(error => {
+//   console.error(error);
+//   process.exit(1);
+// });

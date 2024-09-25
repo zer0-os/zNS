@@ -37,7 +37,7 @@
     "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
     "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
     "run-meowtestnet": "hardhat run src/deploy/run-campaign.ts --network meowtestnet",
-    "run-gmp": "hardhat run test/L2-BRIDGE-TEST/claim.ts --network zchaintest"
+    "run-gmp": "hardhat run test/L2-BRIDGE-TEST/send.ts --network sepolia"
   },
   "pre-commit": [
     "lint"
@@ -76,8 +76,7 @@
     "solidity-docgen": "^0.6.0-beta.36",
     "ts-node": "10.9.1",
     "typechain": "^8.3.2",
-    "typescript": "^5.0.2",
-    "@zero-tech/zkevm-contracts": "6.0.0-fork-9"
+    "typescript": "^5.0.2"
   },
   "dependencies": {
     "@zero-tech/zdc": "0.1.6",

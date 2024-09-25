@@ -46,7 +46,7 @@ const main = async () => {
   fs.writeFileSync(pathOutputJson, JSON.stringify(outputJson, null, "\t"));
 };
 
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+// main().catch(error => {
+//   console.error(error);
+//   process.exit(1);
+// });
