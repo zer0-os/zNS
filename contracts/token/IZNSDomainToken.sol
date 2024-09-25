@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
+// import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 
 
 

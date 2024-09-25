@@ -174,13 +174,13 @@ describe("ZNSAccessController", () => {
       expect(registrarAdminRole).to.be.equal(EXECUTOR_ROLE);
     });
 
-      it("GOVERNOR_ROLE should be able to assign new EXECUTOR_ROLE as admin for DOMAIN_TOKEN_ROLE", async () => {
-        const [ governor ] = governorAccs;
-        await accessController.connect(governor).setRoleAdmin(DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE);
-  
-        const domainTokenAdminRole = await accessController.getRoleAdmin(DOMAIN_TOKEN_ROLE);
-        expect(domainTokenAdminRole).to.be.equal(EXECUTOR_ROLE);
-      });
+    it("GOVERNOR_ROLE should be able to assign new EXECUTOR_ROLE as admin for DOMAIN_TOKEN_ROLE", async () => {
+      const [ governor ] = governorAccs;
+      await accessController.connect(governor).setRoleAdmin(DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE);
+
+      const domainTokenAdminRole = await accessController.getRoleAdmin(DOMAIN_TOKEN_ROLE);
+      expect(domainTokenAdminRole).to.be.equal(EXECUTOR_ROLE);
+    });
     // eslint-disable-next-line max-len
     it("GOVERNOR_ROLE should be able to make himself a new EXECUTOR_ROLE's admin and assign this role to anyone", async () => {
       const [ governor ] = governorAccs;
@@ -221,7 +221,7 @@ describe("ZNSAccessController", () => {
     it("#isDomainToken() should return true for DOMAIN_TOKEN_ROLE", async () => {
       const [ domainToken ] = randomAccs;
       await accessController.connect(adminAccs[0]).grantRole(DOMAIN_TOKEN_ROLE, domainToken.address);
-      const isDomainToken = await accessController.isRegistrar(domainToken.address);
+      const isDomainToken = await accessController.isDomainToken(domainToken.address);
       expect(isDomainToken).to.be.true;
     });
 

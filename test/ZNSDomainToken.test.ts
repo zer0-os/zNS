@@ -215,23 +215,27 @@ describe("ZNSDomainToken", () => {
 
       expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
-    })
+    });
 
     it("Fails when non-owner tries to transfer through `transferTokenFrom`", async () => {
       // Setup for caller as owner of both
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
 
-      expect(await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
-    })
+      expect(
+        await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
+    });
 
     it("Fails when non-owner tries to transfer through `transferFrom`", async () => {
       // Setup for caller as owner of both
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
 
-      expect(await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
-    })
+      expect(
+        await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
+    });
   });
 
   describe("Require Statement Validation", () => {
