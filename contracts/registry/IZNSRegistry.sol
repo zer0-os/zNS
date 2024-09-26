@@ -81,7 +81,9 @@ interface IZNSRegistry {
         string resolverType
     );
 
-    function initialize(address accessController) external;
+    function initialize(address accessController, bytes32 chainRootHash_) external;
+
+    function CHAIN_ROOT_HASH() external view returns (bytes32);
 
     function exists(bytes32 domainHash) external view returns (bool);
 

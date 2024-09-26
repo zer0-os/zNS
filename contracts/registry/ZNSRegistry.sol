@@ -14,6 +14,9 @@ import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors
  */
 contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
+    // TODO multi: add natspec here to explain what this is
+    bytes32 public CHAIN_ROOT_HASH;
+
     // Mapping of all approved resolvers
     mapping(string resolverType => address resolver) internal resolvers;
 
@@ -60,12 +63,16 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Initializer for the `ZNSRegistry` proxy.
      * @param accessController_ The address of the `ZNSAccessController` contract
-     * @dev ! The owner of the 0x0 hash should be a multisig ideally, but EOA can be used to deploy !
-     * > Admin account deploying the contract will be the owner of the 0x0 hash !
+     * @dev ! The owner of the Chain Root Hash hash should be a multisig ideally, but EOA can be used to deploy !
+     * > Admin account deploying the contract will be the owner of the CHAIN_ROOT_HASH hash !
      */
-    function initialize(address accessController_) external override initializer {
-        records[0x0].owner = msg.sender;
+    function initialize(
+        address accessController_,
+        bytes32 chainRootHash_
+    ) external override initializer {
+        records[chainRootHash_].owner = msg.sender;
         _setAccessController(accessController_);
+        CHAIN_ROOT_HASH = chainRootHash_;
     }
 
     /**
