@@ -60,12 +60,14 @@ export const getConfig = async ({
   admins,
   zeroVaultAddress,
   env, // this is ONLY used for tests!
+  chainRootHash, // this is ONLY used for tests! should be read from the env variable in prod
 } : {
   deployer : SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
+  chainRootHash ?: string;
 }) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
@@ -102,11 +104,20 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
+  let chainRootHashFinal;
+  if (process.env.ENV_LEVEL === "dev") {
+    chainRootHashFinal = chainRootHash || ethers.ZeroHash;
+  } else {
+    requires(!!process.env.CHAIN_ROOT_HASH, "Must provide a Chain Root Hash for 'prod' or 'test' environment");
+    chainRootHashFinal = process.env.CHAIN_ROOT_HASH;
+  }
+
   const config : IZNSCampaignConfig<SignerWithAddress> = {
     env: process.env.ENV_LEVEL!,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
+    chainRootHash: chainRootHashFinal as string,
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,

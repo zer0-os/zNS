@@ -24,7 +24,13 @@ IZNSContracts
   instanceName = znsNames.registry.instance;
 
   async deployArgs () : Promise<TDeployArgs> {
-    const { accessController } = this.campaign;
-    return [ await accessController.getAddress() ];
+    const {
+      accessController,
+      config: {
+        chainRootHash,
+      },
+    } = this.campaign;
+
+    return [ await accessController.getAddress(), chainRootHash ];
   }
 }
