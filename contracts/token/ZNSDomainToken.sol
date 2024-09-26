@@ -9,7 +9,6 @@ import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 
@@ -199,7 +198,7 @@ contract ZNSDomainToken is
      * @param tokenId The token being transferred
      */
     function transferTokenFrom(address from, address to, uint256 tokenId) public override {
-        _transfer(from, to, tokenId);
+        super.transferFrom(from, to, tokenId);
     }
 
     /**
@@ -213,7 +212,7 @@ contract ZNSDomainToken is
         uint256 tokenId
     ) public override(ERC721Upgradeable, IERC721) {
         // Transfer the token
-        _transfer(from, to, tokenId);
+        super.transferFrom(from, to, tokenId);
         
         // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here

@@ -3,9 +3,6 @@ pragma solidity 0.8.26;
 
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
-// import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-
-
 
 interface IZNSDomainToken is IERC2981, IERC721 {
 
@@ -27,6 +24,8 @@ interface IZNSDomainToken is IERC2981, IERC721 {
      * through an external setter and NOT during the registration.
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
+
+    error CallerNotOwner(); 
 
     function initialize(
         address accessController,

@@ -18,6 +18,7 @@ import {
   INITIALIZED_ERR,
   DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION, AC_UNAUTHORIZED_ERR,
   ERC721_NOT_OWNER_ERR,
+  ERC721_NOT_APPROVED_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -196,7 +197,7 @@ describe("ZNSDomainToken", () => {
       expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
 
       // After calling `transferTokenFrom` the reg owner will be the same but the token owner is different
-      await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId);
+      await zns.domainToken.connect(caller).transferTokenFrom(caller.address, deployer.address, tokenId);
 
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
       expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
@@ -222,9 +223,13 @@ describe("ZNSDomainToken", () => {
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
 
-      expect(
-        await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)
-      ).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
+      await expect(
+        zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      // After deployer is approved by caller, transferTokenFrom succeeds
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
     });
 
     it("Fails when non-owner tries to transfer through `transferFrom`", async () => {
@@ -232,9 +237,13 @@ describe("ZNSDomainToken", () => {
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
 
-      expect(
-        await zns.domainToken.connect(deployer).transferTokenFrom(caller.address, deployer.address, tokenId)
-      ).to.be.revertedWith(ERC721_NOT_OWNER_ERR);
+      await expect(
+        zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      // Approve deployer to spend on behalf of caller, then deployer transferFrom passes
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
     });
   });
 

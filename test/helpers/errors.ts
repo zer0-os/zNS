@@ -6,6 +6,7 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 //  if it is, add a new constant here and use it in all tests
 
 export const ERC721_NOT_OWNER_ERR = "ERC721: transfer caller is not owner nor approved";
+export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
 
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
