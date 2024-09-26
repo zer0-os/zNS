@@ -62,7 +62,7 @@
     "@types/chai": "^4.3.11",
     "@types/mocha": "^9.1.0",
     "@types/node": "^18.15.11",
-    "@zero-tech/eslint-config-cpt": "0.2.7",
+    "@zero-tech/eslint-config-cpt": "0.2.8",
     "@zero-tech/ztoken": "2.1.0",
     "chai": "^4.3.10",
     "eslint": "^8.37.0",
