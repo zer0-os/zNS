@@ -7,7 +7,7 @@ orbs:
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: cimg/node:18.20.3
+    - image: cimg/node:20.17.0
     - image: mongo:7.0.0-rc5-jammy
 
 jobs:
