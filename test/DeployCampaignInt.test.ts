@@ -50,6 +50,7 @@ import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
+import { IZTokenConfig } from "../src/deploy/missions/types";
 
 
 const execAsync = promisify(exec);
@@ -115,7 +116,7 @@ describe("Deploy Campaign Test", () => {
       expect(
         await zToken.INITIAL_SUPPLY_BASE()
       ).to.equal(
-        campaignConfig.zTokenConfig.initialSupplyBase
+        (campaignConfig.zTokenConfig as IZTokenConfig).initialSupplyBase
       );
 
       // function, which exist only on mock contract

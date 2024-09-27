@@ -97,7 +97,7 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  let zConfig : IZTokenConfig;
+  let zConfig : IZTokenConfig | undefined;
 
   if (envLevel === "dev") {
     requires(
