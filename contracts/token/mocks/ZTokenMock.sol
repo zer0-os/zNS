@@ -26,4 +26,9 @@ contract ZTokenMock is ZToken {
         _inflationRates,
         _finalInflationRate
     ) {}
+
+    // for tests, to identify mock contract
+    function identifyMock() external pure returns (string memory) {
+        return "This is a mock token";
+    }
 }

@@ -94,7 +94,6 @@ describe("ZNSSubRegistrar", () => {
       ];
       const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
       const userBalanceInitial = totalAdminBalance / BigInt(users.length);
-      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
 
       await Promise.all(
         users.map(async ({ address }) =>
@@ -3007,7 +3006,6 @@ describe("ZNSSubRegistrar", () => {
       ];
       const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
       const userBalanceInitial = totalAdminBalance / BigInt(users.length);
-      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
 
       await Promise.all(
         users.map(async ({ address }) =>
@@ -3523,7 +3521,6 @@ describe("ZNSSubRegistrar", () => {
       ];
       const totalAdminBalance = await zns.zToken.balanceOf(admin.address);
       const userBalanceInitial = totalAdminBalance / BigInt(users.length);
-      await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), totalAdminBalance);
 
       await Promise.all(
         users.map(async ({ address }) =>

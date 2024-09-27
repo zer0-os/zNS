@@ -37,7 +37,6 @@ export const transferBulk = async (
   zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const user of users) {
-    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.zToken.connect(admin).transfer(user.address, amount);
   }
 };

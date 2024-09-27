@@ -25,7 +25,6 @@ import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__fac
 import { registrationWithSetup } from "./helpers/register-setup";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
-import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -51,16 +50,11 @@ describe("ZNSCurvePricer", () => {
       randomAcc,
     ] = await hre.ethers.getSigners();
 
-    const zeroVaultAddress : string = deployer.address;
-    const isTenderlyRun  = false;
-
     zns = await deployZNS({
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [admin.address],
       priceConfig: DEFAULT_PRICE_CONFIG,
-      zeroVaultAddress,
-      isTenderlyRun,
     });
 
     // transfer funds from admin to user

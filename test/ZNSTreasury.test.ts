@@ -68,14 +68,11 @@ describe("ZNSTreasury", () => {
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    // Give funds to user
+    // Give funds to user and deployer. Divide equally to give them the same amount
     const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 3n;
-    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
     await zns.zToken.connect(admin).transfer(user, userBalanceInitial);
-    await zns.zToken.connect(admin).approve(await zns.treasury.getAddress(), userBalanceInitial);
     await zns.zToken.connect(admin).transfer(deployer, userBalanceInitial);
-    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-
 
     // register random domain
     await zns.rootRegistrar.connect(user).registerRootDomain(

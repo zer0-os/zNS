@@ -27,11 +27,11 @@ import {
   FINAL_INFLATION_RATE_DEFAULT,
   INITIAL_SUPPLY_DEFAULT,
   INITIAL_ADMIN_DELAY_DEFAULT,
+  Z_NAME_DEFAULT,
+  Z_SYMBOL_DEFAULT,
 } from "./helpers";
 import {
   ZTokenDM,
-  zTokenName,
-  zTokenSymbol,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
   ZNSCurvePricerDM,
@@ -40,7 +40,7 @@ import {
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { MeowMainnet } from "../src/deploy/missions/contracts/z-token/mainnet-data";
+import { ZSepolia } from "../src/deploy/missions/contracts/z-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
@@ -96,16 +96,32 @@ describe("Deploy Campaign Test", () => {
       const { zToken, dbAdapter } = campaign;
 
       expect(
+        campaignConfig.mockZToken
+      ).to.equal(true);
+
+      expect(
         await zToken.getAddress()
       ).to.properAddress;
 
       expect(
         await zToken.name()
-      ).to.equal("Z-Token");
+      ).to.equal("ZERO Token");
 
       expect(
         await zToken.symbol()
       ).to.equal("Z");
+
+      // one of deploy args
+      expect(
+        await zToken.INITIAL_SUPPLY_BASE()
+      ).to.equal(
+        campaignConfig.zTokenConfig.initialSupplyBase
+      );
+
+      // function, which exist only on mock contract
+      expect(
+        await zToken.identifyMock()
+      ).to.equal("This is a mock token");
 
       await dbAdapter.dropDB();
     });
@@ -116,8 +132,8 @@ describe("Deploy Campaign Test", () => {
       // deploy ZToken contract
       const Factory = await hre.ethers.getContractFactory("ZTokenMock");
       const z = await Factory.deploy(
-        zTokenName,
-        zTokenSymbol,
+        Z_NAME_DEFAULT,
+        Z_SYMBOL_DEFAULT,
         admin.address,
         INITIAL_ADMIN_DELAY_DEFAULT,
         admin.address,
@@ -777,7 +793,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if invalid curve for pricing", async () => {
       process.env.MOCK_Z_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = ZSepolia.address;
       process.env.BASE_LENGTH = "3";
       process.env.MAX_LENGTH = "5";
       process.env.MAX_PRICE = "0";
@@ -799,7 +815,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_Z_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = ZSepolia.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -819,7 +835,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       process.env.MOCK_Z_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = ZSepolia.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -861,7 +877,7 @@ describe("Deploy Campaign Test", () => {
 
       campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
       // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
-      campaignConfig.stakingTokenAddress = MeowMainnet.address;
+      campaignConfig.stakingTokenAddress = ZSepolia.address;
       campaignConfig.postDeploy.tenderlyProjectSlug = "";
 
       campaign = await runZnsCampaign({
@@ -1033,7 +1049,7 @@ describe("Deploy Campaign Test", () => {
         }
       );
       config.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
-      config.stakingTokenAddress = MeowMainnet.address;
+      config.stakingTokenAddress = ZSepolia.address;
       config.postDeploy.tenderlyProjectSlug = "";
       config.postDeploy.verifyContracts = true;
     });

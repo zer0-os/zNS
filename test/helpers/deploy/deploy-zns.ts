@@ -45,11 +45,12 @@ import {
   INITIAL_SUPPLY_DEFAULT,
   INFLATION_RATES_DEFAULT,
   FINAL_INFLATION_RATE_DEFAULT,
+  Z_NAME_DEFAULT,
+  Z_SYMBOL_DEFAULT,
 } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
-import { zTokenName, zTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
 
@@ -176,8 +177,8 @@ export const deployZToken = async (
 ) : Promise<ZTokenMock> => {
   const Factory = new ZTokenMock__factory(deployer);
   const zToken = await Factory.deploy(
-    zTokenName,
-    zTokenSymbol,
+    Z_NAME_DEFAULT,
+    Z_SYMBOL_DEFAULT,
     governorAddresses[0],
     INITIAL_ADMIN_DELAY_DEFAULT,
     deployer.address,
@@ -185,7 +186,7 @@ export const deployZToken = async (
     INITIAL_SUPPLY_DEFAULT,
     INFLATION_RATES_DEFAULT,
     FINAL_INFLATION_RATE_DEFAULT
-  ) as unknown as ZTokenMock;
+  ) as ZTokenMock;
 
   await zToken.waitForDeployment();
   const proxyAddress = await zToken.getAddress();

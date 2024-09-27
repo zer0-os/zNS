@@ -1,20 +1,15 @@
+/* eslint-disable prefer-const */
 import {
   BaseDeployMission,
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../../constants";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { ZToken__factory } from "../../../../../typechain";
-import zArtifact from "../../../../../artifacts/@zero-tech/z-token/contracts/ZToken.sol/ZToken.json";
 import { IZTokenConfig } from "../../types";
-
-
-export const zTokenName = "Z-Token";
-export const zTokenSymbol = "Z";
+import { ZToken__factory } from "../../../../../typechain";
 
 
 export class ZTokenDM extends BaseDeployMission<
@@ -25,7 +20,6 @@ IZNSContracts
 > {
   proxyData = {
     isProxy: false,
-    kind: ProxyKinds.transparent,
   };
 
   contractName = znsNames.zToken.contract;
@@ -85,37 +79,29 @@ IZNSContracts
     }
   }
 
-  getArtifact () {
-    return zArtifact;
-  }
-
-  // it will choose the governon as `admin` argument
-  // and deployAdmin as `minter` and first passed admin as `mintBeneficiary`.
   async deployArgs () : Promise<TDeployArgs> {
-    const {
+    let {
+      name,
+      symbol,
+      defaultAdmin,
       initialAdminDelay,
+      minter,
+      mintBeneficiary,
       initialSupplyBase,
       inflationRates,
       finalInflationRate,
     } = this.config.zTokenConfig as IZTokenConfig;
+
     return [
-      zTokenName,
-      zTokenSymbol,
-      this.config.governorAddresses[0],
+      name,
+      symbol,
+      defaultAdmin,
       initialAdminDelay,
-      this.config.deployAdmin.address,
-      this.config.adminAddresses[0],
+      minter,
+      mintBeneficiary,
       initialSupplyBase,
       inflationRates,
       finalInflationRate,
     ];
-  }
-
-  async needsPostDeploy () {
-    const msg = this.config.ZToken ? "needs" : "doesn't need";
-
-    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
-
-    return this.config.mockZToken;
   }
 }
