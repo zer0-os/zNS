@@ -14,10 +14,10 @@ export const znsNames = {
     contract: "ZNSDomainToken",
     instance: "domainToken",
   },
-  meowToken: {
-    contract: "MeowToken",
-    contractMock: "MeowTokenMock",
-    instance: "meowToken",
+  zToken: {
+    contract: "ZToken",
+    contractMock: "ZTokenMock",
+    instance: "zToken",
   },
   addressResolver: {
     contract: "ZNSAddressResolver",

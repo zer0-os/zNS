@@ -6,7 +6,7 @@ import {
   getLogger,
 } from "@zero-tech/zdc";
 import {
-  MeowTokenDM,
+  ZTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
@@ -50,7 +50,7 @@ export const runZnsCampaign = async ({
       ZNSAccessControllerDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
-      MeowTokenDM,
+      ZTokenDM,
       ZNSAddressResolverDM,
       ZNSCurvePricerDM,
       ZNSTreasuryDM,

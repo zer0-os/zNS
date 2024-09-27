@@ -5,14 +5,13 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
 import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
-  mintBulk,
+  transferBulk,
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
@@ -64,8 +63,6 @@ describe("zNS + zDC Single Integration Test", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.parseEther("10000000");
-
   const domains = [shortDomain, mediumDomain, longDomain];
 
   before(async () => {
@@ -78,7 +75,7 @@ describe("zNS + zDC Single Integration Test", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    config.mockMeowToken = hre.network.name === "hardhat";
+    config.mockZToken = hre.network.name === "hardhat";
 
     // First run the `run-campaign` script, then modify the `MONGO_DB_VERSION` environment variable
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
@@ -119,10 +116,12 @@ describe("zNS + zDC Single Integration Test", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (hre.network.name === "hardhat" && config.mockMeowToken) {
-      await mintBulk(
+    if (hre.network.name === "hardhat" && config.mockZToken) {
+      const userBalanceInitial = await zns.zToken.balanceOf(deployAdmin.address) / BigInt(users.length);
+      await transferBulk(
         users,
-        mintAmount,
+        deployAdmin,
+        userBalanceInitial,
         zns
       );
     }
@@ -198,9 +197,9 @@ describe("zNS + zDC Single Integration Test", () => {
     const subdomains = [paidShortSubdomain, paidMediumSubdomain, paidLongSubdomain];
 
     const balancePromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [
@@ -239,9 +238,9 @@ describe("zNS + zDC Single Integration Test", () => {
     );
 
     const balanceAfterPromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [

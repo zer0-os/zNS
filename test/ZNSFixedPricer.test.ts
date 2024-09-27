@@ -8,14 +8,21 @@ import {
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
+  validateUpgrade,
+  AccessType,
+  AC_UNAUTHORIZED_ERR,
+  FEE_TOO_LARGE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
+import {
+  ZNSFixedPricer__factory,
+  ZNSFixedPricer,
+  ZNSFixedPricerUpgradeMock__factory,
+} from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
 
@@ -45,8 +52,9 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
     const fullConfig = {
       distrConfig: {
@@ -55,7 +63,7 @@ describe("ZNSFixedPricer", () => {
         accessType: AccessType.OPEN,
       },
       paymentConfig: {
-        token: await zns.meowToken.getAddress(),
+        token: await zns.zToken.getAddress(),
         beneficiary: user.address,
       },
       priceConfig: {
@@ -300,8 +308,9 @@ describe("ZNSFixedPricer", () => {
         zeroVaultAddress: zeroVault.address,
       });
 
-      await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-      await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
+      const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 2n;
+      await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+      await zns.zToken.connect(admin).transfer(user.address, userBalanceInitial);
 
       const fullConfig = {
         distrConfig: {
@@ -310,7 +319,7 @@ describe("ZNSFixedPricer", () => {
           accessType: AccessType.OPEN,
         },
         paymentConfig: {
-          token: await zns.meowToken.getAddress(),
+          token: await zns.zToken.getAddress(),
           beneficiary: user.address,
         },
         priceConfig: {
