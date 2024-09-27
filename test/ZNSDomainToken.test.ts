@@ -16,12 +16,15 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INITIALIZED_ERR,
-  DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION, AC_UNAUTHORIZED_ERR,
+  DEFAULT_PERCENTAGE_BASIS, 
+  DEFAULT_ROYALTY_FRACTION,
+  AC_UNAUTHORIZED_ERR,
   ERC721_NOT_APPROVED_ERR,
   ZERO_ADDRESS_ERR,
+  DeployZNSParams,
+  IZNSContractsLocal,
+  getProxyImplAddress
 } from "./helpers";
-import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
-import { getProxyImplAddress } from "./helpers/utils";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
 
