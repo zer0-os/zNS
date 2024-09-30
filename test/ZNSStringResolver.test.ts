@@ -23,7 +23,6 @@ import {
 } from "../typechain";
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { IZNSContractsLocal } from "./helpers/types";
 

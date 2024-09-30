@@ -20,3 +20,6 @@ docker*.tgz
 
 # We don't ever use the generated manifests
 .openzeppelin
+
+# Don't source control log files from deployment
+deploy-*.log
