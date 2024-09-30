@@ -60,7 +60,7 @@ IZNSContracts
     return !isRegistrar;
   }
 
-  async postDeploy () { // TODO add this to ZNSDomainToken as well for perms to update registry domain
+  async postDeploy () {
     const {
       accessController,
       rootRegistrar,

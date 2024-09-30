@@ -3079,7 +3079,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // tranfer token
-      await zns.domainToken.connect(lvl2SubOwner).transferTokenFrom(
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(
         lvl2SubOwner.address,
         lvl3SubOwner.address,
         regResults[1].domainHash
@@ -3328,7 +3328,7 @@ describe("ZNSSubRegistrar", () => {
 
       const { amount: stakedBefore } = await zns.treasury.stakedForDomain(regResults[1].domainHash);
 
-      await zns.domainToken.connect(lvl2SubOwner).transferTokenFrom(
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(
         lvl2SubOwner.address,
         lvl3SubOwner.address,
         tokenId

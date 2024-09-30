@@ -197,7 +197,7 @@ contract ZNSDomainToken is
      * @param to Address to send the token to
      * @param tokenId The token being transferred
      */
-    function transferTokenFrom(address from, address to, uint256 tokenId) public override {
+    function updateTokenOwner(address from, address to, uint256 tokenId) public override {
         super.transferFrom(from, to, tokenId);
     }
 

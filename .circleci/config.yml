@@ -8,13 +8,7 @@ defaults: &defaults
   working_directory: ~/repo
   docker:
     - image: cimg/node:20.17.0
-      auth:
-        username: $DOCKER_HUB_USERNAME
-        password: $DOCKER_HUB_PASSWORD
     - image: mongo:7.0.0-rc5-jammy
-      auth:
-        username: $DOCKER_HUB_USERNAME
-        password: $DOCKER_HUB_PASSWORD
 
 jobs:
   test and coverage:
