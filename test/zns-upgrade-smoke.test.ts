@@ -57,6 +57,7 @@ describe("ZNS Upgrade Smoke Test", () => {
     znsInitial = campaignInitial.state.contracts;
 
     process.env.UPGRADE = "true";
+    resetMongoAdapter();
 
     // make upgrade campaign
     config = await getCampaignConfig({
@@ -73,8 +74,6 @@ describe("ZNS Upgrade Smoke Test", () => {
       signer: config.deployAdmin,
       env: config.env,
     });
-
-    resetMongoAdapter();
 
     dbAdapter = await getZnsMongoAdapter();
 
