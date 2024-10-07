@@ -99,25 +99,17 @@ contract ZNSRootRegistrar is
         name.validate();
 
         // Create hash for given domain name
-        bytes32 chainRoot = registry.CHAIN_ROOT_HASH();
-        bytes32 domainHash = chainRoot == bytes32(0)
-            ? keccak256(bytes(name))
-            : keccak256(
-            abi.encodePacked(
-                chainRoot,
-                keccak256(bytes(name))
-            )
-        );
+        bytes32 domainHash = keccak256(bytes(name));
 
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(chainRoot, name, true);
+        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
 
         _coreRegister(
             CoreRegisterArgs(
-                chainRoot,
+                bytes32(0),
                 domainHash,
                 msg.sender,
                 domainAddress,
@@ -219,7 +211,7 @@ contract ZNSRootRegistrar is
     */
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = rootPricer.getFeeForPrice(registry.CHAIN_ROOT_HASH(), args.price + args.stakeFee);
+        uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -286,7 +278,7 @@ contract ZNSRootRegistrar is
         bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
-            uint256 protocolFee = rootPricer.getFeeForPrice(registry.CHAIN_ROOT_HASH(), stakedAmount);
+            uint256 protocolFee = rootPricer.getFeeForPrice(0x0, stakedAmount);
 
             treasury.unstakeForDomain(domainHash, owner, protocolFee);
             stakeRefunded = true;

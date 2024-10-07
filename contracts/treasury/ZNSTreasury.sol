@@ -24,7 +24,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
     /**
      * @notice The mapping that stores the payment configurations for each domain.
-     * Zero's own configs for root domains is stored under chain root hash.
+     * Zero's own configs for root domains is stored under 0x0 hash.
     */
     mapping(bytes32 domainHash => PaymentConfig config) public override paymentConfigs;
 
@@ -66,7 +66,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         if (paymentToken_ == address(0) || zeroVault_ == address(0))
             revert ZeroAddressPassed();
 
-        paymentConfigs[registry.CHAIN_ROOT_HASH()] = PaymentConfig({
+        paymentConfigs[0x0] = PaymentConfig({
             token: IERC20(paymentToken_),
             beneficiary : zeroVault_
         });
@@ -109,7 +109,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // Transfer registration fee to the Zero Vault from this address
         parentConfig.token.safeTransfer(
-            paymentConfigs[registry.CHAIN_ROOT_HASH()].beneficiary,
+            paymentConfigs[0x0].beneficiary,
             protocolFee
         );
 
@@ -162,7 +162,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         if (protocolFee > 0) {
             stakeData.token.safeTransferFrom(
                 owner,
-                paymentConfigs[registry.CHAIN_ROOT_HASH()].beneficiary,
+                paymentConfigs[0x0].beneficiary,
                 protocolFee
             );
         }
@@ -212,7 +212,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         // Transfer registration fee to the Zero Vault from payer
         parentConfig.token.safeTransferFrom(
             payer,
-            paymentConfigs[registry.CHAIN_ROOT_HASH()].beneficiary,
+            paymentConfigs[0x0].beneficiary,
             protocolFee
         );
 

@@ -6,8 +6,8 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
 /**
- * @notice Stake fee is 0 for anything other than subdomain under a parent with Stake Payment
- * parent hash will be registry.CHAIN_ROOT_HASH for root domain
+ * @notice Stake fee is 0x0 for anything other than subdomain under a parent with Stake Payment
+ * parent hash will be 0x0 for root domain
  */
 struct CoreRegisterArgs {
     bytes32 parentHash;

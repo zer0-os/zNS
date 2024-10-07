@@ -26,7 +26,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
-     * @dev Zero, for pricing root domains, uses this mapping as well under CHAIN_ROOT_HASH hash.
+     * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
     */
     mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
 
@@ -37,7 +37,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Proxy initializer to set the initial state of the contract after deployment.
-     * Only Owner of the CHAIN_ROOT_HASH hash (Zero owned address) can call this function.
+     * Only Owner of the 0x0 hash (Zero owned address) can call this function.
      * @dev > Note the for PriceConfig we set each value individually and calling
      * 2 important functions that validate all of the config's values against the formula:
      * - `setPrecisionMultiplier()` to validate precision multiplier
@@ -54,7 +54,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
-        setPriceConfig(registry.CHAIN_ROOT_HASH(), zeroPriceConfig_);
+        setPriceConfig(0x0, zeroPriceConfig_);
     }
 
     /**

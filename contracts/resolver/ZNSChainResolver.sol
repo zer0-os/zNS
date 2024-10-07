@@ -33,7 +33,7 @@ contract ZNSChainResolver is
         bytes32 domainHash
     ) external view override returns (uint32, string memory, address, string memory) {
         ChainData memory data = chainData[domainHash];
-        return (data.chainId, data.chainName, data.znsRegistryOnChain, data.auxData);
+        return (data.chainID, data.chainName, data.znsRegistryOnChain, data.auxData);
     }
 
     function resolveChainDataStruct(
