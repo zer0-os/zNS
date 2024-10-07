@@ -64,6 +64,7 @@
     "@types/node": "^18.15.11",
     "@zero-tech/eslint-config-cpt": "0.2.8",
     "@zero-tech/ztoken": "2.1.0",
+    "@zero-tech/zkevm-contracts": "6.0.0-fork-9",
     "chai": "^4.3.10",
     "eslint": "^8.37.0",
     "ethers": "^6.9.0",

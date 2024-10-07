@@ -1940,6 +1940,11 @@
     mongodb "^6.3.0"
     winston "^3.11.0"
 
+"@zero-tech/zkevm-contracts@6.0.0-fork-9":
+  version "6.0.0-fork-9"
+  resolved "https://registry.yarnpkg.com/@zero-tech/zkevm-contracts/-/zkevm-contracts-6.0.0-fork-9.tgz#6ef7c889762542562485bf2ba3c6124ea00c0aa2"
+  integrity sha512-iSBm3wEvzkHAnqJYIWJlvIuBU1rKnnI8+IlqHLvz2r+3Ml228KaSNZi0SG8O1DW/oqNnHnMTDZzKv7NPR9wIrQ==
+
 "@zero-tech/ztoken@2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@zero-tech/ztoken/-/ztoken-2.1.0.tgz#71f50b532c258588ade488644fd75d1b8028a256"
