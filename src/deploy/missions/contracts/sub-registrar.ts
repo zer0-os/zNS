@@ -1,18 +1,14 @@
 import {
-  BaseDeployMission,
+  BaseUpgradeMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
 import { znsNames } from "./names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSSubRegistrarDM extends BaseDeployMission<
-HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+export class ZNSSubRegistrarDM extends BaseUpgradeMission<
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

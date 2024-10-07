@@ -34,9 +34,7 @@
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
-    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
-    "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
-    "run-meowtestnet": "hardhat run src/deploy/run-campaign.ts --network meowtestnet"
+    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia"
   },
   "pre-commit": [
     "lint"
@@ -44,7 +42,7 @@
   "devDependencies": {
     "@ensdomains/ensjs": "2.1.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
-    "@nomicfoundation/hardhat-ethers": "^3.0.6",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.8",
@@ -53,7 +51,7 @@
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/contracts-upgradeable-400": "npm:@openzeppelin/contracts-upgradeable@4.0.0",
     "@openzeppelin/defender-sdk": "^1.7.0",
-    "@openzeppelin/hardhat-upgrades": "^3.1.1",
+    "@openzeppelin/hardhat-upgrades": "^3.2.1",
     "@semantic-release/git": "^10.0.1",
     "@tenderly/hardhat-tenderly": "^2.0.1",
     "@typechain/ethers-v6": "^0.5.1",
@@ -61,12 +59,12 @@
     "@types/chai": "^4.3.11",
     "@types/mocha": "^9.1.0",
     "@types/node": "^18.15.11",
-    "@zero-tech/eslint-config-cpt": "0.2.7",
+    "@zero-tech/eslint-config-cpt": "0.2.8",
     "@zero-tech/ztoken": "2.1.0",
     "chai": "^4.3.10",
-    "eslint": "^8.37.0",
-    "ethers": "^6.9.0",
-    "hardhat": "^2.22.6",
+    "eslint": "^8.56.0",
+    "ethers": "^6.13.2",
+    "hardhat": "^2.22.10",
     "hardhat-gas-reporter": "^1.0.9",
     "semantic-release": "^21.0.1",
     "solhint": "^5.0.1",
@@ -77,7 +75,7 @@
     "typescript": "^5.0.2"
   },
   "dependencies": {
-    "@zero-tech/zdc": "0.1.6",
+    "@zero-tech/zdc": "../zDC/zero-tech-zdc-0.1.7.tgz",
     "axios": "^1.4.0",
     "dotenv": "16.0.3",
     "mongodb": "^6.1.0",

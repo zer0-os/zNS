@@ -2,15 +2,11 @@ import {
   BaseDeployMission,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { IZNSContracts, IZNSCampaignConfig } from "../../campaign/types";
 
 
 export class ZNSAccessControllerDM extends BaseDeployMission<
-HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

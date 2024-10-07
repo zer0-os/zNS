@@ -53,7 +53,7 @@ export const approveForParent = async ({
   user,
   domainLabel,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -92,7 +92,7 @@ export const defaultSubdomainRegistration = async ({
   distrConfig,
 } : {
   user : SignerWithAddress;
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
@@ -126,7 +126,7 @@ export const registrationWithSetup = async ({
   fullConfig = fullDistrConfigEmpty,
   setConfigs = true,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;

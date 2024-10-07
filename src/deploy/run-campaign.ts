@@ -1,4 +1,4 @@
-import { getConfig } from "./campaign/environments";
+import { getCampaignConfig } from "./campaign/environments";
 import { runZnsCampaign } from "./zns-campaign";
 import * as hre from "hardhat";
 import { getLogger } from "@zero-tech/zdc";
@@ -10,7 +10,7 @@ const runCampaign = async () => {
 
   const [ deployer ] = await hre.ethers.getSigners();
 
-  const config = await getConfig({
+  const config = await getCampaignConfig({
     deployer: deployer as unknown as SignerWithAddress,
   });
 

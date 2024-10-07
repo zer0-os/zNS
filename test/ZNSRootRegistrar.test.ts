@@ -42,7 +42,7 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
 
@@ -71,7 +71,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    const config = await getConfig({
+    const config = await getCampaignConfig({
       deployer,
       zeroVaultAddress: zeroVault.address,
       governors: [deployer.address, governor.address],

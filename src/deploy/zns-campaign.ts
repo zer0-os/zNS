@@ -1,5 +1,4 @@
 import * as hre from "hardhat";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   HardhatDeployer,
   DeployCampaign,
@@ -13,7 +12,6 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 
 
@@ -22,9 +20,9 @@ export const runZnsCampaign = async ({
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig<SignerWithAddress>;
+  config : IZNSCampaignConfig;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
+  deployer ?: HardhatDeployer;
 }) => {
   hre.upgrades.silenceWarnings();
 
@@ -41,9 +39,7 @@ export const runZnsCampaign = async ({
   const dbAdapter = await getZnsMongoAdapter();
 
   const campaign = new DeployCampaign<
-  HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSCampaignConfig,
   IZNSContracts
   >({
     missions: [

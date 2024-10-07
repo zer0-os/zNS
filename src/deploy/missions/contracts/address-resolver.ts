@@ -1,18 +1,14 @@
 import {
-  BaseDeployMission,
   TDeployArgs,
+  BaseUpgradeMission,
 } from "@zero-tech/zdc";
 import { ProxyKinds, ResolverTypes } from "../../constants";
 import { znsNames } from "./names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 
-export class ZNSAddressResolverDM extends BaseDeployMission<
-HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+export class ZNSAddressResolverDM extends BaseUpgradeMission<
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

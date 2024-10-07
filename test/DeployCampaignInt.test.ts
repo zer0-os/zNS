@@ -38,7 +38,7 @@ import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -59,7 +59,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IZNSCampaignConfig<SignerWithAddress>;
+  let campaignConfig : IZNSCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -74,6 +74,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -197,9 +198,7 @@ describe("Deploy Campaign Test", () => {
       callback,
     } : {
       missionList : Array<TDeployMissionCtor<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -208,16 +207,11 @@ describe("Deploy Campaign Test", () => {
       failingInstanceName : string;
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress
-      >({
+      const deployer = new HardhatDeployer({
         hre,
         signer: deployAdmin,
         env,
@@ -230,9 +224,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       const failingCampaign = new DeployCampaign<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >({
         missions: missionList,
@@ -360,6 +352,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -467,9 +460,7 @@ describe("Deploy Campaign Test", () => {
       ];
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -588,9 +579,7 @@ describe("Deploy Campaign Test", () => {
       ];
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -655,7 +644,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const localConfig : IZNSCampaignConfig = await getCampaignConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -687,7 +676,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const config : IZNSCampaignConfig = await getCampaignConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -749,7 +738,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Throws if env variable is invalid", async () => {
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -766,7 +755,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MOCK_MEOW_TOKEN = "true";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -784,7 +773,7 @@ describe("Deploy Campaign Test", () => {
       process.env.STAKING_TOKEN_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -805,7 +794,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MIN_PRICE = ethers.parseEther("3").toString();
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -827,7 +816,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ROYALTY_FRACTION = "100";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -845,7 +834,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -861,9 +850,7 @@ describe("Deploy Campaign Test", () => {
 
   describe("Versioning", () => {
     let campaign : DeployCampaign<
-    HardhatRuntimeEnvironment,
-    SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
 
@@ -873,6 +860,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -1046,7 +1034,7 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IZNSCampaignConfig<SignerWithAddress>;
+    let config : IZNSCampaignConfig;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
@@ -1054,6 +1042,7 @@ describe("Deploy Campaign Test", () => {
       config = {
         env: "dev",
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -1080,10 +1069,7 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct data for each contract when verifying on Etherscan", async () => {
       const verifyData : Array<{ address : string; ctorArgs ?: TDeployArgs; }> = [];
-      class HardhatDeployerMock extends HardhatDeployer<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress
-      > {
+      class HardhatDeployerMock extends HardhatDeployer {
         async etherscanVerify (args : {
           address : string;
           ctorArgs ?: TDeployArgs;
@@ -1122,10 +1108,7 @@ describe("Deploy Campaign Test", () => {
 
     it("should prepare the correct contract data when pushing to Tenderly Project", async () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
-      class HardhatDeployerMock extends HardhatDeployer<
-      HardhatRuntimeEnvironment,
-      SignerWithAddress
-      > {
+      class HardhatDeployerMock extends HardhatDeployer {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;
         }
@@ -1153,7 +1136,7 @@ describe("Deploy Campaign Test", () => {
         async (acc, instance) => {
           await acc;
 
-          const dbData = await instance.getFromDB();
+          const dbData = await instance.getLatestFromDB();
 
           if (instance.proxyData.isProxy) {
             // check proxy

@@ -1,13 +1,11 @@
 import {
-  BaseDeployMission,
+  BaseUpgradeMission,
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
@@ -17,10 +15,8 @@ export const meowTokenName = "MEOW";
 export const meowTokenSymbol = "MEOW";
 
 
-export class MeowTokenDM extends BaseDeployMission<
-HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+export class MeowTokenDM extends BaseUpgradeMission<
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -32,9 +28,7 @@ IZNSContracts
   instanceName = znsNames.meowToken.instance;
 
   constructor (args : IDeployMissionArgs<
-  HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);

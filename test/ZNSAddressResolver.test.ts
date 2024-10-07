@@ -164,7 +164,6 @@ describe("ZNSAddressResolver", () => {
 
     const address = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(address).to.eq(hre.ethers.ZeroAddress);
-
   });
 
   it("Should resolve address correctly", async () => {

@@ -1,5 +1,3 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
 import {
@@ -16,11 +14,8 @@ import {
 } from "../../../typechain";
 import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
-export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
-export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
-  env : string;
-  deployAdmin : Signer;
+export interface IZNSCampaignConfig extends IDeployCampaignConfig {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -33,11 +28,6 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
-  postDeploy : {
-    tenderlyProjectSlug : string;
-    monitorContracts : boolean;
-    verifyContracts : boolean;
-  };
 }
 
 export type ZNSContract =
@@ -53,7 +43,7 @@ export type ZNSContract =
   ZNSFixedPricer |
   ZNSSubRegistrar;
 
-export interface IZNSContracts extends IContractState<ZNSContract> {
+export interface IZNSContracts extends IContractState {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
