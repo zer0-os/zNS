@@ -24,7 +24,6 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   deployAdmin : Signer;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  chainRootHash : string;
   domainToken : {
     name : string;
     symbol : string;
