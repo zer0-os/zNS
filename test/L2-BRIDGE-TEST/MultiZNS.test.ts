@@ -5,153 +5,307 @@ import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/typ
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import {
-  AccessType,
+  AccessType, DEFAULT_TOKEN_URI,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   NOT_AUTHORIZED_ERR,
-  NOT_OWNER_OF_ERR,
+  NOT_OWNER_OF_ERR, paymentConfigEmpty, PaymentType,
 } from "../helpers";
 import { expect } from "chai";
 import * as ethers from "ethers";
-import { ZNSChainResolver, ZNSChainResolver__factory } from "../../typechain";
+import {
+  PolygonZkEVMBridgeV2Mock,
+  PolygonZkEVMBridgeV2Mock__factory,
+  ZNSChainResolver,
+  ZNSChainResolver__factory, ZNSEthereumPortal,
+  ZNSEthereumPortal__factory, ZNSPolygonZkEvmPortal,
+  ZNSPolygonZkEvmPortal__factory,
+} from "../../typechain";
+import { getDomainHashFromEvent } from "../helpers/events";
 
 
-describe("MultiZNS", () => {
-  let zns : IZNSContracts;
+// TODO multi: move below code to appropriate places
+//  some of these may be optional ??
+export interface IZNSContractsExtended extends IZNSContracts {
+  polyPortal : ZNSPolygonZkEvmPortal;
+  bridgeL1 : PolygonZkEVMBridgeV2Mock;
+  ethPortal : ZNSEthereumPortal;
+  bridgeL2 : PolygonZkEVMBridgeV2Mock;
+}
+
+
+export const NETWORK_ID_L1_DEFAULT = 1n;
+export const NETWORK_ID_L2_DEFAULT = 666n;
+
+export const deployCrossChainContracts = async ({
+  deployer,
+  znsL1,
+  znsL2,
+  networkIdL1 = NETWORK_ID_L1_DEFAULT,
+  networkIdL2 = NETWORK_ID_L2_DEFAULT,
+  wethTokenAddress = hre.ethers.ZeroAddress,
+} : {
+  deployer : SignerWithAddress;
+  znsL1 : IZNSContracts;
+  znsL2 : IZNSContracts;
+  networkIdL1 ?: bigint;
+  networkIdL2 ?: bigint;
+  wethTokenAddress ?: string;
+}) => {
+  const polyPortalFact = new ZNSPolygonZkEvmPortal__factory(deployer);
+  const ethPortalFact = new ZNSEthereumPortal__factory(deployer);
+  const bridgeMockFact = new PolygonZkEVMBridgeV2Mock__factory(deployer);
+
+  const bridgeL1 = await bridgeMockFact.deploy(
+    networkIdL1,
+    wethTokenAddress,
+  );
+  await bridgeL1.waitForDeployment();
+  const bridgeL2 = await bridgeMockFact.deploy(
+    networkIdL2,
+    wethTokenAddress,
+  );
+  await bridgeL2.waitForDeployment();
+
+  const polyPortal = await hre.upgrades.deployProxy(
+    polyPortalFact,
+    [
+      znsL1.accessController.target,
+      networkIdL2,
+      bridgeL1.target,
+      znsL1.rootRegistrar.target,
+      znsL1.subRegistrar.target,
+      znsL1.registry.target,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as unknown as ZNSPolygonZkEvmPortal;
+  await polyPortal.waitForDeployment();
+
+  const ethPortal = await hre.upgrades.deployProxy(
+    ethPortalFact,
+    [
+      znsL2.accessController.target,
+      bridgeL2.target,
+      polyPortal.target,
+      znsL2.rootRegistrar.target,
+      znsL2.subRegistrar.target,
+      znsL2.registry.target,
+      znsL2.registry.target,
+    ],
+    {
+      kind: "uups",
+    }
+  ) as unknown as ZNSEthereumPortal;
+  await ethPortal.waitForDeployment();
+
+  await polyPortal.connect(deployer).setL1PortalAddress(ethPortal.target);
+
+  return {
+    polyPortal,
+    ethPortal,
+    bridgeL1,
+    bridgeL2,
+  };
+};
+
+describe.only("MultiZNS", () => {
+  let znsL1 : IZNSContractsExtended;
+  let znsL2 : IZNSContractsExtended;
 
   let deployAdmin : SignerWithAddress;
-  let registryMock : SignerWithAddress;
 
   let config : IZNSCampaignConfig<SignerWithAddress>;
 
-  const chainDomainLabel = "zchain";
-  let chainDomainHash : string;
+  const rootDomainLabel = "jeffbridges";
+  let rootDomainHash : string;
 
   let chainResolver : ZNSChainResolver;
 
   before(async () => {
-    [ deployAdmin, registryMock ] = await hre.ethers.getSigners();
+    [ deployAdmin ] = await hre.ethers.getSigners();
 
     config = await getConfig({
       deployer: deployAdmin,
       zeroVaultAddress: deployAdmin.address,
     });
 
-    const campaign = await runZnsCampaign({ config });
+    const campaignL1 = await runZnsCampaign({ config });
 
-    zns = campaign.state.contracts;
+    znsL1 = campaignL1.state.contracts;
 
-    await zns.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
-    await zns.meowToken.connect(deployAdmin).approve(zns.treasury.target, ethers.MaxUint256);
+    await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
+    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.treasury.target, ethers.MaxUint256);
 
     // TODO multi: add deploy mission for ChainResolver if decided to leave it!
     const chainResFact = new ZNSChainResolver__factory(deployAdmin);
     chainResolver = await hre.upgrades.deployProxy(
       chainResFact,
       [
-        zns.accessController.target,
-        zns.registry.target,
+        znsL1.accessController.target,
+        znsL1.registry.target,
       ],
       {
         kind: "uups",
       }
     ) as unknown as ZNSChainResolver;
     await chainResolver.waitForDeployment();
+
+    config = await getConfig({
+      deployer: deployAdmin,
+      zeroVaultAddress: deployAdmin.address,
+    });
+
+    // emulating L2 here by deploying to the same network
+    const campaignL2 = await runZnsCampaign({ config });
+
+    znsL2 = campaignL2.state.contracts;
+
+    await znsL2.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
+    await znsL2.meowToken.connect(deployAdmin).approve(znsL2.treasury.target, ethers.MaxUint256);
+
+    const {
+      polyPortal,
+      ethPortal,
+      bridgeL1,
+      bridgeL2,
+    } = await deployCrossChainContracts({
+      deployer: deployAdmin,
+      znsL1,
+      znsL2,
+    });
+
+    znsL1 = {
+      ...znsL1,
+      polyPortal,
+      bridgeL1,
+    };
+
+    znsL2 = {
+      ...znsL2,
+      ethPortal,
+      bridgeL2,
+    };
   });
 
-  describe("Bridging Single Chain Specific Domain", () => {
-    it.only("should register a new root domain for a chain regularly", async () => {
-      chainDomainHash = await registrationWithSetup({
-        zns,
+  describe("Bridge and Register on L1", () => {
+    before(async () => {
+      // register and bridge
+      await znsL1.polyPortal.connect(deployAdmin).registerAndBridgeDomain(
+        hre.ethers.ZeroHash,
+        rootDomainLabel,
+        DEFAULT_TOKEN_URI,
+      );
+      rootDomainHash = await getDomainHashFromEvent({
+        zns: znsL1,
         user: deployAdmin,
-        domainLabel: chainDomainLabel,
-        fullConfig: fullDistrConfigEmpty,
       });
+    });
 
-      // should be LOCKED to not allow any subdomains on L1
-      const { accessType } = await zns.subRegistrar.distrConfigs(chainDomainHash);
-      expect(accessType).to.equal(0n);
-
-      // set ChainResolver ?!?!?!
-      const chainId = 1668201165n;
-      const chainName = "ZChain";
-      const znsRegistryOnChain = registryMock.address;
-      const auxData = "ZChain Root Domain";
-
-      await chainResolver.connect(deployAdmin).setChainData(
-        chainDomainHash,
-        chainId,
-        chainName,
-        znsRegistryOnChain,
-        auxData
+    it("should register and set owners as ZkEvmPortal and fire DomainBridged event", async () => {
+      // check if domain is registered on L1
+      // check events
+      const filter = znsL1.polyPortal.filters.DomainBridged(
+        undefined,
+        undefined,
+        rootDomainHash,
+        undefined,
       );
+      const events = await znsL1.polyPortal.queryFilter(filter);
+      const [event] = events;
+      expect(event.args.domainHash).to.equal(rootDomainHash);
+      expect(event.args.destNetworkId).to.equal(666n);
+      expect(event.args.destPortalAddress).to.equal(znsL2.ethPortal.target);
+      expect(event.args.domainOwner).to.equal(deployAdmin.address);
 
-      // transfer Domain Token to ZNSRegistry. It CAN NOT be transfered back! This is a final immutable operation!
-      await zns.domainToken.connect(deployAdmin).transferFrom(
-        deployAdmin.address,
-        zns.registry.target,
-        BigInt(chainDomainHash)
-      );
+      // check owner and resolver are set properly
+      const {
+        owner: ownerL1,
+        resolver: resolverL1,
+      } = await znsL1.registry.getDomainRecord(rootDomainHash);
+      expect(ownerL1).to.equal(znsL1.polyPortal.target);
+      // TODO multi: unblock below code when logic added to contract
+      // expect(resolverL1).to.equal(chainResolver.target);
 
-      // [AS A LAST OPERATION] change owner to ZNSRegistry to signify that a domain is on another network
-      await zns.registry.connect(deployAdmin).updateDomainOwner(chainDomainHash, zns.registry.target);
+      const tokenOwner = await znsL1.domainToken.ownerOf(BigInt(rootDomainHash));
+      expect(tokenOwner).to.equal(znsL1.polyPortal.target);
+    });
 
-      // make sure no domain related functions are available to the domain creator now
+    it("should set configs as empty", async () => {
+      // should be LOCKED with no configs
+      const distrConfig = await znsL1.subRegistrar.distrConfigs(rootDomainHash);
+      expect(distrConfig.accessType).to.equal(AccessType.LOCKED);
+      expect(distrConfig.paymentType).to.equal(PaymentType.DIRECT);
+      expect(distrConfig.pricerContract).to.equal(hre.ethers.ZeroAddress);
+
+      const paymentConfig = await znsL1.treasury.paymentConfigs(rootDomainHash);
+      expect(paymentConfig.token).to.equal(hre.ethers.ZeroAddress);
+      expect(paymentConfig.beneficiary).to.equal(hre.ethers.ZeroAddress);
+    });
+
+    it("should properly set data in ChainResolver", async () => {
+      // TODO multi: unblock below code when logic added to contract
+      // check resolver data
+      // const resolverData = await chainResolver.resolveChainDataStruct(chainDomainHash);
+      // expect(resolverData.chainId).to.equal(chainId);
+      // expect(resolverData.chainName).to.equal(chainName);
+      // expect(resolverData.znsRegistryOnChain).to.equal(znsRegistryOnChain);
+      // expect(resolverData.auxData).to.equal(auxData);
+    });
+
+    it("should NOT allow owner to access any domain functions after bridge", async () => {
+      // make sure NO domain related functions are available to the domain creator now
       await expect(
-        zns.registry.connect(deployAdmin).updateDomainOwner(
-          chainDomainHash,
+        znsL1.registry.connect(deployAdmin).updateDomainOwner(
+          rootDomainHash,
           deployAdmin.address
         )
-      ).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
+      ).to.be.revertedWithCustomError(znsL1.registry, NOT_AUTHORIZED_ERR);
 
       await expect(
-        zns.addressResolver.connect(deployAdmin).setAddress(
-          chainDomainHash,
+        znsL1.addressResolver.connect(deployAdmin).setAddress(
+          rootDomainHash,
           deployAdmin.address
         )
-      ).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
+      ).to.be.revertedWithCustomError(znsL1.registry, NOT_AUTHORIZED_ERR);
 
       await expect(
-        zns.subRegistrar.connect(deployAdmin).setDistributionConfigForDomain(
-          chainDomainHash,
+        znsL1.subRegistrar.connect(deployAdmin).setDistributionConfigForDomain(
+          rootDomainHash,
           {
             ...distrConfigEmpty,
             accessType: AccessType.OPEN,
           }
         )
-      ).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
+      ).to.be.revertedWithCustomError(znsL1.registry, NOT_AUTHORIZED_ERR);
 
       // can't Revoke or Reclaim domain
       await expect(
-        zns.rootRegistrar.connect(deployAdmin).revokeDomain(chainDomainHash)
-      ).to.be.revertedWithCustomError(zns.rootRegistrar, NOT_OWNER_OF_ERR);
+        znsL1.rootRegistrar.connect(deployAdmin).revokeDomain(rootDomainHash)
+      ).to.be.revertedWithCustomError(znsL1.rootRegistrar, NOT_OWNER_OF_ERR);
 
       await expect(
-        zns.rootRegistrar.connect(deployAdmin).reclaimDomain(chainDomainHash)
-      ).to.be.revertedWithCustomError(zns.rootRegistrar, NOT_OWNER_OF_ERR);
+        znsL1.rootRegistrar.connect(deployAdmin).reclaimDomain(rootDomainHash)
+      ).to.be.revertedWithCustomError(znsL1.rootRegistrar, NOT_OWNER_OF_ERR);
+    });
 
+    it("should NOT allow registration of subdomains", async () => {
       // make sure no one can register subdomains
       await expect(
         registrationWithSetup({
-          zns,
+          zns: znsL1,
           user: deployAdmin,
-          parentHash: chainDomainHash,
+          parentHash: rootDomainHash,
           domainLabel: "test",
           fullConfig: fullDistrConfigEmpty,
         })
-      ).to.be.revertedWithCustomError(zns.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+      ).to.be.revertedWithCustomError(znsL1.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
 
-      const record = await zns.registry.getDomainRecord(chainDomainHash);
-      expect(record.owner).to.equal(zns.registry.target);
-      expect(record.resolver).to.equal(zns.addressResolver.target);
-
-      // check resolver data
-      const resolverData = await chainResolver.resolveChainDataStruct(chainDomainHash);
-      expect(resolverData.chainId).to.equal(chainId);
-      expect(resolverData.chainName).to.equal(chainName);
-      expect(resolverData.znsRegistryOnChain).to.equal(znsRegistryOnChain);
-      expect(resolverData.auxData).to.equal(auxData);
+      const record = await znsL1.registry.getDomainRecord(rootDomainHash);
+      expect(record.owner).to.equal(znsL1.registry.target);
+      expect(record.resolver).to.equal(znsL1.addressResolver.target);
     });
   });
 });
