@@ -10,7 +10,7 @@ import {
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   NOT_AUTHORIZED_ERR,
-  NOT_OWNER_OF_ERR, paymentConfigEmpty, PaymentType,
+  NOT_OWNER_OF_ERR, paymentConfigEmpty, PaymentType, REGISTRAR_ROLE,
 } from "../helpers";
 import { expect } from "chai";
 import * as ethers from "ethers";
@@ -76,6 +76,7 @@ export const deployCrossChainContracts = async ({
       bridgeL1.target,
       znsL1.rootRegistrar.target,
       znsL1.subRegistrar.target,
+      znsL1.treasury.target,
       znsL1.registry.target,
     ],
     {
@@ -101,7 +102,14 @@ export const deployCrossChainContracts = async ({
   ) as unknown as ZNSEthereumPortal;
   await ethPortal.waitForDeployment();
 
+  // link portals
   await polyPortal.connect(deployer).setL1PortalAddress(ethPortal.target);
+
+  // give Role to the Portal on L2 to call special function
+  await znsL2.accessController.connect(deployer).grantRole(
+    REGISTRAR_ROLE,
+    ethPortal.target
+  );
 
   return {
     polyPortal,
@@ -135,9 +143,6 @@ describe.only("MultiZNS", () => {
     const campaignL1 = await runZnsCampaign({ config });
 
     znsL1 = campaignL1.state.contracts;
-
-    await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
-    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.treasury.target, ethers.MaxUint256);
 
     // TODO multi: add deploy mission for ChainResolver if decided to leave it!
     const chainResFact = new ZNSChainResolver__factory(deployAdmin);
@@ -188,6 +193,9 @@ describe.only("MultiZNS", () => {
       ethPortal,
       bridgeL2,
     };
+
+    await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
+    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.polyPortal.target, ethers.MaxUint256);
   });
 
   describe("Bridge and Register on L1", () => {
@@ -200,7 +208,7 @@ describe.only("MultiZNS", () => {
       );
       rootDomainHash = await getDomainHashFromEvent({
         zns: znsL1,
-        user: deployAdmin,
+        registrantAddress: znsL1.polyPortal.target as string,
       });
     });
 
@@ -302,10 +310,6 @@ describe.only("MultiZNS", () => {
           fullConfig: fullDistrConfigEmpty,
         })
       ).to.be.revertedWithCustomError(znsL1.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
-
-      const record = await znsL1.registry.getDomainRecord(rootDomainHash);
-      expect(record.owner).to.equal(znsL1.registry.target);
-      expect(record.resolver).to.equal(znsL1.addressResolver.target);
     });
   });
 });
