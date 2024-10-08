@@ -26,6 +26,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         bytes32 indexed domainHash,
         address indexed domainOwner
     );
+    event L1PortalAddressSet(address newAddress);
 
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
@@ -37,6 +38,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
     // *--| ZNS Data for THIS chain |--*
     IZNSRootRegistrar public rootRegistrar;
     IZNSSubRegistrar public subRegistrar;
+    IZNSTreasury public treasury;
     IZNSRegistry public registry;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -48,26 +50,26 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         address accessController_,
         uint32 networkIdL2_,
         IPolygonZkEVMBridgeV2 zkEvmBridge_,
-        address znsEthPortalL2_,
         IZNSRootRegistrar rootRegistrar_,
         IZNSSubRegistrar subRegistrar_,
+        IZNSTreasury treasury_,
         IZNSRegistry registry_
     ) external initializer {
         _setAccessController(accessController_);
 
         if (
-            zkEvmBridge_ == address(0)
-            | znsEthPortalL2_ == address(0)
-            | address(rootRegistrar_) == address(0)
-            | address(subRegistrar_) == address(0)
-            | address(registry_) == address(0)
+            address(zkEvmBridge_) == address(0)
+            || address(rootRegistrar_) == address(0)
+            || address(subRegistrar_) == address(0)
+            || address(treasury_) == address(0)
+            || address(registry_) == address(0)
         ) revert ZeroAddressPassed();
 
         polygonZkEVMBridge = zkEvmBridge_;
         networkIdL2 = networkIdL2_;
-        znsEthPortalL2 = znsEthPortalL2_;
         rootRegistrar = rootRegistrar_;
         subRegistrar = subRegistrar_;
+        treasury = treasury_;
         registry = registry_;
     }
 
@@ -77,15 +79,15 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         string calldata tokenURI
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
     ) external {
-        DistributionConfig memory emptyDistrConfig = DistributionConfig(
-            IZNSPricer(address(0)),
-            PaymentType.DIRECT,
-            AccessType.LOCKED
-        );
-        PaymentConfig memory emptyPaymentConfig = PaymentConfig(
-            IERC20(address(0)),
-            address(0)
-        );
+        DistributionConfig memory emptyDistrConfig;
+        PaymentConfig memory emptyPaymentConfig;
+
+        // TODO multi: do we actually want to stake on BOTH sides? What other payment option can we do ???!!!
+        // TODO multi: if we leave this option (stake as Portal address) this needs to be optimized!!!
+        // take payment to this contract so it can register
+        uint256 domainPrice = rootRegistrar.rootPricer().getPrice(0x0, label, true);
+        ( IERC20 paymentToken, ) = treasury.paymentConfigs(0x0);
+        paymentToken.transferFrom(msg.sender, address(this), domainPrice);
 
         // Register domain
         bytes32 domainHash;
@@ -111,22 +113,34 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         // TODO multi: should we do that or leave this Agent as the owner ???
         //  DELETER registry from state if this is NOT used !!!
         // set owner as ZNSRegistry on this network
-        registry.updateDomainOwner(domainHash, address(registry));
+//        registry.updateDomainOwner(domainHash, address(registry));
 
         // TODO multi: ADD write record to ChainResolver here !!!
 
         // Bridge domain
-        _bridgeDomain(domainHash, tokenURI);
-    }
-
-    function _bridgeDomain(bytes32 domainHash, string calldata tokenURI) internal {
-        // Create data proof for ZNS on L2
-        RegistrationProof memory proof = RegistrationProof(
-            // we are using msg.sender here because the current caller on L1 will be the owner of the bridged L2 domain
-            msg.sender,
+        _bridgeDomain(
             domainHash,
+            parentHash,
+            label,
             tokenURI
         );
+    }
+
+    function _bridgeDomain(
+        bytes32 domainHash,
+        bytes32 parentHash,
+        string calldata label,
+        string calldata tokenURI
+    ) internal {
+        // Create data proof for ZNS on L2
+        // we are using msg.sender here because the current caller on L1 will be the owner of the bridged L2 domain
+        RegistrationProof memory proof = RegistrationProof({
+            domainOwner: msg.sender,
+            domainHash: domainHash,
+            parentHash: parentHash,
+            label: label,
+            tokenUri: tokenURI
+        });
 
         bytes memory encodedProof = abi.encode(proof);
 
@@ -145,6 +159,14 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
             domainHash,
             msg.sender
         );
+    }
+
+    function setL1PortalAddress(address newAddress) external onlyAdmin {
+        if (newAddress == address(0)) revert ZeroAddressPassed();
+
+        znsEthPortalL2 = newAddress;
+
+        emit L1PortalAddressSet(newAddress);
     }
 
     /**
