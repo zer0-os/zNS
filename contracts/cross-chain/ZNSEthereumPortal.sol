@@ -116,6 +116,8 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         if (domainHash != proof.domainHash)
             revert DomainHashDoesNotMatchBridged(proof.domainHash, domainHash);
 
+        // TODO multi: remove registry owner change if merged after DomainToken transfer changes!
+        //  this should be done automatically by transferring the token!
         // Transfer domain ownership to the address of registrant on L1
         registry.updateDomainOwner(
             proof.domainHash,
