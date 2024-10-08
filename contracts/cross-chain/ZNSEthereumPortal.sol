@@ -94,12 +94,9 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         // Register bridged domain
         bytes32 domainHash;
         if (proof.parentHash == bytes32(0)) {
-            domainHash = rootRegistrar.registerRootDomain(
+            domainHash = rootRegistrar.registerBridgedRootDomain(
                 proof.label,
-                address(0),
-                proof.tokenUri,
-                emptyDistrConfig,
-                emptyPaymentConfig
+                proof.tokenUri
             );
         } else {
             // TODO multi: think on how to best make this work when the parent is not present

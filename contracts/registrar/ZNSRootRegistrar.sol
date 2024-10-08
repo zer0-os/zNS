@@ -77,7 +77,7 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param name Name (label) of the domain to register
+     * @param label Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      * @param tokenURI URI to assign to the Domain Token issued for the domain
      * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
@@ -89,45 +89,39 @@ contract ZNSRootRegistrar is
      *  but all the parameters inside are required.
      */
     function registerRootDomain(
-        string calldata name,
+        string calldata label,
         address domainAddress,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
-        // Confirms string values are only [a-z0-9-]
-        name.validate();
-
-        // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(name));
-
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
-
-        // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
-
-        _coreRegister(
-            CoreRegisterArgs(
-                bytes32(0),
-                domainHash,
-                msg.sender,
-                domainAddress,
-                domainPrice,
-                0,
-                name,
-                tokenURI,
-                true,
-                paymentConfig
-            )
+        return _coreRootRegister(
+            label,
+            domainAddress,
+            tokenURI,
+            distributionConfig,
+            paymentConfig,
+            true
         );
+    }
 
-        if (address(distributionConfig.pricerContract) != address(0)) {
-            // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
-        }
+    // TODO multi: should this function ONLY be on the L2 contract ???
+    function registerBridgedRootDomain(
+        string calldata label,
+        string calldata tokenURI
+    // TODO multi: should we add specific role for the Portal ???
+    ) external onlyRegistrar returns (bytes32) {
+        DistributionConfig memory emptyDistrConfig;
+        PaymentConfig memory emptyPaymentConfig;
 
-        return domainHash;
+        return _coreRootRegister(
+            label,
+            address(0),
+            tokenURI,
+            emptyDistrConfig,
+            emptyPaymentConfig,
+            false
+        );
     }
 
     /**
@@ -150,6 +144,49 @@ contract ZNSRootRegistrar is
         _coreRegister(
             args
         );
+    }
+
+    function _coreRootRegister(
+        string calldata label,
+        address domainAddress,
+        string calldata tokenURI,
+        DistributionConfig memory distributionConfig,
+        PaymentConfig memory paymentConfig,
+        bool payForDomain
+    ) internal returns (bytes32) {
+        // Confirms string values are only [a-z0-9-]
+        label.validate();
+
+        // Create hash for given domain name
+        bytes32 domainHash = keccak256(bytes(label));
+
+        if (registry.exists(domainHash))
+            revert DomainAlreadyExists(domainHash);
+
+        // Get price for the domain
+        uint256 domainPrice = payForDomain ? rootPricer.getPrice(0x0, label, true) : 0;
+
+        _coreRegister(
+            CoreRegisterArgs(
+                bytes32(0),
+                domainHash,
+                msg.sender,
+                domainAddress,
+                domainPrice,
+                0,
+                label,
+                tokenURI,
+                true,
+                paymentConfig
+            )
+        );
+
+        if (address(distributionConfig.pricerContract) != address(0)) {
+            // this adds additional gas to the register tx if passed
+            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+        }
+
+        return domainHash;
     }
 
     /**
