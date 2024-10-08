@@ -172,7 +172,7 @@ export const registrationWithSetup = async ({
   // get hash
   const domainHash = await getDomainHashFromEvent({
     zns,
-    user,
+    registrantAddress: user,
   });
 
   if (!hasConfig) return domainHash;

@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
 import { IZNSContractsLocal } from "./types";
-import { IZNSContracts } from "../../src/deploy/campaign/types";
+import { IZNSContracts, ZNSContract } from "../../src/deploy/campaign/types";
 
 
 export const getDomainRegisteredEvents = async ({
@@ -34,23 +34,22 @@ export const getDomainRegisteredEvents = async ({
 
 export const getDomainHashFromEvent = async ({
   zns,
-  user,
+  registrantAddress,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  registrantAddress : string;
 }) : Promise<string> => {
-  const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
     undefined,
     undefined,
     undefined,
     undefined,
-    user.address,
+    registrantAddress,
     undefined,
   );
 
-  const events = await zns.rootRegistrar.queryFilter(filter, latestBlock - 2, latestBlock);
+  const events = await zns.rootRegistrar.queryFilter(filter);
   const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;
