@@ -169,7 +169,7 @@ describe("ZNSRootRegistrar", () => {
 
     const domainHash = await getDomainHashFromEvent({
       zns,
-      user: deployer,
+      registrantAddress: deployer,
     });
 
     // Registering as deployer (owner of parent) and user is different gas values
@@ -355,7 +355,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
       const tokenId = BigInt(domainHash);
 
@@ -619,7 +619,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       const {
@@ -648,7 +648,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       const {
@@ -688,7 +688,7 @@ describe("ZNSRootRegistrar", () => {
       const namehashRef = hashDomainLabel(defaultDomain);
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       expect(domainHash).to.eq(namehashRef);
@@ -759,7 +759,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       const exists = await zns.registry.exists(domainHash);
@@ -777,7 +777,7 @@ describe("ZNSRootRegistrar", () => {
       const tokenId = BigInt(
         await getDomainHashFromEvent({
           zns,
-          user,
+          registrantAddress: user,
         })
       );
       const owner = await zns.domainToken.ownerOf(tokenId);
@@ -793,7 +793,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
@@ -846,7 +846,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
@@ -880,7 +880,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const tokenId = BigInt(domainHash);
 
@@ -898,7 +898,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       // Reclaim the Domain
       const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
@@ -929,7 +929,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
@@ -973,7 +973,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const tokenId = BigInt(domainHash);
 
@@ -1023,7 +1023,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
@@ -1054,7 +1054,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       // add mintlist to check revocation
@@ -1078,7 +1078,7 @@ describe("ZNSRootRegistrar", () => {
       const tokenId = BigInt(
         await getDomainHashFromEvent({
           zns,
-          user,
+          registrantAddress: user,
         })
       );
 
@@ -1128,7 +1128,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       // Validated staked values
@@ -1167,7 +1167,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const parentDomainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
@@ -1185,7 +1185,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const parentDomainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer,
       });
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
@@ -1210,7 +1210,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user,
       });
 
       // assign an operator

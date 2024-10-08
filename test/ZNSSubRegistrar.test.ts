@@ -2657,7 +2657,7 @@ describe("ZNSSubRegistrar", () => {
 
       const hash = await getDomainHashFromEvent({
         zns,
-        user: lvl5SubOwner,
+        registrantAddress: lvl5SubOwner,
       });
 
       // check registry
@@ -2896,7 +2896,7 @@ describe("ZNSSubRegistrar", () => {
 
       const hash = await getDomainHashFromEvent({
         zns,
-        user: lvl5SubOwner,
+        registrantAddress: lvl5SubOwner,
       });
 
       // check registry
@@ -3651,7 +3651,7 @@ describe("ZNSSubRegistrar", () => {
 
       const subHash = await getDomainHashFromEvent({
         zns,
-        user: lvl2SubOwner,
+        registrantAddress: lvl2SubOwner,
       });
 
       const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);
