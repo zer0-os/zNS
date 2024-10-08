@@ -10,8 +10,9 @@ import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { RegistrationProof } from "../types/CrossChainTypes.sol";
 
 
@@ -85,9 +86,15 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         // TODO multi: do we actually want to stake on BOTH sides? What other payment option can we do ???!!!
         // TODO multi: if we leave this option (stake as Portal address) this needs to be optimized!!!
         // take payment to this contract so it can register
-        uint256 domainPrice = rootRegistrar.rootPricer().getPrice(0x0, label, true);
+        (uint256 domainPrice, uint256 protocolFee) = rootRegistrar.rootPricer().getPriceAndFee(
+            0x0,
+            label,
+            true
+        );
+        uint256 totalCost = domainPrice + protocolFee;
         ( IERC20 paymentToken, ) = treasury.paymentConfigs(0x0);
-        paymentToken.transferFrom(msg.sender, address(this), domainPrice);
+        paymentToken.transferFrom(msg.sender, address(this), totalCost);
+        paymentToken.approve(address(treasury), totalCost);
 
         // Register domain
         bytes32 domainHash;
@@ -126,6 +133,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         );
     }
 
+    // TODO multi: move this lower in the contract
     function _bridgeDomain(
         bytes32 domainHash,
         bytes32 parentHash,
@@ -159,6 +167,15 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
             domainHash,
             msg.sender
         );
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     function setL1PortalAddress(address newAddress) external onlyAdmin {
