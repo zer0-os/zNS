@@ -149,6 +149,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function _setPrice(bytes32 domainHash, uint256 price) internal {
         priceConfigs[domainHash].price = price;
+        priceConfigs[domainHash].isSet = true;
         emit PriceSet(domainHash, price);
     }
 
