@@ -22,7 +22,7 @@ import {
   ZNSEthereumPortal__factory, ZNSPolygonZkEvmPortal,
   ZNSPolygonZkEvmPortal__factory,
 } from "../../typechain";
-import { getDomainHashFromEvent } from "../helpers/events";
+import { getDomainHashFromEvent, getEvents } from "../helpers/events";
 
 
 // TODO multi: move below code to appropriate places
@@ -93,7 +93,7 @@ export const deployCrossChainContracts = async ({
       polyPortal.target,
       znsL2.rootRegistrar.target,
       znsL2.subRegistrar.target,
-      znsL2.registry.target,
+      znsL2.domainToken.target,
       znsL2.registry.target,
     ],
     {
@@ -124,16 +124,28 @@ describe.only("MultiZNS", () => {
   let znsL2 : IZNSContractsExtended;
 
   let deployAdmin : SignerWithAddress;
+  let user : SignerWithAddress;
 
   let config : IZNSCampaignConfig<SignerWithAddress>;
 
   const rootDomainLabel = "jeffbridges";
   let rootDomainHash : string;
 
+  let bridgedEventData : {
+    leafType : bigint;
+    originNetwork : bigint;
+    originAddress : string;
+    destinationNetwork : bigint;
+    destinationAddress : string;
+    amount : bigint;
+    metadata : string;
+    globalIndex : bigint;
+  };
+
   let chainResolver : ZNSChainResolver;
 
   before(async () => {
-    [ deployAdmin ] = await hre.ethers.getSigners();
+    [ deployAdmin, user ] = await hre.ethers.getSigners();
 
     config = await getConfig({
       deployer: deployAdmin,
@@ -196,37 +208,37 @@ describe.only("MultiZNS", () => {
 
     await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
     await znsL1.meowToken.connect(deployAdmin).approve(znsL1.polyPortal.target, ethers.MaxUint256);
+
+    // register and bridge
+    await znsL1.polyPortal.connect(deployAdmin).registerAndBridgeDomain(
+      hre.ethers.ZeroHash,
+      rootDomainLabel,
+      DEFAULT_TOKEN_URI,
+    );
+    rootDomainHash = await getDomainHashFromEvent({
+      zns: znsL1,
+      registrantAddress: znsL1.polyPortal.target as string,
+    });
   });
 
   describe("Bridge and Register on L1", () => {
-    before(async () => {
-      // register and bridge
-      await znsL1.polyPortal.connect(deployAdmin).registerAndBridgeDomain(
-        hre.ethers.ZeroHash,
-        rootDomainLabel,
-        DEFAULT_TOKEN_URI,
-      );
-      rootDomainHash = await getDomainHashFromEvent({
-        zns: znsL1,
-        registrantAddress: znsL1.polyPortal.target as string,
-      });
-    });
-
-    it("should register and set owners as ZkEvmPortal and fire DomainBridged event", async () => {
+    it("should register and set owners as ZkEvmPortal and fire DomainBridged and BridgeEvent events", async () => {
       // check if domain is registered on L1
       // check events
-      const filter = znsL1.polyPortal.filters.DomainBridged(
-        undefined,
-        undefined,
-        rootDomainHash,
-        undefined,
-      );
-      const events = await znsL1.polyPortal.queryFilter(filter);
-      const [event] = events;
+      const [event] = await getEvents({
+        contract: znsL1.polyPortal,
+        eventName: "DomainBridged",
+      });
       expect(event.args.domainHash).to.equal(rootDomainHash);
       expect(event.args.destNetworkId).to.equal(666n);
       expect(event.args.destPortalAddress).to.equal(znsL2.ethPortal.target);
       expect(event.args.domainOwner).to.equal(deployAdmin.address);
+
+      // TODO multi: test these values !!!
+      [ { args: bridgedEventData } ] = await getEvents({
+        contract: znsL1.bridgeL1,
+        eventName: "BridgeEvent",
+      });
 
       // check owner and resolver are set properly
       const {
@@ -310,6 +322,141 @@ describe.only("MultiZNS", () => {
           fullConfig: fullDistrConfigEmpty,
         })
       ).to.be.revertedWithCustomError(znsL1.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+    });
+  });
+
+  describe("Claim Bridged Domain on L2", () => {
+    const dummySmtProof = Array.from({ length: 32 }, () => hre.ethers.randomBytes(32));
+
+    it("should #claimMessage() on the bridge successfully and fire a ClaimEvent", async () => {
+      // call Polygon Zk Evm Bridge to claimMessage
+      await znsL2.bridgeL2.connect(deployAdmin).claimMessage(
+        dummySmtProof,
+        dummySmtProof,
+        bridgedEventData.globalIndex,
+        dummySmtProof[0],
+        dummySmtProof[1],
+        bridgedEventData.originNetwork,
+        bridgedEventData.originAddress,
+        bridgedEventData.destinationNetwork,
+        bridgedEventData.destinationAddress,
+        bridgedEventData.amount,
+        bridgedEventData.metadata,
+      );
+
+      const [event] = await getEvents({
+        contract: znsL2.bridgeL2,
+        eventName: "ClaimEvent",
+      });
+      expect(event.args.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
+      expect(event.args.originAddress).to.equal(znsL1.polyPortal.target);
+      expect(event.args.destinationAddress).to.equal(znsL2.ethPortal.target);
+      expect(event.args.amount).to.equal(0n);
+    });
+
+    it("should register domain on L2, set owners as original L1 caller and fire DomainClaimed event", async () => {
+      // check if domain is registered on L2
+      // check events
+      const [event] = await getEvents({
+        contract: znsL2.ethPortal,
+        eventName: "DomainClaimed",
+      });
+      expect(event.args.srcNetworkId).to.equal(NETWORK_ID_L1_DEFAULT);
+      expect(event.args.srcPortalAddress).to.equal(znsL1.polyPortal.target);
+      expect(event.args.domainHash).to.equal(rootDomainHash);
+      expect(event.args.domainOwner).to.equal(deployAdmin.address);
+
+      // check owner and resolver are set properly
+      const {
+        owner: ownerL2,
+        resolver: resolverL2,
+      } = await znsL2.registry.getDomainRecord(rootDomainHash);
+      expect(ownerL2).to.equal(deployAdmin.address);
+      // TODO multi: unblock below code when logic added to contract
+      // expect(resolverL2).to.equal(chainResolver.target);
+
+      const tokenOwner = await znsL2.domainToken.ownerOf(BigInt(rootDomainHash));
+      expect(tokenOwner).to.equal(deployAdmin.address);
+    });
+
+    it("should set configs as empty and allow original caller to set these configs", async () => {
+      // should be LOCKED with no configs
+      const distrConfig = await znsL2.subRegistrar.distrConfigs(rootDomainHash);
+      expect(distrConfig.accessType).to.equal(AccessType.LOCKED);
+      expect(distrConfig.paymentType).to.equal(PaymentType.DIRECT);
+      expect(distrConfig.pricerContract).to.equal(hre.ethers.ZeroAddress);
+
+      const paymentConfig = await znsL2.treasury.paymentConfigs(rootDomainHash);
+      expect(paymentConfig.token).to.equal(hre.ethers.ZeroAddress);
+      expect(paymentConfig.beneficiary).to.equal(hre.ethers.ZeroAddress);
+
+      // set configs
+      const distrConfigToSet = {
+        accessType: AccessType.OPEN,
+        paymentType: PaymentType.DIRECT,
+        pricerContract: znsL2.fixedPricer.target,
+      };
+      await znsL2.subRegistrar.connect(deployAdmin).setDistributionConfigForDomain(
+        rootDomainHash,
+        distrConfigToSet,
+      );
+
+      const paymentConfigToSet = {
+        token: znsL2.meowToken.target,
+        beneficiary: deployAdmin.address,
+      };
+      await znsL2.treasury.connect(deployAdmin).setPaymentConfig(
+        rootDomainHash,
+        paymentConfigToSet,
+      );
+
+      const priceToSet = 100n;
+      await znsL2.fixedPricer.setPrice(rootDomainHash, priceToSet);
+
+      // check configs are set properly
+      const distrConfigAfter = await znsL2.subRegistrar.distrConfigs(rootDomainHash);
+      expect(distrConfigAfter.accessType).to.equal(distrConfigToSet.accessType);
+      expect(distrConfigAfter.paymentType).to.equal(distrConfigToSet.paymentType);
+      expect(distrConfigAfter.pricerContract).to.equal(distrConfigToSet.pricerContract);
+
+      const paymentConfigAfter = await znsL2.treasury.paymentConfigs(rootDomainHash);
+      expect(paymentConfigAfter.token).to.equal(paymentConfigToSet.token);
+      expect(paymentConfigAfter.beneficiary).to.equal(paymentConfigToSet.beneficiary);
+
+      const priceAfter = await znsL2.fixedPricer.getPrice(rootDomainHash, "test", true);
+      expect(priceAfter).to.equal(priceToSet);
+    });
+
+    it("should allow creating subdomains under the rules of newly set configs", async () => {
+      const subDomainLabel = "test";
+      // make sure subdomains can be registered now
+      const subdomainHash = await registrationWithSetup({
+        zns: znsL2,
+        user: deployAdmin,
+        parentHash: rootDomainHash,
+        domainLabel: subDomainLabel,
+        fullConfig: fullDistrConfigEmpty,
+        domainContent: deployAdmin.address,
+      });
+
+      const [ , event ] = await getEvents({
+        contract: znsL2.rootRegistrar,
+        eventName: "DomainRegistered",
+      });
+      expect(event.args.parentHash).to.equal(rootDomainHash);
+      expect(event.args.domainHash).to.equal(subdomainHash);
+      expect(event.args.label).to.equal(subDomainLabel);
+      expect(event.args.tokenURI).to.equal(DEFAULT_TOKEN_URI);
+      expect(event.args.registrant).to.equal(deployAdmin.address);
+      expect(event.args.domainAddress).to.equal(deployAdmin.address);
+
+      // check if subdomain is registered
+      const record = await znsL2.registry.getDomainRecord(subdomainHash);
+      expect(record.owner).to.equal(deployAdmin.address);
+      expect(record.resolver).to.equal(znsL2.addressResolver.target);
+
+      const tokenOwner = await znsL2.domainToken.ownerOf(BigInt(subdomainHash));
+      expect(tokenOwner).to.equal(deployAdmin.address);
     });
   });
 });
