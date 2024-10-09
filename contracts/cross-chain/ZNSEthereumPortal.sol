@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
@@ -17,7 +18,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 // TODO multi: could this be a better name that implies cross-chain nature ???
-contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionConfig {
+contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionConfig, IBridgeMessageReceiver {
 
     event DomainClaimed(
         uint32 indexed srcNetworkId,
@@ -84,7 +85,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         uint32 originNetwork,
         bytes memory data
     ) external payable {
-        if (msg.sender == address(polygonZkEVMBridge)) revert CalledByInvalidContract(msg.sender);
+        if (msg.sender != address(polygonZkEVMBridge)) revert CalledByInvalidContract(msg.sender);
 
         RegistrationProof memory proof = abi.decode(data, (RegistrationProof));
 
@@ -144,6 +145,15 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         znsZkEvmPortalL1 = newAddress;
 
         emit L2PortalAddressSet(newAddress);
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     /**
