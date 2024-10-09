@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-explicit-any */
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
 import { IZNSContractsLocal } from "./types";
@@ -53,4 +53,18 @@ export const getDomainHashFromEvent = async ({
   const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;
+};
+
+export const getEvents = async ({
+  contract,
+  eventName,
+  args,
+} : {
+  contract : any;
+  eventName : string;
+  args ?: any;
+}) : Promise<Array<TypedEventLog<TypedContractEvent>>> => {
+  const filter = contract.filters[eventName](args);
+
+  return contract.queryFilter(filter);
 };
