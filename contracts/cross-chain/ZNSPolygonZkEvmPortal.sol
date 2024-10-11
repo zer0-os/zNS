@@ -1,42 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IPolygonZkEVMBridgeV2 } from "@zero-tech/zkevm-contracts/contracts/v2/interfaces/IPolygonZkEVMBridgeV2.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IPolygonZkEVMBridgeV2 } from "@zero-tech/zkevm-contracts/contracts/v2/interfaces/IPolygonZkEVMBridgeV2.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
-import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
+import { IZNSPolygonZkEvmPortal } from "./IZNSPolygonZkEvmPortal.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { RegistrationProof } from "../types/CrossChainTypes.sol";
-import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
+import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
 // TODO multi: should this be ZChainPortal as in chain specific contract?
 //  it should ideally work with any ZkEVM chain. why not? we should add networkId and other
 //  chain specific data to as parameters to some functions ???
-contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistributionConfig {
-
-    event DomainBridged(
-        uint32 indexed destNetworkId,
-        address destPortalAddress,
-        bytes32 indexed domainHash,
-        address indexed domainOwner
-    );
-    event L1PortalAddressSet(address newAddress);
-
-    struct DomainData {
-        bytes32 domainHash;
-        uint256 price;
-        uint256 protocolFee;
-        uint256 totalCost;
-    }
-
+contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygonZkEvmPortal {
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
     // Destination chain (L2)
@@ -65,7 +49,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         IZNSTreasury treasury_,
         IZNSChainResolver chainResolver_,
         IZNSRegistry registry_
-    ) external initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
 
         if (
@@ -94,7 +78,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         // TODO multi: do we actually have to pass it here ?? do we support 1 chain in this portal only ???
         string calldata destinationChainName
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
-    ) external {
+    ) external override {
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 
@@ -160,7 +144,23 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         );
     }
 
-    // TODO multi: move this lower in the contract
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function setL1PortalAddress(address newAddress) external override onlyAdmin {
+        if (newAddress == address(0)) revert ZeroAddressPassed();
+
+        znsEthPortalL2 = newAddress;
+
+        emit L1PortalAddressSet(newAddress);
+    }
+
     function _bridgeDomain(
         bytes32 domainHash,
         bytes32 parentHash,
@@ -180,7 +180,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         bytes memory encodedProof = abi.encode(proof);
 
         polygonZkEVMBridge.bridgeMessage(
-            // TODO multi: should this be a parameter to the registerAndBridgeDomain function to work on any chain ???
+        // TODO multi: should this be a parameter to the registerAndBridgeDomain function to work on any chain ???
             networkIdL2,
             znsEthPortalL2,
             // TODO multi: figure out what this is and how to better pass it !!!
@@ -194,23 +194,6 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
             domainHash,
             msg.sender
         );
-    }
-
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
-    function setL1PortalAddress(address newAddress) external onlyAdmin {
-        if (newAddress == address(0)) revert ZeroAddressPassed();
-
-        znsEthPortalL2 = newAddress;
-
-        emit L1PortalAddressSet(newAddress);
     }
 
     /**

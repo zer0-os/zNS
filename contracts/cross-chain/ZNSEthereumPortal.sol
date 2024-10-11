@@ -3,8 +3,8 @@ pragma solidity 0.8.26;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { IZNSEthereumPortal } from "./IZNSEthereumPortal.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 import { RegistrationProof } from "../types/CrossChainTypes.sol";
@@ -12,32 +12,20 @@ import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 // TODO multi: could this be a better name that implies cross-chain nature ???
-contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionConfig, IBridgeMessageReceiver {
-
-    event DomainClaimed(
-        uint32 indexed srcNetworkId,
-        address srcPortalAddress,
-        bytes32 indexed domainHash,
-        address indexed domainOwner
-    );
-    event L2PortalAddressSet(address newAddress);
-
-    // TODO multi: can this be better and have smth like NotPolygonBridge ???
-    error CalledByInvalidContract(address caller);
-    error DomainHashDoesNotMatchBridged(bytes32 bridgedHashL1, bytes32 generatedHashL2);
-
+contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPortal {
     // TODO multi: check that all state vars are needed and remove redundant ones !!!
     // *--| Cross-chain Data |--*
+    // TODO multi: should we keep this exteneded interface ???
     IPolygonZkEVMBridgeV2Ext public polygonZkEVMBridge;
     // This chain
     uint32 public networkId;
     // TODO multi: should this be an Interface Var ???
+    //  figure out better names for these vars !!!
     address public znsZkEvmPortalL1;
 
     // *--| ZNS Data for THIS chain |--*
@@ -59,7 +47,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         IZNSSubRegistrar subRegistrar_,
         IZNSDomainToken domainToken_,
         IZNSRegistry registry_
-    ) external initializer {
+    ) external override initializer {
         _setAccessController(accessController_);
 
         if (
@@ -84,7 +72,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
         address originAddress,
         uint32 originNetwork,
         bytes memory data
-    ) external payable {
+    ) external payable override {
         if (msg.sender != address(polygonZkEVMBridge)) revert CalledByInvalidContract(msg.sender);
 
         RegistrationProof memory proof = abi.decode(data, (RegistrationProof));
