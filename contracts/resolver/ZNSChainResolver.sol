@@ -43,6 +43,7 @@ contract ZNSChainResolver is
         return chainData[domainHash];
     }
 
+    // TODO multi: make this better !!!
     function setChainData(
         bytes32 domainHash,
         uint32 chainID,

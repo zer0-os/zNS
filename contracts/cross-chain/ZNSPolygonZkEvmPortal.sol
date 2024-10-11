@@ -14,6 +14,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { RegistrationProof } from "../types/CrossChainTypes.sol";
+import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
 
 
 // TODO multi: should this be ZChainPortal as in chain specific contract?
@@ -29,6 +30,13 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
     );
     event L1PortalAddressSet(address newAddress);
 
+    struct DomainData {
+        bytes32 domainHash;
+        uint256 price;
+        uint256 protocolFee;
+        uint256 totalCost;
+    }
+
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
     // Destination chain (L2)
@@ -40,6 +48,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
     IZNSRootRegistrar public rootRegistrar;
     IZNSSubRegistrar public subRegistrar;
     IZNSTreasury public treasury;
+    IZNSChainResolver public chainResolver;
     IZNSRegistry public registry;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -54,6 +63,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         IZNSRootRegistrar rootRegistrar_,
         IZNSSubRegistrar subRegistrar_,
         IZNSTreasury treasury_,
+        IZNSChainResolver chainResolver_,
         IZNSRegistry registry_
     ) external initializer {
         _setAccessController(accessController_);
@@ -63,6 +73,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
             || address(rootRegistrar_) == address(0)
             || address(subRegistrar_) == address(0)
             || address(treasury_) == address(0)
+            || address(chainResolver_) == address(0)
             || address(registry_) == address(0)
         ) revert ZeroAddressPassed();
 
@@ -71,13 +82,17 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         rootRegistrar = rootRegistrar_;
         subRegistrar = subRegistrar_;
         treasury = treasury_;
+        chainResolver = chainResolver_;
         registry = registry_;
     }
 
     function registerAndBridgeDomain(
         bytes32 parentHash,
         string calldata label,
-        string calldata tokenURI
+        string calldata tokenURI,
+        uint32 destinationChainId,
+        // TODO multi: do we actually have to pass it here ?? do we support 1 chain in this portal only ???
+        string calldata destinationChainName
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
     ) external {
         DistributionConfig memory emptyDistrConfig;
@@ -86,20 +101,23 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         // TODO multi: do we actually want to stake on BOTH sides? What other payment option can we do ???!!!
         // TODO multi: if we leave this option (stake as Portal address) this needs to be optimized!!!
         // take payment to this contract so it can register
-        (uint256 domainPrice, uint256 protocolFee) = rootRegistrar.rootPricer().getPriceAndFee(
+
+        // TODO multi: optimize this and make it better to not use this struct possibly !!
+        DomainData memory domainData;
+
+        (domainData.price, domainData.protocolFee) = rootRegistrar.rootPricer().getPriceAndFee(
             0x0,
             label,
             true
         );
-        uint256 totalCost = domainPrice + protocolFee;
+        domainData.totalCost = domainData.price + domainData.protocolFee;
         ( IERC20 paymentToken, ) = treasury.paymentConfigs(0x0);
-        paymentToken.transferFrom(msg.sender, address(this), totalCost);
-        paymentToken.approve(address(treasury), totalCost);
+        paymentToken.transferFrom(msg.sender, address(this), domainData.totalCost);
+        paymentToken.approve(address(treasury), domainData.totalCost);
 
         // Register domain
-        bytes32 domainHash;
         if (parentHash == bytes32(0)) { // 0x0 parent for root domains
-            domainHash = rootRegistrar.registerRootDomain(
+            domainData.domainHash = rootRegistrar.registerRootDomain(
                 label,
                 address(0),
                 tokenURI,
@@ -107,7 +125,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
                 emptyPaymentConfig
             );
         } else {
-            domainHash = subRegistrar.registerSubdomain(
+            domainData.domainHash = subRegistrar.registerSubdomain(
                 parentHash,
                 label,
                 address(0),
@@ -122,11 +140,20 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IDistribut
         // set owner as ZNSRegistry on this network
 //        registry.updateDomainOwner(domainHash, address(registry));
 
-        // TODO multi: ADD write record to ChainResolver here !!!
+        // TODO multi: analyze how to make these strings better !!!
+        registry.updateDomainResolver(domainData.domainHash, "chain");
+        // TODO multi: iron out what should go to ChainResolver data !!!
+        chainResolver.setChainData(
+            domainData.domainHash,
+            destinationChainId,
+            destinationChainName,
+            address(0),
+            ""
+        );
 
         // Bridge domain
         _bridgeDomain(
-            domainHash,
+            domainData.domainHash,
             parentHash,
             label,
             tokenURI

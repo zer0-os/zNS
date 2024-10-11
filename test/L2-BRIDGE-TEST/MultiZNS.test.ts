@@ -10,7 +10,7 @@ import {
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   NOT_AUTHORIZED_ERR,
-  NOT_OWNER_OF_ERR, paymentConfigEmpty, PaymentType, REGISTRAR_ROLE,
+  NOT_OWNER_OF_ERR, PaymentType, REGISTRAR_ROLE,
 } from "../helpers";
 import { expect } from "chai";
 import * as ethers from "ethers";
@@ -23,6 +23,7 @@ import {
   ZNSPolygonZkEvmPortal__factory,
 } from "../../typechain";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
+import { AddressLike, ContractTransactionReceipt } from "ethers";
 
 
 // TODO multi: move below code to appropriate places
@@ -41,6 +42,7 @@ export const NETWORK_ID_L2_DEFAULT = 666n;
 export const deployCrossChainContracts = async ({
   deployer,
   znsL1,
+  chainResolverAddressL1,
   znsL2,
   networkIdL1 = NETWORK_ID_L1_DEFAULT,
   networkIdL2 = NETWORK_ID_L2_DEFAULT,
@@ -48,6 +50,7 @@ export const deployCrossChainContracts = async ({
 } : {
   deployer : SignerWithAddress;
   znsL1 : IZNSContracts;
+  chainResolverAddressL1 : AddressLike;
   znsL2 : IZNSContracts;
   networkIdL1 ?: bigint;
   networkIdL2 ?: bigint;
@@ -77,6 +80,7 @@ export const deployCrossChainContracts = async ({
       znsL1.rootRegistrar.target,
       znsL1.subRegistrar.target,
       znsL1.treasury.target,
+      chainResolverAddressL1,
       znsL1.registry.target,
     ],
     {
@@ -132,6 +136,9 @@ describe.only("MultiZNS", () => {
   const subdomainLabel = "beaubridges";
   const subParentLabel = "bridges";
 
+  const zChainID = 336699n;
+  const zChainName = "ZChain";
+
   let rootDomainHash : string;
 
   let bridgedEventData : {
@@ -173,6 +180,9 @@ describe.only("MultiZNS", () => {
     ) as unknown as ZNSChainResolver;
     await chainResolver.waitForDeployment();
 
+    // TODO multi: add constants/enums for Resolver Types and possibly to Registry as well !!!
+    await znsL1.registry.connect(deployAdmin).addResolverType("chain", chainResolver.target);
+
     config = await getConfig({
       deployer: deployAdmin,
       zeroVaultAddress: deployAdmin.address,
@@ -194,6 +204,7 @@ describe.only("MultiZNS", () => {
     } = await deployCrossChainContracts({
       deployer: deployAdmin,
       znsL1,
+      chainResolverAddressL1: chainResolver.target,
       znsL2,
     });
 
@@ -269,11 +280,15 @@ describe.only("MultiZNS", () => {
           }
 
           // register and bridge
-          await znsL1.polyPortal.connect(deployAdmin).registerAndBridgeDomain(
+          const tx = await znsL1.polyPortal.connect(deployAdmin).registerAndBridgeDomain(
             parentHash as string,
             label,
             DEFAULT_TOKEN_URI,
+            zChainID,
+            zChainName,
           );
+          const receipt = await tx.wait() as ContractTransactionReceipt;
+          console.log(`Gas used for ${name} bridging: ${receipt.gasUsed.toString()}`);
 
           domainHash = await getDomainHashFromEvent({
             zns: znsL1,
@@ -283,7 +298,7 @@ describe.only("MultiZNS", () => {
 
         describe("Bridge and Register on L1", () => {
           // eslint-disable-next-line max-len
-          it("should register and set owners as ZkEvmPortal and fire DomainBridged and BridgeEvent events", async () => {
+          it("should register and set owners as ZkEvmPortal and fire DomainBridged and  BridgeEvent events", async () => {
             // check if domain is registered on L1
             // check events
             const events = await getEvents({
@@ -309,8 +324,7 @@ describe.only("MultiZNS", () => {
               resolver: resolverL1,
             } = await znsL1.registry.getDomainRecord(domainHash);
             expect(ownerL1).to.equal(znsL1.polyPortal.target);
-            // TODO multi: unblock below code when logic added to contract
-            // expect(resolverL1).to.equal(chainResolver.target);
+            expect(resolverL1).to.equal(chainResolver.target);
 
             const tokenOwner = await znsL1.domainToken.ownerOf(BigInt(domainHash));
             expect(tokenOwner).to.equal(znsL1.polyPortal.target);
@@ -329,13 +343,11 @@ describe.only("MultiZNS", () => {
           });
 
           it("should properly set data in ChainResolver", async () => {
-            // TODO multi: unblock below code when logic added to contract
-            // check resolver data
-            // const resolverData = await chainResolver.resolveChainDataStruct(chainDomainHash);
-            // expect(resolverData.chainId).to.equal(chainId);
-            // expect(resolverData.chainName).to.equal(chainName);
-            // expect(resolverData.znsRegistryOnChain).to.equal(znsRegistryOnChain);
-            // expect(resolverData.auxData).to.equal(auxData);
+            const chainData = await chainResolver.resolveChainDataStruct(domainHash);
+            expect(chainData.chainId).to.equal(zChainID);
+            expect(chainData.chainName).to.equal(zChainName);
+            expect(chainData.znsRegistryOnChain).to.equal(hre.ethers.ZeroAddress);
+            expect(chainData.auxData).to.equal("");
           });
 
           it("should NOT allow owner to access any domain functions after bridge", async () => {
