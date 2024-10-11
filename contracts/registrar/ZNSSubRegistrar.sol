@@ -91,57 +91,68 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
+        return _coreSubdomainRegister(
+            parentHash,
+            label,
+            domainAddress,
+            tokenURI,
+            distrConfig,
+            paymentConfig,
+            false
+        );
+    }
+
+    function registerBridgedSubdomain(
+        bytes32 parentHash,
+        string calldata label,
+        string calldata tokenURI
+    ) external onlyRegistrar override returns (bytes32) {
+        DistributionConfig memory emptyDistrConfig;
+        PaymentConfig memory emptyPaymentConfig;
+
+        return _coreSubdomainRegister(
+            parentHash,
+            label,
+            address(0),
+            tokenURI,
+            emptyDistrConfig,
+            emptyPaymentConfig,
+            true
+        );
+    }
+
+    function _coreSubdomainRegister(
+        bytes32 parentHash,
+        string calldata label,
+        address domainAddress,
+        string calldata tokenURI,
+        DistributionConfig memory distrConfig,
+        PaymentConfig memory paymentConfig,
+        bool isBridgedDomain
+    ) internal returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
-
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
-
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(parentHash);
-
-        if (parentConfig.accessType == AccessType.MINTLIST) {
-            if (
-                !mintlist[parentHash]
-                    .list
-                    [mintlist[parentHash].ownerIndex]
-                    [msg.sender]
-            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
-        }
-
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: parentHash,
-            domainHash: domainHash,
+            domainHash: 0x0,
             label: label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
             domainAddress: domainAddress,
             tokenURI: tokenURI,
-            isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
+            isStakePayment: false,
             paymentConfig: paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
-            if (coreRegisterArgs.isStakePayment) {
-                (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPriceAndFee(
-                        parentHash,
-                        label,
-                        true
-                    );
-            } else {
-                coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
-                    .getPrice(
-                        parentHash,
-                        label,
-                        true
-                    );
-            }
+        coreRegisterArgs.domainHash = hashWithParent(parentHash, label);
+        if (registry.exists(coreRegisterArgs.domainHash))
+            revert DomainAlreadyExists(coreRegisterArgs.domainHash);
+
+        if (!isBridgedDomain) {
+            // TODO multi: do we need to reassign the return to coreRegisterArgs here ???
+            _checkFillParentData(coreRegisterArgs);
         }
 
         rootRegistrar.coreRegister(coreRegisterArgs);
@@ -152,7 +163,48 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
         }
 
-        return domainHash;
+        return coreRegisterArgs.domainHash;
+    }
+
+    function _checkFillParentData(
+        CoreRegisterArgs memory args
+    ) internal view returns (CoreRegisterArgs memory) {
+        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
+
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(args.parentHash, msg.sender);
+        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
+            revert ParentLockedOrDoesntExist(args.parentHash);
+
+        if (parentConfig.accessType == AccessType.MINTLIST) {
+            if (
+                !mintlist[args.parentHash]
+            .list
+            [mintlist[args.parentHash].ownerIndex]
+            [msg.sender]
+            ) revert SenderNotApprovedForPurchase(args.parentHash, msg.sender);
+        }
+
+        if (!isOwnerOrOperator) {
+            if (parentConfig.paymentType == PaymentType.STAKE) {
+                args.isStakePayment = true;
+
+                (args.price, args.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
+                .getPriceAndFee(
+                    args.parentHash,
+                    args.label,
+                    true
+                );
+            } else {
+                args.price = IZNSPricer(address(parentConfig.pricerContract))
+                    .getPrice(
+                    args.parentHash,
+                    args.label,
+                    true
+                );
+            }
+        }
+
+        return args;
     }
 
     /**
@@ -181,7 +233,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setDistributionConfigForDomain(
         bytes32 domainHash,
-        DistributionConfig calldata config
+        DistributionConfig memory config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();

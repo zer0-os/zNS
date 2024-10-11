@@ -110,7 +110,7 @@ contract ZNSRootRegistrar is
         string calldata label,
         string calldata tokenURI
     // TODO multi: should we add specific role for the Portal ???
-    ) external onlyRegistrar returns (bytes32) {
+    ) external onlyRegistrar override returns (bytes32) {
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 
@@ -152,6 +152,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig memory distributionConfig,
         PaymentConfig memory paymentConfig,
+        // TODO multi: should we change this to `isBridged` ???
         bool payForDomain
     ) internal returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
