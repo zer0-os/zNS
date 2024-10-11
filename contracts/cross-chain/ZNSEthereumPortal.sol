@@ -89,9 +89,6 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
 
         RegistrationProof memory proof = abi.decode(data, (RegistrationProof));
 
-        DistributionConfig memory emptyDistrConfig;
-        PaymentConfig memory emptyPaymentConfig;
-
         // Register bridged domain
         bytes32 domainHash;
         if (proof.parentHash == bytes32(0)) {
@@ -100,16 +97,10 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IDistributionC
                 proof.tokenUri
             );
         } else {
-            // TODO multi: think on how to best make this work when the parent is not present
-            //  on this chain and the checks for it will fail
-            //  maybe make a new function specifically to be registered from here ONLY ???
-            domainHash = subRegistrar.registerSubdomain(
+            domainHash = subRegistrar.registerBridgedSubdomain(
                 proof.parentHash,
                 proof.label,
-                address(0),
-                proof.tokenUri,
-                emptyDistrConfig,
-                emptyPaymentConfig
+                proof.tokenUri
             );
         }
 
