@@ -13,7 +13,7 @@ import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { RegistrationProof } from "../types/CrossChainTypes.sol";
+import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
@@ -82,26 +82,12 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 
-        // TODO multi: do we actually want to stake on BOTH sides? What other payment option can we do ???!!!
-        // TODO multi: if we leave this option (stake as Portal address) this needs to be optimized!!!
-        // take payment to this contract so it can register
-
-        // TODO multi: optimize this and make it better to not use this struct possibly !!
-        DomainData memory domainData;
-
-        (domainData.price, domainData.protocolFee) = rootRegistrar.rootPricer().getPriceAndFee(
-            0x0,
-            label,
-            true
-        );
-        domainData.totalCost = domainData.price + domainData.protocolFee;
-        ( IERC20 paymentToken, ) = treasury.paymentConfigs(0x0);
-        paymentToken.transferFrom(msg.sender, address(this), domainData.totalCost);
-        paymentToken.approve(address(treasury), domainData.totalCost);
+        _processPayment(label, parentHash);
 
         // Register domain
+        bytes32 domainHash;
         if (parentHash == bytes32(0)) { // 0x0 parent for root domains
-            domainData.domainHash = rootRegistrar.registerRootDomain(
+            domainHash = rootRegistrar.registerRootDomain(
                 label,
                 address(0),
                 tokenURI,
@@ -109,7 +95,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
                 emptyPaymentConfig
             );
         } else {
-            domainData.domainHash = subRegistrar.registerSubdomain(
+            domainHash = subRegistrar.registerSubdomain(
                 parentHash,
                 label,
                 address(0),
@@ -119,16 +105,11 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
             );
         }
 
-        // TODO multi: should we do that or leave this Agent as the owner ???
-        //  DELETER registry from state if this is NOT used !!!
-        // set owner as ZNSRegistry on this network
-//        registry.updateDomainOwner(domainHash, address(registry));
-
         // TODO multi: analyze how to make these strings better !!!
-        registry.updateDomainResolver(domainData.domainHash, "chain");
+        registry.updateDomainResolver(domainHash, "chain");
         // TODO multi: iron out what should go to ChainResolver data !!!
         chainResolver.setChainData(
-            domainData.domainHash,
+            domainHash,
             destinationChainId,
             destinationChainName,
             address(0),
@@ -137,7 +118,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
 
         // Bridge domain
         _bridgeDomain(
-            domainData.domainHash,
+            domainHash,
             parentHash,
             label,
             tokenURI
@@ -161,6 +142,42 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
         emit L1PortalAddressSet(newAddress);
     }
 
+    function _processPayment(
+        string calldata label,
+        bytes32 parentHash
+    ) internal {
+        // TODO multi: do we actually want to stake on BOTH sides? What other payment option can we do ???!!!
+        // TODO multi: if we leave this option (stake as Portal address) this needs to be optimized!!!
+        // take payment to this contract so it can register
+
+        uint256 price;
+        uint256 stakeFee;
+        IZNSPricer rootPricer = rootRegistrar.rootPricer();
+        if (parentHash == bytes32(0)) { // Root Domains
+            price = rootPricer.getPrice(
+                parentHash,
+                label,
+                true
+            );
+        } else { // Subdomains
+            (IZNSPricer pricer, PaymentType paymentType,) = subRegistrar.distrConfigs(parentHash);
+            (price, stakeFee) = pricer.getPriceAndFee(
+                parentHash,
+                label,
+                true
+            );
+            stakeFee = paymentType == PaymentType.STAKE ? stakeFee : 0;
+        }
+
+        uint256 protocolFee = rootPricer.getFeeForPrice(bytes32(0), price + stakeFee);
+        uint256 totalCost = price + stakeFee + protocolFee;
+
+        ( IERC20 paymentToken, ) = treasury.paymentConfigs(parentHash);
+        paymentToken.transferFrom(msg.sender, address(this), totalCost);
+
+        paymentToken.approve(address(treasury), totalCost);
+    }
+
     function _bridgeDomain(
         bytes32 domainHash,
         bytes32 parentHash,
@@ -169,7 +186,7 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
     ) internal {
         // Create data proof for ZNS on L2
         // we are using msg.sender here because the current caller on L1 will be the owner of the bridged L2 domain
-        RegistrationProof memory proof = RegistrationProof({
+        BridgedDomain memory proof = BridgedDomain({
             domainOwner: msg.sender,
             domainHash: domainHash,
             parentHash: parentHash,
