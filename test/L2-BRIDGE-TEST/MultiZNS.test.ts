@@ -273,7 +273,6 @@ describe.only("MultiZNS", () => {
             // register root regularly on L1 first
             parentHash = await registrationWithSetup({
               zns: znsL1,
-              // TODO multi: convert this test to use different user from the deployAdmin !!!
               user: deployAdmin,
               domainLabel: subParentLabel,
               fullConfig: {
@@ -319,16 +318,34 @@ describe.only("MultiZNS", () => {
             });
             const event = events[events.length - 1];
             expect(event.args.domainHash).to.equal(domainHash);
-            expect(event.args.destNetworkId).to.equal(666n);
+            expect(event.args.destNetworkId).to.equal(NETWORK_ID_L2_DEFAULT);
             expect(event.args.destPortalAddress).to.equal(znsL2.ethPortal.target);
             expect(event.args.domainOwner).to.equal(user.address);
 
-            // TODO multi: test these values !!!
             const bridgeEvents = await getEvents({
               contract: znsL1.bridgeL1,
               eventName: "BridgeEvent",
             });
             ({ args: bridgedEventData } = bridgeEvents[bridgeEvents.length - 1]);
+
+            const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+            const metadataRef = abiCoder.encode(
+              ["tuple(bytes32,bytes32,string,address,string)"],
+              [[
+                domainHash,
+                parentHash,
+                label,
+                user.address,
+                DEFAULT_TOKEN_URI,
+              ]]
+            );
+
+            expect(bridgedEventData.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
+            expect(bridgedEventData.originAddress).to.equal(znsL1.polyPortal.target);
+            expect(bridgedEventData.destinationNetwork).to.equal(NETWORK_ID_L2_DEFAULT);
+            expect(bridgedEventData.destinationAddress).to.equal(znsL2.ethPortal.target);
+            expect(bridgedEventData.amount).to.equal(0n);
+            expect(bridgedEventData.metadata).to.equal(metadataRef);
 
             // check owner and resolver are set properly
             const {
