@@ -8,9 +8,19 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
+import { IZNSAccessController } from "../access/IZNSAccessController.sol";
 
 
 interface IZNSPolygonZkEvmPortal is IDistributionConfig {
+
+    struct ZNSContractInput {
+        IZNSAccessController accessController;
+        IZNSRootRegistrar rootRegistrar;
+        IZNSSubRegistrar subRegistrar;
+        IZNSTreasury treasury;
+        IZNSChainResolver chainResolver;
+        IZNSRegistry registry;
+    }
 
     event DomainBridged(
         uint32 indexed destNetworkId,
@@ -18,13 +28,17 @@ interface IZNSPolygonZkEvmPortal is IDistributionConfig {
         bytes32 indexed domainHash,
         address indexed domainOwner
     );
-    event L1PortalAddressSet(address newAddress);
+    event DestZnsPortalSet(address newAddress);
 
     function polygonZkEVMBridge() external view returns (IPolygonZkEVMBridgeV2);
 
-    function networkIdL2() external view returns (uint32);
+    function destNetworkId() external view returns (uint32);
 
-    function znsEthPortalL2() external view returns (address);
+    function destChainName() external view returns (string memory);
+
+    function destChainId() external view returns (uint256);
+
+    function destZnsPortal() external view returns (address);
 
     function rootRegistrar() external view returns (IZNSRootRegistrar);
 
@@ -37,23 +51,17 @@ interface IZNSPolygonZkEvmPortal is IDistributionConfig {
     function registry() external view returns (IZNSRegistry);
 
     function initialize(
-        address accessController_,
-        uint32 networkIdL2_,
+        uint32 destNetworkId_,
+        string calldata destChainName_,
+        uint256 destChainId_,
         IPolygonZkEVMBridgeV2 zkEvmBridge_,
-        IZNSRootRegistrar rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_,
-        IZNSTreasury treasury_,
-        IZNSChainResolver chainResolver_,
-        IZNSRegistry registry_
+        ZNSContractInput calldata znsContracts
     ) external;
 
     function registerAndBridgeDomain(
         bytes32 parentHash,
         string calldata label,
-        string calldata tokenURI,
-        uint32 destinationChainId,
-    // TODO multi: do we actually have to pass it here ?? do we support 1 chain in this portal only ???
-        string calldata destinationChainName
+        string calldata tokenURI
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
     ) external;
 
@@ -64,5 +72,5 @@ interface IZNSPolygonZkEvmPortal is IDistributionConfig {
         bytes calldata
     ) external pure returns (bytes4);
 
-    function setL1PortalAddress(address newAddress) external;
+    function setDestZnsPortal(address newAddress) external;
 }

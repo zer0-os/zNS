@@ -17,16 +17,14 @@ import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
-// TODO multi: should this be ZChainPortal as in chain specific contract?
-//  it should ideally work with any ZkEVM chain. why not? we should add networkId and other
-//  chain specific data to as parameters to some functions ???
 contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygonZkEvmPortal {
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
     // Destination chain (L2)
-    uint32 public networkIdL2;
-    // TODO multi: change to interface type (possibly!)
-    address public znsEthPortalL2;
+    uint32 public destNetworkId;
+    string public destChainName;
+    uint256 public destChainId;
+    address public destZnsPortal;
 
     // *--| ZNS Data for THIS chain |--*
     IZNSRootRegistrar public rootRegistrar;
@@ -41,42 +39,38 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
     }
 
     function initialize(
-        address accessController_,
-        uint32 networkIdL2_,
+        uint32 destNetworkId_,
+        string calldata destChainName_,
+        uint256 destChainId_,
         IPolygonZkEVMBridgeV2 zkEvmBridge_,
-        IZNSRootRegistrar rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_,
-        IZNSTreasury treasury_,
-        IZNSChainResolver chainResolver_,
-        IZNSRegistry registry_
+        ZNSContractInput calldata znsContracts
     ) external override initializer {
-        _setAccessController(accessController_);
+        _setAccessController(address(znsContracts.accessController));
 
         if (
             address(zkEvmBridge_) == address(0)
-            || address(rootRegistrar_) == address(0)
-            || address(subRegistrar_) == address(0)
-            || address(treasury_) == address(0)
-            || address(chainResolver_) == address(0)
-            || address(registry_) == address(0)
+            || address(znsContracts.rootRegistrar) == address(0)
+            || address(znsContracts.subRegistrar) == address(0)
+            || address(znsContracts.treasury) == address(0)
+            || address(znsContracts.chainResolver) == address(0)
+            || address(znsContracts.registry) == address(0)
         ) revert ZeroAddressPassed();
 
         polygonZkEVMBridge = zkEvmBridge_;
-        networkIdL2 = networkIdL2_;
-        rootRegistrar = rootRegistrar_;
-        subRegistrar = subRegistrar_;
-        treasury = treasury_;
-        chainResolver = chainResolver_;
-        registry = registry_;
+        destNetworkId = destNetworkId_;
+        destChainName = destChainName_;
+        destChainId = destChainId_;
+        rootRegistrar = znsContracts.rootRegistrar;
+        subRegistrar = znsContracts.subRegistrar;
+        treasury = znsContracts.treasury;
+        chainResolver = znsContracts.chainResolver;
+        registry = znsContracts.registry;
     }
 
     function registerAndBridgeDomain(
         bytes32 parentHash,
         string calldata label,
-        string calldata tokenURI,
-        uint32 destinationChainId,
-        // TODO multi: do we actually have to pass it here ?? do we support 1 chain in this portal only ???
-        string calldata destinationChainName
+        string calldata tokenURI
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
     ) external override {
         DistributionConfig memory emptyDistrConfig;
@@ -110,8 +104,8 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
         // TODO multi: iron out what should go to ChainResolver data !!!
         chainResolver.setChainData(
             domainHash,
-            destinationChainId,
-            destinationChainName,
+            destChainId,
+            destChainName,
             address(0),
             ""
         );
@@ -134,12 +128,12 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
         return this.onERC721Received.selector;
     }
 
-    function setL1PortalAddress(address newAddress) external override onlyAdmin {
+    function setDestZnsPortal(address newAddress) external override onlyAdmin {
         if (newAddress == address(0)) revert ZeroAddressPassed();
 
-        znsEthPortalL2 = newAddress;
+        destZnsPortal = newAddress;
 
-        emit L1PortalAddressSet(newAddress);
+        emit DestZnsPortalSet(newAddress);
     }
 
     function _processPayment(
@@ -198,16 +192,16 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
 
         polygonZkEVMBridge.bridgeMessage(
         // TODO multi: should this be a parameter to the registerAndBridgeDomain function to work on any chain ???
-            networkIdL2,
-            znsEthPortalL2,
+            destNetworkId,
+            destZnsPortal,
             // TODO multi: figure out what this is and how to better pass it !!!
             true,
             encodedProof
         );
 
         emit DomainBridged(
-            networkIdL2,
-            znsEthPortalL2,
+            destNetworkId,
+            destZnsPortal,
             domainHash,
             msg.sender
         );
