@@ -24,6 +24,7 @@ import {
 } from "../../typechain";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
 import { AddressLike, ContractTransactionReceipt } from "ethers";
+import { ResolverTypes } from "../../src/deploy/constants";
 
 
 // TODO multi: move below code to appropriate places
@@ -193,7 +194,7 @@ describe.only("MultiZNS", () => {
     await chainResolver.waitForDeployment();
 
     // TODO multi: add constants/enums for Resolver Types and possibly to Registry as well !!!
-    await znsL1.registry.connect(deployAdmin).addResolverType("chain", chainResolver.target);
+    await znsL1.registry.connect(deployAdmin).addResolverType(ResolverTypes.chain, chainResolver.target);
 
     config = await getConfig({
       deployer: deployAdmin,
@@ -442,9 +443,10 @@ describe.only("MultiZNS", () => {
           const dummySmtProof = Array.from({ length: 32 }, () => hre.ethers.randomBytes(32));
 
           it("should #claimMessage() on the bridge successfully and fire a ClaimEvent", async () => {
-            // call Polygon Zk Evm Bridge to claimMessage
-            // TODO multi: add test to check that anyone can call this for the user !!!
-            await znsL2.bridgeL2.connect(user).claimMessage(
+            // **NOTE** that we connect as `deployAdmin` here to show that it's not
+            // required that this has to be called by the original owner,
+            // it can be called by anyone
+            await znsL2.bridgeL2.connect(deployAdmin).claimMessage(
               dummySmtProof,
               dummySmtProof,
               bridgedEventData.globalIndex,
@@ -492,6 +494,7 @@ describe.only("MultiZNS", () => {
             const tokenOwner = await znsL2.domainToken.ownerOf(BigInt(domainHash));
             expect(tokenOwner).to.equal(user.address);
           });
+
 
           it("should set configs as empty and allow original caller to set these configs", async () => {
             // should be LOCKED with no configs
