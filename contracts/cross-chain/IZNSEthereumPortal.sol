@@ -17,7 +17,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
         bytes32 indexed domainHash,
         address indexed domainOwner
     );
-    event L2PortalAddressSet(address newAddress);
+    event SrcZnsPortalSet(address newAddress);
 
     // TODO multi: can this be better and have smth like NotPolygonBridge ???
     error InvalidCaller(address caller);
@@ -28,7 +28,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
 
     function networkId() external view returns (uint32);
 
-    function znsZkEvmPortalL1() external view returns (address);
+    function srcZnsPortal() external view returns (address);
 
     function rootRegistrar() external view returns (IZNSRootRegistrar);
 
@@ -41,14 +41,14 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
     function initialize(
         address accessController_,
         IPolygonZkEVMBridgeV2Ext zkEvmBridge_,
-        address znsZkEvmPortalL1_,
+        address srcZnsPortal_,
         IZNSRootRegistrar rootRegistrar_,
         IZNSSubRegistrar subRegistrar_,
         IZNSDomainToken domainToken_,
         IZNSRegistry registry_
     ) external;
 
-    function setL2PortalAddress(address newAddress) external;
+    function setSrcZnsPortal(address newAddress) external;
 
     function onERC721Received(
         address,

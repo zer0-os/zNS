@@ -191,7 +191,6 @@ contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygo
         bytes memory encodedProof = abi.encode(proof);
 
         polygonZkEVMBridge.bridgeMessage(
-        // TODO multi: should this be a parameter to the registerAndBridgeDomain function to work on any chain ???
             destNetworkId,
             destZnsPortal,
             // TODO multi: figure out what this is and how to better pass it !!!

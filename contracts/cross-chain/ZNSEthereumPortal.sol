@@ -18,15 +18,13 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 // TODO multi: could this be a better name that implies cross-chain nature ???
 contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPortal {
-    // TODO multi: check that all state vars are needed and remove redundant ones !!!
     // *--| Cross-chain Data |--*
     // TODO multi: should we keep this extended interface ???
     IPolygonZkEVMBridgeV2Ext public polygonZkEVMBridge;
     // This chain
     uint32 public networkId;
-    // TODO multi: should this be an Interface Var ??? it is not used now (delete?) !!!
     //  figure out better names for these vars !!!
-    address public znsZkEvmPortalL1;
+    address public srcZnsPortal;
 
     // *--| ZNS Data for THIS chain |--*
     IZNSRootRegistrar public rootRegistrar;
@@ -42,7 +40,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
     function initialize(
         address accessController_,
         IPolygonZkEVMBridgeV2Ext zkEvmBridge_,
-        address znsZkEvmPortalL1_,
+        address srcZnsPortal_,
         IZNSRootRegistrar rootRegistrar_,
         IZNSSubRegistrar subRegistrar_,
         IZNSDomainToken domainToken_,
@@ -52,7 +50,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
 
         if (
             address(zkEvmBridge_) == address(0)
-            || znsZkEvmPortalL1_ == address(0)
+            || srcZnsPortal_ == address(0)
             || address(rootRegistrar_) == address(0)
             || address(subRegistrar_) == address(0)
             || address(domainToken_) == address(0)
@@ -61,7 +59,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
 
         polygonZkEVMBridge = zkEvmBridge_;
         networkId = polygonZkEVMBridge.networkID();
-        znsZkEvmPortalL1 = znsZkEvmPortalL1_;
+        srcZnsPortal = srcZnsPortal_;
         rootRegistrar = rootRegistrar_;
         subRegistrar = subRegistrar_;
         domainToken = domainToken_;
@@ -74,7 +72,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         bytes memory data
     ) external payable override {
         if (msg.sender != address(polygonZkEVMBridge)) revert InvalidCaller(msg.sender);
-        if (originAddress != znsZkEvmPortalL1) revert InvalidOriginAddress(originAddress);
+        if (originAddress != srcZnsPortal) revert InvalidOriginAddress(originAddress);
 
         BridgedDomain memory proof = abi.decode(data, (BridgedDomain));
 
@@ -119,12 +117,12 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         );
     }
 
-    function setL2PortalAddress(address newAddress) external onlyAdmin {
+    function setSrcZnsPortal(address newAddress) external onlyAdmin {
         if (newAddress == address(0)) revert ZeroAddressPassed();
 
-        znsZkEvmPortalL1 = newAddress;
+        srcZnsPortal = newAddress;
 
-        emit L2PortalAddressSet(newAddress);
+        emit SrcZnsPortalSet(newAddress);
     }
 
     function onERC721Received(
