@@ -39,34 +39,42 @@ export interface IZNSContractsExtended extends IZNSContracts {
 export const NETWORK_ID_L1_DEFAULT = 1n;
 export const NETWORK_ID_L2_DEFAULT = 666n;
 
+const zChainID = 336699n;
+const zChainName = "ZChain";
+
+
 export const deployCrossChainContracts = async ({
   deployer,
   znsL1,
   chainResolverAddressL1,
   znsL2,
-  networkIdL1 = NETWORK_ID_L1_DEFAULT,
-  networkIdL2 = NETWORK_ID_L2_DEFAULT,
+  srcNetworkId = NETWORK_ID_L1_DEFAULT,
+  destNetworkId = NETWORK_ID_L2_DEFAULT,
   wethTokenAddress = hre.ethers.ZeroAddress,
+  destChainName = zChainName,
+  destChainId = zChainID,
 } : {
   deployer : SignerWithAddress;
   znsL1 : IZNSContracts;
   chainResolverAddressL1 : AddressLike;
   znsL2 : IZNSContracts;
-  networkIdL1 ?: bigint;
-  networkIdL2 ?: bigint;
+  srcNetworkId ?: bigint;
+  destNetworkId ?: bigint;
   wethTokenAddress ?: string;
+  destChainName ?: string;
+  destChainId ?: bigint;
 }) => {
   const polyPortalFact = new ZNSPolygonZkEvmPortal__factory(deployer);
   const ethPortalFact = new ZNSEthereumPortal__factory(deployer);
   const bridgeMockFact = new PolygonZkEVMBridgeV2Mock__factory(deployer);
 
   const bridgeL1 = await bridgeMockFact.deploy(
-    networkIdL1,
+    srcNetworkId,
     wethTokenAddress,
   );
   await bridgeL1.waitForDeployment();
   const bridgeL2 = await bridgeMockFact.deploy(
-    networkIdL2,
+    destNetworkId,
     wethTokenAddress,
   );
   await bridgeL2.waitForDeployment();
@@ -74,14 +82,18 @@ export const deployCrossChainContracts = async ({
   const polyPortal = await hre.upgrades.deployProxy(
     polyPortalFact,
     [
-      znsL1.accessController.target,
-      networkIdL2,
+      destNetworkId,
+      destChainName,
+      destChainId,
       bridgeL1.target,
-      znsL1.rootRegistrar.target,
-      znsL1.subRegistrar.target,
-      znsL1.treasury.target,
-      chainResolverAddressL1,
-      znsL1.registry.target,
+      {
+        accessController: znsL1.accessController.target,
+        rootRegistrar: znsL1.rootRegistrar.target,
+        subRegistrar: znsL1.subRegistrar.target,
+        treasury: znsL1.treasury.target,
+        chainResolver: chainResolverAddressL1,
+        registry: znsL1.registry.target,
+      },
     ],
     {
       kind: "uups",
@@ -107,7 +119,7 @@ export const deployCrossChainContracts = async ({
   await ethPortal.waitForDeployment();
 
   // link portals
-  await polyPortal.connect(deployer).setL1PortalAddress(ethPortal.target);
+  await polyPortal.connect(deployer).setDestZnsPortal(ethPortal.target);
 
   // give Role to the Portal on L2 to call special function
   await znsL2.accessController.connect(deployer).grantRole(
@@ -136,9 +148,6 @@ describe.only("MultiZNS", () => {
   const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
   const subParentLabel = "bridges";
-
-  const zChainID = 336699n;
-  const zChainName = "ZChain";
 
   let rootDomainHash : string;
 
@@ -288,9 +297,7 @@ describe.only("MultiZNS", () => {
           const tx = await znsL1.polyPortal.connect(user).registerAndBridgeDomain(
             parentHash as string,
             label,
-            DEFAULT_TOKEN_URI,
-            zChainID,
-            zChainName,
+            DEFAULT_TOKEN_URI
           );
           const receipt = await tx.wait() as ContractTransactionReceipt;
           console.log(`Gas used for ${name} bridging: ${receipt.gasUsed.toString()}`);
