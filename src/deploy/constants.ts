@@ -21,6 +21,10 @@ export const REGISTRAR_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["REGISTRAR_ROLE"],
 );
+export const PORTAL_ROLE = ethers.solidityPackedKeccak256(
+  ["string"],
+  ["PORTAL_ROLE"],
+);
 export const EXECUTOR_ROLE = ethers.solidityPackedKeccak256(
   ["string"],
   ["EXECUTOR_ROLE"],

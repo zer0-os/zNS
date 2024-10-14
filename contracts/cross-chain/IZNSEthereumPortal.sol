@@ -19,7 +19,6 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
     );
     event SrcZnsPortalSet(address newAddress);
 
-    // TODO multi: can this be better and have smth like NotPolygonBridge ???
     error InvalidCaller(address caller);
     error InvalidOriginAddress(address originAddress);
     error DomainHashDoesNotMatchBridged(bytes32 bridgedHashL1, bytes32 generatedHashL2);

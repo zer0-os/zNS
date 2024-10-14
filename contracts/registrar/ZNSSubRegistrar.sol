@@ -106,7 +106,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 parentHash,
         string calldata label,
         string calldata tokenURI
-    ) external onlyRegistrar override returns (bytes32) {
+    ) external override returns (bytes32) {
+        accessController.checkPortal(msg.sender);
+
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 

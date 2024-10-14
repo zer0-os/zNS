@@ -10,7 +10,7 @@ import {
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty, getCurvePrice, getStakingOrProtocolFee,
   NOT_AUTHORIZED_ERR,
-  NOT_OWNER_OF_ERR, PaymentType, REGISTRAR_ROLE,
+  NOT_OWNER_OF_ERR, PaymentType,
 } from "../helpers";
 import { expect } from "chai";
 import * as ethers from "ethers";
@@ -24,7 +24,7 @@ import {
 } from "../../typechain";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
 import { AddressLike, ContractTransactionReceipt } from "ethers";
-import { ResolverTypes } from "../../src/deploy/constants";
+import { PORTAL_ROLE, ResolverTypes } from "../../src/deploy/constants";
 
 
 // TODO multi: move below code to appropriate places
@@ -38,12 +38,13 @@ export interface IZNSContractsExtended extends IZNSContracts {
 
 
 export const NETWORK_ID_L1_DEFAULT = 1n;
-export const NETWORK_ID_L2_DEFAULT = 666n;
+export const NETWORK_ID_L2_DEFAULT = 369n;
 
 const zChainID = 336699n;
 const zChainName = "ZChain";
 
 
+// TODO multi: add this to the Campaign properly !!!
 export const deployCrossChainContracts = async ({
   deployer,
   znsL1,
@@ -124,7 +125,7 @@ export const deployCrossChainContracts = async ({
 
   // give Role to the Portal on L2 to call special function
   await znsL2.accessController.connect(deployer).grantRole(
-    REGISTRAR_ROLE,
+    PORTAL_ROLE,
     ethPortal.target
   );
 
@@ -149,8 +150,6 @@ describe.only("MultiZNS", () => {
   const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
   const subParentLabel = "bridges";
-
-  let rootDomainHash : string;
 
   let balanceBeforeBridge : bigint;
 

@@ -110,7 +110,9 @@ contract ZNSRootRegistrar is
         string calldata label,
         string calldata tokenURI
     // TODO multi: should we add specific role for the Portal ???
-    ) external onlyRegistrar override returns (bytes32) {
+    ) external override returns (bytes32) {
+        accessController.checkPortal(msg.sender);
+
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 

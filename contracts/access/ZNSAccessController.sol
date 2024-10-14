@@ -15,6 +15,7 @@ import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
  * - ADMIN: The main maintainer role, that gets access to all system functions (managed by Governor)
  * - EXECUTOR: Can be here to future proof, if we need a new role (managed by Governor)
  * - REGISTRAR: This role is here specifically for the ZNSRootRegistrar.sol contract (managed by Admin)
+ * - PORTAL: Role for cross-chain Portal contracts that call certain functions on ZNS contracts (managed by Admin)
  *
  * > This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
  * and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.
@@ -34,6 +35,8 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
         // all of the admins control registrar
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
+        // all of the admins control portals
+        _setRoleAdmin(PORTAL_ROLE, ADMIN_ROLE);
     }
 
     // ** Access Validators **
@@ -54,6 +57,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _checkRole(REGISTRAR_ROLE, account);
     }
 
+    function checkPortal(address account) external view override {
+        _checkRole(PORTAL_ROLE, account);
+    }
+
     // "is...()" functions return a boolean
     function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
@@ -65,6 +72,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
 
     function isGovernor(address account) external view override returns (bool) {
         return hasRole(GOVERNOR_ROLE, account);
+    }
+
+    function isPortal(address account) external view override returns (bool) {
+        return hasRole(PORTAL_ROLE, account);
     }
 
     function isExecutor(address account) external view override returns (bool) {
