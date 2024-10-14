@@ -31,7 +31,7 @@ contract ZNSChainResolver is
 
     function resolveChainData(
         bytes32 domainHash
-    ) external view override returns (uint32, string memory, address, string memory) {
+    ) external view override returns (uint256, string memory, address, string memory) {
         ChainData memory data = chainData[domainHash];
         // TODO multi: should we add RootRegistrar that has all ZNS addresses instead of Registry here ???
         return (data.chainId, data.chainName, data.znsRegistryOnChain, data.auxData);
@@ -46,7 +46,7 @@ contract ZNSChainResolver is
     // TODO multi: make this better !!!
     function setChainData(
         bytes32 domainHash,
-        uint32 chainID,
+        uint256 chainID,
         string memory chainName,
         address znsRegistryOnChain,
         string memory auxData

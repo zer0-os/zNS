@@ -5,14 +5,14 @@ pragma solidity 0.8.26;
 interface IZNSChainResolver {
     event ChainDataSet(
         bytes32 indexed domainHash,
-        uint32 chainID,
+        uint256 chainID,
         string chainName,
         address znsRegistryOnChain,
         string auxData
     );
 
     struct ChainData {
-        uint32 chainId;
+        uint256 chainId;
         string chainName;
         address znsRegistryOnChain;
         string auxData;
@@ -22,7 +22,7 @@ interface IZNSChainResolver {
 
     function resolveChainData(
         bytes32 domainHash
-    ) external view returns (uint32, string memory, address, string memory);
+    ) external view returns (uint256, string memory, address, string memory);
 
     function resolveChainDataStruct(
         bytes32 domainHash
@@ -30,7 +30,7 @@ interface IZNSChainResolver {
 
     function setChainData(
         bytes32 domainHash,
-        uint32 chainID,
+        uint256 chainID,
         string memory chainName,
         address znsRegistryOnChain,
         string memory auxData
