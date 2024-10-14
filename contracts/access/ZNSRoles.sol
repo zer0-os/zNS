@@ -23,6 +23,12 @@ abstract contract ZNSRoles {
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
 
     /**
+     * @notice Role for cross-chain contracts of Portal type that can call
+     * certain functions on ZNS contracts.
+     */
+    bytes32 public constant PORTAL_ROLE = keccak256("PORTAL_ROLE");
+
+    /**
      * @notice Executor can be here to future proof, if we need a new role
      * so we don't have to upgrade all contracts
      */

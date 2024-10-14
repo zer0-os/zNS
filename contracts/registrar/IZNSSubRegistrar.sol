@@ -99,6 +99,12 @@ interface IZNSSubRegistrar is IDistributionConfig {
         PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
+    function registerBridgedSubdomain(
+        bytes32 parentHash,
+        string calldata label,
+        string calldata tokenURI
+    ) external returns (bytes32);
+
     function hashWithParent(
         bytes32 parentHash,
         string calldata label

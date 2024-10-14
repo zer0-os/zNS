@@ -28,6 +28,7 @@ import {
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { Addressable } from "ethers";
 
 
 export type Maybe<T> = T | undefined;
@@ -102,13 +103,13 @@ export interface DeployZNSParams {
 }
 
 export interface IDistributionConfig {
-  pricerContract : string;
+  pricerContract : string | Addressable;
   paymentType : bigint;
   accessType : bigint;
 }
 
 export interface IPaymentConfig {
-  token : string;
+  token : string | Addressable;
   beneficiary : string;
 }
 

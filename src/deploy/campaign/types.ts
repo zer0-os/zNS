@@ -14,7 +14,7 @@ import {
   ZNSSubRegistrar,
   ZNSTreasury,
   MeowToken,
-  ZNSStringResolver,
+  ZNSStringResolver, ZNSPolygonZkEvmPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock,
 } from "../../../typechain";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
@@ -53,7 +53,10 @@ export type ZNSContract =
   ZNSTreasury |
   ZNSRootRegistrar |
   ZNSFixedPricer |
-  ZNSSubRegistrar;
+  ZNSSubRegistrar |
+  ZNSPolygonZkEvmPortal |
+  ZNSEthereumPortal |
+  PolygonZkEVMBridgeV2Mock;
 
 export interface IZNSContracts extends IContractState<ZNSContract> {
   accessController : ZNSAccessController;
