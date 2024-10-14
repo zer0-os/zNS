@@ -20,7 +20,8 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
     event L2PortalAddressSet(address newAddress);
 
     // TODO multi: can this be better and have smth like NotPolygonBridge ???
-    error CalledByInvalidContract(address caller);
+    error InvalidCaller(address caller);
+    error InvalidOriginAddress(address originAddress);
     error DomainHashDoesNotMatchBridged(bytes32 bridgedHashL1, bytes32 generatedHashL2);
 
     function polygonZkEVMBridge() external view returns (IPolygonZkEVMBridgeV2Ext);

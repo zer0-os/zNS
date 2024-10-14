@@ -7,7 +7,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IZNSEthereumPortal } from "./IZNSEthereumPortal.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
-import { RegistrationProof } from "../types/CrossChainTypes.sol";
+import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
@@ -20,11 +20,11 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPortal {
     // TODO multi: check that all state vars are needed and remove redundant ones !!!
     // *--| Cross-chain Data |--*
-    // TODO multi: should we keep this exteneded interface ???
+    // TODO multi: should we keep this extended interface ???
     IPolygonZkEVMBridgeV2Ext public polygonZkEVMBridge;
     // This chain
     uint32 public networkId;
-    // TODO multi: should this be an Interface Var ???
+    // TODO multi: should this be an Interface Var ??? it is not used now (delete?) !!!
     //  figure out better names for these vars !!!
     address public znsZkEvmPortalL1;
 
@@ -73,9 +73,10 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         uint32 originNetwork,
         bytes memory data
     ) external payable override {
-        if (msg.sender != address(polygonZkEVMBridge)) revert CalledByInvalidContract(msg.sender);
+        if (msg.sender != address(polygonZkEVMBridge)) revert InvalidCaller(msg.sender);
+        if (originAddress != znsZkEvmPortalL1) revert InvalidOriginAddress(originAddress);
 
-        RegistrationProof memory proof = abi.decode(data, (RegistrationProof));
+        BridgedDomain memory proof = abi.decode(data, (BridgedDomain));
 
         // Register bridged domain
         bytes32 domainHash;

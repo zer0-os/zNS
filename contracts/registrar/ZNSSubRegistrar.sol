@@ -151,7 +151,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             revert DomainAlreadyExists(coreRegisterArgs.domainHash);
 
         if (!isBridgedDomain) {
-            // TODO multi: do we need to reassign the return to coreRegisterArgs here ???
             _checkFillParentData(coreRegisterArgs);
         }
 

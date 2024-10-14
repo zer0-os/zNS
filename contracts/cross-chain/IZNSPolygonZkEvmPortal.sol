@@ -20,13 +20,6 @@ interface IZNSPolygonZkEvmPortal is IDistributionConfig {
     );
     event L1PortalAddressSet(address newAddress);
 
-    struct DomainData {
-        bytes32 domainHash;
-        uint256 price;
-        uint256 protocolFee;
-        uint256 totalCost;
-    }
-
     function polygonZkEVMBridge() external view returns (IPolygonZkEVMBridgeV2);
 
     function networkIdL2() external view returns (uint32);

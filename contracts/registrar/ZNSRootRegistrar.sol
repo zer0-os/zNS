@@ -101,7 +101,7 @@ contract ZNSRootRegistrar is
             tokenURI,
             distributionConfig,
             paymentConfig,
-            true
+            false
         );
     }
 
@@ -120,7 +120,7 @@ contract ZNSRootRegistrar is
             tokenURI,
             emptyDistrConfig,
             emptyPaymentConfig,
-            false
+            true
         );
     }
 
@@ -152,8 +152,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig memory distributionConfig,
         PaymentConfig memory paymentConfig,
-        // TODO multi: should we change this to `isBridged` ???
-        bool payForDomain
+        bool isBridgedDomain
     ) internal returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
@@ -165,7 +164,7 @@ contract ZNSRootRegistrar is
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = payForDomain ? rootPricer.getPrice(0x0, label, true) : 0;
+        uint256 domainPrice = !isBridgedDomain ? rootPricer.getPrice(0x0, label, true) : 0;
 
         _coreRegister(
             CoreRegisterArgs(
