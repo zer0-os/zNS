@@ -41,10 +41,10 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
         address accessController_,
         IPolygonZkEVMBridgeV2Ext zkEvmBridge_,
         address srcZnsPortal_,
-        IZNSRootRegistrar rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_,
+        IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
-        IZNSRegistry registry_
+        IZNSRootRegistrar rootRegistrar_,
+        IZNSSubRegistrar subRegistrar_
     ) external;
 
     function setSrcZnsPortal(address newAddress) external;

@@ -41,10 +41,10 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         address accessController_,
         IPolygonZkEVMBridgeV2Ext zkEvmBridge_,
         address srcZnsPortal_,
-        IZNSRootRegistrar rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_,
+        IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
-        IZNSRegistry registry_
+        IZNSRootRegistrar rootRegistrar_,
+        IZNSSubRegistrar subRegistrar_
     ) external override initializer {
         _setAccessController(accessController_);
 
@@ -68,6 +68,8 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
 
     function onMessageReceived(
         address originAddress,
+        // TODO multi: do we need to add this value to state and validate against it here with a revert ???
+        //  so it can only be called with from one network ???
         uint32 originNetwork,
         bytes memory data
     ) external payable override {
