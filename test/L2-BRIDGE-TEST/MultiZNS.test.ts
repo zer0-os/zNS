@@ -109,10 +109,10 @@ export const deployCrossChainContracts = async ({
       znsL2.accessController.target,
       bridgeL2.target,
       zPortal.target,
+      znsL2.registry.target,
+      znsL2.domainToken.target,
       znsL2.rootRegistrar.target,
       znsL2.subRegistrar.target,
-      znsL2.domainToken.target,
-      znsL2.registry.target,
     ],
     {
       kind: "uups",
@@ -307,6 +307,7 @@ describe.only("MultiZNS", () => {
           });
         });
 
+        // TODO multi: test all reverts and failures properly !!!
         describe("Bridge and Register on L1", () => {
           // eslint-disable-next-line max-len
           it("should register and set owners as ZkEvmPortal and fire DomainBridged and BridgeEvent events", async () => {
