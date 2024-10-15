@@ -14,7 +14,7 @@ import {
   ZNSSubRegistrar,
   ZNSTreasury,
   MeowToken,
-  ZNSStringResolver, ZNSPolygonZkEvmPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock,
+  ZNSStringResolver, ZNSZChainPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock, ZNSChainResolver,
 } from "../../../typechain";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
@@ -34,6 +34,12 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
+  crosschain : {
+    destNetworkId : bigint;
+    destChainName : string;
+    destChainId : bigint;
+    srcZkEvmBridge ?: string;
+  };
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -49,12 +55,13 @@ export type ZNSContract =
   MeowToken |
   ZNSAddressResolver |
   ZNSStringResolver |
+  ZNSChainResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
   ZNSFixedPricer |
   ZNSSubRegistrar |
-  ZNSPolygonZkEvmPortal |
+  ZNSZChainPortal |
   ZNSEthereumPortal |
   PolygonZkEVMBridgeV2Mock;
 
@@ -65,9 +72,12 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
   stringResolver : ZNSStringResolver;
+  chainResolver : ZNSChainResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
+  zPortal : ZNSZChainPortal;
+  ethPortal : ZNSEthereumPortal;
 }
