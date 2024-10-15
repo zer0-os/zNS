@@ -15,11 +15,11 @@ interface IZNSZChainPortal is IDistributionConfig {
 
     struct ZNSContractInput {
         IZNSAccessController accessController;
+        IZNSRegistry registry;
+        IZNSChainResolver chainResolver;
+        IZNSTreasury treasury;
         IZNSRootRegistrar rootRegistrar;
         IZNSSubRegistrar subRegistrar;
-        IZNSTreasury treasury;
-        IZNSChainResolver chainResolver;
-        IZNSRegistry registry;
     }
 
     event DomainBridged(
