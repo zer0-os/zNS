@@ -6,6 +6,7 @@ import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
 
 
+// TODO multi: figure out how to set EthereumPortal address on this contract after that is deployed !!!
 export class ZChainPortalDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,

@@ -38,7 +38,9 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
     destNetworkId : bigint;
     destChainName : string;
     destChainId : bigint;
+    destZkEvmBridge ?: string;
     srcZkEvmBridge ?: string;
+    srcZnsPortal : string;
   };
   postDeploy : {
     tenderlyProjectSlug : string;

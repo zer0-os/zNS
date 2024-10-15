@@ -55,6 +55,10 @@ export const znsNames = {
     contract: "ZNSZChainPortal",
     instance: "zPortal",
   },
+  ethPortal: {
+    contract: "ZNSEthereumPortal",
+    instance: "ethPortal",
+  },
   erc1967Proxy: {
     contract: erc1967ProxyName,
     instance: "erc1967Proxy",
