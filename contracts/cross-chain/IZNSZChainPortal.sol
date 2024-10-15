@@ -11,7 +11,7 @@ import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
 import { IZNSAccessController } from "../access/IZNSAccessController.sol";
 
 
-interface IZNSPolygonZkEvmPortal is IDistributionConfig {
+interface IZNSZChainPortal is IDistributionConfig {
 
     struct ZNSContractInput {
         IZNSAccessController accessController;

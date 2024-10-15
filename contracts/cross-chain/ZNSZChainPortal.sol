@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IPolygonZkEVMBridgeV2 } from "@zero-tech/zkevm-contracts/contracts/v2/interfaces/IPolygonZkEVMBridgeV2.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { IZNSPolygonZkEvmPortal } from "./IZNSPolygonZkEvmPortal.sol";
+import { IZNSZChainPortal } from "./IZNSZChainPortal.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
@@ -17,7 +17,7 @@ import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
-contract ZNSPolygonZkEvmPortal is UUPSUpgradeable, AAccessControlled, IZNSPolygonZkEvmPortal {
+contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal {
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
     // Destination chain (L2)

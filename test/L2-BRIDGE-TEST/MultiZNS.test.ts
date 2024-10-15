@@ -20,7 +20,7 @@ import {
   ZNSChainResolver,
   ZNSChainResolver__factory, ZNSEthereumPortal,
   ZNSEthereumPortal__factory, ZNSPolygonZkEvmPortal,
-  ZNSPolygonZkEvmPortal__factory,
+  ZNSZChainPortal__factory,
 } from "../../typechain";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
 import { AddressLike, ContractTransactionReceipt } from "ethers";
@@ -30,7 +30,7 @@ import { PORTAL_ROLE, ResolverTypes } from "../../src/deploy/constants";
 // TODO multi: move below code to appropriate places
 //  some of these may be optional ??
 export interface IZNSContractsExtended extends IZNSContracts {
-  polyPortal : ZNSPolygonZkEvmPortal;
+  zPortal : ZNSPolygonZkEvmPortal;
   bridgeL1 : PolygonZkEVMBridgeV2Mock;
   ethPortal : ZNSEthereumPortal;
   bridgeL2 : PolygonZkEVMBridgeV2Mock;
@@ -66,7 +66,7 @@ export const deployCrossChainContracts = async ({
   destChainName ?: string;
   destChainId ?: bigint;
 }) => {
-  const polyPortalFact = new ZNSPolygonZkEvmPortal__factory(deployer);
+  const zPortalFact = new ZNSZChainPortal__factory(deployer);
   const ethPortalFact = new ZNSEthereumPortal__factory(deployer);
   const bridgeMockFact = new PolygonZkEVMBridgeV2Mock__factory(deployer);
 
@@ -81,8 +81,8 @@ export const deployCrossChainContracts = async ({
   );
   await bridgeL2.waitForDeployment();
 
-  const polyPortal = await hre.upgrades.deployProxy(
-    polyPortalFact,
+  const zPortal = await hre.upgrades.deployProxy(
+    zPortalFact,
     [
       destNetworkId,
       destChainName,
@@ -101,14 +101,14 @@ export const deployCrossChainContracts = async ({
       kind: "uups",
     }
   ) as unknown as ZNSPolygonZkEvmPortal;
-  await polyPortal.waitForDeployment();
+  await zPortal.waitForDeployment();
 
   const ethPortal = await hre.upgrades.deployProxy(
     ethPortalFact,
     [
       znsL2.accessController.target,
       bridgeL2.target,
-      polyPortal.target,
+      zPortal.target,
       znsL2.rootRegistrar.target,
       znsL2.subRegistrar.target,
       znsL2.domainToken.target,
@@ -121,7 +121,7 @@ export const deployCrossChainContracts = async ({
   await ethPortal.waitForDeployment();
 
   // link portals
-  await polyPortal.connect(deployer).setDestZnsPortal(ethPortal.target);
+  await zPortal.connect(deployer).setDestZnsPortal(ethPortal.target);
 
   // give Role to the Portal on L2 to call special function
   await znsL2.accessController.connect(deployer).grantRole(
@@ -130,7 +130,7 @@ export const deployCrossChainContracts = async ({
   );
 
   return {
-    polyPortal,
+    zPortal,
     ethPortal,
     bridgeL1,
     bridgeL2,
@@ -209,7 +209,7 @@ describe.only("MultiZNS", () => {
     await znsL2.meowToken.connect(deployAdmin).approve(znsL2.treasury.target, ethers.MaxUint256);
 
     const {
-      polyPortal,
+      zPortal,
       ethPortal,
       bridgeL1,
       bridgeL2,
@@ -222,7 +222,7 @@ describe.only("MultiZNS", () => {
 
     znsL1 = {
       ...znsL1,
-      polyPortal,
+      zPortal,
       bridgeL1,
     };
 
@@ -233,11 +233,11 @@ describe.only("MultiZNS", () => {
     };
 
     await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
-    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.polyPortal.target, ethers.MaxUint256);
+    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.zPortal.target, ethers.MaxUint256);
     await znsL1.meowToken.connect(deployAdmin).approve(znsL1.treasury.target, ethers.MaxUint256);
 
     await znsL1.meowToken.mint(user.address, hre.ethers.parseEther("100000000000000"));
-    await znsL1.meowToken.connect(user).approve(znsL1.polyPortal.target, ethers.MaxUint256);
+    await znsL1.meowToken.connect(user).approve(znsL1.zPortal.target, ethers.MaxUint256);
   });
 
   [
@@ -293,7 +293,7 @@ describe.only("MultiZNS", () => {
           balanceBeforeBridge = await znsL1.meowToken.balanceOf(user.address);
 
           // register and bridge
-          const tx = await znsL1.polyPortal.connect(user).registerAndBridgeDomain(
+          const tx = await znsL1.zPortal.connect(user).registerAndBridgeDomain(
             parentHash as string,
             label,
             DEFAULT_TOKEN_URI
@@ -303,7 +303,7 @@ describe.only("MultiZNS", () => {
 
           domainHash = await getDomainHashFromEvent({
             zns: znsL1,
-            registrantAddress: znsL1.polyPortal.target as string,
+            registrantAddress: znsL1.zPortal.target as string,
           });
         });
 
@@ -313,7 +313,7 @@ describe.only("MultiZNS", () => {
             // check if domain is registered on L1
             // check events
             const events = await getEvents({
-              contract: znsL1.polyPortal,
+              contract: znsL1.zPortal,
               eventName: "DomainBridged",
             });
             const event = events[events.length - 1];
@@ -341,7 +341,7 @@ describe.only("MultiZNS", () => {
             );
 
             expect(bridgedEventData.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
-            expect(bridgedEventData.originAddress).to.equal(znsL1.polyPortal.target);
+            expect(bridgedEventData.originAddress).to.equal(znsL1.zPortal.target);
             expect(bridgedEventData.destinationNetwork).to.equal(NETWORK_ID_L2_DEFAULT);
             expect(bridgedEventData.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(bridgedEventData.amount).to.equal(0n);
@@ -352,11 +352,11 @@ describe.only("MultiZNS", () => {
               owner: ownerL1,
               resolver: resolverL1,
             } = await znsL1.registry.getDomainRecord(domainHash);
-            expect(ownerL1).to.equal(znsL1.polyPortal.target);
+            expect(ownerL1).to.equal(znsL1.zPortal.target);
             expect(resolverL1).to.equal(chainResolver.target);
 
             const tokenOwner = await znsL1.domainToken.ownerOf(BigInt(domainHash));
-            expect(tokenOwner).to.equal(znsL1.polyPortal.target);
+            expect(tokenOwner).to.equal(znsL1.zPortal.target);
           });
 
           it("should withdraw the correct amount of tokens from the caller", async () => {
@@ -465,7 +465,7 @@ describe.only("MultiZNS", () => {
             });
             const event = events[events.length - 1];
             expect(event.args.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
-            expect(event.args.originAddress).to.equal(znsL1.polyPortal.target);
+            expect(event.args.originAddress).to.equal(znsL1.zPortal.target);
             expect(event.args.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(event.args.amount).to.equal(0n);
           });
@@ -480,7 +480,7 @@ describe.only("MultiZNS", () => {
             });
             const event = events[events.length - 1];
             expect(event.args.srcNetworkId).to.equal(NETWORK_ID_L1_DEFAULT);
-            expect(event.args.srcPortalAddress).to.equal(znsL1.polyPortal.target);
+            expect(event.args.srcPortalAddress).to.equal(znsL1.zPortal.target);
             expect(event.args.domainHash).to.equal(domainHash);
             expect(event.args.domainOwner).to.equal(user.address);
 
@@ -493,7 +493,6 @@ describe.only("MultiZNS", () => {
             const tokenOwner = await znsL2.domainToken.ownerOf(BigInt(domainHash));
             expect(tokenOwner).to.equal(user.address);
           });
-
 
           it("should set configs as empty and allow original caller to set these configs", async () => {
             // should be LOCKED with no configs
