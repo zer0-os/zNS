@@ -6,7 +6,7 @@ import { PORTAL_ROLE, ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
 
 
-export class ZNSEthPortalDM extends BaseDeployMission<
+export class ZNSEthereumPortalDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 IZNSCampaignConfig<SignerWithAddress>,

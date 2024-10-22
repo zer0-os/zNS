@@ -41,8 +41,6 @@ IZNSContracts
 
     if (this.config.mockMeowToken) {
       this.contractName = znsNames.meowToken.contractMock;
-    } else {
-      this.contractName = znsNames.meowToken.contract;
     }
   }
 
@@ -68,11 +66,6 @@ IZNSContracts
 
       const factory = new MeowToken__factory(this.config.deployAdmin);
       const baseContract = factory.attach(this.config.stakingTokenAddress);
-      // TODO remove!
-      // const baseContract = await this.campaign.deployer.getContractObject(
-      //   this.contractName,
-      //   this.config.stakingTokenAddress as string,
-      // );
 
       await this.saveToDB(baseContract);
 
