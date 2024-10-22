@@ -1,10 +1,10 @@
 import {
   BaseDeployMission,
 } from "@zero-tech/zdc";
-import { znsNames } from "./names";
+import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 
 
 export class ZNSAccessControllerDM extends BaseDeployMission<

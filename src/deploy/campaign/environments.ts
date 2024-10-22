@@ -18,7 +18,7 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+import { MeowMainnet } from "../missions/contracts/zns-base/meow-token/mainnet-data";
 
 
 const getCustomAddresses = (

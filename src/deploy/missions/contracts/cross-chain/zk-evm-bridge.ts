@@ -1,9 +1,9 @@
 import { BaseDeployMission, IDeployMissionArgs, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
-import { ProxyKinds } from "../../constants";
-import { znsNames } from "./names";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { ProxyKinds } from "../../../constants";
+import { znsNames } from "../names";
 import { ethers } from "ethers";
 
 

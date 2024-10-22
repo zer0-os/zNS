@@ -1,9 +1,9 @@
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { BaseDeployMission } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ProxyKinds, ResolverTypes } from "../../constants";
-import { znsNames } from "./names";
+import { ProxyKinds, ResolverTypes } from "../../../constants";
+import { znsNames } from "../names";
 
 
 export class ZNSChainResolverDM extends BaseDeployMission<

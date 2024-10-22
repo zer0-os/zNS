@@ -3,12 +3,12 @@ import {
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../../constants";
+import { ProxyKinds } from "../../../../constants";
 import { ethers } from "ethers";
-import { znsNames } from "../names";
+import { znsNames } from "../../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../../campaign/types";
 import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
 

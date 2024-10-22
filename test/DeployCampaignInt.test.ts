@@ -34,10 +34,10 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
-import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
+import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/zns-base/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
+import { MeowMainnet } from "../src/deploy/missions/contracts/zns-base/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
