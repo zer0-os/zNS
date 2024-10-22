@@ -35,12 +35,17 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   mockMeowToken : boolean;
   stakingTokenAddress : string;
   crosschain : {
+    // TODO multi: refine props and types here !!!
     destNetworkId : bigint;
     destChainName : string;
     destChainId : bigint;
     destZkEvmBridge ?: string;
+    srcNetworkId : bigint;
     srcZkEvmBridge ?: string;
     srcZnsPortal : string;
+    zkEvmBridgeAddress : string;
+    mockZkEvmBridge : boolean;
+    bridgeToken ?: string;
   };
   postDeploy : {
     tenderlyProjectSlug : string;

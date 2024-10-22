@@ -7,7 +7,7 @@ import { znsNames } from "./names";
 
 
 // TODO multi: figure out how to set EthereumPortal address on this contract after that is deployed !!!
-export class ZChainPortalDM extends BaseDeployMission<
+export class ZNSZChainPortalDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 IZNSCampaignConfig<SignerWithAddress>,

@@ -17,6 +17,7 @@ import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
+// TODO multi: can we make it work on ALL chain under ZkEVM ??? make contract more general ???
 contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal {
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;

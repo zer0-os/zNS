@@ -59,6 +59,11 @@ export const znsNames = {
     contract: "ZNSEthereumPortal",
     instance: "ethPortal",
   },
+  zkEvmBridge: {
+    contract: "PolygonZkEVMBridgeV2",
+    contractMock: "PolygonZkEVMBridgeV2Mock",
+    instance: "zkEvmBridge",
+  },
   erc1967Proxy: {
     contract: erc1967ProxyName,
     instance: "erc1967Proxy",
