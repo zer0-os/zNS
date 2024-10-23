@@ -4,11 +4,12 @@ pragma solidity 0.8.26;
 // This is here only to bring the contract so Hardhat compiles it by default
 import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { ERC20Mock } from "../../token/mocks/ERC20Mock.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 
 // Note that this does NOT inherit the original Bridge contract!
 // We are EMULATING bridge behavior here so we can run tests on the same chain
-contract PolygonZkEVMBridgeV2Mock {
+contract PolygonZkEVMBridgeV2Mock is ReentrancyGuardUpgradeable {
     error NoValueInMessagesOnGasTokenNetworks();
     error DestinationNetworkInvalid();
     error MessageFailed();
@@ -42,10 +43,15 @@ contract PolygonZkEVMBridgeV2Mock {
     // WETH address
     ERC20Mock public WETHToken;
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         uint32 _networkID,
         address _WETHToken
-    ) {
+    ) external initializer {
         networkID = _networkID;
         WETHToken = ERC20Mock(_WETHToken);
     }
