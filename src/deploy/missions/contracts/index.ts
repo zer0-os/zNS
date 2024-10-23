@@ -11,6 +11,6 @@ export * from "./zns-base/fixed-pricer";
 export * from "./zns-base/sub-registrar";
 
 export * from "./cross-chain/chain-resolver";
-export * from "./cross-chain/zchain-portal";
-export * from "./cross-chain/eth-portal";
+export * from "./cross-chain/portals/zchain-portal";
+export * from "./cross-chain/portals/eth-portal";
 export * from "./cross-chain/zk-evm-bridge";

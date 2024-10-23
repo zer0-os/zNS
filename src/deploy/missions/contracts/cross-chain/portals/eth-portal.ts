@@ -1,9 +1,9 @@
 import { BaseDeployMission, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { PORTAL_ROLE, ProxyKinds } from "../../../constants";
-import { znsNames } from "../names";
+import { IZNSCampaignConfig, IZNSContracts, IZNSZChainCrossConfig } from "../../../../campaign/types";
+import { PORTAL_ROLE, ProxyKinds } from "../../../../constants";
+import { znsNames } from "../../names";
 
 
 export class ZNSEthereumPortalDM extends BaseDeployMission<
@@ -29,15 +29,17 @@ IZNSContracts
       subRegistrar,
       zkEvmBridge,
       config: {
-        crosschain: {
-          destZkEvmBridge,
-          srcZnsPortal,
-        },
+        crosschain,
       },
     } = this.campaign;
 
+    const {
+      zkEvmBridgeAddress,
+      srcZnsPortal,
+    } = crosschain as IZNSZChainCrossConfig;
+
     // TODO multi: figure out proper handling of this for actual contract AND mock !!!
-    const bridgeAddress = !destZkEvmBridge ? await zkEvmBridge.getAddress() : destZkEvmBridge;
+    const bridgeAddress = !zkEvmBridgeAddress ? await zkEvmBridge.getAddress() : zkEvmBridgeAddress;
 
     return [
       await accessController.getAddress(),

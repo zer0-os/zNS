@@ -36,12 +36,20 @@ IZNSContracts
 
   async deploy () {
     if (!this.config.crosschain.mockZkEvmBridge) {
+      const {
+        crosschain: {
+          zkEvmBridgeAddress,
+        },
+      } = this.config;
+
       this.logger.info("Using PolygonZkEvmBridgeV2 deployed on chain");
+
+      if (!zkEvmBridgeAddress) throw new Error("No existing ZkEvmBridge address has been passed!");
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
       const factory = await this.campaign.deployer.getFactory(this.contractName);
-      const contract = factory.attach(this.config.crosschain.zkEvmBridgeAddress);
+      const contract = factory.attach(zkEvmBridgeAddress);
 
       await this.saveToDB(contract);
 
@@ -58,7 +66,7 @@ IZNSContracts
     // this is ONLY for the Mock version of the Bridge !
     const {
       crosschain: {
-        srcNetworkId,
+        curNetworkId,
         bridgeToken,
       },
     } = this.config;
@@ -66,7 +74,7 @@ IZNSContracts
     const tokenAddress = !bridgeToken ? ethers.ZeroAddress : bridgeToken;
 
     return [
-      srcNetworkId,
+      curNetworkId as bigint,
       tokenAddress,
     ];
   }
