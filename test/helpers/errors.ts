@@ -44,6 +44,11 @@ export const NO_BENEFICIARY_ERR = "NoBeneficiarySetForParent";
 export const NONEXISTENT_TOKEN_ERC_ERR = "ERC721NonexistentToken";
 export const INITIALIZED_ERR = "InvalidInitialization";
 
+// CrossChain
+export const INVALID_CALLER_ERR = "InvalidCaller";
+export const INVALID_ORIGIN_ERR = "InvalidOriginAddress";
+export const DOMAIN_HASH_NO_MATCH_ERR = "DomainHashDoesNotMatchBridged";
+
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";
 export const NO_MOCK_PROD_ERR = "Cannot mock MEOW token in production";

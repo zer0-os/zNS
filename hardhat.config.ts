@@ -49,7 +49,7 @@ const config : HardhatUserConfig = {
             enabled: true,
             runs: 20000,
           },
-          // TODO: we are not using this, but solcover gives an error if we don't have it
+          // TODO multi: we are not using this, but solcover gives an error if we don't have it
           //  figure out what to do here for it to work in CI!
           // viaIR: true,
         },
