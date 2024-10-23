@@ -1,6 +1,12 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { IZNSCampaignConfig } from "./types";
+import {
+  IZNSBaseCrossConfig,
+  IZNSCampaignConfig,
+  IZNSEthCrossConfig,
+  IZNSZChainCrossConfig,
+  TZNSCrossConfig,
+} from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
   DEFAULT_ROYALTY_FRACTION,
@@ -19,6 +25,8 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/zns-base/meow-token/mainnet-data";
+import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
+import { SupportedChains } from "../missions/contracts/cross-chain/portals/get-portal-dm";
 
 
 const getCustomAddresses = (
@@ -77,16 +85,16 @@ export const getConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  let zeroVaultAddressConf;
+  let zeroVaultAddressConf : string;
 
   if (process.env.ENV_LEVEL === "dev") {
     requires(
       !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
       "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
     );
-    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS!;
   } else {
-    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS!;
   }
 
   // Domain Token Values
@@ -122,6 +130,7 @@ export const getConfig = async ({
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",
       verifyContracts: process.env.VERIFY_CONTRACTS === "true",
     },
+    crosschain: buildCrosschainConfig(),
   };
 
   return config;
@@ -267,4 +276,65 @@ const validatePrice = (config : ICurvePriceConfig) => {
 
   // if B > A, then the price spike is invalid
   return (priceB <= priceA);
+};
+
+export const buildCrosschainConfig = () : TZNSCrossConfig => {
+  requires(!!process.env.SRC_CHAIN_NAME, "Must provide name for the chain to deploy to!");
+  const srcChainName = process.env.SRC_CHAIN_NAME as TSupportedChain;
+  requires(!!process.env.MOCK_ZKEVM_BRIDGE, "Must provide mock polygon bridge flag!");
+  const mockZkEvmBridge = process.env.MOCK_ZKEVM_BRIDGE === "true";
+
+  let curNetworkId;
+  let zkEvmBridgeAddress;
+  if (!mockZkEvmBridge) {
+    requires(
+      !!process.env.ZK_EVM_BRIDGE,
+      "Must provide source zkEVM bridge address from this chain if not mocking!"
+    );
+    zkEvmBridgeAddress = process.env.ZK_EVM_BRIDGE;
+  } else {
+    requires(
+      !!process.env.NETWORK_ID,
+      "Must provide current network ID for mocked bridge!"
+    );
+    curNetworkId = BigInt(process.env.NETWORK_ID!);
+  }
+
+  const baseConfig = {
+    mockZkEvmBridge,
+    srcChainName,
+    zkEvmBridgeAddress,
+    curNetworkId,
+    bridgeToken: process.env.BRIDGE_TOKEN,
+  };
+
+  let crossConfig;
+  switch (srcChainName) {
+  case SupportedChains.eth:
+    requires(!!process.env.DEST_NETWORK_ID, "Must provide destination network ID!");
+    requires(!!process.env.DEST_CHAIN_NAME, "Must provide destination chain name!");
+    requires(!!process.env.DEST_CHAIN_ID, "Must provide destination chain ID!");
+
+    crossConfig = {
+      ...baseConfig,
+      destNetworkId: BigInt(process.env.DEST_NETWORK_ID!),
+      destChainName: process.env.DEST_CHAIN_NAME,
+      destChainId: BigInt(process.env.DEST_CHAIN_ID!),
+    } as IZNSEthCrossConfig;
+
+    break;
+  case SupportedChains.z:
+    requires(!!process.env.SRC_ZNS_PORTAL, "Must provide source ZNSZChainPortal address!");
+
+    crossConfig = {
+      ...baseConfig,
+      srcZnsPortal: process.env.SRC_ZNS_PORTAL,
+    } as IZNSZChainCrossConfig;
+
+    break;
+  default:
+    throw new Error(`Unsupported chain: ${srcChainName}!`);
+  }
+
+  return crossConfig;
 };

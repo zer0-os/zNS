@@ -16,8 +16,29 @@ import {
   MeowToken,
   ZNSStringResolver, ZNSZChainPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock, ZNSChainResolver,
 } from "../../../typechain";
+import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
+
+export interface IZNSBaseCrossConfig {
+  mockZkEvmBridge : boolean;
+  zkEvmBridgeAddress ?: string;
+  srcChainName : TSupportedChain;
+  curNetworkId ?: bigint;
+  bridgeToken ?: string;
+}
+
+export interface IZNSEthCrossConfig extends IZNSBaseCrossConfig {
+  destNetworkId : bigint;
+  destChainName : string;
+  destChainId : bigint;
+}
+
+export interface IZNSZChainCrossConfig extends IZNSBaseCrossConfig {
+  srcZnsPortal : string;
+}
+
+export type TZNSCrossConfig = IZNSEthCrossConfig | IZNSZChainCrossConfig;
 
 export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
   env : string;
@@ -34,19 +55,7 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
-  crosschain : {
-    // TODO multi: refine props and types here !!!
-    destNetworkId : bigint;
-    destChainName : string;
-    destChainId : bigint;
-    destZkEvmBridge ?: string;
-    srcNetworkId : bigint;
-    srcZkEvmBridge ?: string;
-    srcZnsPortal : string;
-    zkEvmBridgeAddress : string;
-    mockZkEvmBridge : boolean;
-    bridgeToken ?: string;
-  };
+  crosschain : TZNSCrossConfig;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -87,4 +96,5 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   subRegistrar : ZNSSubRegistrar;
   zPortal : ZNSZChainPortal;
   ethPortal : ZNSEthereumPortal;
+  zkEvmBridge : PolygonZkEVMBridgeV2Mock;
 }
