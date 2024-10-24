@@ -2,11 +2,11 @@ import {
   BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../constants";
-import { znsNames } from "./names";
+import { ProxyKinds } from "../../../constants";
+import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 
 
 export class ZNSTreasuryDM extends BaseDeployMission<

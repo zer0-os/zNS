@@ -1,14 +1,15 @@
-import { ProxyKinds } from "../../constants";
 import {
   BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { znsNames } from "./names";
+import { ProxyKinds } from "../../../constants";
+import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 
-export class ZNSFixedPricerDM extends BaseDeployMission<
+
+export class ZNSCurvePricerDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 IZNSCampaignConfig<SignerWithAddress>,
@@ -19,15 +20,18 @@ IZNSContracts
     kind: ProxyKinds.uups,
   };
 
-  contractName = znsNames.fixedPricer.contract;
-  instanceName = znsNames.fixedPricer.instance;
+  contractName = znsNames.curvePricer.contract;
+  instanceName = znsNames.curvePricer.instance;
 
   async deployArgs () : Promise<TDeployArgs> {
     const {
       accessController,
       registry,
+      config: {
+        rootPriceConfig,
+      },
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress()];
+    return [await accessController.getAddress(), await registry.getAddress(), rootPriceConfig];
   }
 }

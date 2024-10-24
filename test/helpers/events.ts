@@ -1,8 +1,8 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-explicit-any */
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
 import { IZNSContractsLocal } from "./types";
-import { IZNSContracts } from "../../src/deploy/campaign/types";
+import { IZNSContracts, ZNSContract } from "../../src/deploy/campaign/types";
 
 
 export const getDomainRegisteredEvents = async ({
@@ -34,24 +34,37 @@ export const getDomainRegisteredEvents = async ({
 
 export const getDomainHashFromEvent = async ({
   zns,
-  user,
+  registrantAddress,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  registrantAddress : string;
 }) : Promise<string> => {
-  const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
     undefined,
     undefined,
     undefined,
     undefined,
-    user.address,
+    registrantAddress,
     undefined,
   );
 
-  const events = await zns.rootRegistrar.queryFilter(filter, latestBlock - 2, latestBlock);
+  const events = await zns.rootRegistrar.queryFilter(filter);
   const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;
+};
+
+export const getEvents = async ({
+  contract,
+  eventName,
+  args,
+} : {
+  contract : any;
+  eventName : string;
+  args ?: any;
+}) : Promise<Array<TypedEventLog<TypedContractEvent>>> => {
+  const filter = contract.filters[eventName](args);
+
+  return contract.queryFilter(filter);
 };

@@ -15,11 +15,15 @@ interface IZNSAccessController is IAccessControl {
 
     function checkRegistrar(address account) external view;
 
+    function checkPortal(address account) external view;
+
     function isAdmin(address account) external view returns (bool);
 
     function isRegistrar(address account) external view returns (bool);
 
     function isGovernor(address account) external view returns (bool);
+
+    function isPortal(address account) external view returns (bool);
 
     function isExecutor(address account) external view returns (bool);
 }

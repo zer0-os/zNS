@@ -14,10 +14,31 @@ import {
   ZNSSubRegistrar,
   ZNSTreasury,
   MeowToken,
-  ZNSStringResolver,
+  ZNSStringResolver, ZNSZChainPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock, ZNSChainResolver,
 } from "../../../typechain";
+import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
+
+export interface IZNSBaseCrossConfig {
+  mockZkEvmBridge : boolean;
+  zkEvmBridgeAddress ?: string;
+  srcChainName : TSupportedChain;
+  curNetworkId ?: bigint;
+  bridgeToken ?: string;
+}
+
+export interface IZNSEthCrossConfig extends IZNSBaseCrossConfig {
+  destNetworkId : bigint;
+  destChainName : string;
+  destChainId : bigint;
+}
+
+export interface IZNSZChainCrossConfig extends IZNSBaseCrossConfig {
+  srcZnsPortal : string;
+}
+
+export type TZNSCrossConfig = IZNSEthCrossConfig | IZNSZChainCrossConfig;
 
 export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
   env : string;
@@ -34,6 +55,7 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
+  crosschain : TZNSCrossConfig;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -49,11 +71,15 @@ export type ZNSContract =
   MeowToken |
   ZNSAddressResolver |
   ZNSStringResolver |
+  ZNSChainResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
   ZNSFixedPricer |
-  ZNSSubRegistrar;
+  ZNSSubRegistrar |
+  ZNSZChainPortal |
+  ZNSEthereumPortal |
+  PolygonZkEVMBridgeV2Mock;
 
 export interface IZNSContracts extends IContractState<ZNSContract> {
   accessController : ZNSAccessController;
@@ -62,9 +88,13 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
   stringResolver : ZNSStringResolver;
+  chainResolver : ZNSChainResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
+  zPortal : ZNSZChainPortal;
+  ethPortal : ZNSEthereumPortal;
+  zkEvmBridge : PolygonZkEVMBridgeV2Mock;
 }

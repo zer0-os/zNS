@@ -1,15 +1,12 @@
-import {
-  BaseDeployMission,
-  TDeployArgs,
-} from "@zero-tech/zdc";
-import { ProxyKinds, ResolverTypes } from "../../constants";
-import { znsNames } from "./names";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { BaseDeployMission } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { ProxyKinds, ResolverTypes } from "../../../constants";
+import { znsNames } from "../names";
 
 
-export class ZNSAddressResolverDM extends BaseDeployMission<
+export class ZNSChainResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
 IZNSCampaignConfig<SignerWithAddress>,
@@ -20,11 +17,14 @@ IZNSContracts
     kind: ProxyKinds.uups,
   };
 
-  contractName = znsNames.addressResolver.contract;
-  instanceName = znsNames.addressResolver.instance;
+  contractName = znsNames.chainResolver.contract;
+  instanceName = znsNames.chainResolver.instance;
 
-  async deployArgs () : Promise<TDeployArgs> {
-    const { accessController, registry } = this.campaign;
+  async deployArgs () {
+    const {
+      accessController,
+      registry,
+    } = this.campaign;
 
     return [await accessController.getAddress(), await registry.getAddress()];
   }
@@ -32,14 +32,14 @@ IZNSContracts
   async needsPostDeploy () {
     const {
       registry,
-      addressResolver,
+      chainResolver,
     } = this.campaign;
 
     const resolverInReg = await registry.getResolverType(
-      ResolverTypes.address,
+      ResolverTypes.chain,
     );
 
-    const needs = resolverInReg !== await addressResolver.getAddress();
+    const needs = resolverInReg !== await chainResolver.getAddress();
     const msg = needs ? "needs" : "doesn't need";
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
@@ -50,15 +50,15 @@ IZNSContracts
   async postDeploy () {
     const {
       registry,
-      addressResolver,
+      chainResolver,
       config: {
         deployAdmin,
       },
     } = this.campaign;
 
     await registry.connect(deployAdmin).addResolverType(
-      ResolverTypes.address,
-      await addressResolver.getAddress(),
+      ResolverTypes.chain,
+      await chainResolver.getAddress(),
     );
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

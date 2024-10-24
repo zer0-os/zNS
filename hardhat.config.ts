@@ -49,6 +49,9 @@ const config : HardhatUserConfig = {
             enabled: true,
             runs: 20000,
           },
+          // TODO multi: we are not using this, but solcover gives an error if we don't have it
+          //  figure out what to do here for it to work in CI!
+          // viaIR: true,
         },
       },
       {
@@ -105,14 +108,14 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_E}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+      ],
       // // Must have to avoid instead failing as `invalid length for result data` error
       // throwOnCallFailures: false, // not sure if this even works
     },
@@ -121,10 +124,11 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-    // meowtestnet: {
-    //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
+    // zchaintest: {
+    //   url: `${process.env.ZCHAINTEST_RPC_URL}`,
+    //   chainId: 1668201165,
     //   accounts: [
-    //     `${process.env.DEPLOYER_PRIVATE_KEY}`,
+    //     `${process.env.TESTNET_PRIVATE_KEY_A}`,
     //   ],
     // },
   },
@@ -132,11 +136,11 @@ const config : HardhatUserConfig = {
   //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   //   customChains: [
   //     {
-  //       network: "meowtestnet",
-  //       chainId: 883424730,
+  //       network: "zchaintest",
+  //       chainId: 1668201165,
   //       urls: {
-  //         apiURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
-  //         browserURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/",
+  //         apiURL: "https://zchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
+  //         browserURL: "https://zchain-testnet-blockscout.eu-north-2.gateway.fm/",
   //       },
   //     },
   //   ],

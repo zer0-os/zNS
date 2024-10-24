@@ -3,6 +3,10 @@ pragma solidity 0.8.26;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -141,6 +145,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
         PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
+    function registerBridgedRootDomain(
+        string calldata label,
+        string calldata tokenURI
+    ) external returns (bytes32);
+
     function coreRegister(
         CoreRegisterArgs memory args
     ) external;
@@ -160,4 +169,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
+
+    function rootPricer() external view returns (IZNSPricer);
+
+    function treasury() external view returns (IZNSTreasury);
+
+    function domainToken() external view returns (IZNSDomainToken);
+
+    function subRegistrar() external view returns (IZNSSubRegistrar);
 }

@@ -11,11 +11,12 @@ import {
   ZNSAddressResolverDM,
   ZNSStringResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
-  ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
+  ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM, PolygonZkEVMBridgeV2DM, ZNSChainResolverDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
+import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
 
 
 export const runZnsCampaign = async ({
@@ -57,8 +58,11 @@ export const runZnsCampaign = async ({
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,
-      ZNSFixedPricerDM,
       ZNSSubRegistrarDM,
+      ZNSFixedPricerDM,
+      ZNSChainResolverDM,
+      PolygonZkEVMBridgeV2DM,
+      getPortalDM(config.crosschain.srcChainName),
     ],
     deployer,
     dbAdapter,
@@ -69,6 +73,9 @@ export const runZnsCampaign = async ({
   await campaign.execute();
 
   await dbAdapter.finalize(dbVersion);
+
+  // TODO multi: add setting L2 portal address on L1 portal here for prod !!!!!!
+  //  find a good way to acquire this from the DB or something else possibly
 
   return campaign;
 };
