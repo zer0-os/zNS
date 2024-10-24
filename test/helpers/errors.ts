@@ -48,6 +48,7 @@ export const INITIALIZED_ERR = "InvalidInitialization";
 export const INVALID_CALLER_ERR = "InvalidCaller";
 export const INVALID_ORIGIN_ERR = "InvalidOriginAddress";
 export const DOMAIN_HASH_NO_MATCH_ERR = "DomainHashDoesNotMatchBridged";
+export const MESSAGE_FAILED_ERR = "MessageFailed";
 
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";

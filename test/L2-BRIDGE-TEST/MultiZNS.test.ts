@@ -10,6 +10,7 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import {
+  AC_UNAUTHORIZED_ERR,
   AccessType,
   DEFAULT_PRICE_CONFIG,
   DEFAULT_TOKEN_URI,
@@ -22,7 +23,7 @@ import {
   hashDomainLabel,
   INITIALIZED_ERR,
   INVALID_CALLER_ERR,
-  INVALID_ORIGIN_ERR,
+  INVALID_ORIGIN_ERR, MESSAGE_FAILED_ERR,
   NOT_AUTHORIZED_ERR,
   NOT_OWNER_OF_ERR,
   PaymentType,
@@ -477,60 +478,29 @@ describe.only("MultiZNS", () => {
 
   describe("Unit Tests", () => {
     describe("ZNSZChainPortal", () => {
-      it.only("#initialize() should revert when trying to reinitialize", async () => {
-        const {
-          destNetworkId,
-          destChainName,
-          destChainId,
-        } = config.crosschain as IZNSEthCrossConfig;
-
+      it("#initialize() should revert when trying to reinitialize", async () => {
         await expect(
-          znsL1.zPortal.connect(deployAdmin).initialize(
-            destNetworkId,
-            destChainName,
-            destChainId,
-            await znsL1.zkEvmBridge.getAddress(),
-            {
-              accessController: await znsL1.accessController.getAddress(),
-              registry: await znsL1.registry.getAddress(),
-              chainResolver: await znsL1.chainResolver.getAddress(),
-              treasury: await znsL1.treasury.getAddress(),
-              rootRegistrar: await znsL1.rootRegistrar.getAddress(),
-              subRegistrar: await znsL1.subRegistrar.getAddress(),
-            }
-          )
-        ).to.be.revertedWithCustomError(znsL1.zPortal, INITIALIZED_ERR);
-      });
-
-      it("#initialize() should revert when passing 0x0 addresses", async () => {
-        const {
-          destNetworkId,
-          destChainName,
-          destChainId,
-        } = config.crosschain as IZNSEthCrossConfig;
-
-        await expect(
-          znsL1.zPortal.connect(deployAdmin).initialize(
-            destNetworkId,
-            destChainName,
-            destChainId,
+          znsL1.zPortal.initialize(
+            "1",
+            "Z",
+            "1",
             hre.ethers.ZeroAddress,
             {
               accessController: znsL1.accessController.target,
               registry: znsL1.registry.target,
               chainResolver: znsL1.chainResolver.target,
+              treasury: znsL1.treasury.target,
               rootRegistrar: znsL1.rootRegistrar.target,
               subRegistrar: znsL1.subRegistrar.target,
-              treasury: znsL1.treasury.target,
-            }
+            },
           )
-        ).to.be.revertedWithCustomError(znsL1.zPortal, ZERO_ADDRESS_ERR);
+        ).to.be.revertedWithCustomError(znsL1.zPortal, INITIALIZED_ERR);
       });
 
       it("#setDestZnsPortal() should revert when called by non-ADMIN", async () => {
         await expect(
           znsL1.zPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
-        ).to.be.revertedWithCustomError(znsL1.zPortal, NOT_AUTHORIZED_ERR);
+        ).to.be.revertedWithCustomError(znsL1.accessController, AC_UNAUTHORIZED_ERR);
       });
 
       it("#setDestZnsPortal() should revert when setting 0x0 address", async () => {
@@ -580,9 +550,10 @@ describe.only("MultiZNS", () => {
       });
 
       it("#onMessageReceived() should revert when `originAddress` is something OTHER than ZChainPortal", async () => {
+        // this will fail with MessageFailed error from the Bridge since it does a `.call()` internally
         await expect(
-          // this will call onMessageReceived(), we have to do it like this to avoid
-          // reverting on the `InvalidCaller` check
+        // this will call onMessageReceived(), we have to do it like this to avoid
+        // reverting on the `InvalidCaller` check
           znsL2.zkEvmBridge.claimMessage(
             dummySmtProof,
             dummySmtProof,
@@ -596,7 +567,7 @@ describe.only("MultiZNS", () => {
             bridgedEventData.amount,
             bridgedEventData.metadata,
           )
-        ).to.be.revertedWithCustomError(znsL2.ethPortal, INVALID_ORIGIN_ERR);
+        ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
       });
 
       it("#onMessageReceived() should revert when proof's `domainHash` is incorrect", async () => {
@@ -627,7 +598,7 @@ describe.only("MultiZNS", () => {
             bridgedEventData.amount,
             wrongMetadata,
           )
-        ).to.be.revertedWithCustomError(znsL2.ethPortal, DOMAIN_HASH_NO_MATCH_ERR);
+        ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
       });
     });
   });
