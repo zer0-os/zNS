@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { ERC20Mock } from "../../token/mocks/ERC20Mock.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+// import { PolygonZkEVMBridgeV2 } from "@zero-tech/zkevm-contracts/contracts/v2/PolygonZkEVMBridgeV2.sol";
 
 
 // Note that this does NOT inherit the original Bridge contract!
@@ -29,7 +30,7 @@ contract PolygonZkEVMBridgeV2Mock is ReentrancyGuardUpgradeable {
         address destinationAddress,
         uint256 amount,
         bytes metadata,
-        uint32 globalIndex
+        uint32 depositCount
     );
 
 
