@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
 import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
-import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarTrunk } from "./IZNSSubRegistrarTrunk.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
@@ -20,7 +20,7 @@ import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+contract ZNSSubRegistrarTrunk is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrarTrunk {
     using StringUtils for string;
 
     /**
@@ -101,27 +101,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             distrConfig,
             paymentConfig,
             false
-        );
-    }
-
-    function registerBridgedSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        string calldata tokenURI
-    ) external override returns (bytes32) {
-        accessController.checkPortal(msg.sender);
-
-        DistributionConfig memory emptyDistrConfig;
-        PaymentConfig memory emptyPaymentConfig;
-
-        return _coreSubdomainRegister(
-            parentHash,
-            label,
-            address(0),
-            tokenURI,
-            emptyDistrConfig,
-            emptyPaymentConfig,
-            true
         );
     }
 
@@ -374,7 +353,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWired`.
     */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrar) onlyAdmin {
+    function setRegistry(address registry_) public virtual override(ARegistryWired, IZNSSubRegistrarTrunk) onlyAdmin {
         _setRegistry(registry_);
     }
 

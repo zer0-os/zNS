@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarTrunk } from "./IZNSSubRegistrarTrunk.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSRootRegistrarTypes } from "./IZNSRootRegistrarTypes.sol";
@@ -64,5 +64,5 @@ interface IZNSRootRegistrarBase is IZNSRootRegistrarTypes {
 
     function domainToken() external view returns (IZNSDomainToken);
 
-    function subRegistrar() external view returns (IZNSSubRegistrar);
+    function subRegistrar() external view returns (IZNSSubRegistrarTrunk);
 }

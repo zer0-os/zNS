@@ -10,14 +10,13 @@ import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSRootRegistrarTrunk } from "../registrar/IZNSRootRegistrarTrunk.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarTrunk } from "../registrar/IZNSSubRegistrarTrunk.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
-// TODO multi: can we make it work on ALL chain under ZkEVM ??? make contract more general ???
 contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal {
     // *--| Cross-chain Data |--*
     IPolygonZkEVMBridgeV2 public polygonZkEVMBridge;
@@ -29,7 +28,7 @@ contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal
 
     // *--| ZNS Data for THIS chain |--*
     IZNSRootRegistrarTrunk public rootRegistrar;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSSubRegistrarTrunk public subRegistrar;
     IZNSTreasury public treasury;
     IZNSChainResolver public chainResolver;
     IZNSRegistry public registry;

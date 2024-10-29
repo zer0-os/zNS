@@ -5,7 +5,7 @@ import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { IZNSRootRegistrarBranch } from "../registrar/IZNSRootRegistrarBranch.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarBranch } from "../registrar/IZNSSubRegistrarBranch.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 
@@ -31,7 +31,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
 
     function rootRegistrar() external view returns (IZNSRootRegistrarBranch);
 
-    function subRegistrar() external view returns (IZNSSubRegistrar);
+    function subRegistrar() external view returns (IZNSSubRegistrarBranch);
 
     function domainToken() external view returns (IZNSDomainToken);
 
@@ -44,7 +44,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
         IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
         IZNSRootRegistrarBranch rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_
+        IZNSSubRegistrarBranch subRegistrar_
     ) external;
 
     function setSrcZnsPortal(address newAddress) external;

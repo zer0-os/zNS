@@ -9,14 +9,13 @@ import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 import { BridgedDomain } from "../types/CrossChainTypes.sol";
 import { IZNSRootRegistrarBranch } from "../registrar/IZNSRootRegistrarBranch.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarBranch } from "../registrar/IZNSSubRegistrarBranch.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
-// TODO multi: could this be a better name that implies cross-chain nature ???
 contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPortal {
     // *--| Cross-chain Data |--*
     // TODO multi: should we keep this extended interface ???
@@ -28,7 +27,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
 
     // *--| ZNS Data for THIS chain |--*
     IZNSRootRegistrarBranch public rootRegistrar;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSSubRegistrarBranch public subRegistrar;
     IZNSDomainToken public domainToken;
     IZNSRegistry public registry;
 
@@ -44,7 +43,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
         IZNSRootRegistrarBranch rootRegistrar_,
-        IZNSSubRegistrar subRegistrar_
+        IZNSSubRegistrarBranch subRegistrar_
     ) external override initializer {
         _setAccessController(accessController_);
 

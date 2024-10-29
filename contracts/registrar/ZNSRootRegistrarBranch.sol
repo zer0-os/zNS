@@ -7,11 +7,7 @@ import { ZNSRootRegistrarBase } from "./ZNSRootRegistrarBase.sol";
 import { IZNSRootRegistrarBranch } from "./IZNSRootRegistrarBranch.sol";
 import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
 import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
-import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
@@ -32,6 +28,7 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
  * logic required to be performed for any level domains.
  */
 contract ZNSRootRegistrarBranch is
+// TODO multi: fix inheritance on all child contracts! it is not needed!!!
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,

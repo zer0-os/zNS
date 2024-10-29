@@ -10,16 +10,12 @@ import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
 import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
 
-// TODO multi: MAKE SURE IT IS NOT POSSIBLE TO REGISTER ROOT DOMAIN ON ZCHAIN!!!!
-//  NEW LOGIC NEEDS TO BE ADDED FOR THAT !!!
-//  TEST THIS !!!!!
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
  * @notice This contract serves as the "umbrella" for many ZNS operations, it is given REGISTRAR_ROLE

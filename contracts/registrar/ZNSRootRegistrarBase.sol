@@ -8,7 +8,7 @@ import { IZNSRootRegistrarTypes, CoreRegisterArgs } from "./IZNSRootRegistrarTyp
 import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
+import { IZNSSubRegistrarTrunk } from "../registrar/IZNSSubRegistrarTrunk.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
@@ -39,7 +39,7 @@ contract ZNSRootRegistrarBase is
     IZNSPricer public rootPricer;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSSubRegistrarTrunk public subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -372,7 +372,7 @@ contract ZNSRootRegistrarBase is
         if (subRegistrar_ == address(0))
             revert ZeroAddressPassed();
 
-        subRegistrar = IZNSSubRegistrar(subRegistrar_);
+        subRegistrar = IZNSSubRegistrarTrunk(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
     }
 

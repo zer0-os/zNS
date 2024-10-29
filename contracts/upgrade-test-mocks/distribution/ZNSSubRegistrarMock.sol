@@ -3,8 +3,9 @@
 pragma solidity 0.8.26;
 
 // solhint-disable
-import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
-import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+// TODO multi: fix these are remove unnecessary imports
+import { ZNSSubRegistrarTrunk } from "../../registrar/ZNSSubRegistrarTrunk.sol";
+import { IZNSSubRegistrarTrunk } from "../../registrar/IZNSSubRegistrarTrunk.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 import { IZNSPricer } from "../../types/IZNSPricer.sol";
 import { IZNSRootRegistrarBase, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrarBase.sol";
