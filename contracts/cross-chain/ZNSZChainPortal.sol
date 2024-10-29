@@ -9,7 +9,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IZNSChainResolver } from "../resolver/IZNSChainResolver.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
-import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarTrunk } from "../registrar/IZNSRootRegistrarTrunk.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
@@ -28,7 +28,7 @@ contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal
     address public destZnsPortal;
 
     // *--| ZNS Data for THIS chain |--*
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrarTrunk public rootRegistrar;
     IZNSSubRegistrar public subRegistrar;
     IZNSTreasury public treasury;
     IZNSChainResolver public chainResolver;

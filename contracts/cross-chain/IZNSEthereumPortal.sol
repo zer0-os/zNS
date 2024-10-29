@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { IBridgeMessageReceiver } from "@zero-tech/zkevm-contracts/contracts/interfaces/IBridgeMessageReceiver.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
-import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarBranch } from "../registrar/IZNSRootRegistrarBranch.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
@@ -29,7 +29,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
 
     function srcZnsPortal() external view returns (address);
 
-    function rootRegistrar() external view returns (IZNSRootRegistrar);
+    function rootRegistrar() external view returns (IZNSRootRegistrarBranch);
 
     function subRegistrar() external view returns (IZNSSubRegistrar);
 
@@ -43,7 +43,7 @@ interface IZNSEthereumPortal is IDistributionConfig, IBridgeMessageReceiver {
         address srcZnsPortal_,
         IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
-        IZNSRootRegistrar rootRegistrar_,
+        IZNSRootRegistrarBranch rootRegistrar_,
         IZNSSubRegistrar subRegistrar_
     ) external;
 

@@ -8,7 +8,7 @@ import { IZNSEthereumPortal } from "./IZNSEthereumPortal.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
 import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 import { BridgedDomain } from "../types/CrossChainTypes.sol";
-import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarBranch } from "../registrar/IZNSRootRegistrarBranch.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
@@ -27,7 +27,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
     address public srcZnsPortal;
 
     // *--| ZNS Data for THIS chain |--*
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrarBranch public rootRegistrar;
     IZNSSubRegistrar public subRegistrar;
     IZNSDomainToken public domainToken;
     IZNSRegistry public registry;
@@ -43,7 +43,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         address srcZnsPortal_,
         IZNSRegistry registry_,
         IZNSDomainToken domainToken_,
-        IZNSRootRegistrar rootRegistrar_,
+        IZNSRootRegistrarBranch rootRegistrar_,
         IZNSSubRegistrar subRegistrar_
     ) external override initializer {
         _setAccessController(accessController_);

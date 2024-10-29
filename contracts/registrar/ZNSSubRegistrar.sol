@@ -2,7 +2,8 @@
 pragma solidity 0.8.26;
 
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
+import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
@@ -12,6 +13,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
+// TODO multi: should we split this for Trunk and Branch as well ???
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
  * @dev This contract has the entry point for registering subdomains, but calls
@@ -24,7 +26,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
     */
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrarBase public rootRegistrar;
 
     /**
      * @notice Mapping of domainHash to distribution config set by the domain owner/operator.
@@ -383,7 +385,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setRootRegistrar(address registrar_) public override onlyAdmin {
         if (registrar_ == address(0)) revert ZeroAddressPassed();
-        rootRegistrar = IZNSRootRegistrar(registrar_);
+        rootRegistrar = IZNSRootRegistrarBase(registrar_);
 
         emit RootRegistrarSet(registrar_);
     }

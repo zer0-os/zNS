@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import { IPolygonZkEVMBridgeV2 } from "@zero-tech/zkevm-contracts/contracts/v2/interfaces/IPolygonZkEVMBridgeV2.sol";
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
-import { IZNSRootRegistrar } from "../registrar/IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarTrunk } from "../registrar/IZNSRootRegistrarTrunk.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
@@ -18,7 +18,7 @@ interface IZNSZChainPortal is IDistributionConfig {
         IZNSRegistry registry;
         IZNSChainResolver chainResolver;
         IZNSTreasury treasury;
-        IZNSRootRegistrar rootRegistrar;
+        IZNSRootRegistrarTrunk rootRegistrar;
         IZNSSubRegistrar subRegistrar;
     }
 
@@ -40,7 +40,7 @@ interface IZNSZChainPortal is IDistributionConfig {
 
     function destZnsPortal() external view returns (address);
 
-    function rootRegistrar() external view returns (IZNSRootRegistrar);
+    function rootRegistrar() external view returns (IZNSRootRegistrarTrunk);
 
     function subRegistrar() external view returns (IZNSSubRegistrar);
 

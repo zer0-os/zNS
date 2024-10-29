@@ -3,7 +3,8 @@ pragma solidity 0.8.26;
 
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
+import { IZNSRootRegistrarTypes, CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
 import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
@@ -14,6 +15,7 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
 
+// TODO multi: fix NatSpec here to the Base contract
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
  * @notice This contract serves as the "umbrella" for many ZNS operations, it is given REGISTRAR_ROLE
@@ -27,11 +29,11 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
  * @dev This contract is also called at the last stage of registering subdomains, since it has the common
  * logic required to be performed for any level domains.
  */
-contract ZNSRootRegistrar is
+contract ZNSRootRegistrarBase is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
-    IZNSRootRegistrar {
+    IZNSRootRegistrarBase {
     using StringUtils for string;
 
     IZNSPricer public rootPricer;
@@ -67,63 +69,6 @@ contract ZNSRootRegistrar is
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
-    }
-
-    /**
-     * @notice This function is the main entry point for the Register Root Domain flow.
-     * Registers a new root domain such as `0://wilder`.
-     * Gets domain hash as a keccak256 hash of the domain label string casted to bytes32,
-     * checks existence of the domain in the registry and reverts if it exists.
-     * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
-     * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
-     * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param label Name (label) of the domain to register
-     * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
-     * @param tokenURI URI to assign to the Domain Token issued for the domain
-     * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
-     *     > Please note that passing distribution config will add more gas to the tx and most importantly -
-     *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
-     *      but all the parameters inside are required.
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
-     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
-     *  but all the parameters inside are required.
-     */
-    function registerRootDomain(
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
-        return _coreRootRegister(
-            label,
-            domainAddress,
-            tokenURI,
-            distributionConfig,
-            paymentConfig,
-            false
-        );
-    }
-
-    // TODO multi: should this function ONLY be on the L2 contract ???
-    function registerBridgedRootDomain(
-        string calldata label,
-        string calldata tokenURI
-    // TODO multi: should we add specific role for the Portal ???
-    ) external override returns (bytes32) {
-        accessController.checkPortal(msg.sender);
-
-        DistributionConfig memory emptyDistrConfig;
-        PaymentConfig memory emptyPaymentConfig;
-
-        return _coreRootRegister(
-            label,
-            address(0),
-            tokenURI,
-            emptyDistrConfig,
-            emptyPaymentConfig,
-            true
-        );
     }
 
     /**
@@ -221,7 +166,7 @@ contract ZNSRootRegistrar is
             registry.createDomainRecord(args.domainHash, args.registrant, "address");
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
-                .setAddress(args.domainHash, args.domainAddress);
+            .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
@@ -373,7 +318,7 @@ contract ZNSRootRegistrar is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param registry_ Address of the `ZNSRegistry` contract
      */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
+    function setRegistry(address registry_) public virtual override(ARegistryWired, IZNSRootRegistrarBase) onlyAdmin {
         _setRegistry(registry_);
     }
 
