@@ -1,5 +1,5 @@
 import {
-  BaseDeployMission,
+  BaseDeployMission, IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../../constants";
@@ -7,6 +7,7 @@ import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { SupportedChains } from "../cross-chain/portals/get-portal-dm";
 
 
 export class ZNSSubRegistrarDM extends BaseDeployMission<
@@ -20,11 +21,28 @@ IZNSContracts
     kind: ProxyKinds.uups,
   };
 
-  contractName = znsNames.subRegistrar.contract;
+  contractName = znsNames.subRegistrar.contractTrunk;
   instanceName = znsNames.subRegistrar.instance;
 
   private hasRegistrarRole : boolean | undefined;
   private isSetOnRoot : boolean | undefined;
+
+  constructor (args : IDeployMissionArgs<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSContracts
+  >) {
+    super(args);
+
+    if (this.config.crosschain.srcChainName === SupportedChains.eth) {
+      this.contractName = znsNames.subRegistrar.contractTrunk;
+    } else if (this.config.crosschain.srcChainName === SupportedChains.z) {
+      this.contractName = znsNames.subRegistrar.contractBranch;
+    } else {
+      throw new Error("Unsupported chain for Root Registrar deployment");
+    }
+  }
 
   async deployArgs () : Promise<TDeployArgs> {
     const {

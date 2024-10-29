@@ -50,7 +50,8 @@ export const znsNames = {
     instance: "rootRegistrar",
   },
   subRegistrar: {
-    contract: "ZNSSubRegistrar",
+    contractTrunk: "ZNSSubRegistrarTrunk",
+    contractBranch: "ZNSSubRegistrarBranch",
     instance: "subRegistrar",
   },
   zPortal: {
