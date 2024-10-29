@@ -1,19 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { ZNSRootRegistrarBase } from "./ZNSRootRegistrarBase.sol";
 import { IZNSRootRegistrarTrunk } from "./IZNSRootRegistrarTrunk.sol";
 import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
-import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
-import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -30,9 +21,6 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
  * logic required to be performed for any level domains.
  */
 contract ZNSRootRegistrarTrunk is
-    UUPSUpgradeable,
-    AAccessControlled,
-    ARegistryWired,
     ZNSRootRegistrarBase,
     IZNSRootRegistrarTrunk {
 
@@ -73,7 +61,6 @@ contract ZNSRootRegistrarTrunk is
     }
 
     function setRegistry(address registry) public override(
-        ARegistryWired,
         ZNSRootRegistrarBase,
         IZNSRootRegistrarBase
     ) onlyAdmin {

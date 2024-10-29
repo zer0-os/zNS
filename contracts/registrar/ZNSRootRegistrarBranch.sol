@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { ZNSRootRegistrarBase } from "./ZNSRootRegistrarBase.sol";
 import { IZNSRootRegistrarBranch } from "./IZNSRootRegistrarBranch.sol";
 import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
-import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
 
 // TODO multi: fix NatSpec here !
@@ -28,10 +22,6 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
  * logic required to be performed for any level domains.
  */
 contract ZNSRootRegistrarBranch is
-// TODO multi: fix inheritance on all child contracts! it is not needed!!!
-    UUPSUpgradeable,
-    AAccessControlled,
-    ARegistryWired,
     ZNSRootRegistrarBase,
     IZNSRootRegistrarBranch {
 
@@ -55,11 +45,13 @@ contract ZNSRootRegistrarBranch is
         );
     }
 
-    function setRegistry(address registry) public override(
-        ARegistryWired,
+    function setRegistry(address registry)
+    public
+    override(
         ZNSRootRegistrarBase,
         IZNSRootRegistrarBase
-    ) onlyAdmin {
+    )
+    onlyAdmin {
         super.setRegistry(registry);
     }
 }
