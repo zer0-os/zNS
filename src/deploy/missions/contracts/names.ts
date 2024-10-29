@@ -44,7 +44,9 @@ export const znsNames = {
     instance: "treasury",
   },
   rootRegistrar: {
-    contract: "ZNSRootRegistrar",
+    contractBase: "ZNSRootRegistrarBase",
+    contractTrunk: "ZNSRootRegistrarTrunk",
+    contractBranch: "ZNSRootRegistrarBranch",
     instance: "rootRegistrar",
   },
   subRegistrar: {
