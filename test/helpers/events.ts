@@ -35,9 +35,11 @@ export const getDomainRegisteredEvents = async ({
 export const getDomainHashFromEvent = async ({
   zns,
   registrantAddress,
+  fromBlock,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   registrantAddress : string;
+  fromBlock ?: number;
 }) : Promise<string> => {
   const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
@@ -49,7 +51,7 @@ export const getDomainHashFromEvent = async ({
     undefined,
   );
 
-  const events = await zns.rootRegistrar.queryFilter(filter);
+  const events = await zns.rootRegistrar.queryFilter(filter, fromBlock);
   const { args: { domainHash } } = events[events.length - 1];
 
   return domainHash;
@@ -59,12 +61,14 @@ export const getEvents = async ({
   contract,
   eventName,
   args,
+  fromBlock,
 } : {
   contract : any;
   eventName : string;
   args ?: any;
+  fromBlock ?: number;
 }) : Promise<Array<TypedEventLog<TypedContractEvent>>> => {
   const filter = contract.filters[eventName](args);
 
-  return contract.queryFilter(filter);
+  return contract.queryFilter(filter, fromBlock);
 };

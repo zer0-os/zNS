@@ -1,30 +1,30 @@
 import {
-  MeowTokenMock,
+  MeowTokenMock, PolygonZkEVMBridgeV2Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
-  ZNSAddressResolverUpgradeMock__factory,
+  ZNSAddressResolverUpgradeMock__factory, ZNSChainResolver,
   ZNSCurvePricer,
   ZNSCurvePricerUpgradeMock,
   ZNSCurvePricerUpgradeMock__factory,
   ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
-  ZNSDomainTokenUpgradeMock__factory,
+  ZNSDomainTokenUpgradeMock__factory, ZNSEthereumPortal,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
   ZNSFixedPricerUpgradeMock__factory,
   ZNSRegistry,
   ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSRootRegistrar,
+  ZNSRootRegistrarBranch, ZNSRootRegistrarTrunk,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory,
-  ZNSSubRegistrar,
+  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolver,
+  ZNSSubRegistrarBranch, ZNSSubRegistrarTrunk,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
-  ZNSTreasuryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock__factory, ZNSZChainPortal,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
@@ -84,11 +84,16 @@ export interface IZNSContractsLocal {
   domainToken : ZNSDomainToken;
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
+  chainResolver : ZNSChainResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
+  rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
+  subRegistrar : ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
+  zPortal : ZNSZChainPortal;
+  ethPortal : ZNSEthereumPortal;
+  zkEvmBridge : PolygonZkEVMBridgeV2Mock;
   zeroVaultAddress : string;
 }
 
