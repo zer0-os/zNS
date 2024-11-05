@@ -4,26 +4,24 @@ import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import {
   IZNSCampaignConfig,
   IZNSContracts,
-  IZNSEthCrossConfig,
   IZNSZChainCrossConfig,
 } from "../../src/deploy/campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { registrationWithSetup } from "../helpers/register-setup";
+import { approveForDomain, registrationWithSetup } from "../helpers/register-setup";
 import {
   AC_UNAUTHORIZED_ERR,
   AccessType,
   DEFAULT_PRICE_CONFIG,
-  DEFAULT_TOKEN_URI,
+  DEFAULT_TOKEN_URI, DEST_PORTAL_NOT_SET_ERR,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
-  DOMAIN_HASH_NO_MATCH_ERR,
   fullDistrConfigEmpty,
   getCurvePrice,
   getStakingOrProtocolFee,
   hashDomainLabel,
   INITIALIZED_ERR,
   INVALID_CALLER_ERR,
-  INVALID_ORIGIN_ERR, MESSAGE_FAILED_ERR,
+  MESSAGE_FAILED_ERR,
   NOT_AUTHORIZED_ERR,
   NOT_OWNER_OF_ERR,
   PaymentType,
@@ -32,15 +30,16 @@ import {
 import { expect } from "chai";
 import * as ethers from "ethers";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
-import { ContractTransactionReceipt } from "ethers";
+import { ContractTransactionReceipt, Wallet } from "ethers";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
 import { resetMongoAdapter } from "@zero-tech/zdc";
+import assert from "assert";
 
 
-export const NETWORK_ID_L1_DEFAULT = 1n;
-export const NETWORK_ID_L2_DEFAULT = 369n;
+export const NETWORK_ID_L1_DEFAULT = 0n;
+export const NETWORK_ID_L2_DEFAULT = 19n;
 
-const zChainID = 336699n;
+const zChainID = 1668201165n;
 
 
 const resetEnvVars = () => {
@@ -53,17 +52,23 @@ const resetEnvVars = () => {
   delete process.env.SRC_ZNS_PORTAL;
 };
 
+// TODO multi: add ChainResolver tests !!!
 describe.only("MultiZNS", () => {
+  let isRealNetwork = false;
+
   let znsL1 : IZNSContracts;
   let znsL2 : IZNSContracts;
 
   let deployAdmin : SignerWithAddress;
+  let deployAdminL2 : Wallet | SignerWithAddress;
   let user : SignerWithAddress;
+  let userL2 : Wallet | SignerWithAddress;
   let subUser : SignerWithAddress;
+  let subUserL2 : Wallet | SignerWithAddress;
 
   let config : IZNSCampaignConfig<SignerWithAddress>;
 
-  const rootDomainLabel = "jeffbridges";
+  const rootDomainLabel = "jefffbridges";
   const subdomainLabel = "beaubridges";
   const subParentLabel = "bridges";
 
@@ -79,20 +84,56 @@ describe.only("MultiZNS", () => {
     destinationAddress : string;
     amount : bigint;
     metadata : string;
-    globalIndex : bigint;
+    depositCount : bigint;
   };
 
+  // !!! The test network run test should always run on PREDEPLOYED contracts !!!
+  //  and MONGO specific ENV vars should be set to the correct values so that the campaignL2
+  //  can pick them up properly and not redeploy anything !
   before(async () => {
+    const env = process.env.ENV_LEVEL;
+    isRealNetwork = env === "test" && hre.network.name !== "hardhat";
+
     [ deployAdmin, user, subUser ] = await hre.ethers.getSigners();
 
-    // set ENV vars for the Ethereum ZNS deployment
     process.env.SRC_CHAIN_NAME = SupportedChains.eth;
-    process.env.MOCK_ZKEVM_BRIDGE = "true";
-    process.env.NETWORK_ID = NETWORK_ID_L1_DEFAULT.toString();
-    process.env.DEST_NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
-    process.env.DEST_CHAIN_NAME = SupportedChains.z;
-    process.env.DEST_CHAIN_ID = zChainID.toString();
+    if (isRealNetwork) {
+      assert.ok(
+        !!process.env.MONGO_DB_VERSION,
+        "Have to provide correct MONGO_DB_VERSION for running on test networks to use existing deployed contracts!"
+      );
+      assert.ok(
+        !!process.env.MONGO_DB_NAME,
+        "Have to provide correct MONGO_DB_NAME where SOURCE chain contracts are located!"
+      );
+      assert.ok(
+        !!process.env.MONGO_DB_NAME_DEST,
+        "Have to provide correct MONGO_DB_NAME_DEST where DESTINATION chain contracts are located!"
+      );
+      assert.ok(
+        !!process.env.MONGO_DB_VERSION_DEST,
+        "Have to provide correct MONGO_DB_VERSION_DEST where DESTINATION chain contracts are located!"
+      );
+      assert.ok(
+        !!process.env.SEPOLIA_RPC_URL,
+        "Have to provide correct SEPOLIA_RPC_URL for running on test networks!"
+      );
+      assert.ok(
+        !!process.env.ZCHAINTEST_RPC_URL,
+        "Have to provide correct ZCHAINTEST_RPC_URL for running on test networks!"
+      );
+    } else {
+      // set ENV vars for the Ethereum ZNS deployment
+      process.env.MOCK_ZKEVM_BRIDGE = "true";
+      process.env.NETWORK_ID = NETWORK_ID_L1_DEFAULT.toString();
+      process.env.DEST_NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
+      process.env.DEST_CHAIN_NAME = SupportedChains.z;
+      process.env.DEST_CHAIN_ID = zChainID.toString();
+    }
 
+    // TODO multi: create a proper test for zkEVM bridge when not mocked !!!
+
+    // L1 run
     config = await getConfig({
       deployer: deployAdmin,
       zeroVaultAddress: deployAdmin.address,
@@ -104,38 +145,83 @@ describe.only("MultiZNS", () => {
 
     resetMongoAdapter();
 
-    // set vars for ZChain ZNS deployment
     process.env.SRC_CHAIN_NAME = SupportedChains.z;
-    process.env.SRC_ZNS_PORTAL = znsL1.zPortal.target as string;
-    process.env.NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
-    process.env.MONGO_DB_NAME = "zns-l2";
 
+    if (!isRealNetwork) {
+      // set vars for ZChain ZNS deployment
+      process.env.SRC_ZNS_PORTAL = znsL1.zPortal.target as string;
+      process.env.NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
+      process.env.MONGO_DB_NAME = "zns-l2";
+      // TODO multi: create zkEVM bridge tests for predeployed bridge !!!
+      deployAdminL2 = deployAdmin;
+      userL2 = user;
+      subUserL2 = subUser;
+    } else {
+      const zChainProvider = new ethers.JsonRpcProvider(process.env.ZCHAINTEST_RPC_URL);
+      deployAdminL2 = new ethers.Wallet(`0x${process.env.TESTNET_PRIVATE_KEY_A}`, zChainProvider);
+      userL2 = new ethers.Wallet(`0x${process.env.TESTNET_PRIVATE_KEY_B}`, zChainProvider);
+      subUserL2 = new ethers.Wallet(`0x${process.env.TESTNET_PRIVATE_KEY_C}`, zChainProvider);
+      // swap to another DB where L2 contracts are located
+      process.env.MONGO_DB_NAME = process.env.MONGO_DB_NAME_DEST;
+      process.env.MONGO_DB_VERSION = process.env.MONGO_DB_VERSION_DEST;
+    }
+
+    // L2 run
     config = await getConfig({
-      deployer: deployAdmin,
-      zeroVaultAddress: deployAdmin.address,
+      deployer: deployAdminL2,
+      zeroVaultAddress: deployAdminL2.address,
     });
 
     // emulating L2 here by deploying to the same network
     const campaignL2 = await runZnsCampaign({ config });
 
     znsL2 = campaignL2.state.contracts;
-
-    // set L2 portal address on L1
-    await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
-
-    await znsL2.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
-    await znsL2.meowToken.connect(deployAdmin).approve(znsL2.treasury.target, ethers.MaxUint256);
-
-    await znsL1.meowToken.mint(deployAdmin.address, 1000000000000000000000n);
-    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.zPortal.target, ethers.MaxUint256);
-    await znsL1.meowToken.connect(deployAdmin).approve(znsL1.treasury.target, ethers.MaxUint256);
-
-    await znsL1.meowToken.mint(user.address, hre.ethers.parseEther("100000000000000"));
-    await znsL1.meowToken.connect(user).approve(znsL1.zPortal.target, ethers.MaxUint256);
   });
 
   after(async () => {
     resetEnvVars();
+  });
+
+  it("#registerAndBridgeDomain() should revert if `destZnsPortal` is not set", async () => {
+    const curPortal = await znsL1.zPortal.destZnsPortal();
+
+    if (curPortal !== hre.ethers.ZeroAddress) {
+      await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress);
+    }
+
+    await approveForDomain({
+      zns: znsL1,
+      parentHash: hre.ethers.ZeroHash,
+      user,
+      domainLabel: "test",
+      isBridging: true,
+      mintTokens: true,
+    });
+
+    await expect(
+      znsL1.zPortal.connect(user).registerAndBridgeDomain(
+        hre.ethers.ZeroHash,
+        "test",
+        DEFAULT_TOKEN_URI,
+      )
+    ).to.be.revertedWithCustomError(znsL1.zPortal, DEST_PORTAL_NOT_SET_ERR);
+
+    // TODO multi: add a proper way to set this programmatically on actual chains !!!
+    // set L2 portal address on L1
+    await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
+  });
+
+  it("should NOT allow to register root domain on ZChain", async () => {
+    await expect(
+      registrationWithSetup({
+        zns: znsL2,
+        user: deployAdminL2,
+        parentHash: hre.ethers.ZeroHash,
+        domainLabel: "domainlabeltoberejected",
+        fullConfig: fullDistrConfigEmpty,
+      })
+      // this function does not exist on the RootRegistrarBranch contract, so it fails with this error
+    ).to.be.rejectedWith("registerRootDomain is not a function");
   });
 
   [
@@ -188,9 +274,18 @@ describe.only("MultiZNS", () => {
             });
           }
 
+          // register and bridge
+          await approveForDomain({
+            zns: znsL1,
+            parentHash: parentHash as string,
+            user,
+            domainLabel: label,
+            isBridging: true,
+            mintTokens: true,
+          });
+
           balanceBeforeBridge = await znsL1.meowToken.balanceOf(user.address);
 
-          // register and bridge
           const tx = await znsL1.zPortal.connect(user).registerAndBridgeDomain(
             parentHash as string,
             label,
@@ -211,9 +306,12 @@ describe.only("MultiZNS", () => {
           it("should register and set owners as ZkEvmPortal and fire DomainBridged and BridgeEvent events", async () => {
             // check if domain is registered on L1
             // check events
+            const latestBlock = await hre.ethers.provider.getBlockNumber();
+            const fromBlock = latestBlock - 10;
             const events = await getEvents({
               contract: znsL1.zPortal,
               eventName: "DomainBridged",
+              fromBlock,
             });
             const event = events[events.length - 1];
             expect(event.args.domainHash).to.equal(domainHash);
@@ -224,6 +322,7 @@ describe.only("MultiZNS", () => {
             const bridgeEvents = await getEvents({
               contract: znsL1.zkEvmBridge,
               eventName: "BridgeEvent",
+              fromBlock,
             });
             ({ args: bridgedEventData } = bridgeEvents[bridgeEvents.length - 1]);
 
@@ -267,7 +366,7 @@ describe.only("MultiZNS", () => {
             expect(balanceBeforeBridge - balanceAfterBridge).to.equal(priceRef + protocolFeeRef);
           });
 
-          it("should set configs as empty", async () => {
+          it("should set configs as empty during bridging", async () => {
             // should be LOCKED with no configs
             const distrConfig = await znsL1.subRegistrar.distrConfigs(domainHash);
             expect(distrConfig.accessType).to.equal(AccessType.LOCKED);
@@ -337,15 +436,16 @@ describe.only("MultiZNS", () => {
           });
         });
 
+        // TODO multi: for real network run add code to get the proof from the API!!!
         describe("Claim Bridged Domain on L2", () => {
           it("should #claimMessage() on the bridge successfully and fire a ClaimEvent", async () => {
             // **NOTE** that we connect as `deployAdmin` here to show that it's not
             // required that this has to be called by the original owner,
             // it can be called by anyone
-            await znsL2.zkEvmBridge.connect(deployAdmin).claimMessage(
+            await znsL2.zkEvmBridge.connect(deployAdminL2).claimMessage(
               dummySmtProof,
               dummySmtProof,
-              bridgedEventData.globalIndex,
+              bridgedEventData.depositCount,
               dummySmtProof[0],
               dummySmtProof[1],
               bridgedEventData.originNetwork,
@@ -408,7 +508,7 @@ describe.only("MultiZNS", () => {
               paymentType: PaymentType.DIRECT,
               pricerContract: znsL2.fixedPricer.target,
             };
-            await znsL2.subRegistrar.connect(user).setDistributionConfigForDomain(
+            await znsL2.subRegistrar.connect(userL2).setDistributionConfigForDomain(
               domainHash,
               distrConfigToSet,
             );
@@ -417,13 +517,13 @@ describe.only("MultiZNS", () => {
               token: znsL2.meowToken.target,
               beneficiary: user.address,
             };
-            await znsL2.treasury.connect(user).setPaymentConfig(
+            await znsL2.treasury.connect(userL2).setPaymentConfig(
               domainHash,
               paymentConfigToSet,
             );
 
             const priceToSet = 100n;
-            await znsL2.fixedPricer.connect(user).setPrice(domainHash, priceToSet);
+            await znsL2.fixedPricer.connect(userL2).setPrice(domainHash, priceToSet);
 
             // check configs are set properly
             const distrConfigAfter = await znsL2.subRegistrar.distrConfigs(domainHash);
@@ -440,16 +540,14 @@ describe.only("MultiZNS", () => {
           });
 
           it("should allow creating subdomains under the rules of newly set configs", async () => {
-            await znsL2.meowToken.mint(subUser.address, 1000000000000000000000n);
-            await znsL2.meowToken.connect(subUser).approve(znsL2.treasury.target, ethers.MaxUint256);
-
             // make sure subdomains can be registered now
             const subdomainHash = await registrationWithSetup({
               zns: znsL2,
-              user: subUser,
+              user: subUserL2,
               parentHash: domainHash,
               domainLabel: subdomainChildLabel,
               fullConfig: fullDistrConfigEmpty,
+              mintTokens: true,
             });
 
             const events = await getEvents({
@@ -461,145 +559,148 @@ describe.only("MultiZNS", () => {
             expect(event.args.domainHash).to.equal(subdomainHash);
             expect(event.args.label).to.equal(subdomainChildLabel);
             expect(event.args.tokenURI).to.equal(DEFAULT_TOKEN_URI);
-            expect(event.args.registrant).to.equal(subUser.address);
-            expect(event.args.domainAddress).to.equal(subUser.address);
+            expect(event.args.registrant).to.equal(subUserL2.address);
+            expect(event.args.domainAddress).to.equal(subUserL2.address);
 
             // check if subdomain is registered
             const record = await znsL2.registry.getDomainRecord(subdomainHash);
-            expect(record.owner).to.equal(subUser.address);
+            expect(record.owner).to.equal(subUserL2.address);
             expect(record.resolver).to.equal(znsL2.addressResolver.target);
 
             const tokenOwner = await znsL2.domainToken.ownerOf(BigInt(subdomainHash));
-            expect(tokenOwner).to.equal(subUser.address);
+            expect(tokenOwner).to.equal(subUserL2.address);
           });
         });
       });
     });
 
-  describe("Unit Tests", () => {
-    describe("ZNSZChainPortal", () => {
-      it("#initialize() should revert when trying to reinitialize", async () => {
-        await expect(
-          znsL1.zPortal.initialize(
-            "1",
-            "Z",
-            "1",
-            hre.ethers.ZeroAddress,
-            {
-              accessController: znsL1.accessController.target,
-              registry: znsL1.registry.target,
-              chainResolver: znsL1.chainResolver.target,
-              treasury: znsL1.treasury.target,
-              rootRegistrar: znsL1.rootRegistrar.target,
-              subRegistrar: znsL1.subRegistrar.target,
-            },
-          )
-        ).to.be.revertedWithCustomError(znsL1.zPortal, INITIALIZED_ERR);
+  // We will only run this on local Hardhat network
+  if (!isRealNetwork) {
+    describe("Unit Tests", () => {
+      describe("ZNSZChainPortal", () => {
+        it("#initialize() should revert when trying to reinitialize", async () => {
+          await expect(
+            znsL1.zPortal.initialize(
+              "1",
+              "Z",
+              "1",
+              hre.ethers.ZeroAddress,
+              {
+                accessController: znsL1.accessController.target,
+                registry: znsL1.registry.target,
+                chainResolver: znsL1.chainResolver.target,
+                treasury: znsL1.treasury.target,
+                rootRegistrar: znsL1.rootRegistrar.target,
+                subRegistrar: znsL1.subRegistrar.target,
+              },
+            )
+          ).to.be.revertedWithCustomError(znsL1.zPortal, INITIALIZED_ERR);
+        });
+
+        it("#setDestZnsPortal() should revert when called by non-ADMIN", async () => {
+          await expect(
+            znsL1.zPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
+          ).to.be.revertedWithCustomError(znsL1.accessController, AC_UNAUTHORIZED_ERR);
+        });
+
+        it("#setDestZnsPortal() should revert when setting 0x0 address", async () => {
+          await expect(
+            znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress)
+          ).to.be.revertedWithCustomError(znsL1.zPortal, ZERO_ADDRESS_ERR);
+        });
+
+        it("#setDestZnsPortal() should set the destination portal address", async () => {
+          await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(user.address);
+
+          const destPortal = await znsL1.zPortal.destZnsPortal();
+          expect(destPortal).to.equal(user.address);
+
+          // set back to L2 portal address
+          await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
+        });
       });
 
-      it("#setDestZnsPortal() should revert when called by non-ADMIN", async () => {
-        await expect(
-          znsL1.zPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
-        ).to.be.revertedWithCustomError(znsL1.accessController, AC_UNAUTHORIZED_ERR);
-      });
-
-      it("#setDestZnsPortal() should revert when setting 0x0 address", async () => {
-        await expect(
-          znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress)
-        ).to.be.revertedWithCustomError(znsL1.zPortal, ZERO_ADDRESS_ERR);
-      });
-
-      it("#setDestZnsPortal() should set the destination portal address", async () => {
-        await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(user.address);
-
-        const destPortal = await znsL1.zPortal.destZnsPortal();
-        expect(destPortal).to.equal(user.address);
-
-        // set back to L2 portal address
-        await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
-      });
-    });
-
-    describe("ZNSEthereumPortal", () => {
-      it("#initialize() should revert when trying to reinitialize", async () => {
-        const {
-          srcZnsPortal,
-        } = config.crosschain as IZNSZChainCrossConfig;
-
-        await expect(
-          znsL2.ethPortal.connect(deployAdmin).initialize(
-            znsL2.accessController.target,
-            znsL2.zkEvmBridge.target,
+      describe("ZNSEthereumPortal", () => {
+        it("#initialize() should revert when trying to reinitialize", async () => {
+          const {
             srcZnsPortal,
-            znsL2.registry.target,
-            znsL2.domainToken.target,
-            znsL2.rootRegistrar.target,
-            znsL2.subRegistrar.target,
-          )
-        ).to.be.revertedWithCustomError(znsL2.ethPortal, INITIALIZED_ERR);
-      });
+          } = config.crosschain as IZNSZChainCrossConfig;
 
-      it("#onMessageReceived() should revert when called by non-ZkEvmBridge", async () => {
-        await expect(
-          znsL2.ethPortal.connect(deployAdmin).onMessageReceived(
-            znsL2.zkEvmBridge.target,
-            1n,
-            hre.ethers.ZeroHash,
-          )
-        ).to.be.revertedWithCustomError(znsL2.ethPortal, INVALID_CALLER_ERR);
-      });
+          await expect(
+            znsL2.ethPortal.connect(deployAdmin).initialize(
+              znsL2.accessController.target,
+              znsL2.zkEvmBridge.target,
+              srcZnsPortal,
+              znsL2.registry.target,
+              znsL2.domainToken.target,
+              znsL2.rootRegistrar.target,
+              znsL2.subRegistrar.target,
+            )
+          ).to.be.revertedWithCustomError(znsL2.ethPortal, INITIALIZED_ERR);
+        });
 
-      it("#onMessageReceived() should revert when `originAddress` is something OTHER than ZChainPortal", async () => {
-        // this will fail with MessageFailed error from the Bridge since it does a `.call()` internally
-        await expect(
-        // this will call onMessageReceived(), we have to do it like this to avoid
-        // reverting on the `InvalidCaller` check
-          znsL2.zkEvmBridge.claimMessage(
-            dummySmtProof,
-            dummySmtProof,
-            bridgedEventData.globalIndex,
-            dummySmtProof[0],
-            dummySmtProof[1],
-            bridgedEventData.originNetwork,
-            znsL2.registry.target,
-            bridgedEventData.destinationNetwork,
-            bridgedEventData.destinationAddress,
-            bridgedEventData.amount,
-            bridgedEventData.metadata,
-          )
-        ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
-      });
+        it("#onMessageReceived() should revert when called by non-ZkEvmBridge", async () => {
+          await expect(
+            znsL2.ethPortal.connect(deployAdmin).onMessageReceived(
+              znsL2.zkEvmBridge.target,
+              1n,
+              hre.ethers.ZeroHash,
+            )
+          ).to.be.revertedWithCustomError(znsL2.ethPortal, INVALID_CALLER_ERR);
+        });
 
-      it("#onMessageReceived() should revert when proof's `domainHash` is incorrect", async () => {
-        // make wrong metadata
-        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-        const wrongMetadata = abiCoder.encode(
-          ["tuple(bytes32,bytes32,string,address,string)"],
-          [[
-            hashDomainLabel("wrong"), // this hashes a different label from the one below
-            hre.ethers.ZeroHash,
-            "right",
-            user.address,
-            DEFAULT_TOKEN_URI,
-          ]]
-        );
+        it("#onMessageReceived() should revert when `originAddress` is something OTHER than ZChainPortal", async () => {
+          // this will fail with MessageFailed error from the Bridge since it does a `.call()` internally
+          await expect(
+            // this will call onMessageReceived(), we have to do it like this to avoid
+            // reverting on the `InvalidCaller` check
+            znsL2.zkEvmBridge.claimMessage(
+              dummySmtProof,
+              dummySmtProof,
+              bridgedEventData.depositCount,
+              dummySmtProof[0],
+              dummySmtProof[1],
+              bridgedEventData.originNetwork,
+              znsL2.registry.target,
+              bridgedEventData.destinationNetwork,
+              bridgedEventData.destinationAddress,
+              bridgedEventData.amount,
+              bridgedEventData.metadata,
+            )
+          ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
+        });
 
-        await expect(
-          znsL2.zkEvmBridge.claimMessage(
-            dummySmtProof,
-            dummySmtProof,
-            bridgedEventData.globalIndex,
-            dummySmtProof[0],
-            dummySmtProof[1],
-            bridgedEventData.originNetwork,
-            bridgedEventData.originAddress,
-            bridgedEventData.destinationNetwork,
-            bridgedEventData.destinationAddress,
-            bridgedEventData.amount,
-            wrongMetadata,
-          )
-        ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
+        it("#onMessageReceived() should revert when proof's `domainHash` is incorrect", async () => {
+          // make wrong metadata
+          const abiCoder = ethers.AbiCoder.defaultAbiCoder();
+          const wrongMetadata = abiCoder.encode(
+            ["tuple(bytes32,bytes32,string,address,string)"],
+            [[
+              hashDomainLabel("wrong"), // this hashes a different label from the one below
+              hre.ethers.ZeroHash,
+              "right",
+              user.address,
+              DEFAULT_TOKEN_URI,
+            ]]
+          );
+
+          await expect(
+            znsL2.zkEvmBridge.claimMessage(
+              dummySmtProof,
+              dummySmtProof,
+              bridgedEventData.depositCount,
+              dummySmtProof[0],
+              dummySmtProof[1],
+              bridgedEventData.originNetwork,
+              bridgedEventData.originAddress,
+              bridgedEventData.destinationNetwork,
+              bridgedEventData.destinationAddress,
+              bridgedEventData.amount,
+              wrongMetadata,
+            )
+          ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
+        });
       });
     });
-  });
+  }
 });
