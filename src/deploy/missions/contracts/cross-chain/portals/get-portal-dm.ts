@@ -4,8 +4,8 @@ import { ISupportedChains, TSupportedChain } from "./types";
 
 
 export const SupportedChains : ISupportedChains = {
-  z: "ZChain",
-  eth: "Ethereum",
+  z: "zchain",
+  eth: "ethereum",
 };
 
 
