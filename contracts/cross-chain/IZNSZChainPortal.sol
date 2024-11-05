@@ -30,6 +30,8 @@ interface IZNSZChainPortal is IDistributionConfig {
     );
     event DestZnsPortalSet(address newAddress);
 
+    error DestinationPortalNotSetInState();
+
     function polygonZkEVMBridge() external view returns (IPolygonZkEVMBridgeV2);
 
     function destNetworkId() external view returns (uint32);

@@ -13,7 +13,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
-// TODO multi: should we split this for Trunk and Branch as well ???
 /**
  * @title ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.
  * @dev This contract has the entry point for registering subdomains, but calls

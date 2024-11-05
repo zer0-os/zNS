@@ -190,6 +190,10 @@ contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal
 
         bytes memory encodedProof = abi.encode(proof);
 
+        // TODO multi: should we leave this? We can't rely on setting this properly on time
+        //  and can permanently lock domains !!!
+        if (destZnsPortal == address(0)) revert DestinationPortalNotSetInState();
+
         polygonZkEVMBridge.bridgeMessage(
             destNetworkId,
             destZnsPortal,
