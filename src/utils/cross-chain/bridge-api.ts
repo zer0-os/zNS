@@ -61,3 +61,36 @@ export const getMerkeProof = async ({
 
   return proof;
 };
+
+const args = process.argv.slice(2);
+
+switch (args[0]) {
+case "deposit":
+  const destAddress = args[1];
+
+  getBridgeDepositData({ destAddress })
+    .then(deposits => {
+      console.log("Deposits acquired:", JSON.stringify(deposits, null, "\t"));
+    })
+    .catch(error => {
+      console.error("Error acquiring deposits!", error);
+    });
+  break;
+
+case "proof":
+  const depositCnt = Number(args[1]);
+  const netId = Number(args[2]);
+
+  getMerkeProof({ depositCnt, netId })
+    .then(proof => {
+      console.log("Proof acquired:", JSON.stringify(proof, null, "\t"));
+    })
+    .catch(error => {
+      console.error("Error acquiring proof!", error);
+    });
+  break;
+
+default:
+  console.error("Invalid arguments!");
+  break;
+}
