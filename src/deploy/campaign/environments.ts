@@ -200,7 +200,7 @@ export const validateEnv = (
   return priceConfig;
 };
 
-const getValidateRootPriceConfig = () => {
+export const getValidateRootPriceConfig = () => {
 
   if (process.env.ENV_LEVEL === "prod") {
     requires(

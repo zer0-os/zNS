@@ -36,7 +36,7 @@
     "mongo:drop": "ts-node src/utils/drop-db.ts",
     "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
     "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
-    "run-meowtestnet": "hardhat run src/deploy/run-campaign.ts --network meowtestnet",
+    "run-zchaintest": "hardhat run src/deploy/run-campaign.ts --network zchaintest",
     "run-gmp": "hardhat run test/L2-BRIDGE-TEST/send.ts --network sepolia"
   },
   "pre-commit": [

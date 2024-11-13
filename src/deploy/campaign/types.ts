@@ -10,11 +10,14 @@ import {
   ZNSDomainToken,
   ZNSFixedPricer,
   ZNSRegistry,
-  ZNSRootRegistrar,
-  ZNSSubRegistrar,
   ZNSTreasury,
   MeowToken,
-  ZNSStringResolver, ZNSZChainPortal, ZNSEthereumPortal, PolygonZkEVMBridgeV2Mock, ZNSChainResolver,
+  ZNSStringResolver,
+  ZNSZChainPortal,
+  ZNSEthereumPortal,
+  PolygonZkEVMBridgeV2Mock,
+  ZNSChainResolver,
+  ZNSRootRegistrarTrunk, ZNSRootRegistrarBranch, ZNSSubRegistrarTrunk, ZNSSubRegistrarBranch,
 } from "../../../typechain";
 import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 
@@ -74,9 +77,11 @@ export type ZNSContract =
   ZNSChainResolver |
   ZNSCurvePricer |
   ZNSTreasury |
-  ZNSRootRegistrar |
+  ZNSRootRegistrarTrunk |
+  ZNSRootRegistrarBranch |
   ZNSFixedPricer |
-  ZNSSubRegistrar |
+  ZNSSubRegistrarTrunk |
+  ZNSSubRegistrarBranch |
   ZNSZChainPortal |
   ZNSEthereumPortal |
   PolygonZkEVMBridgeV2Mock;
@@ -91,9 +96,9 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   chainResolver : ZNSChainResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
+  rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
+  subRegistrar : ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
   zPortal : ZNSZChainPortal;
   ethPortal : ZNSEthereumPortal;
   zkEvmBridge : PolygonZkEVMBridgeV2Mock;
