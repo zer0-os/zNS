@@ -13,6 +13,7 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 import { MeowTokenMock, ZNSRootRegistrarTrunk } from "../../typechain";
+import { getConfirmationsAmount } from "./tx";
 
 const { ZeroAddress } = ethers;
 
@@ -42,10 +43,10 @@ export const defaultRootRegistration = async ({
     paymentConfigEmpty
   );
 
+  await tx.wait(getConfirmationsAmount());
+
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
-
-  return tx.wait();
 };
 
 export const approveForDomain = async ({
@@ -78,11 +79,16 @@ export const approveForDomain = async ({
   const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
 
-  if (mintTokens)
-    await tokenContract.connect(user).mint(user.address, toApprove);
+  const confNum = getConfirmationsAmount();
+
+  if (mintTokens) {
+    const tx = await tokenContract.connect(user).mint(user.address, toApprove);
+    await tx.wait(confNum);
+  }
 
   const spender = isBridging ? await zns.zPortal.getAddress() : await zns.treasury.getAddress();
-  return tokenContract.connect(user).approve(spender, toApprove);
+  const tx = await tokenContract.connect(user).approve(spender, toApprove);
+  await tx.wait(confNum);
 };
 
 /**
@@ -122,7 +128,7 @@ export const defaultSubdomainRegistration = async ({
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
 
-  return tx.wait();
+  return tx.wait(getConfirmationsAmount());
 };
 
 export const registrationWithSetup = async ({
@@ -191,31 +197,36 @@ export const registrationWithSetup = async ({
 
   if (!hasConfig) return domainHash;
 
+  const confNum = getConfirmationsAmount();
+
   // set up prices
   if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    await zns.fixedPricer.connect(user).setPriceConfig(
+    const tx = await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       {
         ...fullConfig.priceConfig as IFixedPriceConfig,
         isSet: true,
       },
     );
+    await tx.wait(confNum);
   } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    await zns.curvePricer.connect(user).setPriceConfig(
+    const tx = await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       {
         ...fullConfig.priceConfig as ICurvePriceConfig,
         isSet: true,
       },
     );
+    await tx.wait(confNum);
   }
 
   if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {
     // set up payment config
-    await zns.treasury.connect(user).setPaymentConfig(
+    const tx = await zns.treasury.connect(user).setPaymentConfig(
       domainHash,
       fullConfig.paymentConfig,
     );
+    await tx.wait(confNum);
   }
 
   return domainHash;
