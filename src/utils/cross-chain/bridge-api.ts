@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-var-requires, camelcase, no-shadow, @typescript-eslint/no-explicit-any */
 import axios from "axios";
-import { GET_BRIDGE_DEPOSIT_DATA_EP, MERKLE_PROOF_EP, ZCHAIN_TEST_BRIDGE_API_URL } from "./constants";
+import {
+  BridgeApiOps,
+  GET_BRIDGE_DEPOSIT_DATA_EP, getTempDataFilePath,
+  MERKLE_PROOF_EP, TBridgeApiOp,
+  TEMP_DATA_DIR_PATH,
+  ZCHAIN_TEST_BRIDGE_API_URL,
+} from "./constants";
 import path from "path";
 import fs from "fs";
 
@@ -31,7 +37,7 @@ export const getBridgeDepositData = async ({
   endpoint ?: string;
   destAddress : string;
   params ?: any;
-}) => {
+}) : Promise<Array<any>> => {
   const result = await baseApiGET({
     apiURL,
     endpoint: `${endpoint}${destAddress}`,
@@ -67,9 +73,10 @@ export const getMerkeProof = async ({
 
 const main = async (args : Array<string>) => {
   let apiDataReturn : string;
+  const op = args[0] as TBridgeApiOp;
 
-  switch (args[0]) {
-  case "deposit":
+  switch (op) {
+  case BridgeApiOps.deposit:
     const destAddress = args[1];
 
     const deposits = await getBridgeDepositData({ destAddress });
@@ -77,7 +84,7 @@ const main = async (args : Array<string>) => {
     apiDataReturn = JSON.stringify(deposits[deposits.length - 1], null, "\t");
     break;
 
-  case "proof":
+  case BridgeApiOps.proof:
     const depositCnt = Number(args[1]);
     const netId = Number(args[2]);
 
@@ -88,15 +95,14 @@ const main = async (args : Array<string>) => {
     break;
 
   default:
-    throw new Error("Invalid arguments!");
+    throw new Error("Invalid operation argument!");
   }
 
   if (args[args.length - 1] === "save" && apiDataReturn) {
-    const pathToDir = path.join(process.cwd(), "./test-data");
-    const pathToFile = path.join(pathToDir, `bridge-${args[0]}.json`);
+    const pathToFile = path.join(TEMP_DATA_DIR_PATH, getTempDataFilePath(op));
 
-    if (!fs.existsSync(pathToDir)) {
-      fs.mkdirSync(pathToDir);
+    if (!fs.existsSync(TEMP_DATA_DIR_PATH)) {
+      fs.mkdirSync(TEMP_DATA_DIR_PATH);
     }
 
     fs.writeFileSync(pathToFile, apiDataReturn);
