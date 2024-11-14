@@ -3,6 +3,7 @@ import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
 import { IZNSContractsLocal } from "./types";
 import { IZNSContracts, ZNSContract } from "../../src/deploy/campaign/types";
+import * as hre from "hardhat";
 
 
 export const getDomainRegisteredEvents = async ({
@@ -41,6 +42,11 @@ export const getDomainHashFromEvent = async ({
   registrantAddress : string;
   fromBlock ?: number;
 }) : Promise<string> => {
+  if (!fromBlock && hre.network.name === "hardhat") {
+    const latest = await zns.rootRegistrar.runner?.provider?.getBlockNumber();
+    fromBlock = latest! - 50;
+  }
+
   const filter = zns.rootRegistrar.filters.DomainRegistered(
     undefined,
     undefined,
@@ -68,6 +74,11 @@ export const getEvents = async ({
   args ?: any;
   fromBlock ?: number;
 }) : Promise<Array<TypedEventLog<TypedContractEvent>>> => {
+  if (!fromBlock && hre.network.name === "hardhat") {
+    const latest = await contract.runner.provider.getBlockNumber();
+    fromBlock = latest - 50;
+  }
+
   const filter = contract.filters[eventName](args);
 
   return contract.queryFilter(filter, fromBlock);

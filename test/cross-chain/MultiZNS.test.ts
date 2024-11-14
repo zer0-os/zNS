@@ -35,6 +35,7 @@ import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain
 import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import assert from "assert";
 import { getConfirmationsNumber } from "../helpers/tx";
+import { getClaimArgsFromApi } from "../helpers/cc-claim";
 
 
 export const NETWORK_ID_L1_DEFAULT = 0n;
@@ -459,22 +460,29 @@ describe.only("MultiZNS", () => {
         // TODO multi: for real network run add code to get the proof from the API!!!
         describe("Claim Bridged Domain on L2", () => {
           it("should #claimMessage() on the bridge successfully and fire a ClaimEvent", async () => {
+            const claimArgs = !isRealNetwork
+              ? [
+                dummySmtProof,
+                dummySmtProof,
+                bridgedEventData.depositCount,
+                dummySmtProof[0],
+                dummySmtProof[1],
+                bridgedEventData.originNetwork,
+                bridgedEventData.originAddress,
+                bridgedEventData.destinationNetwork,
+                bridgedEventData.destinationAddress,
+                bridgedEventData.amount,
+                bridgedEventData.metadata,
+              ]
+              : await getClaimArgsFromApi();
+
             // **NOTE** that we connect as `deployAdmin` here to show that it's not
             // required that this has to be called by the original owner,
             // it can be called by anyone
-            await znsL2.zkEvmBridge.connect(deployAdminL2).claimMessage(
-              dummySmtProof,
-              dummySmtProof,
-              bridgedEventData.depositCount,
-              dummySmtProof[0],
-              dummySmtProof[1],
-              bridgedEventData.originNetwork,
-              bridgedEventData.originAddress,
-              bridgedEventData.destinationNetwork,
-              bridgedEventData.destinationAddress,
-              bridgedEventData.amount,
-              bridgedEventData.metadata,
-            );
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            await znsL2.zkEvmBridge.connect(deployAdminL2).claimMessage(...claimArgs);
 
             // TODO multi: fix all the event reads for test networks, now they don't get the data
             const events = await getEvents({
