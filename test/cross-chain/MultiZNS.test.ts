@@ -1,5 +1,5 @@
 import * as hre from "hardhat";
-import { getConfig } from "../../src/deploy/campaign/environments";
+import { getConfig, getValidateRootPriceConfig } from "../../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import {
   IZNSCampaignConfig,
@@ -32,14 +32,15 @@ import * as ethers from "ethers";
 import { getDomainHashFromEvent, getEvents } from "../helpers/events";
 import { ContractTransactionReceipt, Wallet } from "ethers";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import { resetMongoAdapter } from "@zero-tech/zdc";
+import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import assert from "assert";
+import { getConfirmationsNumber } from "../helpers/tx";
 
 
 export const NETWORK_ID_L1_DEFAULT = 0n;
-export const NETWORK_ID_L2_DEFAULT = 19n;
+export const NETWORK_ID_L2_DEFAULT = 1n;
 
-const zChainID = 1668201165n;
+const zChainID = 2012605151n;
 
 
 const resetEnvVars = () => {
@@ -58,6 +59,8 @@ describe.only("MultiZNS", () => {
 
   let znsL1 : IZNSContracts;
   let znsL2 : IZNSContracts;
+  let dbAdapter1 : MongoDBAdapter;
+  let dbAdapter2 : MongoDBAdapter;
 
   let deployAdmin : SignerWithAddress;
   let deployAdminL2 : Wallet | SignerWithAddress;
@@ -68,9 +71,9 @@ describe.only("MultiZNS", () => {
 
   let config : IZNSCampaignConfig<SignerWithAddress>;
 
-  const rootDomainLabel = "jefffbridges";
+  const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
-  const subParentLabel = "bridges";
+  const subParentLabel = "bridgessss";
 
   const dummySmtProof = Array.from({ length: 32 }, () => hre.ethers.randomBytes(32));
 
@@ -139,9 +142,15 @@ describe.only("MultiZNS", () => {
       zeroVaultAddress: deployAdmin.address,
     });
 
+    // TODO multi: add logger message to show which network is campaign running on !!!
     const campaignL1 = await runZnsCampaign({ config });
 
-    znsL1 = campaignL1.state.contracts;
+    ({
+      state: {
+        contracts: znsL1,
+      },
+      dbAdapter: dbAdapter1,
+    } = campaignL1);
 
     resetMongoAdapter();
 
@@ -175,11 +184,17 @@ describe.only("MultiZNS", () => {
     // emulating L2 here by deploying to the same network
     const campaignL2 = await runZnsCampaign({ config });
 
-    znsL2 = campaignL2.state.contracts;
-  });
+    ({
+      state: {
+        contracts: znsL2,
+      },
+      dbAdapter: dbAdapter2,
+    } = campaignL2);  });
 
   after(async () => {
     resetEnvVars();
+    await dbAdapter1.dropDB();
+    await dbAdapter2.dropDB();
   });
 
   it("#registerAndBridgeDomain() should revert if `destZnsPortal` is not set", async () => {
@@ -195,7 +210,6 @@ describe.only("MultiZNS", () => {
       user,
       domainLabel: "test",
       isBridging: true,
-      mintTokens: true,
     });
 
     await expect(
@@ -281,7 +295,6 @@ describe.only("MultiZNS", () => {
             user,
             domainLabel: label,
             isBridging: true,
-            mintTokens: true,
           });
 
           balanceBeforeBridge = await znsL1.meowToken.balanceOf(user.address);
@@ -291,7 +304,7 @@ describe.only("MultiZNS", () => {
             label,
             DEFAULT_TOKEN_URI
           );
-          const receipt = await tx.wait() as ContractTransactionReceipt;
+          const receipt = await tx.wait(getConfirmationsNumber()) as ContractTransactionReceipt;
           console.log(`Gas used for ${name} bridging: ${receipt.gasUsed.toString()}`);
 
           domainHash = await getDomainHashFromEvent({
@@ -306,12 +319,9 @@ describe.only("MultiZNS", () => {
           it("should register and set owners as ZkEvmPortal and fire DomainBridged and BridgeEvent events", async () => {
             // check if domain is registered on L1
             // check events
-            const latestBlock = await hre.ethers.provider.getBlockNumber();
-            const fromBlock = latestBlock - 10;
             const events = await getEvents({
               contract: znsL1.zPortal,
               eventName: "DomainBridged",
-              fromBlock,
             });
             const event = events[events.length - 1];
             expect(event.args.domainHash).to.equal(domainHash);
@@ -322,9 +332,11 @@ describe.only("MultiZNS", () => {
             const bridgeEvents = await getEvents({
               contract: znsL1.zkEvmBridge,
               eventName: "BridgeEvent",
-              fromBlock,
             });
             ({ args: bridgedEventData } = bridgeEvents[bridgeEvents.length - 1]);
+
+            // this is here so we can use this data to do an API call to get the proof
+            if (isRealNetwork) console.log("Bridged Event Data:", bridgedEventData);
 
             const abiCoder = ethers.AbiCoder.defaultAbiCoder();
             const metadataRef = abiCoder.encode(
@@ -360,8 +372,16 @@ describe.only("MultiZNS", () => {
           it("should withdraw the correct amount of tokens from the caller", async () => {
             const balanceAfterBridge = await znsL1.meowToken.balanceOf(user.address);
 
-            const priceRef = getCurvePrice(label);
+            const priceConfig = isRealNetwork ? getValidateRootPriceConfig() : DEFAULT_PRICE_CONFIG;
+            const priceRef = getCurvePrice(label, priceConfig);
             const protocolFeeRef = getStakingOrProtocolFee(priceRef);
+
+            // TODO multi: error here!
+            // AssertionError: expected 4524647947000000000000 to equal 9292717980000000000000.
+            // + expected - actual
+            //
+            // -4524647947000000000000
+            // +9292717980000000000000
 
             expect(balanceBeforeBridge - balanceAfterBridge).to.equal(priceRef + protocolFeeRef);
           });
@@ -456,6 +476,7 @@ describe.only("MultiZNS", () => {
               bridgedEventData.metadata,
             );
 
+            // TODO multi: fix all the event reads for test networks, now they don't get the data
             const events = await getEvents({
               contract: znsL2.zkEvmBridge,
               eventName: "ClaimEvent",
@@ -502,28 +523,33 @@ describe.only("MultiZNS", () => {
             expect(paymentConfig.token).to.equal(hre.ethers.ZeroAddress);
             expect(paymentConfig.beneficiary).to.equal(hre.ethers.ZeroAddress);
 
+            const confNum = getConfirmationsNumber();
+
             // set configs
             const distrConfigToSet = {
               accessType: AccessType.OPEN,
               paymentType: PaymentType.DIRECT,
               pricerContract: znsL2.fixedPricer.target,
             };
-            await znsL2.subRegistrar.connect(userL2).setDistributionConfigForDomain(
+            let tx = await znsL2.subRegistrar.connect(userL2).setDistributionConfigForDomain(
               domainHash,
               distrConfigToSet,
             );
+            await tx.wait(confNum);
 
             const paymentConfigToSet = {
               token: znsL2.meowToken.target,
               beneficiary: user.address,
             };
-            await znsL2.treasury.connect(userL2).setPaymentConfig(
+            tx = await znsL2.treasury.connect(userL2).setPaymentConfig(
               domainHash,
               paymentConfigToSet,
             );
+            await tx.wait(confNum);
 
             const priceToSet = 100n;
-            await znsL2.fixedPricer.connect(userL2).setPrice(domainHash, priceToSet);
+            tx = await znsL2.fixedPricer.connect(userL2).setPrice(domainHash, priceToSet);
+            await tx.wait(confNum);
 
             // check configs are set properly
             const distrConfigAfter = await znsL2.subRegistrar.distrConfigs(domainHash);

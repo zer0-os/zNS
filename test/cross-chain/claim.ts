@@ -3,13 +3,18 @@ import * as hre from "hardhat";
 import axios from "axios";
 import { ErrorDecoder } from "ethers-decode-error";
 import { receiverAddress } from "./addresses.json";
+import * as ethers from "ethers";
+import { ZNSSubRegistrar, ZNSSubRegistrar__factory } from "../../typechain";
+import { DEFAULT_TOKEN_URI, distrConfigEmpty, paymentConfigEmpty } from "../helpers";
 
 
+// TODO multi: make this into something usable or delete
 const mekrleProofString = "/merkle-proof";
 const getClaimsFromAcc = "/bridges/";
 const zChainBridgeApiUrl = "https://zchain-testnet-bridge-api.eu-north-2.gateway.fm/";
 const zChainRpcUrl = "https://zchain-testnet-rpc.eu-north-2.gateway.fm/";
 const zChainTestBridgeAddress = "0x528e26b25a34a4A5d0dbDa1d57D318153d2ED582";
+
 
 
 const main = async () => {
@@ -77,7 +82,30 @@ const main = async () => {
   console.log("Claim process completed successfully!");
 };
 
-// main().catch(error => {
+
+const register = async () => {
+  const [caller] = await hre.ethers.getSigners();
+  const fact = new ZNSSubRegistrar__factory(caller);
+  const znsSubRegistrar = fact.attach("0x0629076F9851dd5AE881d2d68790E4b7176aB5fd") as ZNSSubRegistrar;
+
+  const parentHash = "0x4d7459e21a4603da1084e91d4d1ec4f0255be54312073d256d7f1881c81c167d";
+  const label = "subone";
+
+  const tx = await znsSubRegistrar.registerSubdomain(
+    parentHash,
+    label,
+    caller.address,
+    DEFAULT_TOKEN_URI,
+    distrConfigEmpty,
+    paymentConfigEmpty,
+  );
+  const receipt = await tx.wait();
+
+
+  console.log("Subdomain registered successfully!", JSON.stringify(receipt, null, "\t"));
+};
+
+// register().catch(error => {
 //   console.error(error);
 //   process.exit(1);
 // });
