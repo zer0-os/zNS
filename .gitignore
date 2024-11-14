@@ -20,3 +20,6 @@ docker*.tgz
 
 # We don't ever use the generated manifests
 .openzeppelin
+
+# Local tests and ops
+test-data
