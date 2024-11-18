@@ -37,7 +37,7 @@
     "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
     "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
     "run-zchaintest": "hardhat run src/deploy/run-campaign.ts --network zchaintest",
-    "bridge-get": "ts-node src/utils/cross-chain/bridge-api.ts"
+    "bridge-get": "ts-node src/utils/cross-chain/run-bridge-api.ts"
   },
   "pre-commit": [
     "lint"
