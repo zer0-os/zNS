@@ -6,7 +6,13 @@ import { getBridgeDepositData, getMerkeProof } from "../../src/utils/cross-chain
 
 // These helpers only return data for a single deposit only
 // they use whatever has been saved last to local files after running `bridge-get` script
-export const getSavedBridgeApiData = async (destAddress ?: string) => {
+export const getSavedBridgeApiData = async ({
+  destAddress,
+  depositCnt,
+} : {
+  destAddress ?: string;
+  depositCnt ?: string;
+}) => {
   let deposit;
   let proof;
 
@@ -15,6 +21,9 @@ export const getSavedBridgeApiData = async (destAddress ?: string) => {
       getTempDataFilePath(BridgeApiOps.deposit)
     );
     deposit = JSON.parse(rawDeposit.toString());
+    if (depositCnt) {
+      deposit = deposit.find((d : { deposit_cnt : string; }) => d.deposit_cnt === depositCnt);
+    }
 
     const rawProof = fs.readFileSync(
       getTempDataFilePath(BridgeApiOps.proof)
@@ -23,7 +32,6 @@ export const getSavedBridgeApiData = async (destAddress ?: string) => {
   } else {
     const deposits = await getBridgeDepositData({ destAddress });
     deposit = deposits[deposits.length - 1];
-
 
     const { deposit_cnt, orig_net } = deposit;
     proof = await getMerkeProof({ depositCnt: deposit_cnt, netId: orig_net });
@@ -35,8 +43,14 @@ export const getSavedBridgeApiData = async (destAddress ?: string) => {
   };
 };
 
-export const getClaimArgsFromApi = async (destAddress ?: string) => {
-  const { deposit, proof } = await getSavedBridgeApiData(destAddress);
+export const getClaimArgsFromApi = async ({
+  destAddress,
+  depositCnt,
+} : {
+  destAddress ?: string;
+  depositCnt ?: string;
+}) => {
+  const { deposit, proof } = await getSavedBridgeApiData({ destAddress, depositCnt });
 
   return [
     proof.merkle_proof,

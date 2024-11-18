@@ -71,7 +71,7 @@ export const getMerkeProof = async ({
   return proof;
 };
 
-const main = async (args : Array<string>) => {
+export const getSaveBridgeApiResponse = async (args : Array<string>) => {
   let apiDataReturn : string;
   const op = args[0] as TBridgeApiOp;
 
@@ -81,7 +81,7 @@ const main = async (args : Array<string>) => {
 
     const deposits = await getBridgeDepositData({ destAddress });
     console.log("Deposits acquired:", JSON.stringify(deposits, null, "\t"));
-    apiDataReturn = JSON.stringify(deposits[deposits.length - 1], null, "\t");
+    apiDataReturn = JSON.stringify(deposits, null, "\t");
     break;
 
   case BridgeApiOps.proof:
@@ -99,7 +99,7 @@ const main = async (args : Array<string>) => {
   }
 
   if (args[args.length - 1] === "save" && apiDataReturn) {
-    const pathToFile = path.join(TEMP_DATA_DIR_PATH, getTempDataFilePath(op));
+    const pathToFile = getTempDataFilePath(op);
 
     if (!fs.existsSync(TEMP_DATA_DIR_PATH)) {
       fs.mkdirSync(TEMP_DATA_DIR_PATH);
@@ -108,12 +108,3 @@ const main = async (args : Array<string>) => {
     fs.writeFileSync(pathToFile, apiDataReturn);
   }
 };
-
-const args = process.argv.slice(2);
-
-main(args)
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
