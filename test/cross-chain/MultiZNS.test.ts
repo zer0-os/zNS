@@ -74,7 +74,7 @@ describe.only("MultiZNS", () => {
 
   const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
-  const subParentLabel = "bridgessss";
+  const subParentLabel = "bridgess";
 
   const dummySmtProof = Array.from({ length: 32 }, () => hre.ethers.randomBytes(32));
 
@@ -474,7 +474,10 @@ describe.only("MultiZNS", () => {
                 bridgedEventData.amount,
                 bridgedEventData.metadata,
               ]
-              : await getClaimArgsFromApi();
+              : await getClaimArgsFromApi({
+                // when running on a real network provide this data to be able to run the test !
+                // depositCnt: name === "Root Domain" ? "15" : "16",
+              });
 
             // **NOTE** that we connect as `deployAdmin` here to show that it's not
             // required that this has to be called by the original owner,
@@ -482,9 +485,9 @@ describe.only("MultiZNS", () => {
 
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            await znsL2.zkEvmBridge.connect(deployAdminL2).claimMessage(...claimArgs);
+            const tx = await znsL2.zkEvmBridge.connect(deployAdminL2).claimMessage(...claimArgs);
+            await tx.wait(getConfirmationsNumber());
 
-            // TODO multi: fix all the event reads for test networks, now they don't get the data
             const events = await getEvents({
               contract: znsL2.zkEvmBridge,
               eventName: "ClaimEvent",
