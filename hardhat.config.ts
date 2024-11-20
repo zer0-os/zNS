@@ -124,27 +124,29 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-    // zchaintest: {
-    //   url: `${process.env.ZCHAINTEST_RPC_URL}`,
-    //   chainId: 1668201165,
-    //   accounts: [
-    //     `${process.env.TESTNET_PRIVATE_KEY_A}`,
-    //   ],
-    // },
+    zchaintest: {
+      url: `${process.env.ZCHAINTEST_RPC_URL}`,
+      chainId: 2012605151,
+      accounts: [
+        `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      ],
+    },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  //   customChains: [
-  //     {
-  //       network: "zchaintest",
-  //       chainId: 1668201165,
-  //       urls: {
-  //         apiURL: "https://zchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
-  //         browserURL: "https://zchain-testnet-blockscout.eu-north-2.gateway.fm/",
-  //       },
-  //     },
-  //   ],
-  // },
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [
+      {
+        network: "zchaintest",
+        chainId: 2012605151,
+        urls: {
+          apiURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
@@ -165,20 +167,6 @@ const config : HardhatUserConfig = {
       "oz-proxies/",
     ],
   },
-  // meowtestnet: {
-  //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
-  //   chainId: 883424730,
-  //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
-  // `${process.env.DEPLOYER_PRIVATE_KEY}`,
-  // `${process.env.ZERO_VAULT_PRIVATE_KEY}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_A}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_B}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_C}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_D}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_E}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_F}`,
-  //   ],
-  // },
 };
 
 export default config;
