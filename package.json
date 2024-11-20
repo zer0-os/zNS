@@ -38,7 +38,7 @@
     "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
     "run-zchaintest": "hardhat run src/deploy/run-campaign.ts --network zchaintest",
     "bridge-get": "ts-node src/utils/cross-chain/run-bridge-api.ts",
-    "mint-looper": "yarn hardhat run test/cross-chain/mint-looper.temp.ts --network zchaintest"
+    "mint-looper": "hardhat run test/cross-chain/mint-looper.temp.ts --network zchaintest"
   },
   "pre-commit": [
     "lint"

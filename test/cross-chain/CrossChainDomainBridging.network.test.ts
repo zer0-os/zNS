@@ -36,26 +36,12 @@ import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import assert from "assert";
 import { getConfirmationsNumber } from "../helpers/tx";
 import { getClaimArgsFromApi } from "../helpers/cc-claim";
+import { NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT, ZCHAIN_ID_TEST_DEFAULT } from "./ZNSDeploy.test";
+import { resetEnvVars } from "../helpers/env";
 
-
-export const NETWORK_ID_L1_DEFAULT = 0n;
-export const NETWORK_ID_L2_DEFAULT = 1n;
-
-const zChainID = 2012605151n;
-
-
-const resetEnvVars = () => {
-  delete process.env.SRC_CHAIN_NAME;
-  delete process.env.MOCK_ZKEVM_BRIDGE;
-  delete process.env.NETWORK_ID;
-  delete process.env.DEST_NETWORK_ID;
-  delete process.env.DEST_CHAIN_NAME;
-  delete process.env.DEST_CHAIN_ID;
-  delete process.env.SRC_ZNS_PORTAL;
-};
 
 // TODO multi: add ChainResolver tests !!!
-describe.only("MultiZNS", () => {
+describe("Cross-Chain Domain Bridging Test [for local and test networks]", () => {
   let isRealNetwork = false;
 
   let znsL1 : IZNSContracts;
@@ -70,7 +56,8 @@ describe.only("MultiZNS", () => {
   let subUser : SignerWithAddress;
   let subUserL2 : Wallet | SignerWithAddress;
 
-  let config : IZNSCampaignConfig<SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig<SignerWithAddress>;
+  let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
 
   const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
@@ -129,22 +116,22 @@ describe.only("MultiZNS", () => {
     } else {
       // set ENV vars for the Ethereum ZNS deployment
       process.env.MOCK_ZKEVM_BRIDGE = "true";
-      process.env.NETWORK_ID = NETWORK_ID_L1_DEFAULT.toString();
-      process.env.DEST_NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
+      process.env.NETWORK_ID = NETWORK_ID_L1_TEST_DEFAULT.toString();
+      process.env.DEST_NETWORK_ID = NETWORK_ID_L2_TEST_DEFAULT.toString();
       process.env.DEST_CHAIN_NAME = SupportedChains.z;
-      process.env.DEST_CHAIN_ID = zChainID.toString();
+      process.env.DEST_CHAIN_ID = ZCHAIN_ID_TEST_DEFAULT.toString();
     }
 
     // TODO multi: create a proper test for zkEVM bridge when not mocked !!!
 
     // L1 run
-    config = await getConfig({
+    configL1 = await getConfig({
       deployer: deployAdmin,
       zeroVaultAddress: deployAdmin.address,
     });
 
     // TODO multi: add logger message to show which network is campaign running on !!!
-    const campaignL1 = await runZnsCampaign({ config });
+    const campaignL1 = await runZnsCampaign({ config: configL1 });
 
     ({
       state: {
@@ -160,7 +147,7 @@ describe.only("MultiZNS", () => {
     if (!isRealNetwork) {
       // set vars for ZChain ZNS deployment
       process.env.SRC_ZNS_PORTAL = znsL1.zPortal.target as string;
-      process.env.NETWORK_ID = NETWORK_ID_L2_DEFAULT.toString();
+      process.env.NETWORK_ID = NETWORK_ID_L2_TEST_DEFAULT.toString();
       process.env.MONGO_DB_NAME = "zns-l2";
       // TODO multi: create zkEVM bridge tests for predeployed bridge !!!
       deployAdminL2 = deployAdmin;
@@ -177,20 +164,21 @@ describe.only("MultiZNS", () => {
     }
 
     // L2 run
-    config = await getConfig({
+    configL2 = await getConfig({
       deployer: deployAdminL2,
       zeroVaultAddress: deployAdminL2.address,
     });
 
     // emulating L2 here by deploying to the same network
-    const campaignL2 = await runZnsCampaign({ config });
+    const campaignL2 = await runZnsCampaign({ config: configL2 });
 
     ({
       state: {
         contracts: znsL2,
       },
       dbAdapter: dbAdapter2,
-    } = campaignL2);  });
+    } = campaignL2);
+  });
 
   after(async () => {
     resetEnvVars();
@@ -239,6 +227,9 @@ describe.only("MultiZNS", () => {
     ).to.be.rejectedWith("registerRootDomain is not a function");
   });
 
+  // TODO multi: Separate these into a different file that can work with real test networks and properly
+  //  run one flow at a time (bridge vs claim) !!!
+  //  And leave more regular tests here that can run on local Hardhat network !
   [
     {
       name: "Root Domain",
@@ -326,7 +317,7 @@ describe.only("MultiZNS", () => {
             });
             const event = events[events.length - 1];
             expect(event.args.domainHash).to.equal(domainHash);
-            expect(event.args.destNetworkId).to.equal(NETWORK_ID_L2_DEFAULT);
+            expect(event.args.destNetworkId).to.equal(NETWORK_ID_L2_TEST_DEFAULT);
             expect(event.args.destPortalAddress).to.equal(znsL2.ethPortal.target);
             expect(event.args.domainOwner).to.equal(user.address);
 
@@ -351,9 +342,9 @@ describe.only("MultiZNS", () => {
               ]]
             );
 
-            expect(bridgedEventData.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
+            expect(bridgedEventData.originNetwork).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
             expect(bridgedEventData.originAddress).to.equal(znsL1.zPortal.target);
-            expect(bridgedEventData.destinationNetwork).to.equal(NETWORK_ID_L2_DEFAULT);
+            expect(bridgedEventData.destinationNetwork).to.equal(NETWORK_ID_L2_TEST_DEFAULT);
             expect(bridgedEventData.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(bridgedEventData.amount).to.equal(0n);
             expect(bridgedEventData.metadata).to.equal(metadataRef);
@@ -401,7 +392,7 @@ describe.only("MultiZNS", () => {
 
           it("should properly set data in ChainResolver", async () => {
             const chainData = await znsL1.chainResolver.resolveChainDataStruct(domainHash);
-            expect(chainData.chainId).to.equal(zChainID);
+            expect(chainData.chainId).to.equal(ZCHAIN_ID_TEST_DEFAULT);
             expect(chainData.chainName).to.equal(SupportedChains.z);
             expect(chainData.znsRegistryOnChain).to.equal(hre.ethers.ZeroAddress);
             expect(chainData.auxData).to.equal("");
@@ -493,7 +484,7 @@ describe.only("MultiZNS", () => {
               eventName: "ClaimEvent",
             });
             const event = events[events.length - 1];
-            expect(event.args.originNetwork).to.equal(NETWORK_ID_L1_DEFAULT);
+            expect(event.args.originNetwork).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
             expect(event.args.originAddress).to.equal(znsL1.zPortal.target);
             expect(event.args.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(event.args.amount).to.equal(0n);
@@ -508,7 +499,7 @@ describe.only("MultiZNS", () => {
               eventName: "DomainClaimed",
             });
             const event = events[events.length - 1];
-            expect(event.args.srcNetworkId).to.equal(NETWORK_ID_L1_DEFAULT);
+            expect(event.args.srcNetworkId).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
             expect(event.args.srcPortalAddress).to.equal(znsL1.zPortal.target);
             expect(event.args.domainHash).to.equal(domainHash);
             expect(event.args.domainOwner).to.equal(user.address);
@@ -611,6 +602,7 @@ describe.only("MultiZNS", () => {
       });
     });
 
+  // TODO multi: separate all these into different files
   // We will only run this on local Hardhat network
   if (!isRealNetwork) {
     describe("Unit Tests", () => {
@@ -661,7 +653,7 @@ describe.only("MultiZNS", () => {
         it("#initialize() should revert when trying to reinitialize", async () => {
           const {
             srcZnsPortal,
-          } = config.crosschain as IZNSZChainCrossConfig;
+          } = configL1.crosschain as IZNSZChainCrossConfig;
 
           await expect(
             znsL2.ethPortal.connect(deployAdmin).initialize(
