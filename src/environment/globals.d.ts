@@ -1,7 +1,7 @@
-import { ZNSEnv } from "./types";
+import { IZNSEnvironment } from "./types";
 
 declare global {
   namespace NodeJS {
-    interface ProcessEnv extends ZNSEnv {}
+    interface ProcessEnv extends IZNSEnvironment {}
   }
 }

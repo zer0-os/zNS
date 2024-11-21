@@ -1,4 +1,4 @@
-export interface ZNSEnv {
+export interface IZNSEnvironment {
   ENV_LEVEL : string;
   MAINNET_RPC_URL ?: string;
   SEPOLIA_RPC_URL ?: string;

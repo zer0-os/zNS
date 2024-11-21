@@ -57,7 +57,7 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  stakingTokenAddress : string;
+  stakingTokenAddress ?: string;
   crosschain : TZNSCrossConfig;
   postDeploy : {
     tenderlyProjectSlug : string;
