@@ -6,7 +6,10 @@
 // set in .env file locally.
 // For detailed breakdown of vars, see env.sample file.
 // !!! --< DO NOT WRITE ANY MAINNET DATA HERE >-- !!!
-export const environment = {
+import { IZNSEnvironment } from "./types";
+
+
+export const environment : IZNSEnvironment = {
   ENV_LEVEL: "dev",
   // RPCs for actual networks
   MAINNET_RPC_URL: "",
@@ -39,7 +42,6 @@ export const environment = {
   DEVNET_RPC_URL: "",
 
   // Contracts Config:
-
   // ! System Administration !
   GOVERNOR_ADDRESSES: "",
   ADMIN_ADDRESSES: "",

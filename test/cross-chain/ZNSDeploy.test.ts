@@ -8,8 +8,9 @@ import { Wallet } from "ethers";
 import { getConfig } from "../../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import { resetEnvVars } from "../helpers/env";
+import { resetEnvVars } from "../../src/environment/env";
 import { PolygonZkEVMBridgeV2Mock } from "../../typechain";
+import { findMissingEnvVars } from "../../src/environment/validate";
 
 
 export const NETWORK_ID_L1_TEST_DEFAULT = 0n;

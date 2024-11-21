@@ -34,6 +34,7 @@ export const PaymentType = {
   STAKE: 1n,
 };
 
+// TODO multi: make these read from the env.ts file along with other default env vars ??
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
   minPrice: ethers.parseEther("2000"),

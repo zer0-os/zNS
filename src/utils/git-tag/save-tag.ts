@@ -6,12 +6,12 @@ import { tagFilePath } from "./constants";
 
 
 const execAsync = promisify(exec);
-const logger = getLogger();
 
 
 export const acquireLatestGitTag = async () => {
   const gitTag = await execAsync("git describe --tags --abbrev=0");
   const tag = gitTag.stdout.trim();
+  const logger = getLogger();
 
   logger.info(`Latest git tag acquired: ${tag}`);
 
