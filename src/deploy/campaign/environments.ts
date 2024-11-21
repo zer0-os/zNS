@@ -22,11 +22,12 @@ import {
   MONGO_URI_ERR,
   INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
 } from "../../../test/helpers";
-import { ethers } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/zns-base/meow-token/mainnet-data";
 import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../missions/contracts/cross-chain/portals/get-portal-dm";
+import { findMissingEnvVars } from "../../environment/validate";
 
 
 const getCustomAddresses = (
@@ -69,12 +70,12 @@ export const getConfig = async ({
   zeroVaultAddress,
   env, // this is ONLY used for tests!
 } : {
-  deployer : SignerWithAddress;
+  deployer : Wallet | SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
-}) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
+}) : Promise<IZNSCampaignConfig<SignerWithAddress | Wallet>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
@@ -99,10 +100,7 @@ export const getConfig = async ({
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
-  const royaltyFraction =
-    process.env.ROYALTY_FRACTION
-      ? BigInt(process.env.ROYALTY_FRACTION)
-      : DEFAULT_ROYALTY_FRACTION;
+  const royaltyFraction = BigInt(process.env.ROYALTY_FRACTION);
 
   // Get governor addresses set through env, if any
   const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
@@ -110,23 +108,23 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig<SignerWithAddress> = {
-    env: process.env.ENV_LEVEL!,
+  const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = {
+    env: process.env.ENV_LEVEL,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
     domainToken: {
-      name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
-      symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
+      name: process.env.DOMAIN_TOKEN_NAME,
+      symbol: process.env.DOMAIN_TOKEN_SYMBOL,
       defaultRoyaltyReceiver: royaltyReceiver,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
     zeroVaultAddress: zeroVaultAddressConf,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS,
     postDeploy: {
-      tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
+      tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG ?? "",
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",
       verifyContracts: process.env.VERIFY_CONTRACTS === "true",
     },
@@ -150,6 +148,8 @@ export const validateEnv = (
     envLevel = env;
   }
 
+  findMissingEnvVars();
+
   // Validate price config first since we have to return it
   const priceConfig = getValidateRootPriceConfig();
 
@@ -165,20 +165,6 @@ export const validateEnv = (
     // If we reach this code, there is an env variable, but it's not valid.
     throw new Error(INVALID_ENV_ERR);
   }
-
-  if (!process.env.ROYALTY_RECEIVER) {
-    throw new Error("Must provide a default royalty receiver");
-  }
-
-  if (!process.env.ROYALTY_FRACTION) {
-    throw new Error("Must provide a default royalty fraction");
-  }
-
-  if (!process.env.MONGO_DB_URI) {
-    throw new Error(`Must provide a Mongo URI used for ${envLevel} environment!`);
-  }
-
-  requires(!!process.env.ZERO_VAULT_ADDRESS, NO_ZERO_VAULT_ERR);
 
   // Mainnet
   if (envLevel === "prod") {
@@ -201,57 +187,18 @@ export const validateEnv = (
 };
 
 export const getValidateRootPriceConfig = () => {
-
-  if (process.env.ENV_LEVEL === "prod") {
-    requires(
-      !!process.env.MAX_PRICE
-      && !!process.env.MIN_PRICE
-      && !!process.env.MAX_LENGTH
-      && !!process.env.BASE_LENGTH
-      && !!process.env.DECIMALS
-      && !!process.env.PRECISION
-      && !!process.env.PROTOCOL_FEE_PERC,
-      "Must provide all price config variables for prod environment!"
-    );
-  }
-
   // Price config variables
-  const maxPrice =
-    process.env.MAX_PRICE
-      ? ethers.parseEther(process.env.MAX_PRICE)
-      : DEFAULT_PRICE_CONFIG.maxPrice;
-
-  const minPrice =
-    process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
-      : DEFAULT_PRICE_CONFIG.minPrice;
-
-  const maxLength =
-    process.env.MAX_LENGTH
-      ? BigInt(process.env.MAX_LENGTH)
-      : DEFAULT_PRICE_CONFIG.maxLength;
-
-  const baseLength =
-    process.env.BASE_LENGTH
-      ? BigInt(process.env.BASE_LENGTH)
-      : DEFAULT_PRICE_CONFIG.baseLength;
-
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
   const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
-  const feePercentage =
-    process.env.PROTOCOL_FEE_PERC
-      ? BigInt(process.env.PROTOCOL_FEE_PERC)
-      : DEFAULT_PROTOCOL_FEE_PERCENT;
-
   const priceConfig : ICurvePriceConfig = {
-    maxPrice,
-    minPrice,
-    maxLength,
-    baseLength,
+    maxPrice: ethers.parseEther(process.env.MAX_PRICE),
+    minPrice: ethers.parseEther(process.env.MIN_PRICE),
+    maxLength: BigInt(process.env.MAX_LENGTH),
+    baseLength: BigInt(process.env.BASE_LENGTH),
     precisionMultiplier,
-    feePercentage,
+    feePercentage: BigInt(process.env.PROTOCOL_FEE_PERC),
     isSet: true,
   };
 
@@ -279,9 +226,7 @@ const validatePrice = (config : ICurvePriceConfig) => {
 };
 
 export const buildCrosschainConfig = () : TZNSCrossConfig => {
-  requires(!!process.env.SRC_CHAIN_NAME, "Must provide name for the chain to deploy to!");
   const srcChainName = process.env.SRC_CHAIN_NAME as TSupportedChain;
-  requires(!!process.env.MOCK_ZKEVM_BRIDGE, "Must provide mock polygon bridge flag!");
   const mockZkEvmBridge = process.env.MOCK_ZKEVM_BRIDGE === "true";
 
   let curNetworkId;
@@ -297,7 +242,7 @@ export const buildCrosschainConfig = () : TZNSCrossConfig => {
       !!process.env.NETWORK_ID,
       "Must provide current network ID for mocked bridge!"
     );
-    curNetworkId = BigInt(process.env.NETWORK_ID!);
+    curNetworkId = BigInt(process.env.NETWORK_ID);
   }
 
   const baseConfig = {
@@ -317,9 +262,9 @@ export const buildCrosschainConfig = () : TZNSCrossConfig => {
 
     crossConfig = {
       ...baseConfig,
-      destNetworkId: BigInt(process.env.DEST_NETWORK_ID!),
+      destNetworkId: BigInt(process.env.DEST_NETWORK_ID),
       destChainName: process.env.DEST_CHAIN_NAME,
-      destChainId: BigInt(process.env.DEST_CHAIN_ID!),
+      destChainId: BigInt(process.env.DEST_CHAIN_ID),
     } as IZNSEthCrossConfig;
 
     break;
