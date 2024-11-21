@@ -26,7 +26,7 @@ const sendTxes = async () => {
   console.log("Minted tokens:", JSON.stringify(resArr, null, "\t"));
 };
 
-sendTxes().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+// sendTxes().catch(error => {
+//   console.error(error);
+//   process.exit(1);
+// });
