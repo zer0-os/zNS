@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
-require("dotenv").config();
 
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
@@ -16,6 +15,7 @@ import "solidity-docgen";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
+import "./src/environment/set-env";
 
 
 subtask(TASK_TEST_RUN_MOCHA_TESTS)
@@ -125,12 +125,12 @@ const config : HardhatUserConfig = {
       chainId: 1,
     },
     zchaintest: {
-      url: `${process.env.ZCHAINTEST_RPC_URL}`,
+      url: `${process.env.ZCHAIN_TEST_RPC_URL}`,
       chainId: 2012605151,
       accounts: [
-        `${process.env.TESTNET_PRIVATE_KEY_A}`,
-        `${process.env.TESTNET_PRIVATE_KEY_B}`,
-        `${process.env.TESTNET_PRIVATE_KEY_C}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
       ],
     },
   },
