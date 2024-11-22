@@ -9,16 +9,29 @@ import {
   ZNSDomainToken__factory,
   ZNSFixedPricer__factory,
   ZNSCurvePricer__factory,
-  ZNSRootRegistrar,
-  ZNSRootRegistrar__factory,
   ZNSRegistry,
   ZNSRegistry__factory,
-  ZNSSubRegistrar__factory,
   ZNSTreasury,
   ZNSTreasury__factory,
   ZNSFixedPricer,
-  ZNSSubRegistrar,
   MeowTokenMock,
+  ZNSStringResolver,
+  ZNSStringResolver__factory,
+  ZNSChainResolver__factory,
+  ZNSChainResolver,
+  ZNSRootRegistrarTrunk__factory,
+  ZNSRootRegistrarBranch__factory,
+  ZNSSubRegistrarTrunk__factory,
+  ZNSSubRegistrarBranch__factory,
+  PolygonZkEVMBridgeV2Mock__factory,
+  PolygonZkEVMBridgeV2Mock,
+  ZNSZChainPortal__factory,
+  ZNSZChainPortal,
+  ZNSEthereumPortal__factory,
+  ZNSEthereumPortal,
+  ZNSRootRegistrarTrunk,
+  ZNSRootRegistrarBranch,
+  ZNSSubRegistrarTrunk, ZNSSubRegistrarBranch,
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig, IZNSContractsLocal } from "../types";
 import * as hre from "hardhat";
@@ -32,9 +45,7 @@ import {
   fixedPricerName,
   DEFAULT_PRICE_CONFIG,
   curvePricerName,
-  registrarName,
   registryName,
-  subRegistrarName,
   treasuryName,
   meowTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -42,11 +53,18 @@ import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
 } from "../constants";
-import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
+import { PORTAL_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
-import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
+import { transparentProxyName, znsNames } from "../../../src/deploy/missions/contracts/names";
+import { TSupportedChain } from "../../../src/deploy/missions/contracts/cross-chain/portals/types";
+import { SupportedChains } from "../../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
+import {
+  NETWORK_ID_L1_TEST_DEFAULT,
+  NETWORK_ID_L2_TEST_DEFAULT,
+  ZCHAIN_ID_TEST_DEFAULT,
+} from "../../cross-chain/ZNSDeploy.test";
 
 
 export const deployAccessController = async ({
@@ -68,7 +86,7 @@ export const deployAccessController = async ({
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
-      name: accessControllerName,
+      name: znsNames.accessController.contract,
       address: proxyAddress,
     });
 
@@ -105,7 +123,7 @@ export const deployRegistry = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: registryName,
+      name: znsNames.registry.contract,
       address: impl,
     });
 
@@ -152,7 +170,7 @@ export const deployDomainToken = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: domainTokenName,
+      name: znsNames.domainToken.contract,
       address: impl,
     });
 
@@ -193,7 +211,7 @@ export const deployMeowToken = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: meowTokenMockName,
+      name: znsNames.meowToken.contractMock,
       address: impl,
     });
 
@@ -240,7 +258,7 @@ export const deployAddressResolver = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: addressResolverName,
+      name: znsNames.addressResolver.contract,
       address: impl,
     });
 
@@ -250,6 +268,94 @@ export const deployAddressResolver = async (
   }
 
   return resolver as unknown as ZNSAddressResolver;
+};
+
+export const deployStringResolver = async (
+  deployer : SignerWithAddress,
+  accessControllerAddress : string,
+  registryAddress : string,
+  isTenderlyRun : boolean,
+) => {
+  const stringResolverFactory = new ZNSStringResolver__factory(deployer);
+
+  const resolver = await upgrades.deployProxy(
+    stringResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await resolver.waitForDeployment();
+
+  const proxyAddress = await resolver.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: znsNames.stringResolver.contract,
+      address: impl,
+    });
+
+    console.log(`ZNSStringResolver deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
+
+  return resolver as unknown as ZNSStringResolver;
+};
+
+export const deployChainResolver = async (
+  deployer : SignerWithAddress,
+  accessControllerAddress : string,
+  registryAddress : string,
+  isTenderlyRun : boolean,
+) => {
+  const chainResolverFactory = new ZNSChainResolver__factory(deployer);
+
+  const resolver = await upgrades.deployProxy(
+    chainResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await resolver.waitForDeployment();
+
+  const proxyAddress = await resolver.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: znsNames.chainResolver.contract,
+      address: impl,
+    });
+
+    console.log(`ZNSChainResolver deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
+
+  return resolver as unknown as ZNSChainResolver;
 };
 
 export const deployCurvePricer = async ({
@@ -292,7 +398,7 @@ export const deployCurvePricer = async ({
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: curvePricerName,
+      name: znsNames.curvePricer.contract,
       address: impl,
     });
 
@@ -344,7 +450,7 @@ export const deployTreasury = async ({
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: treasuryName,
+      name: znsNames.treasury.contract,
       address: impl,
     });
 
@@ -360,9 +466,18 @@ export const deployRootRegistrar = async (
   deployer : SignerWithAddress,
   accessController : ZNSAccessController,
   config : RegistrarConfig,
+  srcChainName = SupportedChains.eth,
   isTenderlyRun : boolean
-) : Promise<ZNSRootRegistrar> => {
-  const registrarFactory = new ZNSRootRegistrar__factory(deployer);
+) : Promise<ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch> => {
+  let registrarFactory;
+  let name;
+  if (srcChainName === SupportedChains.eth) {
+    registrarFactory = new ZNSRootRegistrarTrunk__factory(deployer);
+    name = znsNames.rootRegistrar.contractTrunk;
+  } else {
+    registrarFactory = new ZNSRootRegistrarBranch__factory(deployer);
+    name = znsNames.rootRegistrar.contractBranch;
+  }
 
   const registrar = await upgrades.deployProxy(
     registrarFactory,
@@ -392,16 +507,16 @@ export const deployRootRegistrar = async (
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: registrarName,
+      name,
       address: impl,
     });
 
-    console.log(`ZNSRootRegistrar deployed at:
+    console.log(`${name} deployed at:
                 proxy: ${proxyAddress}
                 implementation: ${impl}`);
   }
 
-  return registrar as unknown as ZNSRootRegistrar;
+  return registrar as unknown as ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
 };
 
 export const deployFixedPricer = async ({
@@ -439,7 +554,7 @@ export const deployFixedPricer = async ({
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: fixedPricerName,
+      name: znsNames.fixedPricer.contract,
       address: impl,
     });
 
@@ -457,16 +572,27 @@ export const deploySubRegistrar = async ({
   registry,
   rootRegistrar,
   admin,
+  srcChainName = SupportedChains.eth,
   isTenderlyRun = false,
 } : {
   deployer : SignerWithAddress;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
-  rootRegistrar : ZNSRootRegistrar;
+  rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   admin : SignerWithAddress;
+  srcChainName ?: TSupportedChain;
   isTenderlyRun ?: boolean;
 }) => {
-  const subRegistrarFactory = new ZNSSubRegistrar__factory(deployer);
+  let subRegistrarFactory;
+  let name;
+  if (srcChainName === SupportedChains.eth) {
+    subRegistrarFactory = new ZNSSubRegistrarTrunk__factory(deployer);
+    name = znsNames.subRegistrar.contractTrunk;
+  } else {
+    subRegistrarFactory = new ZNSSubRegistrarBranch__factory(deployer);
+    name = znsNames.subRegistrar.contractBranch;
+  }
+
   const subRegistrar = await upgrades.deployProxy(
     subRegistrarFactory,
     [
@@ -497,16 +623,188 @@ export const deploySubRegistrar = async ({
     const impl = await getProxyImplAddress(proxyAddress);
 
     await hre.tenderly.verify({
-      name: subRegistrarName,
+      name,
       address: impl,
     });
 
-    console.log(`${subRegistrarName} deployed at:
+    console.log(`${name} deployed at:
                 proxy: ${proxyAddress}
                 implementation: ${impl}`);
   }
 
-  return subRegistrar as unknown as ZNSSubRegistrar;
+  return subRegistrar as unknown as ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
+};
+
+export const deployZkEvmBridgeMock = async (
+  deployer : SignerWithAddress,
+  networkId : bigint,
+  bridgeTokenAddress : string,
+  isTenderlyRun : boolean,
+) => {
+  const bridgeFact = new PolygonZkEVMBridgeV2Mock__factory(deployer);
+
+  const bridge = await hre.upgrades.deployProxy(
+    bridgeFact,
+    [
+      networkId,
+      bridgeTokenAddress,
+    ],
+    {
+      kind: "transparent",
+    }
+  );
+
+  await bridge.waitForDeployment();
+  const proxyAddress = await bridge.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: transparentProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: znsNames.zkEvmBridge.contractMock,
+      address: impl,
+    });
+
+    console.log(`${znsNames.zkEvmBridge.contractMock} deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
+
+  return bridge as unknown as PolygonZkEVMBridgeV2Mock;
+};
+
+export const deployZChainPortal = async ({
+  deployer,
+  destNetworkId,
+  destChainName,
+  destChainId,
+  bridgeAddress,
+  contractAddresses,
+  isTenderlyRun,
+} : {
+  deployer : SignerWithAddress;
+  destNetworkId : bigint;
+  destChainName : TSupportedChain;
+  destChainId : bigint;
+  bridgeAddress : string;
+  contractAddresses : {
+    accessController : string;
+    rootRegistrar : string;
+    subRegistrar : string;
+    treasury : string;
+    registry : string;
+    chainResolver : string;
+  };
+  isTenderlyRun : boolean;
+}) => {
+  const factory = new ZNSZChainPortal__factory(deployer);
+
+  const zChainPortal = await hre.upgrades.deployProxy(
+    factory,
+    [
+      destNetworkId,
+      destChainName,
+      destChainId,
+      bridgeAddress,
+      contractAddresses,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await zChainPortal.waitForDeployment();
+  const proxyAddress = await zChainPortal.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: znsNames.zPortal.contract,
+      address: impl,
+    });
+
+    console.log(`${znsNames.zPortal.contract} deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
+
+  return zChainPortal as unknown as ZNSZChainPortal;
+};
+
+export const deployEthPortal = async ({
+  deployer,
+  accessController,
+  zkEvmBridgeAddress,
+  srcZnsPortalAddress,
+  registryAddress,
+  domainTokenAddress,
+  rootRegistrarAddress,
+  subRegistrarAddress,
+  isTenderlyRun,
+} : {
+  deployer : SignerWithAddress;
+  accessController : ZNSAccessController;
+  zkEvmBridgeAddress : string;
+  srcZnsPortalAddress : string;
+  registryAddress : string;
+  domainTokenAddress : string;
+  rootRegistrarAddress : string;
+  subRegistrarAddress : string;
+  isTenderlyRun : boolean;
+}) => {
+  const factory = new ZNSEthereumPortal__factory(deployer);
+
+  const ethPortal = await hre.upgrades.deployProxy(
+    factory,
+    [
+      accessController.target,
+      zkEvmBridgeAddress,
+      srcZnsPortalAddress,
+      registryAddress,
+      domainTokenAddress,
+      rootRegistrarAddress,
+      subRegistrarAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await ethPortal.waitForDeployment();
+  const proxyAddress = await ethPortal.getAddress();
+
+  await accessController.connect(deployer).grantRole(PORTAL_ROLE, proxyAddress);
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: znsNames.ethPortal.contract,
+      address: impl,
+    });
+
+    console.log(`${znsNames.ethPortal.contract} deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
+
+  return ethPortal as unknown as ZNSEthereumPortal;
 };
 
 /**
@@ -521,6 +819,13 @@ export const deployZNS = async ({
   adminAddresses,
   priceConfig = DEFAULT_PRICE_CONFIG,
   zeroVaultAddress = deployer.address,
+  srcChainName = SupportedChains.eth,
+  srcNetworkId = NETWORK_ID_L1_TEST_DEFAULT,
+  bridgeTokenAddress = ethers.ZeroAddress,
+  destNetworkId = NETWORK_ID_L2_TEST_DEFAULT,
+  destChainName = SupportedChains.z,
+  destChainId = ZCHAIN_ID_TEST_DEFAULT,
+  srcZnsPortalAddress = ethers.ZeroAddress,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<IZNSContractsLocal> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
@@ -567,6 +872,13 @@ export const deployZNS = async ({
     isTenderlyRun
   );
 
+  const stringResolver = await deployStringResolver(
+    deployer,
+    await accessController.getAddress(),
+    await registry.getAddress(),
+    isTenderlyRun
+  );
+
   const curvePricer = await deployCurvePricer({
     deployer,
     accessControllerAddress: await accessController.getAddress(),
@@ -595,6 +907,7 @@ export const deployZNS = async ({
     deployer,
     accessController,
     config,
+    srcChainName,
     isTenderlyRun
   );
 
@@ -614,17 +927,69 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
+  const chainResolver = await deployChainResolver(
+    deployer,
+    await accessController.getAddress(),
+    await registry.getAddress(),
+    isTenderlyRun
+  );
+
+  const zkEvmBridge = await deployZkEvmBridgeMock(
+    deployer,
+    srcNetworkId,
+    bridgeTokenAddress,
+    isTenderlyRun
+  );
+
+  let zChainPortal;
+  let ethPortal;
+  if (srcChainName === SupportedChains.eth) {
+    zChainPortal = await deployZChainPortal({
+      deployer,
+      destNetworkId,
+      destChainName,
+      destChainId,
+      bridgeAddress: await zkEvmBridge.getAddress(),
+      contractAddresses: {
+        accessController: await accessController.getAddress(),
+        rootRegistrar: await rootRegistrar.getAddress(),
+        subRegistrar: await subRegistrar.getAddress(),
+        treasury: await treasury.getAddress(),
+        registry: await registry.getAddress(),
+        chainResolver: await chainResolver.getAddress(),
+      },
+      isTenderlyRun,
+    });
+  } else {
+    ethPortal = await deployEthPortal({
+      deployer,
+      accessController,
+      zkEvmBridgeAddress: await zkEvmBridge.getAddress(),
+      srcZnsPortalAddress,
+      registryAddress: await registry.getAddress(),
+      domainTokenAddress: await domainToken.getAddress(),
+      rootRegistrarAddress: await rootRegistrar.getAddress(),
+      subRegistrarAddress: await subRegistrar.getAddress(),
+      isTenderlyRun,
+    });
+  }
+
   const znsContracts : IZNSContractsLocal = {
     accessController,
     registry,
     domainToken,
     meowToken: meowTokenMock,
     addressResolver,
+    stringResolver,
     curvePricer,
     treasury,
     rootRegistrar,
     fixedPricer,
     subRegistrar,
+    chainResolver,
+    zkEvmBridge,
+    zChainPortal,
+    ethPortal,
     zeroVaultAddress,
   };
 
