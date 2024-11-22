@@ -7,6 +7,7 @@ import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSAddressResolverDM extends BaseDeployMission<
@@ -56,9 +57,14 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
-      ResolverTypes.address,
-      await addressResolver.getAddress(),
+    // TODO multi: wrap this in a tx runner that will wait for every tx if not on "dev"
+    //  amount of confirmations should be a var passed to the config!
+    //  do this for all DMs here after the zDC code is changed!
+    await executeWithConfirmation(
+      registry.connect(deployAdmin).addResolverType(
+        ResolverTypes.address,
+        await addressResolver.getAddress()
+      )
     );
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

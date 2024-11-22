@@ -4,6 +4,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
+import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSStringResolverDM extends BaseDeployMission<
@@ -56,9 +57,11 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
-      ResolverTypes.string,
-      await stringResolver.getAddress(),
+    await executeWithConfirmation(
+      registry.connect(deployAdmin).addResolverType(
+        ResolverTypes.string,
+        await stringResolver.getAddress(),
+      )
     );
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

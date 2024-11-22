@@ -4,6 +4,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
+import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSChainResolverDM extends BaseDeployMission<
@@ -56,9 +57,11 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
-      ResolverTypes.chain,
-      await chainResolver.getAddress(),
+    await executeWithConfirmation(
+      registry.connect(deployAdmin).addResolverType(
+        ResolverTypes.chain,
+        await chainResolver.getAddress(),
+      )
     );
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

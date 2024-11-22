@@ -1,10 +1,10 @@
-import { BaseDeployMission, IDeployMissionArgs, TDeployArgs } from "@zero-tech/zdc";
+import { BaseDeployMission, IContractArtifact, IDeployMissionArgs, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { ProxyKinds } from "../../../constants";
 import { znsNames } from "../names";
-import { ethers } from "ethers";
+import { ethers, Interface } from "ethers";
 
 
 export class PolygonZkEVMBridgeV2DM extends BaseDeployMission<
@@ -44,12 +44,15 @@ IZNSContracts
 
       this.logger.info("Using PolygonZkEvmBridgeV2 deployed on chain");
 
-      if (!zkEvmBridgeAddress) throw new Error("No existing ZkEvmBridge address has been passed!");
+      if (!zkEvmBridgeAddress)
+        throw new Error("No existing ZkEvmBridge address has been passed to the campaign config!");
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const factory = await this.campaign.deployer.getFactory(this.contractName);
-      const contract = factory.attach(zkEvmBridgeAddress);
+      // TODO multi:
+      // const factory = await this.campaign.deployer.getFactory(this.contractName);
+      // const contract = factory.attach(zkEvmBridgeAddress);
+      const contract = this.getContractObject(zkEvmBridgeAddress);
 
       await this.saveToDB(contract);
 
@@ -60,6 +63,52 @@ IZNSContracts
     } else {
       await super.deploy();
     }
+  }
+
+  getContractObject (address : string) {
+    // TODO multi: make this better when figured out how to compile the Bridge !!!
+
+    const { abi } = this.getArtifact();
+    // TODO multi: fix this !
+    const contract = new ethers.Contract(address, abi as unknown as Interface, this.campaign.config.deployAdmin);
+
+    return contract;
+  }
+
+  // TODO multi: make this better !!! maybe add a new getContractObject() method to BaseDeployMission for this !!!
+  async needsDeploy () {
+    const dbContract = await this.getFromDB();
+
+    if (!dbContract) {
+      this.logger.info(`${this.dbName} not found in DB, proceeding to deploy...`);
+    } else {
+      this.logger.info(`${this.dbName} found in DB at ${dbContract.address}, no deployment needed.`);
+
+      const contract = this.getContractObject(dbContract.address);
+
+      // eslint-disable-next-line max-len
+      this.logger.debug(`Updating ${this.contractName} in state from DB data with address ${await contract.getAddress()}`);
+
+      this.campaign.updateStateContract(this.instanceName, this.contractName, contract);
+    }
+
+    return !dbContract;
+  }
+
+  async verify () {
+    if (!this.config.crosschain.mockZkEvmBridge) {
+      this.logger.info("Skipping verification for PolygonZkEvmBridge since it's already verified.");
+      return;
+    }
+
+    await super.verify();
+  }
+
+  // TODO multi: make this better !!!
+  getArtifact () : IContractArtifact {
+    return require(
+      `${process.cwd()}/node_modules/@zero-tech/zkevm-contracts/compiled-contracts/PolygonZkEVMBridgeV2.json`
+    );
   }
 
   async deployArgs () : Promise<TDeployArgs> {

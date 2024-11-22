@@ -8,6 +8,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { SupportedChains } from "../cross-chain/portals/get-portal-dm";
+import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSSubRegistrarDM extends BaseDeployMission<
@@ -95,13 +96,17 @@ IZNSContracts
     } = this.campaign;
 
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      await executeWithConfirmation(
+        rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress())
+      );
     }
 
     if (!this.hasRegistrarRole) {
-      await accessController
-        .connect(deployAdmin)
-        .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
+      await executeWithConfirmation(
+        accessController
+          .connect(deployAdmin)
+          .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress())
+      );
     }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

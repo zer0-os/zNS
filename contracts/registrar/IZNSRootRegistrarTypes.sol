@@ -52,6 +52,7 @@ interface IZNSRootRegistrarTypes is IDistributionConfig {
      * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
      * @param domainAddress The domain address of the domain registered
      */
+    // TODO multi: make parentHash indexed instead of tokenId !!!
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
