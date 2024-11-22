@@ -99,7 +99,7 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
-  zPortal : ZNSZChainPortal;
+  zChainPortal : ZNSZChainPortal;
   ethPortal : ZNSEthereumPortal;
   zkEvmBridge : PolygonZkEVMBridgeV2Mock;
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
-
+import "./init-env";
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
 
@@ -15,7 +15,6 @@ import "solidity-docgen";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
-import "./src/environment/set-env";
 
 
 subtask(TASK_TEST_RUN_MOCHA_TESTS)

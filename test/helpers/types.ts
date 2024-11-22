@@ -29,6 +29,14 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
+import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
+import {
+  NETWORK_ID_L1_TEST_DEFAULT,
+  NETWORK_ID_L2_TEST_DEFAULT,
+  ZCHAIN_ID_TEST_DEFAULT,
+} from "../cross-chain/ZNSDeploy.test";
+import { ethers } from "hardhat";
+import { TSupportedChain } from "../../src/deploy/missions/contracts/cross-chain/portals/types";
 
 
 export type Maybe<T> = T | undefined;
@@ -91,8 +99,8 @@ export interface IZNSContractsLocal {
   rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
-  zPortal : ZNSZChainPortal;
-  ethPortal : ZNSEthereumPortal;
+  zChainPortal ?: ZNSZChainPortal;
+  ethPortal ?: ZNSEthereumPortal;
   zkEvmBridge : PolygonZkEVMBridgeV2Mock;
   zeroVaultAddress : string;
 }
@@ -104,6 +112,13 @@ export interface DeployZNSParams {
   priceConfig ?: ICurvePriceConfig;
   registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
+  srcChainName ?: TSupportedChain;
+  srcNetworkId ?: bigint;
+  bridgeTokenAddress ?: string;
+  destNetworkId ?: bigint;
+  destChainName ?: TSupportedChain;
+  destChainId ?: bigint;
+  srcZnsPortalAddress ?: string;
   isTenderlyRun ?: boolean;
 }
 
