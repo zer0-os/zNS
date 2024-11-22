@@ -9,7 +9,10 @@ const required = [
 // TODO multi: is there a way to evaluate a type of the full ENV and run the below function
 //  only on non-optional parameters?
 export const findMissingEnvVars = () => {
-  const missing = required.filter(key => process.env[key] === undefined || process.env[key] === "");
+  const missing = required.filter(
+    key =>
+      process.env[key] === undefined || process.env[key] === ""
+  );
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);

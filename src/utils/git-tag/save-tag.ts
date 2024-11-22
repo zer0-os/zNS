@@ -26,6 +26,7 @@ export const acquireLatestGitTag = async () => {
 
 export const saveTag = async () => {
   const tag = await acquireLatestGitTag();
+  const logger = getLogger();
 
   fs.writeFileSync(tagFilePath, tag, "utf8");
   logger.info(`Saved git tag-commit to ${tagFilePath}}`);
