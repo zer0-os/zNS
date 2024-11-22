@@ -35,7 +35,7 @@ import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
   ZNSRootRegistrar,
-  ZNSRootRegistrar__factory,
+  ZNSRootRegistrar__factory, ZNSRootRegistrarTrunk, ZNSRootRegistrarTrunk__factory,
   ZNSRootRegistrarUpgradeMock__factory,
 } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
@@ -51,6 +51,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
+// TODO multi: test both RootRegistrar types here, add missing tests for Branch and fix types !!!
 describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
@@ -206,10 +207,9 @@ describe("ZNSRootRegistrar", () => {
   });
 
   it("Should NOT initialize the implementation contract", async () => {
-    const factory = new ZNSRootRegistrar__factory(deployer);
+    const factory = new ZNSRootRegistrarTrunk__factory(deployer);
     const impl = await getProxyImplAddress(await zns.rootRegistrar.getAddress());
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const implContract = factory.attach(impl) as ZNSRootRegistrar;
+    const implContract = factory.attach(impl) as ZNSRootRegistrarTrunk;
 
     await expect(
       implContract.initialize(
@@ -292,7 +292,7 @@ describe("ZNSRootRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSRootRegistrar__factory(user);
+    const registrarFactory = new ZNSRootRegistrarTrunk__factory(user);
 
     const tx = upgrades.deployProxy(
       registrarFactory,
@@ -1386,7 +1386,7 @@ describe("ZNSRootRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrarTrunk__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
@@ -1398,7 +1398,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Fails to upgrade when an unauthorized users calls", async () => {
-      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrarTrunk__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 

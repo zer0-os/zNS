@@ -8,32 +8,30 @@ import { Wallet } from "ethers";
 import { getConfig } from "../../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import { resetEnvVars } from "../../src/environment/env";
 import { PolygonZkEVMBridgeV2Mock } from "../../typechain";
-import { findMissingEnvVars } from "../../src/environment/validate";
+import { setDefaultEnvironment } from "../../src/environment/set-env";
 
 
 export const NETWORK_ID_L1_TEST_DEFAULT = 0n;
 export const NETWORK_ID_L2_TEST_DEFAULT = 1n;
 export const ZCHAIN_ID_TEST_DEFAULT = 2012605151n;
 
-describe.only("ZNS Cross-Chain Deploy Test", () => {
+describe("ZNS Cross-Chain Deploy Test", () => {
   let znsL1 : IZNSContracts;
   let znsL2 : IZNSContracts;
 
-  let configL1 : IZNSCampaignConfig<SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig<SignerWithAddress | Wallet>;
   let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
 
   let dbAdapter1 : MongoDBAdapter;
   let dbAdapter2 : MongoDBAdapter;
 
   let deployAdmin : SignerWithAddress;
-  let user : SignerWithAddress;
 
   let predeployedBridge : PolygonZkEVMBridgeV2Mock;
 
   before(async () => {
-    [ deployAdmin, user ] = await hre.ethers.getSigners();
+    [ deployAdmin ] = await hre.ethers.getSigners();
 
     // set ENV vars for the Ethereum ZNS deployment
     process.env.SRC_CHAIN_NAME = SupportedChains.eth;
@@ -65,7 +63,7 @@ describe.only("ZNS Cross-Chain Deploy Test", () => {
 
     // set ENV vars for ZChain ZNS deployment
     process.env.SRC_CHAIN_NAME = SupportedChains.z;
-    process.env.SRC_ZNS_PORTAL = znsL1.zPortal.target as string;
+    process.env.SRC_ZNS_PORTAL = znsL1.zChainPortal.target as string;
     process.env.MONGO_DB_NAME = "zns-l2";
 
     // for L2 we are deploying the Bridge separately, so that we can test
@@ -104,9 +102,9 @@ describe.only("ZNS Cross-Chain Deploy Test", () => {
   });
 
   after(async () => {
-    resetEnvVars();
     await dbAdapter1.dropDB();
     await dbAdapter2.dropDB();
+    setDefaultEnvironment();
   });
 
   it("should deploy a mocked zkEVM Bridge if MOCK_ZKEVM_BRIDGE is 'true'", async () => {

@@ -256,6 +256,10 @@ describe("ZNSStringResolver", () => {
       await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
     });
 
+    afterEach(async () => {
+      await mongoAdapter.dropDB();
+    });
+
     it("Should not allow non-owner address to setString (similar domain and string)", async () => {
 
       const curStringDomain = "shouldbrake";

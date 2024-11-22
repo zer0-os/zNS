@@ -37,7 +37,7 @@ import assert from "assert";
 import { getConfirmationsNumber } from "../helpers/tx";
 import { getClaimArgsFromApi } from "../helpers/cc-claim";
 import { NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT, ZCHAIN_ID_TEST_DEFAULT } from "./ZNSDeploy.test";
-import { resetEnvVars } from "../helpers/env";
+import { setDefaultEnvironment } from "../../src/environment/set-env";
 
 
 // TODO multi: add ChainResolver tests !!!
@@ -146,7 +146,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
 
     if (!isRealNetwork) {
       // set vars for ZChain ZNS deployment
-      process.env.SRC_ZNS_PORTAL = znsL1.zPortal.target as string;
+      process.env.SRC_ZNS_PORTAL = znsL1.zChainPortal.target as string;
       process.env.NETWORK_ID = NETWORK_ID_L2_TEST_DEFAULT.toString();
       process.env.MONGO_DB_NAME = "zns-l2";
       // TODO multi: create zkEVM bridge tests for predeployed bridge !!!
@@ -159,7 +159,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
       userL2 = new ethers.Wallet(`0x${process.env.TESTNET_PRIVATE_KEY_B}`, zChainProvider);
       subUserL2 = new ethers.Wallet(`0x${process.env.TESTNET_PRIVATE_KEY_C}`, zChainProvider);
       // swap to another DB where L2 contracts are located
-      process.env.MONGO_DB_NAME = process.env.MONGO_DB_NAME_DEST;
+      process.env.MONGO_DB_NAME = process.env.MONGO_DB_NAME_DEST as string;
       process.env.MONGO_DB_VERSION = process.env.MONGO_DB_VERSION_DEST;
     }
 
@@ -181,16 +181,16 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
   });
 
   after(async () => {
-    resetEnvVars();
     await dbAdapter1.dropDB();
     await dbAdapter2.dropDB();
+    setDefaultEnvironment();
   });
 
   it("#registerAndBridgeDomain() should revert if `destZnsPortal` is not set", async () => {
-    const curPortal = await znsL1.zPortal.destZnsPortal();
+    const curPortal = await znsL1.zChainPortal.destZnsPortal();
 
     if (curPortal !== hre.ethers.ZeroAddress) {
-      await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress);
+      await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress);
     }
 
     await approveForDomain({
@@ -202,16 +202,16 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
     });
 
     await expect(
-      znsL1.zPortal.connect(user).registerAndBridgeDomain(
+      znsL1.zChainPortal.connect(user).registerAndBridgeDomain(
         hre.ethers.ZeroHash,
         "test",
         DEFAULT_TOKEN_URI,
       )
-    ).to.be.revertedWithCustomError(znsL1.zPortal, DEST_PORTAL_NOT_SET_ERR);
+    ).to.be.revertedWithCustomError(znsL1.zChainPortal, DEST_PORTAL_NOT_SET_ERR);
 
     // TODO multi: add a proper way to set this programmatically on actual chains !!!
     // set L2 portal address on L1
-    await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
+    await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
   });
 
   it("should NOT allow to register root domain on ZChain", async () => {
@@ -291,7 +291,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
 
           balanceBeforeBridge = await znsL1.meowToken.balanceOf(user.address);
 
-          const tx = await znsL1.zPortal.connect(user).registerAndBridgeDomain(
+          const tx = await znsL1.zChainPortal.connect(user).registerAndBridgeDomain(
             parentHash as string,
             label,
             DEFAULT_TOKEN_URI
@@ -301,7 +301,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
 
           domainHash = await getDomainHashFromEvent({
             zns: znsL1,
-            registrantAddress: znsL1.zPortal.target as string,
+            registrantAddress: znsL1.zChainPortal.target as string,
           });
         });
 
@@ -312,7 +312,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             // check if domain is registered on L1
             // check events
             const events = await getEvents({
-              contract: znsL1.zPortal,
+              contract: znsL1.zChainPortal,
               eventName: "DomainBridged",
             });
             const event = events[events.length - 1];
@@ -343,7 +343,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             );
 
             expect(bridgedEventData.originNetwork).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
-            expect(bridgedEventData.originAddress).to.equal(znsL1.zPortal.target);
+            expect(bridgedEventData.originAddress).to.equal(znsL1.zChainPortal.target);
             expect(bridgedEventData.destinationNetwork).to.equal(NETWORK_ID_L2_TEST_DEFAULT);
             expect(bridgedEventData.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(bridgedEventData.amount).to.equal(0n);
@@ -354,11 +354,11 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
               owner: ownerL1,
               resolver: resolverL1,
             } = await znsL1.registry.getDomainRecord(domainHash);
-            expect(ownerL1).to.equal(znsL1.zPortal.target);
+            expect(ownerL1).to.equal(znsL1.zChainPortal.target);
             expect(resolverL1).to.equal(znsL1.chainResolver.target);
 
             const tokenOwner = await znsL1.domainToken.ownerOf(BigInt(domainHash));
-            expect(tokenOwner).to.equal(znsL1.zPortal.target);
+            expect(tokenOwner).to.equal(znsL1.zChainPortal.target);
           });
 
           it("should withdraw the correct amount of tokens from the caller", async () => {
@@ -485,7 +485,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             });
             const event = events[events.length - 1];
             expect(event.args.originNetwork).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
-            expect(event.args.originAddress).to.equal(znsL1.zPortal.target);
+            expect(event.args.originAddress).to.equal(znsL1.zChainPortal.target);
             expect(event.args.destinationAddress).to.equal(znsL2.ethPortal.target);
             expect(event.args.amount).to.equal(0n);
           });
@@ -500,7 +500,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             });
             const event = events[events.length - 1];
             expect(event.args.srcNetworkId).to.equal(NETWORK_ID_L1_TEST_DEFAULT);
-            expect(event.args.srcPortalAddress).to.equal(znsL1.zPortal.target);
+            expect(event.args.srcPortalAddress).to.equal(znsL1.zChainPortal.target);
             expect(event.args.domainHash).to.equal(domainHash);
             expect(event.args.domainOwner).to.equal(user.address);
 
@@ -609,7 +609,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
       describe("ZNSZChainPortal", () => {
         it("#initialize() should revert when trying to reinitialize", async () => {
           await expect(
-            znsL1.zPortal.initialize(
+            znsL1.zChainPortal.initialize(
               "1",
               "Z",
               "1",
@@ -623,43 +623,39 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
                 subRegistrar: znsL1.subRegistrar.target,
               },
             )
-          ).to.be.revertedWithCustomError(znsL1.zPortal, INITIALIZED_ERR);
+          ).to.be.revertedWithCustomError(znsL1.zChainPortal, INITIALIZED_ERR);
         });
 
         it("#setDestZnsPortal() should revert when called by non-ADMIN", async () => {
           await expect(
-            znsL1.zPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
+            znsL1.zChainPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
           ).to.be.revertedWithCustomError(znsL1.accessController, AC_UNAUTHORIZED_ERR);
         });
 
         it("#setDestZnsPortal() should revert when setting 0x0 address", async () => {
           await expect(
-            znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress)
-          ).to.be.revertedWithCustomError(znsL1.zPortal, ZERO_ADDRESS_ERR);
+            znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress)
+          ).to.be.revertedWithCustomError(znsL1.zChainPortal, ZERO_ADDRESS_ERR);
         });
 
         it("#setDestZnsPortal() should set the destination portal address", async () => {
-          await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(user.address);
+          await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(user.address);
 
-          const destPortal = await znsL1.zPortal.destZnsPortal();
+          const destPortal = await znsL1.zChainPortal.destZnsPortal();
           expect(destPortal).to.equal(user.address);
 
           // set back to L2 portal address
-          await znsL1.zPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
+          await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
         });
       });
 
       describe("ZNSEthereumPortal", () => {
         it("#initialize() should revert when trying to reinitialize", async () => {
-          const {
-            srcZnsPortal,
-          } = configL1.crosschain as IZNSZChainCrossConfig;
-
           await expect(
             znsL2.ethPortal.connect(deployAdmin).initialize(
               znsL2.accessController.target,
               znsL2.zkEvmBridge.target,
-              srcZnsPortal,
+              znsL1.zChainPortal.target,
               znsL2.registry.target,
               znsL2.domainToken.target,
               znsL2.rootRegistrar.target,
