@@ -19,7 +19,7 @@ export const environment : IZNSEnvironment = {
   // MongoDB setup
   // TODO multi: should we split these into 2 for L1 and L2 ZNS contracts ??
   //  how do we structure the DB here ??
-  MONGO_DB_URI: "mongodb://localhost:27018",
+  MONGO_DB_URI: `mongodb://localhost:2701${process.argv.includes("coverage") ? "7" : "8"}`,
   MONGO_DB_NAME: "zns-campaign",
   MONGO_DB_CLIENT_OPTS: "",
   MONGO_DB_VERSION: "",
