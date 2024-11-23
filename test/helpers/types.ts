@@ -29,17 +29,8 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
-import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import {
-  NETWORK_ID_L1_TEST_DEFAULT,
-  NETWORK_ID_L2_TEST_DEFAULT,
-  ZCHAIN_ID_TEST_DEFAULT,
-} from "../cross-chain/ZNSDeploy.test";
-import { ethers } from "hardhat";
 import { TSupportedChain } from "../../src/deploy/missions/contracts/cross-chain/portals/types";
 
-
-export type Maybe<T> = T | undefined;
 
 export type GeneralContractGetter = Promise<
 string

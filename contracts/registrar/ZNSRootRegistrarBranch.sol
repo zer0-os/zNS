@@ -29,7 +29,7 @@ contract ZNSRootRegistrarBranch is
     function registerBridgedRootDomain(
         string calldata label,
         string calldata tokenURI
-    ) external returns (bytes32) {
+    ) external override returns (bytes32) {
         accessController.checkPortal(msg.sender);
 
         DistributionConfig memory emptyDistrConfig;

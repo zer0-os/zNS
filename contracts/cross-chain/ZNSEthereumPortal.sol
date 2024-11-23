@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { IZNSEthereumPortal } from "./IZNSEthereumPortal.sol";
 import { IPolygonZkEVMBridgeV2Ext } from "./IPolygonZkEVMBridgeV2Ext.sol";
@@ -12,8 +11,6 @@ import { IZNSRootRegistrarBranch } from "../registrar/IZNSRootRegistrarBranch.so
 import { IZNSSubRegistrarBranch } from "../registrar/IZNSSubRegistrarBranch.sol";
 import { IZNSRegistry } from "../registry/IZNSRegistry.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
 
 
 contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPortal {
@@ -118,7 +115,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         );
     }
 
-    function setSrcZnsPortal(address newAddress) external onlyAdmin {
+    function setSrcZnsPortal(address newAddress) external override onlyAdmin {
         if (newAddress == address(0)) revert ZeroAddressPassed();
 
         srcZnsPortal = newAddress;
@@ -131,7 +128,7 @@ contract ZNSEthereumPortal is UUPSUpgradeable, AAccessControlled, IZNSEthereumPo
         address,
         uint256,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }
 

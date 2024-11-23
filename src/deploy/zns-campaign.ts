@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow, no-shadow */
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {

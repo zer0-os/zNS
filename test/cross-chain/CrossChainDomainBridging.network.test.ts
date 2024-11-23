@@ -1,10 +1,9 @@
 import * as hre from "hardhat";
-import { getConfig, getValidateRootPriceConfig } from "../../src/deploy/campaign/environments";
+import { getConfig, getValidateRootPriceConfig } from "../../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import {
   IZNSCampaignConfig,
   IZNSContracts,
-  IZNSZChainCrossConfig,
 } from "../../src/deploy/campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { approveForDomain, registrationWithSetup } from "../helpers/register-setup";

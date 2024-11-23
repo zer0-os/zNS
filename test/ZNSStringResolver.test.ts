@@ -16,15 +16,14 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
+  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
 } from "../typechain";
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContractsLocal } from "./helpers/types";
 
 

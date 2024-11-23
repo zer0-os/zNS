@@ -38,15 +38,10 @@ import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
-  accessControllerName,
-  addressResolverName,
-  domainTokenName,
   erc1967ProxyName,
   fixedPricerName,
   DEFAULT_PRICE_CONFIG,
   curvePricerName,
-  registryName,
-  treasuryName,
   meowTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,

@@ -1,4 +1,4 @@
-import { getConfig } from "./campaign/environments";
+import { getConfig } from "./campaign/get-config";
 import { runZnsCampaign } from "./zns-campaign";
 import * as hre from "hardhat";
 import { getLogger } from "@zero-tech/zdc";

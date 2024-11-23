@@ -49,7 +49,7 @@ contract ZNSRootRegistrarTrunk is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external returns (bytes32) {
+    ) external override returns (bytes32) {
         return _coreRootRegister(
             label,
             domainAddress,

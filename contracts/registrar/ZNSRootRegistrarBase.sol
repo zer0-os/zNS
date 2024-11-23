@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrarBase } from "./IZNSRootRegistrarBase.sol";
-import { IZNSRootRegistrarTypes, CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
+import { CoreRegisterArgs } from "./IZNSRootRegistrarTypes.sol";
 import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";

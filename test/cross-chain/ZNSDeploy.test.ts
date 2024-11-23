@@ -5,7 +5,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/types";
 import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import { Wallet } from "ethers";
-import { getConfig } from "../../src/deploy/campaign/environments";
+import { getConfig } from "../../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
 import { PolygonZkEVMBridgeV2Mock } from "../../typechain";

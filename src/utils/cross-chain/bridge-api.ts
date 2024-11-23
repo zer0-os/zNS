@@ -7,7 +7,6 @@ import {
   TEMP_DATA_DIR_PATH,
   ZCHAIN_TEST_BRIDGE_API_URL,
 } from "./constants";
-import path from "path";
 import fs from "fs";
 
 

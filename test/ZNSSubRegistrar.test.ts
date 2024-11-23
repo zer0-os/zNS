@@ -36,9 +36,8 @@ import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/r
 import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {
-  CustomDecimalTokenMock, ZNSRootRegistrarTrunk__factory,
-  ZNSSubRegistrar,
-  ZNSSubRegistrar__factory, ZNSSubRegistrarTrunk, ZNSSubRegistrarTrunk__factory,
+  CustomDecimalTokenMock,
+  ZNSSubRegistrarTrunk, ZNSSubRegistrarTrunk__factory,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
 } from "../typechain";

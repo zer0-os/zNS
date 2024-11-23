@@ -1,26 +1,20 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import {
-  IZNSBaseCrossConfig,
   IZNSCampaignConfig,
   IZNSEthCrossConfig,
   IZNSZChainCrossConfig,
   TZNSCrossConfig,
 } from "./types";
 import {
-  DEFAULT_PROTOCOL_FEE_PERCENT,
-  DEFAULT_ROYALTY_FRACTION,
-  ZNS_DOMAIN_TOKEN_NAME,
-  ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
   DEFAULT_PRECISION,
-  DEFAULT_PRICE_CONFIG,
   getCurvePrice,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
-  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
+  INVALID_ENV_ERR,
 } from "../../../test/helpers";
 import { ethers, Wallet } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";

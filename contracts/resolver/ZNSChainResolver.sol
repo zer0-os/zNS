@@ -3,7 +3,6 @@ pragma solidity 0.8.26;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IZNSStringResolver } from "./IZNSStringResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
@@ -17,7 +16,7 @@ contract ZNSChainResolver is
     ERC165,
     IZNSChainResolver {
 
-    mapping(bytes32 => ChainData) internal chainData;
+    mapping(bytes32 domainHash => ChainData data) internal chainData;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {

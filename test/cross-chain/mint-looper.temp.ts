@@ -2,6 +2,7 @@ import * as hre from "hardhat";
 import { MeowTokenMock, MeowTokenMock__factory } from "../../typechain";
 
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sendTxes = async () => {
   const amounts = Array.from({ length: 50 }, (_, i) => BigInt(i + 1) * BigInt(1e18));
 

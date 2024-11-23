@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 import { IZNSSubRegistrarBranch } from "./IZNSSubRegistrarBranch.sol";
 import { ZNSSubRegistrarTrunk } from "./ZNSSubRegistrarTrunk.sol";
 import { IZNSSubRegistrarTrunk } from "./IZNSSubRegistrarTrunk.sol";
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 

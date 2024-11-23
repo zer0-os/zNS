@@ -3,7 +3,6 @@ import {
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig, IZNSContractsLocal,
-
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -12,7 +11,7 @@ import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
-import { MeowTokenMock, ZNSRootRegistrarTrunk } from "../../typechain";
+import { ZNSRootRegistrarTrunk } from "../../typechain";
 import { getConfirmationsNumber } from "./tx";
 
 const { ZeroAddress } = ethers;
@@ -89,6 +88,7 @@ export const approveForDomain = async ({
 
   const userBal = await tokenContract.balanceOf(user.address);
   if (userBal < toApprove) {
+    // eslint-disable-next-line no-shadow
     const tx = await tokenContract.connect(user).mint(user.address, toApprove);
     await tx.wait(confNum);
   }
