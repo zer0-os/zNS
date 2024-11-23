@@ -48,9 +48,9 @@ const config : HardhatUserConfig = {
             enabled: true,
             runs: 20000,
           },
-          // TODO multi: we are not using this, but solcover gives an error if we don't have it
-          //  figure out what to do here for it to work in CI!
-          // viaIR: true,
+          // Only use this when running coverage
+          // TODO multi: figure out if this is worth using for actual deploys to networks and tests
+          viaIR: process.argv.includes("coverage"),
         },
       },
       {
