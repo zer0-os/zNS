@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@zero-tech/zdc": "0.1.6",
-    "axios": "^1.4.0",
+    "axios": "1.7.4",
     "dotenv": "16.0.3",
     "mongodb": "^6.1.0",
     "winston": "^3.11.0"
