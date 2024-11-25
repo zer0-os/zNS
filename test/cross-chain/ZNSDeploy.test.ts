@@ -10,11 +10,8 @@ import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
 import { PolygonZkEVMBridgeV2Mock } from "../../typechain";
 import { setDefaultEnvironment } from "../../src/environment/set-env";
+import { NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT, ZCHAIN_ID_TEST_DEFAULT } from "../helpers";
 
-
-export const NETWORK_ID_L1_TEST_DEFAULT = 0n;
-export const NETWORK_ID_L2_TEST_DEFAULT = 1n;
-export const ZCHAIN_ID_TEST_DEFAULT = 2012605151n;
 
 describe("ZNS Cross-Chain Deploy Test", () => {
   let znsL1 : IZNSContracts;

@@ -86,3 +86,8 @@ export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const subRegistrarName = "ZNSSubRegistrar";
+
+// Cross-Chain
+export const NETWORK_ID_L1_TEST_DEFAULT = 0n;
+export const NETWORK_ID_L2_TEST_DEFAULT = 1n;
+export const ZCHAIN_ID_TEST_DEFAULT = 2012605151n;

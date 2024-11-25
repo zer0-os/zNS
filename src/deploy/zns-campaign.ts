@@ -64,7 +64,7 @@ class HardhatDeployerWrapper extends HardhatDeployer<HardhatRuntimeEnvironment, 
       // TODO multi: fix this in zDC since there is a wrong type in IContractV6 for this method
       const deployTx = contract.deploymentTransaction() as ContractTransactionResponse;
       // TODO multi: make the amount of blocks a var passed to deployed by the config ??
-      if (deployTx) await deployTx.wait(2);
+      if (deployTx) await deployTx.wait(getConfirmationsNumber());
     }
 
     return contract;
@@ -78,7 +78,7 @@ class HardhatDeployerWrapper extends HardhatDeployer<HardhatRuntimeEnvironment, 
       const deployTx = contract.deploymentTransaction() as ContractTransactionResponse;
       // TODO multi: make the amount of blocks a var passed to deployed by the config ??
       //  this may be needed to be higher than 2 in times of network congestion
-      if (deployTx) await deployTx.wait(2);
+      if (deployTx) await deployTx.wait(getConfirmationsNumber());
     }
 
     return contract;

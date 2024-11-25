@@ -47,6 +47,9 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
+  ZCHAIN_ID_TEST_DEFAULT,
+  NETWORK_ID_L2_TEST_DEFAULT,
+  NETWORK_ID_L1_TEST_DEFAULT,
 } from "../constants";
 import { PORTAL_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
@@ -55,11 +58,6 @@ import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/con
 import { transparentProxyName, znsNames } from "../../../src/deploy/missions/contracts/names";
 import { TSupportedChain } from "../../../src/deploy/missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import {
-  NETWORK_ID_L1_TEST_DEFAULT,
-  NETWORK_ID_L2_TEST_DEFAULT,
-  ZCHAIN_ID_TEST_DEFAULT,
-} from "../../cross-chain/ZNSDeploy.test";
 
 
 export const deployAccessController = async ({

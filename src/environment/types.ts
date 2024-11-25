@@ -1,5 +1,6 @@
 export interface IZNSEnvironment {
   ENV_LEVEL : string;
+  CONFIRMATION_N ?: string;
   MAINNET_RPC_URL ?: string;
   SEPOLIA_RPC_URL ?: string;
   ZCHAIN_TEST_RPC_URL ?: string;

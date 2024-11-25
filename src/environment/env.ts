@@ -11,6 +11,7 @@ import { IZNSEnvironment } from "./types";
 
 export const environment : IZNSEnvironment = {
   ENV_LEVEL: "dev",
+  CONFIRMATION_N: "0",
   // RPCs for actual networks
   MAINNET_RPC_URL: "",
   SEPOLIA_RPC_URL: "",
@@ -76,15 +77,3 @@ export const environment : IZNSEnvironment = {
   DEST_CHAIN_ID: "2012605151",
   SRC_ZNS_PORTAL: "",
 };
-
-
-export const resetEnvVars = () => {
-  delete process.env.SRC_CHAIN_NAME;
-  delete process.env.MOCK_ZKEVM_BRIDGE;
-  delete process.env.NETWORK_ID;
-  delete process.env.DEST_NETWORK_ID;
-  delete process.env.DEST_CHAIN_NAME;
-  delete process.env.DEST_CHAIN_ID;
-  delete process.env.SRC_ZNS_PORTAL;
-};
-

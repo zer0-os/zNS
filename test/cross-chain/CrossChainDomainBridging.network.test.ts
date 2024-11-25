@@ -20,10 +20,10 @@ import {
   hashDomainLabel,
   INITIALIZED_ERR,
   INVALID_CALLER_ERR,
-  MESSAGE_FAILED_ERR,
+  MESSAGE_FAILED_ERR, NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT,
   NOT_AUTHORIZED_ERR,
   NOT_OWNER_OF_ERR,
-  PaymentType,
+  PaymentType, ZCHAIN_ID_TEST_DEFAULT,
   ZERO_ADDRESS_ERR,
 } from "../helpers";
 import { expect } from "chai";
@@ -35,7 +35,6 @@ import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
 import assert from "assert";
 import { getConfirmationsNumber } from "../helpers/tx";
 import { getClaimArgsFromApi } from "../helpers/cc-claim";
-import { NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT, ZCHAIN_ID_TEST_DEFAULT } from "./ZNSDeploy.test";
 import { setDefaultEnvironment } from "../../src/environment/set-env";
 
 
