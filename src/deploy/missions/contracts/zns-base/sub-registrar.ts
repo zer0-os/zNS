@@ -35,9 +35,9 @@ IZNSContracts
   >) {
     super(args);
 
-    if (this.config.crosschain.srcChainName === SupportedChains.eth) {
+    if (this.config.srcChainName === SupportedChains.eth) {
       this.contractName = znsNames.subRegistrar.contractTrunk;
-    } else if (this.config.crosschain.srcChainName === SupportedChains.z) {
+    } else if (this.config.srcChainName === SupportedChains.z) {
       this.contractName = znsNames.subRegistrar.contractBranch;
     } else {
       throw new Error("Unsupported chain for Root Registrar deployment");

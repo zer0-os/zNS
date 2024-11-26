@@ -446,7 +446,7 @@ describe("Deploy Campaign Test", () => {
           ZNSFixedPricerDM,
           ZNSChainResolverDM,
           PolygonZkEVMBridgeV2DM,
-          getPortalDM(campaignConfig.crosschain.srcChainName),
+          getPortalDM(campaignConfig.srcChainName),
         ],
         placeOfFailure: "deploy",
         deployedNames,
