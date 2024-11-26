@@ -4,7 +4,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts, IZNSZChainCrossConfig } from "../../../../campaign/types";
 import { PORTAL_ROLE, ProxyKinds } from "../../../../constants";
 import { znsNames } from "../../names";
-import { executeWithConfirmation } from "../../../../zns-campaign";
 
 
 export class ZNSEthereumPortalDM extends BaseDeployMission<
@@ -76,12 +75,11 @@ IZNSContracts
       config: { deployAdmin },
     } = this.campaign;
 
-    await executeWithConfirmation(
-      accessController.connect(deployAdmin).grantRole(
-        PORTAL_ROLE,
-        ethPortal.target
-      )
+    const tx = await accessController.connect(deployAdmin).grantRole(
+      PORTAL_ROLE,
+      ethPortal.target
     );
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

@@ -11,7 +11,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../../campaign/types";
 import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
-import { executeWithConfirmation } from "../../../../zns-campaign";
 
 
 export const meowTokenName = "MEOW";
@@ -116,12 +115,11 @@ IZNSContracts
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await executeWithConfirmation(
-      meowToken.connect(deployAdmin).mint(
-        await deployAdmin.getAddress(),
-        ethers.parseEther("100000"),
-      )
+    const tx = await meowToken.connect(deployAdmin).mint(
+      await deployAdmin.getAddress(),
+      ethers.parseEther("100000"),
     );
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

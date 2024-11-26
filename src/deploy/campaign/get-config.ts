@@ -104,6 +104,7 @@ export const getConfig = async ({
 
   const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = {
     env: process.env.ENV_LEVEL,
+    confirmationsN: Number(process.env.CONFIRMATION_N),
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,

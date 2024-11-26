@@ -8,7 +8,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
 import { SupportedChains } from "../cross-chain/portals/get-portal-dm";
-import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
@@ -88,11 +87,10 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await executeWithConfirmation(
-      accessController
-        .connect(deployAdmin)
-        .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress())
-    );
+    const tx = await accessController
+      .connect(deployAdmin)
+      .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
