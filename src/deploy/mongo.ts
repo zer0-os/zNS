@@ -10,17 +10,44 @@ const execAsync = promisify(exec);
 export const getZnsMongoAdapter = async ({
   contractsVersion,
   logger,
+  mongoConfig,
 } : {
   contractsVersion ?: string;
   logger ?: TLogger;
+  mongoConfig ?: {
+    dbUri : string;
+    dbName : string;
+    dbVersion ?: string;
+    archiveDb ?: boolean;
+    clientOpts ?: Record<string, unknown>;
+  };
 } = {}) => {
   if (!contractsVersion) {
     contractsVersion = getGitTag();
   }
 
+  if (!mongoConfig) {
+    const {
+      MONGO_DB_URI,
+      MONGO_DB_NAME,
+      MONGO_DB_VERSION,
+      ARCHIVE_PREVIOUS_DB_VERSION,
+      MONGO_DB_CLIENT_OPTS,
+    } = process.env;
+
+    mongoConfig = {
+      dbUri: MONGO_DB_URI,
+      dbName: MONGO_DB_NAME,
+      dbVersion: !MONGO_DB_VERSION || MONGO_DB_VERSION === "" ? undefined : MONGO_DB_VERSION,
+      archiveDb: ARCHIVE_PREVIOUS_DB_VERSION === "true",
+      clientOpts: !MONGO_DB_CLIENT_OPTS || MONGO_DB_CLIENT_OPTS === "" ? undefined : JSON.parse(MONGO_DB_CLIENT_OPTS),
+    };
+  }
+
   return getMongoAdapter({
     logger,
     contractsVersion,
+    ...mongoConfig,
   });
 };
 
