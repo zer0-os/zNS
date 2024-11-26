@@ -19,14 +19,12 @@ import {
   ZNSChainResolver,
   ZNSRootRegistrarTrunk, ZNSRootRegistrarBranch, ZNSSubRegistrarTrunk, ZNSSubRegistrarBranch,
 } from "../../../typechain";
-import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
 export interface IZNSBaseCrossConfig {
   mockZkEvmBridge : boolean;
   zkEvmBridgeAddress ?: string;
-  srcChainName : TSupportedChain;
   curNetworkId ?: bigint;
   bridgeToken ?: string;
 }
@@ -44,8 +42,6 @@ export interface IZNSZChainCrossConfig extends IZNSBaseCrossConfig {
 export type TZNSCrossConfig = IZNSEthCrossConfig | IZNSZChainCrossConfig;
 
 export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
-  env : string;
-  deployAdmin : Signer;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -59,11 +55,6 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
   mockMeowToken : boolean;
   stakingTokenAddress ?: string;
   crosschain : TZNSCrossConfig;
-  postDeploy : {
-    tenderlyProjectSlug : string;
-    monitorContracts : boolean;
-    verifyContracts : boolean;
-  };
 }
 
 export type ZNSContract =

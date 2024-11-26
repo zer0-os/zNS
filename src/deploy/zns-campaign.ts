@@ -4,7 +4,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   HardhatDeployer,
   DeployCampaign,
-  getLogger, IHardhatDeployerArgs, TDeployArgs, TProxyKind, IContractV6,
+  getLogger,
 } from "@zero-tech/zdc";
 import {
   MeowTokenDM,
@@ -18,8 +18,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
-import { ContractTransactionResponse, Wallet } from "ethers";
-import { getConfirmationsNumber } from "../../test/helpers/tx";
+import { Wallet } from "ethers";
 
 
 export const runZnsCampaign = async ({
@@ -39,9 +38,7 @@ export const runZnsCampaign = async ({
     deployAdmin,
     env,
     confirmationsN,
-    crosschain: {
-      srcChainName,
-    },
+    srcChainName,
   } = config;
 
   if (!deployer) {
