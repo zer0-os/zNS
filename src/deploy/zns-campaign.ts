@@ -4,7 +4,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   HardhatDeployer,
   DeployCampaign,
-  getLogger,
 } from "@zero-tech/zdc";
 import {
   MeowTokenDM,
@@ -19,6 +18,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
 import { Wallet } from "ethers";
+import { getZnsLogger } from "./logger";
 
 
 export const runZnsCampaign = async ({
@@ -32,7 +32,7 @@ export const runZnsCampaign = async ({
 }) => {
   hre.upgrades.silenceWarnings();
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   const {
     deployAdmin,

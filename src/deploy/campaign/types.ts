@@ -94,3 +94,13 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   ethPortal : ZNSEthereumPortal;
   zkEvmBridge : PolygonZkEVMBridgeV2Mock;
 }
+
+export interface IZNSContractsEth extends IZNSContracts {
+  rootRegistrar : ZNSRootRegistrarTrunk;
+  subRegistrar : ZNSSubRegistrarTrunk;
+}
+
+export interface IZNSContractsZChain extends IZNSContracts {
+  rootRegistrar : ZNSRootRegistrarBranch;
+  subRegistrar : ZNSSubRegistrarBranch;
+}

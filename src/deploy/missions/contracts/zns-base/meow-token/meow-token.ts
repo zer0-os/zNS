@@ -64,6 +64,9 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
+      if (!this.config.stakingTokenAddress)
+        throw new Error("Token is set as non-mocked, but no staking token address provided!");
+
       const factory = new MeowToken__factory(this.config.deployAdmin);
       const baseContract = factory.attach(this.config.stakingTokenAddress);
 

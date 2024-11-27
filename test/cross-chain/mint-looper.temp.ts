@@ -19,7 +19,7 @@ const sendTxes = async () => {
 
       const tx = await meowToken.connect(txCaller).mint(txCaller.address, amt);
       const rec = await tx.wait(1);
-      res.push(rec);
+      res.push(rec as never);
       return res;
     }, Promise.resolve([]),
   );

@@ -1,6 +1,3 @@
-import {
-  getLogger,
-} from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getConfig } from "../src/deploy/campaign/get-config";
@@ -17,6 +14,7 @@ import {
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { getZnsLogger } from "../src/deploy/logger";
 
 
 describe("zNS + zDC Single Integration Test", () => {
@@ -38,7 +36,7 @@ describe("zNS + zDC Single Integration Test", () => {
   let users : Array<SignerWithAddress>;
   let distConfig : IDistributionConfig;
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   // Default baselength is 4, maxLength is 50
   const shortDomain = "mazz"; // Length 4

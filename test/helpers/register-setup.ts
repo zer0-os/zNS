@@ -93,7 +93,7 @@ export const approveForDomain = async ({
     await tx.wait(confNum);
   }
 
-  const spender = isBridging ? await zns.zChainPortal.getAddress() : await zns.treasury.getAddress();
+  const spender = isBridging ? await zns.zChainPortal!.getAddress() : await zns.treasury.getAddress();
   const tx = await tokenContract.connect(user).approve(spender, toApprove);
   await tx.wait(confNum);
 };
@@ -151,7 +151,7 @@ export const defaultBridgingRegistration = async ({
   domainLabel : string;
   tokenURI ?: string;
 }) => {
-  const tx = await zns.zChainPortal.connect(user).registerAndBridgeDomain(
+  const tx = await zns.zChainPortal!.connect(user).registerAndBridgeDomain(
     parentHash,
     domainLabel,
     tokenURI

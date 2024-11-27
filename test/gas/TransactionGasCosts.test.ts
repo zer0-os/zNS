@@ -5,6 +5,7 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import fs from "fs";
+import { ZNSRootRegistrarTrunk } from "../../typechain";
 
 
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
@@ -90,7 +91,7 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
+    const tx = await (zns.rootRegistrar as ZNSRootRegistrarTrunk).connect(rootOwner).registerRootDomain(
       "root",
       rootOwner.address,
       DEFAULT_TOKEN_URI,

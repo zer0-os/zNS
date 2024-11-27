@@ -1,6 +1,6 @@
 import { ZNSZChainPortalDM } from "./zchain-portal";
 import { ZNSEthereumPortalDM } from "./eth-portal";
-import { ISupportedChains, TSupportedChain } from "./types";
+import { ISupportedChains, TSupportedChain } from "@zero-tech/zdc";
 
 
 export const SupportedChains : ISupportedChains = {

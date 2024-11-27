@@ -16,7 +16,7 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
+  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrarTrunk,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
@@ -45,7 +45,7 @@ describe("ZNSStringResolver", () => {
     IZNSCampaignConfig<SignerWithAddress>,
     IZNSContracts
     >;
-    let rootRegistrar : ZNSRootRegistrar;
+    let rootRegistrar : ZNSRootRegistrarTrunk;
     let accessController : ZNSAccessController;
 
     let userBalance : bigint;

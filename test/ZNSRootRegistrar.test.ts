@@ -43,7 +43,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
-import { IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSContractsEth } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
 
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -59,7 +59,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsEth;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -83,7 +83,7 @@ describe("ZNSRootRegistrar", () => {
       config,
     });
 
-    zns = campaign.state.contracts;
+    zns = campaign.state.contracts as IZNSContractsEth;
 
     mongoAdapter = campaign.dbAdapter;
 

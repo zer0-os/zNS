@@ -17,8 +17,15 @@ import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
+import {
+  ZNSRootRegistrarTrunk,
+  ZNSTreasury,
+  ZNSTreasury__factory,
+  ZNSTreasuryUpgradeMock__factory
+} from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
+import { SupportedChains } from "../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
+import { IZNSContractsEth } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -73,7 +80,7 @@ describe("ZNSTreasury", () => {
     await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
 
     // register random domain
-    await zns.rootRegistrar.connect(user).registerRootDomain(
+    await (zns.rootRegistrar as ZNSRootRegistrarTrunk).connect(user).registerRootDomain(
       domainName,
       user.address,
       DEFAULT_TOKEN_URI,

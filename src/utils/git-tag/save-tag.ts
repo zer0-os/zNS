@@ -1,8 +1,8 @@
 import { exec } from "child_process";
 import { promisify } from "util";
-import { getLogger } from "@zero-tech/zdc";
 import fs from "fs";
 import { tagFilePath } from "./constants";
+import { getZnsLogger } from "../../deploy/logger";
 
 
 const execAsync = promisify(exec);
@@ -11,7 +11,7 @@ const execAsync = promisify(exec);
 export const acquireLatestGitTag = async () => {
   const gitTag = await execAsync("git describe --tags --abbrev=0");
   const tag = gitTag.stdout.trim();
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   logger.info(`Latest git tag acquired: ${tag}`);
 
@@ -26,7 +26,7 @@ export const acquireLatestGitTag = async () => {
 
 export const saveTag = async () => {
   const tag = await acquireLatestGitTag();
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   fs.writeFileSync(tagFilePath, tag, "utf8");
   logger.info(`Saved git tag-commit to ${tagFilePath}}`);
