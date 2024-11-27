@@ -40,7 +40,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/zns-base/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { buildCrosschainConfig, getConfig } from "../src/deploy/campaign/get-config";
-import { ethers, Wallet } from "ethers";
+import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";

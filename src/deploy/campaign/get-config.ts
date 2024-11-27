@@ -103,7 +103,9 @@ export const getConfig = async ({
   }
 
   // Domain Token Values
-  const royaltyReceiver = process.env.ENV_LEVEL !== EnvironmentLevels.dev ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
+  const royaltyReceiver = process.env.ENV_LEVEL !== EnvironmentLevels.dev
+    ? process.env.ROYALTY_RECEIVER!
+    : zeroVaultAddressConf;
   const royaltyFraction = BigInt(process.env.ROYALTY_FRACTION);
 
   // Get governor addresses set through env, if any
@@ -224,8 +226,8 @@ const validatePrice = (config : ICurvePriceConfig) => {
 };
 
 export const buildCrosschainConfig = () : {
-  crosschain: TZNSCrossConfig;
-  srcChainName: TSupportedChain;
+  crosschain : TZNSCrossConfig;
+  srcChainName : TSupportedChain;
 } => {
   const srcChainName = process.env.SRC_CHAIN_NAME as TSupportedChain;
   const mockZkEvmBridge = process.env.MOCK_ZKEVM_BRIDGE === "true";

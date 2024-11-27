@@ -21,11 +21,9 @@ import {
   ZNSRootRegistrarTrunk,
   ZNSTreasury,
   ZNSTreasury__factory,
-  ZNSTreasuryUpgradeMock__factory
+  ZNSTreasuryUpgradeMock__factory,
 } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
-import { SupportedChains } from "../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import { IZNSContractsEth } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 

@@ -1,7 +1,6 @@
 import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 import { BaseDeployMission } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
 

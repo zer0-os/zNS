@@ -1,4 +1,3 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
   IFixedPriceConfig,
@@ -11,7 +10,7 @@ import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts, IZNSSigner } from "../../src/deploy/campaign/types";
-import { ZNSRootRegistrarTrunk } from "../../typechain";
+import { ZNSRootRegistrarTrunk, ZNSZChainPortal } from "../../typechain";
 import { getConfirmationsNumber } from "./tx";
 
 const { ZeroAddress } = ethers;
@@ -93,7 +92,10 @@ export const approveForDomain = async ({
     await tx.wait(confNum);
   }
 
-  const spender = isBridging ? await zns.zChainPortal!.getAddress() : await zns.treasury.getAddress();
+  const spender = isBridging
+    ? await (zns.zChainPortal as ZNSZChainPortal).getAddress()
+    : await zns.treasury.getAddress();
+
   const tx = await tokenContract.connect(user).approve(spender, toApprove);
   await tx.wait(confNum);
 };
@@ -151,7 +153,7 @@ export const defaultBridgingRegistration = async ({
   domainLabel : string;
   tokenURI ?: string;
 }) => {
-  const tx = await zns.zChainPortal!.connect(user).registerAndBridgeDomain(
+  const tx = await (zns.zChainPortal as ZNSZChainPortal).connect(user).registerAndBridgeDomain(
     parentHash,
     domainLabel,
     tokenURI

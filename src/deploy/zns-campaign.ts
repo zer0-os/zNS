@@ -14,10 +14,8 @@ import {
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM, PolygonZkEVMBridgeV2DM, ZNSChainResolverDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "./campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
-import { Wallet } from "ethers";
 import { getZnsLogger } from "./logger";
 
 

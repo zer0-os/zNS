@@ -1,5 +1,4 @@
 import { MeowTokenMock, MeowTokenMock__factory } from "../../typechain";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSSigner } from "../../src/deploy/campaign/types";
 
 

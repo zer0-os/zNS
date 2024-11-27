@@ -14,7 +14,9 @@ export const validateUpgrade = async (
 ) => {
   const preVals = await Promise.all(getters);
 
-  await (contract as Exclude<ZNSContractMock, MeowTokenMock>).connect(deployer).upgradeToAndCall(await upgradeContract.getAddress(), "0x");
+  await (contract as Exclude<ZNSContractMock, MeowTokenMock>)
+    .connect(deployer)
+    .upgradeToAndCall(await upgradeContract.getAddress(), "0x");
 
   // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead

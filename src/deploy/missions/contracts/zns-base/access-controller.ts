@@ -3,7 +3,6 @@ import {
 } from "@zero-tech/zdc";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 
 

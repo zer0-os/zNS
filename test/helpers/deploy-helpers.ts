@@ -107,7 +107,7 @@ export const registerRootDomainBulk = async (
           token: await zns.meowToken.getAddress(),
           beneficiary: config.zeroVaultAddress,
         }
-    );
+      );
     logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);
