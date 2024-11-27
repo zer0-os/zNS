@@ -103,6 +103,23 @@ describe("ZNS Cross-Chain Deploy Test", () => {
     setDefaultEnvironment();
   });
 
+  it("should automatically link EthereumPortal to ZChainPortal", async () => {
+    const { zChainPortal } = znsL1;
+    const { ethPortal } = znsL2;
+
+    const destZnsPortalAddress = await zChainPortal.destZnsPortal();
+
+    expect(destZnsPortalAddress).to.equal(ethPortal.target);
+  });
+
+  it("should assign the PORTAL_ROLE to the EthereumPortal", async () => {
+    const { accessController, ethPortal } = znsL2;
+
+    const hasPortalRole = await accessController.isPortal(ethPortal.target);
+
+    expect(hasPortalRole).to.be.true;
+  });
+
   it("should deploy a mocked zkEVM Bridge if MOCK_ZKEVM_BRIDGE is 'true'", async () => {
     // this happens in znsL1 deploy
     assert.ok(configL1.crosschain.mockZkEvmBridge, "mockZkEvmBridge for L1 is set incorrectly!");
