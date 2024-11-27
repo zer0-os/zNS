@@ -5,14 +5,13 @@ import {
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 
 
 export class ZNSAddressResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

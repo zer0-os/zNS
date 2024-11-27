@@ -13,7 +13,7 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM, PolygonZkEVMBridgeV2DM, ZNSChainResolverDM,
 } from "./missions/contracts";
-import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
 import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
@@ -26,9 +26,9 @@ export const runZnsCampaign = async ({
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig<SignerWithAddress | Wallet>;
+  config : IZNSCampaignConfig;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, IZNSSigner>;
 }) => {
   hre.upgrades.silenceWarnings();
 
@@ -42,7 +42,6 @@ export const runZnsCampaign = async ({
   } = config;
 
   if (!deployer) {
-    // TODO multi: change this when finalized !
     deployer = new HardhatDeployer({
       hre,
       signer: deployAdmin,
@@ -55,8 +54,8 @@ export const runZnsCampaign = async ({
 
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >({
     missions: [

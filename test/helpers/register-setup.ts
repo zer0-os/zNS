@@ -10,7 +10,7 @@ import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfi
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
-import { IZNSContracts } from "../../src/deploy/campaign/types";
+import { IZNSContracts, IZNSSigner } from "../../src/deploy/campaign/types";
 import { ZNSRootRegistrarTrunk } from "../../typechain";
 import { getConfirmationsNumber } from "./tx";
 
@@ -25,7 +25,7 @@ export const defaultRootRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
 } : {
-  user : SignerWithAddress;
+  user : IZNSSigner;
   zns : IZNSContractsLocal | IZNSContracts;
   domainName : string;
   domainContent ?: string;
@@ -59,7 +59,7 @@ export const approveForDomain = async ({
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   domainLabel : string;
   isBridging ?: boolean;
 }) => {
@@ -113,7 +113,7 @@ export const defaultSubdomainRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig,
 } : {
-  user : SignerWithAddress;
+  user : IZNSSigner;
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
@@ -146,7 +146,7 @@ export const defaultBridgingRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   parentHash ?: string;
   domainLabel : string;
   tokenURI ?: string;
@@ -172,7 +172,7 @@ export const registrationWithSetup = async ({
   bridgeDomain = false,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;

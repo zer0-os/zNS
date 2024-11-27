@@ -1,15 +1,14 @@
 import { BaseDeployMission, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts, IZNSZChainCrossConfig } from "../../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner, IZNSZChainCrossConfig } from "../../../../campaign/types";
 import { PORTAL_ROLE, ProxyKinds } from "../../../../constants";
 import { znsNames } from "../../names";
 
 
 export class ZNSEthereumPortalDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

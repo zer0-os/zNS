@@ -19,8 +19,8 @@ import {
   ZNSChainResolver,
   ZNSRootRegistrarTrunk, ZNSRootRegistrarBranch, ZNSSubRegistrarTrunk, ZNSSubRegistrarBranch,
 } from "../../../typechain";
+import { Wallet } from "ethers";
 
-export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
 export interface IZNSBaseCrossConfig {
   mockZkEvmBridge : boolean;
@@ -41,7 +41,9 @@ export interface IZNSZChainCrossConfig extends IZNSBaseCrossConfig {
 
 export type TZNSCrossConfig = IZNSEthCrossConfig | IZNSZChainCrossConfig;
 
-export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
+export type IZNSSigner = SignerWithAddress | Wallet;
+
+export interface IZNSCampaignConfig extends IDeployCampaignConfig<IZNSSigner> {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {

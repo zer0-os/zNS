@@ -1,7 +1,7 @@
 import { BaseDeployMission, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts, IZNSEthCrossConfig } from "../../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSEthCrossConfig, IZNSSigner } from "../../../../campaign/types";
 import { ProxyKinds } from "../../../../constants";
 import { znsNames } from "../../names";
 
@@ -9,8 +9,8 @@ import { znsNames } from "../../names";
 // TODO multi: figure out how to set EthereumPortal address on this contract after that is deployed !!!
 export class ZNSZChainPortalDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

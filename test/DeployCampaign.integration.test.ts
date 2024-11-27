@@ -28,7 +28,7 @@ describe("zNS + zDC Single Integration Test", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IZNSCampaignConfig<SignerWithAddress>;
+  let config : IZNSCampaignConfig;
 
   let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;

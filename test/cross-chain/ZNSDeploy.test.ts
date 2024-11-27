@@ -17,8 +17,8 @@ describe("ZNS Cross-Chain Deploy Test", () => {
   let znsL1 : IZNSContracts;
   let znsL2 : IZNSContracts;
 
-  let configL1 : IZNSCampaignConfig<SignerWithAddress | Wallet>;
-  let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig;
+  let configL2 : IZNSCampaignConfig;
 
   let dbAdapter1 : MongoDBAdapter;
   let dbAdapter2 : MongoDBAdapter;

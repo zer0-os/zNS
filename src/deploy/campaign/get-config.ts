@@ -69,7 +69,7 @@ export const getConfig = async ({
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: TEnvironment;
-}) : Promise<IZNSCampaignConfig<SignerWithAddress | Wallet>> => {
+}) : Promise<IZNSCampaignConfig> => {
   // Prioritize reading from the env variable first, and only then fallback to the param
   let envLevel = process.env.ENV_LEVEL as TEnvironment;
 
@@ -114,7 +114,7 @@ export const getConfig = async ({
 
   const { crosschain, srcChainName } = buildCrosschainConfig();
 
-  const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = {
+  const config : IZNSCampaignConfig = {
     env: envLevel,
     confirmationsN: Number(process.env.CONFIRMATION_N),
     deployAdmin: deployer,

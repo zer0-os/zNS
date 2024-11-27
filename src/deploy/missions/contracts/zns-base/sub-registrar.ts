@@ -5,15 +5,14 @@ import {
 import { ProxyKinds, REGISTRAR_ROLE } from "../../../constants";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 import { SupportedChains } from "../cross-chain/portals/get-portal-dm";
 
 
 export class ZNSSubRegistrarDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -29,8 +28,8 @@ IZNSContracts
 
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);

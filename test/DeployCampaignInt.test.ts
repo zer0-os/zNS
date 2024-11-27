@@ -44,7 +44,7 @@ import { ethers, Wallet } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
-import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 import { getPortalDM } from "../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
@@ -61,7 +61,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IZNSCampaignConfig<SignerWithAddress>;
+  let campaignConfig : IZNSCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -204,8 +204,8 @@ describe("Deploy Campaign Test", () => {
     } : {
       missionList : Array<TDeployMissionCtor<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -215,8 +215,8 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => Promise<void>;
     }) => {
@@ -238,8 +238,8 @@ describe("Deploy Campaign Test", () => {
 
       const failingCampaign = new DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >({
         missions: missionList,
@@ -492,8 +492,8 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -613,8 +613,8 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -679,7 +679,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
+      const localConfig : IZNSCampaignConfig = await getConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -711,7 +711,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
+      const config : IZNSCampaignConfig = await getConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -886,8 +886,8 @@ describe("Deploy Campaign Test", () => {
   describe("Versioning", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
-    SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSSigner,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
 
@@ -1075,7 +1075,7 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IZNSCampaignConfig<SignerWithAddress>;
+    let config : IZNSCampaignConfig;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
