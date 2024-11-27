@@ -36,6 +36,7 @@ export interface IZNSEthCrossConfig extends IZNSBaseCrossConfig {
 
 export interface IZNSZChainCrossConfig extends IZNSBaseCrossConfig {
   srcZnsPortal : string;
+  ethAdmin ?: IZNSSigner;
 }
 
 export type TZNSCrossConfig = IZNSEthCrossConfig | IZNSZChainCrossConfig;

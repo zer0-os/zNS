@@ -114,7 +114,7 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const { crosschain, srcChainName } = buildCrosschainConfig();
+  const { crosschain, srcChainName } = buildCrosschainConfig(envLevel);
 
   const config : IZNSCampaignConfig = {
     env: envLevel,
@@ -225,7 +225,7 @@ const validatePrice = (config : ICurvePriceConfig) => {
   return (priceB <= priceA);
 };
 
-export const buildCrosschainConfig = () : {
+export const buildCrosschainConfig = (env : TEnvironment) : {
   crosschain : TZNSCrossConfig;
   srcChainName : TSupportedChain;
 } => {
@@ -273,8 +273,30 @@ export const buildCrosschainConfig = () : {
   case SupportedChains.z:
     requires(!!process.env.SRC_ZNS_PORTAL, "Must provide source ZNSZChainPortal address!");
 
+    let ethRpcUrl;
+    let adminPk;
+    if (env === EnvironmentLevels.test) {
+      requires(!!process.env.SEPOLIA_RPC_URL, "SEPOLIA_RPC_URL is missing! It is required for calls to src chain!");
+      requires(!!process.env.DEPLOY_ADMIN_SEPOLIA_PK, "DEPLOY_ADMIN_SEPOLIA_PK is missing!");
+      ethRpcUrl = process.env.SEPOLIA_RPC_URL;
+      adminPk = process.env.DEPLOY_ADMIN_SEPOLIA_PK;
+    } else if (env === EnvironmentLevels.prod) {
+      requires(!!process.env.MAINNET_RPC_URL, "MAINNET_RPC_URL is missing! It is required for calls to src chain!");
+      requires(!!process.env.DEPLOY_ADMIN_MAINNET_PK, "DEPLOY_ADMIN_MAINNET_PK is missing!");
+      ethRpcUrl = process.env.MAINNET_RPC_URL;
+      adminPk = process.env.DEPLOY_ADMIN_MAINNET_PK;
+    }
+
+    let ethAdmin;
+    if (!!ethRpcUrl && !!adminPk) {
+      const ethProvider = new ethers.JsonRpcProvider(ethRpcUrl);
+      ethAdmin = new ethers.Wallet(adminPk, ethProvider);
+    }
+
     crossConfig = {
       ...baseConfig,
+      ethRpcUrl,
+      ethAdmin,
       srcZnsPortal: process.env.SRC_ZNS_PORTAL,
     } as IZNSZChainCrossConfig;
 

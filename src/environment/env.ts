@@ -17,6 +17,11 @@ export const environment : IZNSEnvironment = {
   SEPOLIA_RPC_URL: "",
   ZCHAIN_TEST_RPC_URL: "",
   ZCHAIN_MAIN_RPC_URL: "",
+  // Required Private Keys for actual chains
+  DEPLOY_ADMIN_MAINNET_PK: "",
+  DEPLOY_ADMIN_SEPOLIA_PK: "",
+  DEPLOY_ADMIN_ZCHAIN_TEST_PK: "",
+  DEPLOY_ADMIN_ZCHAIN_MAIN_PK: "",
   // MongoDB setup
   // TODO multi: should we split these into 2 for L1 and L2 ZNS contracts ??
   //  how do we structure the DB here ??
