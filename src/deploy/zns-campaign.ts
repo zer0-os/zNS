@@ -28,7 +28,8 @@ export const runZnsCampaign = async ({
   dbVersion ?: string;
   deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, IZNSSigner>;
 }) => {
-  hre.upgrades.silenceWarnings();
+  // TODO multi: decide what to do with these
+  // hre.upgrades.silenceWarnings();
 
   const logger = getZnsLogger();
 
