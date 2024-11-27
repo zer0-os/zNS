@@ -54,8 +54,8 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
   let subUser : SignerWithAddress;
   let subUserL2 : Wallet | SignerWithAddress;
 
-  let configL1 : IZNSCampaignConfig<SignerWithAddress>;
-  let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig;
+  let configL2 : IZNSCampaignConfig;
 
   const rootDomainLabel = "jeffbridges";
   const subdomainLabel = "beaubridges";
@@ -573,7 +573,6 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
               parentHash: domainHash,
               domainLabel: subdomainChildLabel,
               fullConfig: fullDistrConfigEmpty,
-              mintTokens: true,
             });
 
             const events = await getEvents({
