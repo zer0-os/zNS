@@ -3,8 +3,6 @@ import { environment } from "./env";
 
 export const setDefaultEnvironment = () => {
   Object.entries(environment).forEach(([key, value]) => {
-    if (value === "") value = undefined;
-
     // load the defaults first
     process.env[key] = value;
   });
