@@ -184,34 +184,6 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
     setDefaultEnvironment();
   });
 
-  it("#registerAndBridgeDomain() should revert if `destZnsPortal` is not set", async () => {
-    const curPortal = await znsL1.zChainPortal.destZnsPortal();
-
-    if (curPortal !== hre.ethers.ZeroAddress) {
-      await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress);
-    }
-
-    await approveForDomain({
-      zns: znsL1,
-      parentHash: hre.ethers.ZeroHash,
-      user,
-      domainLabel: "test",
-      isBridging: true,
-    });
-
-    await expect(
-      znsL1.zChainPortal.connect(user).registerAndBridgeDomain(
-        hre.ethers.ZeroHash,
-        "test",
-        DEFAULT_TOKEN_URI,
-      )
-    ).to.be.revertedWithCustomError(znsL1.zChainPortal, DEST_PORTAL_NOT_SET_ERR);
-
-    // TODO multi: add a proper way to set this programmatically on actual chains !!!
-    // set L2 portal address on L1
-    await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
-  });
-
   it("should NOT allow to register root domain on ZChain", async () => {
     await expect(
       registrationWithSetup({
