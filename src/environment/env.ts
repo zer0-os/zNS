@@ -1,7 +1,3 @@
-// TODO multi: create a proper big ENV file with all default values here
-//  and make it be the default for all the tests and so it's easier to fill, clear
-//  and override it when needed.
-
 // These are DEFAULT values for local testing that can be overridden by ENV vars
 // set in .env file locally.
 // For detailed breakdown of vars, see env.sample file.
@@ -29,7 +25,7 @@ export const environment : IZNSEnvironment = {
   MONGO_DB_NAME: "zns-campaign",
   MONGO_DB_CLIENT_OPTS: "",
   MONGO_DB_VERSION: "",
-  ARCHIVE_PREVIOUS_DB_VERSION: "true",
+  ARCHIVE_PREVIOUS_DB_VERSION: "false",
   // Logger vars
   LOG_LEVEL: "debug",
   SILENT_LOGGER: "true",

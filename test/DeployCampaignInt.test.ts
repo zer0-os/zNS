@@ -958,6 +958,9 @@ describe("Deploy Campaign Test", () => {
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
 
+      // Need to recreate Mongo Adapter to create stuff with new env setup and new version
+      resetMongoAdapter();
+
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
@@ -1005,6 +1008,9 @@ describe("Deploy Campaign Test", () => {
       // set archiving for the new mongo adapter
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
+
+      // Need to recreate Mongo Adapter to create stuff with new env setup and new version
+      resetMongoAdapter();
 
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
