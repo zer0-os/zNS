@@ -19,9 +19,9 @@ import {
 import { ethers, Wallet } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/zns-base/meow-token/mainnet-data";
-import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../missions/contracts/cross-chain/portals/get-portal-dm";
 import { findMissingEnvVars } from "../../environment/validate";
+import { EnvironmentLevels, TEnvironment, TSupportedChain } from "@zero-tech/zdc";
 
 
 const getCustomAddresses = (
@@ -68,10 +68,20 @@ export const getConfig = async ({
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
-  env ?: string;
-}) : Promise<IZNSCampaignConfig<SignerWithAddress | Wallet>> => {
+  env ?: TEnvironment;
+}) : Promise<IZNSCampaignConfig> => {
+  // Prioritize reading from the env variable first, and only then fallback to the param
+  let envLevel = process.env.ENV_LEVEL as TEnvironment;
+
+  if (env) {
+    // We only ever specify an `env` param in tests
+    // So if there is a value we must use that instead
+    // otherwise only ever use the ENV_LEVEL above
+    envLevel = env;
+  }
+
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
-  const priceConfig = validateEnv(env);
+  const priceConfig = validateEnv(envLevel);
 
   let deployerAddress;
   if (deployer && Object.keys(deployer).includes("address")) {
@@ -82,7 +92,7 @@ export const getConfig = async ({
 
   let zeroVaultAddressConf : string;
 
-  if (process.env.ENV_LEVEL === "dev") {
+  if (process.env.ENV_LEVEL === EnvironmentLevels.dev) {
     requires(
       !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
       "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
@@ -93,7 +103,9 @@ export const getConfig = async ({
   }
 
   // Domain Token Values
-  const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
+  const royaltyReceiver = process.env.ENV_LEVEL !== EnvironmentLevels.dev
+    ? process.env.ROYALTY_RECEIVER!
+    : zeroVaultAddressConf;
   const royaltyFraction = BigInt(process.env.ROYALTY_FRACTION);
 
   // Get governor addresses set through env, if any
@@ -102,9 +114,13 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = {
-    env: process.env.ENV_LEVEL,
+  const { crosschain, srcChainName } = buildCrosschainConfig(envLevel);
+
+  const config : IZNSCampaignConfig = {
+    env: envLevel,
+    confirmationsN: Number(process.env.CONFIRMATION_N),
     deployAdmin: deployer,
+    srcChainName,
     governorAddresses,
     adminAddresses,
     domainToken: {
@@ -122,7 +138,7 @@ export const getConfig = async ({
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",
       verifyContracts: process.env.VERIFY_CONTRACTS === "true",
     },
-    crosschain: buildCrosschainConfig(),
+    crosschain,
   };
 
   return config;
@@ -130,38 +146,28 @@ export const getConfig = async ({
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
 export const validateEnv = (
-  env ?: string, // this is ONLY used for tests!
+  envLevel ?: string, // this is ONLY used for tests!
 ) : ICurvePriceConfig => {
-  // Prioritize reading from the env variable first, and only then fallback to the param
-  let envLevel = process.env.ENV_LEVEL;
-
-  if (env) {
-    // We only ever specify an `env` param in tests
-    // So if there is a value we must use that instead
-    // otherwise only ever use the ENV_LEVEL above
-    envLevel = env;
-  }
-
   findMissingEnvVars();
 
   // Validate price config first since we have to return it
   const priceConfig = getValidateRootPriceConfig();
 
-  if (envLevel === "dev") return priceConfig;
+  if (envLevel === EnvironmentLevels.dev) return priceConfig;
 
-  if (envLevel === "test" || envLevel === "dev") {
+  if (envLevel === EnvironmentLevels.test || envLevel === EnvironmentLevels.dev) {
     if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
       throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
     }
   }
 
-  if (envLevel !== "test" && envLevel !== "prod") {
+  if (envLevel !== EnvironmentLevels.test && envLevel !== EnvironmentLevels.prod) {
     // If we reach this code, there is an env variable, but it's not valid.
     throw new Error(INVALID_ENV_ERR);
   }
 
   // Mainnet
-  if (envLevel === "prod") {
+  if (envLevel === EnvironmentLevels.prod) {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
@@ -219,7 +225,10 @@ const validatePrice = (config : ICurvePriceConfig) => {
   return (priceB <= priceA);
 };
 
-export const buildCrosschainConfig = () : TZNSCrossConfig => {
+export const buildCrosschainConfig = (env : TEnvironment) : {
+  crosschain : TZNSCrossConfig;
+  srcChainName : TSupportedChain;
+} => {
   const srcChainName = process.env.SRC_CHAIN_NAME as TSupportedChain;
   const mockZkEvmBridge = process.env.MOCK_ZKEVM_BRIDGE === "true";
 
@@ -241,7 +250,6 @@ export const buildCrosschainConfig = () : TZNSCrossConfig => {
 
   const baseConfig = {
     mockZkEvmBridge,
-    srcChainName,
     zkEvmBridgeAddress,
     curNetworkId,
     bridgeToken: process.env.BRIDGE_TOKEN,
@@ -265,8 +273,30 @@ export const buildCrosschainConfig = () : TZNSCrossConfig => {
   case SupportedChains.z:
     requires(!!process.env.SRC_ZNS_PORTAL, "Must provide source ZNSZChainPortal address!");
 
+    let ethRpcUrl;
+    let adminPk;
+    if (env === EnvironmentLevels.test) {
+      requires(!!process.env.SEPOLIA_RPC_URL, "SEPOLIA_RPC_URL is missing! It is required for calls to src chain!");
+      requires(!!process.env.DEPLOY_ADMIN_SEPOLIA_PK, "DEPLOY_ADMIN_SEPOLIA_PK is missing!");
+      ethRpcUrl = process.env.SEPOLIA_RPC_URL;
+      adminPk = process.env.DEPLOY_ADMIN_SEPOLIA_PK;
+    } else if (env === EnvironmentLevels.prod) {
+      requires(!!process.env.MAINNET_RPC_URL, "MAINNET_RPC_URL is missing! It is required for calls to src chain!");
+      requires(!!process.env.DEPLOY_ADMIN_MAINNET_PK, "DEPLOY_ADMIN_MAINNET_PK is missing!");
+      ethRpcUrl = process.env.MAINNET_RPC_URL;
+      adminPk = process.env.DEPLOY_ADMIN_MAINNET_PK;
+    }
+
+    let ethAdmin;
+    if (!!ethRpcUrl && !!adminPk) {
+      const ethProvider = new ethers.JsonRpcProvider(ethRpcUrl);
+      ethAdmin = new ethers.Wallet(adminPk, ethProvider);
+    }
+
     crossConfig = {
       ...baseConfig,
+      ethRpcUrl,
+      ethAdmin,
       srcZnsPortal: process.env.SRC_ZNS_PORTAL,
     } as IZNSZChainCrossConfig;
 
@@ -275,5 +305,5 @@ export const buildCrosschainConfig = () : TZNSCrossConfig => {
     throw new Error(`Unsupported chain: ${srcChainName}!`);
   }
 
-  return crossConfig;
+  return { crosschain: crossConfig, srcChainName };
 };

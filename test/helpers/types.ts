@@ -1,35 +1,44 @@
 import {
-  MeowTokenMock, PolygonZkEVMBridgeV2Mock,
+  MeowTokenMock,
+  PolygonZkEVMBridgeV2Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
-  ZNSAddressResolverUpgradeMock__factory, ZNSChainResolver,
+  ZNSAddressResolverUpgradeMock__factory,
+  ZNSChainResolver,
   ZNSCurvePricer,
   ZNSCurvePricerUpgradeMock,
   ZNSCurvePricerUpgradeMock__factory,
   ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
-  ZNSDomainTokenUpgradeMock__factory, ZNSEthereumPortal,
+  ZNSDomainTokenUpgradeMock__factory,
+  ZNSEthereumPortal,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
   ZNSFixedPricerUpgradeMock__factory,
   ZNSRegistry,
   ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSRootRegistrarBranch, ZNSRootRegistrarTrunk,
+  ZNSRootRegistrarBranch,
+  ZNSRootRegistrarTrunk,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolver,
-  ZNSSubRegistrarBranch, ZNSSubRegistrarTrunk,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSStringResolver,
+  ZNSStringResolverUpgradeMock,
+  ZNSStringResolverUpgradeMock__factory,
+  ZNSSubRegistrarBranch,
+  ZNSSubRegistrarTrunk,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
-  ZNSTreasuryUpgradeMock__factory, ZNSZChainPortal,
+  ZNSTreasuryUpgradeMock__factory,
+  ZNSZChainPortal,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
-import { TSupportedChain } from "../../src/deploy/missions/contracts/cross-chain/portals/types";
+import { TSupportedChain } from "@zero-tech/zdc";
 
 
 export type GeneralContractGetter = Promise<
@@ -53,6 +62,7 @@ export type ZNSContractMockFactory =
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
+  ZNSStringResolverUpgradeMock__factory |
   ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
@@ -63,6 +73,7 @@ export type ZNSContractMock =
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
+  ZNSStringResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock;
 
 export interface IFixedPriceConfig {

@@ -9,14 +9,14 @@ import {
   paymentConfigEmpty,
   validateUpgrade,
 } from "./helpers";
-import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
+  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrarTrunk,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
@@ -41,11 +41,11 @@ describe("ZNSStringResolver", () => {
     let registry : ZNSRegistry;
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
-    SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSSigner,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
-    let rootRegistrar : ZNSRootRegistrar;
+    let rootRegistrar : ZNSRootRegistrarTrunk;
     let accessController : ZNSAccessController;
 
     let userBalance : bigint;
@@ -196,8 +196,8 @@ describe("ZNSStringResolver", () => {
     let registry : ZNSRegistry;
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
-    SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSSigner,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
     let accessController : ZNSAccessController;

@@ -5,6 +5,10 @@ export interface IZNSEnvironment {
   SEPOLIA_RPC_URL ?: string;
   ZCHAIN_TEST_RPC_URL ?: string;
   ZCHAIN_MAIN_RPC_URL ?: string;
+  DEPLOY_ADMIN_MAINNET_PK ?: string;
+  DEPLOY_ADMIN_SEPOLIA_PK ?: string;
+  DEPLOY_ADMIN_ZCHAIN_TEST_PK ?: string;
+  DEPLOY_ADMIN_ZCHAIN_MAIN_PK ?: string;
   MONGO_DB_URI : string;
   MONGO_DB_NAME : string;
   MONGO_DB_CLIENT_OPTS ?: string;

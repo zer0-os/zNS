@@ -4,7 +4,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import {
   HardhatDeployer,
   DeployCampaign,
-  getLogger, IHardhatDeployerArgs, TDeployArgs, TProxyKind, IContractV6,
 } from "@zero-tech/zdc";
 import {
   MeowTokenDM,
@@ -14,96 +13,39 @@ import {
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM, PolygonZkEVMBridgeV2DM, ZNSChainResolverDM,
 } from "./missions/contracts";
-import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "./campaign/types";
 import { getZnsMongoAdapter } from "./mongo";
 import { getPortalDM } from "./missions/contracts/cross-chain/portals/get-portal-dm";
-import { ContractTransactionResponse, Wallet } from "ethers";
-import { getConfirmationsNumber } from "../../test/helpers/tx";
+import { getZnsLogger } from "./logger";
 
-
-export const executeWithConfirmation = async (
-  tx : Promise<ContractTransactionResponse>,
-  confNum ?: number,
-) => {
-  confNum = confNum ?? getConfirmationsNumber();
-  const txRes = await tx;
-  return txRes.wait(confNum);
-};
-
-// TODO multi: move this or change zDC code to include this !!
-class HardhatDeployerWrapper extends HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress> {
-  constructor ({
-    hre,
-    signer,
-    env,
-  } : IHardhatDeployerArgs<HardhatRuntimeEnvironment, SignerWithAddress>) {
-    super({
-      hre,
-      signer,
-      env,
-    });
-  }
-
-  async deployProxy ({
-    contractName,
-    args,
-    kind,
-  } : {
-    contractName : string;
-    args : TDeployArgs;
-    kind : TProxyKind;
-  }) : Promise<IContractV6> {
-    const contract = await super.deployProxy({
-      contractName,
-      args,
-      kind,
-    });
-
-    if (this.env !== "dev") {
-      // TODO multi: fix this in zDC since there is a wrong type in IContractV6 for this method
-      const deployTx = contract.deploymentTransaction() as ContractTransactionResponse;
-      // TODO multi: make the amount of blocks a var passed to deployed by the config ??
-      if (deployTx) await deployTx.wait(getConfirmationsNumber());
-    }
-
-    return contract;
-  }
-
-  async deployContract (contractName : string, args : TDeployArgs) : Promise<IContractV6> {
-    const contract = await super.deployContract(contractName, args);
-
-    if (this.env !== "dev") {
-      // TODO multi: fix this in zDC since there is a wrong type in IContractV6 for this method
-      const deployTx = contract.deploymentTransaction() as ContractTransactionResponse;
-      // TODO multi: make the amount of blocks a var passed to deployed by the config ??
-      //  this may be needed to be higher than 2 in times of network congestion
-      if (deployTx) await deployTx.wait(getConfirmationsNumber());
-    }
-
-    return contract;
-  }
-}
 
 export const runZnsCampaign = async ({
   config,
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig<SignerWithAddress | Wallet>;
+  config : IZNSCampaignConfig;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, IZNSSigner>;
 }) => {
-  hre.upgrades.silenceWarnings();
+  // TODO multi: decide what to do with these
+  // hre.upgrades.silenceWarnings();
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
+
+  const {
+    deployAdmin,
+    env,
+    confirmationsN,
+    srcChainName,
+  } = config;
 
   if (!deployer) {
-    // TODO multi: change this when finalized !
-    deployer = new HardhatDeployerWrapper({
+    deployer = new HardhatDeployer({
       hre,
-      signer: config.deployAdmin,
-      env: config.env,
+      signer: deployAdmin,
+      env,
+      confirmationsN,
     });
   }
 
@@ -111,8 +53,8 @@ export const runZnsCampaign = async ({
 
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >({
     missions: [
@@ -129,7 +71,7 @@ export const runZnsCampaign = async ({
       ZNSFixedPricerDM,
       ZNSChainResolverDM,
       PolygonZkEVMBridgeV2DM,
-      getPortalDM(config.crosschain.srcChainName),
+      getPortalDM(srcChainName),
     ],
     deployer,
     dbAdapter,

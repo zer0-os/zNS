@@ -1,16 +1,14 @@
 import { BaseDeployMission, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
-import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSStringResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -57,12 +55,11 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await executeWithConfirmation(
-      registry.connect(deployAdmin).addResolverType(
-        ResolverTypes.string,
-        await stringResolver.getAddress(),
-      )
+    const tx = await registry.connect(deployAdmin).addResolverType(
+      ResolverTypes.string,
+      await stringResolver.getAddress(),
     );
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

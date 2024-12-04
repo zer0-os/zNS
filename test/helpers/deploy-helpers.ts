@@ -9,6 +9,7 @@ import { expect } from "chai";
 import { hashDomainLabel, paymentConfigEmpty } from ".";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { TLogger } from "@zero-tech/zdc";
+import { ZNSRootRegistrarTrunk } from "../../typechain";
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
@@ -84,7 +85,7 @@ export const getPriceBulk = async (
 export const registerRootDomainBulk = async (
   signers : Array<SignerWithAddress>,
   domains : Array<string>,
-  config : IZNSCampaignConfig<SignerWithAddress>,
+  config : IZNSCampaignConfig,
   tokenUri : string,
   distConfig : IDistributionConfig,
   priceConfig : ICurvePriceConfig,
@@ -95,16 +96,18 @@ export const registerRootDomainBulk = async (
 
   for(const domain of domains) {
     const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
-    const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
-      domain,
-      config.zeroVaultAddress,
-      `${tokenUri}${index}`,
-      distConfig,
-      {
-        token: await zns.meowToken.getAddress(),
-        beneficiary: config.zeroVaultAddress,
-      }
-    );
+    const tx = await (zns.rootRegistrar as ZNSRootRegistrarTrunk)
+      .connect(signers[index])
+      .registerRootDomain(
+        domain,
+        config.zeroVaultAddress,
+        `${tokenUri}${index}`,
+        distConfig,
+        {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: config.zeroVaultAddress,
+        }
+      );
     logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);

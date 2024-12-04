@@ -5,15 +5,13 @@ import {
 import { ProxyKinds, ResolverTypes } from "../../../constants";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { executeWithConfirmation } from "../../../zns-campaign";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 
 
 export class ZNSAddressResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -60,12 +58,11 @@ IZNSContracts
     // TODO multi: wrap this in a tx runner that will wait for every tx if not on "dev"
     //  amount of confirmations should be a var passed to the config!
     //  do this for all DMs here after the zDC code is changed!
-    await executeWithConfirmation(
-      registry.connect(deployAdmin).addResolverType(
-        ResolverTypes.address,
-        await addressResolver.getAddress()
-      )
+    const tx = await registry.connect(deployAdmin).addResolverType(
+      ResolverTypes.address,
+      await addressResolver.getAddress()
     );
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

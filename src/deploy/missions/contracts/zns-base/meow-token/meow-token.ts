@@ -7,11 +7,9 @@ import { ProxyKinds } from "../../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../../campaign/types";
 import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
 import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
-import { executeWithConfirmation } from "../../../../zns-campaign";
 
 
 export const meowTokenName = "MEOW";
@@ -20,8 +18,8 @@ export const meowTokenSymbol = "MEOW";
 
 export class MeowTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -34,8 +32,8 @@ IZNSContracts
 
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);
@@ -64,6 +62,9 @@ IZNSContracts
       // }
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
+
+      if (!this.config.stakingTokenAddress)
+        throw new Error("Token is set as non-mocked, but no staking token address provided!");
 
       const factory = new MeowToken__factory(this.config.deployAdmin);
       const baseContract = factory.attach(this.config.stakingTokenAddress);
@@ -116,12 +117,11 @@ IZNSContracts
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await executeWithConfirmation(
-      meowToken.connect(deployAdmin).mint(
-        await deployAdmin.getAddress(),
-        ethers.parseEther("100000"),
-      )
+    const tx = await meowToken.connect(deployAdmin).mint(
+      await deployAdmin.getAddress(),
+      ethers.parseEther("100000"),
     );
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

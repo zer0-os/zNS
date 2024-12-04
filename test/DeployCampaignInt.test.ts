@@ -40,11 +40,11 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/zns-base/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { buildCrosschainConfig, getConfig } from "../src/deploy/campaign/get-config";
-import { ethers, Wallet } from "ethers";
+import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
-import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 import { getPortalDM } from "../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
@@ -61,7 +61,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IZNSCampaignConfig<SignerWithAddress>;
+  let campaignConfig : IZNSCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -73,9 +73,12 @@ describe("Deploy Campaign Test", () => {
 
   describe("MEOW Token Ops", () => {
     before(async () => {
+      const { crosschain, srcChainName } = buildCrosschainConfig();
       campaignConfig = {
         env,
         deployAdmin,
+        confirmationsN: 0,
+        srcChainName,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -93,7 +96,7 @@ describe("Deploy Campaign Test", () => {
           monitorContracts: false,
           verifyContracts: false,
         },
-        crosschain: buildCrosschainConfig(),
+        crosschain,
       };
     });
 
@@ -201,8 +204,8 @@ describe("Deploy Campaign Test", () => {
     } : {
       missionList : Array<TDeployMissionCtor<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -212,8 +215,8 @@ describe("Deploy Campaign Test", () => {
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => Promise<void>;
     }) => {
@@ -224,6 +227,7 @@ describe("Deploy Campaign Test", () => {
         hre,
         signer: deployAdmin,
         env,
+        confirmationsN: 0,
       });
       let dbAdapter = await getZnsMongoAdapter();
 
@@ -234,8 +238,8 @@ describe("Deploy Campaign Test", () => {
 
       const failingCampaign = new DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >({
         missions: missionList,
@@ -363,9 +367,13 @@ describe("Deploy Campaign Test", () => {
     beforeEach(async () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
+      const { crosschain, srcChainName } = buildCrosschainConfig();
+
       campaignConfig = {
         env,
         deployAdmin,
+        confirmationsN: 0,
+        srcChainName,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -383,7 +391,7 @@ describe("Deploy Campaign Test", () => {
           monitorContracts: false,
           verifyContracts: false,
         },
-        crosschain: buildCrosschainConfig(),
+        crosschain,
       };
 
       mongoAdapter = await getZnsMongoAdapter({
@@ -446,7 +454,7 @@ describe("Deploy Campaign Test", () => {
           ZNSFixedPricerDM,
           ZNSChainResolverDM,
           PolygonZkEVMBridgeV2DM,
-          getPortalDM(campaignConfig.crosschain.srcChainName),
+          getPortalDM(campaignConfig.srcChainName),
         ],
         placeOfFailure: "deploy",
         deployedNames,
@@ -484,8 +492,8 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -605,8 +613,8 @@ describe("Deploy Campaign Test", () => {
 
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSSigner,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -671,7 +679,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
+      const localConfig : IZNSCampaignConfig = await getConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -703,7 +711,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
+      const config : IZNSCampaignConfig = await getConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -878,17 +886,21 @@ describe("Deploy Campaign Test", () => {
   describe("Versioning", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
-    SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSSigner,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
 
     before(async () => {
       await saveTag();
 
+      const { crosschain, srcChainName } = buildCrosschainConfig();
+
       campaignConfig = {
         env,
         deployAdmin,
+        confirmationsN: 0,
+        srcChainName,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -906,7 +918,7 @@ describe("Deploy Campaign Test", () => {
           monitorContracts: false,
           verifyContracts: false,
         },
-        crosschain: buildCrosschainConfig(),
+        crosschain,
       };
 
       campaign = await runZnsCampaign({
@@ -945,6 +957,9 @@ describe("Deploy Campaign Test", () => {
       // set archiving for the new mongo adapter
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
+
+      // Need to recreate Mongo Adapter to create stuff with new env setup and new version
+      resetMongoAdapter();
 
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
@@ -993,6 +1008,9 @@ describe("Deploy Campaign Test", () => {
       // set archiving for the new mongo adapter
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
+
+      // Need to recreate Mongo Adapter to create stuff with new env setup and new version
+      resetMongoAdapter();
 
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
@@ -1063,14 +1081,18 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IZNSCampaignConfig<SignerWithAddress>;
+    let config : IZNSCampaignConfig;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
 
+      const { crosschain, srcChainName } = buildCrosschainConfig();
+
       config = {
         env: "dev",
         deployAdmin,
+        confirmationsN: 0,
+        srcChainName,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -1088,7 +1110,7 @@ describe("Deploy Campaign Test", () => {
           monitorContracts: false,
           verifyContracts: true,
         },
-        crosschain: buildCrosschainConfig(),
+        crosschain,
       };
     });
 
@@ -1114,6 +1136,7 @@ describe("Deploy Campaign Test", () => {
         hre,
         signer: deployAdmin,
         env,
+        confirmationsN: 0,
       });
 
       const campaign = await runZnsCampaign({
@@ -1153,6 +1176,7 @@ describe("Deploy Campaign Test", () => {
         hre,
         signer: deployAdmin,
         env,
+        confirmationsN: 0,
       });
 
       config.postDeploy.monitorContracts = true;

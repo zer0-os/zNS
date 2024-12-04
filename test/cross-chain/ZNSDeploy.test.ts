@@ -4,7 +4,6 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/types";
 import { MongoDBAdapter, resetMongoAdapter } from "@zero-tech/zdc";
-import { Wallet } from "ethers";
 import { getConfig } from "../../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../../src/deploy/zns-campaign";
 import { SupportedChains } from "../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
@@ -17,8 +16,8 @@ describe("ZNS Cross-Chain Deploy Test", () => {
   let znsL1 : IZNSContracts;
   let znsL2 : IZNSContracts;
 
-  let configL1 : IZNSCampaignConfig<SignerWithAddress | Wallet>;
-  let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig;
+  let configL2 : IZNSCampaignConfig;
 
   let dbAdapter1 : MongoDBAdapter;
   let dbAdapter2 : MongoDBAdapter;
@@ -102,6 +101,23 @@ describe("ZNS Cross-Chain Deploy Test", () => {
     await dbAdapter1.dropDB();
     await dbAdapter2.dropDB();
     setDefaultEnvironment();
+  });
+
+  it("should automatically link EthereumPortal to ZChainPortal", async () => {
+    const { zChainPortal } = znsL1;
+    const { ethPortal } = znsL2;
+
+    const destZnsPortalAddress = await zChainPortal.destZnsPortal();
+
+    expect(destZnsPortalAddress).to.equal(ethPortal.target);
+  });
+
+  it("should assign the PORTAL_ROLE to the EthereumPortal", async () => {
+    const { accessController, ethPortal } = znsL2;
+
+    const hasPortalRole = await accessController.isPortal(ethPortal.target);
+
+    expect(hasPortalRole).to.be.true;
   });
 
   it("should deploy a mocked zkEVM Bridge if MOCK_ZKEVM_BRIDGE is 'true'", async () => {

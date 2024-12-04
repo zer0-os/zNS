@@ -1,4 +1,3 @@
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
   IFixedPriceConfig,
@@ -10,8 +9,8 @@ import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfi
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
-import { IZNSContracts } from "../../src/deploy/campaign/types";
-import { ZNSRootRegistrarTrunk } from "../../typechain";
+import { IZNSContracts, IZNSSigner } from "../../src/deploy/campaign/types";
+import { ZNSRootRegistrarTrunk, ZNSZChainPortal } from "../../typechain";
 import { getConfirmationsNumber } from "./tx";
 
 const { ZeroAddress } = ethers;
@@ -25,7 +24,7 @@ export const defaultRootRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
 } : {
-  user : SignerWithAddress;
+  user : IZNSSigner;
   zns : IZNSContractsLocal | IZNSContracts;
   domainName : string;
   domainContent ?: string;
@@ -59,7 +58,7 @@ export const approveForDomain = async ({
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   domainLabel : string;
   isBridging ?: boolean;
 }) => {
@@ -93,7 +92,10 @@ export const approveForDomain = async ({
     await tx.wait(confNum);
   }
 
-  const spender = isBridging ? await zns.zChainPortal.getAddress() : await zns.treasury.getAddress();
+  const spender = isBridging
+    ? await (zns.zChainPortal as ZNSZChainPortal).getAddress()
+    : await zns.treasury.getAddress();
+
   const tx = await tokenContract.connect(user).approve(spender, toApprove);
   await tx.wait(confNum);
 };
@@ -113,7 +115,7 @@ export const defaultSubdomainRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig,
 } : {
-  user : SignerWithAddress;
+  user : IZNSSigner;
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
@@ -146,12 +148,12 @@ export const defaultBridgingRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   parentHash ?: string;
   domainLabel : string;
   tokenURI ?: string;
 }) => {
-  const tx = await zns.zChainPortal.connect(user).registerAndBridgeDomain(
+  const tx = await (zns.zChainPortal as ZNSZChainPortal).connect(user).registerAndBridgeDomain(
     parentHash,
     domainLabel,
     tokenURI
@@ -172,7 +174,7 @@ export const registrationWithSetup = async ({
   bridgeDomain = false,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
+  user : IZNSSigner;
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;

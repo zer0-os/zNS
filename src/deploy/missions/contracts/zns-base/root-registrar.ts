@@ -5,16 +5,14 @@ import {
 import { ProxyKinds, REGISTRAR_ROLE } from "../../../constants";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 import { SupportedChains } from "../cross-chain/portals/get-portal-dm";
-import { executeWithConfirmation } from "../../../zns-campaign";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -27,15 +25,15 @@ IZNSContracts
 
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);
 
-    if (this.config.crosschain.srcChainName === SupportedChains.eth) {
+    if (this.config.srcChainName === SupportedChains.eth) {
       this.contractName = znsNames.rootRegistrar.contractTrunk;
-    } else if (this.config.crosschain.srcChainName === SupportedChains.z) {
+    } else if (this.config.srcChainName === SupportedChains.z) {
       this.contractName = znsNames.rootRegistrar.contractBranch;
     } else {
       throw new Error("Unsupported chain for Root Registrar deployment");
@@ -88,11 +86,10 @@ IZNSContracts
       },
     } = this.campaign;
 
-    await executeWithConfirmation(
-      accessController
-        .connect(deployAdmin)
-        .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress())
-    );
+    const tx = await accessController
+      .connect(deployAdmin)
+      .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+    await this.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

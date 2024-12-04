@@ -1,7 +1,6 @@
 import { BaseDeployMission, IContractArtifact, IDeployMissionArgs, TDeployArgs } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts, IZNSSigner } from "../../../campaign/types";
 import { ProxyKinds } from "../../../constants";
 import { znsNames } from "../names";
 import { ethers, Interface } from "ethers";
@@ -9,8 +8,8 @@ import { ethers, Interface } from "ethers";
 
 export class PolygonZkEVMBridgeV2DM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
-SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSSigner,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -23,8 +22,8 @@ IZNSContracts
 
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
-  SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSSigner,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);

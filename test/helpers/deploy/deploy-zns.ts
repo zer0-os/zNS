@@ -56,8 +56,8 @@ import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName, znsNames } from "../../../src/deploy/missions/contracts/names";
-import { TSupportedChain } from "../../../src/deploy/missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
+import { TSupportedChain } from "@zero-tech/zdc";
 
 
 export const deployAccessController = async ({

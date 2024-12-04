@@ -1,6 +1,6 @@
 import fs from "fs";
 import { tagFilePath } from "./constants";
-import { getLogger } from "@zero-tech/zdc";
+import { getZnsLogger } from "../../deploy/logger";
 
 
 export const getGitTag = () => {
@@ -8,7 +8,7 @@ export const getGitTag = () => {
     throw Error(`No git tag found at ${tagFilePath}`);
   }
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   const tag = fs.readFileSync(tagFilePath, "utf8").trim();
   logger.info(`Git tag found at ${tagFilePath}: ${tag}`);

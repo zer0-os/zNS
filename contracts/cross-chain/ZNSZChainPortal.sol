@@ -71,8 +71,12 @@ contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal
         bytes32 parentHash,
         string calldata label,
         string calldata tokenURI
+    // TODO multi: figure this out !!!
 //      bool forceUpdateGlobalExitRoot  - do we need to pass this ???
     ) external override {
+        // TODO multi: can we optimize this somehow, so we don't have to do it every time ??
+        if (destZnsPortal == address(0)) revert DestinationPortalNotSetInState();
+
         DistributionConfig memory emptyDistrConfig;
         PaymentConfig memory emptyPaymentConfig;
 
@@ -189,10 +193,6 @@ contract ZNSZChainPortal is UUPSUpgradeable, AAccessControlled, IZNSZChainPortal
         });
 
         bytes memory encodedProof = abi.encode(proof);
-
-        // TODO multi: should we leave this? We can't rely on setting this properly on time
-        //  and can permanently lock domains !!!
-        if (destZnsPortal == address(0)) revert DestinationPortalNotSetInState();
 
         polygonZkEVMBridge.bridgeMessage(
             destNetworkId,
