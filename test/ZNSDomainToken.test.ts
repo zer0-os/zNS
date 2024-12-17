@@ -10,14 +10,13 @@ import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
   GOVERNOR_ROLE,
-  getAccessRevertMsg,
-  INVALID_TOKENID_ERC_ERR,
+  NONEXISTENT_TOKEN_ERC_ERR,
   deployZNS,
   validateUpgrade,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INITIALIZED_ERR,
-  DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION,
+  DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION, AC_UNAUTHORIZED_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -64,7 +63,7 @@ describe("ZNSDomainToken", () => {
       ZNS_DOMAIN_TOKEN_SYMBOL,
       zns.zeroVaultAddress,
       DEFAULT_ROYALTY_FRACTION
-    )).to.be.revertedWith(INITIALIZED_ERR);
+    )).to.be.revertedWithCustomError(zns.domainToken, INITIALIZED_ERR);
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
@@ -80,7 +79,7 @@ describe("ZNSDomainToken", () => {
         zns.zeroVaultAddress,
         DEFAULT_ROYALTY_FRACTION
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   describe("External functions", () => {
@@ -130,13 +129,11 @@ describe("ZNSDomainToken", () => {
 
     it("Should revert when registering (minting) if caller does not have REGISTRAR_ROLE", async () => {
       const tokenId = BigInt("1");
-      await expect(
-        zns.domainToken
-          .connect(caller)
-          .register(caller.address, tokenId, randomTokenURI)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.domainToken
+        .connect(caller)
+        .register(caller.address, tokenId, randomTokenURI))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address,REGISTRAR_ROLE);
     });
 
     it("Revokes a token", async () => {
@@ -161,7 +158,10 @@ describe("ZNSDomainToken", () => {
       );
 
       // Verify token has been burned
-      await expect(zns.domainToken.ownerOf(tokenId)).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
+      await expect(zns.domainToken.ownerOf(tokenId)).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      );
     });
   });
 
@@ -172,9 +172,8 @@ describe("ZNSDomainToken", () => {
         .connect(caller)
         .register(caller.address, tokenId, randomTokenURI);
 
-      await expect(registerTx).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
-      );
+      await expect(registerTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address,REGISTRAR_ROLE);
     });
 
     it("Only authorized can revoke a token", async () => {
@@ -193,9 +192,8 @@ describe("ZNSDomainToken", () => {
 
       // Revoke domain
       const tx = zns.domainToken.connect(caller).revoke(tokenId);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, REGISTRAR_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address,REGISTRAR_ROLE);
 
       // Verify token has not been burned
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
@@ -207,11 +205,9 @@ describe("ZNSDomainToken", () => {
     });
 
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
-      await expect(
-        zns.domainToken.connect(caller).setAccessController(caller.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
+      await expect(zns.domainToken.connect(caller).setAccessController(caller.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address,ADMIN_ROLE);
     });
   });
 
@@ -293,11 +289,9 @@ describe("ZNSDomainToken", () => {
     });
 
     it("#setDefaultRoyalty() should revert if called by anyone other than ADMIN_ROLE", async () => {
-      await expect(
-        zns.domainToken.connect(caller).setDefaultRoyalty(beneficiary.address, 100)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
+      await expect(zns.domainToken.connect(caller).setDefaultRoyalty(beneficiary.address, 100))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address,ADMIN_ROLE);
     });
 
     it("#setTokenRoyalty() should revert if called by anyone other than ADMIN_ROLE", async () => {
@@ -305,11 +299,9 @@ describe("ZNSDomainToken", () => {
       const tokenId = BigInt("777356");
       await zns.domainToken.connect(mockRegistrar).register(deployer.address, tokenId, randomTokenURI);
 
-      await expect(
-        zns.domainToken.connect(caller).setTokenRoyalty(tokenId, beneficiary.address, 100)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
+      await expect(zns.domainToken.connect(caller).setTokenRoyalty(tokenId, beneficiary.address, 100))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
     });
   });
 
@@ -441,21 +433,17 @@ describe("ZNSDomainToken", () => {
 
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, tokenURI);
 
-      await expect(
-        zns.domainToken.connect(caller).setTokenURI(tokenId, newTokenURI)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
+      await expect(zns.domainToken.connect(caller).setTokenURI(tokenId, newTokenURI))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
     });
 
     it("#setBaseURI() should revert when called by anyone other than ADMIN_ROLE", async () => {
       const baseURI = "https://www.zNS.domains/";
 
-      await expect(
-        zns.domainToken.connect(caller).setBaseURI(baseURI)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, ADMIN_ROLE)
-      );
+      await expect(zns.domainToken.connect(caller).setBaseURI(baseURI))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
     });
   });
 
@@ -492,7 +480,10 @@ describe("ZNSDomainToken", () => {
         await zns.accessController.hasRole(GOVERNOR_ROLE, deployer.address)
       ).to.be.true;
 
-      const upgradeTx = zns.domainToken.connect(deployer).upgradeTo(await newDomainToken.getAddress());
+      const upgradeTx = zns.domainToken.connect(deployer).upgradeToAndCall(
+        await newDomainToken.getAddress(),
+        "0x"
+      );
 
       await expect(upgradeTx).to.not.be.reverted;
     });
@@ -529,15 +520,17 @@ describe("ZNSDomainToken", () => {
       await newDomainToken.waitForDeployment();
 
       // Confirm the caller is not a governor
-      await expect(zns.accessController.checkGovernor(caller.address)).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
+      await expect(zns.accessController.checkGovernor(caller.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, GOVERNOR_ROLE);
+
+      const upgradeTx = zns.domainToken.connect(caller).upgradeToAndCall(
+        await newDomainToken.getAddress(),
+        "0x"
       );
 
-      const upgradeTx = zns.domainToken.connect(caller).upgradeTo(await newDomainToken.getAddress());
-
-      await expect(upgradeTx).to.be.revertedWith(
-        getAccessRevertMsg(caller.address, GOVERNOR_ROLE)
-      );
+      await expect(upgradeTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, GOVERNOR_ROLE);
     });
   });
 });
