@@ -1129,20 +1129,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.0.0.tgz#11edb64933c43ab3eab2a84abe5e3ccf2981c4c7"
   integrity sha512-T5tO/KD++m+Ph74ppPPmNuhyrvNcsMDgQWt+pGshNJMsTf9UvmhBNyyOqVAL91UeuqDI0FHAbBV1+NnMg7ffFA==
 
-"@openzeppelin/contracts-upgradeable@4.9.3":
-  version "4.9.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-4.9.3.tgz#ff17a80fb945f5102571f8efecb5ce5915cc4811"
-  integrity sha512-jjaHAVRMrE4UuZNfDwjlLGDxTHWIOwTJS2ldnc278a0gevfXfPr8hxKEVBGFBE96kl2G3VHDZhUimw/+G3TG2A==
-
 "@openzeppelin/contracts-upgradeable@^5.0.2":
   version "5.0.2"
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-5.0.2.tgz#3e5321a2ecdd0b206064356798c21225b6ec7105"
   integrity sha512-0MmkHSHiW2NRFiT9/r5Lu4eJq5UJ4/tzlOgYXNAIj/ONkQTVnz22pLxDvp4C4uZ9he7ZFvGn3Driptn1/iU7tQ==
-
-"@openzeppelin/contracts@4.9.3":
-  version "4.9.3"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.3.tgz#00d7a8cf35a475b160b3f0293a6403c511099364"
-  integrity sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==
 
 "@openzeppelin/contracts@^5.0.2":
   version "5.0.2"
@@ -1926,6 +1916,11 @@
     eslint-plugin-prefer-arrow "^1.2.3"
     typescript "^5.0.2"
 
+"@zero-tech/z-token@1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@zero-tech/z-token/-/z-token-1.0.0.tgz#ba56c7e269e399e029cca69d1d54357220a2d08f"
+  integrity sha512-hbUmgKZ6G4Z4dLzvI0SR5n/O6OaWpWh2utG5DHDZZd6P6G5HBdeELUKVVQxecTsPQY0GnVvevxaEoLBMcyW9Xw==
+
 "@zero-tech/zdc@0.1.6":
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/@zero-tech/zdc/-/zdc-0.1.6.tgz#131d13a128c494b7b5d32c208f3afdb775bf3ba2"
@@ -1934,14 +1929,6 @@
     axios "^1.6.5"
     mongodb "^6.3.0"
     winston "^3.11.0"
-
-"@zero-tech/ztoken@2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@zero-tech/ztoken/-/ztoken-2.1.0.tgz#71f50b532c258588ade488644fd75d1b8028a256"
-  integrity sha512-5S392GkiE+mH+ZNWs1XKL/ia4YiQ9tf+i8p1qeoHBFqatwB1wP3XTl+GkosqSxaJPnw/nNq7bn2W+XBnGATxJg==
-  dependencies:
-    "@openzeppelin/contracts" "4.9.3"
-    "@openzeppelin/contracts-upgradeable" "4.9.3"
 
 JSONStream@^1.3.5:
   version "1.3.5"
