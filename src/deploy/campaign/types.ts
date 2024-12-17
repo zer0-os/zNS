@@ -14,6 +14,7 @@ import {
   ZNSTreasury,
   ZToken,
   ZTokenMock,
+  ZNSStringResolver,
 } from "../../../typechain";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
@@ -48,6 +49,7 @@ export type ZNSContract =
   ZTokenMock |
   ZToken |
   ZNSAddressResolver |
+  ZNSStringResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
@@ -60,6 +62,7 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   domainToken : ZNSDomainToken;
   zToken : ZTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;
