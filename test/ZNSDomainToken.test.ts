@@ -273,16 +273,22 @@ describe("ZNSDomainToken", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
 
       await expect(
-        zns.domainToken.connect(deployer)["safeTransferFrom(address,address,uint256)"](caller.address, deployer.address, tokenId)
+        zns.domainToken.connect(deployer)
+          ["safeTransferFrom(address,address,uint256)"]
+          (caller.address, deployer.address, tokenId)
       ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
 
       await expect(
-        zns.domainToken.connect(deployer)["safeTransferFrom(address,address,uint256,bytes)"](caller.address, deployer.address, tokenId, ethers.ZeroHash)
+        zns.domainToken.connect(deployer)
+          ["safeTransferFrom(address,address,uint256,bytes)"]
+          (caller.address, deployer.address, tokenId, ethers.ZeroHash)
       ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
 
       // Approve deployer to spend on behalf of caller, then deployer safeTransferFrom passes
       await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
-      await zns.domainToken.connect(deployer)["safeTransferFrom(address,address,uint256)"](caller.address, deployer.address, tokenId);
+      await zns.domainToken.connect(deployer)
+        ["safeTransferFrom(address,address,uint256)"]
+        (caller.address, deployer.address, tokenId);
     });
 
     it("Fails when non-owner tries to transfer through `transferFrom`", async () => {
