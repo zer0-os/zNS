@@ -258,7 +258,7 @@ describe("ZNSRootRegistrar", () => {
       baseLength: BigInt("6"),
       maxLength: BigInt("35"),
       maxPrice: ethers.parseEther("150"),
-      minPrice: ethers.parseEther("10"),
+      curveMultiplier: BigInt(1000),
       precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
       feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
       isSet: true,
@@ -272,7 +272,7 @@ describe("ZNSRootRegistrar", () => {
     await expect(pricerTx).to.emit(zns.curvePricer, "PriceConfigSet").withArgs(
       ethers.ZeroHash,
       newPricerConfig.maxPrice,
-      newPricerConfig.minPrice,
+      newPricerConfig.curveMultiplier,
       newPricerConfig.maxLength,
       newPricerConfig.baseLength,
       newPricerConfig.precisionMultiplier,
@@ -803,7 +803,6 @@ describe("ZNSRootRegistrar", () => {
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
       // set config on CurvePricer for the price to be 0
       await zns.curvePricer.connect(deployer).setMaxPrice(ethers.ZeroHash, "0");
-      await zns.curvePricer.connect(deployer).setMinPrice(ethers.ZeroHash, "0");
 
       const userBalanceBefore = await zns.zToken.balanceOf(user.address);
       const vaultBalanceBefore = await zns.zToken.balanceOf(zeroVault.address);

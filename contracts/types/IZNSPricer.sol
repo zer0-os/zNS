@@ -20,6 +20,16 @@ interface IZNSPricer {
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
 
     /**
+     * @notice Reverted when `maxLength` smaller than `baseLength`.
+     */
+    error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
+
+    /**
+     * @notice Reverted when `curveMultiplier` AND `baseLength` are 0.
+     */
+    error DivisionByZero(bytes32 domainHash);
+
+    /**
      * @dev `parentHash` param is here to allow pricer contracts
      *  to have different price configs for different subdomains
      * `skipValidityCheck` param is added to provide proper revert when the user is
