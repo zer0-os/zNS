@@ -11,8 +11,8 @@ export const DEFAULT_PROTOCOL_FEE_PERCENT = BigInt("222");
 export const DEFAULT_PERCENTAGE_BASIS = BigInt("10000");
 
 export const DEFAULT_DECIMALS = BigInt(18);
-export const DECAULT_PRECISION = BigInt(2);
-export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DECAULT_PRECISION);
+export const DEFAULT_PRECISION = BigInt(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DEFAULT_PRECISION);
 
 // eslint-disable-next-line no-shadow
 export const AccessType  = {
@@ -36,7 +36,7 @@ export const PaymentType = {
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
-  minPrice: ethers.parseEther("2000"),
+  curveMultiplier: BigInt("1000"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -46,7 +46,7 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
-  minPrice: BigInt(0),
+  curveMultiplier: BigInt(0),
   maxLength: BigInt(0),
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
@@ -77,7 +77,7 @@ export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735
 export const accessControllerName = "ZNSAccessController";
 export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
-export const meowTokenMockName = "MeowTokenMock";
+export const zTokenMockName = "ZTokenMock";
 export const addressResolverName = "ZNSAddressResolver";
 export const curvePricerName = "ZNSCurvePricer";
 export const fixedPricerName = "ZNSFixedPricer";
@@ -85,3 +85,11 @@ export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const subRegistrarName = "ZNSSubRegistrar";
+
+// zToken mock deploy default params
+export const Z_NAME_DEFAULT = "ZERO Token";
+export const Z_SYMBOL_DEFAULT = "Z";
+export const INITIAL_ADMIN_DELAY_DEFAULT = 5n;
+export const INITIAL_SUPPLY_DEFAULT = 369000000n;
+export const INFLATION_RATES_DEFAULT = [0n, 900n, 765n, 650n, 552n, 469n, 398n, 338n, 287n, 243n, 206n, 175n];
+export const FINAL_INFLATION_RATE_DEFAULT = 150n;

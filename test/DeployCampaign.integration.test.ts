@@ -5,18 +5,16 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
 import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
-  mintBulk,
+  transferBulk,
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 
 
@@ -65,8 +63,6 @@ describe("zNS + zDC Single Integration Test", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.parseEther("10000000");
-
   const domains = [shortDomain, mediumDomain, longDomain];
 
   before(async () => {
@@ -74,31 +70,12 @@ describe("zNS + zDC Single Integration Test", () => {
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
 
-    let deployer;
-    let provider;
-
-    if (hre.network.name === "hardhat") {
-      deployer = deployAdmin;
-      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    } else {
-      const credentials = {
-        apiKey: process.env.DEFENDER_KEY,
-        apiSecret: process.env.DEFENDER_SECRET,
-        relayerApiKey: process.env.RELAYER_KEY,
-        relayerApiSecret: process.env.RELAYER_SECRET,
-      };
-
-      const client = new Defender(credentials);
-      provider = client.relaySigner.getProvider();
-      deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
-    }
-
     config = await getConfig({
-      deployer: deployer as unknown as SignerWithAddress,
+      deployer: deployAdmin,
       zeroVaultAddress: zeroVault.address,
     });
 
-    config.mockMeowToken = hre.network.name === "hardhat";
+    config.mockZToken = hre.network.name === "hardhat";
 
     // First run the `run-campaign` script, then modify the `MONGO_DB_VERSION` environment variable
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
@@ -139,10 +116,12 @@ describe("zNS + zDC Single Integration Test", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (hre.network.name === "hardhat" && config.mockMeowToken) {
-      await mintBulk(
+    if (hre.network.name === "hardhat" && config.mockZToken) {
+      const userBalanceInitial = await zns.zToken.balanceOf(deployAdmin.address) / BigInt(users.length);
+      await transferBulk(
         users,
-        mintAmount,
+        deployAdmin,
+        userBalanceInitial,
         zns
       );
     }
@@ -218,9 +197,9 @@ describe("zNS + zDC Single Integration Test", () => {
     const subdomains = [paidShortSubdomain, paidMediumSubdomain, paidLongSubdomain];
 
     const balancePromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [
@@ -259,9 +238,9 @@ describe("zNS + zDC Single Integration Test", () => {
     );
 
     const balanceAfterPromises =  [
-      zns.meowToken.balanceOf(userD.address),
-      zns.meowToken.balanceOf(userE.address),
-      zns.meowToken.balanceOf(userF.address),
+      zns.zToken.balanceOf(userD.address),
+      zns.zToken.balanceOf(userE.address),
+      zns.zToken.balanceOf(userF.address),
     ];
 
     const [

@@ -18,23 +18,26 @@ export const getCurvePrice = (
   // Get price configuration for contract
   const {
     maxPrice,
-    minPrice,
+    curveMultiplier,
     baseLength,
     maxLength,
     precisionMultiplier,
   } = priceConfig;
 
-  if (baseLength === 0n) return maxPrice;
+  let length = BigInt(name.length);
 
-  if (BigInt(name.length) <= baseLength) {
+  if (length <= baseLength) {
     return maxPrice;
   }
 
   if (BigInt(name.length) > maxLength) {
-    return minPrice;
+    length = maxLength;
   }
 
-  const base = baseLength * maxPrice / BigInt(name.length);
+  const MULTIPLIER_BASIS = 1000n;
+
+  const base = (baseLength * maxPrice * MULTIPLIER_BASIS)
+    / (baseLength * MULTIPLIER_BASIS + curveMultiplier * (length - baseLength));
 
   return base / precisionMultiplier * precisionMultiplier;
 };

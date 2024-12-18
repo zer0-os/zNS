@@ -3,29 +3,23 @@ pragma solidity 0.8.26;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
+import { IZNSStringResolver } from "./IZNSStringResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
- * @title The specific Resolver for ZNS that maps domain hashes to Ethereum addresses these domains were made for.
- * @notice This Resolver supports ONLY the address type. Every domain in ZNS made for a contract or wallet address
- * will have a corresponding record in this Resolver.
+ * @title The specific Resolver for ZNS that maps domain hashes to strings.
  */
-contract ZNSAddressResolver is
+contract ZNSStringResolver is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
     ERC165,
-    IZNSAddressResolver {
-    /**
-     * @notice Mapping of domain hash to address used to bind domains
-     * to Ethereum wallets or contracts registered in ZNS.
-     */
-    mapping(bytes32 domainHash => address resolvedAddress)
-        internal domainAddresses;
+    IZNSStringResolver {
+
+    mapping(bytes32 domainHash => string resolvedString) internal resolvedStrings;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -33,7 +27,7 @@ contract ZNSAddressResolver is
     }
 
     /**
-     * @notice Initializer for the `ZNSAddressResolver` proxy.
+     * @notice Initializer for the `ZNSStringResolver` proxy.
      * Note that setter functions are used instead of direct state variable assignments
      * to use access control at deploy time. Only ADMIN can call this function.
      * @param accessController_ The address of the `ZNSAccessController` contract
@@ -45,66 +39,61 @@ contract ZNSAddressResolver is
     }
 
     /**
-     * @dev Returns address associated with a given domain name hash.
+     * @dev Returns string associated with a given domain name hash.
      * @param domainHash The identifying hash of a domain's name
      */
-    function resolveDomainAddress(
+    function resolveDomainString(
         bytes32 domainHash
-    ) external view override returns (address) {
-        return domainAddresses[domainHash];
+    ) external view override returns (string memory) {
+        return resolvedStrings[domainHash];
     }
 
     /**
-     * @dev Sets the address for a domain name hash. This function can only
-     * be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
-     * as a part of the Register flow.
-     * Emits an `AddressSet` event.
+     * @dev Sets the string for a domain name hash.
      * @param domainHash The identifying hash of a domain's name
-     * @param newAddress The new address to map the domain to
+     * @param newString The new string to map the domain to
      */
-    function setAddress(
+    function setString(
         bytes32 domainHash,
-        address newAddress
+        string calldata newString
     ) external override {
-        // only owner or operator of the current domain can set the address
-        // also, ZNSRootRegistrar.sol can set the address as part of the registration process
-        if (
-            !registry.isOwnerOrOperator(domainHash, msg.sender) &&
-            !accessController.isRegistrar(msg.sender)
-        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
+        // only owner or operator of the current domain can set the string
 
-        domainAddresses[domainHash] = newAddress;
+        if (!registry.isOwnerOrOperator(domainHash, msg.sender)) {
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
+        }
 
-        emit AddressSet(domainHash, newAddress);
+        resolvedStrings[domainHash] = newString;
+
+        emit StringSet(domainHash, newString);
     }
 
     /**
      * @dev ERC-165 check for implementation identifier
-     * @dev Supports interfaces IZNSAddressResolver and IERC165
+     * @dev Supports interfaces IZNSStringResolver and IERC165
      * @param interfaceId ID to check, XOR of the first 4 bytes of each function signature
      */
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC165, IZNSAddressResolver) returns (bool) {
+    ) public view virtual override(ERC165, IZNSStringResolver) returns (bool) {
         return
             interfaceId == getInterfaceId() ||
             super.supportsInterface(interfaceId);
     }
 
     /**
-     * @dev Exposes IZNSAddressResolver interfaceId
+     * @dev Exposes IZNSStringResolver interfaceId
      */
     function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSAddressResolver).interfaceId;
+        return type(IZNSStringResolver).interfaceId;
     }
 
     /**
      * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system. This function can only be called by the ADMIN.
-     * Emits a `RegistrySet` event.
      * @param _registry The address of the `ZNSRegistry` contract
      */
-    function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolver) onlyAdmin {
+    function setRegistry(address _registry) public override(ARegistryWired, IZNSStringResolver) onlyAdmin {
         _setRegistry(_registry);
     }
 

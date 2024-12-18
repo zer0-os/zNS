@@ -6,18 +6,24 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
-  DECAULT_PRECISION,
+  DEFAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
-  getCurvePrice,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
   INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
+  INITIAL_ADMIN_DELAY_DEFAULT,
+  INITIAL_SUPPLY_DEFAULT,
+  INFLATION_RATES_DEFAULT,
+  FINAL_INFLATION_RATE_DEFAULT,
+  Z_NAME_DEFAULT,
+  Z_SYMBOL_DEFAULT,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
-import { ICurvePriceConfig } from "../missions/types";
-import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+import { ICurvePriceConfig, IZTokenConfig } from "../missions/types";
+import process from "process";
+import { ZSepolia } from "../missions/contracts/z-token/mainnet-data";
 
 
 const getCustomAddresses = (
@@ -59,12 +65,14 @@ export const getConfig = async ({
   admins,
   zeroVaultAddress,
   env, // this is ONLY used for tests!
+  zTokenConfig,
 } : {
   deployer : SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
+  zTokenConfig ?: IZTokenConfig;
 }) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
@@ -76,41 +84,70 @@ export const getConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
+  let zeroVaultAddressConf;
+
+  const zeroVaultAddressEnv = process.env.ZERO_VAULT_ADDRESS;
+  const mockZTokenEnv = process.env.MOCK_Z_TOKEN;
+  const envLevel = process.env.ENV_LEVEL;
+
+
+  // Get governor addresses set through env, if any
+  const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
+  // Get admin addresses set through env, if any
+  const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
+
+  let zConfig : IZTokenConfig | undefined;
+
+  if (envLevel === "dev") {
+    requires(
+      !!zeroVaultAddress || !!zeroVaultAddressEnv,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || zeroVaultAddressEnv;
+
+    if (!zTokenConfig) {
+      // in case, we didn't provide addresses, it will choose the governon as `admin` argument,
+      // deployAdmin as `minter` and first passed admin as `mintBeneficiary`.
+      zConfig = {
+        name: Z_NAME_DEFAULT,
+        symbol: Z_SYMBOL_DEFAULT,
+        defaultAdmin: governorAddresses[0],
+        initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+        minter: deployer.address,
+        mintBeneficiary: adminAddresses[0],
+        initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+        inflationRates: INFLATION_RATES_DEFAULT,
+        finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+      };
+    } else {
+      zConfig = zTokenConfig;
+    }
+  } else {
+    zeroVaultAddressConf = zeroVaultAddressEnv;
   }
 
-  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
-    ? zeroVaultAddress!
-    : process.env.ZERO_VAULT_ADDRESS!;
-
   // Domain Token Values
-  const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
+  const royaltyReceiver = envLevel !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
   const royaltyFraction =
     process.env.ROYALTY_FRACTION
       ? BigInt(process.env.ROYALTY_FRACTION)
       : DEFAULT_ROYALTY_FRACTION;
 
-  // Get governor addresses set through env, if any
-  const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
-
-  // Get admin addresses set through env, if any
-  const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
-
   const config : IZNSCampaignConfig<SignerWithAddress> = {
-    env: process.env.ENV_LEVEL!,
+    env: envLevel!,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver!,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf,
-    mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
+    zTokenConfig: zConfig,
+    zeroVaultAddress: zeroVaultAddressConf as string,
+    mockZToken: mockZTokenEnv === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
@@ -139,11 +176,13 @@ export const validateEnv = (
   // Validate price config first since we have to return it
   const priceConfig = getValidateRootPriceConfig();
 
+  const mockZTokenEnv = process.env.MOCK_Z_TOKEN;
+
   if (envLevel === "dev") return priceConfig;
 
   if (envLevel === "test" || envLevel === "dev") {
-    if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
-      throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
+    if (mockZTokenEnv === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
+      throw new Error("Must provide a staking token address if not mocking Z token in `dev` environment");
     }
   }
 
@@ -168,19 +207,19 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
-    requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
+    requires(mockZTokenEnv === "false", NO_MOCK_PROD_ERR);
+    requires(process.env.STAKING_TOKEN_ADDRESS === ZSepolia.address, STAKING_TOKEN_ERR);
   }
 
   if (process.env.VERIFY_CONTRACTS === "true") {
-    requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
+    requires(process.env.ETHERSCAN_API_KEY === "true", "Must provide an Etherscan API Key to verify contracts");
   }
 
   if (process.env.MONITOR_CONTRACTS === "true") {
-    requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
-    requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
-    requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
+    requires(process.env.TENDERLY_PROJECT_SLUG === "true", "Must provide a Tenderly Project Slug to monitor contracts");
+    requires(process.env.TENDERLY_ACCOUNT_ID === "true", "Must provide a Tenderly Account ID to monitor contracts");
+    requires(process.env.TENDERLY_ACCESS_KEY === "true", "Must provide a Tenderly Access Key to monitor contracts");
   }
 
   return priceConfig;
@@ -207,10 +246,10 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  const minPrice =
-    process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
-      : DEFAULT_PRICE_CONFIG.minPrice;
+  const curveMultiplier =
+    process.env.curveMultiplier
+      ? process.env.curveMultiplier
+      : DEFAULT_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
     process.env.MAX_LENGTH
@@ -223,7 +262,7 @@ const getValidateRootPriceConfig = () => {
       : DEFAULT_PRICE_CONFIG.baseLength;
 
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DECAULT_PRECISION;
+  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
   const feePercentage =
@@ -233,7 +272,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    minPrice,
+    curveMultiplier: BigInt(curveMultiplier),
     maxLength,
     baseLength,
     precisionMultiplier,
@@ -241,7 +280,7 @@ const getValidateRootPriceConfig = () => {
     isSet: true,
   };
 
-  requires(validatePrice(priceConfig), INVALID_CURVE_ERR);
+  validateConfig(priceConfig);
 
   return priceConfig;
 };
@@ -252,14 +291,16 @@ const requires = (condition : boolean, message : string) => {
   }
 };
 
-// No price spike before `minPrice` kicks in at `maxLength`
-const validatePrice = (config : ICurvePriceConfig) => {
-  const strA = "a".repeat(Number(config.maxLength));
-  const strB = "b".repeat(Number(config.maxLength + 1n));
+const validateConfig = (config : ICurvePriceConfig) => {
+  const PERCENTAGE_BASIS = 10000n;
 
-  const priceA = getCurvePrice(strA, config);
-  const priceB = getCurvePrice(strB, config);
-
-  // if B > A, then the price spike is invalid
-  return (priceB <= priceA);
+  if (
+    (config.curveMultiplier === 0n && config.baseLength === 0n) ||
+    (config.maxLength < config.baseLength) ||
+    ((config.maxLength < config.baseLength) || config.maxLength === 0n) ||
+    (config.curveMultiplier === 0n || config.curveMultiplier > 10n**18n) ||
+    (config.feePercentage > PERCENTAGE_BASIS)
+  ) {
+    requires(false, INVALID_CURVE_ERR);
+  }
 };

@@ -1,5 +1,4 @@
 
-// TODO dep: this does not work. find a better way and uncomment the call in meow-token.ts
 const replacePattern = /a165627a7a72305820.{64}0029.*/g;
 
 export const compareBytecodeStrict = (bytecodeA : string, bytecodeB : string) => {

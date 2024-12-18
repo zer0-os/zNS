@@ -7,18 +7,16 @@ import {
   distrConfigEmpty,
   getPriceObject,
   NO_BENEFICIARY_ERR,
-  NOT_AUTHORIZED_REG_WIRED_ERR,
   INITIALIZED_ERR,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade,
-  NOT_AUTHORIZED_TREASURY_ERR,
-  getStakingOrProtocolFee,
+  NOT_AUTHORIZED_ERR,
+  getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { getAccessRevertMsg } from "./helpers/errors";
 import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -63,16 +61,18 @@ describe("ZNSTreasury", () => {
     zns = await deployZNS(params);
 
     paymentConfig = {
-      token: await zns.meowToken.getAddress(),
+      token: await zns.zToken.getAddress(),
       beneficiary: user.address,
     };
 
     // give REGISTRAR_ROLE to a wallet address to be calling guarded functions
     await zns.accessController.connect(admin).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    // Give funds to user
-    await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
+    // Give funds to user and deployer. Divide equally to give them the same amount
+    const userBalanceInitial = await zns.zToken.balanceOf(admin.address) / 3n;
+    await zns.zToken.connect(user).approve(await zns.treasury.getAddress(), userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(user, userBalanceInitial);
+    await zns.zToken.connect(admin).transfer(deployer, userBalanceInitial);
 
     // register random domain
     await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -93,7 +93,7 @@ describe("ZNSTreasury", () => {
     const accessController = await zns.treasury.getAccessController();
 
     expect(registry).to.eq(await zns.registry.getAddress());
-    expect(token).to.eq(await zns.meowToken.getAddress());
+    expect(token).to.eq(await zns.zToken.getAddress());
     expect(beneficiary).to.eq(zns.zeroVaultAddress);
     expect(accessController).to.eq(await zns.accessController.getAddress());
   });
@@ -101,11 +101,14 @@ describe("ZNSTreasury", () => {
   it("should NOT initialize twice", async () => {
     const tx = zns.treasury.initialize(
       await zns.registry.getAddress(),
-      await zns.meowToken.getAddress(),
+      await zns.zToken.getAddress(),
       zns.zeroVaultAddress,
       await zns.accessController.getAddress()
     );
-    await expect(tx).to.be.revertedWith("Initializable: contract is already initialized");
+    await expect(tx).to.be.revertedWithCustomError(
+      zns.treasury,
+      INITIALIZED_ERR
+    );
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
@@ -116,11 +119,11 @@ describe("ZNSTreasury", () => {
     await expect(
       implContract.initialize(
         await zns.registry.getAddress(),
-        await zns.meowToken.getAddress(),
+        await zns.zToken.getAddress(),
         zns.zeroVaultAddress,
         await zns.accessController.getAddress()
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   it("should NOT deploy/initialize with 0x0 addresses as args", async () => {
@@ -128,7 +131,7 @@ describe("ZNSTreasury", () => {
       deployer,
       accessControllerAddress: await zns.accessController.getAddress(),
       registryAddress: await zns.registry.getAddress(),
-      zTokenMockAddress: await zns.meowToken.getAddress(),
+      zTokenMockAddress: await zns.zToken.getAddress(),
       zeroVaultAddress: zns.zeroVaultAddress,
       isTenderlyRun: false,
     };
@@ -151,8 +154,8 @@ describe("ZNSTreasury", () => {
 
   describe("#stakeForDomain()", () => {
     it("Stakes the correct amount", async () => {
-      const balanceBeforeStake = await zns.meowToken.balanceOf(user.address);
-      const zeroVaultBalanceBeforeStake = await zns.meowToken.balanceOf(zeroVault.address);
+      const balanceBeforeStake = await zns.zToken.balanceOf(user.address);
+      const zeroVaultBalanceBeforeStake = await zns.zToken.balanceOf(zeroVault.address);
 
       const expectedStake = await zns.curvePricer.getPrice(
         ethers.ZeroHash,
@@ -174,30 +177,27 @@ describe("ZNSTreasury", () => {
       expect(stake).to.eq(expectedStake);
 
       await checkBalance({
-        token: zns.meowToken,
+        token: zns.zToken,
         balanceBefore: balanceBeforeStake,
         userAddress: user.address,
         target: stake + fee,
         shouldDecrease: true,
       });
 
-      const zeroVaultBalanceAfterStake = await zns.meowToken.balanceOf(zeroVault.address);
+      const zeroVaultBalanceAfterStake = await zns.zToken.balanceOf(zeroVault.address);
       expect(zeroVaultBalanceAfterStake).to.eq(zeroVaultBalanceBeforeStake + fee);
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
-      await expect(
-        zns.treasury.connect(randomAcc).stakeForDomain(
-          ethers.ZeroHash,
-          domainHash,
-          user.address,
-          BigInt(0),
-          BigInt(0),
-          BigInt(0)
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(randomAcc).stakeForDomain(
+        ethers.ZeroHash,
+        domainHash,
+        user.address,
+        BigInt(0),
+        BigInt(0),
+        BigInt(0)
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomAcc.address,REGISTRAR_ROLE);
     });
 
     it("Should fire StakeDeposited event with correct params", async () => {
@@ -224,7 +224,7 @@ describe("ZNSTreasury", () => {
           ethers.ZeroHash,
           domainHash,
           user.address,
-          await zns.meowToken.getAddress(),
+          await zns.zToken.getAddress(),
           expectedPrice,
           BigInt(0),
           protocolFee
@@ -246,33 +246,30 @@ describe("ZNSTreasury", () => {
         protocolFee
       );
 
-      const balanceBeforeUnstake = await zns.meowToken.balanceOf(user.address);
+      const balanceBeforeUnstake = await zns.zToken.balanceOf(user.address);
       const { token, amount: stake } = await zns.treasury.stakedForDomain(domainHash);
 
       await zns.treasury.connect(mockRegistrar).unstakeForDomain(domainHash, user.address, protocolFee);
 
       await checkBalance({
-        token: zns.meowToken,
+        token: zns.zToken,
         balanceBefore: balanceBeforeUnstake,
         userAddress: user.address,
         target: stake - protocolFee,
         shouldDecrease: false,
       });
-      expect(token).to.eq(await zns.meowToken.getAddress());
+      expect(token).to.eq(await zns.zToken.getAddress());
     });
 
     it("Should revert if called from an address without REGISTRAR_ROLE", async () => {
       const { amount } = await zns.treasury.stakedForDomain(domainHash);
       const protocolFee = getStakingOrProtocolFee(amount);
-      await expect(
-        zns.treasury.connect(user).unstakeForDomain(
-          domainHash,
-          user.address,
-          protocolFee
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(user.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(user).unstakeForDomain(
+        domainHash,
+        user.address,
+        protocolFee
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,REGISTRAR_ROLE);
     });
   });
 
@@ -280,7 +277,7 @@ describe("ZNSTreasury", () => {
     it("should process payment correctly with paymentConfig set", async () => {
       const randomHash = hashDomainLabel("randommmmmmmm2342342");
       const config = {
-        token: await zns.meowToken.getAddress(),
+        token: await zns.zToken.getAddress(),
         beneficiary: user.address,
       };
 
@@ -298,12 +295,12 @@ describe("ZNSTreasury", () => {
       const paymentAmt = ethers.parseEther("1000");
       const protocolFee = ethers.parseEther("10");
       // give tokens to mock registrar
-      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
-      await zns.meowToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);
+      await zns.zToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
+      await zns.zToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);
 
-      const userBalanceBefore = await zns.meowToken.balanceOf(user.address);
-      const payerBalanceBefore = await zns.meowToken.balanceOf(mockRegistrar.address);
-      const zeroVaultBalanceBefore = await zns.meowToken.balanceOf(zeroVault.address);
+      const userBalanceBefore = await zns.zToken.balanceOf(user.address);
+      const payerBalanceBefore = await zns.zToken.balanceOf(mockRegistrar.address);
+      const zeroVaultBalanceBefore = await zns.zToken.balanceOf(zeroVault.address);
 
       await zns.treasury.connect(mockRegistrar).processDirectPayment(
         randomHash,
@@ -313,9 +310,9 @@ describe("ZNSTreasury", () => {
         protocolFee
       );
 
-      const userBalanceAfter = await zns.meowToken.balanceOf(user.address);
-      const payerBalanceAfter = await zns.meowToken.balanceOf(mockRegistrar.address);
-      const zeroVaultBalanceAfter = await zns.meowToken.balanceOf(zeroVault.address);
+      const userBalanceAfter = await zns.zToken.balanceOf(user.address);
+      const payerBalanceAfter = await zns.zToken.balanceOf(mockRegistrar.address);
+      const zeroVaultBalanceAfter = await zns.zToken.balanceOf(zeroVault.address);
 
       expect(userBalanceAfter - userBalanceBefore).to.eq(paymentAmt);
       expect(payerBalanceBefore - payerBalanceAfter).to.eq(paymentAmt + protocolFee);
@@ -343,29 +340,29 @@ describe("ZNSTreasury", () => {
           paymentAmt,
           protocolFee
         )
-      ).to.be.revertedWith(NO_BENEFICIARY_ERR);
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        NO_BENEFICIARY_ERR
+      );
     });
 
     it("should revert if called by anyone other than REGISTRAR_ROLE", async () => {
-      await expect(
-        zns.treasury.connect(randomAcc).processDirectPayment(
-          ethers.ZeroHash,
-          domainHash,
-          mockRegistrar.address,
-          "0",
-          "0"
-        )
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomAcc.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.treasury.connect(randomAcc).processDirectPayment(
+        ethers.ZeroHash,
+        domainHash,
+        mockRegistrar.address,
+        "0",
+        "0"
+      )).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomAcc.address,REGISTRAR_ROLE);
     });
 
     it("should emit DirectPaymentProcessed event with correct params", async () => {
       const paymentAmt = ethers.parseEther("100");
       const protocolFee = ethers.parseEther("7");
       // give tokens to mock registrar
-      await zns.meowToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
-      await zns.meowToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);
+      await zns.zToken.connect(user).transfer(mockRegistrar.address, paymentAmt + protocolFee);
+      await zns.zToken.connect(mockRegistrar).approve(await zns.treasury.getAddress(), paymentAmt + protocolFee);
 
       await expect(
         zns.treasury.connect(mockRegistrar).processDirectPayment(
@@ -429,12 +426,10 @@ describe("ZNSTreasury", () => {
       };
 
       await expect(
-        zns.treasury.connect(randomAcc).setPaymentConfig(
-          domainHash,
-          configToSet,
-        )
-      ).to.be.revertedWith(
-        NOT_AUTHORIZED_TREASURY_ERR
+        zns.treasury.connect(randomAcc).setPaymentConfig(domainHash, configToSet)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        NOT_AUTHORIZED_ERR
       );
     });
 
@@ -445,26 +440,22 @@ describe("ZNSTreasury", () => {
       };
 
       await expect(
-        zns.treasury.connect(user).setPaymentConfig(
-          domainHash,
-          zeroBeneficiaryConf
-        )
-      ).to.be.revertedWith(
-        "ZNSTreasury: beneficiary passed as 0x0 address"
+        zns.treasury.connect(user).setPaymentConfig(domainHash, zeroBeneficiaryConf)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        ZERO_ADDRESS_ERR
       );
 
-      const meowTokenConf = {
+      const zTokenConf = {
         token: ethers.ZeroAddress,
         beneficiary: randomAcc.address,
       };
 
       await expect(
-        zns.treasury.connect(user).setPaymentConfig(
-          domainHash,
-          meowTokenConf
-        )
-      ).to.be.revertedWith(
-        "ZNSTreasury: paymentToken passed as 0x0 address"
+        zns.treasury.connect(user).setPaymentConfig(domainHash, zTokenConf)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        ZERO_ADDRESS_ERR
       );
     });
   });
@@ -495,9 +486,7 @@ describe("ZNSTreasury", () => {
         ethers.ZeroHash,
         mockRegistrar.address
       );
-      await expect(tx).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, NOT_AUTHORIZED_ERR);
     });
 
     it("Should revert when beneficiary is address 0", async () => {
@@ -505,7 +494,7 @@ describe("ZNSTreasury", () => {
         ethers.ZeroHash,
         ethers.ZeroAddress
       );
-      await expect(tx).to.be.revertedWith("ZNSTreasury: beneficiary passed as 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -533,14 +522,15 @@ describe("ZNSTreasury", () => {
         domainHash,
         randomAcc.address
       );
-      await expect(tx).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_WIRED_ERR
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.treasury,
+        NOT_AUTHORIZED_ERR
       );
     });
 
     it("Should revert when paymentToken is address 0", async () => {
       const tx = zns.treasury.connect(user).setPaymentToken(domainHash, ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("ZNSTreasury: paymentToken passed as 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -559,14 +549,13 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
       const tx = zns.treasury.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
 
     it("Should revert when accessController is address 0", async () => {
       const tx = zns.treasury.setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -585,14 +574,13 @@ describe("ZNSTreasury", () => {
 
     it("Should revert when called from any address without ADMIN_ROLE", async () => {
       const tx = zns.treasury.connect(user).setRegistry(randomAcc.address);
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(user.address, ADMIN_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address,ADMIN_ROLE);
     });
 
     it("Should revert when registry is address 0", async () => {
       const tx = zns.treasury.setRegistry(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
+      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
     });
   });
 
@@ -607,7 +595,10 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      await expect(zns.treasury.connect(deployer).upgradeTo(await treasury.getAddress())).to.not.be.reverted;
+      await expect(zns.treasury.connect(deployer).upgradeToAndCall(
+        await treasury.getAddress(),
+        "0x"
+      )).to.not.be.reverted;
     });
 
     it("Fails when an unauthorized user tries to upgrade the contract", async () => {
@@ -619,8 +610,12 @@ describe("ZNSTreasury", () => {
       const treasury = await treasuryFactory.deploy();
       await treasury.waitForDeployment();
 
-      const deployTx = zns.treasury.connect(user).upgradeTo(await treasury.getAddress());
-      await expect(deployTx).to.be.revertedWith(getAccessRevertMsg(user.address, GOVERNOR_ROLE));
+      const deployTx = zns.treasury.connect(user).upgradeToAndCall(
+        await treasury.getAddress(),
+        "0x"
+      );
+      await expect(deployTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
@@ -634,6 +629,8 @@ describe("ZNSTreasury", () => {
       const newLabel = "world";
       const newHash = hashSubdomainName(newLabel);
       const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
+
+      await zns.zToken.connect(deployer).approve(await zns.treasury.getAddress(), ethers.MaxInt256);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,
