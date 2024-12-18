@@ -8,23 +8,19 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { approveForDomain, registrationWithSetup } from "../helpers/register-setup";
 import {
-  AC_UNAUTHORIZED_ERR,
   AccessType,
   DEFAULT_PRICE_CONFIG,
-  DEFAULT_TOKEN_URI, DEST_PORTAL_NOT_SET_ERR,
+  DEFAULT_TOKEN_URI,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   fullDistrConfigEmpty,
   getCurvePrice,
   getStakingOrProtocolFee,
-  hashDomainLabel,
-  INITIALIZED_ERR,
-  INVALID_CALLER_ERR,
-  MESSAGE_FAILED_ERR, NETWORK_ID_L1_TEST_DEFAULT, NETWORK_ID_L2_TEST_DEFAULT,
+  NETWORK_ID_L1_TEST_DEFAULT,
+  NETWORK_ID_L2_TEST_DEFAULT,
   NOT_AUTHORIZED_ERR,
   NOT_OWNER_OF_ERR,
   PaymentType, ZCHAIN_ID_TEST_DEFAULT,
-  ZERO_ADDRESS_ERR,
 } from "../helpers";
 import { expect } from "chai";
 import * as ethers from "ethers";
@@ -570,131 +566,4 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
         });
       });
     });
-
-  // TODO multi: separate all these into different files
-  // We will only run this on local Hardhat network
-  if (!isRealNetwork) {
-    describe("Unit Tests", () => {
-      describe("ZNSZChainPortal", () => {
-        it("#initialize() should revert when trying to reinitialize", async () => {
-          await expect(
-            znsL1.zChainPortal.initialize(
-              "1",
-              "Z",
-              "1",
-              hre.ethers.ZeroAddress,
-              {
-                accessController: znsL1.accessController.target,
-                registry: znsL1.registry.target,
-                chainResolver: znsL1.chainResolver.target,
-                treasury: znsL1.treasury.target,
-                rootRegistrar: znsL1.rootRegistrar.target,
-                subRegistrar: znsL1.subRegistrar.target,
-              },
-            )
-          ).to.be.revertedWithCustomError(znsL1.zChainPortal, INITIALIZED_ERR);
-        });
-
-        it("#setDestZnsPortal() should revert when called by non-ADMIN", async () => {
-          await expect(
-            znsL1.zChainPortal.connect(user).setDestZnsPortal(znsL2.ethPortal.target)
-          ).to.be.revertedWithCustomError(znsL1.accessController, AC_UNAUTHORIZED_ERR);
-        });
-
-        it("#setDestZnsPortal() should revert when setting 0x0 address", async () => {
-          await expect(
-            znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(hre.ethers.ZeroAddress)
-          ).to.be.revertedWithCustomError(znsL1.zChainPortal, ZERO_ADDRESS_ERR);
-        });
-
-        it("#setDestZnsPortal() should set the destination portal address", async () => {
-          await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(user.address);
-
-          const destPortal = await znsL1.zChainPortal.destZnsPortal();
-          expect(destPortal).to.equal(user.address);
-
-          // set back to L2 portal address
-          await znsL1.zChainPortal.connect(deployAdmin).setDestZnsPortal(znsL2.ethPortal.target);
-        });
-      });
-
-      describe("ZNSEthereumPortal", () => {
-        it("#initialize() should revert when trying to reinitialize", async () => {
-          await expect(
-            znsL2.ethPortal.connect(deployAdmin).initialize(
-              znsL2.accessController.target,
-              znsL2.zkEvmBridge.target,
-              znsL1.zChainPortal.target,
-              znsL2.registry.target,
-              znsL2.domainToken.target,
-              znsL2.rootRegistrar.target,
-              znsL2.subRegistrar.target,
-            )
-          ).to.be.revertedWithCustomError(znsL2.ethPortal, INITIALIZED_ERR);
-        });
-
-        it("#onMessageReceived() should revert when called by non-ZkEvmBridge", async () => {
-          await expect(
-            znsL2.ethPortal.connect(deployAdmin).onMessageReceived(
-              znsL2.zkEvmBridge.target,
-              1n,
-              hre.ethers.ZeroHash,
-            )
-          ).to.be.revertedWithCustomError(znsL2.ethPortal, INVALID_CALLER_ERR);
-        });
-
-        it("#onMessageReceived() should revert when `originAddress` is something OTHER than ZChainPortal", async () => {
-          // this will fail with MessageFailed error from the Bridge since it does a `.call()` internally
-          await expect(
-            // this will call onMessageReceived(), we have to do it like this to avoid
-            // reverting on the `InvalidCaller` check
-            znsL2.zkEvmBridge.claimMessage(
-              dummySmtProof,
-              dummySmtProof,
-              bridgedEventData.depositCount,
-              dummySmtProof[0],
-              dummySmtProof[1],
-              bridgedEventData.originNetwork,
-              znsL2.registry.target,
-              bridgedEventData.destinationNetwork,
-              bridgedEventData.destinationAddress,
-              bridgedEventData.amount,
-              bridgedEventData.metadata,
-            )
-          ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
-        });
-
-        it("#onMessageReceived() should revert when proof's `domainHash` is incorrect", async () => {
-          // make wrong metadata
-          const abiCoder = ethers.AbiCoder.defaultAbiCoder();
-          const wrongMetadata = abiCoder.encode(
-            ["tuple(bytes32,bytes32,string,address,string)"],
-            [[
-              hashDomainLabel("wrong"), // this hashes a different label from the one below
-              hre.ethers.ZeroHash,
-              "right",
-              user.address,
-              DEFAULT_TOKEN_URI,
-            ]]
-          );
-
-          await expect(
-            znsL2.zkEvmBridge.claimMessage(
-              dummySmtProof,
-              dummySmtProof,
-              bridgedEventData.depositCount,
-              dummySmtProof[0],
-              dummySmtProof[1],
-              bridgedEventData.originNetwork,
-              bridgedEventData.originAddress,
-              bridgedEventData.destinationNetwork,
-              bridgedEventData.destinationAddress,
-              bridgedEventData.amount,
-              wrongMetadata,
-            )
-          ).to.be.revertedWithCustomError(znsL2.zkEvmBridge, MESSAGE_FAILED_ERR);
-        });
-      });
-    });
-  }
 });
