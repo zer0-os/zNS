@@ -16,16 +16,23 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INITIALIZED_ERR,
-  DEFAULT_PERCENTAGE_BASIS, DEFAULT_ROYALTY_FRACTION, AC_UNAUTHORIZED_ERR,
+  DEFAULT_PERCENTAGE_BASIS,
+  DEFAULT_ROYALTY_FRACTION,
+  AC_UNAUTHORIZED_ERR,
+  ERC721_NOT_APPROVED_ERR,
+  ZERO_ADDRESS_ERR,
+  DeployZNSParams,
+  IZNSContractsLocal,
+  getProxyImplAddress,
 } from "./helpers";
-import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
-import { getProxyImplAddress } from "./helpers/utils";
+import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
 
 describe("ZNSDomainToken", () => {
   let deployer : SignerWithAddress;
   let caller : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
+  let mockRegistry : SignerWithAddress;
   let beneficiary : SignerWithAddress;
 
   let zns : IZNSContractsLocal;
@@ -34,7 +41,7 @@ describe("ZNSDomainToken", () => {
   const randomTokenURI = "https://www.zNS.domains/1a3c2f5";
 
   beforeEach(async () => {
-    [deployer, caller, mockRegistrar, beneficiary] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar, mockRegistry, beneficiary] = await hre.ethers.getSigners();
     deployParams = {
       deployer,
       governorAddresses: [deployer.address],
@@ -44,6 +51,7 @@ describe("ZNSDomainToken", () => {
       deployParams
     );
 
+    await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
   });
 
@@ -51,6 +59,7 @@ describe("ZNSDomainToken", () => {
     expect(await zns.domainToken.getAccessController()).to.equal(await zns.accessController.getAddress());
     expect(await zns.domainToken.name()).to.equal(ZNS_DOMAIN_TOKEN_NAME);
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
+    expect(await zns.domainToken.registry()).to.equal(await zns.registry.getAddress());
     const royaltyInfo = await zns.domainToken.royaltyInfo("0", ethers.parseEther("100"));
     expect(royaltyInfo[0]).to.equal(zns.zeroVaultAddress);
     expect(royaltyInfo[1]).to.equal(ethers.parseEther("2"));
@@ -62,7 +71,8 @@ describe("ZNSDomainToken", () => {
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
       zns.zeroVaultAddress,
-      DEFAULT_ROYALTY_FRACTION
+      DEFAULT_ROYALTY_FRACTION,
+      await zns.registry.getAddress()
     )).to.be.revertedWithCustomError(zns.domainToken, INITIALIZED_ERR);
   });
 
@@ -77,9 +87,37 @@ describe("ZNSDomainToken", () => {
         ZNS_DOMAIN_TOKEN_NAME,
         ZNS_DOMAIN_TOKEN_SYMBOL,
         zns.zeroVaultAddress,
-        DEFAULT_ROYALTY_FRACTION
+        DEFAULT_ROYALTY_FRACTION,
+        await zns.registry.getAddress()
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
+  });
+
+  describe("#setRegistry", () => {
+    it("Should set ZNSRegistry and fire RegistrySet event", async () => {
+      const currentRegistry = await zns.domainToken.registry();
+      const tx = await zns.domainToken.connect(deployer).setRegistry(mockRegistry.address);
+      const newRegistry = await zns.domainToken.registry();
+
+      await expect(tx).to.emit(zns.domainToken, "RegistrySet").withArgs(mockRegistry.address);
+
+      expect(newRegistry).to.equal(mockRegistry .address);
+      expect(currentRegistry).to.not.equal(newRegistry);
+    });
+
+    it("Should revert if not called by ADMIN", async () => {
+      const tx = zns.domainToken.connect(caller).setRegistry(mockRegistry.address);
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
+    });
+
+    it("Should revert if ZNSRegistry is address zero", async () => {
+      const tx = zns.rootRegistrar.connect(deployer).setRegistry(ethers.ZeroAddress);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        ZERO_ADDRESS_ERR
+      );
+    });
   });
 
   describe("External functions", () => {
@@ -162,6 +200,109 @@ describe("ZNSDomainToken", () => {
         zns.domainToken,
         NONEXISTENT_TOKEN_ERC_ERR
       );
+    });
+  });
+
+  describe("Updated Transfers",  () => {
+    const tokenId = 1;
+    const domainHash = ethers.solidityPacked(["uint256"], [tokenId]);
+
+    it("Should update owner for DomainToken and in Registry when transferred normally", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+
+      // Call to standard transfer function modifies both
+      await zns.domainToken.connect(caller).transferFrom(caller.address, deployer.address, tokenId);
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
+    });
+
+    it("Should update owner for DomainToken and not for Registry when called with non-standard transfer", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+
+      // After calling the reg owner will be the same but the token owner is different
+      await zns.domainToken.connect(caller).updateTokenOwner(caller.address, deployer.address, tokenId);
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+    });
+
+    it("Allows the owner of the domain record in the registry to update the owner", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+
+      // The owner of the reg record can still update independent of the token transfer method
+      await zns.registry.connect(caller).updateDomainOwner(domainHash, deployer.address);
+
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+    });
+
+    it("Fails when non-owner tries to transfer through `updateTokenOwner`", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(deployer).updateTokenOwner(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      // After deployer is approved by caller, updateTokenOwner succeeds
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
+    });
+
+    // it fails when non-owner uses either safeTransferFrom function
+    it("Fails when non-owner tries to transfer through `safeTransferFrom`", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(deployer)
+          ["safeTransferFrom(address,address,uint256)"]
+          (caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      await expect(
+        zns.domainToken.connect(deployer)
+          ["safeTransferFrom(address,address,uint256,bytes)"]
+          (caller.address, deployer.address, tokenId, ethers.ZeroHash)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      // Approve deployer to spend on behalf of caller, then deployer safeTransferFrom passes
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer)
+        ["safeTransferFrom(address,address,uint256)"]
+        (caller.address, deployer.address, tokenId);
+    });
+
+    it("Fails when non-owner tries to transfer through `transferFrom`", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
+
+      // Approve deployer to spend on behalf of caller, then deployer transferFrom passes
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
     });
   });
 

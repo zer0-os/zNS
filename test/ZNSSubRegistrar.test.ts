@@ -3106,7 +3106,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // tranfer token
-      await zns.domainToken.connect(lvl2SubOwner).transferFrom(
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(
         lvl2SubOwner.address,
         lvl3SubOwner.address,
         regResults[1].domainHash
@@ -3213,6 +3213,7 @@ describe("ZNSSubRegistrar", () => {
 
       it("should NOT allow to set distribution config for a non-authorized account", async () => {
         const domainHash = regResults[1].domainHash;
+
 
         const newConfig = {
           pricerContract: await zns.curvePricer.getAddress(),
@@ -3354,7 +3355,7 @@ describe("ZNSSubRegistrar", () => {
 
       const { amount: stakedBefore } = await zns.treasury.stakedForDomain(regResults[1].domainHash);
 
-      await zns.domainToken.connect(lvl2SubOwner).transferFrom(
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(
         lvl2SubOwner.address,
         lvl3SubOwner.address,
         tokenId
