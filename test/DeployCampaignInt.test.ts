@@ -43,7 +43,7 @@ import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/zns-base/s
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 // TODO multi: why does this have Sepolia in the name ?! Check and validate !
-import { ZSepolia } from "../src/deploy/missions/contracts/z-token/mainnet-data";
+import { ZSepolia } from "../src/deploy/missions/contracts/zns-base/z-token/mainnet-data";
 import { MeowMainnet } from "../src/deploy/missions/contracts/zns-base/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { buildCrosschainConfig, getConfig } from "../src/deploy/campaign/get-config";
