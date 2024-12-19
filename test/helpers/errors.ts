@@ -5,6 +5,9 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 // When adding a revert test, check if this message is already present in other tests
 //  if it is, add a new constant here and use it in all tests
 
+export const ERC721_NOT_OWNER_ERR = "ERC721: transfer caller is not owner nor approved";
+export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
+
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
 
@@ -22,8 +25,10 @@ export const PARENT_CONFIG_NOT_SET_ERR = "ParentPriceConfigNotSet";
 export const FEE_TOO_LARGE_ERR = "FeePercentageValueTooLarge";
 
 // ZNSCurvePricer.sol
-export const INVALID_MULTIPLIER_ERR = "InvalidMultiplierPassed";
+export const INVALID_PRECISION_MULTIPLIER_ERR = "InvalidPrecisionMultiplierPassed";
 export const INVALID_PRICE_CONFIG_ERR = "InvalidConfigCausingPriceSpikes";
+export const INVALID_BASE_OR_MAX_LENGTH_ERR = "MaxLengthSmallerThanBaseLength";
+export const DIVISION_BY_ZERO_ERR = "DivisionByZero";
 
 // ZNSRootRegistrar.sol
 export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";
@@ -53,8 +58,8 @@ export const DEST_PORTAL_NOT_SET_ERR = "DestinationPortalNotSetInState";
 
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";
-export const NO_MOCK_PROD_ERR = "Cannot mock MEOW token in production";
-export const STAKING_TOKEN_ERR = "Must use MEOW token in production";
+export const NO_MOCK_PROD_ERR = "Cannot mock Z token in production";
+export const STAKING_TOKEN_ERR = "Must use Z token in production";
 export const INVALID_CURVE_ERR = "Must use a valid price configuration";
 export const MONGO_URI_ERR = "Cannot use local mongo URI in production";
 export const NO_ZERO_VAULT_ERR = "Must provide ZERO_VAULT_ADDRESS for 'prod' or 'test' environments";

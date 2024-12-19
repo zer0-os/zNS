@@ -7,7 +7,7 @@ import {
   getLogger, IHardhatDeployerArgs, TDeployArgs, TProxyKind, IContractV6,
 } from "@zero-tech/zdc";
 import {
-  MeowTokenDM,
+  ZTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
   ZNSStringResolverDM,
@@ -119,7 +119,7 @@ export const runZnsCampaign = async ({
       ZNSAccessControllerDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
-      MeowTokenDM,
+      ZTokenDM,
       ZNSAddressResolverDM,
       ZNSStringResolverDM,
       ZNSCurvePricerDM,

@@ -16,8 +16,10 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
+  ZNSAccessController, ZNSDomainToken, ZNSRegistry,
+  ZNSRootRegistrar,
   ZNSStringResolver,
+  ZTokenMock,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
 } from "../typechain";
@@ -77,22 +79,22 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let zToken : ZTokenMock;
       let treasury : ZNSTreasury;
 
       ({
         accessController,
         stringResolver,
         registry,
-        meowToken,
+        zToken,
         treasury,
         rootRegistrar,
         dbAdapter: mongoAdapter,
       } = campaign);
 
-      userBalance = ethers.parseEther("1000000000000000000");
-      await meowToken.mint(user.address, userBalance);
-      await meowToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
+      userBalance = ethers.parseEther("1000000");
+      await zToken.connect(admin).transfer(user.address, userBalance);
+      await zToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
     });
 
     after(async () => {
@@ -234,25 +236,25 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let zToken : ZTokenMock;
       let treasury : ZNSTreasury;
 
       zns = campaign.state.contracts as unknown as IZNSContractsLocal;
 
       // eslint-disable-next-line max-len
-      ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
+      ({ stringResolver, registry, zToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
 
-      operatorBalance = ethers.parseEther("1000000000000000000");
-      await meowToken.mint(operator.address, operatorBalance);
-      await meowToken.connect(operator).approve(await treasury.getAddress(), ethers.MaxUint256);
+      operatorBalance = ethers.parseEther("100000000");
+      await zToken.connect(admin).transfer(operator.address, operatorBalance);
+      await zToken.connect(operator).approve(await treasury.getAddress(), ethers.MaxUint256);
 
-      userBalance = ethers.parseEther("1000000000000000000");
-      await meowToken.mint(user.address, userBalance);
-      await meowToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
+      userBalance = ethers.parseEther("100000000");
+      await zToken.connect(admin).transfer(user.address, userBalance);
+      await zToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
 
-      deployerBalance = ethers.parseEther("1000000000000000000");
-      await meowToken.mint(deployer.address, deployerBalance);
-      await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
+      deployerBalance = ethers.parseEther("10000000");
+      await zToken.connect(admin).transfer(deployer.address, deployerBalance);
+      await zToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
     });
 
     afterEach(async () => {

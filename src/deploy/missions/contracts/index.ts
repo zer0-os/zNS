@@ -6,7 +6,7 @@ export * from "./zns-base/domain-token";
 export * from "./zns-base/treasury";
 export * from "./zns-base/curve-pricer";
 export * from "./zns-base/access-controller";
-export * from "./zns-base/meow-token/meow-token";
+export * from "./zns-base/z-token/z-token";
 export * from "./zns-base/fixed-pricer";
 export * from "./zns-base/sub-registrar";
 

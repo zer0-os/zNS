@@ -27,7 +27,7 @@ IZNSContracts
     const {
       accessController,
       registry,
-      meowToken,
+      zToken,
       config: {
         zeroVaultAddress,
       },
@@ -36,7 +36,7 @@ IZNSContracts
     return [
       await accessController.getAddress(),
       await registry.getAddress(),
-      await meowToken.getAddress(),
+      await zToken.getAddress(),
       zeroVaultAddress,
     ];
   }

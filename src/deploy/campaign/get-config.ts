@@ -10,18 +10,27 @@ import {
   DEFAULT_DECIMALS,
   DEFAULT_PRECISION,
   getCurvePrice,
+  DEFAULT_PRICE_CONFIG,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
-  INVALID_ENV_ERR,
+  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
+  INITIAL_ADMIN_DELAY_DEFAULT,
+  INITIAL_SUPPLY_DEFAULT,
+  INFLATION_RATES_DEFAULT,
+  FINAL_INFLATION_RATE_DEFAULT,
+  Z_NAME_DEFAULT,
+  Z_SYMBOL_DEFAULT,
 } from "../../../test/helpers";
 import { ethers, Wallet } from "ethers";
-import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/zns-base/meow-token/mainnet-data";
 import { TSupportedChain } from "../missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../missions/contracts/cross-chain/portals/get-portal-dm";
 import { findMissingEnvVars } from "../../environment/validate";
+import { ICurvePriceConfig, IZTokenConfig } from "../missions/types";
+import process from "process";
+import { ZSepolia } from "../missions/contracts/z-token/mainnet-data";
 
 
 const getCustomAddresses = (
@@ -63,12 +72,14 @@ export const getConfig = async ({
   admins,
   zeroVaultAddress,
   env, // this is ONLY used for tests!
+  zTokenConfig,
 } : {
   deployer : Wallet | SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
+  zTokenConfig ?: IZTokenConfig;
 }) : Promise<IZNSCampaignConfig<SignerWithAddress | Wallet>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
@@ -82,28 +93,51 @@ export const getConfig = async ({
 
   let zeroVaultAddressConf : string;
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(
-      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
-      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
-    );
-    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS!;
-  } else {
-    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS!;
-  }
-
-  // Domain Token Values
-  const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
-  const royaltyFraction = BigInt(process.env.ROYALTY_FRACTION);
+  const zeroVaultAddressEnv = process.env.ZERO_VAULT_ADDRESS;
+  const mockZTokenEnv = process.env.MOCK_Z_TOKEN;
+  const envLevel = process.env.ENV_LEVEL;
 
   // Get governor addresses set through env, if any
   const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
-
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = {
-    env: process.env.ENV_LEVEL,
+  let zConfig : IZTokenConfig | undefined;
+
+  if (envLevel === "dev") {
+    requires(
+      !!zeroVaultAddress || !!zeroVaultAddressEnv,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || zeroVaultAddressEnv;
+
+    if (!zTokenConfig) {
+      // in case, we didn't provide addresses, it will choose the governon as `admin` argument,
+      // deployAdmin as `minter` and first passed admin as `mintBeneficiary`.
+      zConfig = {
+        name: Z_NAME_DEFAULT,
+        symbol: Z_SYMBOL_DEFAULT,
+        defaultAdmin: governorAddresses[0],
+        initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+        minter: deployer.address,
+        mintBeneficiary: adminAddresses[0],
+        initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+        inflationRates: INFLATION_RATES_DEFAULT,
+        finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+      };
+    } else {
+    zeroVaultAddressConf = zeroVaultAddressEnv;
+  }
+
+  // Domain Token Values
+  const royaltyReceiver = envLevel !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
+  const royaltyFraction =
+    process.env.ROYALTY_FRACTION
+      ? BigInt(process.env.ROYALTY_FRACTION)
+      : DEFAULT_ROYALTY_FRACTION;
+
+  const config : IZNSCampaignConfig<SignerWithAddress> = {
+    env: envLevel!,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
@@ -114,6 +148,7 @@ export const getConfig = async ({
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
+    zTokenConfig: zConfig,
     zeroVaultAddress: zeroVaultAddressConf,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS,
@@ -147,11 +182,13 @@ export const validateEnv = (
   // Validate price config first since we have to return it
   const priceConfig = getValidateRootPriceConfig();
 
+  const mockZTokenEnv = process.env.MOCK_Z_TOKEN;
+
   if (envLevel === "dev") return priceConfig;
 
   if (envLevel === "test" || envLevel === "dev") {
-    if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
-      throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
+    if (mockZTokenEnv === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
+      throw new Error("Must provide a staking token address if not mocking Z token in `dev` environment");
     }
   }
 
@@ -162,19 +199,19 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
-    requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
+    requires(mockZTokenEnv === "false", NO_MOCK_PROD_ERR);
+    requires(process.env.STAKING_TOKEN_ADDRESS === ZSepolia.address, STAKING_TOKEN_ERR);
   }
 
   if (process.env.VERIFY_CONTRACTS === "true") {
-    requires(!!process.env.ETHERSCAN_API_KEY, "Must provide an Etherscan API Key to verify contracts");
+    requires(process.env.ETHERSCAN_API_KEY === "true", "Must provide an Etherscan API Key to verify contracts");
   }
 
   if (process.env.MONITOR_CONTRACTS === "true") {
-    requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
-    requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
-    requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
+    requires(process.env.TENDERLY_PROJECT_SLUG === "true", "Must provide a Tenderly Project Slug to monitor contracts");
+    requires(process.env.TENDERLY_ACCOUNT_ID === "true", "Must provide a Tenderly Account ID to monitor contracts");
+    requires(process.env.TENDERLY_ACCESS_KEY === "true", "Must provide a Tenderly Access Key to monitor contracts");
   }
 
   return priceConfig;
@@ -188,7 +225,7 @@ export const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice: ethers.parseEther(process.env.MAX_PRICE),
-    minPrice: ethers.parseEther(process.env.MIN_PRICE),
+    curveMultiplier: BigInt(process.env.CURVE_MULTIPLIER),
     maxLength: BigInt(process.env.MAX_LENGTH),
     baseLength: BigInt(process.env.BASE_LENGTH),
     precisionMultiplier,
@@ -196,7 +233,7 @@ export const getValidateRootPriceConfig = () => {
     isSet: true,
   };
 
-  requires(validatePrice(priceConfig), INVALID_CURVE_ERR);
+  validateConfig(priceConfig);
 
   return priceConfig;
 };
@@ -207,16 +244,18 @@ const requires = (condition : boolean, message : string) => {
   }
 };
 
-// No price spike before `minPrice` kicks in at `maxLength`
-const validatePrice = (config : ICurvePriceConfig) => {
-  const strA = "a".repeat(Number(config.maxLength));
-  const strB = "b".repeat(Number(config.maxLength + 1n));
+const validateConfig = (config : ICurvePriceConfig) => {
+  const PERCENTAGE_BASIS = 10000n;
 
-  const priceA = getCurvePrice(strA, config);
-  const priceB = getCurvePrice(strB, config);
-
-  // if B > A, then the price spike is invalid
-  return (priceB <= priceA);
+  if (
+    (config.curveMultiplier === 0n && config.baseLength === 0n) ||
+    (config.maxLength < config.baseLength) ||
+    ((config.maxLength < config.baseLength) || config.maxLength === 0n) ||
+    (config.curveMultiplier === 0n || config.curveMultiplier > 10n**18n) ||
+    (config.feePercentage > PERCENTAGE_BASIS)
+  ) {
+    requires(false, INVALID_CURVE_ERR);
+  }
 };
 
 export const buildCrosschainConfig = () : TZNSCrossConfig => {

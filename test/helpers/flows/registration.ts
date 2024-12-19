@@ -36,7 +36,7 @@ export const registerDomainPath = async ({
     let beneficiary;
 
     if (isRootDomain) {
-      paymentTokenContract = zns.meowToken;
+      paymentTokenContract = zns.zToken;
       // no beneficiary for root domain
       beneficiary = ethers.ZeroAddress;
     } else {
@@ -45,8 +45,8 @@ export const registerDomainPath = async ({
       const { token: paymentTokenAddress } = paymentConfig;
       ({ beneficiary } = paymentConfig);
 
-      if (paymentTokenAddress === await zns.meowToken.getAddress()) {
-        paymentTokenContract = zns.meowToken;
+      if (paymentTokenAddress === await zns.zToken.getAddress()) {
+        paymentTokenContract = zns.zToken;
       } else {
         paymentTokenContract = getTokenContract(paymentTokenAddress, config.user);
       }
@@ -119,7 +119,7 @@ export const validatePathRegistration = async ({
 
     const {
       maxPrice: curveMaxPrice,
-      minPrice: curveMinPrice,
+      curveMultiplier,
       maxLength: curveMaxLength,
       baseLength: curveBaseLength,
       precisionMultiplier: curvePrecisionMultiplier,
@@ -136,7 +136,7 @@ export const validatePathRegistration = async ({
         domainLabel,
         {
           maxPrice: curveMaxPrice,
-          minPrice: curveMinPrice,
+          curveMultiplier,
           maxLength: curveMaxLength,
           baseLength: curveBaseLength,
           precisionMultiplier: curvePrecisionMultiplier,
@@ -160,7 +160,7 @@ export const validatePathRegistration = async ({
       } else {
         const {
           maxPrice,
-          minPrice,
+          curveMultiplier,
           maxLength,
           baseLength,
           precisionMultiplier,
@@ -174,7 +174,7 @@ export const validatePathRegistration = async ({
           domainLabel,
           {
             maxPrice,
-            minPrice,
+            curveMultiplier,
             maxLength,
             baseLength,
             precisionMultiplier,
