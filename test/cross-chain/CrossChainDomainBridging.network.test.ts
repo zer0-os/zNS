@@ -54,7 +54,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
   let subUser : SignerWithAddress;
   let subUserL2 : Wallet | SignerWithAddress;
 
-  let configL1 : IZNSCampaignConfig<SignerWithAddress>;
+  let configL1 : IZNSCampaignConfig<SignerWithAddress | Wallet>;
   let configL2 : IZNSCampaignConfig<Wallet | SignerWithAddress>;
 
   const rootDomainLabel = "jeffbridges";

@@ -16,6 +16,7 @@ import {
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { Wallet } from "ethers";
 
 
 describe("zNS + zDC Single Integration Test", () => {
@@ -29,7 +30,7 @@ describe("zNS + zDC Single Integration Test", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IZNSCampaignConfig<SignerWithAddress>;
+  let config : IZNSCampaignConfig<SignerWithAddress | Wallet>;
 
   let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;

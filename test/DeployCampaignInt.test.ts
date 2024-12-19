@@ -30,9 +30,7 @@ import {
   Z_SYMBOL_DEFAULT,
 } from "./helpers";
 import {
-  ZTokenDM,
-  meowTokenName,
-  meowTokenSymbol, PolygonZkEVMBridgeV2DM,
+  ZTokenDM, PolygonZkEVMBridgeV2DM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM, ZNSChainResolverDM,
   ZNSCurvePricerDM,
@@ -44,7 +42,6 @@ import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 // TODO multi: why does this have Sepolia in the name ?! Check and validate !
 import { ZSepolia } from "../src/deploy/missions/contracts/zns-base/z-token/mainnet-data";
-import { MeowMainnet } from "../src/deploy/missions/contracts/zns-base/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { buildCrosschainConfig, getConfig } from "../src/deploy/campaign/get-config";
 import { ethers, Wallet } from "ethers";
@@ -94,8 +91,8 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockMeowToken: true,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
           monitorContracts: false,
@@ -398,7 +395,7 @@ describe("Deploy Campaign Test", () => {
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: "",
-        mockMeowToken: true, // 1700083028872
+        mockZToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
           monitorContracts: false,
@@ -903,8 +900,8 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockMeowToken: true,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
           monitorContracts: false,
@@ -1090,8 +1087,8 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
-        mockMeowToken: true,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
           monitorContracts: false,

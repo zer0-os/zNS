@@ -35,14 +35,12 @@ import {
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig, IZNSContractsLocal } from "../types";
 import * as hre from "hardhat";
-import { upgrades } from "hardhat";
+import { upgrades, ethers } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   erc1967ProxyName,
   fixedPricerName,
   DEFAULT_PRICE_CONFIG,
-  curvePricerName,
-  zTokenMockName,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
@@ -60,11 +58,9 @@ import {
 import { PORTAL_ROLE, DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
-import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 import { transparentProxyName, znsNames } from "../../../src/deploy/missions/contracts/names";
 import { TSupportedChain } from "../../../src/deploy/missions/contracts/cross-chain/portals/types";
 import { SupportedChains } from "../../../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
-import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
 
 export const deployAccessController = async ({

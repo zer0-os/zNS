@@ -23,10 +23,10 @@ export interface IZNSEnvironment {
   DEVNET_RPC_URL ?: string;
   GOVERNOR_ADDRESSES ?: string;
   ADMIN_ADDRESSES ?: string;
-  MOCK_MEOW_TOKEN : string;
+  MOCK_Z_TOKEN : string;
   STAKING_TOKEN_ADDRESS ?: string;
   MAX_PRICE : string;
-  MIN_PRICE : string;
+  CURVE_MULTIPLIER : string;
   MAX_LENGTH : string;
   BASE_LENGTH : string;
   PROTOCOL_FEE_PERC : string;

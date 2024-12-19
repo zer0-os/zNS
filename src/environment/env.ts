@@ -46,12 +46,13 @@ export const environment : IZNSEnvironment = {
   // ! System Administration !
   GOVERNOR_ADDRESSES: "",
   ADMIN_ADDRESSES: "",
-  // ZNS Payment Token (e.g. MEOW or Z)
-  MOCK_MEOW_TOKEN: "true",
+  // ZNS Payment Token (e.g. Z)
+  MOCK_Z_TOKEN: "true",
   STAKING_TOKEN_ADDRESS: "",
   // CurvePricer Config [without decimals!]
+  // TODO multi: check defaults for the new formula and update !!!
   MAX_PRICE: "25000",
-  MIN_PRICE: "2000",
+  CURVE_MULTIPLIER: "1000",
   MAX_LENGTH: "50",
   BASE_LENGTH: "4",
   PROTOCOL_FEE_PERC: "222",
