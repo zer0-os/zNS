@@ -22,7 +22,7 @@ import {
 } from "./helpers";
 
 
-describe.only("ZNSEthereumPortal", () => {
+describe("ZNSEthereumPortal", () => {
   let deployAdmin : IZNSSigner;
   let randomAcc : IZNSSigner;
 
