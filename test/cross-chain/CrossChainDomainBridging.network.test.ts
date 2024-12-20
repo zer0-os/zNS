@@ -270,7 +270,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
                   pricerContract: znsL1.curvePricer.target,
                 },
                 paymentConfig: {
-                  token: znsL1.meowToken.target,
+                  token: znsL1.zToken.target,
                   beneficiary: deployAdmin.address,
                 },
                 priceConfig: DEFAULT_PRICE_CONFIG,
@@ -287,7 +287,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             isBridging: true,
           });
 
-          balanceBeforeBridge = await znsL1.meowToken.balanceOf(user.address);
+          balanceBeforeBridge = await znsL1.zToken.balanceOf(user.address);
 
           const tx = await znsL1.zChainPortal.connect(user).registerAndBridgeDomain(
             parentHash as string,
@@ -360,7 +360,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
           });
 
           it("should withdraw the correct amount of tokens from the caller", async () => {
-            const balanceAfterBridge = await znsL1.meowToken.balanceOf(user.address);
+            const balanceAfterBridge = await znsL1.zToken.balanceOf(user.address);
 
             const priceConfig = isRealNetwork ? getValidateRootPriceConfig() : DEFAULT_PRICE_CONFIG;
             const priceRef = getCurvePrice(label, priceConfig);
@@ -538,7 +538,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             await tx.wait(confNum);
 
             const paymentConfigToSet = {
-              token: znsL2.meowToken.target,
+              token: znsL2.zToken.target,
               beneficiary: user.address,
             };
             tx = await znsL2.treasury.connect(userL2).setPaymentConfig(
