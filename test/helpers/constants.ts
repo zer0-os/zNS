@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
+export const CHAIN_RESOLVER_TYPE = "chain";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
 export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZID";
 
