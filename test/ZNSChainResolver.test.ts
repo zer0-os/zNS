@@ -18,26 +18,26 @@ import {
   AC_UNAUTHORIZED_ERR,
   ADMIN_ROLE,
   CHAIN_RESOLVER_TYPE,
-  DEFAULT_RESOLVER_TYPE,
   REGISTRAR_ROLE,
 } from "./helpers";
 
-describe.only("ZNSresolver", () => {
+describe("ZNSChainResolver", () => {
   let resolver : ZNSChainResolver;
   let registry : ZNSRegistry;
   let registrar : SignerWithAddress;
   let accessController : ZNSAccessController;
 
   let admin : SignerWithAddress;
-  let operator : SignerWithAddress;
   let unauthorized : SignerWithAddress;
   let emptySigner : SignerWithAddress;
 
   const domainLabel = "example.com";
   const domainHash = ethers.keccak256(ethers.toUtf8Bytes(domainLabel));
+  const chainName = "name";
+  const aux = "Aux";
 
   before(async () => {
-    [admin, operator, unauthorized, emptySigner, registrar] = await ethers.getSigners();
+    [admin, unauthorized, emptySigner, registrar] = await ethers.getSigners();
 
     accessController = await deployAccessController({
       deployer: admin,
@@ -72,7 +72,6 @@ describe.only("ZNSresolver", () => {
 
   it("should allow authorized user to set and resolve chain data", async () => {
     const chainID = 1n;
-    const chainName = "Ethereum Mainnet";
     const znsRegistryOnChain = await registry.getAddress();
     const auxData = "Additional info";
 
@@ -174,6 +173,9 @@ describe.only("ZNSresolver", () => {
     ).to.equal(
       emptySigner
     );
+
+    // assign it back
+    await resolver.connect(admin).setRegistry(registry.target);
   });
 
   it("should revert when setRegistry() without ADMIN_ROLE", async () => {
@@ -198,10 +200,10 @@ describe.only("ZNSresolver", () => {
     await expect(
       resolver.connect(unauthorized).setChainData(
         ethers.id("domain"),
-        1,
-        DEFAULT_RESOLVER_TYPE,
-        unauthorized.address,
-        "Aux"
+        1n,
+        chainName,
+        registry.target,
+        aux
       )
     ).to.be.reverted;
   });
@@ -211,9 +213,9 @@ describe.only("ZNSresolver", () => {
       resolver.setChainData(
         domainHash,
         1n,
-        CHAIN_RESOLVER_TYPE,
-        admin.address,
-        "Aux"
+        chainName,
+        registry.target,
+        aux
       )
     ).to.emit(
       resolver,
@@ -221,9 +223,9 @@ describe.only("ZNSresolver", () => {
     ).withArgs(
       domainHash,
       1n,
-      CHAIN_RESOLVER_TYPE,
-      admin.address,
-      "Aux"
+      chainName,
+      registry.target,
+      aux
     );
   });
 
@@ -231,12 +233,13 @@ describe.only("ZNSresolver", () => {
     await resolver.connect(admin).setChainData(
       domainHash,
       1n,
-      CHAIN_RESOLVER_TYPE,
-      admin.address,
-      "Aux"
+      chainName,
+      registry.target,
+      aux
     );
 
     const data = await resolver.resolveChainData(domainHash);
+
     expect(
       data[0]
     ).to.equal(
@@ -246,18 +249,18 @@ describe.only("ZNSresolver", () => {
     expect(
       data[1]
     ).to.equal(
-      CHAIN_RESOLVER_TYPE
+      chainName
     );
     expect(
       data[2]
     ).to.equal(
-      admin.address
+      registry.target
     );
 
     expect(
       data[3]
     ).to.equal(
-      "Aux"
+      aux
     );
   });
 
