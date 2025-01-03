@@ -46,10 +46,11 @@ export class ZNSAddressResolverDM extends BaseDeployMission {
       },
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
+    const tx = await registry.connect(deployAdmin).addResolverType(
       ResolverTypes.address,
       await addressResolver.getAddress(),
     );
+    await tx.wait(2);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

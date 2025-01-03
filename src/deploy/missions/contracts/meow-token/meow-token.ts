@@ -87,10 +87,11 @@ export class MeowTokenDM extends BaseDeployMission {
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await meowToken.connect(deployAdmin).mint(
+    const tx = await meowToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress(),
       ethers.parseEther("100000")
     );
+    await tx.wait(2);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

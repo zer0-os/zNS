@@ -59,9 +59,10 @@ export class ZNSRootRegistrarDM extends BaseDeployMission {
       },
     } = this.campaign;
 
-    await accessController
+    const tx = await accessController
       .connect(deployAdmin)
       .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+    await tx.wait(2);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

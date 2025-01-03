@@ -121,6 +121,20 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
+    moonwalker: {
+      chainId: 1828369849,
+      url: `${process.env.MOONWALKER_RPC_URL}`,
+      accounts: [
+        `${process.env.ZNS_DEPLOYER}`,
+        `${process.env.ZERO_VAULT_KEY}`,
+        `${process.env.TEST_USER_A_KEY}`,
+        `${process.env.TEST_USER_B_KEY}`,
+        `${process.env.TEST_USER_C_KEY}`,
+        `${process.env.TEST_USER_D_KEY}`,
+        `${process.env.TEST_USER_E_KEY}`,
+        `${process.env.TEST_USER_F_KEY}`,
+      ],
+    },
   },
   defender: {
     useDefenderDeploy: false,
@@ -129,6 +143,16 @@ const config : HardhatUserConfig = {
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [
+      {
+        network: "moonwalker",
+        chainId: 1828369849,
+        urls: {
+          apiURL: "https://moonwalker-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://moonwalker-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
   },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment

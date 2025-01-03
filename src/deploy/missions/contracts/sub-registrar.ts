@@ -67,13 +67,15 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
     } = this.campaign;
 
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      const tx = await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      await tx.wait(2);
     }
 
     if (!this.hasRegistrarRole) {
-      await accessController
+      const tx = await accessController
         .connect(deployAdmin)
         .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
+      await tx.wait(2);
     }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
