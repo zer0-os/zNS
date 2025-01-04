@@ -91,7 +91,7 @@ const config : HardhatUserConfig = {
   },
   typechain: {
     outDir: "typechain",
-    externalArtifacts: ["./node_modules/@zero-tech/zkevm-contracts/compiled-contracts/*.json"],
+    // externalArtifacts: ["./node_modules/@zero-tech/zkevm-contracts/compiled-contracts/*.json"],
   },
   mocha: {
     timeout: 5000000,
@@ -136,7 +136,7 @@ const config : HardhatUserConfig = {
       url: `${process.env.MOONWALKER_RPC_URL}`,
       chainId: 1828369849,
       accounts: [
-        `${process.env.ZTOKEN_BENEFICIARY}`,
+        // `${process.env.ZTOKEN_BENEFICIARY}`,
         // `${process.env.TESTNET_PRIVATE_KEY_B}`,
         // `${process.env.TESTNET_PRIVATE_KEY_C}`,
       ],

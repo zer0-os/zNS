@@ -11,7 +11,7 @@ import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
-import { ZNSRootRegistrarTrunk } from "../../typechain";
+import { ZNSRootRegistrarTrunk, ZNSZChainPortal } from "../../typechain";
 import { getConfirmationsNumber } from "./tx";
 
 const { ZeroAddress } = ethers;
@@ -54,12 +54,14 @@ export const approveForDomain = async ({
   zns,
   parentHash,
   user,
+  tokenHolder,
   domainLabel,
   isBridging = false,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   user : SignerWithAddress;
+  tokenHolder ?: SignerWithAddress;
   domainLabel : string;
   isBridging ?: boolean;
 }) => {
@@ -88,12 +90,13 @@ export const approveForDomain = async ({
 
   const userBal = await tokenContract.balanceOf(user.address);
   if (userBal < toApprove) {
-    // eslint-disable-next-line no-shadow
-    const tx = await tokenContract.connect(user).mint(user.address, toApprove);
+    const tx = await tokenContract.connect(tokenHolder).transfer(user.address, toApprove);
     await tx.wait(confNum);
   }
 
-  const spender = isBridging ? await zns.zChainPortal.getAddress() : await zns.treasury.getAddress();
+  const spender = isBridging
+    ? await (zns.zChainPortal as ZNSZChainPortal).getAddress()
+    : await zns.treasury.getAddress();
   const tx = await tokenContract.connect(user).approve(spender, toApprove);
   await tx.wait(confNum);
 };
@@ -163,6 +166,7 @@ export const defaultBridgingRegistration = async ({
 export const registrationWithSetup = async ({
   zns,
   user,
+  tokenHolder,
   parentHash,
   domainLabel,
   domainContent = user.address,
@@ -173,6 +177,7 @@ export const registrationWithSetup = async ({
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
+  tokenHolder ?: SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;
   domainContent ?: string;
@@ -192,6 +197,7 @@ export const registrationWithSetup = async ({
     zns,
     parentHash,
     user,
+    tokenHolder,
     domainLabel,
     isBridging: bridgeDomain,
   });

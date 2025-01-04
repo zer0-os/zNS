@@ -194,6 +194,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
     await approveForDomain({
       zns: znsL1,
       parentHash: hre.ethers.ZeroHash,
+      tokenHolder: deployAdmin,
       user,
       domainLabel: "test",
       isBridging: true,
@@ -283,6 +284,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             zns: znsL1,
             parentHash: parentHash as string,
             user,
+            tokenHolder: deployAdmin,
             domainLabel: label,
             isBridging: true,
           });
@@ -570,6 +572,7 @@ describe("Cross-Chain Domain Bridging Test [for local and test networks]", () =>
             const subdomainHash = await registrationWithSetup({
               zns: znsL2,
               user: subUserL2,
+              tokenHolder: deployAdminL2,
               parentHash: domainHash,
               domainLabel: subdomainChildLabel,
               fullConfig: fullDistrConfigEmpty,
