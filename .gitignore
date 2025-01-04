@@ -24,3 +24,6 @@ docker*.tgz
 
 # Don't source control log files from deployment
 deploy-*.log
+
+# Local tests and ops
+test-data

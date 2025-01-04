@@ -2,8 +2,8 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "Zero Name Service";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNS";
+export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZID";
 
 export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
@@ -34,6 +34,7 @@ export const PaymentType = {
   STAKE: 1n,
 };
 
+// TODO multi: make these read from the env.ts file along with other default env vars ??
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
   curveMultiplier: BigInt("1000"),
@@ -85,6 +86,11 @@ export const treasuryName = "ZNSTreasury";
 export const registrarName = "ZNSRootRegistrar";
 export const erc1967ProxyName = "ERC1967Proxy";
 export const subRegistrarName = "ZNSSubRegistrar";
+
+// Cross-Chain
+export const NETWORK_ID_L1_TEST_DEFAULT = 0n;
+export const NETWORK_ID_L2_TEST_DEFAULT = 1n;
+export const ZCHAIN_ID_TEST_DEFAULT = 2012605151n;
 
 // zToken mock deploy default params
 export const Z_NAME_DEFAULT = "ZERO Token";

@@ -1,36 +1,37 @@
 import {
+  PolygonZkEVMBridgeV2Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
-  ZNSAddressResolverUpgradeMock__factory,
+  ZNSAddressResolverUpgradeMock__factory, ZNSChainResolver,
   ZNSCurvePricer,
   ZNSCurvePricerUpgradeMock,
   ZNSCurvePricerUpgradeMock__factory,
   ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
-  ZNSDomainTokenUpgradeMock__factory,
+  ZNSDomainTokenUpgradeMock__factory, ZNSEthereumPortal,
   ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
   ZNSFixedPricerUpgradeMock__factory,
   ZNSRegistry,
   ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSRootRegistrar,
+  ZNSRootRegistrarBranch, ZNSRootRegistrarTrunk,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
-  ZNSSubRegistrar,
+  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolver,
+  ZNSSubRegistrarBranch, ZNSSubRegistrarTrunk,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
-  ZNSTreasuryUpgradeMock__factory,
+  ZNSTreasuryUpgradeMock__factory, ZNSZChainPortal,
   ZTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { Addressable } from "ethers";
+import { TSupportedChain } from "../../src/deploy/missions/contracts/cross-chain/portals/types";
 
-
-export type Maybe<T> = T | undefined;
 
 export type GeneralContractGetter = Promise<
 string
@@ -85,11 +86,16 @@ export interface IZNSContractsLocal {
   domainToken : ZNSDomainToken;
   zToken : ZTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
+  chainResolver : ZNSChainResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
+  rootRegistrar : ZNSRootRegistrarTrunk | ZNSRootRegistrarBranch;
   fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
+  subRegistrar : ZNSSubRegistrarTrunk | ZNSSubRegistrarBranch;
+  zChainPortal ?: ZNSZChainPortal;
+  ethPortal ?: ZNSEthereumPortal;
+  zkEvmBridge : PolygonZkEVMBridgeV2Mock;
   zeroVaultAddress : string;
 }
 
@@ -100,17 +106,24 @@ export interface DeployZNSParams {
   priceConfig ?: ICurvePriceConfig;
   registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
+  srcChainName ?: TSupportedChain;
+  srcNetworkId ?: bigint;
+  bridgeTokenAddress ?: string;
+  destNetworkId ?: bigint;
+  destChainName ?: TSupportedChain;
+  destChainId ?: bigint;
+  srcZnsPortalAddress ?: string;
   isTenderlyRun ?: boolean;
 }
 
 export interface IDistributionConfig {
-  pricerContract : string;
+  pricerContract : string | Addressable;
   paymentType : bigint;
   accessType : bigint;
 }
 
 export interface IPaymentConfig {
-  token : string;
+  token : string | Addressable;
   beneficiary : string;
 }
 

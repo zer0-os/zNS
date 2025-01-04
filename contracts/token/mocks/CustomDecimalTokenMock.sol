@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 // solhint-disable
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract CustomDecimalTokenMock is ERC20 {
     uint8 private _decimals;

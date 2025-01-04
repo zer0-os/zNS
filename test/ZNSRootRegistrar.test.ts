@@ -34,15 +34,15 @@ import { getDomainHashFromEvent } from "./helpers/events";
 import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
-  ZNSRootRegistrar,
-  ZNSRootRegistrar__factory,
+  ZNSRootRegistrarTrunk,
+  ZNSRootRegistrarTrunk__factory,
   ZNSRootRegistrarUpgradeMock__factory,
 } from "../typechain";
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
 
@@ -51,6 +51,7 @@ require("@nomicfoundation/hardhat-chai-matchers");
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
+// TODO multi: test both RootRegistrar types here, add missing tests for Branch and fix types !!!
 describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
@@ -171,7 +172,7 @@ describe("ZNSRootRegistrar", () => {
 
     const domainHash = await getDomainHashFromEvent({
       zns,
-      user: deployer,
+      registrantAddress: deployer.address,
     });
 
     // Registering as deployer (owner of parent) and user is different gas values
@@ -208,10 +209,9 @@ describe("ZNSRootRegistrar", () => {
   });
 
   it("Should NOT initialize the implementation contract", async () => {
-    const factory = new ZNSRootRegistrar__factory(deployer);
+    const factory = new ZNSRootRegistrarTrunk__factory(deployer);
     const impl = await getProxyImplAddress(await zns.rootRegistrar.getAddress());
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    const implContract = factory.attach(impl) as ZNSRootRegistrar;
+    const implContract = factory.attach(impl) as ZNSRootRegistrarTrunk;
 
     await expect(
       implContract.initialize(
@@ -294,7 +294,7 @@ describe("ZNSRootRegistrar", () => {
     const userHasAdmin = await zns.accessController.hasRole(ADMIN_ROLE, user.address);
     expect(userHasAdmin).to.be.false;
 
-    const registrarFactory = new ZNSRootRegistrar__factory(user);
+    const registrarFactory = new ZNSRootRegistrarTrunk__factory(user);
 
     const tx = upgrades.deployProxy(
       registrarFactory,
@@ -357,7 +357,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
       const tokenId = BigInt(domainHash);
 
@@ -621,7 +621,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       const {
@@ -650,7 +650,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       const {
@@ -690,7 +690,7 @@ describe("ZNSRootRegistrar", () => {
       const namehashRef = hashDomainLabel(defaultDomain);
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       expect(domainHash).to.eq(namehashRef);
@@ -761,7 +761,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       const exists = await zns.registry.exists(domainHash);
@@ -779,7 +779,7 @@ describe("ZNSRootRegistrar", () => {
       const tokenId = BigInt(
         await getDomainHashFromEvent({
           zns,
-          user,
+          registrantAddress: user.address,
         })
       );
       const owner = await zns.domainToken.ownerOf(tokenId);
@@ -795,7 +795,7 @@ describe("ZNSRootRegistrar", () => {
       });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
@@ -847,7 +847,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
@@ -881,7 +881,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const tokenId = BigInt(domainHash);
 
@@ -899,7 +899,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       // Reclaim the Domain
       const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
@@ -930,7 +930,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const tokenId = BigInt(domainHash);
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
@@ -974,7 +974,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const tokenId = BigInt(domainHash);
 
@@ -1024,7 +1024,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
@@ -1055,7 +1055,7 @@ describe("ZNSRootRegistrar", () => {
 
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       // add mintlist to check revocation
@@ -1079,7 +1079,7 @@ describe("ZNSRootRegistrar", () => {
       const tokenId = BigInt(
         await getDomainHashFromEvent({
           zns,
-          user,
+          registrantAddress: user.address,
         })
       );
 
@@ -1129,7 +1129,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       // Validated staked values
@@ -1168,7 +1168,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const parentDomainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
@@ -1186,7 +1186,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
       const parentDomainHash = await getDomainHashFromEvent({
         zns,
-        user: deployer,
+        registrantAddress: deployer.address,
       });
       const owner = await zns.registry.getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
@@ -1211,7 +1211,7 @@ describe("ZNSRootRegistrar", () => {
       await defaultRootRegistration({ user, zns, domainName: defaultDomain });
       const domainHash = await getDomainHashFromEvent({
         zns,
-        user,
+        registrantAddress: user.address,
       });
 
       // assign an operator
@@ -1387,7 +1387,7 @@ describe("ZNSRootRegistrar", () => {
       // Confirm deployer has the correct role first
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrarTrunk__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
@@ -1399,7 +1399,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Fails to upgrade when an unauthorized users calls", async () => {
-      const registrarFactory = new ZNSRootRegistrar__factory(deployer);
+      const registrarFactory = new ZNSRootRegistrarTrunk__factory(deployer);
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 

@@ -27,6 +27,10 @@ export const znsNames = {
     contract: "ZNSStringResolver",
     instance: "stringResolver",
   },
+  chainResolver: {
+    contract: "ZNSChainResolver",
+    instance: "chainResolver",
+  },
   curvePricer: {
     contract: "ZNSCurvePricer",
     instance: "curvePricer",
@@ -40,12 +44,28 @@ export const znsNames = {
     instance: "treasury",
   },
   rootRegistrar: {
-    contract: "ZNSRootRegistrar",
+    contractBase: "ZNSRootRegistrarBase",
+    contractTrunk: "ZNSRootRegistrarTrunk",
+    contractBranch: "ZNSRootRegistrarBranch",
     instance: "rootRegistrar",
   },
   subRegistrar: {
-    contract: "ZNSSubRegistrar",
+    contractTrunk: "ZNSSubRegistrarTrunk",
+    contractBranch: "ZNSSubRegistrarBranch",
     instance: "subRegistrar",
+  },
+  zPortal: {
+    contract: "ZNSZChainPortal",
+    instance: "zChainPortal",
+  },
+  ethPortal: {
+    contract: "ZNSEthereumPortal",
+    instance: "ethPortal",
+  },
+  zkEvmBridge: {
+    contract: "PolygonZkEVMBridgeV2",
+    contractMock: "PolygonZkEVMBridgeV2Mock",
+    instance: "zkEvmBridge",
   },
   erc1967Proxy: {
     contract: erc1967ProxyName,

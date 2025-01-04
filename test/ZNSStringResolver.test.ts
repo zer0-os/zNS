@@ -16,7 +16,8 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
+  ZNSAccessController, ZNSDomainToken, ZNSRegistry,
+  ZNSRootRegistrar,
   ZNSStringResolver,
   ZTokenMock,
   ZNSStringResolverUpgradeMock__factory,
@@ -24,7 +25,7 @@ import {
 } from "../typechain";
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContractsLocal } from "./helpers/types";
 
 
@@ -254,6 +255,10 @@ describe("ZNSStringResolver", () => {
       deployerBalance = ethers.parseEther("10000000");
       await zToken.connect(admin).transfer(deployer.address, deployerBalance);
       await zToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
+    });
+
+    afterEach(async () => {
+      await mongoAdapter.dropDB();
     });
 
     it("Should not allow non-owner address to setString (similar domain and string)", async () => {

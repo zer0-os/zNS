@@ -37,8 +37,7 @@ import { getDomainHashFromEvent } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {
   CustomDecimalTokenMock,
-  ZNSSubRegistrar,
-  ZNSSubRegistrar__factory,
+  ZNSSubRegistrarTrunk, ZNSSubRegistrarTrunk__factory,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
 } from "../typechain";
@@ -2678,7 +2677,7 @@ describe("ZNSSubRegistrar", () => {
 
       const hash = await getDomainHashFromEvent({
         zns,
-        user: lvl5SubOwner,
+        registrantAddress: lvl5SubOwner,
       });
 
       // check registry
@@ -2917,7 +2916,7 @@ describe("ZNSSubRegistrar", () => {
 
       const hash = await getDomainHashFromEvent({
         zns,
-        user: lvl5SubOwner,
+        registrantAddress: lvl5SubOwner,
       });
 
       // check registry
@@ -3414,9 +3413,9 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("Should NOT let initialize the implementation contract", async () => {
-      const factory = new ZNSSubRegistrar__factory(deployer);
+      const factory = new ZNSSubRegistrarTrunk__factory(deployer);
       const impl = await getProxyImplAddress(await zns.subRegistrar.getAddress());
-      const implContract = factory.attach(impl) as ZNSSubRegistrar;
+      const implContract = factory.attach(impl) as ZNSSubRegistrarTrunk;
 
       await expect(
         implContract.initialize(
@@ -3681,7 +3680,7 @@ describe("ZNSSubRegistrar", () => {
 
       const subHash = await getDomainHashFromEvent({
         zns,
-        user: lvl2SubOwner,
+        registrantAddress: lvl2SubOwner,
       });
 
       const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);

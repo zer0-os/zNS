@@ -30,27 +30,28 @@ import {
   Z_SYMBOL_DEFAULT,
 } from "./helpers";
 import {
-  ZTokenDM,
+  ZTokenDM, PolygonZkEVMBridgeV2DM,
   ZNSAccessControllerDM,
-  ZNSAddressResolverDM,
+  ZNSAddressResolverDM, ZNSChainResolverDM,
   ZNSCurvePricerDM,
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
-import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
+import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/zns-base/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 // TODO multi: why does this have Sepolia in the name ?! Check and validate !
-import { ZSepolia } from "../src/deploy/missions/contracts/z-token/mainnet-data";
+import { ZSepolia } from "../src/deploy/missions/contracts/zns-base/z-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
-import { getConfig } from "../src/deploy/campaign/environments";
-import { ethers } from "ethers";
+import { buildCrosschainConfig, getConfig } from "../src/deploy/campaign/get-config";
+import { ethers, Wallet } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
+import { getPortalDM } from "../src/deploy/missions/contracts/cross-chain/portals/get-portal-dm";
 import { IZTokenConfig } from "../src/deploy/missions/types";
 
 
@@ -77,15 +78,40 @@ describe("Deploy Campaign Test", () => {
 
   describe("Z Token Ops", () => {
     before(async () => {
-      campaignConfig = await getConfig(
-        {
-          deployer: deployAdmin,
-          governors: [deployAdmin.address],
-          admins: [deployAdmin.address, admin.address],
-          zeroVaultAddress: zeroVault.address,
-          env,
-        }
-      );
+      campaignConfig = {
+        env,
+        deployAdmin,
+        governorAddresses: [deployAdmin.address],
+        adminAddresses: [deployAdmin.address, admin.address],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
+        zTokenConfig: {
+          name: Z_NAME_DEFAULT,
+          symbol: Z_SYMBOL_DEFAULT,
+          defaultAdmin: deployAdmin.address,
+          initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+          minter: deployAdmin.address,
+          mintBeneficiary: deployAdmin.address,
+          initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+          inflationRates: INFLATION_RATES_DEFAULT,
+          finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+        },
+        postDeploy: {
+          tenderlyProjectSlug: "",
+          monitorContracts: false,
+          verifyContracts: false,
+        },
+        crosschain: buildCrosschainConfig(),
+      };
+
       campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
       campaignConfig.postDeploy.tenderlyProjectSlug = "";
     });
@@ -209,8 +235,8 @@ describe("Deploy Campaign Test", () => {
       IZNSContracts
       >>;
       placeOfFailure : string;
-      deployedNames : Array<{ contract : string; instance : string; }>;
-      undeployedNames : Array<{ contract : string; instance : string; }>;
+      deployedNames : Array<{ contract ?: string; contractTrunk ?: string; instance : string; }>;
+      undeployedNames : Array<{ contract ?: string; contractTrunk ?: string; instance : string; }>;
       failingInstanceName : string;
       // eslint-disable-next-line no-shadow
       callback ?: (failingCampaign : DeployCampaign<
@@ -272,13 +298,14 @@ describe("Deploy Campaign Test", () => {
       const firstRunDeployed = await deployedNames.reduce(
         async (
           acc : Promise<Array<IDeployedData>>,
-          { contract, instance } : { contract : string; instance : string; }
+          { contract, contractTrunk, instance } : { contract ?: string; contractTrunk ?: string; instance : string; }
         ) : Promise<Array<IDeployedData>> => {
           const akk = await acc;
-          const fromDB = await dbAdapter.getContract(contract);
+          const name = contract ?? contractTrunk;
+          const fromDB = await dbAdapter.getContract(name as string);
           expect(fromDB?.address).to.be.properAddress;
 
-          return [...akk, { contract, instance, address: fromDB?.address }];
+          return [...akk, { contract: name as string, instance, address: fromDB?.address }];
         },
         Promise.resolve([])
       );
@@ -286,10 +313,11 @@ describe("Deploy Campaign Test", () => {
       await undeployedNames.reduce(
         async (
           acc : Promise<void>,
-          { contract, instance } : { contract : string; instance : string; }
+          { contract, contractTrunk, instance } : { contract ?: string; contractTrunk ?: string; instance : string; }
         ) : Promise<void> => {
           await acc;
-          const fromDB = await dbAdapter.getContract(contract);
+          const name = contract ?? contractTrunk;
+          const fromDB = await dbAdapter.getContract(name as string);
           const fromState = failingCampaign[instance];
 
           expect(fromDB).to.be.null;
@@ -319,9 +347,9 @@ describe("Deploy Campaign Test", () => {
 
       // state should have 11 contracts in it
       const { state } = nextCampaign;
-      expect(Object.keys(state.contracts).length).to.equal(11);
-      expect(Object.keys(state.instances).length).to.equal(11);
-      expect(state.missions.length).to.equal(11);
+      expect(Object.keys(state.contracts).length).to.equal(14);
+      expect(Object.keys(state.instances).length).to.equal(14);
+      expect(state.missions.length).to.equal(14);
       // it should deploy AddressResolver
       expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
@@ -331,10 +359,11 @@ describe("Deploy Campaign Test", () => {
       await allNames.reduce(
         async (
           acc : Promise<void>,
-          { contract } : { contract : string; }
+          { contract, contractTrunk } : { contract ?: string; contractTrunk ?: string; }
         ) : Promise<void> => {
           await acc;
-          const fromDB = await dbAdapter.getContract(contract);
+          const name = contract ?? contractTrunk;
+          const fromDB = await dbAdapter.getContract(name as string);
           expect(fromDB?.address).to.be.properAddress;
         },
         Promise.resolve()
@@ -363,15 +392,40 @@ describe("Deploy Campaign Test", () => {
     beforeEach(async () => {
       [deployAdmin, admin, zeroVault] = await hre.ethers.getSigners();
 
-      campaignConfig = await getConfig(
-        {
-          deployer: deployAdmin,
-          governors: [deployAdmin.address],
-          admins: [deployAdmin.address, admin.address],
-          zeroVaultAddress: zeroVault.address,
-          env,
-        }
-      );
+      campaignConfig = {
+        env,
+        deployAdmin,
+        governorAddresses: [deployAdmin.address],
+        adminAddresses: [deployAdmin.address, admin.address],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: "",
+        mockZToken: true,
+        zTokenConfig: {
+          name: Z_NAME_DEFAULT,
+          symbol: Z_SYMBOL_DEFAULT,
+          defaultAdmin: deployAdmin.address,
+          initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+          minter: deployAdmin.address,
+          mintBeneficiary: deployAdmin.address,
+          initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+          inflationRates: INFLATION_RATES_DEFAULT,
+          finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+        },
+        postDeploy: {
+          tenderlyProjectSlug: "",
+          monitorContracts: false,
+          verifyContracts: false,
+        },
+        crosschain: buildCrosschainConfig(),
+      };
+
       campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
       // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
       campaignConfig.stakingTokenAddress = "";
@@ -413,6 +467,12 @@ describe("Deploy Campaign Test", () => {
         znsNames.rootRegistrar,
         znsNames.fixedPricer,
         znsNames.subRegistrar,
+        znsNames.chainResolver,
+        {
+          contract: znsNames.zkEvmBridge.contractMock,
+          instance: znsNames.zkEvmBridge.instance,
+        },
+        znsNames.zPortal,
       ];
 
       // call test flow runner
@@ -427,8 +487,11 @@ describe("Deploy Campaign Test", () => {
           ZNSCurvePricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
+          ZNSFixedPricerDM,
+          ZNSChainResolverDM,
+          PolygonZkEVMBridgeV2DM,
+          getPortalDM(campaignConfig.crosschain.srcChainName),
         ],
         placeOfFailure: "deploy",
         deployedNames,
@@ -653,7 +716,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const localConfig : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -685,7 +748,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const config : IZNSCampaignConfig<SignerWithAddress | Wallet> = await getConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -812,7 +875,7 @@ describe("Deploy Campaign Test", () => {
         });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
-        expect(e.message).includes("Must provide a Mongo URI used for prod environment!");
+        expect(e.message).includes("Missing required environment variables: MONGO_DB_URI");
       }
 
       process.env.MOCK_Z_TOKEN = "false";
@@ -846,15 +909,39 @@ describe("Deploy Campaign Test", () => {
     before(async () => {
       await saveTag();
 
-      campaignConfig = await getConfig(
-        {
-          deployer: deployAdmin,
-          governors: [deployAdmin.address, governor.address],
-          admins: [deployAdmin.address, admin.address],
-          zeroVaultAddress: zeroVault.address,
-          env,
-        }
-      );
+      campaignConfig = {
+        env,
+        deployAdmin,
+        governorAddresses: [deployAdmin.address, governor.address],
+        adminAddresses: [deployAdmin.address, admin.address],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
+        zTokenConfig: {
+          name: Z_NAME_DEFAULT,
+          symbol: Z_SYMBOL_DEFAULT,
+          defaultAdmin: deployAdmin.address,
+          initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+          minter: deployAdmin.address,
+          mintBeneficiary: deployAdmin.address,
+          initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+          inflationRates: INFLATION_RATES_DEFAULT,
+          finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+        },
+        postDeploy: {
+          tenderlyProjectSlug: "",
+          monitorContracts: false,
+          verifyContracts: false,
+        },
+        crosschain: buildCrosschainConfig(),
+      };
 
       campaignConfig.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
       // TODO dep: what do we pass here for test flow? we don't have a deployed ZToken contract
@@ -1020,15 +1107,40 @@ describe("Deploy Campaign Test", () => {
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
 
-      config = await getConfig(
-        {
-          deployer: deployAdmin,
-          governors: [deployAdmin.address, governor.address],
-          admins: [deployAdmin.address, admin.address],
-          zeroVaultAddress: zeroVault.address,
-          env,
-        }
-      );
+      config = {
+        env: "dev",
+        deployAdmin,
+        governorAddresses: [deployAdmin.address, governor.address],
+        adminAddresses: [deployAdmin.address, admin.address],
+        domainToken: {
+          name: ZNS_DOMAIN_TOKEN_NAME,
+          symbol: ZNS_DOMAIN_TOKEN_SYMBOL,
+          defaultRoyaltyReceiver: deployAdmin.address,
+          defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
+        },
+        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+        stakingTokenAddress: ZSepolia.address,
+        mockZToken: true,
+        zTokenConfig: {
+          name: Z_NAME_DEFAULT,
+          symbol: Z_SYMBOL_DEFAULT,
+          defaultAdmin: deployAdmin.address,
+          initialAdminDelay: INITIAL_ADMIN_DELAY_DEFAULT,
+          minter: deployAdmin.address,
+          mintBeneficiary: deployAdmin.address,
+          initialSupplyBase: INITIAL_SUPPLY_DEFAULT,
+          inflationRates: INFLATION_RATES_DEFAULT,
+          finalInflationRate: FINAL_INFLATION_RATE_DEFAULT,
+        },
+        postDeploy: {
+          tenderlyProjectSlug: "",
+          monitorContracts: false,
+          verifyContracts: true,
+        },
+        crosschain: buildCrosschainConfig(),
+      };
+
       config.domainToken.defaultRoyaltyReceiver = deployAdmin.address;
       config.stakingTokenAddress = ZSepolia.address;
       config.postDeploy.tenderlyProjectSlug = "";

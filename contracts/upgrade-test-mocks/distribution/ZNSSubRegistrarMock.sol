@@ -3,11 +3,12 @@
 pragma solidity 0.8.26;
 
 // solhint-disable
-import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
-import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+// TODO multi: fix these are remove unnecessary imports
+import { ZNSSubRegistrarTrunk } from "../../registrar/ZNSSubRegistrarTrunk.sol";
+import { IZNSSubRegistrarTrunk } from "../../registrar/IZNSSubRegistrarTrunk.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 import { IZNSPricer } from "../../types/IZNSPricer.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
+import { IZNSRootRegistrarBase, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrarBase.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -37,7 +38,7 @@ struct DistributionConfig {
 
 
 contract ZNSSubRegistrarMainState {
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrarBase public rootRegistrar;
 
     mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
@@ -250,7 +251,7 @@ contract ZNSSubRegistrarUpgradeMock is
 
     function setRootRegistrar(address registrar_) public onlyAdmin {
         if (registrar_ == address(0)) revert ZeroAddressPassed();
-        rootRegistrar = IZNSRootRegistrar(registrar_);
+        rootRegistrar = IZNSRootRegistrarBase(registrar_);
     }
 
     // solhint-disable-next-line

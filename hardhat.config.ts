@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
-require("dotenv").config();
-
+import "./init-env";
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
 
@@ -47,6 +46,9 @@ const config : HardhatUserConfig = {
             enabled: true,
             runs: 20000,
           },
+          // Only use this when running coverage
+          // TODO multi: figure out if this is worth using for actual deploys to networks and tests
+          viaIR: process.argv.includes("coverage"),
         },
       },
       {
@@ -59,26 +61,27 @@ const config : HardhatUserConfig = {
         },
       },
     ],
-    overrides: {
-      "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
-      "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
-    },
+    // TODO multi: figure out why this breaks the compilation even though the version is correct ??
+    // overrides: {
+    //   "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
+    //     version: "0.8.20",
+    //     settings: {
+    //       optimizer: {
+    //         enabled: true,
+    //         runs: 20000,
+    //       },
+    //     },
+    //   },
+    //   "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
+    //     version: "0.8.20",
+    //     settings: {
+    //       optimizer: {
+    //         enabled: true,
+    //         runs: 20000,
+    //       },
+    //     },
+    //   },
+    // },
   },
   paths: {
     sources: "./contracts",
@@ -88,6 +91,7 @@ const config : HardhatUserConfig = {
   },
   typechain: {
     outDir: "typechain",
+    // externalArtifacts: ["./node_modules/@zero-tech/zkevm-contracts/compiled-contracts/*.json"],
   },
   mocha: {
     timeout: 5000000,
@@ -103,14 +107,14 @@ const config : HardhatUserConfig = {
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_E}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+      ],
       // // Must have to avoid instead failing as `invalid length for result data` error
       // throwOnCallFailures: false, // not sure if this even works
     },
@@ -119,26 +123,46 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-    // meowtestnet: {
-    //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
-    //   accounts: [
-    //     `${process.env.DEPLOYER_PRIVATE_KEY}`,
-    //   ],
-    // },
+    zchaintest: {
+      url: `${process.env.ZCHAIN_TEST_RPC_URL}`,
+      chainId: 2012605151,
+      accounts: [
+        // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      ],
+    },
+    moonwalker: {
+      url: `${process.env.MOONWALKER_RPC_URL}`,
+      chainId: 1828369849,
+      accounts: [
+        // `${process.env.ZTOKEN_BENEFICIARY}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      ],
+    },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  //   customChains: [
-  //     {
-  //       network: "meowtestnet",
-  //       chainId: 883424730,
-  //       urls: {
-  //         apiURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
-  //         browserURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/",
-  //       },
-  //     },
-  //   ],
-  // },
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [
+      {
+        network: "moonwalker",
+        chainId: 1828369849,
+        urls: {
+          apiURL: "https://moonwalker-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://moonwalker-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+      {
+        network: "zchaintest",
+        chainId: 2012605151,
+        urls: {
+          apiURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
@@ -159,20 +183,6 @@ const config : HardhatUserConfig = {
       "oz-proxies/",
     ],
   },
-  // meowtestnet: {
-  //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
-  //   chainId: 883424730,
-  //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
-  // `${process.env.DEPLOYER_PRIVATE_KEY}`,
-  // `${process.env.ZERO_VAULT_PRIVATE_KEY}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_A}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_B}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_C}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_D}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_E}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_F}`,
-  //   ],
-  // },
 };
 
 export default config;
