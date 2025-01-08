@@ -127,7 +127,7 @@ const config : HardhatUserConfig = {
       url: `${process.env.ZCHAIN_TEST_RPC_URL}`,
       chainId: 2012605151,
       accounts: [
-        // `${process.env.TESTNET_PRIVATE_KEY_A}`,
+        `${process.env.TESTNET_PRIVATE_KEY_A}`,
         // `${process.env.TESTNET_PRIVATE_KEY_B}`,
         // `${process.env.TESTNET_PRIVATE_KEY_C}`,
       ],

@@ -14,11 +14,11 @@ const sendTxes = async () => {
     async (acc, amt, idx) => {
       const res = await acc;
 
-      const txCaller = idx % 3 === 0 ? caller : idx % 3 === 1 ? caller2 : caller3;
+      const txCaller = caller; // idx % 3 === 0 ? caller : idx % 3 === 1 ? caller2 : caller3;
       console.log(`Minting tx #${idx} from ${txCaller.address}`);
 
       const tx = await meowToken.connect(txCaller).mint(txCaller.address, amt);
-      const rec = await tx.wait(1);
+      const rec = await tx.wait(0);
       res.push(rec);
       return res;
     }, Promise.resolve([]),
@@ -27,7 +27,7 @@ const sendTxes = async () => {
   console.log("Minted tokens:", JSON.stringify(resArr, null, "\t"));
 };
 
-// sendTxes().catch(error => {
-//   console.error(error);
-//   process.exit(1);
-// });
+sendTxes().catch(error => {
+  console.error(error);
+  process.exit(1);
+});
