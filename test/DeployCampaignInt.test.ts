@@ -34,6 +34,7 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
+import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -311,11 +312,11 @@ describe("Deploy Campaign Test", () => {
       const { curVersion: nextDbVersion } = dbAdapter;
       expect(nextDbVersion).to.equal(initialDbVersion);
 
-      // state should have 10 contracts in it
+      // state should have 11 contracts in it
       const { state } = nextCampaign;
-      expect(Object.keys(state.contracts).length).to.equal(10);
-      expect(Object.keys(state.instances).length).to.equal(10);
-      expect(state.missions.length).to.equal(10);
+      expect(Object.keys(state.contracts).length).to.equal(11);
+      expect(Object.keys(state.instances).length).to.equal(11);
+      expect(state.missions.length).to.equal(11);
       // it should deploy AddressResolver
       expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
@@ -426,6 +427,7 @@ describe("Deploy Campaign Test", () => {
           ZNSDomainTokenDM,
           MeowTokenDM,
           FailingZNSAddressResolverDM, // failing DM
+          ZNSStringResolverDM,
           ZNSCurvePricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
