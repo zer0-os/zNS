@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-
 interface IZNSDomainToken is IERC2981, IERC721 {
 
     /**
@@ -26,12 +25,15 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
+    error CallerNotOwner(); 
+
     function initialize(
         address accessController,
         string calldata tokenName,
         string calldata tokenSymbol,
         address defaultRoyaltyReceiver,
-        uint96 defaultRoyaltyFraction
+        uint96 defaultRoyaltyFraction,
+        address registry
     ) external;
 
     function totalSupply() external view returns (uint256);
@@ -55,11 +57,15 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
 
+    function updateTokenOwner(address from, address to, uint256 tokenId) external;
+
     function setTokenRoyalty(
         uint256 tokenId,
         address receiver,
         uint96 royaltyFraction
     ) external;
+
+    function setRegistry(address registry_) external;
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

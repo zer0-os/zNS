@@ -31,7 +31,7 @@ import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
+import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
   ZNSRootRegistrar,
@@ -83,6 +83,8 @@ describe("ZNSRootRegistrar", () => {
     });
 
     zns = campaign.state.contracts;
+
+    // await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
 
     mongoAdapter = campaign.dbAdapter;
 
@@ -374,7 +376,7 @@ describe("ZNSRootRegistrar", () => {
       expect(isOwnerOfBothRandom).to.be.false;
 
       // transfer token
-      await zns.domainToken.connect(user).transferFrom(user.address, randomUser.address, tokenId);
+      await zns.domainToken.connect(user).updateTokenOwner(user.address, randomUser.address, tokenId);
       const isOwnerOfTokenUser = await zns.rootRegistrar.isOwnerOf(
         domainHash,
         user.address,
@@ -851,9 +853,9 @@ describe("ZNSRootRegistrar", () => {
       const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
 
       // Transfer the domain token
-      await zns.domainToken.connect(deployer).transferFrom(deployer.address, user.address, tokenId);
+      await zns.domainToken.connect(deployer).updateTokenOwner(deployer.address, user.address, tokenId);
 
-      // Verify owner in registry
+      // Verify owner in Registry is unchanged after using `updateTokenOwner`
       const originalOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
       expect(originalOwner).to.equal(deployer.address);
 
@@ -1186,12 +1188,12 @@ describe("ZNSRootRegistrar", () => {
         zns,
         user: deployer,
       });
-      const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
+      const owner = await zns.registry.getDomainOwner(parentDomainHash);
       expect(owner).to.not.equal(user.address);
 
       const tokenId = BigInt(parentDomainHash);
 
-      await zns.domainToken.transferFrom(deployer.address, user.address, tokenId);
+      await zns.domainToken.connect(deployer).updateTokenOwner(deployer.address, user.address, tokenId);
 
       // Try to revoke domain as a new owner of the token
       const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
