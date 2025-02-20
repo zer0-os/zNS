@@ -13,8 +13,9 @@ import {
   ZNSRootRegistrar,
   ZNSSubRegistrar,
   ZNSTreasury,
-  MeowToken,
+  ZNSStringResolver,
 } from "../../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
@@ -47,6 +48,7 @@ export type ZNSContract =
   MeowTokenMock |
   MeowToken |
   ZNSAddressResolver |
+  ZNSStringResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
@@ -59,6 +61,7 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   domainToken : ZNSDomainToken;
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;

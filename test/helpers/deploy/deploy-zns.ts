@@ -42,7 +42,7 @@ import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
 } from "../constants";
-import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
+import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
@@ -119,20 +119,22 @@ export const deployRegistry = async (
 
 export const deployDomainToken = async (
   deployer : SignerWithAddress,
-  accessControllerAddress : string,
+  accessController : ZNSAccessController,
   royaltyReceiverAddress : string,
   royaltyFraction : bigint,
-  isTenderlyRun : boolean
+  isTenderlyRun : boolean,
+  registry : ZNSRegistry,
 ) : Promise<ZNSDomainToken> => {
   const domainTokenFactory = new ZNSDomainToken__factory(deployer);
   const domainToken = await upgrades.deployProxy(
     domainTokenFactory,
     [
-      accessControllerAddress,
+      await accessController.getAddress(),
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
       royaltyReceiverAddress,
       royaltyFraction,
+      await registry.getAddress(),
     ],
     {
       kind: "uups",
@@ -142,6 +144,8 @@ export const deployDomainToken = async (
   await domainToken.waitForDeployment();
 
   const proxyAddress = await domainToken.getAddress();
+
+  await accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, proxyAddress);
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -549,10 +553,11 @@ export const deployZNS = async ({
 
   const domainToken = await deployDomainToken(
     deployer,
-    await accessController.getAddress(),
+    accessController,
     zeroVaultAddress,
     DEFAULT_ROYALTY_FRACTION,
-    isTenderlyRun
+    isTenderlyRun,
+    registry
   );
 
   // While we do use the real ZeroToken contract, it is only deployed as a mock here

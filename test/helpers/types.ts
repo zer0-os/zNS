@@ -18,7 +18,7 @@ import {
   ZNSRegistryUpgradeMock__factory,
   ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
   ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
@@ -53,7 +53,8 @@ export type ZNSContractMockFactory =
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
-  ZNSDomainTokenUpgradeMock__factory;
+  ZNSDomainTokenUpgradeMock__factory |
+  ZNSStringResolverUpgradeMock__factory;
 
 export type ZNSContractMock =
   ZNSRootRegistrarUpgradeMock |
@@ -63,7 +64,8 @@ export type ZNSContractMock =
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
-  ZNSDomainTokenUpgradeMock;
+  ZNSDomainTokenUpgradeMock |
+  ZNSStringResolverUpgradeMock;
 
 export interface IFixedPriceConfig {
   price : bigint;

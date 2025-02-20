@@ -11,7 +11,7 @@ import {
   MongoDBAdapter,
   ITenderlyContractData,
   TDeployArgs,
-  VERSION_TYPES, IHardhatBase, ISignerBase, IProviderBase,
+  VERSION_TYPES,
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
@@ -21,7 +21,6 @@ import {
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  INVALID_CURVE_ERR,
   MONGO_URI_ERR,
 } from "./helpers";
 import {
@@ -34,6 +33,7 @@ import {
   ZNSDomainTokenDM, ZNSFixedPricerDM,
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
+import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
@@ -45,8 +45,6 @@ import { exec } from "child_process";
 import { saveTag } from "../src/utils/git-tag/save-tag";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContractsLocal } from "./helpers/types";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
@@ -122,7 +120,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowToken");
+      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
       const meow = await hre.upgrades.deployProxy(
         factory,
         [meowTokenName, meowTokenSymbol],
@@ -201,7 +199,7 @@ describe("Deploy Campaign Test", () => {
       missionList : Array<TDeployMissionCtor<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      DefenderRelayProvider,
+      IZNSCampaignConfig<SignerWithAddress>,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -212,14 +210,13 @@ describe("Deploy Campaign Test", () => {
       callback ?: (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      DefenderRelayProvider,
+      IZNSCampaignConfig<SignerWithAddress>,
       IZNSContracts
       >) => Promise<void>;
     }) => {
       const deployer = new HardhatDeployer<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      DefenderRelayProvider
+      SignerWithAddress
       >({
         hre,
         signer: deployAdmin,
@@ -235,7 +232,7 @@ describe("Deploy Campaign Test", () => {
       const failingCampaign = new DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      DefenderRelayProvider,
+      IZNSCampaignConfig<SignerWithAddress>,
       IZNSContracts
       >({
         missions: missionList,
@@ -314,11 +311,11 @@ describe("Deploy Campaign Test", () => {
       const { curVersion: nextDbVersion } = dbAdapter;
       expect(nextDbVersion).to.equal(initialDbVersion);
 
-      // state should have 10 contracts in it
+      // state should have 11 contracts in it
       const { state } = nextCampaign;
-      expect(Object.keys(state.contracts).length).to.equal(10);
-      expect(Object.keys(state.instances).length).to.equal(10);
-      expect(state.missions.length).to.equal(10);
+      expect(Object.keys(state.contracts).length).to.equal(11);
+      expect(Object.keys(state.instances).length).to.equal(11);
+      expect(state.missions.length).to.equal(11);
       // it should deploy AddressResolver
       expect(await state.contracts.addressResolver.getAddress()).to.be.properAddress;
 
@@ -429,6 +426,7 @@ describe("Deploy Campaign Test", () => {
           ZNSDomainTokenDM,
           MeowTokenDM,
           FailingZNSAddressResolverDM, // failing DM
+          ZNSStringResolverDM,
           ZNSCurvePricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
@@ -469,14 +467,10 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async <
-        H extends IHardhatBase,
-        S extends ISignerBase,
-        P extends IProviderBase,
-      > (failingCampaign : DeployCampaign<
+      const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      DefenderRelayProvider,
+      IZNSCampaignConfig<SignerWithAddress>,
       IZNSContracts
       >) => {
         const {
@@ -597,7 +591,7 @@ describe("Deploy Campaign Test", () => {
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      DefenderRelayProvider,
+      IZNSCampaignConfig<SignerWithAddress>,
       IZNSContracts
       >) => {
         const {
@@ -803,28 +797,6 @@ describe("Deploy Campaign Test", () => {
       }
     });
 
-    it("Fails to validate if invalid curve for pricing", async () => {
-      process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
-      process.env.BASE_LENGTH = "3";
-      process.env.MAX_LENGTH = "5";
-      process.env.MAX_PRICE = "0";
-      process.env.MIN_PRICE = ethers.parseEther("3").toString();
-
-      try {
-        await getConfig({
-          env: "prod",
-          deployer: deployAdmin,
-          zeroVaultAddress: zeroVault.address,
-          governors: [deployAdmin.address, governor.address],
-          admins: [deployAdmin.address, admin.address],
-        });
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-      } catch (e : any) {
-        expect(e.message).includes(INVALID_CURVE_ERR);
-      }
-    });
-
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
       process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
@@ -870,7 +842,7 @@ describe("Deploy Campaign Test", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    DefenderRelayProvider,
+    IZNSCampaignConfig<SignerWithAddress>,
     IZNSContracts
     >;
 
@@ -1089,8 +1061,7 @@ describe("Deploy Campaign Test", () => {
       const verifyData : Array<{ address : string; ctorArgs ?: TDeployArgs; }> = [];
       class HardhatDeployerMock extends HardhatDeployer<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      DefenderRelayProvider
+      SignerWithAddress
       > {
         async etherscanVerify (args : {
           address : string;
@@ -1132,8 +1103,7 @@ describe("Deploy Campaign Test", () => {
       let tenderlyData : Array<ITenderlyContractData> = [];
       class HardhatDeployerMock extends HardhatDeployer<
       HardhatRuntimeEnvironment,
-      SignerWithAddress,
-      DefenderRelayProvider
+      SignerWithAddress
       > {
         async tenderlyPush (contracts : Array<ITenderlyContractData>) {
           tenderlyData = contracts;

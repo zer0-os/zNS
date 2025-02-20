@@ -5,40 +5,49 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 // When adding a revert test, check if this message is already present in other tests
 //  if it is, add a new constant here and use it in all tests
 
-// ZNSCurvePricer.sol
-export const MULTIPLIER_BELOW_MIN_ERR = "ZNSCurvePricer: Multiplier must be >= baseLength + 1";
-export const NO_ZERO_MULTIPLIER_ERR = "ZNSCurvePricer: Multiplier cannot be 0";
-export const MULTIPLIER_OUT_OF_RANGE_ORA_ERR = "ZNSCurvePricer: Multiplier out of range";
-export const CURVE_NO_ZERO_PRECISION_MULTIPLIER_ERR = "ZNSCurvePricer: precisionMultiplier cannot be 0";
-export const CURVE_PRICE_CONFIG_ERR = "ZNSCurvePricer: incorrect value set causes the price spike at maxLength.";
+export const ERC721_NOT_OWNER_ERR = "ERC721: transfer caller is not owner nor approved";
+export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
 
-// ZNSRegistry
-export const ONLY_NAME_OWNER_REG_ERR = "ZNSRegistry: Not the Name Owner";
-export const ONLY_OWNER_REGISTRAR_REG_ERR = "ZNSRegistry: Only Name Owner or Registrar allowed to call";
-export const NOT_AUTHORIZED_REG_WIRED_ERR = "ARegistryWired: Not authorized. Only Owner or Operator allowed";
-export const NOT_AUTHORIZED_REG_ERR = "ZNSRegistry: Not authorized";
-export const OWNER_NOT_ZERO_REG_ERR = "ZNSRegistry: Owner cannot be zero address";
+// AccessControl
+export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
+
+// ERC20
+export const INSUFFICIENT_BALANCE_ERC_ERR = "ERC20InsufficientBalance";
+export const INSUFFICIENT_ALLOWANCE_ERC_ERR = "ERC20InsufficientAllowance";
+
+// CommonErrors.sol
+export const ZERO_ADDRESS_ERR = "ZeroAddressPassed";
+export const DOMAIN_EXISTS_ERR = "DomainAlreadyExists";
+export const NOT_AUTHORIZED_ERR = "NotAuthorizedForDomain";
+
+// IZNSPricer.sol
+export const PARENT_CONFIG_NOT_SET_ERR = "ParentPriceConfigNotSet";
+export const FEE_TOO_LARGE_ERR = "FeePercentageValueTooLarge";
+
+// ZNSCurvePricer.sol
+export const INVALID_PRECISION_MULTIPLIER_ERR = "InvalidPrecisionMultiplierPassed";
+export const INVALID_PRICE_CONFIG_ERR = "InvalidConfigCausingPriceSpikes";
+export const INVALID_BASE_OR_MAX_LENGTH_ERR = "MaxLengthSmallerThanBaseLength";
+export const DIVISION_BY_ZERO_ERR = "DivisionByZero";
 
 // ZNSRootRegistrar.sol
-export const NOT_NAME_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of the Name";
-export const NOT_TOKEN_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of the Token";
-export const NOT_BOTH_OWNER_RAR_ERR = "ZNSRootRegistrar: Not the owner of both Name and Token";
+export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";
 
 // Subdomain Registrar
 // eslint-disable-next-line max-len
-export const DISTRIBUTION_LOCKED_ERR = "ZNSSubRegistrar: Parent domain's distribution is locked";
+export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ParentLockedOrDoesntExist";
+export const SENDER_NOT_APPROVED_ERR = "SenderNotApprovedForPurchase";
 
 // StringUtils
-export const INVALID_NAME_ERR = "StringUtils: Invalid domain label";
-export const INVALID_LENGTH_ERR = "StringUtils: Domain label too long or nonexistent";
+export const INVALID_LABEL_ERR = "DomainLabelContainsInvalidCharacters";
+export const INVALID_LENGTH_ERR = "DomainLabelTooLongOrNonexistent";
 
 // Treasury
-export const NO_BENEFICIARY_ERR = "ZNSTreasury: parent domain has no beneficiary set";
-export const NOT_AUTHORIZED_TREASURY_ERR = "ZNSTreasury: Not authorized.";
+export const NO_BENEFICIARY_ERR = "NoBeneficiarySetForParent";
 
 // OpenZeppelin
-export const INVALID_TOKENID_ERC_ERR = "ERC721: invalid token ID";
-export const INITIALIZED_ERR = "Initializable: contract is already initialized";
+export const NONEXISTENT_TOKEN_ERC_ERR = "ERC721NonexistentToken";
+export const INITIALIZED_ERR = "InvalidInitialization";
 
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";

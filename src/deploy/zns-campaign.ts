@@ -1,6 +1,5 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import {
   HardhatDeployer,
   DeployCampaign,
@@ -10,6 +9,7 @@ import {
   MeowTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
+  ZNSStringResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
@@ -20,14 +20,12 @@ import { getZnsMongoAdapter } from "./mongo";
 
 export const runZnsCampaign = async ({
   config,
-  provider,
   dbVersion,
   deployer,
 } : {
   config : IZNSCampaignConfig<SignerWithAddress>;
-  provider ?: DefenderRelayProvider;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
 }) => {
   hre.upgrades.silenceWarnings();
 
@@ -38,7 +36,6 @@ export const runZnsCampaign = async ({
       hre,
       signer: config.deployAdmin,
       env: config.env,
-      provider,
     });
   }
 
@@ -47,7 +44,7 @@ export const runZnsCampaign = async ({
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  DefenderRelayProvider,
+  IZNSCampaignConfig<SignerWithAddress>,
   IZNSContracts
   >({
     missions: [
@@ -56,6 +53,7 @@ export const runZnsCampaign = async ({
       ZNSDomainTokenDM,
       MeowTokenDM,
       ZNSAddressResolverDM,
+      ZNSStringResolverDM,
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,

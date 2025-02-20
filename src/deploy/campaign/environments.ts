@@ -1,5 +1,4 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
@@ -7,9 +6,8 @@ import {
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
-  DECAULT_PRECISION,
+  DEFAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
-  getCurvePrice,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
@@ -19,7 +17,6 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 
 const getCustomAddresses = (
@@ -78,13 +75,17 @@ export const getConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
-  }
+  let zeroVaultAddressConf;
 
-  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
-    ? zeroVaultAddress!
-    : process.env.ZERO_VAULT_ADDRESS!;
+  if (process.env.ENV_LEVEL === "dev") {
+    requires(
+      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+  } else {
+    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+  }
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
@@ -107,11 +108,11 @@ export const getConfig = async ({
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver as string,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf,
+    zeroVaultAddress: zeroVaultAddressConf as string,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
@@ -209,10 +210,11 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  const minPrice =
-    process.env.MIN_PRICE
-      ? ethers.parseEther(process.env.MIN_PRICE)
-      : DEFAULT_PRICE_CONFIG.minPrice;
+  // TODO v1.5: FIX ENV VAR NAME !
+  const curveMultiplier =
+    process.env.curveMultiplier
+      ? process.env.curveMultiplier
+      : DEFAULT_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
     process.env.MAX_LENGTH
@@ -225,7 +227,7 @@ const getValidateRootPriceConfig = () => {
       : DEFAULT_PRICE_CONFIG.baseLength;
 
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DECAULT_PRECISION;
+  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
   const feePercentage =
@@ -235,7 +237,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    minPrice,
+    curveMultiplier: BigInt(curveMultiplier),
     maxLength,
     baseLength,
     precisionMultiplier,
@@ -243,7 +245,7 @@ const getValidateRootPriceConfig = () => {
     isSet: true,
   };
 
-  requires(validatePrice(priceConfig), INVALID_CURVE_ERR);
+  validateConfig(priceConfig);
 
   return priceConfig;
 };
@@ -254,14 +256,16 @@ const requires = (condition : boolean, message : string) => {
   }
 };
 
-// No price spike before `minPrice` kicks in at `maxLength`
-const validatePrice = (config : ICurvePriceConfig) => {
-  const strA = "a".repeat(Number(config.maxLength));
-  const strB = "b".repeat(Number(config.maxLength + 1n));
+const validateConfig = (config : ICurvePriceConfig) => {
+  const PERCENTAGE_BASIS = 10000n;
 
-  const priceA = getCurvePrice(strA, config);
-  const priceB = getCurvePrice(strB, config);
-
-  // if B > A, then the price spike is invalid
-  return (priceB <= priceA);
+  if (
+    (config.curveMultiplier === 0n && config.baseLength === 0n) ||
+    (config.maxLength < config.baseLength) ||
+    ((config.maxLength < config.baseLength) || config.maxLength === 0n) ||
+    (config.curveMultiplier === 0n || config.curveMultiplier > 10n**18n) ||
+    (config.feePercentage > PERCENTAGE_BASIS)
+  ) {
+    requires(false, INVALID_CURVE_ERR);
+  }
 };

@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
-import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
+import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 
 
@@ -18,10 +20,10 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  */
 contract ZNSDomainToken is
     AAccessControlled,
-    ERC721Upgradeable,
-    ERC2981Upgradeable,
     ERC721URIStorageUpgradeable,
+    ERC2981Upgradeable,
     UUPSUpgradeable,
+    ARegistryWired,
     IZNSDomainToken {
 
     /**
@@ -53,11 +55,13 @@ contract ZNSDomainToken is
         string memory name_,
         string memory symbol_,
         address defaultRoyaltyReceiver,
-        uint96 defaultRoyaltyFraction
+        uint96 defaultRoyaltyFraction,
+        address registry_
     ) external override initializer {
         __ERC721_init(name_, symbol_);
         _setAccessController(accessController_);
         _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
+        _setRegistry(registry_);
     }
 
     /**
@@ -89,6 +93,7 @@ contract ZNSDomainToken is
      */
     function revoke(uint256 tokenId) external override onlyRegistrar {
         _burn(tokenId);
+        --_totalSupply;
         _resetTokenRoyalty(tokenId);
     }
 
@@ -98,7 +103,7 @@ contract ZNSDomainToken is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721URIStorageUpgradeable, ERC721Upgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, IZNSDomainToken)
     returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -162,6 +167,15 @@ contract ZNSDomainToken is
     }
 
     /**
+     * @notice Setter function for the `ZNSRegistry` address in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * @param registry_ Address of the `ZNSRegistry` contract
+     */
+    function setRegistry(address registry_) public override(ARegistryWired, IZNSDomainToken) onlyAdmin {
+        _setRegistry(registry_);
+    }
+
+    /**
      * @notice To allow for user extension of the protocol we have to
      * enable checking acceptance of new interfaces to ensure they are supported
      * @param interfaceId The interface ID
@@ -170,21 +184,40 @@ contract ZNSDomainToken is
     public
     view
     virtual
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
     /**
-     * @notice ERC721 `_burn` function
-     * @param tokenId The ID of the token to burn
+     * @notice We override the standard transfer function to update the owner for both the `registry` and `token`
+     * This non-standard transfer is to behave similarly to the default transfer that only updates the `token`
+     * 
+     * @param from Owner of the token
+     * @param to Address to send the token to
+     * @param tokenId The token being transferred
      */
-    function _burn(uint256 tokenId)
-    internal
-    override(ERC721URIStorageUpgradeable, ERC721Upgradeable)
-    {
-        super._burn(tokenId);
-        --_totalSupply;
+    function updateTokenOwner(address from, address to, uint256 tokenId) public override {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    /**
+     * @notice Override the standard transferFrom function to update the owner for both the `registry` and `token`
+     * 
+     * @dev See {IERC721-transferFrom}
+     */
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override(ERC721Upgradeable, IERC721) {
+        // Transfer the token
+        super.transferFrom(from, to, tokenId);
+        
+        // Update the registry
+        // because `_transfer` already checks for `to == address(0)` we don't need to check it here
+        // We `encodePacked` here to ensure that any values that result in leading zeros are converted correctly
+        registry.updateDomainOwner(bytes32(abi.encodePacked(tokenId)), to);
     }
 
     /**

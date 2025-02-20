@@ -2,21 +2,20 @@
 pragma solidity 0.8.26;
 
 
-interface IZNSAddressResolver {
+interface IZNSStringResolver {
     /**
-     * @dev Emit when ownership of a domain is modified
-     * @param newAddress The new domain owner
      * @param domainHash The identifying hash of a domain's name
+     * @param newString - content of string type set by the owner/operator to which a domain will resolve to
      */
-    event AddressSet(bytes32 indexed domainHash, address indexed newAddress);
+    event StringSet(bytes32 indexed domainHash, string indexed newString);
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 
-    function resolveDomainAddress(bytes32 domainHash) external view returns (address);
+    function resolveDomainString(bytes32 domainHash) external view returns (string memory);
 
-    function setAddress(
+    function setString(
         bytes32 domainHash,
-        address newAddress
+        string calldata newString
     ) external;
 
     function getInterfaceId() external pure returns (bytes4);
