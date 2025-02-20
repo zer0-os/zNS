@@ -3,14 +3,12 @@ import {
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { MeowToken__factory } from "@zero-tech/ztoken/typechain-js";
-import meowArtifact from "@zero-tech/ztoken/artifacts/contracts/MeowToken.sol/MeowToken.json";
+import { ZToken__factory } from "../../../../../typechain";
 
 
 export const meowTokenName = "MEOW";
@@ -24,8 +22,7 @@ IZNSCampaignConfig<SignerWithAddress>,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: true,
-    kind: ProxyKinds.transparent,
+    isProxy: false,
   };
 
   contractName = znsNames.meowToken.contract;
@@ -66,13 +63,8 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const factory = new MeowToken__factory(this.config.deployAdmin);
+      const factory = new ZToken__factory(this.config.deployAdmin);
       const baseContract = factory.attach(this.config.stakingTokenAddress);
-      // TODO remove!
-      // const baseContract = await this.campaign.deployer.getContractObject(
-      //   this.contractName,
-      //   this.config.stakingTokenAddress as string,
-      // );
 
       await this.saveToDB(baseContract);
 
@@ -83,10 +75,6 @@ IZNSContracts
     } else {
       await super.deploy();
     }
-  }
-
-  getArtifact () {
-    return meowArtifact;
   }
 
   async deployArgs () : Promise<TDeployArgs> {

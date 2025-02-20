@@ -15,8 +15,8 @@ export const znsNames = {
     instance: "domainToken",
   },
   meowToken: {
-    contract: "MeowToken",
-    contractMock: "MeowTokenMock",
+    contract: "ZToken",
+    contractMock: "ERC20Mock",
     instance: "meowToken",
   },
   addressResolver: {
