@@ -1,16 +1,29 @@
 // SPDX-License-Identifier: MIT
-/* solhint-disable */
 pragma solidity 0.8.26;
 
-import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import { ZToken } from "@zero-tech/z-token/contracts/ZToken.sol";
 
 
-contract MeowTokenMock is ERC20Upgradeable {
-    function initialize(string memory name_, string memory symbol_) external initializer {
-        __ERC20_init(name_, symbol_);
-    }
-
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
-    }
+contract MeowTokenMock is ZToken {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _defaultAdmin,
+        uint48 _initialAdminDelay, // without the decimal part!
+        address _minter,
+        address _mintBeneficiary,
+        uint256 _initialSupplyBase,
+        uint16[] memory _inflationRates,
+        uint16 _finalInflationRate
+    ) ZToken(
+        _name,
+        _symbol,
+        _defaultAdmin,
+        _initialAdminDelay,
+        _minter,
+        _mintBeneficiary,
+        _initialSupplyBase,
+        _inflationRates,
+        _finalInflationRate
+    ) {}
 }
