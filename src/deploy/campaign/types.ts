@@ -3,7 +3,7 @@ import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-cli
 import { ICurvePriceConfig } from "../missions/types";
 import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
 import {
-  MeowTokenMock,
+  ERC20Mock as MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSCurvePricer,
