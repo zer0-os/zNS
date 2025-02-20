@@ -36,7 +36,7 @@ import {
 import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
+import { MEOWzChainData } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
 import { ResolverTypes } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
@@ -84,7 +84,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -94,7 +94,7 @@ describe("Deploy Campaign Test", () => {
       };
     });
 
-    it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
+    it("should deploy new ERC20Mock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
       });
@@ -116,17 +116,12 @@ describe("Deploy Campaign Test", () => {
       await dbAdapter.dropDB();
     });
 
-    it("should use existing deployed non-mocked MeowToken contract when `mockMeowToken` is false", async () => {
+    it("should use existing deployed MeowToken contract when `mockMeowToken` is false", async () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
-      const meow = await hre.upgrades.deployProxy(
-        factory,
-        [meowTokenName, meowTokenSymbol],
-        {
-          kind: "transparent",
-        });
+      const factory = await hre.ethers.getContractFactory("ERC20Mock");
+      const meow = await factory.deploy(meowTokenName, meowTokenSymbol);
 
       await meow.waitForDeployment();
 
@@ -146,7 +141,7 @@ describe("Deploy Campaign Test", () => {
         },
       } = campaign;
 
-      expect(meowToken.address).to.equal(meow.address);
+      expect(meowToken.target).to.equal(meow.target);
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
 
       const toMint = hre.ethers.parseEther("972315");
@@ -160,7 +155,7 @@ describe("Deploy Campaign Test", () => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         expect(e.message).to.include(
-          ".mint is not a function"
+          "no matching fragment"
         );
       }
 
@@ -799,7 +794,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -819,7 +814,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -862,7 +857,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1043,7 +1038,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",

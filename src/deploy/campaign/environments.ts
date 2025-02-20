@@ -16,7 +16,7 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
+import { MEOWzChainData } from "../missions/contracts/meow-token/mainnet-data";
 
 
 const getCustomAddresses = (
@@ -172,7 +172,7 @@ export const validateEnv = (
   // Mainnet
   if (envLevel === "prod") {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
+    requires(process.env.STAKING_TOKEN_ADDRESS === MEOWzChainData.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
   }
 

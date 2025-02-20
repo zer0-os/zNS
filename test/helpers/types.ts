@@ -1,5 +1,5 @@
 import {
-  MeowTokenMock,
+  ERC20Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -83,7 +83,7 @@ export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  meowToken : MeowTokenMock;
+  meowToken : ERC20Mock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
