@@ -16,7 +16,7 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
+  ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
@@ -77,7 +77,7 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
 
       ({
@@ -234,7 +234,7 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
 
       zns = campaign.state.contracts as unknown as IZNSContractsLocal;
