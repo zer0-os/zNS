@@ -100,9 +100,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
+        bool hasFreeAccess = _hasFreeSubdomainAccess(parentHash);
+        if (
+            parentConfig.accessType == AccessType.LOCKED
+            && !hasFreeAccess
+        ) {
+            // when access type is LOCKED, ONLY owner of both: token and registry record can register
+            // as well as a registered operator for the parent domain that owns both
             revert ParentLockedOrDoesntExist(parentHash);
+        }
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
@@ -126,7 +132,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             paymentConfig: paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
+        if (!hasFreeAccess) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
@@ -333,6 +339,20 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    function _hasFreeSubdomainAccess(bytes32 parentHash) internal view returns (bool) {
+        address parentOwner = registry.getDomainOwner(parentHash);
+        bool ownsBoth = rootRegistrar.isOwnerOf(
+            parentHash,
+            parentOwner,
+            IZNSRootRegistrar.OwnerOf.BOTH
+        );
+
+        bool isParentThatOwnsBoth = ownsBoth && parentOwner == msg.sender;
+        bool isValidParentOperator = ownsBoth && registry.isOperatorFor(msg.sender, parentOwner);
+
+        return isParentThatOwnsBoth || isValidParentOperator;
     }
 
     /**

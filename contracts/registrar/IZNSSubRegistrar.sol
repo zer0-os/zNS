@@ -22,12 +22,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
 
-    struct Ownership {
-        address owner;
-        bool ownsBoth;
-        bool isOperatorForOwner;
-    }
-
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
      */
