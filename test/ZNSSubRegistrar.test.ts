@@ -25,7 +25,7 @@ import {
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   NOT_OWNER_OF_ERR,
-  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
+  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR, curvePriceConfigEmpty,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -203,7 +203,7 @@ describe("ZNSSubRegistrar", () => {
       const balanceBefore = await zns.meowToken.balanceOf(rootOwner.address);
 
       // Give token to lvl2SubOwner
-      await zns.domainToken.connect(rootOwner).transferFrom(rootOwner.address, lvl2SubOwner.address, rootHash);
+      await zns.domainToken.connect(rootOwner).updateTokenOwner(rootOwner.address, lvl2SubOwner.address, rootHash);
 
       await zns.subRegistrar.connect(rootOwner).registerSubdomain(
         rootHash,
@@ -218,7 +218,7 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // Restore token owner
-      await zns.domainToken.connect(lvl2SubOwner).transferFrom(lvl2SubOwner.address, rootOwner.address, rootHash);
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(lvl2SubOwner.address, rootOwner.address, rootHash);
 
       const balanceAfter = await zns.meowToken.balanceOf(rootOwner.address);
 
@@ -231,7 +231,7 @@ describe("ZNSSubRegistrar", () => {
       const balanceBefore = await zns.meowToken.balanceOf(lvl2SubOwner.address);
 
       // Give token to lvl2SubOwner
-      await zns.domainToken.connect(rootOwner).transferFrom(rootOwner.address, lvl2SubOwner.address, rootHash);
+      await zns.domainToken.connect(rootOwner).updateTokenOwner(rootOwner.address, lvl2SubOwner.address, rootHash);
 
       await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, true);
 
@@ -248,13 +248,59 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // Restore token owner
-      await zns.domainToken.connect(lvl2SubOwner).transferFrom(lvl2SubOwner.address, rootOwner.address, rootHash);
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(lvl2SubOwner.address, rootOwner.address, rootHash);
 
       await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, false);
 
       const balanceAfter = await zns.meowToken.balanceOf(lvl2SubOwner.address);
 
       expect(balanceAfter).to.not.eq(balanceBefore);
+    });
+
+    // eslint-disable-next-line max-len
+    it("Should revert if parent domain is locked, it's owner does not own BOTH and caller is this owner or operator", async () => {
+      const subdomain = "no-access";
+
+      // Lock parent domain
+      await zns.subRegistrar.connect(rootOwner).setAccessTypeForDomain(rootHash, AccessType.LOCKED);
+
+      // Give token to lvl2SubOwner
+      await zns.domainToken.connect(rootOwner).updateTokenOwner(rootOwner.address, lvl2SubOwner.address, rootHash);
+
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, true);
+
+      await expect(
+        zns.subRegistrar.connect(rootOwner).registerSubdomain(
+          rootHash,
+          subdomain,
+          rootOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        )
+      ).to.be.revertedWithCustomError(zns.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+          rootHash,
+          subdomain,
+          rootOwner.address,
+          subTokenURI,
+          distrConfigEmpty,
+          {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        )
+      ).to.be.revertedWithCustomError(zns.subRegistrar, DISTRIBUTION_LOCKED_NOT_EXIST_ERR);
+
+      // Restore token owner and remove operator and unlock the domain
+      await zns.domainToken.connect(lvl2SubOwner).updateTokenOwner(lvl2SubOwner.address, rootOwner.address, rootHash);
+      await zns.registry.connect(rootOwner).setOwnersOperator(lvl2SubOwner.address, false);
+      await zns.subRegistrar.connect(rootOwner).setAccessTypeForDomain(rootHash, AccessType.OPEN);
     });
 
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
@@ -336,7 +382,7 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
-          priceConfig: DEFAULT_PRICE_CONFIG,
+          priceConfig: curvePriceConfigEmpty,
         },
       });
 
@@ -477,8 +523,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
 
       // check that a random non-existent hash can NOT be passed as parentHash
@@ -493,8 +539,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
     });
 
@@ -1067,8 +1113,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1142,8 +1188,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
 
       const dataFromReg = await zns.registry.getDomainRecord(domainHash);
@@ -1385,8 +1431,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
 
       // register root back for other tests
@@ -1420,8 +1466,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfigEmpty,
         )
       ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
       );
     });
 
