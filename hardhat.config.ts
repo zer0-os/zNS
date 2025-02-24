@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
-require("dotenv").config();
-
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
+import { setDefaultEnvironment } from "./src/environment/set-env";
 
 
-import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
@@ -17,6 +15,12 @@ import "hardhat-gas-reporter";
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
 
+// This will set the default environment variables before running any hardhat scripts
+// most of this code relies on. This is needed to ensure that the default environment for tests is set
+// up correctly before running any scripts on any machine, including CI, and is not dependent
+// on the default environment variables set in the .env file.
+// The environment CAN still be overridden by the .env file, but this is the default setup.
+setDefaultEnvironment();
 
 subtask(TASK_TEST_RUN_MOCHA_TESTS)
   .setAction(async (args, hre, runSuper) => {
@@ -27,15 +31,6 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
     return testFailures;
   });
 
-// This call is needed to initialize Tenderly with Hardhat,
-// the automatic verifications, though, don't seem to work,
-// needing us to verify explicitly in code, however,
-// for Tenderly to work properly with Hardhat this method
-// needs to be called. The call below is commented out
-// because if we leave it here, solidity-coverage
-// does not work properly locally or in CI, so we
-// keep it commented out and uncomment when using DevNet
-// locally.
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -119,23 +114,11 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-    // meowtestnet: {
-    //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
-    //   accounts: [
-    //     `${process.env.DEPLOYER_PRIVATE_KEY}`,
-    //   ],
-    // },
   },
   // etherscan: {
   //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
   //   customChains: [
   //     {
-  //       network: "meowtestnet",
-  //       chainId: 883424730,
-  //       urls: {
-  //         apiURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/api/",
-  //         browserURL: "https://meowchain-testnet-blockscout.eu-north-2.gateway.fm/",
-  //       },
   //     },
   //   ],
   // },
@@ -143,10 +126,10 @@ const config : HardhatUserConfig = {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
   },
-  tenderly: {
-    project: `${process.env.TENDERLY_PROJECT_SLUG}`,
-    username: `${process.env.TENDERLY_ACCOUNT_ID}`,
-  },
+  // tenderly: {
+  //   project: `${process.env.TENDERLY_PROJECT_SLUG}`,
+  //   username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+  // },
   docgen: {
     pages: "files",
     templates: "docs/docgen-templates",
@@ -159,20 +142,6 @@ const config : HardhatUserConfig = {
       "oz-proxies/",
     ],
   },
-  // meowtestnet: {
-  //   url: `${process.env.MEOWTESTNET_RPC_URL}`,
-  //   chainId: 883424730,
-  //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
-  // `${process.env.DEPLOYER_PRIVATE_KEY}`,
-  // `${process.env.ZERO_VAULT_PRIVATE_KEY}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_A}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_B}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_C}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_D}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_E}`,
-  // `${process.env.TESTNET_PRIVATE_KEY_F}`,
-  //   ],
-  // },
 };
 
 export default config;
