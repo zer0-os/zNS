@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
-import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
-import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
-import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { AAccessControlled } from "../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
+import { IZNSTreasury, PaymentConfig } from "../../treasury/IZNSTreasury.sol";
+import { IZNSDomainToken } from "../../token/IZNSDomainToken.sol";
+import { IZNSAddressResolver } from "../../resolver/IZNSAddressResolver.sol";
+import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+import { IZNSPricer } from "../../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import { StringUtils } from "../../utils/StringUtils.sol";
+import { ZeroAddressPassed, DomainAlreadyExists } from "../../utils/CommonErrors.sol";
 
 
 /**
@@ -27,7 +27,7 @@ import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.so
  * @dev This contract is also called at the last stage of registering subdomains, since it has the common
  * logic required to be performed for any level domains.
  */
-contract ZNSRootRegistrar is
+contract ZNSRootRegistrarPostMigrationMock is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
@@ -94,7 +94,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override onlyAdmin returns (bytes32) {
+    ) external override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -182,7 +182,7 @@ contract ZNSRootRegistrar is
             registry.createDomainRecord(args.domainHash, args.registrant, "address");
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
-                .setAddress(args.domainHash, args.domainAddress);
+            .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.registrant, "");
