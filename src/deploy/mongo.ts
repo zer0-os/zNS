@@ -1,7 +1,8 @@
 import { exec } from "child_process";
-import { getLogger, getMongoAdapter, TLogger } from "@zero-tech/zdc";
+import { getMongoAdapter, TLogger } from "@zero-tech/zdc";
 import { promisify } from "util";
 import { getGitTag } from "../utils/git-tag/get-tag";
+import { getZnsLogger } from "./get-logger";
 
 
 const execAsync = promisify(exec);
@@ -25,7 +26,7 @@ export const getZnsMongoAdapter = async ({
 };
 
 export const startMongo = async () => {
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   try {
     exec("npm run mongo:start");
@@ -42,7 +43,7 @@ export const startMongo = async () => {
 };
 
 export const stopMongo = async () => {
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   try {
     await execAsync("npm run mongo:stop");

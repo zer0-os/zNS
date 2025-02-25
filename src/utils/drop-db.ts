@@ -1,8 +1,6 @@
-import { getLogger } from "@zero-tech/zdc";
 import { startMongo, stopMongo, getZnsMongoAdapter } from "../deploy/mongo";
+import { getZnsLogger } from "../deploy/get-logger";
 
-
-const logger = getLogger();
 
 export const dropDB = async () => {
   try {
@@ -18,6 +16,6 @@ export const dropDB = async () => {
 dropDB()
   .then(() => process.exit(0))
   .catch(error => {
-    logger.debug(error);
+    getZnsLogger().debug(error);
     process.exit(1);
   });
