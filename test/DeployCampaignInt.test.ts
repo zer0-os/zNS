@@ -815,7 +815,7 @@ describe("Deploy Campaign Test", () => {
         });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
-        expect(e.message).includes("Must provide a Mongo URI used for prod environment!");
+        expect(e.message).includes("Missing required environment variables:");
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
@@ -910,12 +910,17 @@ describe("Deploy Campaign Test", () => {
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
 
+      // we need to reset the adapter here so we can create a new one with new params
+      // from env vars, otherwise it will return the same adapter from previous deploy
+      resetMongoAdapter();
+
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
       });
 
-      expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
+      expect(newDbAdapter.versioner.curDbVersion).to.not.be.undefined;
+      expect(newDbAdapter.versioner.curDbVersion).to.not.equal(initialDBVersion);
 
       // get some data from new DB version
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
@@ -957,6 +962,9 @@ describe("Deploy Campaign Test", () => {
       // set archiving for the new mongo adapter
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
+
+      // reset adapter to create new with new params from env vars
+      resetMongoAdapter();
 
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({

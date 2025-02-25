@@ -182,7 +182,6 @@ describe("ZNSStringResolver", () => {
   });
 
   describe("New campaign for each test", () => {
-
     let deployer : SignerWithAddress;
     let zeroVault : SignerWithAddress;
     let operator : SignerWithAddress;
@@ -212,7 +211,6 @@ describe("ZNSStringResolver", () => {
     let mongoAdapter : MongoDBAdapter;
 
     beforeEach(async () => {
-
       [
         deployer,
         zeroVault,
@@ -255,8 +253,11 @@ describe("ZNSStringResolver", () => {
       await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
     });
 
-    it("Should not allow non-owner address to setString (similar domain and string)", async () => {
+    afterEach(async () => {
+      await mongoAdapter.dropDB();
+    });
 
+    it("Should not allow non-owner address to setString (similar domain and string)", async () => {
       const curStringDomain = "shouldbrake";
 
       await registrationWithSetup({
