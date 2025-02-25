@@ -144,7 +144,6 @@ export const validateEnv = (
     envLevel = env;
   }
 
-  // TODO v1.5: check if there are tests for this on other branches
   findMissingEnvVars();
 
   // Validate price config first since we have to return it
@@ -218,7 +217,6 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  // TODO v1.5: FIX ENV VAR NAME !
   const curveMultiplier =
     process.env.CURVE_MULTIPLIER
       ? BigInt(process.env.CURVE_MULTIPLIER)
