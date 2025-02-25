@@ -9,6 +9,30 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
+
+    // TODO TEMP DELETE after migration
+    struct SubBulkMigrationArgs {
+        address domainToken; // DomainToken contract for transfers
+        address[] tokenOwners;
+        address[] recordOwners;
+        bytes32[] parentHashes;
+        string[] labels;
+        address[] domainAddresses;
+        string[] tokenURIs;
+        DistributionConfig[] distributionConfigs;
+        PaymentConfig[] paymentConfigs;
+    }
+
+    struct RegisterSubdomainArgs {
+        bytes32 parentHash;
+        string label;
+        address domainAddress;
+        address recordOwner;
+        string tokenURI;
+        DistributionConfig distrConfig;
+        PaymentConfig paymentConfig;
+    }
+
     /**
      * @notice Reverted when someone other than parent owner is trying to buy 
      a subdomain under the parent that is locked\
@@ -91,12 +115,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        RegisterSubdomainArgs calldata args
     ) external returns (bytes32);
 
     function hashWithParent(

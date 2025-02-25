@@ -38,7 +38,9 @@ export const runZnsCampaign = async ({
     });
   }
 
+
   const dbAdapter = await getZnsMongoAdapter();
+  // console.log("here2")
 
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,

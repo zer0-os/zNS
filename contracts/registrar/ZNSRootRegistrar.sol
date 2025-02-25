@@ -13,6 +13,10 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
+// import { BulkMigrationArgs } from "./IZNSRootRegistrar.sol"; 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -69,6 +73,31 @@ contract ZNSRootRegistrar is
         setDomainToken(domainToken_);
     }
 
+    function registerRootDomainBulk(
+        RootBulkMigrationArgs calldata args
+    ) public onlyAdmin {
+        // Expect all arrays are the same length
+        for (uint256 i = 0; i < args.names.length;) {
+            bytes32 domainHash = registerRootDomain(
+                args.names[i],
+                args.domainAddresses[i],
+                args.tokenURIs[i],
+                args.distributionConfigs[i],
+                args.paymentConfigs[i]
+            );
+
+            // Transfer ERC721 to domain token owner
+            domainToken.transferFrom(msg.sender, args.tokenOwners[i], uint256(domainHash));
+
+            // Update the domain record in the registry with the proper record owner
+            registry.updateDomainOwnerForMigration(domainHash, args.recordOwners[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     /**
      * @notice This function is the main entry point for the Register Root Domain flow.
      * Registers a new root domain such as `0://wilder`.
@@ -94,7 +123,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) public override onlyAdmin returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -164,6 +193,7 @@ contract ZNSRootRegistrar is
         CoreRegisterArgs memory args
     ) internal {
         // payment part of the logic
+        // TODO uncomment after migration
         if (args.price > 0) {
             _processPayment(args);
         }
