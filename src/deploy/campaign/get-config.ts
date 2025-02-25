@@ -221,7 +221,7 @@ const getValidateRootPriceConfig = () => {
   // TODO v1.5: FIX ENV VAR NAME !
   const curveMultiplier =
     process.env.CURVE_MULTIPLIER
-      ? ethers.parseEther(process.env.CURVE_MULTIPLIER)
+      ? BigInt(process.env.CURVE_MULTIPLIER)
       : DEFAULT_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
