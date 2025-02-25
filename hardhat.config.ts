@@ -2,7 +2,7 @@
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 import { setDefaultEnvironment } from "./src/environment/set-env";
 
-
+import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
@@ -126,10 +126,10 @@ const config : HardhatUserConfig = {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,
   },
-  // tenderly: {
-  //   project: `${process.env.TENDERLY_PROJECT_SLUG}`,
-  //   username: `${process.env.TENDERLY_ACCOUNT_ID}`,
-  // },
+  tenderly: {
+    project: `${process.env.TENDERLY_PROJECT_SLUG}`,
+    username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+  },
   docgen: {
     pages: "files",
     templates: "docs/docgen-templates",

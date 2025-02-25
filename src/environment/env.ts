@@ -44,7 +44,6 @@ export const environment : IZNSEnvironment = {
   MOCK_MEOW_TOKEN: "true",
   STAKING_TOKEN_ADDRESS: "",
   // CurvePricer Config [without decimals!]
-  // TODO multi: check defaults for the new formula and update !!!
   MAX_PRICE: "25000",
   CURVE_MULTIPLIER: "1000",
   MAX_LENGTH: "50",

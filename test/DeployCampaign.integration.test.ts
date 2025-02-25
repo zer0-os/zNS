@@ -3,7 +3,7 @@ import {
 } from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
@@ -30,7 +30,7 @@ describe("zNS + zDC Single Integration Test", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IZNSCampaignConfig<SignerWithAddress>;
+  let config : IZNSCampaignConfig;
 
   let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;

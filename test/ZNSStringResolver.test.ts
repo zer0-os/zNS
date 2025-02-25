@@ -23,7 +23,7 @@ import {
 } from "../typechain";
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContractsLocal } from "./helpers/types";
 
 
@@ -42,7 +42,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
     let rootRegistrar : ZNSRootRegistrar;
@@ -197,7 +197,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
     let accessController : ZNSAccessController;

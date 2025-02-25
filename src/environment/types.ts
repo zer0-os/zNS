@@ -1,5 +1,8 @@
+import { TEnvironment } from "@zero-tech/zdc";
+
+
 export interface IZNSEnvironment {
-  ENV_LEVEL : string;
+  ENV_LEVEL : TEnvironment;
   CONFIRMATION_N ?: string;
   MAINNET_RPC_URL ?: string;
   SEPOLIA_RPC_URL ?: string;
