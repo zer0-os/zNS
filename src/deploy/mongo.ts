@@ -11,9 +11,19 @@ const execAsync = promisify(exec);
 export const getZnsMongoAdapter = async ({
   contractsVersion,
   logger,
+  dbUri = process.env.MONGO_DB_URI,
+  dbName = process.env.MONGO_DB_NAME,
+  dbVersion = process.env.MONGO_DB_VERSION,
+  archiveDb = process.env.ARCHIVE_PREVIOUS_DB_VERSION === "true",
+  clientOpts = !process.env.MONGO_DB_CLIENT_OPTS ? undefined : JSON.parse(process.env.MONGO_DB_CLIENT_OPTS),
 } : {
   contractsVersion ?: string;
   logger ?: TLogger;
+  dbUri ?: string;
+  dbName ?: string;
+  dbVersion ?: string;
+  archiveDb ?: boolean;
+  clientOpts ?: Record<string, unknown>;
 } = {}) => {
   if (!contractsVersion) {
     contractsVersion = getGitTag();
@@ -22,6 +32,11 @@ export const getZnsMongoAdapter = async ({
   return getMongoAdapter({
     logger,
     contractsVersion,
+    dbUri,
+    dbName,
+    dbVersion,
+    archiveDb,
+    clientOpts,
   });
 };
 
