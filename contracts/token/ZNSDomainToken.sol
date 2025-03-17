@@ -192,7 +192,7 @@ contract ZNSDomainToken is
     /**
      * @notice We override the standard transfer function to update the owner for both the `registry` and `token`
      * This non-standard transfer is to behave similarly to the default transfer that only updates the `token`
-     * 
+     *
      * @param from Owner of the token
      * @param to Address to send the token to
      * @param tokenId The token being transferred
@@ -203,7 +203,7 @@ contract ZNSDomainToken is
 
     /**
      * @notice Override the standard transferFrom function to update the owner for both the `registry` and `token`
-     * 
+     *
      * @dev See {IERC721-transferFrom}
      */
     function transferFrom(
@@ -213,7 +213,8 @@ contract ZNSDomainToken is
     ) public override(ERC721Upgradeable, IERC721) {
         // Transfer the token
         super.transferFrom(from, to, tokenId);
-        
+
+        // TODO v1.5: do we need to clear the mintlist (update ownerIdx) here so it's not inherited by the new owner?
         // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here
         // We `encodePacked` here to ensure that any values that result in leading zeros are converted correctly
