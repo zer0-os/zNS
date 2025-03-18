@@ -46,7 +46,6 @@ import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants
 import { getProxyImplAddress } from "../utils";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
-import { transparentProxyName } from "../../../src/deploy/missions/contracts/names";
 
 
 export const deployAccessController = async ({
@@ -75,7 +74,7 @@ export const deployAccessController = async ({
     console.log(`AccessController deployed at: ${proxyAddress}`);
   }
 
-  return controller as unknown as ZNSAccessController;
+  return controller as ZNSAccessController;
 };
 
 export const deployRegistry = async (
@@ -195,7 +194,7 @@ export const deployMeowToken = async (
   // Mint 10,000 ZERO for self
   await meowToken.mint(tokenAddress, ethers.parseEther("10000"));
 
-  return meowToken as unknown as ERC20Mock;
+  return meowToken;
 };
 
 export const deployAddressResolver = async (

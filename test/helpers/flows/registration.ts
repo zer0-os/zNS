@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow, @typescript-eslint/no-shadow */
 import { IDomainConfigForTest, IPathRegResult, IZNSContractsLocal } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { ethers } from "ethers";

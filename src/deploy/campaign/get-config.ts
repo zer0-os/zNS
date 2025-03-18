@@ -2,7 +2,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
-  DEFAULT_ROYALTY_FRACTION,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
