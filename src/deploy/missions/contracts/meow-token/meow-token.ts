@@ -18,7 +18,7 @@ export const meowTokenSymbol = "MEOW";
 export class MeowTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -31,7 +31,7 @@ IZNSContracts
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  IZNSCampaignConfig<SignerWithAddress>,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);
@@ -64,7 +64,7 @@ IZNSContracts
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
       const factory = new ZToken__factory(this.config.deployAdmin);
-      const baseContract = factory.attach(this.config.stakingTokenAddress);
+      const baseContract = factory.attach(this.config.stakingTokenAddress as string);
 
       await this.saveToDB(baseContract);
 

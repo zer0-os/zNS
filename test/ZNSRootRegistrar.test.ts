@@ -31,7 +31,7 @@ import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
+import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
   ZNSRootRegistrar,
@@ -42,7 +42,7 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
 

@@ -2102,12 +2102,12 @@
   resolved "https://registry.yarnpkg.com/@zero-tech/z-token/-/z-token-1.0.0.tgz#ba56c7e269e399e029cca69d1d54357220a2d08f"
   integrity sha512-hbUmgKZ6G4Z4dLzvI0SR5n/O6OaWpWh2utG5DHDZZd6P6G5HBdeELUKVVQxecTsPQY0GnVvevxaEoLBMcyW9Xw==
 
-"@zero-tech/zdc@0.1.6":
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/@zero-tech/zdc/-/zdc-0.1.6.tgz#131d13a128c494b7b5d32c208f3afdb775bf3ba2"
-  integrity sha512-BemYIVUs95pk0fx/otWbtLGiCJyor0SNmNKH/46iNXoSzYdeCbPFx05GsXjAE6yhu9buwHybdDRXjSj/YcQpXg==
+"@zero-tech/zdc@0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@zero-tech/zdc/-/zdc-0.2.0.tgz#9b785a79a3d22b44cbdd927355614631d5b51e87"
+  integrity sha512-kg23UFuBt1fhEi8s5h5u498fq689MEey1W8IgwhqMqboj4HJPPJEin7i7ldwQPEr9YSIFMDL+dBsNJnOYOHTsw==
   dependencies:
-    axios "^1.6.5"
+    axios "1.7.4"
     mongodb "^6.3.0"
     winston "^3.11.0"
 
@@ -2525,6 +2525,15 @@ available-typed-arrays@^1.0.7:
   dependencies:
     possible-typed-array-names "^1.0.0"
 
+axios@1.7.4:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.4.tgz#4c8ded1b43683c8dd362973c393f3ede24052aa2"
+  integrity sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==
+  dependencies:
+    follow-redirects "^1.15.6"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
+
 axios@^0.21.1:
   version "0.21.4"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.4.tgz#c67b90dc0568e5c1cf2b0b858c43ba28e2eda575"
@@ -2540,7 +2549,7 @@ axios@^0.27.2:
     follow-redirects "^1.14.9"
     form-data "^4.0.0"
 
-axios@^1.5.1, axios@^1.6.5, axios@^1.6.7, axios@^1.7.2:
+axios@^1.5.1, axios@^1.6.7, axios@^1.7.2:
   version "1.7.7"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.7.tgz#2f554296f9892a72ac8d8e4c5b79c14a91d0a47f"
   integrity sha512-S4kL7XrjgBmvdGut0sN3yJxqYzrDOnivkBiN0OFs6hLiUam3UPvswUo0kqGyhqUZGEOytHyumEdXsAkgCOUf3Q==

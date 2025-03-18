@@ -11,7 +11,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 export class ZNSFixedPricerDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
