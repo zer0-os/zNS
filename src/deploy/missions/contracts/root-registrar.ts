@@ -6,14 +6,13 @@ import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
 import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContracts } from "../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

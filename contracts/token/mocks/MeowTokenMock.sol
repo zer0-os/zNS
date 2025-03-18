@@ -1,13 +1,29 @@
 // SPDX-License-Identifier: MIT
-/* solhint-disable */
-pragma solidity 0.8.3;
+pragma solidity 0.8.26;
 
-import { MeowToken } from "@zero-tech/ztoken/contracts/MeowToken.sol";
-import { MeowTokenTest } from "@zero-tech/ztoken/contracts/MeowTokenTest.sol";
+import { ZToken } from "@zero-tech/z-token/contracts/ZToken.sol";
 
 
-contract MeowTokenMock is MeowToken {
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
-    }
+contract MeowTokenMock is ZToken {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _defaultAdmin,
+        uint48 _initialAdminDelay, // without the decimal part!
+        address _minter,
+        address _mintBeneficiary,
+        uint256 _initialSupplyBase,
+        uint16[] memory _inflationRates,
+        uint16 _finalInflationRate
+    ) ZToken(
+        _name,
+        _symbol,
+        _defaultAdmin,
+        _initialAdminDelay,
+        _minter,
+        _mintBeneficiary,
+        _initialSupplyBase,
+        _inflationRates,
+        _finalInflationRate
+    ) {}
 }

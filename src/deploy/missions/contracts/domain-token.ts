@@ -2,18 +2,17 @@ import {
   BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../constants";
+import { DOMAIN_TOKEN_ROLE, ProxyKinds } from "../../constants";
 import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
 export class ZNSDomainTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
@@ -25,7 +24,7 @@ IZNSContracts
   instanceName = znsNames.domainToken.instance;
 
   async deployArgs () : Promise<TDeployArgs> {
-    const { accessController } = this.campaign;
+    const { accessController, registry } = this.campaign;
     const {
       domainToken: {
         name,
@@ -33,8 +32,49 @@ IZNSContracts
         defaultRoyaltyReceiver,
         defaultRoyaltyFraction,
       },
-    } = this.config as IZNSCampaignConfig<SignerWithAddress>;
+    } = this.config;
 
-    return [ await accessController.getAddress(), name, symbol, defaultRoyaltyReceiver, defaultRoyaltyFraction ];
+    return [
+      await accessController.getAddress(),
+      name,
+      symbol,
+      defaultRoyaltyReceiver,
+      defaultRoyaltyFraction,
+      await registry.getAddress(),
+    ];
+  }
+
+  async needsPostDeploy () {
+    const {
+      accessController,
+      domainToken,
+      config: { deployAdmin },
+    } = this.campaign;
+
+    const isDomainToken = await accessController
+      .connect(deployAdmin)
+      .isDomainToken(await domainToken.getAddress());
+
+    const msg = !isDomainToken ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
+    return !isDomainToken;
+  }
+
+  async postDeploy () {
+    const {
+      accessController,
+      domainToken,
+      config: {
+        deployAdmin,
+      },
+    } = this.campaign;
+
+    await accessController
+      .connect(deployAdmin)
+      .grantRole(DOMAIN_TOKEN_ROLE, await domainToken.getAddress());
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
 }

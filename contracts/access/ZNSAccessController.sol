@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IZNSAccessController } from "./IZNSAccessController.sol";
 import { ZNSRoles } from "./ZNSRoles.sol";
+import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -33,6 +34,8 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
         // all of the admins control registrar
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
+        // all of the admins control domain token
+        _setRoleAdmin(DOMAIN_TOKEN_ROLE, ADMIN_ROLE);
     }
 
     // ** Access Validators **
@@ -53,6 +56,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _checkRole(REGISTRAR_ROLE, account);
     }
 
+    function checkDomainToken(address account) external view override {
+        _checkRole(DOMAIN_TOKEN_ROLE, account);
+    }
+
     // "is...()" functions return a boolean
     function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
@@ -60,6 +67,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
 
     function isRegistrar(address account) external view override returns (bool) {
         return hasRole(REGISTRAR_ROLE, account);
+    }
+
+    function isDomainToken(address account) external view override returns (bool) {
+        return hasRole(DOMAIN_TOKEN_ROLE, account);
     }
 
     function isGovernor(address account) external view override returns (bool) {
@@ -77,10 +88,8 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     function _grantRoleToMany(bytes32 role, address[] memory addresses) internal {
         uint256 length = addresses.length;
         for (uint256 i = 0; i < length; ++i) {
-            require(
-                addresses[i] != address(0),
-                "ZNSAccessController: Can't grant role to zero address"
-            );
+            if (addresses[i] == address(0)) revert ZeroAddressPassed();
+
             _grantRole(role, addresses[i]);
         }
     }
