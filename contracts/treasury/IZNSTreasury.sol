@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/**
+/** 
  * @notice The `PaymentConfig` struct describes the two pieces of information
  * needed to create a payment configuration for a domain. The address of the
  * user to send funds to in a sale, and what token those funds are in.
@@ -26,10 +26,9 @@ struct PaymentConfig {
  *      + `amount`: The amount of the staking token above deposited by the user
 */
 interface IZNSTreasury {
-    error NoBeneficiarySetForParent(bytes32 domainHash);
 
     /**
-     * @notice Describe a stake for a domain. This could be
+     * @notice Describe a stake for a domain. This could be 
      * in any ERC20 token so the address of the specific token
      * as well as the amount is required.
      */

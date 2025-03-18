@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -37,8 +36,10 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
-        if (!isOwnerOrOperator(domainHash, msg.sender))
-            revert NotAuthorizedForDomain(msg.sender, domainHash);
+        require(
+            isOwnerOrOperator(domainHash, msg.sender),
+            "ZNSRegistry: Not authorized"
+        );
         _;
     }
 
@@ -47,8 +48,10 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwner(bytes32 domainHash) {
-        if (records[domainHash].owner != msg.sender)
-            revert NotAuthorizedForDomain(msg.sender, domainHash);
+        require(
+            records[domainHash].owner == msg.sender,
+            "ZNSRegistry: Not the Name Owner"
+        );
         _;
     }
 
@@ -180,7 +183,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Add a new resolver type option to the mapping of types
-     * This function can also be used to update the resolver mapping for an existing resolver
+     * This function can also be used to update the resolver mapping for an existing resolver 
      * simple by using an existing key like "address" with a new address
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract
@@ -231,11 +234,11 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner
     ) external override {
-        if (
-            msg.sender != records[domainHash].owner &&
-            !accessController.isRegistrar(msg.sender) && 
-            !accessController.isDomainToken(msg.sender)
-        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
+        require(
+            msg.sender == records[domainHash].owner ||
+            accessController.isRegistrar(msg.sender),
+            "ZNSRegistry: Only Name Owner or Registrar allowed to call"
+        );
 
         _setDomainOwner(domainHash, owner);
     }
@@ -283,7 +286,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @param owner The owner to set
      */
     function _setDomainOwner(bytes32 domainHash, address owner) internal {
-        if (owner == address(0)) revert ZeroAddressPassed();
+        require(owner != address(0), "ZNSRegistry: Owner cannot be zero address");
         records[domainHash].owner = owner;
         emit DomainOwnerSet(domainHash, owner);
     }

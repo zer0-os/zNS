@@ -3,12 +3,13 @@ import {
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
+import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
-import { ZToken__factory } from "../../../../../typechain";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { IZNSContracts } from "../../../campaign/types";
 
 
 export const meowTokenName = "MEOW";
@@ -18,11 +19,12 @@ export const meowTokenSymbol = "MEOW";
 export class MeowTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig,
+DefenderRelayProvider,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: false,
+    isProxy: true,
+    kind: ProxyKinds.transparent,
   };
 
   contractName = znsNames.meowToken.contract;
@@ -31,7 +33,7 @@ IZNSContracts
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  IZNSCampaignConfig,
+  DefenderRelayProvider,
   IZNSContracts
   >) {
     super(args);
@@ -63,8 +65,10 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const factory = new ZToken__factory(this.config.deployAdmin);
-      const baseContract = factory.attach(this.config.stakingTokenAddress as string);
+      const baseContract = await this.campaign.deployer.getContractObject(
+        this.contractName,
+        this.config.stakingTokenAddress as string,
+      );
 
       await this.saveToDB(baseContract);
 
@@ -86,7 +90,7 @@ IZNSContracts
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken ;
+    return this.config.mockMeowToken as boolean;
   }
 
   async postDeploy () {

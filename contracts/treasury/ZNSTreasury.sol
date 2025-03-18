@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -8,7 +8,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { PaymentConfig } from "./IZNSTreasury.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -63,8 +62,14 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
-        if (paymentToken_ == address(0) || zeroVault_ == address(0))
-            revert ZeroAddressPassed();
+        require(
+            paymentToken_ != address(0),
+            "ZNSTreasury: paymentToken_ passed as 0x0 address"
+        );
+        require(
+            zeroVault_ != address(0),
+            "ZNSTreasury: zeroVault_ passed as 0x0 address"
+        );
 
         paymentConfigs[0x0] = PaymentConfig({
             token: IERC20(paymentToken_),
@@ -115,8 +120,10 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // transfer stake fee to the parent beneficiary if it's > 0
         if (stakeFee > 0) {
-            if (parentConfig.beneficiary == address(0))
-                revert NoBeneficiarySetForParent(parentHash);
+            require(
+                parentConfig.beneficiary != address(0),
+                "ZNSTreasury: parent domain has no beneficiary set"
+            );
 
             parentConfig.token.safeTransfer(
                 parentConfig.beneficiary,
@@ -199,8 +206,10 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     ) external override onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
-        if (parentConfig.beneficiary == address(0))
-            revert NoBeneficiarySetForParent(parentHash);
+        require(
+            parentConfig.beneficiary != address(0),
+            "ZNSTreasury: parent domain has no beneficiary set"
+        );
 
         // Transfer payment to parent beneficiary from payer
         parentConfig.token.safeTransferFrom(
@@ -236,11 +245,10 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
     ) external override {
-        if (
-            !registry.isOwnerOrOperator(domainHash, msg.sender)
-            && !accessController.isRegistrar(msg.sender)
-        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
-
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender) || accessController.isRegistrar(msg.sender),
+            "ZNSTreasury: Not authorized."
+        );
         _setBeneficiary(domainHash, paymentConfig.beneficiary);
         _setPaymentToken(domainHash, address(paymentConfig.token));
     }
@@ -283,16 +291,14 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     function _setBeneficiary(bytes32 domainHash, address beneficiary) internal {
-        if (beneficiary == address(0))
-            revert ZeroAddressPassed();
+        require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
 
         paymentConfigs[domainHash].beneficiary = beneficiary;
         emit BeneficiarySet(domainHash, beneficiary);
     }
 
     function _setPaymentToken(bytes32 domainHash, address paymentToken) internal {
-        if (paymentToken == address(0))
-            revert ZeroAddressPassed();
+        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
 
         paymentConfigs[domainHash].token = IERC20(paymentToken);
         emit PaymentTokenSet(domainHash, paymentToken);

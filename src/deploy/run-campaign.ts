@@ -1,12 +1,23 @@
-import { getConfig } from "./campaign/get-config";
+import { getConfig } from "./campaign/environments";
 import { runZnsCampaign } from "./zns-campaign";
-import * as hre from "hardhat";
+import { Defender } from "@openzeppelin/defender-sdk";
+import { getLogger } from "@zero-tech/zdc";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getZnsLogger } from "./get-logger";
 
+const logger = getLogger();
 
 const runCampaign = async () => {
-  const [ deployer ] = await hre.ethers.getSigners();
+  const credentials = {
+    apiKey: process.env.DEFENDER_KEY,
+    apiSecret: process.env.DEFENDER_SECRET,
+    relayerApiKey: process.env.RELAYER_KEY,
+    relayerApiSecret: process.env.RELAYER_SECRET,
+  };
+
+  const client = new Defender(credentials);
+
+  const provider = client.relaySigner.getProvider();
+  const deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
 
   const config = await getConfig({
     deployer: deployer as unknown as SignerWithAddress,
@@ -14,11 +25,11 @@ const runCampaign = async () => {
 
   await runZnsCampaign({
     config,
+    provider,
   });
 };
 
 runCampaign().catch(error => {
-  const logger = getZnsLogger();
   logger.error(error.stack);
   process.exit(1);
 }).finally(() => {

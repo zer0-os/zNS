@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -68,10 +67,11 @@ contract ZNSAddressResolver is
     ) external override {
         // only owner or operator of the current domain can set the address
         // also, ZNSRootRegistrar.sol can set the address as part of the registration process
-        if (
-            !registry.isOwnerOrOperator(domainHash, msg.sender) &&
-            !accessController.isRegistrar(msg.sender)
-        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
+        require(
+            registry.isOwnerOrOperator(domainHash, msg.sender) ||
+            accessController.isRegistrar(msg.sender),
+            "ZNSAddressResolver: Not authorized for this domain"
+        );
 
         domainAddresses[domainHash] = newAddress;
 

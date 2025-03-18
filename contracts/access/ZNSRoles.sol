@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 
 /**
@@ -21,11 +21,6 @@ abstract contract ZNSRoles {
      * @notice This role is here specifically for the ZNSRootRegistrar.sol contract
      */
     bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
-
-    /**
-     * @notice This role is here specifically for the ZNSDomainToken.sol contract
-     */
-    bytes32 public constant DOMAIN_TOKEN_ROLE = keccak256("DOMAIN_TOKEN_ROLE");
 
     /**
      * @notice Executor can be here to future proof, if we need a new role

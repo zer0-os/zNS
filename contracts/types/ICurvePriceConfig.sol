@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 
 /**
  * @dev **`CurvePriceConfig` struct properties:**
  *
  * - `maxPrice` (uint256): Maximum price for a domain returned at <= `baseLength`
- * - `maxLength` (uint256): Maximum length of a domain name. If the name is longer -
- * we return the price that was at the `maxLength`.
+ * - `minPrice` (uint256): Minimum price for a domain returned at > `maxLength`
+ * - `maxLength` (uint256): Maximum length of a domain name. If the name is longer - we return the `minPrice`
  * - `baseLength` (uint256): Base length of a domain name. If the name is shorter or equal - we return the `maxPrice`
  * - `precisionMultiplier` (uint256): The precision multiplier of the price. This multiplier
  * should be picked based on the number of token decimals to calculate properly.
@@ -25,12 +25,12 @@ interface ICurvePriceConfig {
         */
         uint256 maxPrice;
         /**
-         * @notice Multiplier which we use to bend a curve of price on interval from `baseLength` to `maxLength`.
+         * @notice Minimum price for a domain returned at > `maxLength`
          */
-        uint256 curveMultiplier;
+        uint256 minPrice;
         /**
          * @notice Maximum length of a domain name. If the name is longer than this
-         * value we return the price that was at the `maxLength`
+         * value we return the `minPrice`
          */
         uint256 maxLength;
         /**

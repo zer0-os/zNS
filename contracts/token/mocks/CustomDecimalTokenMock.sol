@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 // solhint-disable
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -9,9 +9,9 @@ contract CustomDecimalTokenMock is ERC20 {
 
     uint256 private _totalSupplyBase = 10000000000000000000000;
 
-    constructor(address owner_, uint256 decimals_) ERC20("VariedDecimalTokenMock", "VDTM") {
-        _decimals = uint8(decimals_);
-        _mint(owner_, totalSupply());
+    constructor(address owner, uint256 decimals) ERC20("VariedDecimalTokenMock", "VDTM") {
+        _decimals = uint8(decimals);
+        _mint(owner, totalSupply());
     }
 
     function decimals() public view override returns (uint8) {

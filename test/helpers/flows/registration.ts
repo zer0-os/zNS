@@ -1,4 +1,3 @@
-/* eslint-disable no-shadow, @typescript-eslint/no-shadow */
 import { IDomainConfigForTest, IPathRegResult, IZNSContractsLocal } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { ethers } from "ethers";
@@ -120,7 +119,7 @@ export const validatePathRegistration = async ({
 
     const {
       maxPrice: curveMaxPrice,
-      curveMultiplier,
+      minPrice: curveMinPrice,
       maxLength: curveMaxLength,
       baseLength: curveBaseLength,
       precisionMultiplier: curvePrecisionMultiplier,
@@ -137,7 +136,7 @@ export const validatePathRegistration = async ({
         domainLabel,
         {
           maxPrice: curveMaxPrice,
-          curveMultiplier,
+          minPrice: curveMinPrice,
           maxLength: curveMaxLength,
           baseLength: curveBaseLength,
           precisionMultiplier: curvePrecisionMultiplier,
@@ -161,7 +160,7 @@ export const validatePathRegistration = async ({
       } else {
         const {
           maxPrice,
-          curveMultiplier,
+          minPrice,
           maxLength,
           baseLength,
           precisionMultiplier,
@@ -175,7 +174,7 @@ export const validatePathRegistration = async ({
           domainLabel,
           {
             maxPrice,
-            curveMultiplier,
+            minPrice,
             maxLength,
             baseLength,
             precisionMultiplier,

@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: MIT
-// Forked from:
+// Source:
 // https://github.com/ensdomains/ens-contracts/blob/master/contracts/ethregistrar/StringUtils.sol
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 
 library StringUtils {
-    error DomainLabelTooLongOrNonexistent(string label);
-
-    error DomainLabelContainsInvalidCharacters(string label);
-
     /**
      * @dev Returns the length of a given string
      *
@@ -48,14 +44,21 @@ library StringUtils {
 
         // solhint-disable-next-line var-name-mixedcase
         uint256 MAX_INT = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-        if (length == 0 || length >= MAX_INT)
-            revert DomainLabelTooLongOrNonexistent(s);
+        require(
+            length > 0 && length < MAX_INT,
+            "StringUtils: Domain label too long or nonexistent"
+        );
 
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             bytes1 b = nameBytes[i];
             // Valid strings are lower case a-z, 0-9, or a hyphen
-            if (!((b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D))
-                revert DomainLabelContainsInvalidCharacters(s);
+            require(
+                (b > 0x60 && b < 0x7B) || (b > 0x2F && b < 0x3A) || b == 0x2D,
+                "StringUtils: Invalid domain label"
+            );
+            unchecked {
+                ++i;
+            }
         }
     }
 }

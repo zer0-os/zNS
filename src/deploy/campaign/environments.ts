@@ -2,11 +2,13 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
+  DEFAULT_ROYALTY_FRACTION,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
-  DEFAULT_PRECISION,
+  DECAULT_PRECISION,
   DEFAULT_PRICE_CONFIG,
+  getCurvePrice,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
@@ -15,10 +17,7 @@ import {
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { MEOWzChainData } from "../missions/contracts/meow-token/mainnet-data";
-import { EnvironmentLevels, TEnvironment } from "@zero-tech/zdc";
-import { findMissingEnvVars } from "../../environment/validate";
-import { SupportedChains } from "../constants";
+import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
 
 
 const getCustomAddresses = (
@@ -65,8 +64,8 @@ export const getConfig = async ({
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
-  env ?: TEnvironment;
-}) : Promise<IZNSCampaignConfig> => {
+  env ?: string;
+}) : Promise<IZNSCampaignConfig<SignerWithAddress>> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
@@ -77,24 +76,20 @@ export const getConfig = async ({
     deployerAddress = await deployer.getAddress();
   }
 
-  let zeroVaultAddressConf;
-
-  if (process.env.ENV_LEVEL === EnvironmentLevels.dev) {
-    requires(
-      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
-      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
-    );
-    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
-  } else {
-    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+  if (process.env.ENV_LEVEL === "dev") {
+    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
   }
 
-  // Domain Token Values
-  const royaltyReceiver = process.env.ENV_LEVEL !== EnvironmentLevels.dev
-    ? process.env.ROYALTY_RECEIVER
-    : zeroVaultAddressConf;
+  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
+    ? zeroVaultAddress!
+    : process.env.ZERO_VAULT_ADDRESS!;
 
-  const royaltyFraction = BigInt(process.env.ROYALTY_FRACTION);
+  // Domain Token Values
+  const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
+  const royaltyFraction =
+    process.env.ROYALTY_FRACTION
+      ? BigInt(process.env.ROYALTY_FRACTION)
+      : DEFAULT_ROYALTY_FRACTION;
 
   // Get governor addresses set through env, if any
   const governorAddresses = getCustomAddresses("GOVERNOR_ADDRESSES", deployerAddress, governors);
@@ -102,25 +97,23 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IZNSCampaignConfig = {
-    env: process.env.ENV_LEVEL,
-    confirmationsN: Number(process.env.CONFIRMATION_N),
-    srcChainName: SupportedChains.z,
+  const config : IZNSCampaignConfig<SignerWithAddress> = {
+    env: process.env.ENV_LEVEL!,
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver as string,
+      defaultRoyaltyReceiver: royaltyReceiver,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf as string,
+    zeroVaultAddress: zeroVaultAddressConf,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS,
+    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
-      tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG || "",
+      tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG!,
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",
       verifyContracts: process.env.VERIFY_CONTRACTS === "true",
     },
@@ -131,10 +124,10 @@ export const getConfig = async ({
 
 // For testing the behaviour when we manipulate, we have an optional "env" string param
 export const validateEnv = (
-  env ?: TEnvironment, // this is ONLY used for tests!
+  env ?: string, // this is ONLY used for tests!
 ) : ICurvePriceConfig => {
   // Prioritize reading from the env variable first, and only then fallback to the param
-  let envLevel = process.env.ENV_LEVEL ;
+  let envLevel = process.env.ENV_LEVEL;
 
   if (env) {
     // We only ever specify an `env` param in tests
@@ -143,20 +136,18 @@ export const validateEnv = (
     envLevel = env;
   }
 
-  findMissingEnvVars();
-
   // Validate price config first since we have to return it
   const priceConfig = getValidateRootPriceConfig();
 
-  if (envLevel === EnvironmentLevels.dev) return priceConfig;
+  if (envLevel === "dev") return priceConfig;
 
-  if (envLevel === EnvironmentLevels.test || envLevel === EnvironmentLevels.dev) {
+  if (envLevel === "test" || envLevel === "dev") {
     if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
       throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
     }
   }
 
-  if (envLevel !== EnvironmentLevels.test && envLevel !== EnvironmentLevels.prod) {
+  if (envLevel !== "test" && envLevel !== "prod") {
     // If we reach this code, there is an env variable, but it's not valid.
     throw new Error(INVALID_ENV_ERR);
   }
@@ -176,9 +167,9 @@ export const validateEnv = (
   requires(!!process.env.ZERO_VAULT_ADDRESS, NO_ZERO_VAULT_ERR);
 
   // Mainnet
-  if (envLevel === EnvironmentLevels.test) {
+  if (envLevel === "prod") {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MEOWzChainData.address, STAKING_TOKEN_ERR);
+    requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
   }
 
@@ -197,10 +188,10 @@ export const validateEnv = (
 
 const getValidateRootPriceConfig = () => {
 
-  if (process.env.ENV_LEVEL === EnvironmentLevels.test) {
+  if (process.env.ENV_LEVEL === "prod") {
     requires(
       !!process.env.MAX_PRICE
-      && !!process.env.CURVE_MULTIPLIER
+      && !!process.env.MIN_PRICE
       && !!process.env.MAX_LENGTH
       && !!process.env.BASE_LENGTH
       && !!process.env.DECIMALS
@@ -216,10 +207,10 @@ const getValidateRootPriceConfig = () => {
       ? ethers.parseEther(process.env.MAX_PRICE)
       : DEFAULT_PRICE_CONFIG.maxPrice;
 
-  const curveMultiplier =
-    process.env.CURVE_MULTIPLIER
-      ? BigInt(process.env.CURVE_MULTIPLIER)
-      : DEFAULT_PRICE_CONFIG.curveMultiplier;
+  const minPrice =
+    process.env.MIN_PRICE
+      ? ethers.parseEther(process.env.MIN_PRICE)
+      : DEFAULT_PRICE_CONFIG.minPrice;
 
   const maxLength =
     process.env.MAX_LENGTH
@@ -232,7 +223,7 @@ const getValidateRootPriceConfig = () => {
       : DEFAULT_PRICE_CONFIG.baseLength;
 
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
+  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DECAULT_PRECISION;
   const precisionMultiplier = BigInt(10) ** (decimals - precision);
 
   const feePercentage =
@@ -242,7 +233,7 @@ const getValidateRootPriceConfig = () => {
 
   const priceConfig : ICurvePriceConfig = {
     maxPrice,
-    curveMultiplier,
+    minPrice,
     maxLength,
     baseLength,
     precisionMultiplier,
@@ -250,7 +241,7 @@ const getValidateRootPriceConfig = () => {
     isSet: true,
   };
 
-  validateConfig(priceConfig);
+  requires(validatePrice(priceConfig), INVALID_CURVE_ERR);
 
   return priceConfig;
 };
@@ -261,16 +252,14 @@ const requires = (condition : boolean, message : string) => {
   }
 };
 
-const validateConfig = (config : ICurvePriceConfig) => {
-  const PERCENTAGE_BASIS = 10000n;
+// No price spike before `minPrice` kicks in at `maxLength`
+const validatePrice = (config : ICurvePriceConfig) => {
+  const strA = "a".repeat(Number(config.maxLength));
+  const strB = "b".repeat(Number(config.maxLength + 1n));
 
-  if (
-    (config.curveMultiplier === 0n && config.baseLength === 0n) ||
-    (config.maxLength < config.baseLength) ||
-    ((config.maxLength < config.baseLength) || config.maxLength === 0n) ||
-    (config.curveMultiplier === 0n || config.curveMultiplier > 10n**18n) ||
-    (config.feePercentage > PERCENTAGE_BASIS)
-  ) {
-    requires(false, INVALID_CURVE_ERR);
-  }
+  const priceA = getCurvePrice(strA, config);
+  const priceB = getCurvePrice(strB, config);
+
+  // if B > A, then the price spike is invalid
+  return (priceB <= priceA);
 };

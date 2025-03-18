@@ -5,7 +5,6 @@
       "files": ["src/**/*.ts", "test/**/*.ts", "./*.ts"],
       "extends": ["@zero-tech/eslint-config-cpt/node-ts/.eslintrc.json"],
       "rules": {
-		"jsdoc/newline-after-description": "off",
         "no-unused-expressions": "off",
         "no-console": "off",
         "no-shadow": "warn",

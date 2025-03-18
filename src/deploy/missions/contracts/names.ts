@@ -15,17 +15,13 @@ export const znsNames = {
     instance: "domainToken",
   },
   meowToken: {
-    contract: "ZToken",
-    contractMock: "ERC20Mock",
+    contract: "MeowToken",
+    contractMock: "MeowTokenMock",
     instance: "meowToken",
   },
   addressResolver: {
     contract: "ZNSAddressResolver",
     instance: "addressResolver",
-  },
-  stringResolver: {
-    contract: "ZNSStringResolver",
-    instance: "stringResolver",
   },
   curvePricer: {
     contract: "ZNSCurvePricer",

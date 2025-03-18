@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
@@ -11,7 +11,6 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -101,8 +100,10 @@ contract ZNSRootRegistrar is
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
 
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
+        require(
+            !registry.exists(domainHash),
+            "ZNSRootRegistrar: Domain already exists"
+        );
 
         // Get price for the domain
         uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
@@ -255,8 +256,10 @@ contract ZNSRootRegistrar is
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH))
-            revert NotTheOwnerOf(OwnerOf.BOTH, msg.sender, domainHash);
+        require(
+            isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH),
+            "ZNSRootRegistrar: Not the owner of both Name and Token"
+        );
 
         subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
@@ -302,9 +305,10 @@ contract ZNSRootRegistrar is
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN))
-            revert NotTheOwnerOf(OwnerOf.TOKEN, msg.sender, domainHash);
-
+        require(
+            isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN),
+            "ZNSRootRegistrar: Not the owner of the Token"
+        );
         registry.updateDomainOwner(domainHash, msg.sender);
 
         emit DomainReclaimed(domainHash, msg.sender);
@@ -326,7 +330,7 @@ contract ZNSRootRegistrar is
                 && candidate == domainToken.ownerOf(uint256(domainHash));
         }
 
-        revert InvalidOwnerOfEnumValue(ownerOf);
+        revert("Wrong enum value for `ownerOf`");
     }
 
     /**
@@ -344,9 +348,10 @@ contract ZNSRootRegistrar is
      * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
     */
     function setRootPricer(address rootPricer_) public override onlyAdmin {
-        if (rootPricer_ == address(0))
-            revert ZeroAddressPassed();
-
+        require(
+            rootPricer_ != address(0),
+            "ZNSRootRegistrar: rootPricer_ is 0x0 address"
+        );
         rootPricer = IZNSPricer(rootPricer_);
 
         emit RootPricerSet(rootPricer_);
@@ -358,9 +363,10 @@ contract ZNSRootRegistrar is
      * @param treasury_ Address of the `ZNSTreasury` contract
      */
     function setTreasury(address treasury_) public override onlyAdmin {
-        if (treasury_ == address(0))
-            revert ZeroAddressPassed();
-
+        require(
+            treasury_ != address(0),
+            "ZNSRootRegistrar: treasury_ is 0x0 address"
+        );
         treasury = IZNSTreasury(treasury_);
 
         emit TreasurySet(treasury_);
@@ -372,9 +378,10 @@ contract ZNSRootRegistrar is
      * @param domainToken_ Address of the `ZNSDomainToken` contract
      */
     function setDomainToken(address domainToken_) public override onlyAdmin {
-        if (domainToken_ == address(0))
-            revert ZeroAddressPassed();
-
+        require(
+            domainToken_ != address(0),
+            "ZNSRootRegistrar: domainToken_ is 0x0 address"
+        );
         domainToken = IZNSDomainToken(domainToken_);
 
         emit DomainTokenSet(domainToken_);
@@ -385,8 +392,7 @@ contract ZNSRootRegistrar is
      * @param subRegistrar_ Address of the `ZNSSubRegistrar` contract
     */
     function setSubRegistrar(address subRegistrar_) external override onlyAdmin {
-        if (subRegistrar_ == address(0))
-            revert ZeroAddressPassed();
+        require(subRegistrar_ != address(0), "ZNSRootRegistrar: subRegistrar_ is 0x0 address");
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);

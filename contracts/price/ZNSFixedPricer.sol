@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
@@ -60,7 +60,10 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         string calldata label,
         bool skipValidityCheck
     ) public override view returns (uint256) {
-        if (!priceConfigs[parentHash].isSet) revert ParentPriceConfigNotSet(parentHash);
+        require(
+            priceConfigs[parentHash].isSet,
+            "ZNSFixedPricer: parent's price config has not been set properly through IZNSPricer.setPriceConfig()"
+        );
 
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
@@ -158,8 +161,10 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param feePercentage The new feePercentage
      */
     function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
-        if (feePercentage > PERCENTAGE_BASIS)
-            revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
+        require(
+            feePercentage <= PERCENTAGE_BASIS,
+            "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
+        );
 
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);

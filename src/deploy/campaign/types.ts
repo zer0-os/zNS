@@ -1,9 +1,9 @@
 import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import { ICurvePriceConfig } from "../missions/types";
-import { IContractState, IDeployCampaignConfig, TEnvironment } from "@zero-tech/zdc";
+import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
 import {
-  ERC20Mock as MeowTokenMock,
+  MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSCurvePricer,
@@ -13,15 +13,14 @@ import {
   ZNSRootRegistrar,
   ZNSSubRegistrar,
   ZNSTreasury,
-  ZNSStringResolver,
-  ZToken as MeowToken,
+  MeowToken,
 } from "../../../typechain";
 
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
-export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {
-  env : TEnvironment;
-  deployAdmin : SignerWithAddress;
+export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
+  env : string;
+  deployAdmin : Signer;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -33,7 +32,7 @@ export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddr
   rootPriceConfig : ICurvePriceConfig;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  stakingTokenAddress ?: string;
+  stakingTokenAddress : string;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -48,7 +47,6 @@ export type ZNSContract =
   MeowTokenMock |
   MeowToken |
   ZNSAddressResolver |
-  ZNSStringResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
@@ -61,7 +59,6 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   domainToken : ZNSDomainToken;
   meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
-  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;

@@ -1,42 +1,44 @@
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 import {
   HardhatDeployer,
   DeployCampaign,
+  getLogger,
 } from "@zero-tech/zdc";
 import {
   MeowTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
-  ZNSStringResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
 import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZnsMongoAdapter } from "./mongo";
-import { getZnsLogger } from "./get-logger";
 
 
 export const runZnsCampaign = async ({
   config,
+  provider,
   dbVersion,
   deployer,
 } : {
-  config : IZNSCampaignConfig;
+  config : IZNSCampaignConfig<SignerWithAddress>;
+  provider ?: DefenderRelayProvider;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress, DefenderRelayProvider>;
 }) => {
   hre.upgrades.silenceWarnings();
 
-  const logger = getZnsLogger();
+  const logger = getLogger();
 
   if (!deployer) {
     deployer = new HardhatDeployer({
       hre,
-      confirmationsN: config.confirmationsN,
       signer: config.deployAdmin,
       env: config.env,
+      provider,
     });
   }
 
@@ -45,7 +47,7 @@ export const runZnsCampaign = async ({
   const campaign = new DeployCampaign<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  IZNSCampaignConfig,
+  DefenderRelayProvider,
   IZNSContracts
   >({
     missions: [
@@ -54,7 +56,6 @@ export const runZnsCampaign = async ({
       ZNSDomainTokenDM,
       MeowTokenDM,
       ZNSAddressResolverDM,
-      ZNSStringResolverDM,
       ZNSCurvePricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,

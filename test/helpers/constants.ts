@@ -2,8 +2,8 @@ import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
-export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
-export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZID";
+export const ZNS_DOMAIN_TOKEN_NAME = "Zero Name Service";
+export const ZNS_DOMAIN_TOKEN_SYMBOL = "ZNS";
 
 export const DEFAULT_ROYALTY_FRACTION = BigInt("200");
 export const DEFAULT_TOKEN_URI = "https://www.zns.domains/7c654a5f";
@@ -11,8 +11,8 @@ export const DEFAULT_PROTOCOL_FEE_PERCENT = BigInt("222");
 export const DEFAULT_PERCENTAGE_BASIS = BigInt("10000");
 
 export const DEFAULT_DECIMALS = BigInt(18);
-export const DEFAULT_PRECISION = BigInt(2);
-export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DEFAULT_PRECISION);
+export const DECAULT_PRECISION = BigInt(2);
+export const DEFAULT_PRECISION_MULTIPLIER = BigInt(10) ** (DEFAULT_DECIMALS - DECAULT_PRECISION);
 
 // eslint-disable-next-line no-shadow
 export const AccessType  = {
@@ -36,7 +36,7 @@ export const PaymentType = {
 
 export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
-  curveMultiplier: BigInt("1000"),
+  minPrice: ethers.parseEther("2000"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
@@ -46,7 +46,7 @@ export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
-  curveMultiplier: BigInt(0),
+  minPrice: BigInt(0),
   maxLength: BigInt(0),
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
@@ -77,7 +77,7 @@ export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735
 export const accessControllerName = "ZNSAccessController";
 export const registryName = "ZNSRegistry";
 export const domainTokenName = "ZNSDomainToken";
-export const meowTokenMockName = "ERC20Mock";
+export const meowTokenMockName = "MeowTokenMock";
 export const addressResolverName = "ZNSAddressResolver";
 export const curvePricerName = "ZNSCurvePricer";
 export const fixedPricerName = "ZNSFixedPricer";

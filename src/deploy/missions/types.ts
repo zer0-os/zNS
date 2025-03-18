@@ -1,7 +1,7 @@
 
 export interface ICurvePriceConfig {
   maxPrice : bigint;
-  curveMultiplier : bigint;
+  minPrice : bigint;
   maxLength : bigint;
   baseLength : bigint;
   precisionMultiplier : bigint;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
@@ -42,19 +42,13 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
-    error NotTheOwnerOf(
-        OwnerOf ownerOf,
-        address candidate,
-        bytes32 domainHash
-    );
-
-    error InvalidOwnerOfEnumValue(OwnerOf value);
 
     enum OwnerOf {
         NAME,
         TOKEN,
         BOTH
     }
+
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.

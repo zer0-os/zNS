@@ -1,5 +1,5 @@
 import {
-  ERC20Mock,
+  MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -18,7 +18,7 @@ import {
   ZNSRegistryUpgradeMock__factory,
   ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory,
   ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
@@ -53,8 +53,7 @@ export type ZNSContractMockFactory =
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
-  ZNSDomainTokenUpgradeMock__factory |
-  ZNSStringResolverUpgradeMock__factory;
+  ZNSDomainTokenUpgradeMock__factory;
 
 export type ZNSContractMock =
   ZNSRootRegistrarUpgradeMock |
@@ -64,8 +63,7 @@ export type ZNSContractMock =
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
-  ZNSDomainTokenUpgradeMock |
-  ZNSStringResolverUpgradeMock;
+  ZNSDomainTokenUpgradeMock;
 
 export interface IFixedPriceConfig {
   price : bigint;
@@ -83,7 +81,7 @@ export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  meowToken : ERC20Mock;
+  meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;

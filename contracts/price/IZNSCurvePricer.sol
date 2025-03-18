@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 import { ICurvePriceConfig } from "../types/ICurvePriceConfig.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
@@ -8,16 +8,16 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     /**
-     * @notice Reverted when multiplier passed by the domain owner
-     * is equal to 0 or more than 10^18, which is too large.
-     */
-    error InvalidPrecisionMultiplierPassed(bytes32 domainHash);
-
-    /**
      * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
      * @param price The new maxPrice value
      */
     event MaxPriceSet(bytes32 domainHash, uint256 price);
+
+    /**
+     * @notice Emitted when the `minPrice` is set in `CurvePriceConfig`
+     * @param price The new minPrice value
+     */
+    event MinPriceSet(bytes32 domainHash, uint256 price);
 
     /**
      * @notice Emitted when the `baseLength` is set in `CurvePriceConfig`
@@ -44,16 +44,9 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     event FeePercentageSet(bytes32 domainHash, uint256 feePercentage);
 
     /**
-     * @notice Emitted when the `curveMultiplier` is set in state
-     * @param curveMultiplier The new curveMultiplier value
-     */
-    event CurveMultiplierSet(bytes32 domainHash, uint256 curveMultiplier);
-    
-
-    /**
      * @notice Emitted when the full `CurvePriceConfig` is set in state
      * @param maxPrice The new `maxPrice` value
-     * @param curveMultiplier The new `curveMultiplier` value
+     * @param minPrice The new `minPrice` value
      * @param maxLength The new `maxLength` value
      * @param baseLength The new `baseLength` value
      * @param precisionMultiplier The new `precisionMultiplier` value
@@ -61,7 +54,7 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
     event PriceConfigSet(
         bytes32 domainHash,
         uint256 maxPrice,
-        uint256 curveMultiplier,
+        uint256 minPrice,
         uint256 maxLength,
         uint256 baseLength,
         uint256 precisionMultiplier,
@@ -101,11 +94,11 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     function setMaxPrice(bytes32 domainHash, uint256 maxPrice) external;
 
+    function setMinPrice(bytes32 domainHash, uint256 minPrice) external;
+
     function setBaseLength(bytes32 domainHash, uint256 length) external;
 
     function setMaxLength(bytes32 domainHash, uint256 length) external;
-
-    function setCurveMultiplier(bytes32 domainHash, uint256 curveMultiplier) external;
 
     function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
 

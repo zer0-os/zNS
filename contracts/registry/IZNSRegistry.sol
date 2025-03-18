@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity 0.8.18;
 
 
 /**
@@ -14,7 +14,7 @@ pragma solidity 0.8.26;
 interface IZNSRegistry {
 
     /**
-     * @notice Description of a domain record, pointing to the
+     * @notice Description of a domain record, pointing to the 
      * owner address of that record as well as the address of
      * its resolver
      */
@@ -123,7 +123,7 @@ interface IZNSRegistry {
 
     function getResolverType(
         string calldata resolverType
-    ) external returns (address);
+    ) external returns (address); 
 
     function addResolverType(
         string calldata resolverType,

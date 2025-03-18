@@ -2,13 +2,14 @@ import {
   ADMIN_ROLE,
   deployFixedPricer,
   deployZNS,
+  getAccessRevertMsg,
   GOVERNOR_ROLE,
-  INITIALIZED_ERR, INVALID_LABEL_ERR,
-  NOT_AUTHORIZED_ERR,
+  INITIALIZED_ERR, INVALID_NAME_ERR,
+  NOT_AUTHORIZED_REG_WIRED_ERR,
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
+  validateUpgrade, AccessType,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -81,7 +82,7 @@ describe("ZNSFixedPricer", () => {
     await expect(zns.fixedPricer.initialize(
       await zns.accessController.getAddress(),
       await zns.registry.getAddress(),
-    )).to.be.revertedWithCustomError(zns.fixedPricer, INITIALIZED_ERR);
+    )).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
@@ -94,7 +95,7 @@ describe("ZNSFixedPricer", () => {
         deployer.address,
         random.address,
       )
-    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
+    ).to.be.revertedWith(INITIALIZED_ERR);
   });
 
   it("should set config for 0x0 hash", async () => {
@@ -135,8 +136,9 @@ describe("ZNSFixedPricer", () => {
         acAddress: await zns.accessController.getAddress(),
         regAddress: await zns.registry.getAddress(),
       }),
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(random.address, ADMIN_ROLE);
+    ).to.be.revertedWith(
+      getAccessRevertMsg(random.address, ADMIN_ROLE)
+    );
   });
 
   it("#setPrice() should work correctly and emit #PriceSet event", async () => {
@@ -162,7 +164,7 @@ describe("ZNSFixedPricer", () => {
   it("#getPrice() should revert for invalid label when not skipping the label validation", async () => {
     await expect(
       zns.fixedPricer.getPrice(domainHash, "tEstname", false)
-    ).to.be.revertedWithCustomError(zns.fixedPricer, INVALID_LABEL_ERR);
+    ).to.be.revertedWith(INVALID_NAME_ERR);
   });
 
   it("#getPriceAndFee() should return the correct price and fee", async () => {
@@ -183,9 +185,8 @@ describe("ZNSFixedPricer", () => {
   it("#setPrice() should revert if called by anyone other than domain owner", async () => {
     await expect(
       zns.fixedPricer.connect(random).setPrice(domainHash, ethers.parseEther("1"))
-    ).to.be.revertedWithCustomError(
-      zns.fixedPricer,
-      NOT_AUTHORIZED_ERR
+    ).to.be.revertedWith(
+      NOT_AUTHORIZED_REG_WIRED_ERR
     );
   });
 
@@ -204,18 +205,16 @@ describe("ZNSFixedPricer", () => {
   it("#setFeePercentage() should revert if called by anyone other than domain owner", async () => {
     await expect(
       zns.fixedPricer.connect(random).setFeePercentage(domainHash, BigInt(1))
-    ).to.be.revertedWithCustomError(
-      zns.fixedPricer,
-      NOT_AUTHORIZED_ERR
+    ).to.be.revertedWith(
+      NOT_AUTHORIZED_REG_WIRED_ERR
     );
   });
 
   it("#setFeePercentage() should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
     await expect(
       zns.fixedPricer.connect(user).setFeePercentage(domainHash, DEFAULT_PERCENTAGE_BASIS + 1n)
-    ).to.be.revertedWithCustomError(
-      zns.fixedPricer,
-      FEE_TOO_LARGE_ERR
+    ).to.be.revertedWith(
+      "ZNSFixedPricer: feePercentage cannot be greater than PERCENTAGE_BASIS"
     );
   });
 
@@ -245,14 +244,16 @@ describe("ZNSFixedPricer", () => {
 
   it("#setPriceConfig() should revert if called by anyone other than domain owner or operator", async () => {
     await expect(
-      zns.fixedPricer.connect(random).setPriceConfig(domainHash, {
-        price: BigInt(1),
-        feePercentage: BigInt(1),
-        isSet: true,
-      })
-    ).to.be.revertedWithCustomError(
-      zns.fixedPricer,
-      NOT_AUTHORIZED_ERR
+      zns.fixedPricer.connect(random).setPriceConfig(
+        domainHash,
+        {
+          price: BigInt(1),
+          feePercentage: BigInt(1),
+          isSet: true,
+        }
+      )
+    ).to.be.revertedWith(
+      NOT_AUTHORIZED_REG_WIRED_ERR
     );
   });
 
@@ -270,15 +271,17 @@ describe("ZNSFixedPricer", () => {
   it("#setRegistry() should revert if called by anyone other than ADMIN_ROLE", async () => {
     await expect(
       zns.fixedPricer.connect(random).setRegistry(random.address)
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(random.address, ADMIN_ROLE);
+    ).to.be.revertedWith(
+      getAccessRevertMsg(random.address, ADMIN_ROLE)
+    );
   });
 
   it("#setAccessController() should revert if called by anyone other than ADMIN_ROLE", async () => {
     await expect(
       zns.fixedPricer.connect(random).setAccessController(random.address)
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(random.address, ADMIN_ROLE);
+    ).to.be.revertedWith(
+      getAccessRevertMsg(random.address, ADMIN_ROLE)
+    );
   });
 
   // keep this as the last test
@@ -336,10 +339,7 @@ describe("ZNSFixedPricer", () => {
       // Confirm the deployer is a governor, as set in `deployZNS` helper
       await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
 
-      const tx = zns.fixedPricer.connect(deployer).upgradeToAndCall(
-        await newFixedPricer.getAddress(),
-        "0x"
-      );
+      const tx = zns.fixedPricer.connect(deployer).upgradeTo(await newFixedPricer.getAddress());
       await expect(tx).to.not.be.reverted;
 
       await expect(
@@ -347,7 +347,7 @@ describe("ZNSFixedPricer", () => {
           await zns.accessController.getAddress(),
           await zns.registry.getAddress(),
         )
-      ).to.be.revertedWithCustomError(zns.fixedPricer, INITIALIZED_ERR);
+      ).to.be.revertedWith(INITIALIZED_ERR);
     });
 
     it("Fails to upgrade if the caller is not authorized", async () => {
@@ -359,13 +359,11 @@ describe("ZNSFixedPricer", () => {
       // Confirm the account is not a governor
       await expect(zns.accessController.checkGovernor(random.address)).to.be.reverted;
 
-      const tx = zns.fixedPricer.connect(random).upgradeToAndCall(
-        await newFixedPricer.getAddress(),
-        "0x"
-      );
+      const tx = zns.fixedPricer.connect(random).upgradeTo(await newFixedPricer.getAddress());
 
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(random.address, GOVERNOR_ROLE);
+      await expect(tx).to.be.revertedWith(
+        getAccessRevertMsg(random.address, GOVERNOR_ROLE)
+      );
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

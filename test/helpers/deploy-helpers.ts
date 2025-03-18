@@ -84,7 +84,7 @@ export const getPriceBulk = async (
 export const registerRootDomainBulk = async (
   signers : Array<SignerWithAddress>,
   domains : Array<string>,
-  config : IZNSCampaignConfig,
+  config : IZNSCampaignConfig<SignerWithAddress>,
   tokenUri : string,
   distConfig : IDistributionConfig,
   priceConfig : ICurvePriceConfig,

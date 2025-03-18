@@ -1,5 +1,4 @@
 export * from "./address-resolver";
-export * from "./string-resolver";
 export * from "./registry";
 export * from "./root-registrar";
 export * from "./domain-token";
