@@ -2,13 +2,12 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
 import { ZNSContract } from "../../src/deploy/campaign/types";
-import { ZNSAccessController } from "../../typechain";
-import { MeowToken } from "@zero-tech/ztoken/typechain-js";
+import { ERC20Mock, ZNSAccessController } from "../../typechain";
 
 
 export const validateUpgrade = async (
   deployer : SignerWithAddress,
-  contract : Exclude<Exclude<ZNSContract, ZNSAccessController>, MeowToken>,
+  contract : Exclude<Exclude<ZNSContract, ZNSAccessController>, ERC20Mock>,
   upgradeContract : ZNSContractMock,
   upgradeContractFactory : ZNSContractMockFactory,
   getters : Array<GeneralContractGetter>

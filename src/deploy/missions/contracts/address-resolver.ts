@@ -12,7 +12,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 export class ZNSAddressResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

@@ -16,14 +16,14 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  MeowTokenMock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
+  ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
 } from "../typechain";
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContractsLocal } from "./helpers/types";
 
 
@@ -42,7 +42,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
     let rootRegistrar : ZNSRootRegistrar;
@@ -77,7 +77,7 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
 
       ({
@@ -182,7 +182,6 @@ describe("ZNSStringResolver", () => {
   });
 
   describe("New campaign for each test", () => {
-
     let deployer : SignerWithAddress;
     let zeroVault : SignerWithAddress;
     let operator : SignerWithAddress;
@@ -197,7 +196,7 @@ describe("ZNSStringResolver", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
     let accessController : ZNSAccessController;
@@ -212,7 +211,6 @@ describe("ZNSStringResolver", () => {
     let mongoAdapter : MongoDBAdapter;
 
     beforeEach(async () => {
-
       [
         deployer,
         zeroVault,
@@ -234,7 +232,7 @@ describe("ZNSStringResolver", () => {
         config: campaignConfig,
       });
 
-      let meowToken : MeowTokenMock;
+      let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
 
       zns = campaign.state.contracts as unknown as IZNSContractsLocal;
@@ -255,8 +253,11 @@ describe("ZNSStringResolver", () => {
       await meowToken.connect(deployer).approve(await treasury.getAddress(), ethers.MaxUint256);
     });
 
-    it("Should not allow non-owner address to setString (similar domain and string)", async () => {
+    afterEach(async () => {
+      await mongoAdapter.dropDB();
+    });
 
+    it("Should not allow non-owner address to setString (similar domain and string)", async () => {
       const curStringDomain = "shouldbrake";
 
       await registrationWithSetup({

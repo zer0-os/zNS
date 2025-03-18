@@ -11,7 +11,7 @@ import {
   MongoDBAdapter,
   ITenderlyContractData,
   TDeployArgs,
-  VERSION_TYPES,
+  VERSION_TYPES, EnvironmentLevels, TEnvironment,
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
@@ -36,9 +36,9 @@ import {
 import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-resolver";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
-import { ResolverTypes } from "../src/deploy/constants";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { MEOWzChainData } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
+import { ResolverTypes, SupportedChains } from "../src/deploy/constants";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
@@ -59,7 +59,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IZNSCampaignConfig<SignerWithAddress>;
+  let campaignConfig : IZNSCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -73,6 +73,8 @@ describe("Deploy Campaign Test", () => {
     before(async () => {
       campaignConfig = {
         env,
+        confirmationsN: 0,
+        srcChainName: SupportedChains.z,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -84,7 +86,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -94,7 +96,7 @@ describe("Deploy Campaign Test", () => {
       };
     });
 
-    it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
+    it("should deploy new ERC20Mock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
       });
@@ -116,17 +118,12 @@ describe("Deploy Campaign Test", () => {
       await dbAdapter.dropDB();
     });
 
-    it("should use existing deployed non-mocked MeowToken contract when `mockMeowToken` is false", async () => {
+    it("should use existing deployed MeowToken contract when `mockMeowToken` is false", async () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
-      const meow = await hre.upgrades.deployProxy(
-        factory,
-        [meowTokenName, meowTokenSymbol],
-        {
-          kind: "transparent",
-        });
+      const factory = await hre.ethers.getContractFactory("ERC20Mock");
+      const meow = await factory.deploy(meowTokenName, meowTokenSymbol);
 
       await meow.waitForDeployment();
 
@@ -146,7 +143,7 @@ describe("Deploy Campaign Test", () => {
         },
       } = campaign;
 
-      expect(meowToken.address).to.equal(meow.address);
+      expect(meowToken.target).to.equal(meow.target);
       expect(meowDMInstance.contractName).to.equal(znsNames.meowToken.contract);
 
       const toMint = hre.ethers.parseEther("972315");
@@ -160,7 +157,7 @@ describe("Deploy Campaign Test", () => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         expect(e.message).to.include(
-          ".mint is not a function"
+          "no matching fragment"
         );
       }
 
@@ -199,7 +196,7 @@ describe("Deploy Campaign Test", () => {
       missionList : Array<TDeployMissionCtor<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >>;
       placeOfFailure : string;
@@ -210,7 +207,7 @@ describe("Deploy Campaign Test", () => {
       callback ?: (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => Promise<void>;
     }) => {
@@ -219,6 +216,7 @@ describe("Deploy Campaign Test", () => {
       SignerWithAddress
       >({
         hre,
+        confirmationsN: 0,
         signer: deployAdmin,
         env,
       });
@@ -232,7 +230,7 @@ describe("Deploy Campaign Test", () => {
       const failingCampaign = new DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >({
         missions: missionList,
@@ -359,6 +357,8 @@ describe("Deploy Campaign Test", () => {
 
       campaignConfig = {
         env,
+        confirmationsN: 0,
+        srcChainName: SupportedChains.z,
         deployAdmin,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -470,7 +470,7 @@ describe("Deploy Campaign Test", () => {
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -591,7 +591,7 @@ describe("Deploy Campaign Test", () => {
       const checkPostDeploy = async (failingCampaign : DeployCampaign<
       HardhatRuntimeEnvironment,
       SignerWithAddress,
-      IZNSCampaignConfig<SignerWithAddress>,
+      IZNSCampaignConfig,
       IZNSContracts
       >) => {
         const {
@@ -656,7 +656,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const localConfig : IZNSCampaignConfig = await getConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -688,7 +688,7 @@ describe("Deploy Campaign Test", () => {
 
       let zns : IZNSContracts;
 
-      const config : IZNSCampaignConfig<SignerWithAddress> = await getConfig({
+      const config : IZNSCampaignConfig = await getConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -799,7 +799,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -815,11 +815,11 @@ describe("Deploy Campaign Test", () => {
         });
         /* eslint-disable @typescript-eslint/no-explicit-any */
       } catch (e : any) {
-        expect(e.message).includes("Must provide a Mongo URI used for prod environment!");
+        expect(e.message).includes("Missing required environment variables:");
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MeowMainnet.address;
+      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -842,7 +842,7 @@ describe("Deploy Campaign Test", () => {
     let campaign : DeployCampaign<
     HardhatRuntimeEnvironment,
     SignerWithAddress,
-    IZNSCampaignConfig<SignerWithAddress>,
+    IZNSCampaignConfig,
     IZNSContracts
     >;
 
@@ -851,6 +851,8 @@ describe("Deploy Campaign Test", () => {
 
       campaignConfig = {
         env,
+        confirmationsN: 0,
+        srcChainName: SupportedChains.z,
         deployAdmin,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -862,7 +864,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -908,12 +910,17 @@ describe("Deploy Campaign Test", () => {
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
 
+      // we need to reset the adapter here so we can create a new one with new params
+      // from env vars, otherwise it will return the same adapter from previous deploy
+      resetMongoAdapter();
+
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
       });
 
-      expect(newDbAdapter.curVersion).to.not.equal(initialDBVersion);
+      expect(newDbAdapter.versioner.curDbVersion).to.not.be.undefined;
+      expect(newDbAdapter.versioner.curDbVersion).to.not.equal(initialDBVersion);
 
       // get some data from new DB version
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
@@ -955,6 +962,9 @@ describe("Deploy Campaign Test", () => {
       // set archiving for the new mongo adapter
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
+
+      // reset adapter to create new with new params from env vars
+      resetMongoAdapter();
 
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
@@ -1025,13 +1035,15 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IZNSCampaignConfig<SignerWithAddress>;
+    let config : IZNSCampaignConfig;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
 
       config = {
-        env: "dev",
+        env: EnvironmentLevels.dev as TEnvironment,
+        confirmationsN: 0,
+        srcChainName: SupportedChains.z,
         deployAdmin,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
@@ -1043,7 +1055,7 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MeowMainnet.address,
+        stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1073,6 +1085,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployer = new HardhatDeployerMock({
         hre,
+        confirmationsN: 0,
         signer: deployAdmin,
         env,
       });
@@ -1112,6 +1125,7 @@ describe("Deploy Campaign Test", () => {
 
       const deployer = new HardhatDeployerMock({
         hre,
+        confirmationsN: 0,
         signer: deployAdmin,
         env,
       });

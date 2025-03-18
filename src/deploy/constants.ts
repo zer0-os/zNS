@@ -1,4 +1,4 @@
-import { IProxyKinds } from "@zero-tech/zdc";
+import { IProxyKinds, ISupportedChains } from "@zero-tech/zdc";
 import { ethers } from "ethers";
 
 
@@ -35,4 +35,9 @@ export const ResolverTypes = {
   // TODO: Which word to use for a string type of resolver??
   // eslint-disable-next-line id-blacklist
   string: "string",
+};
+
+export const SupportedChains : ISupportedChains = {
+  z: "zchain",
+  eth: "ethereum",
 };

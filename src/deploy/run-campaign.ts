@@ -1,13 +1,11 @@
-import { getConfig } from "./campaign/environments";
+import { getConfig } from "./campaign/get-config";
 import { runZnsCampaign } from "./zns-campaign";
 import * as hre from "hardhat";
-import { getLogger } from "@zero-tech/zdc";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZnsLogger } from "./get-logger";
 
-const logger = getLogger();
 
 const runCampaign = async () => {
-
   const [ deployer ] = await hre.ethers.getSigners();
 
   const config = await getConfig({
@@ -20,6 +18,7 @@ const runCampaign = async () => {
 };
 
 runCampaign().catch(error => {
+  const logger = getZnsLogger();
   logger.error(error.stack);
   process.exit(1);
 }).finally(() => {

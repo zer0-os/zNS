@@ -1,0 +1,47 @@
+import { TEnvironment } from "@zero-tech/zdc";
+
+
+export interface IZNSEnvironment {
+  ENV_LEVEL : TEnvironment;
+  CONFIRMATION_N ?: string;
+  MAINNET_RPC_URL ?: string;
+  SEPOLIA_RPC_URL ?: string;
+  ZCHAIN_TEST_RPC_URL ?: string;
+  ZCHAIN_MAIN_RPC_URL ?: string;
+  DEPLOY_ADMIN_MAINNET_PK ?: string;
+  DEPLOY_ADMIN_SEPOLIA_PK ?: string;
+  DEPLOY_ADMIN_ZCHAIN_TEST_PK ?: string;
+  DEPLOY_ADMIN_ZCHAIN_MAIN_PK ?: string;
+  MONGO_DB_URI : string;
+  MONGO_DB_NAME : string;
+  MONGO_DB_CLIENT_OPTS ?: string;
+  MONGO_DB_VERSION ?: string;
+  ARCHIVE_PREVIOUS_DB_VERSION : string;
+  LOG_LEVEL : string;
+  SILENT_LOGGER : string;
+  MAKE_LOG_FILE ?: string;
+  VERIFY_CONTRACTS : string;
+  ETHERSCAN_API_KEY ?: string;
+  MONITOR_CONTRACTS : string;
+  TENDERLY_ACCOUNT_ID : string;
+  TENDERLY_PROJECT_SLUG ?: string;
+  TENDERLY_ACCESS_KEY ?: string;
+  TENDERLY_DEVNET_TEMPLATE ?: string;
+  DEVNET_RPC_URL ?: string;
+  GOVERNOR_ADDRESSES ?: string;
+  ADMIN_ADDRESSES ?: string;
+  MOCK_MEOW_TOKEN : string;
+  STAKING_TOKEN_ADDRESS ?: string;
+  MAX_PRICE : string;
+  CURVE_MULTIPLIER : string;
+  MAX_LENGTH : string;
+  BASE_LENGTH : string;
+  PROTOCOL_FEE_PERC : string;
+  DECIMALS : string;
+  PRECISION : string;
+  DOMAIN_TOKEN_NAME : string;
+  DOMAIN_TOKEN_SYMBOL : string;
+  ROYALTY_FRACTION : string;
+  ROYALTY_RECEIVER ?: string;
+  ZERO_VAULT_ADDRESS ?: string;
+}

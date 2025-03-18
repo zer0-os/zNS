@@ -9,7 +9,7 @@ import { znsNames } from "./names";
 export class ZNSStringResolverDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {

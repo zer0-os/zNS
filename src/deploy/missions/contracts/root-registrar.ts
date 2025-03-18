@@ -12,7 +12,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 export class ZNSRootRegistrarDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-IZNSCampaignConfig<SignerWithAddress>,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
