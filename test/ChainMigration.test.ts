@@ -3,23 +3,22 @@ import { getConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import * as ethers from "ethers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { MongoDBAdapter } from "@zero-tech/zdc";
 import {
   AccessType,
   DEFAULT_PRICE_CONFIG,
-  distrConfigEmpty, INVALID_TOKENID_ERC_ERR,
-  normalizeName,
+  distrConfigEmpty,
   paymentConfigEmpty,
   PaymentType,
 } from "./helpers";
 import { expect } from "chai";
 import { registerDomainPath } from "./helpers/flows/registration";
 import { IPathRegResult, IZNSContractsLocal } from "./helpers/types";
-import { MigrationRootPricerMock } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
+import { MongoDBAdapter } from "@zero-tech/zdc";
 
 
-const pricerRevertReason = "Domain registration is disabled because ZNS is migrating to another chain";
+const registryRevertReason = "Transaction reverted: function returned an unexpected amount of data";
+const registryRevertReason2 = "Transaction reverted: function call to a non-contract account";
 
 describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
   describe("Ethereum Side", () => {
@@ -31,21 +30,21 @@ describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
 
     let zns : IZNSContractsLocal;
     let zeroVault : SignerWithAddress;
-    let operator : SignerWithAddress;
     let userBalanceInitial : bigint;
 
     let mongoAdapter : MongoDBAdapter;
 
-    let migrationPricer : MigrationRootPricerMock;
-
-    const newDomain = normalizeName("wilder");
+    const rootDomainLabel = "root";
+    const auxRootDomainLabel = "rootnonrevoked";
 
     let nonRevokedDomainHash : string;
 
     let existingDomainData : Array<IPathRegResult>;
 
+    const deadAddress = "0x000000000000000000000000000000000000dead";
+
     before(async () => {
-      [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
+      [deployer, zeroVault, user, governor, admin, randomUser] = await hre.ethers.getSigners();
 
       const config = await getConfig({
         deployer,
@@ -76,7 +75,7 @@ describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
       const domainConfigs = [
         {
           user: deployer,
-          domainLabel: "root",
+          domainLabel: rootDomainLabel,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
@@ -110,7 +109,7 @@ describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
 
       zns.zeroVaultAddress = zeroVault.address;
       // create initial domains before locking the system to test some flows
-      // first make a root with it's sub
+      // first make a root with its sub
       existingDomainData = await registerDomainPath({
         zns,
         domainConfigs,
@@ -124,149 +123,142 @@ describe("Tests for Migrating ZNS From Ethereum to Meowchain", () => {
       nonRevokedDomainHash = await registrationWithSetup({
         zns,
         user,
-        domainLabel: "nonrevoked",
+        domainLabel: auxRootDomainLabel,
         fullConfig: domainConfigs[0].fullConfig,
       });
-
-      // since for every root domain we need a pricer call to determine the price of registration,
-      // and we need `reclaim()` and `revoke()` to still be available
-      // we are deploying a new Mocked Pricer that will be set for root domains and will revert every time
-      // a price is being read with `getPrice()` or `getPriceAndFee()`,
-      // but will return "0" when reading the fee with `getFeeForPrice()` since it is needed in `revokeDomain()`
-      const migrationPricerFact = await hre.ethers.getContractFactory("MigrationRootPricerMock");
-      migrationPricer = await migrationPricerFact.deploy();
-      await migrationPricer.waitForDeployment();
-
-      await zns.rootRegistrar.setRootPricer(await migrationPricer.getAddress());
     });
 
-    it("[ZNSRootRegistrar] Should lock ALL user access to registration flow of root domains", async () => {
-      await expect(
-        zns.rootRegistrar.connect(deployer).registerRootDomain(
-          newDomain,
-          deployer.address,
-          "https://example.com/817c64af",
+    after(async () => {
+      await mongoAdapter.dropDB();
+    });
+
+    describe("Registry Access Block Method", () => {
+      it("[ZNSRootRegistrar] Should revert on any domain related call to ZNSRootRegistrar", async () => {
+        // we set dead `registry` address
+        // so that no root domain can be registered by all functions reverting,
+        // since all the functions use `registry` for access control,
+        // this should also block access to ALL domain related functions
+        await zns.rootRegistrar.connect(deployer).setRegistry(deadAddress);
+
+        // transfer domain to another address to test reclaim (just in case)
+        await zns.registry.connect(user).updateDomainOwner(nonRevokedDomainHash, randomUser.address);
+
+        // prepare all calls to check if they revert
+        const calls = [
+          zns.rootRegistrar.connect(randomUser).registerRootDomain(
+            "randomname",
+            hre.ethers.ZeroAddress,
+            "w://dummyURI",
+            distrConfigEmpty,
+            paymentConfigEmpty,
+          ),
+          zns.rootRegistrar.connect(deployer).revokeDomain(existingDomainData[0].domainHash),
+          zns.rootRegistrar.connect(user).reclaimDomain(nonRevokedDomainHash),
+        ];
+
+        // run all the calls that should revert and make sure they do
+        await calls.reduce(
+          async (acc, call) => {
+            await acc;
+            try {
+              await call;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } catch (e : any) {
+              expect(e.message).to.satisfy(
+                (msg : string) => msg === registryRevertReason || msg === registryRevertReason2
+              );
+            }
+          }, Promise.resolve()
+        );
+
+        // set owner back
+        await zns.registry.connect(randomUser).updateDomainOwner(nonRevokedDomainHash, user.address);
+      });
+
+      it("[ZNSSubRegistrar] Should revert on any domain related call to ZNSSubRegistrar", async () => {
+        // we set dead `registry` address
+        // so that no subdomain can be registered by all functions reverting,
+        // since all the functions use `registry` for access control
+        // this should also block access to ALL domain related functions
+        await zns.subRegistrar.connect(deployer).setRegistry(deadAddress);
+
+        // prepare all calls to check if they revert
+        const calls = [
+          zns.subRegistrar.connect(randomUser).registerSubdomain(
+            nonRevokedDomainHash,
+            "nonrevokedchild",
+            randomUser.address,
+            "https://example.com/817c64af",
+            distrConfigEmpty,
+            paymentConfigEmpty
+          ),
+          zns.subRegistrar.connect(randomUser).setDistributionConfigForDomain(
+            nonRevokedDomainHash,
+            distrConfigEmpty
+          ),
+          zns.subRegistrar.connect(randomUser).setPricerContractForDomain(
+            nonRevokedDomainHash,
+            zns.curvePricer.target,
+          ),
+          zns.subRegistrar.connect(randomUser).setPaymentTypeForDomain(
+            nonRevokedDomainHash,
+            PaymentType.STAKE
+          ),
+          zns.subRegistrar.connect(randomUser).setAccessTypeForDomain(
+            nonRevokedDomainHash,
+            AccessType.MINTLIST
+          ),
+          zns.subRegistrar.connect(randomUser).updateMintlistForDomain(
+            nonRevokedDomainHash,
+            [randomUser.address],
+            [true]
+          ),
+          zns.subRegistrar.connect(randomUser).clearMintlistForDomain(nonRevokedDomainHash),
+          zns.subRegistrar.connect(randomUser).clearMintlistAndLock(nonRevokedDomainHash),
+        ];
+
+        // run all the calls that should revert and make sure they do
+        await calls.reduce(
+          async (acc, call) => {
+            await acc;
+            try {
+              await call;
+            } catch (e) {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              expect(e.message).to.equal(registryRevertReason);
+            }
+          }, Promise.resolve()
+        );
+      });
+
+      it("Should unblock registration by setting `registry` address back to proper value", async () => {
+        // set registry back to proper value
+        await zns.rootRegistrar.connect(deployer).setRegistry(zns.registry.target);
+        await zns.subRegistrar.connect(deployer).setRegistry(zns.registry.target);
+
+        // try to register a root domain
+        const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
+          "randomname",
+          hre.ethers.ZeroAddress,
+          "w://dummyURI",
           distrConfigEmpty,
-          paymentConfigEmpty
-        )
-      ).to.be.revertedWith(pricerRevertReason);
-    });
+          paymentConfigEmpty,
+        );
 
-    // eslint-disable-next-line max-len
-    it("[ZNSRootRegistrar] Should let `reclaimDomain()` and `revokeDomain()` for previously existing domains", async () => {
-      // we can't lock these functions since they are needed to be available for existing domains
-      // so we need to test that they work as expected
+        expect(tx).to.not.be.undefined;
 
-      const rootDomainHash = existingDomainData[0].domainHash;
-      const subDomainHash = existingDomainData[1].domainHash;
-
-      // transfer domain token first
-      await zns.domainToken.connect(deployer).transferFrom(
-        deployer.address,
-        user.address,
-        rootDomainHash
-      );
-      // reclaim domain
-      await zns.rootRegistrar.connect(user).reclaimDomain(rootDomainHash);
-      // check data
-      const nameOwner = await zns.registry.getDomainOwner(rootDomainHash);
-      const tokenOwner = await zns.domainToken.ownerOf(rootDomainHash);
-      expect(nameOwner).to.equal(user.address);
-      expect(tokenOwner).to.equal(user.address);
-
-      // now revoke domain
-      await zns.rootRegistrar.connect(user).revokeDomain(rootDomainHash);
-      // check data
-      const exists = await zns.registry.exists(rootDomainHash);
-      expect(exists).to.equal(false);
-      await expect(
-        zns.domainToken.ownerOf(rootDomainHash)
-      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
-
-      // try the same with subdomain
-      // transfer domain token first
-      await zns.domainToken.connect(user).transferFrom(
-        user.address,
-        deployer.address,
-        subDomainHash
-      );
-      // reclaim domain
-      await zns.rootRegistrar.connect(deployer).reclaimDomain(subDomainHash);
-      // check data
-      const nameOwnerSub = await zns.registry.getDomainOwner(subDomainHash);
-      const tokenOwnerSub = await zns.domainToken.ownerOf(subDomainHash);
-      expect(nameOwnerSub).to.equal(deployer.address);
-      expect(tokenOwnerSub).to.equal(deployer.address);
-
-      // now revoke domain
-      await zns.rootRegistrar.connect(deployer).revokeDomain(subDomainHash);
-      // check data
-      const existsSub = await zns.registry.exists(subDomainHash);
-      expect(existsSub).to.equal(false);
-      await expect(
-        zns.domainToken.ownerOf(subDomainHash)
-      ).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
-    });
-
-    it("[ZNSSubRegistrar] Should revert on any domain related call to ZNSSubRegistrar", async () => {
-      // with SubRegistrar the approach needs to be different
-      // here the pricers are set by the parent domain owner, but no other flows on contract
-      // need to be available after lock, unlike in RootRegistrar,
-      // so instead of setting a pricer, we set dead `registry` address
-      // so that no sub domain can be registered by all functions reverting,
-      // since all the functions use `registry` for access control
-
-      const deadAddress = "0x000000000000000000000000000000000000dead";
-      await zns.subRegistrar.connect(deployer).setRegistry(deadAddress);
-
-      // prepare all calls to check if they revert
-      const calls = [
-        zns.subRegistrar.connect(randomUser).registerSubdomain(
+        const tx2 = await zns.subRegistrar.connect(user).registerSubdomain(
           nonRevokedDomainHash,
           "nonrevokedchild",
           randomUser.address,
           "https://example.com/817c64af",
           distrConfigEmpty,
           paymentConfigEmpty
-        ),
-        zns.subRegistrar.connect(randomUser).setDistributionConfigForDomain(
-          nonRevokedDomainHash,
-          distrConfigEmpty
-        ),
-        zns.subRegistrar.connect(randomUser).setPricerContractForDomain(
-          nonRevokedDomainHash,
-          zns.curvePricer.target,
-        ),
-        zns.subRegistrar.connect(randomUser).setPaymentTypeForDomain(
-          nonRevokedDomainHash,
-          PaymentType.STAKE
-        ),
-        zns.subRegistrar.connect(randomUser).setAccessTypeForDomain(
-          nonRevokedDomainHash,
-          AccessType.MINTLIST
-        ),
-        zns.subRegistrar.connect(randomUser).updateMintlistForDomain(
-          nonRevokedDomainHash,
-          [randomUser.address],
-          [true]
-        ),
-        zns.subRegistrar.connect(randomUser).clearMintlistForDomain(nonRevokedDomainHash),
-        zns.subRegistrar.connect(randomUser).clearMintlistAndLock(nonRevokedDomainHash),
-      ];
+        );
 
-      // run all the calls that should revert and make sure they do
-      await calls.reduce(
-        async (acc, call) => {
-          await acc;
-          try {
-            await call;
-          } catch (e) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            expect(e.message).to.include("Transaction reverted: function returned an unexpected amount of data");
-          }
-        }, Promise.resolve()
-      );
+        expect(tx2).to.not.be.undefined;
+      });
     });
   });
 });
