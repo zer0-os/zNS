@@ -1,13 +1,13 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@4.7.0
+  node: circleci/node@6.1.0
   codecov: codecov/codecov@3.2.4
 
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: cimg/node:18.15.0
+    - image: cimg/node:20.17.0
     - image: mongo:7.0.0-rc5-jammy
 
 jobs:
@@ -53,9 +53,9 @@ workflows:
             &filters-development # this yaml anchor is setting these values to "filters-production"
             branches:
               only: development
-      - publish:
-          context: CPT
-          requires:
-            - test and coverage
-          filters:
-            <<: *filters-development # this is calling the previously set yaml anchor
+#      - publish:
+#          context: CPT
+#          requires:
+#            - test and coverage
+#          filters:
+#            <<: *filters-development # this is calling the previously set yaml anchor
