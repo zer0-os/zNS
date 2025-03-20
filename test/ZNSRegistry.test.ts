@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
-import { IZNSContracts, DeployZNSParams } from "./helpers/types";
+import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { ZNSRegistry, ZNSRegistry__factory, ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "ethers";
 import {
@@ -11,16 +11,12 @@ import {
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   INITIALIZED_ERR,
-  getAccessRevertMsg,
   validateUpgrade,
-  NOT_AUTHORIZED_REG_ERR,
   DEFAULT_RESOLVER_TYPE,
+  AC_UNAUTHORIZED_ERR,
+  NOT_AUTHORIZED_ERR,
+  ZERO_ADDRESS_ERR,
 } from "./helpers";
-import {
-  ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR,
-  OWNER_NOT_ZERO_REG_ERR,
-} from "./helpers/errors";
 import { getProxyImplAddress } from "./helpers/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -36,7 +32,7 @@ describe("ZNSRegistry", () => {
   let mockResolver : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal;
   let wilderDomainHash : string;
 
   beforeEach(async () => {
@@ -68,7 +64,8 @@ describe("ZNSRegistry", () => {
       zns.registry.initialize(
         await zns.accessController.getAddress()
       )
-    ).to.be.revertedWith(
+    ).to.be.revertedWithCustomError(
+      zns.registry,
       INITIALIZED_ERR
     );
   });
@@ -82,7 +79,7 @@ describe("ZNSRegistry", () => {
       implContract.initialize(
         deployer.address,
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   // eslint-disable-next-line max-len
@@ -121,9 +118,8 @@ describe("ZNSRegistry", () => {
   it("Should revert when setting access controller without ADMIN_ROLE", async () => {
     await expect(
       zns.registry.connect(randomUser).setAccessController(deployer.address)
-    ).to.be.revertedWith(
-      getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
-    );
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+      .withArgs(randomUser.address, ADMIN_ROLE);
   });
 
   describe("Audit fix with approved address resolvers", () => {
@@ -233,12 +229,12 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(deployer).setOwnersOperator(operator.address, false);
 
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Does not permit an operator that's never been allowed to modify a record", async () => {
       const tx = zns.registry.connect(operator).updateDomainResolver(wilderDomainHash, operator.address);
-      await expect(tx).to.be.revertedWith("ZNSRegistry: Not authorized");
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("#isOperatorFor() should return true for an operator", async () => {
@@ -315,9 +311,8 @@ describe("ZNSRegistry", () => {
         DEFAULT_RESOLVER_TYPE
       );
 
-      await expect(tx).to.be.revertedWith(
-        `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${REGISTRAR_ROLE}`
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(deployer.address, REGISTRAR_ROLE);
     });
   });
 
@@ -328,7 +323,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainRecord(domainHash, deployer.address, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain record if the domain exists", async () => {
@@ -352,7 +347,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainOwner(domainHash, deployer.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(ONLY_OWNER_REGISTRAR_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain owner if the domain exists", async () => {
@@ -371,7 +366,7 @@ describe("ZNSRegistry", () => {
       const tx = zns.registry.updateDomainResolver(domainHash, mockResolver.address);
 
       // Because nobody owns a non-existing record, the error is caught by the `onlyOwnerOrOperator` first
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can update a domain resolver if the domain exists", async () => {
@@ -394,7 +389,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.updateDomainRecord(domainHash, ethers.ZeroAddress, mockResolver.address);
 
-      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, ZERO_ADDRESS_ERR);
     });
 
     it("Can update a domain record if the resolver is zero address", async () => {
@@ -414,7 +409,7 @@ describe("ZNSRegistry", () => {
           ethers.ZeroAddress
         );
 
-      await expect(tx).to.be.revertedWith(OWNER_NOT_ZERO_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, ZERO_ADDRESS_ERR);
     });
 
     it("Can update a domain resolver if resolver is zero address", async () => {
@@ -438,7 +433,7 @@ describe("ZNSRegistry", () => {
           operator.address,
           mockResolver.address
         );
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update a domain's record if not an owner or operator", async () => {
@@ -451,7 +446,7 @@ describe("ZNSRegistry", () => {
         deployer.address
       );
 
-      await expect(tx).to.be.revertedWith(ONLY_NAME_OWNER_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update an domain's owner if not an owner or operator", async () => {
@@ -460,9 +455,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainOwner(domainHash, mockResolver.address);
 
-      await expect(tx).to.be.revertedWith(
-        ONLY_OWNER_REGISTRAR_REG_ERR
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("cannot update a domain's resolver if not an owner or operator", async () => {
@@ -471,7 +464,7 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).updateDomainResolver(domainHash, deployer.address);
 
-      await expect(tx).to.be.revertedWith(NOT_AUTHORIZED_REG_ERR);
+      await expect(tx).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
 
     it("Can delete record with REGISTRAR_ROLE", async () => {
@@ -491,9 +484,8 @@ describe("ZNSRegistry", () => {
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, DEFAULT_RESOLVER_TYPE);
       const tx = zns.registry.connect(randomUser).deleteRecord(domainHash);
 
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
-      );
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address,REGISTRAR_ROLE);
     });
   });
 
@@ -595,7 +587,10 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(deployer).upgradeTo(await registry.getAddress());
+      const upgradeTx = zns.registry.connect(deployer).upgradeToAndCall(
+        await registry.getAddress(),
+        "0x"
+      );
       await expect(upgradeTx).to.be.not.be.reverted;
     });
 
@@ -605,8 +600,13 @@ describe("ZNSRegistry", () => {
       await registry.waitForDeployment();
 
       // To control the signer we call manually here instead of through hardhat
-      const upgradeTx = zns.registry.connect(randomUser).upgradeTo(await registry.getAddress());
-      await expect(upgradeTx).to.be.revertedWith(getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE));
+      const upgradeTx = zns.registry.connect(randomUser).upgradeToAndCall(
+        await registry.getAddress(),
+        "0x"
+      );
+
+      await expect(upgradeTx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

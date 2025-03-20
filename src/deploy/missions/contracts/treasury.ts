@@ -1,10 +1,16 @@
-import { BaseDeployMission } from "../base-deploy-mission";
+import {
+  BaseUpgradeMission,
+  TDeployArgs,
+} from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
-import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
+import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSTreasuryDM extends BaseDeployMission {
+export class ZNSTreasuryDM extends BaseUpgradeMission<
+IZNSCampaignConfig,
+IZNSContracts
+> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,

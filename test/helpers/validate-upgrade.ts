@@ -1,18 +1,23 @@
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ZNSContract, ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
+import { ZNSContractMock, ZNSContractMockFactory, GeneralContractGetter } from "./types";
+import { ZNSContract } from "../../src/deploy/campaign/types";
+import { ZNSAccessController } from "../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
 
 export const validateUpgrade = async (
   deployer : SignerWithAddress,
-  contract : ZNSContract,
+  contract : Exclude<Exclude<ZNSContract, ZNSAccessController>, MeowToken>,
   upgradeContract : ZNSContractMock,
   upgradeContractFactory : ZNSContractMockFactory,
   getters : Array<GeneralContractGetter>
 ) => {
   const preVals = await Promise.all(getters);
 
-  await contract.connect(deployer).upgradeTo(await upgradeContract.getAddress());
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await contract.connect(deployer).upgradeToAndCall(await upgradeContract.getAddress(), "0x");
 
   // Typechain doesn't update the generated interface for the contract after upgrading
   // so we use the new factory to attach to the existing address instead

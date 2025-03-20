@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { IZNSTreasury } from "./IZNSTreasury.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -8,6 +8,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { PaymentConfig } from "./IZNSTreasury.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -62,14 +63,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
-        require(
-            paymentToken_ != address(0),
-            "ZNSTreasury: paymentToken_ passed as 0x0 address"
-        );
-        require(
-            zeroVault_ != address(0),
-            "ZNSTreasury: zeroVault_ passed as 0x0 address"
-        );
+        if (paymentToken_ == address(0) || zeroVault_ == address(0))
+            revert ZeroAddressPassed();
 
         paymentConfigs[0x0] = PaymentConfig({
             token: IERC20(paymentToken_),
@@ -120,10 +115,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
 
         // transfer stake fee to the parent beneficiary if it's > 0
         if (stakeFee > 0) {
-            require(
-                parentConfig.beneficiary != address(0),
-                "ZNSTreasury: parent domain has no beneficiary set"
-            );
+            if (parentConfig.beneficiary == address(0))
+                revert NoBeneficiarySetForParent(parentHash);
 
             parentConfig.token.safeTransfer(
                 parentConfig.beneficiary,
@@ -156,13 +149,23 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
      * Since we are clearing storage, gas refund from this operation makes Revoke transactions cheaper.
      * @param domainHash The hash of the domain for which the stake is being withdrawn.
      * @param owner The address of the user who is withdrawing the stake.
+     * @param protocolFee The protocol fee paid by the user to Zero.
      */
     function unstakeForDomain(
         bytes32 domainHash,
-        address owner
+        address owner,
+        uint256 protocolFee
     ) external override onlyRegistrar {
         Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
+
+        if (protocolFee > 0) {
+            stakeData.token.safeTransferFrom(
+                owner,
+                paymentConfigs[0x0].beneficiary,
+                protocolFee
+            );
+        }
 
         stakeData.token.safeTransfer(owner, stakeData.amount);
 
@@ -196,10 +199,8 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     ) external override onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
-        require(
-            parentConfig.beneficiary != address(0),
-            "ZNSTreasury: parent domain has no beneficiary set"
-        );
+        if (parentConfig.beneficiary == address(0))
+            revert NoBeneficiarySetForParent(parentHash);
 
         // Transfer payment to parent beneficiary from payer
         parentConfig.token.safeTransferFrom(
@@ -235,10 +236,11 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
     ) external override {
-        require(
-            registry.isOwnerOrOperator(domainHash, msg.sender) || accessController.isRegistrar(msg.sender),
-            "ZNSTreasury: Not authorized."
-        );
+        if (
+            !registry.isOwnerOrOperator(domainHash, msg.sender)
+            && !accessController.isRegistrar(msg.sender)
+        ) revert NotAuthorizedForDomain(msg.sender, domainHash);
+
         _setBeneficiary(domainHash, paymentConfig.beneficiary);
         _setPaymentToken(domainHash, address(paymentConfig.token));
     }
@@ -281,14 +283,16 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     function _setBeneficiary(bytes32 domainHash, address beneficiary) internal {
-        require(beneficiary != address(0), "ZNSTreasury: beneficiary passed as 0x0 address");
+        if (beneficiary == address(0))
+            revert ZeroAddressPassed();
 
         paymentConfigs[domainHash].beneficiary = beneficiary;
         emit BeneficiarySet(domainHash, beneficiary);
     }
 
     function _setPaymentToken(bytes32 domainHash, address paymentToken) internal {
-        require(paymentToken != address(0), "ZNSTreasury: paymentToken passed as 0x0 address");
+        if (paymentToken == address(0))
+            revert ZeroAddressPassed();
 
         paymentConfigs[domainHash].token = IERC20(paymentToken);
         emit PaymentTokenSet(domainHash, paymentToken);

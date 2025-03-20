@@ -1,18 +1,21 @@
-import { BaseDeployMission } from "../missions/base-deploy-mission";
-import { BaseContract } from "ethers";
-import { ICurvePriceConfig, TDeployMissionCtor } from "../missions/types";
-import { HardhatDeployer } from "../deployer/hardhat-deployer";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSContracts } from "../../../test/helpers/types";
-import { Logger as WinstonLogger } from "winston";
-import { MongoDBAdapter } from "../db/mongo-adapter/mongo-adapter";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
+import { ICurvePriceConfig } from "../missions/types";
+import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
+import {
+  MeowTokenMock,
+  ZNSAccessController,
+  ZNSAddressResolver,
+  ZNSCurvePricer,
+  ZNSDomainToken,
+  ZNSFixedPricer,
+  ZNSRegistry,
+  ZNSRootRegistrar,
+  ZNSSubRegistrar,
+  ZNSTreasury,
+} from "../../../typechain";
+import { MeowToken } from "@zero-tech/ztoken/typechain-js";
 
-export type ContractV6 = BaseContract & Omit<BaseContract, keyof BaseContract>;
 
-export interface IDeployCampaignConfig {
-  env : string;
-  deployAdmin : HardhatEthersSigner | DefenderRelaySigner;
+export interface IZNSCampaignConfig extends IDeployCampaignConfig {
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -25,35 +28,30 @@ export interface IDeployCampaignConfig {
   zeroVaultAddress : string;
   mockMeowToken : boolean;
   stakingTokenAddress : string;
-  postDeploy : {
-    tenderlyProjectSlug : string;
-    monitorContracts : boolean;
-    verifyContracts : boolean;
-  };
 }
 
-export type TLogger = WinstonLogger | Console;
+export type ZNSContract =
+  ZNSAccessController |
+  ZNSRegistry |
+  ZNSDomainToken |
+  MeowTokenMock |
+  MeowToken |
+  ZNSAddressResolver |
+  ZNSCurvePricer |
+  ZNSTreasury |
+  ZNSRootRegistrar |
+  ZNSFixedPricer |
+  ZNSSubRegistrar;
 
-export interface IContractState {
-  [key : string] : ContractV6;
+export interface IZNSContracts extends IContractState {
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  domainToken : ZNSDomainToken;
+  meowToken : MeowTokenMock;
+  addressResolver : ZNSAddressResolver;
+  curvePricer : ZNSCurvePricer;
+  treasury : ZNSTreasury;
+  rootRegistrar : ZNSRootRegistrar;
+  fixedPricer : ZNSFixedPricer;
+  subRegistrar : ZNSSubRegistrar;
 }
-
-export interface IMissionInstances {
-  [key : string] : BaseDeployMission;
-}
-
-export interface ICampaignState {
-  missions : Array<TDeployMissionCtor>;
-  instances : IMissionInstances;
-  contracts : TZNSContractState;
-}
-
-export interface ICampaignArgs {
-  missions : Array<TDeployMissionCtor>;
-  deployer : HardhatDeployer;
-  dbAdapter : MongoDBAdapter;
-  logger : TLogger;
-  config : IDeployCampaignConfig;
-}
-
-export type TZNSContractState = IContractState & IZNSContracts;

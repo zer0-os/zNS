@@ -1,6 +1,5 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-
-import { IDeployCampaignConfig } from "./types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSCampaignConfig } from "./types";
 import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
   DEFAULT_ROYALTY_FRACTION,
@@ -19,7 +18,6 @@ import {
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MeowMainnet } from "../missions/contracts/meow-token/mainnet-data";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
 
 
 const getCustomAddresses = (
@@ -55,36 +53,40 @@ const getCustomAddresses = (
 };
 
 // This function builds a config with default values but overrides them with any values that are set
-export const getConfig = async ({
+export const getCampaignConfig = async ({
   deployer,
   governors,
   admins,
   zeroVaultAddress,
   env, // this is ONLY used for tests!
 } : {
-  deployer : SignerWithAddress | DefenderRelaySigner;
+  deployer : SignerWithAddress;
   governors ?: Array<string>;
   admins ?: Array<string>;
   zeroVaultAddress ?: string;
   env ?: string;
-}) : Promise<IDeployCampaignConfig> => {
+}) : Promise<IZNSCampaignConfig> => {
   // Will throw an error based on any invalid setup, given the `ENV_LEVEL` set
   const priceConfig = validateEnv(env);
 
   let deployerAddress;
   if (deployer && Object.keys(deployer).includes("address")) {
-    deployerAddress = (deployer as HardhatEthersSigner).address;
+    deployerAddress = deployer.address;
   } else {
     deployerAddress = await deployer.getAddress();
   }
 
-  if (process.env.ENV_LEVEL === "dev") {
-    requires(!!zeroVaultAddress, "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment");
-  }
+  let zeroVaultAddressConf;
 
-  const zeroVaultAddressConf = process.env.ENV_LEVEL === "dev"
-    ? zeroVaultAddress!
-    : process.env.ZERO_VAULT_ADDRESS!;
+  if (process.env.ENV_LEVEL === "dev") {
+    requires(
+      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
+      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
+    );
+    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+  } else {
+    zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
+  }
 
   // Domain Token Values
   const royaltyReceiver = process.env.ENV_LEVEL !== "dev" ? process.env.ROYALTY_RECEIVER! : zeroVaultAddressConf;
@@ -99,19 +101,20 @@ export const getConfig = async ({
   // Get admin addresses set through env, if any
   const adminAddresses = getCustomAddresses("ADMIN_ADDRESSES", deployerAddress, admins);
 
-  const config : IDeployCampaignConfig = {
+  const config : IZNSCampaignConfig = {
     env: process.env.ENV_LEVEL!,
+    upgrade: process.env.UPGRADE === "true",
     deployAdmin: deployer,
     governorAddresses,
     adminAddresses,
     domainToken: {
       name: process.env.DOMAIN_TOKEN_NAME ? process.env.DOMAIN_TOKEN_NAME : ZNS_DOMAIN_TOKEN_NAME,
       symbol: process.env.DOMAIN_TOKEN_SYMBOL ? process.env.DOMAIN_TOKEN_SYMBOL : ZNS_DOMAIN_TOKEN_SYMBOL,
-      defaultRoyaltyReceiver: royaltyReceiver,
+      defaultRoyaltyReceiver: royaltyReceiver!,
       defaultRoyaltyFraction: royaltyFraction,
     },
     rootPriceConfig: priceConfig,
-    zeroVaultAddress: zeroVaultAddressConf,
+    zeroVaultAddress: zeroVaultAddressConf as string,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
     stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS!,
     postDeploy: {
@@ -170,6 +173,10 @@ export const validateEnv = (
 
   // Mainnet
   if (envLevel === "prod") {
+    requires(
+      process.env.UPGRADE === "true",
+      "Production contracts can ONLY be upgraded! Set UPGRADE='true' in .env"
+    );
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MeowMainnet.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);

@@ -1,6 +1,6 @@
 import fs from "fs";
 import { tagFilePath } from "./constants";
-import { getLogger } from "../../deploy/logger/create-logger";
+import { getLogger } from "@zero-tech/zdc";
 
 
 const logger = getLogger();

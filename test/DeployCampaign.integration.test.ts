@@ -1,9 +1,10 @@
+import {
+  getLogger,
+} from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getConfig } from "../src/deploy/campaign/environments";
-import { getLogger } from "../src/deploy/logger/create-logger";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
@@ -15,9 +16,10 @@ import {
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 
-describe("DeployCampaign - Integration", () => {
+
+describe("zNS + zDC Single Integration Test", () => {
   // Minters
   let deployAdmin : SignerWithAddress;
   let zeroVault : SignerWithAddress;
@@ -28,9 +30,9 @@ describe("DeployCampaign - Integration", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IDeployCampaignConfig;
+  let config : IZNSCampaignConfig;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;
 
   let users : Array<SignerWithAddress>;
@@ -71,28 +73,8 @@ describe("DeployCampaign - Integration", () => {
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
 
-    let deployer;
-    let provider;
-
-    if (hre.network.name === "hardhat") {
-      deployer = deployAdmin;
-      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    } else {
-      const credentials = {
-        apiKey: process.env.DEFENDER_KEY,
-        apiSecret: process.env.DEFENDER_SECRET,
-        relayerApiKey: process.env.RELAYER_KEY,
-        relayerApiSecret: process.env.RELAYER_SECRET,
-      };
-
-      const client = new Defender(credentials);
-      provider = client.relaySigner.getProvider();
-      deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
-    }
-
-
-    config = await getConfig({
-      deployer,
+    config = await getCampaignConfig({
+      deployer: deployAdmin,
       zeroVaultAddress: zeroVault.address,
     });
 

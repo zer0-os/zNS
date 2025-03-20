@@ -2,37 +2,35 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  MongoDBAdapter,
+} from "@zero-tech/zdc";
+import {
   normalizeName,
   validateUpgrade,
   AccessType,
   OwnerOf,
   PaymentType,
-  getAccessRevertMsg,
   hashDomainLabel,
   DEFAULT_TOKEN_URI,
   distrConfigEmpty,
   INVALID_LENGTH_ERR,
   INITIALIZED_ERR,
-  INVALID_TOKENID_ERC_ERR,
+  NONEXISTENT_TOKEN_ERC_ERR,
   REGISTRAR_ROLE,
   DEFAULT_PRECISION_MULTIPLIER,
   DEFAULT_PRICE_CONFIG,
   DEFAULT_PROTOCOL_FEE_PERCENT,
-  NOT_AUTHORIZED_REG_ERR,
-  NOT_BOTH_OWNER_RAR_ERR,
-  NOT_TOKEN_OWNER_RAR_ERR,
-  ONLY_NAME_OWNER_REG_ERR,
-  ONLY_OWNER_REGISTRAR_REG_ERR,
-  INVALID_NAME_ERR,
-  paymentConfigEmpty,
+  NOT_OWNER_OF_ERR,
+  NOT_AUTHORIZED_ERR,
+  INVALID_LABEL_ERR,
+  paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { getPriceObject } from "./helpers/pricing";
+import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
@@ -44,8 +42,9 @@ import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasur
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
+import { IZNSContracts } from "../src/deploy/campaign/types";
+import { ZeroHash } from "ethers";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -59,7 +58,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : TZNSContractState;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -72,7 +71,7 @@ describe("ZNSRootRegistrar", () => {
     // zeroVault address is used to hold the fee charged to the user when registering
     [deployer, zeroVault, user, operator, governor, admin, randomUser] = await hre.ethers.getSigners();
 
-    const config : IDeployCampaignConfig = await getConfig({
+    const config = await getCampaignConfig({
       deployer,
       zeroVaultAddress: zeroVault.address,
       governors: [deployer.address, governor.address],
@@ -92,7 +91,7 @@ describe("ZNSRootRegistrar", () => {
       ethers.MaxUint256
     );
 
-    userBalanceInitial = ethers.parseEther("100000000000");
+    userBalanceInitial = ethers.parseEther("1000000000000000000");
     // Give funds to user
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
@@ -220,7 +219,7 @@ describe("ZNSRootRegistrar", () => {
         operator.address,
         operator.address,
       )
-    ).to.be.revertedWith(INITIALIZED_ERR);
+    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
 
   it("Allows transfer of 0x0 domain ownership after deployment", async () => {
@@ -309,7 +308,8 @@ describe("ZNSRootRegistrar", () => {
       }
     );
 
-    await expect(tx).to.be.revertedWith(getAccessRevertMsg(user.address, ADMIN_ROLE));
+    await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+      .withArgs(user.address, ADMIN_ROLE);
   });
 
   it("Should NOT initialize twice", async () => {
@@ -321,7 +321,10 @@ describe("ZNSRootRegistrar", () => {
       randomUser.address,
     );
 
-    await expect(tx).to.be.revertedWith("Initializable: contract is already initialized");
+    await expect(tx).to.be.revertedWithCustomError(
+      zns.rootRegistrar,
+      INITIALIZED_ERR
+    );
   });
 
   describe("General functionality", () => {
@@ -329,22 +332,19 @@ describe("ZNSRootRegistrar", () => {
       const isRegistrar = await zns.accessController.hasRole(REGISTRAR_ROLE, randomUser.address);
       expect(isRegistrar).to.be.false;
 
-      await expect(
-        zns.rootRegistrar.connect(randomUser).coreRegister({
-          parentHash: ethers.ZeroHash,
-          domainHash: ethers.ZeroHash,
-          label: "randomname",
-          registrant: ethers.ZeroAddress,
-          price: "0",
-          stakeFee: "0",
-          domainAddress: ethers.ZeroAddress,
-          tokenURI: "",
-          isStakePayment: false,
-          paymentConfig: paymentConfigEmpty,
-        })
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, REGISTRAR_ROLE)
-      );
+      await expect(zns.rootRegistrar.connect(randomUser).coreRegister({
+        parentHash: ethers.ZeroHash,
+        domainHash: ethers.ZeroHash,
+        label: "randomname",
+        registrant: ethers.ZeroAddress,
+        price: "0",
+        stakeFee: "0",
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: "",
+        isStakePayment: false,
+        paymentConfig: paymentConfigEmpty,
+      })).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address,REGISTRAR_ROLE);
     });
 
     it("#isOwnerOf() returns correct bools", async () => {
@@ -408,15 +408,19 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.reverted;
     });
 
+    it("#isOwnerOf() should revert if wrong enum value is passed", async () => {
+      await expect(
+        zns.rootRegistrar.isOwnerOf(ethers.ZeroHash, user.address, 3)
+      ).to.be.reverted;
+    });
+
     it("#setSubRegistrar() should revert if called by address without ADMIN_ROLE", async () => {
       const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
       expect(isAdmin).to.be.false;
 
-      await expect(
-        zns.rootRegistrar.connect(randomUser).setSubRegistrar(randomUser.address)
-      ).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, ADMIN_ROLE)
-      );
+      await expect(zns.rootRegistrar.connect(randomUser).setSubRegistrar(randomUser.address))
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, ADMIN_ROLE);
     });
 
     it("#setSubRegistrar() should set the correct address", async () => {
@@ -430,8 +434,9 @@ describe("ZNSRootRegistrar", () => {
     it("#setSubRegistrar() should NOT set the address to zero address", async () => {
       await expect(
         zns.rootRegistrar.connect(admin).setSubRegistrar(ethers.ZeroAddress)
-      ).to.be.revertedWith(
-        "ZNSRootRegistrar: subRegistrar_ is 0x0 address"
+      ).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        ZERO_ADDRESS_ERR
       );
     });
   });
@@ -446,7 +451,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: emptyName,
         })
-      ).to.be.revertedWith(INVALID_LENGTH_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LENGTH_ERR);
     });
 
     it("Can register a TLD with characters [a-z0-9-]", async () => {
@@ -536,7 +541,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameA,
         })
-      ).to.be.revertedWith(INVALID_NAME_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -544,7 +549,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameB,
         })
-      ).to.be.revertedWith(INVALID_NAME_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -552,7 +557,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameC,
         })
-      ).to.be.revertedWith(INVALID_NAME_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
 
       await expect(
         defaultRootRegistration({
@@ -560,7 +565,7 @@ describe("ZNSRootRegistrar", () => {
           zns,
           domainName: nameD,
         })
-      ).to.be.revertedWith(INVALID_NAME_ERR);
+      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
     });
 
     // eslint-disable-next-line max-len
@@ -706,7 +711,13 @@ describe("ZNSRootRegistrar", () => {
         zns,
         domainName: defaultDomain,
       });
-      await expect(tx).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(ZeroHash, defaultDomain, true);
+
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.meowToken,
+        INSUFFICIENT_BALANCE_ERC_ERR
+      )
+        .withArgs(user.address, 0n, price + stakeFee);
     });
 
     it("Disallows creation of a duplicate domain", async () => {
@@ -721,7 +732,7 @@ describe("ZNSRootRegistrar", () => {
         domainName: defaultDomain,
       });
 
-      await expect(failTx).to.be.revertedWith("ZNSRootRegistrar: Domain already exists");
+      await expect(failTx).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
     });
 
     it("Successfully registers a domain without resolver content", async () => {
@@ -891,9 +902,10 @@ describe("ZNSRootRegistrar", () => {
       });
       // Reclaim the Domain
       const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
-
-      // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith(NOT_TOKEN_OWNER_RAR_ERR);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      ).withArgs(1n, user.address, domainHash);
 
       // Verify domain is not owned in registrar
       const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
@@ -906,7 +918,10 @@ describe("ZNSRootRegistrar", () => {
       const tx = zns.rootRegistrar.connect(user).reclaimDomain(domainHash);
 
       // Verify Domain is not reclaimed
-      await expect(tx).to.be.revertedWith(INVALID_TOKENID_ERC_ERR);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      ).withArgs(BigInt(domainHash));
     });
 
     it("Domain Token can be reclaimed, transferred, and then reclaimed again", async () => {
@@ -984,14 +999,46 @@ describe("ZNSRootRegistrar", () => {
       expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.ZeroAddress);
 
+      const protocolFee = getStakingOrProtocolFee(staked);
+
       // Verify final balances
-      const computedFinalBalance = balance + staked;
+      const computedFinalBalance = balance + staked - protocolFee;
       const finalBalance = await zns.meowToken.balanceOf(user.address);
       expect(computedFinalBalance).to.equal(finalBalance);
     });
   });
 
   describe("Revoking Domains", () => {
+    it("Charges a protocol fee to the owner as part of the revoke flow", async () => {
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+        distrConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.OPEN,
+        },
+      });
+
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
+      const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
+
+      const balanceBefore = await zns.meowToken.balanceOf(user.address);
+
+      // is revoke meant to be free if owner of parent? register subdomain is
+      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+
+      const balanceAfter = await zns.meowToken.balanceOf(user.address);
+
+      expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
+    });
+
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
       await defaultRootRegistration({
@@ -1040,9 +1087,10 @@ describe("ZNSRootRegistrar", () => {
 
       // Verify token has been burned
       const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
-      await expect(ownerOfTx).to.be.revertedWith(
-        INVALID_TOKENID_ERC_ERR
-      );
+      await expect(ownerOfTx).to.be.revertedWithCustomError(
+        zns.domainToken,
+        NONEXISTENT_TOKEN_ERC_ERR
+      ).withArgs(BigInt(domainHash));
 
       // Verify Domain Record Deleted
       const exists = await zns.registry.exists(domainHash);
@@ -1065,7 +1113,10 @@ describe("ZNSRootRegistrar", () => {
 
       // Verify transaction is reverted
       const tx = zns.rootRegistrar.connect(user).revokeDomain(fakeHash);
-      await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      );
     });
 
     it("Revoking domain unstakes", async () => {
@@ -1095,17 +1146,20 @@ describe("ZNSRootRegistrar", () => {
       // Revoke the domain
       await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
 
+
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
       expect(finalstaked).to.equal(BigInt("0"));
       expect(finalToken).to.equal(ethers.ZeroAddress);
+
+      const protocolFee = getStakingOrProtocolFee(staked);
 
       // Verify final balances
       const computedBalanceAfterStaking = balanceAfterStaking + staked;
       const balanceMinusFee = balance - expectedStakeFee;
       expect(computedBalanceAfterStaking).to.equal(balanceMinusFee);
       const finalBalance = await zns.meowToken.balanceOf(user.address);
-      expect(computedBalanceAfterStaking).to.equal(finalBalance);
+      expect(computedBalanceAfterStaking - protocolFee).to.equal(finalBalance);
     });
 
     it("Cannot revoke if Name is owned by another user", async () => {
@@ -1120,7 +1174,10 @@ describe("ZNSRootRegistrar", () => {
 
       // Try to revoke domain
       const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      ).withArgs(2n, user.address, parentDomainHash);
     });
 
     it("No one can revoke if Token and Name have different owners", async () => {
@@ -1139,10 +1196,13 @@ describe("ZNSRootRegistrar", () => {
 
       // Try to revoke domain as a new owner of the token
       const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        NOT_OWNER_OF_ERR
+      );
 
       const tx2 = zns.rootRegistrar.connect(deployer).revokeDomain(parentDomainHash);
-      await expect(tx2).to.be.revertedWith(NOT_BOTH_OWNER_RAR_ERR);
+      await expect(tx2).to.be.revertedWithCustomError(zns.rootRegistrar, NOT_OWNER_OF_ERR);
     });
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
@@ -1166,8 +1226,9 @@ describe("ZNSRootRegistrar", () => {
           domainHash,
           operator.address
         );
-      await expect(tx2).to.be.revertedWith(
-        ONLY_OWNER_REGISTRAR_REG_ERR
+      await expect(tx2).to.be.revertedWithCustomError(
+        zns.registry,
+        NOT_AUTHORIZED_ERR
       );
 
       const tx3 = zns.registry
@@ -1177,9 +1238,7 @@ describe("ZNSRootRegistrar", () => {
           user.address,
           operator.address
         );
-      await expect(tx3).to.be.revertedWith(
-        ONLY_NAME_OWNER_REG_ERR
-      );
+      await expect(tx3).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
 
       const tx4 = zns.registry
         .connect(operator)
@@ -1187,9 +1246,7 @@ describe("ZNSRootRegistrar", () => {
           domainHash,
           zeroVault.address
         );
-      await expect(tx4).to.be.revertedWith(
-        NOT_AUTHORIZED_REG_ERR
-      );
+      await expect(tx4).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
     });
   });
 
@@ -1208,14 +1265,16 @@ describe("ZNSRootRegistrar", () => {
 
       it("Should revert if not called by ADMIN", async () => {
         const tx = zns.rootRegistrar.connect(user).setAccessController(randomUser.address);
-        await expect(tx).to.be.revertedWith(
-          getAccessRevertMsg(user.address, ADMIN_ROLE)
-        );
+        await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+          .withArgs(user.address,ADMIN_ROLE);
       });
 
       it("Should revert if new AccessController is address zero", async () => {
         const tx = zns.rootRegistrar.connect(deployer).setAccessController(ethers.ZeroAddress);
-        await expect(tx).to.be.revertedWith("AC: _accessController is 0x0 address");
+        await expect(tx).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          ZERO_ADDRESS_ERR
+        );
       });
     });
 
@@ -1233,14 +1292,16 @@ describe("ZNSRootRegistrar", () => {
 
       it("Should revert if not called by ADMIN", async () => {
         const tx = zns.rootRegistrar.connect(user).setRegistry(randomUser.address);
-        await expect(tx).to.be.revertedWith(
-          getAccessRevertMsg(user.address, ADMIN_ROLE)
-        );
+        await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+          .withArgs(user.address,ADMIN_ROLE);
       });
 
       it("Should revert if ZNSRegistry is address zero", async () => {
         const tx = zns.rootRegistrar.connect(deployer).setRegistry(ethers.ZeroAddress);
-        await expect(tx).to.be.revertedWith("ARegistryWired: _registry can not be 0x0 address");
+        await expect(tx).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          ZERO_ADDRESS_ERR
+        );
       });
     });
 
@@ -1258,14 +1319,16 @@ describe("ZNSRootRegistrar", () => {
 
       it("Should revert if not called by ADMIN", async () => {
         const tx = zns.rootRegistrar.connect(user).setTreasury(randomUser.address);
-        await expect(tx).to.be.revertedWith(
-          getAccessRevertMsg(user.address, ADMIN_ROLE)
-        );
+        await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+          .withArgs(user.address,ADMIN_ROLE);
       });
 
       it("Should revert if Treasury is address zero", async () => {
         const tx = zns.rootRegistrar.connect(deployer).setTreasury(ethers.ZeroAddress);
-        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: treasury_ is 0x0 address");
+        await expect(tx).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          ZERO_ADDRESS_ERR
+        );
       });
     });
 
@@ -1283,14 +1346,37 @@ describe("ZNSRootRegistrar", () => {
 
       it("Should revert if not called by ADMIN", async () => {
         const tx = zns.rootRegistrar.connect(user).setDomainToken(randomUser.address);
-        await expect(tx).to.be.revertedWith(
-          getAccessRevertMsg(user.address, ADMIN_ROLE)
-        );
+        await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+          .withArgs(user.address,ADMIN_ROLE);
       });
 
       it("Should revert if DomainToken is address zero", async () => {
         const tx = zns.rootRegistrar.connect(deployer).setDomainToken(ethers.ZeroAddress);
-        await expect(tx).to.be.revertedWith("ZNSRootRegistrar: domainToken_ is 0x0 address");
+        await expect(tx).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          ZERO_ADDRESS_ERR
+        );
+      });
+    });
+
+    describe("#setRootPricer", () => {
+      it("#setRootPricer() should set the rootPricer correctly", async () => {
+        const newPricer = zns.fixedPricer.target;
+        await zns.rootRegistrar.connect(admin).setRootPricer(newPricer);
+
+        expect(await zns.rootRegistrar.rootPricer()).to.eq(newPricer);
+
+        // set back
+        await zns.rootRegistrar.connect(admin).setRootPricer(zns.curvePricer.target);
+      });
+
+      it("#setRootPricer() should NOT let set 0x0 address as the new pricer", async () => {
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPricer(ethers.ZeroAddress)
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          ZERO_ADDRESS_ERR
+        );
       });
     });
   });
@@ -1304,7 +1390,10 @@ describe("ZNSRootRegistrar", () => {
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
-      const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeTo(await registrar.getAddress());
+      const upgradeTx = zns.rootRegistrar.connect(deployer).upgradeToAndCall(
+        await registrar.getAddress(),
+        "0x"
+      );
       await expect(upgradeTx).to.not.be.reverted;
     });
 
@@ -1313,11 +1402,13 @@ describe("ZNSRootRegistrar", () => {
       const registrar = await registrarFactory.deploy();
       await registrar.waitForDeployment();
 
-      const tx = zns.rootRegistrar.connect(randomUser).upgradeTo(await registrar.getAddress());
-
-      await expect(tx).to.be.revertedWith(
-        getAccessRevertMsg(randomUser.address, GOVERNOR_ROLE)
+      const tx = zns.rootRegistrar.connect(randomUser).upgradeToAndCall(
+        await registrar.getAddress(),
+        "0x"
       );
+
+      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {

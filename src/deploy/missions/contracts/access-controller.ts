@@ -1,9 +1,14 @@
-import { BaseDeployMission } from "../base-deploy-mission";
-
+import {
+  BaseDeployMission,
+} from "@zero-tech/zdc";
 import { znsNames } from "./names";
+import { IZNSContracts, IZNSCampaignConfig } from "../../campaign/types";
 
 
-export class ZNSAccessControllerDM extends BaseDeployMission {
+export class ZNSAccessControllerDM extends BaseDeployMission<
+IZNSCampaignConfig,
+IZNSContracts
+> {
   proxyData = {
     isProxy: false,
   };
@@ -17,6 +22,6 @@ export class ZNSAccessControllerDM extends BaseDeployMission {
       adminAddresses,
     } = this.config;
 
-    return [ governorAddresses, adminAddresses ];
+    return [governorAddresses, adminAddresses];
   }
 }

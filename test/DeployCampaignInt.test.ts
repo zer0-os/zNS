@@ -3,6 +3,17 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import {
+  TLogger,
+  HardhatDeployer,
+  DeployCampaign,
+  resetMongoAdapter,
+  TDeployMissionCtor,
+  MongoDBAdapter,
+  ITenderlyContractData,
+  TDeployArgs,
+  VERSION_TYPES,
+} from "@zero-tech/zdc";
+import {
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_PRICE_CONFIG,
   ZNS_DOMAIN_TOKEN_NAME,
@@ -24,22 +35,17 @@ import {
   ZNSRegistryDM, ZNSRootRegistrarDM, ZNSSubRegistrarDM, ZNSTreasuryDM,
 } from "../src/deploy/missions/contracts";
 import { znsNames } from "../src/deploy/missions/contracts/names";
-import { IDeployCampaignConfig, TZNSContractState, TLogger } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MeowMainnet } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
-import { HardhatDeployer } from "../src/deploy/deployer/hardhat-deployer";
-import { DeployCampaign } from "../src/deploy/campaign/deploy-campaign";
-import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
-import { BaseDeployMission } from "../src/deploy/missions/base-deploy-mission";
 import { ResolverTypes } from "../src/deploy/constants";
-import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getCampaignConfig } from "../src/deploy/campaign/environments";
 import { ethers } from "ethers";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { ITenderlyContractData, TDeployArgs } from "../src/deploy/missions/types";
 import { saveTag } from "../src/utils/git-tag/save-tag";
-import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
+import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { getZnsMongoAdapter } from "../src/deploy/mongo";
 
 
 const execAsync = promisify(exec);
@@ -53,7 +59,7 @@ describe("Deploy Campaign Test", () => {
   let userA : SignerWithAddress;
   let userB : SignerWithAddress;
   let zeroVault : SignerWithAddress;
-  let campaignConfig : IDeployCampaignConfig;
+  let campaignConfig : IZNSCampaignConfig;
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -68,6 +74,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -114,7 +121,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig.mockMeowToken = false;
 
       // deploy MeowToken contract
-      const factory = await hre.ethers.getContractFactory("MeowToken");
+      const factory = await hre.ethers.getContractFactory("MeowTokenMock");
       const meow = await hre.upgrades.deployProxy(
         factory,
         [meowTokenName, meowTokenSymbol],
@@ -190,23 +197,36 @@ describe("Deploy Campaign Test", () => {
       failingInstanceName,
       callback,
     } : {
-      missionList : Array<typeof BaseDeployMission>;
+      missionList : Array<TDeployMissionCtor<
+      IZNSCampaignConfig,
+      IZNSContracts
+      >>;
       placeOfFailure : string;
       deployedNames : Array<{ contract : string; instance : string; }>;
       undeployedNames : Array<{ contract : string; instance : string; }>;
       failingInstanceName : string;
       // eslint-disable-next-line no-shadow
-      callback ?: (failingCampaign : DeployCampaign) => Promise<void>;
+      callback ?: (failingCampaign : DeployCampaign<
+      IZNSCampaignConfig,
+      IZNSContracts
+      >) => Promise<void>;
     }) => {
-      const deployer = new HardhatDeployer(deployAdmin, env);
-      let dbAdapter = await getMongoAdapter();
+      const deployer = new HardhatDeployer({
+        hre,
+        signer: deployAdmin,
+        env,
+      });
+      let dbAdapter = await getZnsMongoAdapter();
 
       let toMatchErr = errorMsgDeploy;
       if (placeOfFailure === "postDeploy") {
         toMatchErr = errorMsgPostDeploy;
       }
 
-      const failingCampaign = new DeployCampaign({
+      const failingCampaign = new DeployCampaign<
+      IZNSCampaignConfig,
+      IZNSContracts
+      >({
         missions: missionList,
         deployer,
         dbAdapter,
@@ -332,6 +352,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -352,7 +373,9 @@ describe("Deploy Campaign Test", () => {
         },
       };
 
-      mongoAdapter = await getMongoAdapter(loggerMock as TLogger);
+      mongoAdapter = await getZnsMongoAdapter({
+        logger: loggerMock as TLogger,
+      });
     });
 
     afterEach(async () => {
@@ -436,7 +459,10 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async (failingCampaign : DeployCampaign) => {
+      const checkPostDeploy = async (failingCampaign : DeployCampaign<
+      IZNSCampaignConfig,
+      IZNSContracts
+      >) => {
         const {
           // eslint-disable-next-line no-shadow
           registry,
@@ -552,7 +578,10 @@ describe("Deploy Campaign Test", () => {
         znsNames.subRegistrar,
       ];
 
-      const checkPostDeploy = async (failingCampaign : DeployCampaign) => {
+      const checkPostDeploy = async (failingCampaign : DeployCampaign<
+      IZNSCampaignConfig,
+      IZNSContracts
+      >) => {
         const {
           // eslint-disable-next-line no-shadow
           accessController,
@@ -615,7 +644,7 @@ describe("Deploy Campaign Test", () => {
     // for the environment specifically, that is ever only inferred from the `process.env.ENV_LEVEL`
     it("Gets the default configuration correctly", async () => {
       // set the environment to get the appropriate variables
-      const localConfig : IDeployCampaignConfig = await getConfig({
+      const localConfig : IZNSCampaignConfig = await getCampaignConfig({
         deployer: deployAdmin,
         zeroVaultAddress: zeroVault.address,
         governors: [governor.address],
@@ -645,9 +674,9 @@ describe("Deploy Campaign Test", () => {
     it("Modifies config to use a random account as the deployer", async () => {
       // Run the deployment a second time, clear the DB so everything is deployed
 
-      let zns : TZNSContractState;
+      let zns : IZNSContracts;
 
-      const config : IDeployCampaignConfig = await getConfig({
+      const config : IZNSCampaignConfig = await getCampaignConfig({
         deployer: userB,
         zeroVaultAddress: userA.address,
         governors: [userB.address, admin.address], // governors
@@ -709,7 +738,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Throws if env variable is invalid", async () => {
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -726,7 +755,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MOCK_MEOW_TOKEN = "true";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -744,7 +773,7 @@ describe("Deploy Campaign Test", () => {
       process.env.STAKING_TOKEN_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
           governors: [deployAdmin.address, governor.address],
@@ -765,7 +794,7 @@ describe("Deploy Campaign Test", () => {
       process.env.MIN_PRICE = ethers.parseEther("3").toString();
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -787,7 +816,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ROYALTY_FRACTION = "100";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -805,7 +834,7 @@ describe("Deploy Campaign Test", () => {
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
       try {
-        await getConfig({
+        await getCampaignConfig({
           env: "prod",
           deployer: deployAdmin,
           zeroVaultAddress: zeroVault.address,
@@ -820,7 +849,10 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Versioning", () => {
-    let campaign : DeployCampaign;
+    let campaign : DeployCampaign<
+    IZNSCampaignConfig,
+    IZNSContracts
+    >;
 
     before(async () => {
       await saveTag();
@@ -828,6 +860,7 @@ describe("Deploy Campaign Test", () => {
       campaignConfig = {
         env,
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -860,10 +893,10 @@ describe("Deploy Campaign Test", () => {
 
       const { dbAdapter } = campaign;
 
-      const versionDoc = await dbAdapter.getLatestVersion();
+      const versionDoc = await dbAdapter.versioner.getLatestVersion();
       expect(versionDoc?.contractsVersion).to.equal(fullGitTag);
 
-      const deployedVersion = await dbAdapter.getDeployedVersion();
+      const deployedVersion = await dbAdapter.versioner.getDeployedVersion();
       expect(deployedVersion?.contractsVersion).to.equal(fullGitTag);
     });
 
@@ -871,7 +904,7 @@ describe("Deploy Campaign Test", () => {
     it("should create new DB version and KEEP old data if ARCHIVE is true and no TEMP versions currently exist", async () => {
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -895,7 +928,7 @@ describe("Deploy Campaign Test", () => {
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
       expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
 
-      const versionDocNew = await newDbAdapter.getLatestVersion();
+      const versionDocNew = await newDbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
       expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
 
@@ -919,7 +952,7 @@ describe("Deploy Campaign Test", () => {
     it("should create new DB version and WIPE all existing data if ARCHIVE is false and no TEMP versions currently exist", async () => {
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -943,7 +976,7 @@ describe("Deploy Campaign Test", () => {
       const registryDocNew = await newDbAdapter.getContract(znsNames.registry.contract);
       expect(registryDocNew?.version).to.not.equal(registryDocInitial?.version);
 
-      const versionDocNew = await newDbAdapter.getLatestVersion();
+      const versionDocNew = await newDbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.not.equal(initialDBVersion);
       expect(versionDocNew?.type).to.equal(VERSION_TYPES.deployed);
 
@@ -963,7 +996,7 @@ describe("Deploy Campaign Test", () => {
     it("should pick up existing contracts and NOT deploy new ones into state if MONGO_DB_VERSION is specified", async () => {
       const { dbAdapter } = campaign;
 
-      const versionDocInitial = await dbAdapter.getLatestVersion();
+      const versionDocInitial = await dbAdapter.versioner.getLatestVersion();
       const initialDBVersion = versionDocInitial?.dbVersion;
       const registryDocInitial = await dbAdapter.getContract(znsNames.registry.contract);
 
@@ -977,7 +1010,7 @@ describe("Deploy Campaign Test", () => {
       });
 
       // make sure we picked up the correct DB version
-      const versionDocNew = await dbAdapter.getLatestVersion();
+      const versionDocNew = await dbAdapter.versioner.getLatestVersion();
       expect(versionDocNew?.dbVersion).to.equal(initialDBVersion);
 
       // make sure old contracts from previous DB version are still there
@@ -1001,7 +1034,7 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Verify - Monitor", () => {
-    let config : IDeployCampaignConfig;
+    let config : IZNSCampaignConfig;
 
     before (async () => {
       [deployAdmin, admin, governor, zeroVault] = await hre.ethers.getSigners();
@@ -1009,6 +1042,7 @@ describe("Deploy Campaign Test", () => {
       config = {
         env: "dev",
         deployAdmin,
+        upgrade: false,
         governorAddresses: [deployAdmin.address, governor.address],
         adminAddresses: [deployAdmin.address, admin.address],
         domainToken: {
@@ -1044,7 +1078,11 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin, env);
+      const deployer = new HardhatDeployerMock({
+        hre,
+        signer: deployAdmin,
+        env,
+      });
 
       const campaign = await runZnsCampaign({
         config,
@@ -1076,7 +1114,11 @@ describe("Deploy Campaign Test", () => {
         }
       }
 
-      const deployer = new HardhatDeployerMock(deployAdmin,  env);
+      const deployer = new HardhatDeployerMock({
+        hre,
+        signer: deployAdmin,
+        env,
+      });
 
       config.postDeploy.monitorContracts = true;
       config.postDeploy.verifyContracts = false;
@@ -1094,7 +1136,7 @@ describe("Deploy Campaign Test", () => {
         async (acc, instance) => {
           await acc;
 
-          const dbData = await instance.getFromDB();
+          const dbData = await instance.getLatestFromDB();
 
           if (instance.proxyData.isProxy) {
             // check proxy
