@@ -2,9 +2,8 @@
 pragma solidity 0.8.18;
 
 import { IZNSRegistryPausable } from "./IZNSRegistryPausable.sol";
-import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 
 /**
@@ -15,7 +14,6 @@ import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/securit
 contract ZNSRegistryPausable is
     AAccessControlled,
     UUPSUpgradeable,
-    PausableUpgradeable,
     IZNSRegistryPausable {
 
     // Mapping of all approved resolvers
@@ -35,6 +33,8 @@ contract ZNSRegistryPausable is
      */
     mapping(address owner => mapping(address operator => bool isOperator))
         internal operators;
+
+    bool private _paused;
 
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
@@ -57,6 +57,16 @@ contract ZNSRegistryPausable is
             records[domainHash].owner == msg.sender,
             "ZNSRegistry: Not the Name Owner"
         );
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!paused(), "ZNSRegistry: Contract is paused");
+        _;
+    }
+
+    modifier whenPaused() {
+        require(paused(), "ZNSRegistry: Contract is not paused");
         _;
     }
 
@@ -95,6 +105,10 @@ contract ZNSRegistryPausable is
     ) public view override returns (bool) {
         address owner = records[domainHash].owner;
         return candidate == owner || operators[owner][candidate];
+    }
+
+    function paused() public view returns (bool) {
+        return _paused;
     }
 
     /**
@@ -278,14 +292,16 @@ contract ZNSRegistryPausable is
      * @notice Pauses the contract. Can only be called by the ADMIN_ROLE.
      */
     function pause() external onlyAdmin {
-        _pause();
+        _paused = true;
+        emit Paused(msg.sender);
     }
 
     /**
      * @notice Unpauses the contract. Can only be called by the ADMIN_ROLE.
      */
     function unpause() external onlyAdmin {
-        _unpause();
+        _paused = false;
+        emit Unpaused(msg.sender);
     }
 
     /**

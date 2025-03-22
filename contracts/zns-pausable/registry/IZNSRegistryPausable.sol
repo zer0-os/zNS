@@ -81,6 +81,16 @@ interface IZNSRegistryPausable {
         string resolverType
     );
 
+    /**
+     * @dev Emitted when the pause is triggered by `account`.
+     */
+    event Paused(address account);
+
+    /**
+     * @dev Emitted when the pause is lifted by `account`.
+     */
+    event Unpaused(address account);
+
     function initialize(address accessController) external;
 
     function exists(bytes32 domainHash) external view returns (bool);
