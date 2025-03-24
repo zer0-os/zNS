@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
 import { ERC721URIStorageUpgradeable }
@@ -196,6 +197,45 @@ contract ZNSDomainTokenPausable is
     function unpause() external whenPaused onlyAdmin {
         _paused = false;
         emit Unpaused(msg.sender);
+    }
+
+    function approve(
+        address to,
+        uint256 tokenId
+    ) public override (ERC721Upgradeable, IERC721Upgradeable) whenNotPaused {
+        super.approve(to, tokenId);
+    }
+
+    function setApprovalForAll(
+        address operator,
+        bool approved
+    ) public override (ERC721Upgradeable, IERC721Upgradeable) whenNotPaused {
+        super.setApprovalForAll(operator, approved);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override (ERC721Upgradeable, IERC721Upgradeable) whenNotPaused {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override (ERC721Upgradeable, IERC721Upgradeable) whenNotPaused {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public override (ERC721Upgradeable, IERC721Upgradeable) whenNotPaused {
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 
     /**
