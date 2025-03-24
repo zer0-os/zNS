@@ -63,6 +63,16 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         instanceName: znsNames.subRegistrar.instance,
         address: zns.subRegistrar.target,
       },
+      {
+        contractName: znsNames.curvePricer.contract,
+        instanceName: znsNames.curvePricer.instance,
+        address: zns.curvePricer.target,
+      },
+      {
+        contractName: znsNames.fixedPricer.contract,
+        instanceName: znsNames.fixedPricer.instance,
+        address: zns.fixedPricer.target,
+      },
     ];
 
     const znsUpgraded = await upgradeZNS({
