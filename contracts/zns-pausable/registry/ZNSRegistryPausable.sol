@@ -291,7 +291,7 @@ contract ZNSRegistryPausable is
     /**
      * @notice Pauses the contract. Can only be called by the ADMIN_ROLE.
      */
-    function pause() external onlyAdmin {
+    function pause() external whenNotPaused onlyAdmin {
         _paused = true;
         emit Paused(msg.sender);
     }
@@ -299,7 +299,7 @@ contract ZNSRegistryPausable is
     /**
      * @notice Unpauses the contract. Can only be called by the ADMIN_ROLE.
      */
-    function unpause() external onlyAdmin {
+    function unpause() external whenPaused onlyAdmin {
         _paused = false;
         emit Unpaused(msg.sender);
     }
