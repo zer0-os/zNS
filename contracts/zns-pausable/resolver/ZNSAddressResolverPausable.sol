@@ -5,7 +5,7 @@ import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolverPausable } from "./IZNSAddressResolverPausable.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 
 
 /**
@@ -16,7 +16,7 @@ import { ARegistryWired } from "../../registry/ARegistryWired.sol";
 contract ZNSAddressResolverPausable is
     UUPSUpgradeable,
     AAccessControlled,
-    ARegistryWired,
+    ARegistryWiredPausable,
     ERC165,
     IZNSAddressResolverPausable {
     /**
@@ -116,7 +116,7 @@ contract ZNSAddressResolverPausable is
      * Emits a `RegistrySet` event.
      * @param _registry The address of the `ZNSRegistry` contract
      */
-    function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolverPausable) onlyAdmin {
+    function setRegistry(address _registry) public override(ARegistryWiredPausable, IZNSAddressResolverPausable) onlyAdmin {
         _setRegistry(_registry);
     }
 

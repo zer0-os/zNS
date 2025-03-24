@@ -2,7 +2,7 @@
 pragma solidity 0.8.18;
 
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 import { IZNSFixedPricerPausable } from "./IZNSFixedPricerPausable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
@@ -12,7 +12,7 @@ import { StringUtils } from "../../utils/StringUtils.sol";
  * @notice Pricer contract that uses the most straightforward fixed pricing model
  * that doesn't depend on the length of the label.
 */
-contract ZNSFixedPricerPausable is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSFixedPricerPausable {
+contract ZNSFixedPricerPausable is AAccessControlled, ARegistryWiredPausable, UUPSUpgradeable, IZNSFixedPricerPausable {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -154,9 +154,9 @@ contract ZNSFixedPricerPausable is AAccessControlled, ARegistryWired, UUPSUpgrad
 
     /**
      * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+     * @dev This function is required for all contracts inheriting `ARegistryWiredPausable`.
     */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricerPausable) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWiredPausable, IZNSFixedPricerPausable) onlyAdmin {
         _setRegistry(registry_);
     }
 

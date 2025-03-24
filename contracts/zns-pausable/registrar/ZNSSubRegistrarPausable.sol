@@ -5,9 +5,9 @@ import { IZNSPricer } from "../../types/IZNSPricer.sol";
 import { IZNSRootRegistrarPausable, CoreRegisterArgs } from "./IZNSRootRegistrarPausable.sol";
 import { IZNSSubRegistrarPausable } from "./IZNSSubRegistrarPausable.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
-import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasuryPausable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -17,7 +17,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrarPausable is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrarPausable {
+contract ZNSSubRegistrarPausable is AAccessControlled, ARegistryWiredPausable, UUPSUpgradeable, IZNSSubRegistrarPausable {
     using StringUtils for string;
 
     /**
@@ -346,9 +346,9 @@ contract ZNSSubRegistrarPausable is AAccessControlled, ARegistryWired, UUPSUpgra
 
     /**
      * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+     * @dev This function is required for all contracts inheriting `ARegistryWiredPausable`.
     */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSSubRegistrarPausable) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWiredPausable, IZNSSubRegistrarPausable) onlyAdmin {
         _setRegistry(registry_);
     }
 

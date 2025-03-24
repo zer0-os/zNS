@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+// TODO upg: should we change imports and types for the new pausable ones ?!!
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 import { IZNSRootRegistrarPausable, CoreRegisterArgs } from "./IZNSRootRegistrarPausable.sol";
-import { IZNSTreasury, PaymentConfig } from "../../treasury/IZNSTreasury.sol";
-import { IZNSDomainToken } from "../../token/IZNSDomainToken.sol";
-import { IZNSAddressResolver } from "../../resolver/IZNSAddressResolver.sol";
+import { IZNSTreasuryPausable, PaymentConfig } from "../treasury/IZNSTreasuryPausable.sol";
+import { IZNSDomainTokenPausable } from "../token/IZNSDomainTokenPausable.sol";
+import { IZNSAddressResolverPausable } from "../resolver/IZNSAddressResolverPausable.sol";
 import { IZNSSubRegistrarPausable } from "./IZNSSubRegistrarPausable.sol";
 import { IZNSPricer } from "../../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -29,13 +30,13 @@ import { StringUtils } from "../../utils/StringUtils.sol";
 contract ZNSRootRegistrarPausable is
     UUPSUpgradeable,
     AAccessControlled,
-    ARegistryWired,
+    ARegistryWiredPausable,
     IZNSRootRegistrarPausable {
     using StringUtils for string;
 
     IZNSPricer public rootPricer;
-    IZNSTreasury public treasury;
-    IZNSDomainToken public domainToken;
+    IZNSTreasuryPausable public treasury;
+    IZNSDomainTokenPausable public domainToken;
     IZNSSubRegistrarPausable public subRegistrar;
 
     bool private _paused;
@@ -217,7 +218,7 @@ contract ZNSRootRegistrarPausable is
         if (args.domainAddress != address(0)) {
             registry.createDomainRecord(args.domainHash, args.registrant, "address");
 
-            IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
+            IZNSAddressResolverPausable(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
@@ -373,7 +374,7 @@ contract ZNSRootRegistrarPausable is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param registry_ Address of the `ZNSRegistry` contract
      */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrarPausable) onlyAdmin {
+    function setRegistry(address registry_) public override(ARegistryWiredPausable, IZNSRootRegistrarPausable) onlyAdmin {
         _setRegistry(registry_);
     }
 
@@ -402,7 +403,7 @@ contract ZNSRootRegistrarPausable is
             treasury_ != address(0),
             "ZNSRootRegistrar: treasury_ is 0x0 address"
         );
-        treasury = IZNSTreasury(treasury_);
+        treasury = IZNSTreasuryPausable(treasury_);
 
         emit TreasurySet(treasury_);
     }
@@ -417,7 +418,7 @@ contract ZNSRootRegistrarPausable is
             domainToken_ != address(0),
             "ZNSRootRegistrar: domainToken_ is 0x0 address"
         );
-        domainToken = IZNSDomainToken(domainToken_);
+        domainToken = IZNSDomainTokenPausable(domainToken_);
 
         emit DomainTokenSet(domainToken_);
     }

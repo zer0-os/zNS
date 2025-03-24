@@ -7,7 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { PaymentConfig } from "./IZNSTreasuryPausable.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 
 
 /**
@@ -18,7 +18,7 @@ import { ARegistryWired } from "../../registry/ARegistryWired.sol";
  * It also stores the payment configurations for all domains and staked amounts and token addresses which were used.
  * This information is needed for revoking users to withdraw their stakes back when they exit the system.
 */
-contract ZNSTreasuryPausable is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasuryPausable {
+contract ZNSTreasuryPausable is AAccessControlled, ARegistryWiredPausable, UUPSUpgradeable, IZNSTreasuryPausable {
     using SafeERC20 for IERC20;
 
     /**
@@ -284,11 +284,11 @@ contract ZNSTreasuryPausable is AAccessControlled, ARegistryWired, UUPSUpgradeab
 
     /**
      * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+     * @dev This function is required for all contracts inheriting `ARegistryWiredPausable`.
     */
     function setRegistry(
         address registry_
-    ) external override(ARegistryWired, IZNSTreasuryPausable) onlyAdmin {
+    ) external override(ARegistryWiredPausable, IZNSTreasuryPausable) onlyAdmin {
         _setRegistry(registry_);
     }
 

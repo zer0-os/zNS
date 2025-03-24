@@ -2,7 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IDistributionConfig } from "../../types/IDistributionConfig.sol";
-import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
+import { PaymentConfig } from "../treasury/IZNSTreasuryPausable.sol";
 
 
 /**

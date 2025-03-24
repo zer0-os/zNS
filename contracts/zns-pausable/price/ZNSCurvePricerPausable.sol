@@ -5,7 +5,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { IZNSCurvePricerPausable } from "./IZNSCurvePricerPausable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 
 
 /**
@@ -15,7 +15,7 @@ import { ARegistryWired } from "../../registry/ARegistryWired.sol";
  * It then decreases in price, using the calculated price function below, until it reaches `minPrice`
  * at `maxLength` length of the domain name. Price after `maxLength` is fixed and always equal to `minPrice`.
  */
-contract ZNSCurvePricerPausable is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricerPausable {
+contract ZNSCurvePricerPausable is AAccessControlled, ARegistryWiredPausable, UUPSUpgradeable, IZNSCurvePricerPausable {
     using StringUtils for string;
 
     /**
@@ -299,9 +299,9 @@ contract ZNSCurvePricerPausable is AAccessControlled, ARegistryWired, UUPSUpgrad
 
     /**
      * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
+     * @dev This function is required for all contracts inheriting `ARegistryWiredPausable`.
     */
-    function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricerPausable) onlyAdmin {
+    function setRegistry(address registry_) external override(ARegistryWiredPausable, IZNSCurvePricerPausable) onlyAdmin {
         _setRegistry(registry_);
     }
 
