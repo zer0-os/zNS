@@ -22,7 +22,7 @@ export const upgradeZNS = async ({
 
   const logger = getLogger();
 
-  console.log(`Governor acquired as ${governor.address}`);
+  logger.info(`Governor acquired as ${governor.address}`);
 
   const znsUpgraded = await contractData.reduce(
     async (
