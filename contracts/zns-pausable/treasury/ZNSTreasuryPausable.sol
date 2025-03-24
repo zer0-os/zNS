@@ -40,12 +40,12 @@ contract ZNSTreasuryPausable is AAccessControlled, ARegistryWired, UUPSUpgradeab
     bool private _paused;
 
     modifier whenNotPaused() {
-        require(!paused(), "CONTRACTNAME: Contract is paused");
+        require(!paused(), "ZNSTreasury: Contract is paused");
         _;
     }
 
     modifier whenPaused() {
-        require(paused(), "CONTRACTNAME: Contract is not paused");
+        require(paused(), "ZNSTreasury: Contract is not paused");
         _;
     }
 
