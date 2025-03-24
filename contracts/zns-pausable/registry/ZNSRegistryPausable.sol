@@ -196,7 +196,7 @@ contract ZNSRegistryPausable is
      * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
      * @param resolverType The resolver type as a string, e.g. "address"
      */
-    function getResolverType(string calldata resolverType) public view override returns(address) {
+    function getResolverType(string calldata resolverType) public view override returns (address) {
         return resolvers[resolverType];
     }
 
@@ -207,7 +207,7 @@ contract ZNSRegistryPausable is
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract
      */
-    function addResolverType(string calldata resolverType, address resolver) public override whenNotPaused onlyAdmin {
+    function addResolverType(string calldata resolverType, address resolver) public override onlyAdmin {
         resolvers[resolverType] = resolver;
         emit ResolverAdded(resolverType, resolver);
     }
@@ -216,7 +216,7 @@ contract ZNSRegistryPausable is
      * @notice Delete a resolver type from the mapping of types
      * @param resolverType The type to be removed
      */
-    function deleteResolverType(string calldata resolverType) public override whenNotPaused onlyAdmin {
+    function deleteResolverType(string calldata resolverType) public override onlyAdmin {
         delete resolvers[resolverType];
         emit ResolverDeleted(resolverType);
     }
