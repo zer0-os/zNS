@@ -43,6 +43,11 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         instanceName: znsNames.registry.instance,
         address: zns.registry.target,
       },
+      {
+        contractName: znsNames.domainToken.contract,
+        instanceName: znsNames.domainToken.instance,
+        address: zns.domainToken.target,
+      },
     ];
 
     const znsUpgraded = await upgradeZNS({
