@@ -2,12 +2,14 @@
 pragma solidity 0.8.18;
 
 import { IZNSPricer } from "../../types/IZNSPricer.sol";
-import { IZNSRootRegistrarPausable, CoreRegisterArgs } from "./IZNSRootRegistrarPausable.sol";
+import { IZNSRootRegistrarPausable } from "./IZNSRootRegistrarPausable.sol";
+import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+import { CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
 import { IZNSSubRegistrarPausable } from "./IZNSSubRegistrarPausable.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 import { StringUtils } from "../../utils/StringUtils.sol";
-import { PaymentConfig } from "../treasury/IZNSTreasuryPausable.sol";
+import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 
@@ -348,7 +350,12 @@ contract ZNSSubRegistrarPausable is AAccessControlled, ARegistryWiredPausable, U
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWiredPausable`.
     */
-    function setRegistry(address registry_) public override(ARegistryWiredPausable, IZNSSubRegistrarPausable) onlyAdmin {
+    function setRegistry(address registry_)
+    public
+    override(
+        ARegistryWiredPausable,
+        IZNSSubRegistrar
+    ) onlyAdmin {
         _setRegistry(registry_);
     }
 

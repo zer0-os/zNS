@@ -2,11 +2,12 @@
 pragma solidity 0.8.18;
 
 import { IZNSTreasuryPausable } from "./IZNSTreasuryPausable.sol";
+import { IZNSTreasury } from "../../treasury/IZNSTreasury.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { PaymentConfig } from "./IZNSTreasuryPausable.sol";
+import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
 import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 
 
@@ -288,7 +289,7 @@ contract ZNSTreasuryPausable is AAccessControlled, ARegistryWiredPausable, UUPSU
     */
     function setRegistry(
         address registry_
-    ) external override(ARegistryWiredPausable, IZNSTreasuryPausable) onlyAdmin {
+    ) external override(ARegistryWiredPausable, IZNSTreasury) onlyAdmin {
         _setRegistry(registry_);
     }
 

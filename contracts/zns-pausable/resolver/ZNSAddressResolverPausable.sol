@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSAddressResolverPausable } from "./IZNSAddressResolverPausable.sol";
+import { IZNSAddressResolver } from "../../resolver/IZNSAddressResolver.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
 
@@ -97,7 +98,7 @@ contract ZNSAddressResolverPausable is
      */
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC165, IZNSAddressResolverPausable) returns (bool) {
+    ) public view virtual override(ERC165, IZNSAddressResolver) returns (bool) {
         return
             interfaceId == getInterfaceId() ||
             super.supportsInterface(interfaceId);
@@ -116,7 +117,7 @@ contract ZNSAddressResolverPausable is
      * Emits a `RegistrySet` event.
      * @param _registry The address of the `ZNSRegistry` contract
      */
-    function setRegistry(address _registry) public override(ARegistryWiredPausable, IZNSAddressResolverPausable) onlyAdmin {
+    function setRegistry(address _registry) public override(ARegistryWiredPausable, IZNSAddressResolver) onlyAdmin {
         _setRegistry(_registry);
     }
 

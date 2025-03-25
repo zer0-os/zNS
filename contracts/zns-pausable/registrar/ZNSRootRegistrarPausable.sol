@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-// TODO upg: should we change imports and types for the new pausable ones ?!!
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWiredPausable } from "../registry/ARegistryWiredPausable.sol";
-import { IZNSRootRegistrarPausable, CoreRegisterArgs } from "./IZNSRootRegistrarPausable.sol";
-import { IZNSTreasuryPausable, PaymentConfig } from "../treasury/IZNSTreasuryPausable.sol";
+import { IZNSRootRegistrarPausable } from "./IZNSRootRegistrarPausable.sol";
+import { IZNSRootRegistrar } from "../../registrar/IZNSRootRegistrar.sol";
+import { IZNSFixedPricer } from "../../price/IZNSFixedPricer.sol";
+import { CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
+import { IZNSTreasuryPausable } from "../treasury/IZNSTreasuryPausable.sol";
+import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
 import { IZNSDomainTokenPausable } from "../token/IZNSDomainTokenPausable.sol";
 import { IZNSAddressResolverPausable } from "../resolver/IZNSAddressResolverPausable.sol";
 import { IZNSSubRegistrarPausable } from "./IZNSSubRegistrarPausable.sol";
@@ -374,7 +377,12 @@ contract ZNSRootRegistrarPausable is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param registry_ Address of the `ZNSRegistry` contract
      */
-    function setRegistry(address registry_) public override(ARegistryWiredPausable, IZNSRootRegistrarPausable) onlyAdmin {
+    function setRegistry(address registry_)
+    public
+    override(
+        ARegistryWiredPausable,
+        IZNSRootRegistrar
+    ) onlyAdmin {
         _setRegistry(registry_);
     }
 

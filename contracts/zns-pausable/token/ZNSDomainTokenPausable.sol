@@ -8,6 +8,7 @@ import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/co
 import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainTokenPausable } from "./IZNSDomainTokenPausable.sol";
+import { IZNSDomainToken } from "../../token/IZNSDomainToken.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 
 
@@ -115,8 +116,11 @@ contract ZNSDomainTokenPausable is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721URIStorageUpgradeable, ERC721Upgradeable, IZNSDomainTokenPausable)
-    returns (string memory)
+    override(
+        ERC721URIStorageUpgradeable,
+        ERC721Upgradeable,
+        IZNSDomainToken
+    ) returns (string memory)
     {
         return super.tokenURI(tokenId);
     }
@@ -247,8 +251,12 @@ contract ZNSDomainTokenPausable is
     public
     view
     virtual
-    override(ERC721Upgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainTokenPausable)
-    returns (bool) {
+    override(
+        ERC721Upgradeable,
+        ERC721URIStorageUpgradeable,
+        ERC2981Upgradeable,
+        IZNSDomainToken
+    ) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
