@@ -50,6 +50,14 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     error InvalidOwnerOfEnumValue(OwnerOf value);
 
+    struct RootDomainRegistration {
+        string name;
+        address domainAddress;
+        string tokenURI;
+        DistributionConfig distributionConfig;
+        PaymentConfig paymentConfig;
+    }
+
     enum OwnerOf {
         NAME,
         TOKEN,

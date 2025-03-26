@@ -94,7 +94,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -128,6 +128,38 @@ contract ZNSRootRegistrar is
         }
 
         return domainHash;
+    }
+
+    /**
+     * @notice This function allows registering multiple root domains in a single transaction.
+     * It iterates through an array of `RootDomainRegistration` objects, registering each domain
+     * by calling the `registerRootDomain` function for each entry.
+     * @dev This function reduces the number of transactions required to register multiple domains,
+     * saving gas and improving efficiency. Each domain registration is processed sequentially.
+     * @param registrations An array of `RootDomainRegistration` structs, each containing:
+     *      + `name`: The name (label) of the domain to register.
+     *      + `domainAddress`: The address to associate with the domain in the resolver (optional).
+     *      + `tokenURI`: The URI to assign to the domain token.
+     *      + `distributionConfig`: The distribution configuration for the domain (optional).
+     *      + `paymentConfig`: The payment configuration for the domain (optional).
+     * @return domainHashes An array of `bytes32` hashes representing the registered domains.
+     */
+    function registerMultipleRootDomains(
+        RootDomainRegistration[] calldata registrations
+    ) external returns (bytes32[] memory) {
+        bytes32[] memory domainHashes = new bytes32[](registrations.length);
+
+        for (uint256 i = 0; i < registrations.length; i++) {
+            domainHashes[i] = registerRootDomain(
+                registrations[i].name,
+                registrations[i].domainAddress,
+                registrations[i].tokenURI,
+                registrations[i].distributionConfig,
+                registrations[i].paymentConfig
+            );
+        }
+
+        return domainHashes;
     }
 
     /**

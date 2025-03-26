@@ -30,7 +30,7 @@ import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
-import { getDomainHashFromEvent } from "./helpers/events";
+import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
@@ -45,13 +45,14 @@ import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
+import fs from "fs";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
-describe("ZNSRootRegistrar", () => {
+describe.only("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -101,6 +102,50 @@ describe("ZNSRootRegistrar", () => {
 
   afterEach(async () => {
     await mongoAdapter.dropDB();
+  });
+
+  it.only("should reg array", async () => {
+    const registrations = [];
+
+    for (let i = 0; i < 5; i++) {
+      const isOdd = i % 2 !== 0;
+
+      const domainObj = {
+        name: `domain${i + 1}`,
+        domainAddress: user.address,
+        tokenURI: `0://domainURI_${i + 1}`,
+        distributionConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+          accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: isOdd ? user.address : operator.address,
+        },
+      };
+
+      registrations.push(domainObj);
+    }
+
+    await zns.rootRegistrar.connect(user).registerMultipleRootDomains(registrations);
+
+    for (const domain of registrations) {
+      const logs = await getDomainRegisteredEvents({
+        zns,
+        domainHash: hashDomainLabel(domain.name),
+      });
+
+      // "DomainRegistered" event log
+      const args = logs[0].args;
+
+      expect(args[0]).to.eq(ethers.ZeroHash); // parentHash
+      expect(args[1]).to.eq(hashDomainLabel(domain.name)); // domainHash
+      expect(args[2]).to.eq(domain.name); // label
+      expect(args[4]).to.eq(domain.tokenURI); // tokenURI
+      expect(args[5]).to.eq(user.address); // registrant
+      expect(args[6]).to.eq(domain.domainAddress); // domainAddress
+    }
   });
 
   it("Sets the payment config when provided with the domain registration", async () => {
