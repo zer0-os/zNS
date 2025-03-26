@@ -124,6 +124,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     );
     await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
+    // register a bunch of domains pre-upgrade
     domainConfigs = [
       {
         user: rootOwner,
@@ -231,6 +232,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     domainHashes = regResults.map(({ domainHash }) => domainHash);
 
     // UPGRADE ZNS CONTRACTS
+
+    // get contract data for the upgrade helper
     contractData = Object.entries(contractNames).map(
       ([name, { contract, instance }]) => ({
         contractName: contract,
@@ -244,6 +247,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       contractData,
     });
 
+    // list of all the methods that are blocked with `whenNotPaused` modifier
+    // along with arguments for calls
     methodCalls = {
       [znsNames.registry.instance]: [
         {
@@ -474,7 +479,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   });
 
   describe("Post upgrade storage tests", () => {
-    it("should be able to operate on pre-upgrade domains and properly reflect in storage", async () => {
+    it("should be able to operate on pre-upgrade domains and properly reflect changes in storage", async () => {
       await domainConfigs.reduce(
         async (
           acc,
@@ -599,13 +604,13 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         }, Promise.resolve([])
       );
 
-      preUpgradeZnsStorage.forEach((preUpgrade, idx) => {
-        const postUpgrade = postUpgradeStorageData[idx];
+      preUpgradeZnsStorage.forEach((storagePre, idx) => {
+        const storagePost = postUpgradeStorageData[idx];
 
-        expect(preUpgrade.length).to.equal(postUpgrade.length);
+        expect(storagePre.length).to.equal(storagePost.length);
 
-        preUpgrade.forEach((pre, idx2) => {
-          const post = postUpgrade[idx2];
+        storagePre.forEach((pre, idx2) => {
+          const post = storagePost[idx2];
 
           expect(pre).to.deep.equal(post);
         });
