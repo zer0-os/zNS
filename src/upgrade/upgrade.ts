@@ -8,6 +8,7 @@ import { IContractData, IZNSContractsUpgraded, ZNSContractUpgraded } from "./typ
 import { Addressable } from "ethers";
 
 
+// TODO upg: add MongoAdapter here to update the Database with the new contract addresses
 export const upgradeZNS = async ({
   governorExt,
   contractData,

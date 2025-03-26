@@ -1,4 +1,9 @@
-import { ZNSRegistryPausable } from "../../typechain";
+import {
+  ZNSAddressResolverPausable,
+  ZNSCurvePricerPausable,
+  ZNSDomainTokenPausable, ZNSFixedPricerPausable,
+  ZNSRegistryPausable, ZNSRootRegistrarPausable, ZNSSubRegistrarPausable, ZNSTreasuryPausable,
+} from "../../typechain";
 import { Addressable } from "ethers";
 
 export type ContractStorageData = Array<{
@@ -12,9 +17,23 @@ export interface IContractData {
 }
 
 export type ZNSContractUpgraded =
-  ZNSRegistryPausable;
+  ZNSRegistryPausable |
+  ZNSDomainTokenPausable |
+  ZNSAddressResolverPausable |
+  ZNSCurvePricerPausable |
+  ZNSFixedPricerPausable |
+  ZNSTreasuryPausable |
+  ZNSRootRegistrarPausable |
+  ZNSSubRegistrarPausable;
 
 export interface IZNSContractsUpgraded {
   [instanceName : string] : ZNSContractUpgraded;
   registry : ZNSRegistryPausable;
+  domainToken : ZNSDomainTokenPausable;
+  addressResolver : ZNSAddressResolverPausable;
+  curvePricer : ZNSCurvePricerPausable;
+  fixedPricer : ZNSFixedPricerPausable;
+  treasury : ZNSTreasuryPausable;
+  rootRegistrar : ZNSRootRegistrarPausable;
+  subRegistrar : ZNSSubRegistrarPausable;
 }
