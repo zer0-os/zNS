@@ -6,9 +6,11 @@ import { getLogger } from "../deploy/logger/create-logger";
 import { TLogger } from "../deploy/campaign/types";
 import { IContractData, IZNSContractsUpgraded, ZNSContractUpgraded } from "./types";
 import { Addressable } from "ethers";
+import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
+import { MongoDBAdapter } from "../deploy/db/mongo-adapter/mongo-adapter";
+import { updateContractInDb } from "./db";
 
 
-// TODO upg: add MongoAdapter here to update the Database with the new contract addresses
 export const upgradeZNS = async ({
   governorExt,
   contractData,
@@ -25,6 +27,8 @@ export const upgradeZNS = async ({
 
   logger.info(`Governor acquired as ${governor.address}`);
 
+  const dbAdapter = await getMongoAdapter(logger);
+
   const znsUpgraded = await contractData.reduce(
     async (
       acc : Promise<IZNSContractsUpgraded>,
@@ -36,6 +40,7 @@ export const upgradeZNS = async ({
         contractName,
         contractAddress: address,
         governor,
+        dbAdapter,
         logger,
       });
 
@@ -46,18 +51,25 @@ export const upgradeZNS = async ({
     Promise.resolve({} as IZNSContractsUpgraded)
   );
 
-  return znsUpgraded;
+  await dbAdapter.finalizeDeployedVersion();
+
+  return {
+    znsUpgraded,
+    dbAdapter,
+  };
 };
 
 export const upgradeZNSContract = async ({
   contractName,
   contractAddress,
   governor,
+  dbAdapter,
   logger,
 } : {
   contractName : string;
   contractAddress : string | Addressable;
   governor : SignerWithAddress;
+  dbAdapter : MongoDBAdapter;
   logger : TLogger;
 }) => {
   const originalFactory = await hre.ethers.getContractFactory(contractName);
@@ -81,6 +93,12 @@ export const upgradeZNSContract = async ({
   const implAddress = await hre.upgrades.erc1967.getImplementationAddress(await upgradedContract.getAddress());
 
   logger.info(`Upgraded ${contractName} to new implementation at: ${implAddress}`);
+
+  await updateContractInDb({
+    dbAdapter,
+    contractName,
+    implAddress,
+  });
 
   const storageDataPostUpgrade = await readContractStorage(
     upgradedFactory,

@@ -39,8 +39,7 @@ export const readContractStorage = async (
         !type.includes("mapping")
       ) {
         try {
-          // TODO upg: figure this out!
-          const value = await contractObj[label]();
+          const value = await contractObj[(label as keyof ZNSContract)]();
 
           newAcc.push({ [label]: value });
         } catch (e : unknown) {
