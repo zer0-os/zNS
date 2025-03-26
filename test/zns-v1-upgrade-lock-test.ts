@@ -17,9 +17,12 @@ import {
   PaymentType,
 } from "./helpers";
 import { registerDomainPath } from "./helpers/flows/registration";
-import { IDomainConfigForTest, IFixedPriceConfig } from "./helpers/types";
+import { IDomainConfigForTest, IFixedPriceConfig, ZNSContract } from "./helpers/types";
 import * as ethers from "ethers";
 import { readContractStorage } from "../src/upgrade/storage-data";
+import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
+import { IContractDbData } from "../src/deploy/db/types";
+import { IDBVersion } from "../src/deploy/db/mongo-adapter/types";
 
 
 describe("ZNS V1 Upgrade and Lock Test", () => {
@@ -63,6 +66,9 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     [key : string] : Array<{ method : string; args : Array<any>; }>;
   };
 
+  let dbVersionDeploy : IDBVersion;
+  let dbAdapterUpgrade : MongoDBAdapter;
+
   before(async () => {
     [
       deployer,
@@ -94,13 +100,15 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     zns = campaign.state.contracts;
     zns.zeroVaultAddress = zeroVault.address;
 
+    const { dbAdapter: dbAdapterDeploy } = campaign;
+
     // get base contract level storage for each contract pre-upgrade
     preUpgradeZnsStorage = await Object.values(contractNames).reduce(
       async (acc : Promise<Array<ContractStorageData>>, { contract, instance }) => {
         const newAcc = await acc;
 
         const contractFactory = await hre.ethers.getContractFactory(contract);
-        const contractObj = zns[instance];
+        const contractObj = zns[instance] as ZNSContract;
 
         const storage = await readContractStorage(contractFactory, contractObj);
 
@@ -241,11 +249,14 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         address: zns[name].target,
       }));
 
+    process.env.MONGO_DB_VERSION = dbAdapterDeploy.curVersion;
+    dbVersionDeploy = await dbAdapterDeploy.getLatestVersion() as IDBVersion;
+
     // run the upgrade
-    znsUpgraded = await upgradeZNS({
+    ({ znsUpgraded, dbAdapter: dbAdapterUpgrade } = await upgradeZNS({
       governorExt: governor,
       contractData,
-    });
+    }));
 
     // list of all the methods that are blocked with `whenNotPaused` modifier
     // along with arguments for calls
@@ -467,6 +478,11 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     };
   });
 
+  after(async () => {
+    await dbAdapterUpgrade.dropDB();
+    process.env.MONGO_DB_VERSION = "";
+  });
+
   it("should keep the same proxy addresses for each contract", async () => {
     expect(znsUpgraded.registry.target).to.equal(zns.registry.target);
     expect(znsUpgraded.domainToken.target).to.equal(zns.domainToken.target);
@@ -476,6 +492,58 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     expect(znsUpgraded.treasury.target).to.equal(zns.treasury.target);
     expect(znsUpgraded.rootRegistrar.target).to.equal(zns.rootRegistrar.target);
     expect(znsUpgraded.subRegistrar.target).to.equal(zns.subRegistrar.target);
+  });
+
+  describe("Database tests", () => {
+    it("should have the same version in the database", async () => {
+      const {
+        dbVersion: curDbVersion,
+        type: curVersionType,
+      } = await dbAdapterUpgrade.getLatestVersion() as IDBVersion;
+
+      expect(dbVersionDeploy.dbVersion).to.equal(curDbVersion);
+      expect(curDbVersion).to.equal(process.env.MONGO_DB_VERSION);
+
+      expect(dbVersionDeploy.type).to.equal(curVersionType);
+    });
+
+    it("should update docs for each upgraded contract properly", async () => {
+      await Object.values(contractNames).reduce(
+        async (acc, { contract, instance }) => {
+          await acc;
+
+          const {
+            abi: abiPreUpgrade,
+            bytecode: bytecodePreUpgrade,
+          } = hre.artifacts.readArtifactSync(contract);
+          const {
+            abi: abiPausable,
+            bytecode: bytecodePausable,
+          } = hre.artifacts.readArtifactSync(`${contract}Pausable`);
+
+          const {
+            abi: abiPostUpgrade,
+            bytecode: bytecodePostUpgrade,
+            implementation: implPostUpgrade,
+            version: versionPostUpgrade,
+          } = await dbAdapterUpgrade.getContract(contract) as IContractDbData;
+
+          const implAddress = await hre.upgrades.erc1967.getImplementationAddress(
+            znsUpgraded[instance].target as string
+          );
+
+          expect(implAddress).to.equal(implPostUpgrade);
+
+          expect(JSON.stringify(abiPreUpgrade)).to.not.equal(abiPostUpgrade);
+          expect(abiPostUpgrade).to.equal(JSON.stringify(abiPausable));
+
+          expect(bytecodePreUpgrade).to.not.equal(bytecodePostUpgrade);
+          expect(bytecodePostUpgrade).to.equal(bytecodePausable);
+
+          expect(versionPostUpgrade).to.equal(dbVersionDeploy.dbVersion);
+        }, Promise.resolve()
+      );
+    });
   });
 
   describe("Post upgrade storage tests", () => {
