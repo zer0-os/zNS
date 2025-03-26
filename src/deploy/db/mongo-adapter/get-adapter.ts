@@ -52,7 +52,7 @@ export const getMongoAdapter = async (logger ?: TLogger) : Promise<MongoDBAdapte
   }
 
   if (createNew) {
-    logger.debug("Creating new MongoDBAdapter instance");
+    logger.debug(`Creating new MongoDBAdapter instance with version: ${params.version}`);
     mongoAdapter = new MongoDBAdapter({
       ...checkParams,
       ...params,
