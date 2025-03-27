@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
-import { Contract, ContractFactory } from "ethers";
+import { ContractFactory } from "ethers";
 import { getStorageLayout, getUnlinkedBytecode, getVersion, StorageLayout } from "@openzeppelin/upgrades-core";
 import { readValidations } from "@openzeppelin/hardhat-upgrades/dist/utils/validations";
 import { ContractStorageData } from "./types";

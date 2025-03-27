@@ -4,7 +4,7 @@ import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign
 import { getConfig } from "../src/deploy/campaign/environments";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { upgradeZNS } from "../src/upgrade/upgrade";
+import { getContractDataForUpgrade, getContractNamesToUpgrade, upgradeZNS } from "../src/upgrade/upgrade";
 import { ContractStorageData, IContractData, IZNSContractsUpgraded } from "../src/upgrade/types";
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { expect } from "chai";
@@ -23,9 +23,11 @@ import { readContractStorage } from "../src/upgrade/storage-data";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { IContractDbData } from "../src/deploy/db/types";
 import { IDBVersion } from "../src/deploy/db/mongo-adapter/types";
+import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
+import { getLogger } from "../src/deploy/logger/create-logger";
 
 
-describe("ZNS V1 Upgrade and Lock Test", () => {
+describe.only("ZNS V1 Upgrade and Lock Test", () => {
   let deployer : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
@@ -48,18 +50,14 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   const fixedPrice = ethers.parseEther("1375.612");
   const fixedFeePercentage = BigInt(200);
 
-  const contractNames = { ...znsNames };
-  // @ts-ignore
-  delete contractNames.erc1967Proxy;
-  // @ts-ignore
-  delete contractNames.accessController;
-  // @ts-ignore
-  delete contractNames.meowToken;
+  const contractNames = getContractNamesToUpgrade();
 
   let contractData : Array<IContractData>;
   let znsUpgraded : IZNSContractsUpgraded;
 
   let preUpgradeZnsStorage : Array<ContractStorageData>;
+
+  const logger = getLogger();
 
   let methodCalls : {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -239,24 +237,22 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
     domainHashes = regResults.map(({ domainHash }) => domainHash);
 
-    // UPGRADE ZNS CONTRACTS
-
     // get contract data for the upgrade helper
-    contractData = Object.entries(contractNames).map(
-      ([name, { contract, instance }]) => ({
-        contractName: contract,
-        instanceName: instance,
-        address: zns[name].target,
-      }));
+    contractData = await getContractDataForUpgrade(dbAdapterDeploy);
 
     process.env.MONGO_DB_VERSION = dbAdapterDeploy.curVersion;
     dbVersionDeploy = await dbAdapterDeploy.getLatestVersion() as IDBVersion;
 
+    resetMongoAdapter();
+    dbAdapterUpgrade = await getMongoAdapter();
+
     // run the upgrade
-    ({ znsUpgraded, dbAdapter: dbAdapterUpgrade } = await upgradeZNS({
+    znsUpgraded = await upgradeZNS({
       governorExt: governor,
       contractData,
-    }));
+      logger,
+      dbAdapter: dbAdapterUpgrade,
+    });
 
     // list of all the methods that are blocked with `whenNotPaused` modifier
     // along with arguments for calls

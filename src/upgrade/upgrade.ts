@@ -9,25 +9,27 @@ import { Addressable } from "ethers";
 import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
 import { MongoDBAdapter } from "../deploy/db/mongo-adapter/mongo-adapter";
 import { updateContractInDb } from "./db";
+import { znsNames } from "../deploy/missions/contracts/names";
+import { IContractDbData } from "../deploy/db/types";
 
 
 export const upgradeZNS = async ({
   governorExt,
   contractData,
+  dbAdapter,
+  logger,
 } : {
-  governorExt : SignerWithAddress;
+  governorExt ?: SignerWithAddress;
   contractData : Array<IContractData>;
+  dbAdapter : MongoDBAdapter;
+  logger : TLogger;
 }) => {
   let governor = governorExt;
   if (!governor) {
     [ governor ] = await hre.ethers.getSigners();
   }
 
-  const logger = getLogger();
-
   logger.info(`Governor acquired as ${governor.address}`);
-
-  const dbAdapter = await getMongoAdapter(logger);
 
   const znsUpgraded = await contractData.reduce(
     async (
@@ -39,7 +41,7 @@ export const upgradeZNS = async ({
       const upgradedContract = await upgradeZNSContract({
         contractName,
         contractAddress: address,
-        governor,
+        governor: governor as SignerWithAddress,
         dbAdapter,
         logger,
       });
@@ -53,10 +55,7 @@ export const upgradeZNS = async ({
 
   await dbAdapter.finalizeDeployedVersion();
 
-  return {
-    znsUpgraded,
-    dbAdapter,
-  };
+  return znsUpgraded;
 };
 
 export const upgradeZNSContract = async ({
@@ -110,4 +109,39 @@ export const upgradeZNSContract = async ({
   logger.info(`Upgrade of ${contractName} finished successfully`);
 
   return upgradedContract;
+};
+
+export const getContractNamesToUpgrade = () : Partial<typeof znsNames> => {
+  const contractNames = JSON.parse(JSON.stringify(znsNames));
+  delete contractNames.erc1967Proxy;
+  delete contractNames.accessController;
+  delete contractNames.meowToken;
+
+  return contractNames;
+};
+
+export const getContractDataForUpgrade = async (
+  dbAdapter : MongoDBAdapter,
+) : Promise<Array<IContractData>> => {
+  const contractNames = getContractNamesToUpgrade();
+
+  return Object.values(contractNames).reduce(
+    async (
+      acc : Promise<Array<IContractData>>,
+      { contract, instance }
+    ) => {
+      const contractData = await acc;
+
+      const { address } = await dbAdapter.getContract(contract) as IContractDbData;
+
+      contractData.push({
+        contractName: contract,
+        instanceName: instance,
+        address,
+      });
+
+      return contractData;
+    },
+    Promise.resolve([])
+  );
 };
