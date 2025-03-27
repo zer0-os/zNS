@@ -25,7 +25,10 @@ import {
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   NOT_OWNER_OF_ERR,
-  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
+  ZERO_ADDRESS_ERR,
+  PARENT_CONFIG_NOT_SET_ERR,
+  DOMAIN_EXISTS_ERR,
+  SENDER_NOT_APPROVED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -33,7 +36,7 @@ import { expect } from "chai";
 import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
-import { getDomainHashFromEvent } from "./helpers/events";
+import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {
   CustomDecimalTokenMock,
@@ -120,6 +123,82 @@ describe("ZNSSubRegistrar", () => {
           priceConfig: rootPriceConfig,
         },
       });
+    });
+
+    it("Should reg an array of subdomains", async () => {
+      const registrations = [];
+
+      for (let i = 0; i < 5; i++) {
+        const isOdd = i % 2 !== 0;
+
+        const subdomainObj = {
+          parentHash: rootHash,
+          label: `subdomain${i + 1}`,
+          domainAddress: admin.address,
+          tokenURI: `0://tokenURI_${i + 1}`,
+          distributionConfig: {
+            pricerContract: await zns.curvePricer.getAddress(),
+            paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+            accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: isOdd ? admin.address : lvl2SubOwner.address,
+          },
+        };
+
+        registrations.push(subdomainObj);
+      }
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains(registrations);
+
+      // get by `registrant`
+      const logs = await getDomainRegisteredEvents({
+        zns,
+        registrant: lvl2SubOwner.address,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
+      for (let i = 0; i < logs.length; i++) {
+        const subdomain = registrations[i];
+
+        // "DomainRegistered" event log
+        const args = logs[i].args;
+
+        expect(args[0]).to.eq(rootHash); // parentHash
+        expect(args[2]).to.eq(subdomain.label); // label
+        expect(args[4]).to.eq(subdomain.tokenURI); // tokenURI
+        expect(args[5]).to.eq(lvl2SubOwner.address); // registrant
+        expect(args[6]).to.eq(subdomain.domainAddress); // domainAddress
+      }
+    });
+
+    it("Should revert when register the same domain twice using #registerMultipleSubdomains", async () => {
+      const subdomainObj = {
+        parentHash: rootHash,
+        label: "subdomain1",
+        domainAddress: admin.address,
+        tokenURI: "0://tokenURI",
+        distributionConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj, subdomainObj])
+      ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
     });
 
     it("Sets the payment config when given", async () => {

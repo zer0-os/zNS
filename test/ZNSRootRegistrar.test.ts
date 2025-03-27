@@ -45,14 +45,13 @@ import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
-import fs from "fs";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
 // This is the only test converted to use the new Campaign, other
 // contract specific tests are using `deployZNS()` helper
-describe.only("ZNSRootRegistrar", () => {
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -104,7 +103,7 @@ describe.only("ZNSRootRegistrar", () => {
     await mongoAdapter.dropDB();
   });
 
-  it.only("should reg array", async () => {
+  it("Should register an array of domains", async () => {
     const registrations = [];
 
     for (let i = 0; i < 5; i++) {
@@ -131,6 +130,7 @@ describe.only("ZNSRootRegistrar", () => {
     await zns.rootRegistrar.connect(user).registerMultipleRootDomains(registrations);
 
     for (const domain of registrations) {
+      // get by `domainHash`
       const logs = await getDomainRegisteredEvents({
         zns,
         domainHash: hashDomainLabel(domain.name),
@@ -146,6 +146,28 @@ describe.only("ZNSRootRegistrar", () => {
       expect(args[5]).to.eq(user.address); // registrant
       expect(args[6]).to.eq(domain.domainAddress); // domainAddress
     }
+  });
+
+  it("Should revert when register the same domain twice using #registerMultipleRootDomains", async () => {
+    const domainObj = {
+      name: "root",
+      domainAddress: user.address,
+      tokenURI: "0://tokenURI",
+      distributionConfig: {
+        pricerContract: await zns.curvePricer.getAddress(),
+        paymentType: PaymentType.STAKE,
+        accessType: AccessType.LOCKED,
+      },
+      paymentConfig: {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: admin.address,
+      },
+    };
+
+    // Attempt to register the same domain again
+    await expect(
+      zns.rootRegistrar.connect(user).registerMultipleRootDomains([domainObj, domainObj])
+    ).to.be.revertedWithCustomError(zns.rootRegistrar, "DomainAlreadyExists");
   });
 
   it("Sets the payment config when provided with the domain registration", async () => {

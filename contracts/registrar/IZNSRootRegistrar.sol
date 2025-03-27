@@ -149,6 +149,10 @@ interface IZNSRootRegistrar is IDistributionConfig {
         PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
 
+    function registerMultipleRootDomains(
+        RootDomainRegistration[] calldata registrations
+    ) external returns (bytes32[] memory);
+
     function coreRegister(
         CoreRegisterArgs memory args
     ) external;

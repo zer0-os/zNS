@@ -146,7 +146,7 @@ contract ZNSRootRegistrar is
      */
     function registerMultipleRootDomains(
         RootDomainRegistration[] calldata registrations
-    ) external returns (bytes32[] memory) {
+    ) external override returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](registrations.length);
 
         for (uint256 i = 0; i < registrations.length; i++) {

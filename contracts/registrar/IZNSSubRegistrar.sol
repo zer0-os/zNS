@@ -22,6 +22,15 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
 
+    struct SubDomainRegistration {
+        bytes32 parentHash;
+        string label;
+        address domainAddress;
+        string tokenURI;
+        DistributionConfig distributionConfig;
+        PaymentConfig paymentConfig;
+    }
+
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
      */
@@ -98,6 +107,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
         DistributionConfig calldata configForSubdomains,
         PaymentConfig calldata paymentConfig
     ) external returns (bytes32);
+
+    function registerMultipleSubdomains(
+        SubDomainRegistration[] calldata subRegistrations
+    ) external returns (bytes32[] memory);
 
     function hashWithParent(
         bytes32 parentHash,
