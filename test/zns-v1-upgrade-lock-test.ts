@@ -27,7 +27,7 @@ import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapt
 import { getLogger } from "../src/deploy/logger/create-logger";
 
 
-describe.only("ZNS V1 Upgrade and Lock Test", () => {
+describe("ZNS V1 Upgrade and Lock Test", () => {
   let deployer : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
