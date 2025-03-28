@@ -30,20 +30,14 @@ import { updateAllContractsInDb } from "../src/upgrade/db";
 
 describe("ZNS V1 Upgrade and Lock Test", () => {
   let deployer : SignerWithAddress;
-  let governor : SignerWithAddress;
-  let admin : SignerWithAddress;
-  let randomAcc : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let lvl2SubOwner : SignerWithAddress;
   let lvl3SubOwner : SignerWithAddress;
   let lvl4SubOwner : SignerWithAddress;
   let lvl5SubOwner : SignerWithAddress;
   let lvl6SubOwner : SignerWithAddress;
-  let branchLvl1Owner : SignerWithAddress;
-  let branchLvl2Owner : SignerWithAddress;
 
   let zns : TZNSContractState;
-  let zeroVault : SignerWithAddress;
 
   let domainConfigs : Array<IDomainConfigForTest>;
   let domainHashes : Array<string>;
@@ -61,6 +55,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
   const logger = getLogger();
 
+  const isRealNetwork = hre.network.name !== "hardhat";
+
   let methodCalls : {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key : string] : Array<{ method : string; args : Array<any>; }>;
@@ -72,25 +68,19 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   before(async () => {
     [
       deployer,
-      zeroVault,
-      governor,
-      admin,
       rootOwner,
       lvl2SubOwner,
       lvl3SubOwner,
       lvl4SubOwner,
       lvl5SubOwner,
       lvl6SubOwner,
-      branchLvl1Owner,
-      branchLvl2Owner,
-      randomAcc,
     ] = await hre.ethers.getSigners();
 
     const config : IDeployCampaignConfig = await getConfig({
       deployer,
-      zeroVaultAddress: zeroVault.address,
-      governors: [deployer.address, governor.address],
-      admins: [deployer.address, admin.address],
+      zeroVaultAddress: hre.network.name !== "hardhat"
+        ? process.env.ZERO_VAULT_ADDRESS as string
+        : deployer.address,
     });
 
     const campaign = await runZnsCampaign({
@@ -98,7 +88,9 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     });
 
     zns = campaign.state.contracts;
-    zns.zeroVaultAddress = zeroVault.address;
+    zns.zeroVaultAddress = hre.network.name !== "hardhat"
+      ? process.env.ZERO_VAULT_ADDRESS as string
+      : deployer.address;
 
     const { dbAdapter: dbAdapterDeploy } = campaign;
 
@@ -116,21 +108,23 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       }, Promise.resolve([])
     );
 
+    logger.debug("Funding users...");
     // Give funds to users
-    await Promise.all(
-      [
-        rootOwner,
-        lvl2SubOwner,
-        lvl3SubOwner,
-        lvl4SubOwner,
-        lvl5SubOwner,
-        lvl6SubOwner,
-        branchLvl1Owner,
-        branchLvl2Owner,
-      ].map(async ({ address }) =>
-        zns.meowToken.mint(address, ethers.parseEther("1000000")))
+    await [
+      rootOwner,
+      lvl2SubOwner,
+      lvl3SubOwner,
+      lvl4SubOwner,
+      lvl5SubOwner,
+      lvl6SubOwner,
+    ].reduce(async (acc, { address }) => {
+      await acc;
+      const tx = await zns.meowToken.mint(address, ethers.parseEther("1000000"));
+      if (isRealNetwork) await tx.wait(2);
+    }, Promise.resolve()
     );
-    await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    const tx = await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+    if (isRealNetwork) await tx.wait(2);
 
     // register a bunch of domains pre-upgrade
     domainConfigs = [
@@ -232,9 +226,11 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       },
     ];
 
+    logger.debug("Registering a path of domains...");
     const regResults = await registerDomainPath({
       zns,
       domainConfigs,
+      confirmations: isRealNetwork ? 2 : undefined,
     });
 
     domainHashes = regResults.map(({ domainHash }) => domainHash);
@@ -262,7 +258,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
     // run the upgrade
     znsUpgraded = await upgradeZNS({
-      governorExt: governor,
+      governorExt: deployer,
       contractData,
       logger,
     });
@@ -279,19 +275,19 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.registry.instance]: [
         {
           method: "setOwnersOperator",
-          args: [randomAcc.address, true],
+          args: [deployer.address, true],
         },
         {
           method: "createDomainRecord",
-          args: [hre.ethers.ZeroHash, randomAcc.address, "address"],
+          args: [hre.ethers.ZeroHash, deployer.address, "address"],
         },
         {
           method: "updateDomainRecord",
-          args: [hre.ethers.ZeroHash, randomAcc.address, "address"],
+          args: [hre.ethers.ZeroHash, deployer.address, "address"],
         },
         {
           method: "updateDomainOwner",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, deployer.address],
         },
         {
           method: "updateDomainResolver",
@@ -309,29 +305,29 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.domainToken.instance]: [
         {
           method: "transferFrom",
-          args: [deployer.address, randomAcc.address, 1],
+          args: [deployer.address, rootOwner.address, 1],
         },
         {
           // @ts-ignore
           method: "safeTransferFrom(address,address,uint256)",
-          args: [deployer.address, randomAcc.address, "1"],
+          args: [deployer.address, rootOwner.address, "1"],
         },
         {
           // @ts-ignore
           method: "safeTransferFrom(address,address,uint256,bytes)",
-          args: [deployer.address, randomAcc.address, "1", hre.ethers.ZeroHash],
+          args: [deployer.address, rootOwner.address, "1", hre.ethers.ZeroHash],
         },
         {
           method: "approve",
-          args: [randomAcc.address, 1],
+          args: [rootOwner.address, 1],
         },
         {
           method: "setApprovalForAll",
-          args: [randomAcc.address, true],
+          args: [rootOwner.address, true],
         },
         {
           method: "register",
-          args: [randomAcc.address, 123n, "dummyURI"],
+          args: [rootOwner.address, 123n, "dummyURI"],
         },
         {
           method: "revoke",
@@ -345,7 +341,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.addressResolver.instance]: [
         {
           method: "setAddress",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, rootOwner.address],
         },
         {
           method: "pause",
@@ -407,15 +403,15 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.treasury.instance]: [
         {
           method: "stakeForDomain",
-          args: [hre.ethers.ZeroHash, hre.ethers.ZeroHash, randomAcc.address, 1n, 1n, 1n],
+          args: [hre.ethers.ZeroHash, hre.ethers.ZeroHash, rootOwner.address, 1n, 1n, 1n],
         },
         {
           method: "unstakeForDomain",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, rootOwner.address],
         },
         {
           method: "processDirectPayment",
-          args: [hre.ethers.ZeroHash, hre.ethers.ZeroHash, randomAcc.address, 1n, 1n],
+          args: [hre.ethers.ZeroHash, hre.ethers.ZeroHash, rootOwner.address, 1n, 1n],
         },
         {
           method: "setPaymentConfig",
@@ -423,11 +419,11 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         },
         {
           method: "setBeneficiary",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, rootOwner.address],
         },
         {
           method: "setPaymentToken",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, rootOwner.address],
         },
         {
           method: "pause",
@@ -437,7 +433,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.rootRegistrar.instance]: [
         {
           method: "registerRootDomain",
-          args: ["domain", randomAcc.address, "uri", distrConfigEmpty, paymentConfigEmpty],
+          args: ["domain", rootOwner.address, "uri", distrConfigEmpty, paymentConfigEmpty],
         },
         {
           method: "revokeDomain",
@@ -455,7 +451,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       [znsNames.subRegistrar.instance]: [
         {
           method: "registerSubdomain",
-          args: [hre.ethers.ZeroHash, "label", randomAcc.address, "uri", distrConfigEmpty, paymentConfigEmpty],
+          args: [hre.ethers.ZeroHash, "label", rootOwner.address, "uri", distrConfigEmpty, paymentConfigEmpty],
         },
         {
           method: "setDistributionConfigForDomain",
@@ -463,7 +459,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         },
         {
           method: "setPricerContractForDomain",
-          args: [hre.ethers.ZeroHash, randomAcc.address],
+          args: [hre.ethers.ZeroHash, rootOwner.address],
         },
         {
           method: "setPaymentTypeForDomain",
@@ -475,7 +471,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         },
         {
           method: "updateMintlistForDomain",
-          args: [hre.ethers.ZeroHash, [randomAcc.address], [true]],
+          args: [hre.ethers.ZeroHash, [rootOwner.address], [true]],
         },
         {
           method: "clearMintlistForDomain",
@@ -494,8 +490,10 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   });
 
   after(async () => {
-    await dbAdapterUpgrade.dropDB();
-    process.env.MONGO_DB_VERSION = "";
+    if (hre.network.name === "hardhat") {
+      await dbAdapterUpgrade.dropDB();
+      process.env.MONGO_DB_VERSION = "";
+    }
   });
 
   it("should keep the same proxy addresses for each contract", async () => {
@@ -598,7 +596,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
             : AccessType.OPEN;
 
           // set new values
-          await zns.subRegistrar.connect(user).setDistributionConfigForDomain(
+          let tx = await zns.subRegistrar.connect(user).setDistributionConfigForDomain(
             domainHash,
             {
               pricerContract: newPricer,
@@ -606,6 +604,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
               accessType: newAccessType,
             }
           );
+          if (isRealNetwork) await tx.wait(2);
           // check new values
           const domainConfig = await zns.subRegistrar.distrConfigs(domainHash);
           expect(domainConfig.pricerContract).to.equal(newPricer);
@@ -614,17 +613,18 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
           // check Treasury storage
           // set new values
-          await zns.treasury.connect(user).setPaymentConfig(
+          tx = await zns.treasury.connect(user).setPaymentConfig(
             domainHash,
             {
-              token: randomAcc.address,
-              beneficiary: randomAcc.address,
+              token: rootOwner.address,
+              beneficiary: rootOwner.address,
             }
           );
+          if (isRealNetwork) await tx.wait(2);
           // check new values
           const paymentConfig = await zns.treasury.paymentConfigs(domainHash);
-          expect(paymentConfig.token).to.equal(randomAcc.address);
-          expect(paymentConfig.beneficiary).to.equal(randomAcc.address);
+          expect(paymentConfig.token).to.equal(rootOwner.address);
+          expect(paymentConfig.beneficiary).to.equal(rootOwner.address);
 
           if ((fullConfig.priceConfig as IFixedPriceConfig).price) {
             // check FixedPricer storage
@@ -634,7 +634,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
               isSet: true,
             };
             // set new values
-            await zns.fixedPricer.connect(user).setPriceConfig(domainHash, newPriceConfig);
+            tx = await zns.fixedPricer.connect(user).setPriceConfig(domainHash, newPriceConfig);
+            if (isRealNetwork) await tx.wait(2);
 
             const priceConfig = await zns.fixedPricer.priceConfigs(domainHash);
             expect(priceConfig.price).to.equal(newPriceConfig.price);
@@ -651,7 +652,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
               isSet: true,
             };
             // set new values
-            await zns.curvePricer.connect(user).setPriceConfig(domainHash, newPriceConfig);
+            tx = await zns.curvePricer.connect(user).setPriceConfig(domainHash, newPriceConfig);
+            if (isRealNetwork) await tx.wait(2);
             // check new values
             const priceConfig = await zns.curvePricer.priceConfigs(domainHash);
             expect(priceConfig.maxPrice).to.equal(newPriceConfig.maxPrice);
@@ -665,24 +667,28 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
           // check AddressResolver storage
           // set new values
-          await zns.addressResolver.connect(user).setAddress(domainHash, randomAcc.address);
+          tx = await zns.addressResolver.connect(user).setAddress(domainHash, rootOwner.address);
+          if (isRealNetwork) await tx.wait(2);
           // check new values
           const addr = await zns.addressResolver.resolveDomainAddress(domainHash);
-          expect(addr).to.equal(randomAcc.address);
+          expect(addr).to.equal(rootOwner.address);
 
           // check DomainToken storage
           // set new values
-          await zns.domainToken.connect(user).transferFrom(user.address, randomAcc.address, BigInt(domainHash));
+          tx = await zns.domainToken.connect(user).transferFrom(user.address, rootOwner.address, BigInt(domainHash));
+          if (isRealNetwork) await tx.wait(2);
           // check new values
           const tokenOwner = await zns.domainToken.ownerOf(BigInt(domainHash));
-          expect(tokenOwner).to.equal(randomAcc.address);
+          expect(tokenOwner).to.equal(rootOwner.address);
 
           // check Registry storage
           // set new values
-          await zns.registry.connect(user).updateDomainOwner(domainHash, randomAcc.address);
+          tx = await zns.registry.connect(user).updateDomainOwner(domainHash, rootOwner.address);
+          if (isRealNetwork) await tx.wait(2);
+
           // check new values
           const owner = await zns.registry.getDomainOwner(domainHash);
-          expect(owner).to.equal(randomAcc.address);
+          expect(owner).to.equal(rootOwner.address);
         }, Promise.resolve()
       );
     });
@@ -721,7 +727,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         it(`${name}`, async () => {
           const contract = znsUpgraded[instance];
 
-          await contract.connect(deployer).pause();
+          const tx = await contract.connect(deployer).pause();
+          if (isRealNetwork) await tx.wait(2);
 
           expect(await contract.paused()).to.equal(true);
 
