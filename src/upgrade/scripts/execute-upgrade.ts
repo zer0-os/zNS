@@ -1,6 +1,6 @@
-import { getLogger } from "../deploy/logger/create-logger";
-import { getContractDataForUpgrade, upgradeZNS } from "./upgrade";
-import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
+import { getLogger } from "../../deploy/logger/create-logger";
+import { getContractDataForUpgrade, upgradeZNS } from "../upgrade";
+import { getMongoAdapter } from "../../deploy/db/mongo-adapter/get-adapter";
 
 
 const execute = async () => {
@@ -30,6 +30,6 @@ execute()
   })
   .catch(e => {
     const log = getLogger();
-    log.error("Error during upgrade:", e);
+    log.error(`Error during upgrade! Message: ${e.message}, Stack: ${e.stack}`);
     process.exit(1);
   });
