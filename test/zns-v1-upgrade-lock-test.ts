@@ -56,6 +56,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   let znsUpgraded : IZNSContractsUpgraded;
 
   let preUpgradeZnsStorage : Array<ContractStorageData>;
+  let preUpgradeImpls : Array<string>;
 
   const logger = getLogger();
 
@@ -242,6 +243,18 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
     process.env.MONGO_DB_VERSION = dbAdapterDeploy.curVersion;
     dbVersionDeploy = await dbAdapterDeploy.getLatestVersion() as IDBVersion;
+
+    preUpgradeImpls = await Object.values(contractNames).reduce(
+      async (acc : Promise<Array<string>>, { instance }) => {
+        const newAcc = await acc;
+
+        const implAddress = await hre.upgrades.erc1967.getImplementationAddress(
+          zns[instance].target as string
+        );
+
+        return [...newAcc, implAddress];
+      }, Promise.resolve([])
+    );
 
     resetMongoAdapter();
     dbAdapterUpgrade = await getMongoAdapter();
@@ -488,6 +501,20 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     expect(znsUpgraded.treasury.target).to.equal(zns.treasury.target);
     expect(znsUpgraded.rootRegistrar.target).to.equal(zns.rootRegistrar.target);
     expect(znsUpgraded.subRegistrar.target).to.equal(zns.subRegistrar.target);
+  });
+
+  it("should upgrade each implementation to a new one", async () => {
+    await Object.values(contractNames).reduce(
+      async (acc, { instance }, idx) => {
+        await acc;
+
+        const implAddressPostUpgrade = await hre.upgrades.erc1967.getImplementationAddress(
+          znsUpgraded[instance].target as string
+        );
+
+        expect(implAddressPostUpgrade).to.not.equal(preUpgradeImpls[idx]);
+      }, Promise.resolve()
+    );
   });
 
   describe("Database tests", () => {
