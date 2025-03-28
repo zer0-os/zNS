@@ -28,16 +28,11 @@ export const readContractStorage = async (
   return layout.storage.reduce(
     async (
       acc : Promise<ContractStorageData>,
-      { contract, label, type }
+      { label, type }
     ) : Promise<ContractStorageData> => {
       const newAcc = await acc;
 
-      if (
-        (contract === "zStakePoolBase" ||
-          contract === "zStakeCorePool" ||
-          contract === "zStakeCorePoolMigration") &&
-        !type.includes("mapping")
-      ) {
+      if (!type.includes("mapping")) {
         try {
           const value = await contractObj[(label as keyof ZNSContract)]();
 

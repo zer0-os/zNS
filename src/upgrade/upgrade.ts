@@ -2,26 +2,23 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { compareStorageData, readContractStorage } from "./storage-data";
 import { ZNSContract } from "../../test/helpers/types";
-import { getLogger } from "../deploy/logger/create-logger";
 import { TLogger } from "../deploy/campaign/types";
 import { IContractData, IZNSContractsUpgraded, ZNSContractUpgraded } from "./types";
 import { Addressable } from "ethers";
-import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
 import { MongoDBAdapter } from "../deploy/db/mongo-adapter/mongo-adapter";
-import { updateContractInDb } from "./db";
+import { updateAllContractsInDb } from "./db";
 import { znsNames } from "../deploy/missions/contracts/names";
 import { IContractDbData } from "../deploy/db/types";
 
 
+// TODO upg: add the ability to retry from where it left off/failed !
 export const upgradeZNS = async ({
   governorExt,
   contractData,
-  dbAdapter,
   logger,
 } : {
   governorExt ?: SignerWithAddress;
   contractData : Array<IContractData>;
-  dbAdapter : MongoDBAdapter;
   logger : TLogger;
 }) => {
   let governor = governorExt;
@@ -42,7 +39,6 @@ export const upgradeZNS = async ({
         contractName,
         contractAddress: address,
         governor: governor as SignerWithAddress,
-        dbAdapter,
         logger,
       });
 
@@ -53,8 +49,6 @@ export const upgradeZNS = async ({
     Promise.resolve({} as IZNSContractsUpgraded)
   );
 
-  await dbAdapter.finalizeDeployedVersion();
-
   return znsUpgraded;
 };
 
@@ -62,13 +56,11 @@ export const upgradeZNSContract = async ({
   contractName,
   contractAddress,
   governor,
-  dbAdapter,
   logger,
 } : {
   contractName : string;
   contractAddress : string | Addressable;
   governor : SignerWithAddress;
-  dbAdapter : MongoDBAdapter;
   logger : TLogger;
 }) => {
   const originalFactory = await hre.ethers.getContractFactory(contractName);
@@ -84,31 +76,25 @@ export const upgradeZNSContract = async ({
   let upgradedFactory = await hre.ethers.getContractFactory(`${contractName}Pausable`);
   upgradedFactory = upgradedFactory.connect(governor);
 
-  const upgradedContract = await hre.upgrades.upgradeProxy(
+  let upgradedContract = await hre.upgrades.upgradeProxy(
     contractAddress,
-    upgradedFactory
-  ) as unknown as ZNSContractUpgraded;
+    upgradedFactory,
+  );
 
-  const implAddress = await hre.upgrades.erc1967.getImplementationAddress(await upgradedContract.getAddress());
+  upgradedContract = await upgradedContract.waitForDeployment();
 
-  logger.info(`Upgraded ${contractName} to new implementation at: ${implAddress}`);
-
-  await updateContractInDb({
-    dbAdapter,
-    contractName,
-    implAddress,
-  });
+  logger.info(`Upgraded ${contractName} to new implementation.`);
 
   const storageDataPostUpgrade = await readContractStorage(
     upgradedFactory,
-    upgradedContract,
+    upgradedContract as unknown as ZNSContractUpgraded,
   );
 
   compareStorageData(storageDataPreUpgrade, storageDataPostUpgrade);
   logger.info("Storage compared successfully. Values are unchanged after upgrade");
   logger.info(`Upgrade of ${contractName} finished successfully`);
 
-  return upgradedContract;
+  return upgradedContract as unknown as ZNSContractUpgraded;
 };
 
 export const getContractNamesToUpgrade = () : Partial<typeof znsNames> => {
