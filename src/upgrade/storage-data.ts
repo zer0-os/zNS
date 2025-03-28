@@ -34,13 +34,13 @@ export const readContractStorage = async (
     ) : Promise<ContractStorageData> => {
       const newAcc = await acc;
 
-      if (!type.includes("mapping")) {
+      if (!type.includes("mapping") && !type.includes("array")) {
         try {
           const value = await contractObj[(label as keyof ZNSContract)]();
 
           newAcc.push({ [label]: value });
         } catch (e : unknown) {
-          logger.error(`Error on LABEL ${label}: ${(e as Error).message}`);
+          logger.debug(`Error on LABEL ${label}: ${(e as Error).message}`);
         }
       }
 
