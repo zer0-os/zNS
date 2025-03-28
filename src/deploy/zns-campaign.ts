@@ -14,7 +14,7 @@ import {
 import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
 import { getLogger } from "./logger/create-logger";
 
-// TODO how do we mock certain things for tests
+
 export const runZnsCampaign = async ({
   config,
   provider,
