@@ -15,7 +15,6 @@ const execute = async () => {
 
   const znsUpgraded = await upgradeZNS({
     contractData,
-    dbAdapter,
     logger,
   });
 

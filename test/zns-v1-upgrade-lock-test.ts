@@ -25,6 +25,7 @@ import { IContractDbData } from "../src/deploy/db/types";
 import { IDBVersion } from "../src/deploy/db/mongo-adapter/types";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { getLogger } from "../src/deploy/logger/create-logger";
+import { updateAllContractsInDb } from "../src/upgrade/db";
 
 
 describe("ZNS V1 Upgrade and Lock Test", () => {
@@ -264,6 +265,11 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
       governorExt: governor,
       contractData,
       logger,
+    });
+
+    // update database records to new implementations
+    await updateAllContractsInDb({
+      contractData,
       dbAdapter: dbAdapterUpgrade,
     });
 

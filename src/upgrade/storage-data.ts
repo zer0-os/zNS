@@ -5,6 +5,7 @@ import { getStorageLayout, getUnlinkedBytecode, getVersion, StorageLayout } from
 import { readValidations } from "@openzeppelin/hardhat-upgrades/dist/utils/validations";
 import { ContractStorageData } from "./types";
 import { ZNSContract } from "../../test/helpers/types";
+import { getLogger } from "../deploy/logger/create-logger";
 
 
 // TODO utils: move thess helpers to protocol-utils repo when available
@@ -23,6 +24,7 @@ export const readContractStorage = async (
   contractFactory : ContractFactory,
   contractObj : ZNSContract
 ) : Promise<ContractStorageData> => {
+  const logger = getLogger();
   const layout = await getContractStorageLayout(contractFactory);
 
   return layout.storage.reduce(
@@ -38,7 +40,7 @@ export const readContractStorage = async (
 
           newAcc.push({ [label]: value });
         } catch (e : unknown) {
-          console.log(`Error on LABEL ${label}: ${(e as Error).message}`);
+          logger.error(`Error on LABEL ${label}: ${(e as Error).message}`);
         }
       }
 
