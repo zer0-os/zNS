@@ -162,8 +162,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @dev This function reduces the number of transactions required to register multiple subdomains,
      * saving gas and improving efficiency. Each subdomain registration is processed sequentially.
      * 
-     * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash), it will be treated
-     * as a nested domain. In this case, the parent of the subdomain will be set to the domain hash of the
+     * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash), 
+     * it will be treated as a nested domain. 
+     * In this case, the parent of the subdomain will be set to the domain hash of the
      * previously registered subdomain in the array. This allows creating multi-level nested domains in a single
      * transaction. For example:
      * - The first subdomain must have a valid `parentHash`.
