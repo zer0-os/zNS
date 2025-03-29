@@ -1,5 +1,5 @@
 import { getLogger } from "../../deploy/logger/create-logger";
-import { getContractDataForUpgrade, upgradeZNS } from "../upgrade";
+import { getContractDataForUpgrade, getContractNamesToUpgrade, upgradeZNS } from "../upgrade";
 import { getMongoAdapter } from "../../deploy/db/mongo-adapter/get-adapter";
 
 
@@ -9,7 +9,10 @@ const execute = async () => {
 
   logger.info("Prepairing contract data for the upgrade...");
 
-  const contractData = await getContractDataForUpgrade(dbAdapter);
+  const contractData = await getContractDataForUpgrade(
+    dbAdapter,
+    getContractNamesToUpgrade()
+  );
 
   logger.info("Contract data prepared. Starting the upgrade...");
 

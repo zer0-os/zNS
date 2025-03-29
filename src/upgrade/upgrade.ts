@@ -6,7 +6,6 @@ import { TLogger } from "../deploy/campaign/types";
 import { IContractData, IZNSContractsUpgraded, ZNSContractUpgraded } from "./types";
 import { Addressable } from "ethers";
 import { MongoDBAdapter } from "../deploy/db/mongo-adapter/mongo-adapter";
-import { updateAllContractsInDb } from "./db";
 import { znsNames } from "../deploy/missions/contracts/names";
 import { IContractDbData } from "../deploy/db/types";
 
@@ -108,26 +107,23 @@ export const getContractNamesToUpgrade = () : Partial<typeof znsNames> => {
 
 export const getContractDataForUpgrade = async (
   dbAdapter : MongoDBAdapter,
-) : Promise<Array<IContractData>> => {
-  const contractNames = getContractNamesToUpgrade();
+  contractNames : Partial<typeof znsNames>,
+) : Promise<Array<IContractData>> => Object.values(contractNames).reduce(
+  async (
+    acc : Promise<Array<IContractData>>,
+    { contract, instance }
+  ) => {
+    const contractData = await acc;
 
-  return Object.values(contractNames).reduce(
-    async (
-      acc : Promise<Array<IContractData>>,
-      { contract, instance }
-    ) => {
-      const contractData = await acc;
+    const { address } = await dbAdapter.getContract(contract) as IContractDbData;
 
-      const { address } = await dbAdapter.getContract(contract) as IContractDbData;
+    contractData.push({
+      contractName: contract,
+      instanceName: instance,
+      address,
+    });
 
-      contractData.push({
-        contractName: contract,
-        instanceName: instance,
-        address,
-      });
-
-      return contractData;
-    },
-    Promise.resolve([])
-  );
-};
+    return contractData;
+  },
+  Promise.resolve([])
+);
