@@ -133,7 +133,6 @@ contract ZNSDomainTokenPausable is
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to set the tokenURI for
      * @param _tokenURI The tokenURI to be set for the token with the given tokenId
     */
-    // TODO upg: figure out if onlyAdmin functions need to be only whenNotPaused or just keep them as is !!!
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external override onlyAdmin {
         _setTokenURI(tokenId, _tokenURI);
         emit TokenURISet(tokenId, _tokenURI);

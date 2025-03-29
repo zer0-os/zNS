@@ -26,6 +26,8 @@ import { IDBVersion } from "../src/deploy/db/mongo-adapter/types";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { getLogger } from "../src/deploy/logger/create-logger";
 import { updateAllContractsInDb } from "../src/upgrade/db";
+import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
+import { getGitTag } from "../src/utils/git-tag/get-tag";
 
 
 describe("ZNS V1 Upgrade and Lock Test", () => {
@@ -236,7 +238,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     domainHashes = regResults.map(({ domainHash }) => domainHash);
 
     // get contract data for the upgrade helper
-    contractData = await getContractDataForUpgrade(dbAdapterDeploy);
+    contractData = await getContractDataForUpgrade(dbAdapterDeploy, getContractNamesToUpgrade());
 
     process.env.MONGO_DB_VERSION = dbAdapterDeploy.curVersion;
     dbVersionDeploy = await dbAdapterDeploy.getLatestVersion() as IDBVersion;
@@ -265,7 +267,6 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
 
     // update database records to new implementations
     await updateAllContractsInDb({
-      contractData,
       dbAdapter: dbAdapterUpgrade,
     });
 
@@ -522,16 +523,21 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   });
 
   describe("Database tests", () => {
-    it("should have the same version in the database", async () => {
-      const {
-        dbVersion: curDbVersion,
-        type: curVersionType,
-      } = await dbAdapterUpgrade.getLatestVersion() as IDBVersion;
+    let upgradedDbVersion : string;
+    let contractsVersion : string;
 
-      expect(dbVersionDeploy.dbVersion).to.equal(curDbVersion);
-      expect(curDbVersion).to.equal(process.env.MONGO_DB_VERSION);
+    it("should create new version in the database", async () => {
+      ({
+        dbVersion: upgradedDbVersion,
+        contractsVersion,
+      } = await dbAdapterUpgrade.versions.findOne({
+        type: VERSION_TYPES.upgraded,
+      }) as IDBVersion);
 
-      expect(dbVersionDeploy.type).to.equal(curVersionType);
+      expect(dbVersionDeploy.dbVersion).to.not.equal(upgradedDbVersion);
+      expect(upgradedDbVersion).to.not.equal(process.env.MONGO_DB_VERSION);
+
+      expect(contractsVersion).to.equal(getGitTag());
     });
 
     it("should update docs for each upgraded contract properly", async () => {
@@ -553,7 +559,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
             bytecode: bytecodePostUpgrade,
             implementation: implPostUpgrade,
             version: versionPostUpgrade,
-          } = await dbAdapterUpgrade.getContract(contract) as IContractDbData;
+          } = await dbAdapterUpgrade.getContract(contract, upgradedDbVersion) as IContractDbData;
 
           const implAddress = await hre.upgrades.erc1967.getImplementationAddress(
             znsUpgraded[instance].target as string
@@ -567,7 +573,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
           expect(bytecodePreUpgrade).to.not.equal(bytecodePostUpgrade);
           expect(bytecodePostUpgrade).to.equal(bytecodePausable);
 
-          expect(versionPostUpgrade).to.equal(dbVersionDeploy.dbVersion);
+          expect(versionPostUpgrade).to.not.equal(dbVersionDeploy.dbVersion);
+          expect(versionPostUpgrade).to.equal(upgradedDbVersion);
         }, Promise.resolve()
       );
     });
