@@ -81,6 +81,7 @@ describe("ZNSSubRegistrar", () => {
         admin,
         rootOwner,
         lvl2SubOwner,
+        lvl3SubOwner,
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -95,6 +96,7 @@ describe("ZNSSubRegistrar", () => {
         [
           rootOwner,
           lvl2SubOwner,
+          lvl3SubOwner,
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("100000000000")))
       );
@@ -125,7 +127,7 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
-    it("Should reg an array of subdomains", async () => {
+    it("Should #registerMultipleSubdomains and the event must be triggered", async () => {
       const registrations = [];
 
       for (let i = 0; i < 5; i++) {
@@ -176,6 +178,81 @@ describe("ZNSSubRegistrar", () => {
       }
     });
 
+    it("Should register multiple NESTED subdomains using #registerMultipleSubdomains", async () => {
+      const registrations = [];
+      const parentHashes : Array<string> = [];
+
+      // how many nested domains (0://root.sub1.sub2.sub3....)
+      const domainLevels = 15;
+
+      for (let i = 0; i < domainLevels; i++) {
+        const isOdd = i % 2 !== 0;
+
+        const subdomainObj = {
+          parentHash: rootHash,
+          label: `sub${i + 1}`,
+          domainAddress: lvl3SubOwner.address,
+          tokenURI: `0://tokenURI_${i + 1}`,
+          distributionConfig: {
+            pricerContract: await zns.curvePricer.getAddress(),
+            paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+            accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: isOdd ? lvl3SubOwner.address : lvl2SubOwner.address,
+          },
+        };
+
+        if (i > 0) subdomainObj.parentHash = ethers.ZeroHash;
+
+        registrations.push(subdomainObj);
+
+        // first goes with rootHash
+        if (i === 0) {
+          parentHashes.push(
+            await zns.subRegistrar.hashWithParent(
+              rootHash,
+              subdomainObj.label
+            )
+          );
+        } else {
+          parentHashes.push(
+            await zns.subRegistrar.hashWithParent(
+              parentHashes[i - 1],
+              subdomainObj.label
+            )
+          );
+        }
+      }
+
+      // Add allowance
+      await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await zns.subRegistrar.connect(lvl3SubOwner).registerMultipleSubdomains(registrations);
+
+      const logs = await getDomainRegisteredEvents({
+        zns,
+        registrant: lvl3SubOwner.address,
+      });
+
+      for (let i = 0; i < domainLevels; i++) {
+        const subdomain = registrations[i];
+
+        // "DomainRegistered" event log
+        const args = logs[i].args;
+
+        i > 0 ?
+          expect(args[0]).to.eq(parentHashes[i - 1]) :
+          expect(args[0]).to.eq(rootHash);              // parentHash
+        expect(args[1]).to.eq(parentHashes[i]);         // domainHash current
+        expect(args[2]).to.eq(subdomain.label);         // label
+        expect(args[4]).to.eq(subdomain.tokenURI);      // tokenURI
+        expect(args[5]).to.eq(lvl3SubOwner.address);    // registrant
+        expect(args[6]).to.eq(subdomain.domainAddress); // domainAddress
+      }
+    });
+
     it("Should revert when register the same domain twice using #registerMultipleSubdomains", async () => {
       const subdomainObj = {
         parentHash: rootHash,
@@ -199,6 +276,31 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj, subdomainObj])
       ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
+    });
+
+    it("Should revert with #ZeroAddressPassed when 1st level subdomain has zerohash", async () => {
+      const subdomainObj = {
+        parentHash: ethers.ZeroHash,
+        label: "subdomainzeroaAddresspassed",
+        domainAddress: admin.address,
+        tokenURI: "0://tokenURI",
+        distributionConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj])
+      ).to.be.revertedWithCustomError(zns.subRegistrar, ZERO_ADDRESS_ERR);
     });
 
     it("Sets the payment config when given", async () => {
