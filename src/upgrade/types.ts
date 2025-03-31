@@ -6,8 +6,17 @@ import {
 } from "../../typechain";
 import { Addressable } from "ethers";
 
+
+export type ContractStorageElement = string | number | Array<{}>;
+
 export type ContractStorageData = Array<{
-  [label : string] : string | number | Array<object>;
+  [label : string] : ContractStorageElement;
+}>;
+
+export type ContractStorageDiff = Array<{
+  key : string;
+  valueBefore : ContractStorageElement;
+  valueAfter : ContractStorageElement;
 }>;
 
 export interface IContractData {

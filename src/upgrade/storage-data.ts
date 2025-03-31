@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ContractFactory } from "ethers";
 import { getStorageLayout, getUnlinkedBytecode, getVersion, StorageLayout } from "@openzeppelin/upgrades-core";
 import { readValidations } from "@openzeppelin/hardhat-upgrades/dist/utils/validations";
-import { ContractStorageData } from "./types";
+import { ContractStorageData, ContractStorageDiff } from "./types";
 import { ZNSContract } from "../../test/helpers/types";
 import { getLogger } from "../deploy/logger/create-logger";
 
@@ -55,14 +55,28 @@ export const compareStorageData = (
   dataBefore : ContractStorageData,
   dataAfter : ContractStorageData,
 ) => {
-  dataAfter.forEach(
-    (stateVar, idx) => {
+  const storageDiff = dataAfter.reduce(
+    (acc : ContractStorageDiff | undefined, stateVar, idx) => {
       const [key, value] = Object.entries(stateVar)[0];
 
-      expect(value).to.equal(
-        dataBefore[idx][key],
-        `Mismatch on state var ${key} at idx ${idx}! Prev value: ${dataBefore[idx][key]}, new value: ${value}`
-      );
-    }
+      if (value !== dataBefore[idx][key]) {
+        console.error(
+          `Mismatch on state var ${key} at idx ${idx}! Prev value: ${dataBefore[idx][key]}, new value: ${value}`
+        );
+
+        return [
+          ...acc as ContractStorageDiff,
+          {
+            key,
+            valueBefore: dataBefore[idx][key],
+            valueAfter: value,
+          },
+        ];
+      }
+    }, []
   );
+
+  if (storageDiff && storageDiff.length > 0) {
+    throw new Error(`Storage data mismatch: ${JSON.stringify(storageDiff)}`);
+  }
 };
