@@ -1,13 +1,12 @@
 import * as hre from "hardhat";
 import { MongoDBAdapter } from "../deploy/db/mongo-adapter/mongo-adapter";
-import { IContractData } from "./types";
 import { VERSION_TYPES } from "../deploy/db/mongo-adapter/constants";
 import { getLogger } from "../deploy/logger/create-logger";
 import { znsNames } from "../deploy/missions/contracts/names";
 import { getContractDataForUpgrade } from "./upgrade";
 
 
-export const updateAllContractsInDb = async ({
+export const updateAllContractsInDbAndVerify = async ({
   dbAdapter,
 } : {
   dbAdapter : MongoDBAdapter;
@@ -45,6 +44,12 @@ export const updateAllContractsInDb = async ({
       implAddress,
       newDbVersion,
     });
+
+    if (hre.network.name !== "hardhat") {
+      await hre.run("verify:verify", {
+        address: implAddress,
+      });
+    }
   }
 
   // Update the version in the DB
