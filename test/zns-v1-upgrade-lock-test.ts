@@ -85,6 +85,8 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
         : deployer.address,
     });
 
+    resetMongoAdapter();
+
     const campaign = await runZnsCampaign({
       config,
     });
@@ -493,6 +495,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
   after(async () => {
     if (hre.network.name === "hardhat") {
       await dbAdapterUpgrade.dropDB();
+      resetMongoAdapter();
       process.env.MONGO_DB_VERSION = "";
     }
   });
