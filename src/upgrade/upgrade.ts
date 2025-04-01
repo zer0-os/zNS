@@ -10,7 +10,6 @@ import { znsNames } from "../deploy/missions/contracts/names";
 import { IContractDbData } from "../deploy/db/types";
 
 
-// TODO upg: add the ability to retry from where it left off/failed !
 export const upgradeZNS = async ({
   governorExt,
   contractData,
@@ -34,14 +33,12 @@ export const upgradeZNS = async ({
     ) => {
       const upgradedContracts = await acc;
 
-      const upgradedContract = await upgradeZNSContract({
+      upgradedContracts[instanceName] = await upgradeZNSContract({
         contractName,
         contractAddress: address,
         governor: governor as SignerWithAddress,
         logger,
       });
-
-      upgradedContracts[instanceName] = upgradedContract;
 
       return upgradedContracts;
     },
