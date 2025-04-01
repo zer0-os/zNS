@@ -1,5 +1,4 @@
 import * as hre from "hardhat";
-import { expect } from "chai";
 import { ContractFactory } from "ethers";
 import { getStorageLayout, getUnlinkedBytecode, getVersion, StorageLayout } from "@openzeppelin/upgrades-core";
 import { readValidations } from "@openzeppelin/hardhat-upgrades/dist/utils/validations";
@@ -8,7 +7,6 @@ import { ZNSContract } from "../../test/helpers/types";
 import { getLogger } from "../deploy/logger/create-logger";
 
 
-// TODO utils: move thess helpers to protocol-utils repo when available
 export const getContractStorageLayout = async (
   contractFactory : ContractFactory
 ) : Promise<StorageLayout> => {

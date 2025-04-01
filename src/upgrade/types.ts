@@ -7,7 +7,7 @@ import {
 import { Addressable } from "ethers";
 
 
-export type ContractStorageElement = string | number | Array<{}>;
+export type ContractStorageElement = string | number | Array<object>;
 
 export type ContractStorageData = Array<{
   [label : string] : ContractStorageElement;

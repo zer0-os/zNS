@@ -5,7 +5,7 @@ import {
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { ContractTransactionReceipt, ethers } from "ethers";
+import { ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";

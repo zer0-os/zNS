@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/ban-ts-comment, no-shadow */
 import * as hre from "hardhat";
 import { IDeployCampaignConfig, TZNSContractState } from "../src/deploy/campaign/types";
 import { getConfig } from "../src/deploy/campaign/environments";
