@@ -132,11 +132,11 @@ contract ZNSRootRegistrar is
 
     /**
      * @notice This function allows registering multiple root domains in a single transaction.
-     * It iterates through an array of `RootDomainRegistration` objects, registering each domain
+     * It iterates through an array of `RootDomainRegistrationParams` objects, registering each domain
      * by calling the `registerRootDomain` function for each entry.
      * @dev This function reduces the number of transactions required to register multiple domains,
      * saving gas and improving efficiency. Each domain registration is processed sequentially.
-     * @param registrations An array of `RootDomainRegistration` structs, each containing:
+     * @param registrations An array of `RootDomainRegistrationParams` structs, each containing:
      *      + `name`: The name (label) of the domain to register.
      *      + `domainAddress`: The address to associate with the domain in the resolver (optional).
      *      + `tokenURI`: The URI to assign to the domain token.
@@ -145,7 +145,7 @@ contract ZNSRootRegistrar is
      * @return domainHashes An array of `bytes32` hashes representing the registered domains.
      */
     function registerMultipleRootDomains(
-        RootDomainRegistration[] calldata registrations
+        RootDomainRegistrationParams[] calldata registrations
     ) external override returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](registrations.length);
 

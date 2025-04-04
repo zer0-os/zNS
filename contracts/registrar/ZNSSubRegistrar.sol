@@ -94,7 +94,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         // Confirms string values are only [a-z0-9-]
         label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);        
+        bytes32 domainHash = hashWithParent(parentHash, label);
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
@@ -157,13 +157,13 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     /**
      * @notice Allows registering multiple subdomains in a single transaction.
-     * This function iterates through an array of `SubDomainRegistration` objects and registers each subdomain
+     * This function iterates through an array of `SubdomainRegistrationParams` objects and registers each subdomain
      * by calling the `registerSubdomain` function for each entry.
      * @dev This function reduces the number of transactions required to register multiple subdomains,
      * saving gas and improving efficiency. Each subdomain registration is processed sequentially.
      * 
-     * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash), 
-     * it will be treated as a nested domain. 
+     * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash),
+     * it will be treated as a nested domain.
      * In this case, the parent of the subdomain will be set to the domain hash of the
      * previously registered subdomain in the array. This allows creating multi-level nested domains in a single
      * transaction. For example:
@@ -171,7 +171,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
      * - This pattern can continue for deeper levels of nesting.
      * 
-     * @param subRegistrations An array of `SubDomainRegistration` structs, each containing:
+     * @param subRegistrations An array of `SubdomainRegistrationParams` structs, each containing:
      *      + `parentHash`: The hash of the parent domain under which the subdomain is being registered.
      *                     If set to `0x000...`, the parent will be the previously registered subdomain.
      *      + `label`: The label of the subdomain to register (e.g., in `0://parent.child`, the label is `child`).
@@ -182,17 +182,17 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
      */
     function registerMultipleSubdomains(
-        SubDomainRegistration[] memory subRegistrations
+        SubdomainRegistrationParams[] memory subRegistrations
     ) external override returns (bytes32[] memory) {
 
         bytes32[] memory domainHashes = new bytes32[](subRegistrations.length);
-    
+
         for (uint256 i = 0; i < subRegistrations.length; i++) {
             if (subRegistrations[i].parentHash == bytes32(0) && i > 0) {
                 subRegistrations[i].parentHash = domainHashes[i - 1];
 
             } else if (subRegistrations[i].parentHash == bytes32(0)) {
-                revert ZeroAddressPassed();
+                revert ZeroParentHash(subRegistrations[i].label);
             }
 
             domainHashes[i] = registerSubdomain(
