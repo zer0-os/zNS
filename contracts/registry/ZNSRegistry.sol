@@ -5,6 +5,7 @@ import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -12,7 +13,7 @@ import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors
  * in the call chain of many operations where the most crucial Name owner data settles.
  * Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.
  */
-contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
+contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable, IZNSRegistry {
 
     // Mapping of all approved resolvers
     mapping(string resolverType => address resolver) internal resolvers;
@@ -66,6 +67,23 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function initialize(address accessController_) external override initializer {
         records[0x0].owner = msg.sender;
         _setAccessController(accessController_);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**

@@ -83,6 +83,10 @@ interface IZNSRegistry {
 
     function initialize(address accessController) external;
 
+    function pause() external;
+
+    function unpause() external;
+
     function exists(bytes32 domainHash) external view returns (bool);
 
     function isOwnerOrOperator(

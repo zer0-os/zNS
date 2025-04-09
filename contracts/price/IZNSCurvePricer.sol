@@ -94,6 +94,10 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
         uint256 stakeFee
     );
 
+    function pause() external;
+
+    function unpause() external;
+
     function setPriceConfig(
         bytes32 domainHash,
         CurvePriceConfig calldata priceConfig

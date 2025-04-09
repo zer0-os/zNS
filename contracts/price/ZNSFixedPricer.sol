@@ -6,13 +6,14 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
  * @notice Pricer contract that uses the most straightforward fixed pricing model
  * that doesn't depend on the length of the label.
 */
-contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSFixedPricer {
+contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, PausableUpgradeable, IZNSFixedPricer {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
@@ -30,6 +31,23 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function initialize(address _accessController, address _registry) external override initializer {
         _setAccessController(_accessController);
         setRegistry(_registry);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -37,7 +55,10 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param domainHash The hash of the domain who sets the price for subdomains
      * @param _price The new price value set
     */
-    function setPrice(bytes32 domainHash, uint256 _price) public override onlyOwnerOrOperator(domainHash) {
+    function setPrice(
+        bytes32 domainHash,
+        uint256 _price
+    ) public override whenNotPaused onlyOwnerOrOperator(domainHash){
         _setPrice(domainHash, _price);
     }
 
@@ -80,7 +101,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setFeePercentage(
         bytes32 domainHash,
         uint256 feePercentage
-    ) public override onlyOwnerOrOperator(domainHash) {
+    ) public override whenNotPaused onlyOwnerOrOperator(domainHash) {
         _setFeePercentage(domainHash, feePercentage);
     }
 
@@ -96,7 +117,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setPriceConfig(
         bytes32 domainHash,
         PriceConfig calldata priceConfig
-    ) external override {
+    ) external override whenNotPaused {
         setPrice(domainHash, priceConfig.price);
         setFeePercentage(domainHash, priceConfig.feePercentage);
         priceConfigs[domainHash].isSet = true;
@@ -164,6 +185,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         priceConfigs[domainHash].feePercentage = feePercentage;
         emit FeePercentageSet(domainHash, feePercentage);
     }
+
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.

@@ -35,6 +35,10 @@ interface IZNSFixedPricer is IZNSPricer {
 
     function initialize(address _accessController, address _registry) external;
 
+    function pause() external;
+
+    function unpause() external;
+
     function setPrice(bytes32 domainHash, uint256 _price) external;
 
     function getPrice(

@@ -12,6 +12,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -31,6 +32,7 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    PausableUpgradeable,
     IZNSRootRegistrar {
     using StringUtils for string;
 
@@ -67,6 +69,23 @@ contract ZNSRootRegistrar is
         setRootPricer(rootPricer_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -94,7 +113,7 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) external override whenNotPaused returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -146,7 +165,7 @@ contract ZNSRootRegistrar is
     */
     function coreRegister(
         CoreRegisterArgs memory args
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         _coreRegister(
             args
         );
@@ -254,6 +273,7 @@ contract ZNSRootRegistrar is
     function revokeDomain(bytes32 domainHash)
     external
     override
+    whenNotPaused
     {
         if (!isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH))
             revert NotTheOwnerOf(OwnerOf.BOTH, msg.sender, domainHash);
@@ -301,6 +321,7 @@ contract ZNSRootRegistrar is
     function reclaimDomain(bytes32 domainHash)
     external
     override
+    whenNotPaused
     {
         if (!isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN))
             revert NotTheOwnerOf(OwnerOf.TOKEN, msg.sender, domainHash);

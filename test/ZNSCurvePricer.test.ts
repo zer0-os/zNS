@@ -438,6 +438,17 @@ describe("ZNSCurvePricer", () => {
       expect(expectedPriceAfter).to.be.gt(expectedPriceBefore);
       expect(priceAfter).to.be.gt(priceBefore);
     });
+
+    it("Should NOT allow non-admin to set the max price when PAUSED", async () => {
+      await zns.curvePricer.connect(admin).pause();
+
+      await expect(
+        zns.curvePricer.setMaxPrice(domainHash, ethers.parseEther("0.7"))
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        "EnforcedPause"
+      );
+    });
   });
 
   describe("#setCurveMultiplier", async () => {
@@ -939,6 +950,36 @@ describe("ZNSCurvePricer", () => {
         // because its a first check
         INVALID_PRECISION_MULTIPLIER_ERR
       ).withArgs(domainHash);
+    });
+
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.curvePricer.connect(user).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address, ADMIN_ROLE);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      await zns.curvePricer.connect(admin).pause();
+
+      const functionsToTest = [
+        async () => zns.curvePricer.setMaxPrice(domainHash, ethers.parseEther("1")),
+        async () => zns.curvePricer.setBaseLength(domainHash, 5),
+        async () => zns.curvePricer.setMaxLength(domainHash, 10),
+        async () => zns.curvePricer.setCurveMultiplier(domainHash, 1000n),
+        async () => zns.curvePricer.setPrecisionMultiplier(domainHash, 1000n),
+        async () => zns.curvePricer.setFeePercentage(domainHash, 100n),
+        async () => zns.curvePricer.setPriceConfig(domainHash, DEFAULT_PRICE_CONFIG),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.curvePricer,
+          "EnforcedPause"
+        );
+      }
     });
   });
 

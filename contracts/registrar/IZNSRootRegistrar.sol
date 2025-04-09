@@ -133,6 +133,10 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address domainToken_
     ) external;
 
+    function pause() external;
+
+    function unpause() external;
+
     function registerRootDomain(
         string calldata name,
         address domainAddress,

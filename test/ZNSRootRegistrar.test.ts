@@ -1382,6 +1382,53 @@ describe("ZNSRootRegistrar", () => {
     });
   });
 
+  describe("General validation", () => {
+    const domainHash = hashDomainLabel(defaultDomain);
+
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.rootRegistrar.connect(user).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      await zns.rootRegistrar.connect(admin).pause();
+
+      const functionsToTest = [
+        async () => zns.rootRegistrar.registerRootDomain(
+          "example",
+          "0x0000000000000000000000000000000000000000",
+          "tokenURI",
+          distrConfigEmpty,
+          paymentConfigEmpty
+        ),
+        async () => zns.rootRegistrar.coreRegister({
+          parentHash: domainHash,
+          domainHash,
+          registrant: user.address,
+          domainAddress: user.address,
+          price: ethers.parseEther("0.1"),
+          stakeFee: ethers.parseEther("0.1"),
+          label: "testpause",
+          tokenURI: DEFAULT_TOKEN_URI,
+          isStakePayment: false,
+          paymentConfig: paymentConfigEmpty,
+        }),
+        async () => zns.rootRegistrar.revokeDomain(domainHash),
+        async () => zns.rootRegistrar.reclaimDomain(domainHash),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user to upgrade the contract", async () => {
       // Confirm deployer has the correct role first

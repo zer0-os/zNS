@@ -10,6 +10,7 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -18,7 +19,7 @@ import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, PausableUpgradeable, IZNSSubRegistrar {
     using StringUtils for string;
 
     /**
@@ -66,6 +67,23 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         _setAccessController(_accessController);
         setRegistry(_registry);
         setRootRegistrar(_rootRegistrar);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -90,7 +108,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         string calldata tokenURI,
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    ) external override whenNotPaused returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         label.validate();
 
@@ -182,7 +200,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setDistributionConfigForDomain(
         bytes32 domainHash,
         DistributionConfig calldata config
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+    ) public override whenNotPaused onlyOwnerOperatorOrRegistrar(domainHash) {
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();
 
@@ -207,7 +225,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setPricerContractForDomain(
         bytes32 domainHash,
         IZNSPricer pricerContract
-    ) public override {
+    ) public override whenNotPaused {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
             revert NotAuthorizedForDomain(msg.sender, domainHash);
 
@@ -230,14 +248,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setPaymentTypeForDomain(
         bytes32 domainHash,
         PaymentType paymentType
-    ) public override {
+    ) public override whenNotPaused {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
             revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         distrConfigs[domainHash].paymentType = paymentType;
 
         emit PaymentTypeSet(domainHash, paymentType);
-    }
+    }asdasd
 
     /**
      * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `accessType` field of the struct.
@@ -250,7 +268,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function setAccessTypeForDomain(
         bytes32 domainHash,
         AccessType accessType
-    ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
+    ) public override whenNotPaused onlyOwnerOperatorOrRegistrar(domainHash) {
         distrConfigs[domainHash].accessType = accessType;
         emit AccessTypeSet(domainHash, accessType);
     }
@@ -269,7 +287,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         bytes32 domainHash,
         address[] calldata candidates,
         bool[] calldata allowed
-    ) external override {
+    ) external override whenNotPaused {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
             revert NotAuthorizedForDomain(msg.sender, domainHash);
 
@@ -301,6 +319,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function clearMintlistForDomain(bytes32 domainHash)
     public
     override
+    whenNotPaused
     onlyOwnerOperatorOrRegistrar(domainHash) {
         mintlist[domainHash].ownerIndex = mintlist[domainHash].ownerIndex + 1;
 
@@ -310,6 +329,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function clearMintlistAndLock(bytes32 domainHash)
     external
     override
+    whenNotPaused
     onlyOwnerOperatorOrRegistrar(domainHash) {
         setAccessTypeForDomain(domainHash, AccessType.LOCKED);
         clearMintlistForDomain(domainHash);

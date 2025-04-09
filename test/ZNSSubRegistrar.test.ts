@@ -3452,6 +3452,105 @@ describe("ZNSSubRegistrar", () => {
     });
   });
 
+  describe("General validation", () => {
+    let rootHash : string;
+    let rootPriceConfig : IFixedPriceConfig;
+
+    before(async () => {
+      [
+        deployer,
+        zeroVault,
+        governor,
+        admin,
+        rootOwner,
+        lvl2SubOwner,
+        random,
+      ] = await hre.ethers.getSigners();
+      // zeroVault address is used to hold the fee charged to the user when registering
+      zns = await deployZNS({
+        deployer,
+        governorAddresses: [deployer.address, governor.address],
+        adminAddresses: [admin.address],
+        priceConfig: DEFAULT_PRICE_CONFIG,
+        zeroVaultAddress: zeroVault.address,
+      });
+      // Give funds to users
+      await Promise.all(
+        [
+          rootOwner,
+          lvl2SubOwner,
+        ].map(async ({ address }) =>
+          zns.meowToken.mint(address, ethers.parseEther("100000000000")))
+      );
+      await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      rootPriceConfig = {
+        price: ethers.parseEther("1375.612"),
+        feePercentage: BigInt(0),
+      };
+
+      // register root domain
+      rootHash = await registrationWithSetup({
+        zns,
+        user: rootOwner,
+        domainLabel: "root",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: await zns.fixedPricer.getAddress(),
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+          priceConfig: rootPriceConfig,
+        },
+      });
+    });
+
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.subRegistrar.connect(random).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      await zns.subRegistrar.connect(admin).pause();
+
+      const functionsToTest = [
+        async () => zns.subRegistrar.registerSubdomain(
+          rootHash,
+          "example",
+          "0x0000000000000000000000000000000000000000",
+          "tokenURI",
+          distrConfigEmpty,
+          paymentConfigEmpty
+        ),
+        async () => zns.subRegistrar.connect(random).setDistributionConfigForDomain(rootHash, distrConfigEmpty),
+        async () => zns.subRegistrar.connect(random).setPricerContractForDomain(rootHash, ethers.ZeroAddress),
+        async () => zns.subRegistrar.connect(random).setPaymentTypeForDomain(rootHash, BigInt(1)),
+        async () => zns.subRegistrar.connect(random).setAccessTypeForDomain(rootHash, BigInt(1)),
+        async () => zns.subRegistrar.connect(random).updateMintlistForDomain(
+          rootHash,
+          [random.address, admin.address],
+          [true, false]
+        ),
+        async () => zns.subRegistrar.connect(random).clearMintlistForDomain(rootHash),
+        async () => zns.subRegistrar.connect(random).clearMintlistAndLock(rootHash),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     let fixedPrice : bigint;
     let rootHash : string;

@@ -71,6 +71,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     event RootRegistrarSet(address registrar);
 
+    function pause() external;
+
+    function unpause() external;
+
     function distrConfigs(
         bytes32 domainHash
     ) external view returns (

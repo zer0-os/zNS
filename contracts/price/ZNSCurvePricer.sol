@@ -6,6 +6,8 @@ import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+
 
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
@@ -16,7 +18,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * The price after `maxLength` is fixed and equals the price on the hyperbola graph at the point `maxLength`
  * and is determined using the formula where `length` = `maxLength`.
  */
-contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
+contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, PausableUpgradeable, IZNSCurvePricer {
 
     using StringUtils for string;
 
@@ -63,6 +65,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         _setRegistry(registry_);
 
         setPriceConfig(0x0, zeroPriceConfig_);
+        __Pausable_init();
     }
 
     /**
@@ -129,6 +132,22 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
+    }
+
+    /**
      * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
      * @dev Validates the value of the `precisionMultiplier`.
      * fires `PriceConfigSet` event.
@@ -141,7 +160,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setPriceConfig(
         bytes32 domainHash,
         CurvePriceConfig calldata priceConfig
-    ) public override {
+    ) public override whenNotPaused {
         _setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         _validateSetBaseLength(domainHash, priceConfig.baseLength, priceConfig);
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
@@ -176,7 +195,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setMaxPrice(
         bytes32 domainHash,
         uint256 maxPrice
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override whenNotPaused onlyOwnerOrOperator(domainHash) {
         priceConfigs[domainHash].maxPrice = maxPrice;
         emit MaxPriceSet(domainHash, maxPrice);
     }
@@ -197,7 +216,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setCurveMultiplier(
         bytes32 domainHash,
         uint256 curveMultiplier
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override whenNotPaused onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
         _validateSetCurveMultiplier(domainHash, curveMultiplier, config);
         emit CurveMultiplierSet(domainHash, curveMultiplier);
@@ -230,7 +249,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setBaseLength(
         bytes32 domainHash,
         uint256 baseLength
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override whenNotPaused onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
         _validateSetBaseLength(domainHash, baseLength, config);
         emit BaseLengthSet(domainHash, baseLength);
@@ -265,7 +284,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setMaxLength(
         bytes32 domainHash,
         uint256 maxLength
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override whenNotPaused onlyOwnerOrOperator(domainHash) {
         CurvePriceConfig memory config = priceConfigs[domainHash];
         _validateSetMaxLength(domainHash, maxLength, config);
         emit MaxLengthSet(domainHash, maxLength);
@@ -299,7 +318,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setPrecisionMultiplier(
         bytes32 domainHash,
         uint256 multiplier
-    ) public override onlyOwnerOrOperator(domainHash) {
+    ) public override whenNotPaused onlyOwnerOrOperator(domainHash) {
         _setPrecisionMultiplier(domainHash, multiplier);
         emit PrecisionMultiplierSet(domainHash, multiplier);
     }
@@ -324,7 +343,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function setFeePercentage(
         bytes32 domainHash,
         uint256 feePercentage
-    ) public override onlyOwnerOrOperator(domainHash) {
+    ) public override whenNotPaused onlyOwnerOrOperator(domainHash) {
         _validateSetFeePercentage(domainHash, feePercentage);
         emit FeePercentageSet(domainHash, feePercentage);
     }

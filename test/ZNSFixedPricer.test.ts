@@ -290,6 +290,38 @@ describe("ZNSFixedPricer", () => {
     ).to.equal(random.address);
   });
 
+  it("Should revert when NON-admin tries to set #PAUSE", async () => {
+    await expect(
+      zns.fixedPricer.connect(user).pause()
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+  });
+
+  it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+    await zns.fixedPricer.connect(admin).pause();
+
+    const functionsToTest = [
+      async () => zns.fixedPricer.connect(user).setPrice(domainHash, ethers.parseEther("1")),
+      async () => zns.fixedPricer.connect(user).setFeePercentage(domainHash, 100n),
+      async () => zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          price: ethers.parseEther("1"),
+          feePercentage: 100n,
+          isSet: true,
+        }
+      ),
+    ];
+
+    for (const call of functionsToTest) {
+      await expect(
+        call()
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        "EnforcedPause"
+      );
+    }
+  });
+
   describe("UUPS", () => {
     before(async () => {
       zns = await deployZNS({
