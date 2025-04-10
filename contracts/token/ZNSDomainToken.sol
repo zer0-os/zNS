@@ -10,6 +10,7 @@ import { ERC721URIStorageUpgradeable }
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -24,6 +25,7 @@ contract ZNSDomainToken is
     ERC2981Upgradeable,
     UUPSUpgradeable,
     ARegistryWired,
+    PausableUpgradeable,
     IZNSDomainToken {
 
     /**
@@ -62,6 +64,23 @@ contract ZNSDomainToken is
         _setAccessController(accessController_);
         _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
         _setRegistry(registry_);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -80,7 +99,7 @@ contract ZNSDomainToken is
      * @param tokenId The TokenId that the caller wishes to mint/register.
      * @param _tokenURI The tokenURI to be set for the token minted.
      */
-    function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
+    function register(address to, uint256 tokenId, string memory _tokenURI) external override whenNotPaused onlyRegistrar {
         ++_totalSupply;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, _tokenURI);
@@ -91,7 +110,7 @@ contract ZNSDomainToken is
      * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`.
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
-    function revoke(uint256 tokenId) external override onlyRegistrar {
+    function revoke(uint256 tokenId) external override whenNotPaused onlyRegistrar {
         _burn(tokenId);
         --_totalSupply;
         _resetTokenRoyalty(tokenId);
@@ -197,7 +216,7 @@ contract ZNSDomainToken is
      * @param to Address to send the token to
      * @param tokenId The token being transferred
      */
-    function updateTokenOwner(address from, address to, uint256 tokenId) public override {
+    function updateTokenOwner(address from, address to, uint256 tokenId) public override whenNotPaused {
         super.transferFrom(from, to, tokenId);
     }
 
@@ -210,7 +229,7 @@ contract ZNSDomainToken is
         address from,
         address to,
         uint256 tokenId
-    ) public override(ERC721Upgradeable, IERC721) {
+    ) public override(ERC721Upgradeable, IERC721) whenNotPaused {
         // Transfer the token
         super.transferFrom(from, to, tokenId);
 

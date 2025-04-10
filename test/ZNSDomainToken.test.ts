@@ -609,6 +609,48 @@ describe("ZNSDomainToken", () => {
     });
   });
 
+  describe("General validation", () => {
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.domainToken.connect(caller).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      const tokenId = BigInt("1");
+
+      await zns.domainToken.connect(deployer).pause();
+
+      const functionsToTest = [
+        async () => zns.domainToken.register(
+          caller.address,
+          tokenId,
+          "tokenURI"
+        ),
+        async () => zns.domainToken.revoke(tokenId),
+        async () => zns.domainToken.updateTokenOwner(
+          deployer.address,
+          caller.address,
+          tokenId
+        ),
+        async () => zns.domainToken.transferFrom(
+          deployer.address,
+          caller.address,
+          tokenId
+        ),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.domainToken,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user to upgrade the contract", async () => {
       // DomainToken to upgrade to

@@ -575,6 +575,44 @@ describe("ZNSRegistry", () => {
     });
   });
 
+  describe("General validation", () => {
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.registry.connect(randomUser).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      await zns.registry.connect(deployer).pause();
+
+      const functionsToTest = [
+        async () => zns.registry.setOwnersOperator(randomUser, true),
+        async () => zns.registry.createDomainRecord(
+          wilderDomainHash,
+          randomUser.address,
+          "resolverType"
+        ),
+        async () => zns.registry.updateDomainRecord(
+          wilderDomainHash,
+          randomUser.address,
+          "newResolverType"
+        ),
+        async () => zns.registry.updateDomainOwner(wilderDomainHash, randomUser.address),
+        async () => zns.registry.updateDomainResolver(wilderDomainHash, "newResolverType"),
+        async () => zns.registry.deleteRecord(wilderDomainHash),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.registry,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user to upgrade successfully", async () => {
       // Confirm the deployer is a governor

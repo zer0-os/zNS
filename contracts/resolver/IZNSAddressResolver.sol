@@ -10,6 +10,10 @@ interface IZNSAddressResolver {
      */
     event AddressSet(bytes32 indexed domainHash, address indexed newAddress);
 
+    function pause() external;
+
+    function unpause() external;
+
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 
     function resolveDomainAddress(bytes32 domainHash) external view returns (address);

@@ -582,6 +582,60 @@ describe("ZNSTreasury", () => {
     });
   });
 
+  describe("General validation", () => {
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.treasury.connect(user).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      const stakeAmount = BigInt("1");
+
+      await zns.treasury.connect(deployer).pause();
+
+      const functionsToTest = [
+        async () => zns.treasury.stakeForDomain(
+          domainHash,
+          domainHash,
+          user.address,
+          stakeAmount,
+          stakeAmount,
+          stakeAmount
+        ),
+        async () => zns.treasury.unstakeForDomain(
+          domainHash,
+          user.address,
+          stakeAmount
+        ),
+        async () => zns.treasury.processDirectPayment(
+          domainHash,
+          domainHash,
+          user.address,
+          stakeAmount,
+          stakeAmount
+        ),
+        async () => zns.treasury.setPaymentConfig(
+          domainHash,
+          paymentConfig,
+        ),
+        async () => zns.treasury.setPaymentToken(
+          domainHash,
+          user.address
+        ),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.treasury,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user can upgrade the contract", async () => {
       // Confirm deployer has the correct role first

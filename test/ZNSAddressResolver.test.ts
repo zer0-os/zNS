@@ -204,6 +204,31 @@ describe("ZNSAddressResolver", () => {
     expect(resolvedAddress).to.eq(user.address);
   });
 
+  describe("General validation", () => {
+    it("Should revert when NON-admin tries to set #PAUSE", async () => {
+      await expect(
+        zns.addressResolver.connect(user).pause()
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+      await zns.addressResolver.connect(deployer).pause();
+
+      const functionsToTest = [
+        async () => zns.addressResolver.setAddress(wilderDomainHash, user.address),
+      ];
+
+      for (const call of functionsToTest) {
+        await expect(
+          call()
+        ).to.be.revertedWithCustomError(
+          zns.addressResolver,
+          "EnforcedPause"
+        );
+      }
+    });
+  });
+
   describe("UUPS", () => {
     it("Allows an authorized user to upgrade the contract", async () => {
       // AddressResolver to upgrade to

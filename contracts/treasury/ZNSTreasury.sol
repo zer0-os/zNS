@@ -9,6 +9,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { PaymentConfig } from "./IZNSTreasury.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -19,7 +20,7 @@ import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors
  * It also stores the payment configurations for all domains and staked amounts and token addresses which were used.
  * This information is needed for revoking users to withdraw their stakes back when they exit the system.
 */
-contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSTreasury {
+contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, PausableUpgradeable, IZNSTreasury {
     using SafeERC20 for IERC20;
 
     /**
@@ -62,6 +63,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
+        __Pausable_init();
 
         if (paymentToken_ == address(0) || zeroVault_ == address(0))
             revert ZeroAddressPassed();
@@ -70,6 +72,22 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
             token: IERC20(paymentToken_),
             beneficiary : zeroVault_
         });
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -97,7 +115,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         uint256 stakeAmount,
         uint256 stakeFee,
         uint256 protocolFee
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         // Transfer stake amount and fees to this address
@@ -155,7 +173,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         bytes32 domainHash,
         address owner,
         uint256 protocolFee
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
 
@@ -196,7 +214,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         address payer,
         uint256 paymentAmount,
         uint256 protocolFee
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         PaymentConfig memory parentConfig = paymentConfigs[parentHash];
 
         if (parentConfig.beneficiary == address(0))
@@ -235,7 +253,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     function setPaymentConfig(
         bytes32 domainHash,
         PaymentConfig memory paymentConfig
-    ) external override {
+    ) external override whenNotPaused {
         if (
             !registry.isOwnerOrOperator(domainHash, msg.sender)
             && !accessController.isRegistrar(msg.sender)
@@ -268,7 +286,7 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     function setPaymentToken(
         bytes32 domainHash,
         address paymentToken
-    ) public override onlyOwnerOrOperator(domainHash) {
+    ) public override whenNotPaused onlyOwnerOrOperator(domainHash) {
         _setPaymentToken(domainHash, paymentToken);
     }
 

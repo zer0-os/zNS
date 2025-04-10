@@ -374,6 +374,35 @@ describe("ZNSStringResolver", () => {
       ).to.be.false;
     });
 
+    describe("General validation", () => {
+
+      const curDomain = "wild";
+      const curString = "wildlife";
+      const domainHash = hashDomainLabel(curDomain);
+
+      it("Should revert when NON-admin tries to set #PAUSE", async () => {
+        await expect(
+          stringResolver.connect(user).pause()
+        ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+      });
+
+      it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+        await stringResolver.connect(deployer).pause();
+
+        const functionsToTest = [
+          async () => stringResolver.setString(domainHash, curString),
+        ];
+
+        for (const call of functionsToTest) {
+          await expect(
+            call()
+          ).to.be.revertedWithCustomError(
+            stringResolver,
+            "EnforcedPause"
+          );
+        }
+      });
+    });
 
     describe("UUPS", () => {
 

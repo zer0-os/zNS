@@ -255,7 +255,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         distrConfigs[domainHash].paymentType = paymentType;
 
         emit PaymentTypeSet(domainHash, paymentType);
-    }asdasd
+    }
 
     /**
      * @notice One of the individual setters for `distrConfigs[domainHash]`. Sets `accessType` field of the struct.

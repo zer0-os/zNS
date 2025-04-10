@@ -9,6 +9,10 @@ interface IZNSStringResolver {
      */
     event StringSet(bytes32 indexed domainHash, string indexed newString);
 
+    function pause() external;
+
+    function unpause() external;
+
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 
     function resolveDomainString(bytes32 domainHash) external view returns (string memory);

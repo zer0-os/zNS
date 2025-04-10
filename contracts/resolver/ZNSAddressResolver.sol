@@ -7,6 +7,7 @@ import { IZNSAddressResolver } from "./IZNSAddressResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -19,6 +20,7 @@ contract ZNSAddressResolver is
     AAccessControlled,
     ARegistryWired,
     ERC165,
+    PausableUpgradeable,
     IZNSAddressResolver {
     /**
      * @notice Mapping of domain hash to address used to bind domains
@@ -42,6 +44,23 @@ contract ZNSAddressResolver is
     function initialize(address accessController_, address registry_) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -65,7 +84,7 @@ contract ZNSAddressResolver is
     function setAddress(
         bytes32 domainHash,
         address newAddress
-    ) external override {
+    ) external override whenNotPaused {
         // only owner or operator of the current domain can set the address
         // also, ZNSRootRegistrar.sol can set the address as part of the registration process
         if (

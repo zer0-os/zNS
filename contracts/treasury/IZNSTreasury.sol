@@ -104,6 +104,10 @@ interface IZNSTreasury {
      */
     event BeneficiarySet(bytes32 indexed domainHash, address indexed beneficiary);
 
+    function pause() external;
+
+    function unpause() external;
+
     function paymentConfigs(
         bytes32 domainHash
     ) external view returns (

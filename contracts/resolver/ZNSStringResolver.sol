@@ -7,6 +7,7 @@ import { IZNSStringResolver } from "./IZNSStringResolver.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 
 /**
@@ -17,6 +18,7 @@ contract ZNSStringResolver is
     AAccessControlled,
     ARegistryWired,
     ERC165,
+    PausableUpgradeable,
     IZNSStringResolver {
 
     mapping(bytes32 domainHash => string resolvedString) internal resolvedStrings;
@@ -36,6 +38,23 @@ contract ZNSStringResolver is
     function initialize(address accessController_, address registry_) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
+        __Pausable_init();
+    }
+
+    /**
+     * @notice Pauses execution of functions with the `whenNotPaused` modifier.
+     * Only admin can call this function.
+     */
+    function pause() public override onlyAdmin {
+        _pause();
+    }
+
+    /**
+     * @notice Unpauses execution of functions with the `whenNotPaused` modifier. 
+     * Only admin can call this function.
+     */
+    function unpause() public override onlyAdmin {
+        _unpause();
     }
 
     /**
@@ -56,7 +75,7 @@ contract ZNSStringResolver is
     function setString(
         bytes32 domainHash,
         string calldata newString
-    ) external override {
+    ) external override whenNotPaused {
         // only owner or operator of the current domain can set the string
 
         if (!registry.isOwnerOrOperator(domainHash, msg.sender)) {

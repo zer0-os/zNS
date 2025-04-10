@@ -36,6 +36,10 @@ interface IZNSDomainToken is IERC2981, IERC721 {
         address registry
     ) external;
 
+    function pause() external;
+
+    function unpause() external;
+
     function totalSupply() external view returns (uint256);
 
     function register(

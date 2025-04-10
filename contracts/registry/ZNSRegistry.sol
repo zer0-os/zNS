@@ -126,7 +126,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
-    function setOwnersOperator(address operator, bool allowed) external override {
+    function setOwnersOperator(address operator, bool allowed) external override whenNotPaused {
         operators[msg.sender][operator] = allowed;
 
         emit OperatorPermissionSet(msg.sender, operator, allowed);
@@ -179,7 +179,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
         bytes32 domainHash,
         address owner,
         string calldata resolverType
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
         // We allow creation of partial domain data with no resolver address
@@ -232,7 +232,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
         bytes32 domainHash,
         address owner,
         string calldata resolverType
-    ) external override onlyOwner(domainHash) {
+    ) external override whenNotPaused onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolverType);
@@ -248,7 +248,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
     function updateDomainOwner(
         bytes32 domainHash,
         address owner
-    ) external override {
+    ) external override whenNotPaused {
         if (
             msg.sender != records[domainHash].owner &&
             !accessController.isRegistrar(msg.sender) && 
@@ -267,7 +267,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
     function updateDomainResolver(
         bytes32 domainHash,
         string calldata resolverType
-    ) external override onlyOwnerOrOperator(domainHash) {
+    ) external override whenNotPaused onlyOwnerOrOperator(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainResolver(domainHash, resolverType);
     }
@@ -278,7 +278,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, PausableUpgradeable,
      * or any address holding the `REGISTRAR_ROLE`. Emits a `DomainRecordDeleted` event.
      * @param domainHash The hash of the domain name
      */
-    function deleteRecord(bytes32 domainHash) external override onlyRegistrar {
+    function deleteRecord(bytes32 domainHash) external override whenNotPaused onlyRegistrar {
         delete records[domainHash];
 
         emit DomainRecordDeleted(domainHash);
