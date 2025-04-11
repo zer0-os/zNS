@@ -281,13 +281,72 @@ describe("ZNSFixedPricer", () => {
       .withArgs(random.address, ADMIN_ROLE);
   });
 
-  // keep this as the last test
-  it("#setAccessController() should set the correct address", async () => {
-    await zns.fixedPricer.connect(admin).setAccessController(random.address);
+  it("Should revert when NON-admin tries to set #PAUSE", async () => {
+    await expect(
+      zns.fixedPricer.connect(user).pause()
+    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+  });
+
+  it("Should revert on every suspendable function call when the contract is PAUSED", async () => {
+    await zns.fixedPricer.connect(admin).pause();
+
+    const functionsToTest = [
+      async () => zns.fixedPricer.connect(user).setPrice(domainHash, ethers.parseEther("1")),
+      async () => zns.fixedPricer.connect(user).setFeePercentage(domainHash, 100n),
+      async () => zns.fixedPricer.connect(user).setPriceConfig(
+        domainHash,
+        {
+          price: ethers.parseEther("1"),
+          feePercentage: 100n,
+          isSet: true,
+        }
+      ),
+    ];
+
+    for (const call of functionsToTest) {
+      await expect(
+        call()
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        "EnforcedPause"
+      );
+    }
+  });
+
+  it("#setAccessController() should revert with `WrongAccessControlAddress(SIGNER.address)`", async () => {
+    await expect(
+      zns.fixedPricer.setAccessController(random.address)
+    ).to.revertedWithCustomError(
+      zns.fixedPricer,
+      "WrongAccessControlAddress"
+    ).withArgs(random.address);
+
+    // set back for other tests.
+    await zns.fixedPricer.connect(admin).setAccessController(
+      zns.accessController.target
+    );
+  });
+
+  it("#setAccessController() should change current Access Control to another propper one", async () => {
+    await zns.fixedPricer.connect(admin).setAccessController(zns.accessController.target);
 
     expect(
       await zns.fixedPricer.getAccessController()
-    ).to.equal(random.address);
+    ).to.equal(zns.accessController.target);
+  });
+
+  it("#setAccessController() should revert with `WrongAccessControlAddress(CONTRACT.target)`", async () => {
+    await expect(
+      zns.fixedPricer.setAccessController(zns.domainToken.target)
+    ).to.revertedWithCustomError(
+      zns.fixedPricer,
+      "WrongAccessControlAddress"
+    ).withArgs(zns.domainToken.target);
+
+    // set back for other tests.
+    await zns.fixedPricer.connect(admin).setAccessController(
+      zns.accessController.target
+    );
   });
 
   describe("UUPS", () => {

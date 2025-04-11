@@ -93,4 +93,8 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
             _grantRole(role, addresses[i]);
         }
     }
+
+    function checkAccessControl() external view override returns (bool) {
+        return true;
+    }
 }

@@ -7,3 +7,5 @@ error ZeroAddressPassed();
 error DomainAlreadyExists(bytes32 domainHash);
 
 error NotAuthorizedForDomain(address caller, bytes32 domainHash);
+
+error WrongAccessControlAddress(address accessController);

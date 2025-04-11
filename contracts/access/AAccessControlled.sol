@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
+import { ZeroAddressPassed, WrongAccessControlAddress } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -67,7 +67,18 @@ abstract contract AAccessControlled {
      */
     function _setAccessController(address _accessController) internal {
         if (_accessController == address(0)) revert ZeroAddressPassed();
+
+        if (_accessController.code.length == 0) {
+            revert WrongAccessControlAddress(_accessController);
+        }
+
         accessController = IZNSAccessController(_accessController);
-        emit AccessControllerSet(_accessController);
+
+        try accessController.checkAccessControl() {
+            emit AccessControllerSet(_accessController);
+        } catch {
+            revert WrongAccessControlAddress(_accessController);
+        }
+
     }
 }
