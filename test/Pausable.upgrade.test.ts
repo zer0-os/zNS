@@ -30,7 +30,7 @@ import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 import { getGitTag } from "../src/utils/git-tag/get-tag";
 
 
-describe("ZNS V1 Upgrade and Lock Test", () => {
+describe("ZNS Upgrade and Pause Test", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let lvl2SubOwner : SignerWithAddress;
