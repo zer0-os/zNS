@@ -268,9 +268,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     });
 
     // update database records to new implementations
-    await updateDbAndVerifyAll({
-      dbAdapter: dbAdapterUpgrade,
-    });
+    await updateDbAndVerifyAll(dbAdapterUpgrade);
 
     // list of all the methods that are blocked with `whenNotPaused` modifier
     // along with arguments for calls
