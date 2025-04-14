@@ -374,7 +374,7 @@ contract ZNSSubRegistrarPausable is AAccessControlled, ARegistryWiredPausable, U
     /**
      * @dev Returns true if the contract is paused, and false otherwise.
      */
-    function paused() public view virtual returns (bool) {
+    function paused() public view override returns (bool) {
         return _paused;
     }
 

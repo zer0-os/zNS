@@ -5,8 +5,9 @@ import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC
 import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
-import { ERC721URIStorageUpgradeable }
-    from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import {
+    ERC721URIStorageUpgradeable
+} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import { IZNSDomainTokenPausable } from "./IZNSDomainTokenPausable.sol";
 import { IZNSDomainToken } from "../../token/IZNSDomainToken.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
@@ -182,7 +183,10 @@ contract ZNSDomainTokenPausable is
         emit TokenRoyaltySet(tokenId, royaltyFraction);
     }
 
-    function paused() public view returns (bool) {
+    /**
+     * @dev Returns true if the contract is paused, and false otherwise.
+     */
+    function paused() public view override returns (bool) {
         return _paused;
     }
 

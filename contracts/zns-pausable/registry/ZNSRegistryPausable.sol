@@ -107,7 +107,10 @@ contract ZNSRegistryPausable is
         return candidate == owner || operators[owner][candidate];
     }
 
-    function paused() public view returns (bool) {
+    /**
+     * @dev Returns true if the contract is paused, and false otherwise.
+     */
+    function paused() public view override returns (bool) {
         return _paused;
     }
 
