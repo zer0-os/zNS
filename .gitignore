@@ -5,7 +5,8 @@ coverage.json
 typechain
 typechain-types
 .idea
-.dist
+.vscode
+dist
 
 # Hardhat files
 cache
