@@ -25,7 +25,7 @@ import { IContractDbData } from "../src/deploy/db/types";
 import { IDBVersion } from "../src/deploy/db/mongo-adapter/types";
 import { getMongoAdapter, resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 import { getLogger } from "../src/deploy/logger/create-logger";
-import { updateAllContractsInDbAndVerify } from "../src/upgrade/db";
+import { updateDbAndVerifyAll } from "../src/upgrade/db";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 import { getGitTag } from "../src/utils/git-tag/get-tag";
 
@@ -268,7 +268,7 @@ describe("ZNS V1 Upgrade and Lock Test", () => {
     });
 
     // update database records to new implementations
-    await updateAllContractsInDbAndVerify({
+    await updateDbAndVerifyAll({
       dbAdapter: dbAdapterUpgrade,
     });
 

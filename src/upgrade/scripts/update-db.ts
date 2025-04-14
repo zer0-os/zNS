@@ -1,15 +1,13 @@
 import { getLogger } from "../../deploy/logger/create-logger";
 import { getMongoAdapter } from "../../deploy/db/mongo-adapter/get-adapter";
-import { updateAllContractsInDbAndVerify } from "../db";
+import { updateDbAndVerifyAll } from "../db";
 
 
 const executeDbUpdate = async () => {
   const logger = getLogger();
   const dbAdapter = await getMongoAdapter(logger);
 
-  await updateAllContractsInDbAndVerify({
-    dbAdapter,
-  });
+  await updateDbAndVerifyAll(dbAdapter);
 };
 
 

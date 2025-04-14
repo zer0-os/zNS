@@ -6,11 +6,9 @@ import { znsNames } from "../deploy/missions/contracts/names";
 import { getContractDataForUpgrade } from "./upgrade";
 
 
-export const updateAllContractsInDbAndVerify = async ({
-  dbAdapter,
-} : {
-  dbAdapter : MongoDBAdapter;
-}) => {
+export const updateDbAndVerifyAll = async (
+  dbAdapter : MongoDBAdapter,
+) => {
   const logger = getLogger();
 
   const contractNames = JSON.parse(JSON.stringify(znsNames));
