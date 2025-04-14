@@ -163,7 +163,7 @@ contract ZNSRootRegistrarPausable is
     */
     function coreRegister(
         CoreRegisterArgs memory args
-    ) external override onlyRegistrar {
+    ) external override whenNotPaused onlyRegistrar {
         _coreRegister(
             args
         );
