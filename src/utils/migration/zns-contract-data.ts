@@ -1,5 +1,5 @@
 import { znsNames } from "../../deploy/missions/contracts/names";
-import { IZNSContracts } from "../../deploy/campaign/types";
+import { IZNSContracts } from "../../../test/helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { getZNSFromDB } from "./database";
 import {
