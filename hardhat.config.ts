@@ -100,6 +100,10 @@ const config : HardhatUserConfig = {
   networks: {
     mainnet: {
       url: `${process.env.MAINNET_RPC_URL}`,
+      accounts: [
+        // Read only
+        `${process.env.TESTNET_PRIVATE_KEY_A}`,
+      ],
       gasPrice: 80000000000,
     },
     sepolia: {
