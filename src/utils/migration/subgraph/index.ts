@@ -3,7 +3,6 @@ import * as q from "./queries";
 
 
 // Grab domain data from the subgraph and validate against what's actually on mainnet
-
 export const getUsersAndDomains = async () => {
   const first = 1000;
   let skip  = 0;

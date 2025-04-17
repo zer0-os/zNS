@@ -17,7 +17,6 @@ export const getUsersAndDomains = gql`
             id
           }
         }
-        isRevoked
         depth
         label
         isWorld
@@ -25,16 +24,10 @@ export const getUsersAndDomains = gql`
         parentHash
         parent {
           id
-          isRevoked
           label
         }
         accessType
         pricerContract
-        paymentToken {
-          id
-          name
-          symbol
-        }
         paymentType
         curvePriceConfig {
           id

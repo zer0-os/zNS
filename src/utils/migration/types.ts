@@ -8,7 +8,6 @@ export interface Domain {
   domainToken : DomainToken;
   depth : number;
   label : string;
-  isRevoked : boolean;
   isReclaimable : boolean;
   reclaimableAddress : string;
   isWorld : boolean;
@@ -18,7 +17,6 @@ export interface Domain {
   accessType : string;
   paymentType : string;
   pricerContract : string;
-  paymentToken : PaymentToken;
   curvePriceConfig : CurvePriceConfig;
   fixedPriceConfig : FixedPriceConfig;
   subdomainCount : number;
@@ -26,11 +24,6 @@ export interface Domain {
   tokenURI : string;
   treasury : Treasury;
   creationBlock : number;
-}
-
-interface User {
-  id : string;
-  domains : Array<Domain>;
 }
 
 interface CurvePriceConfig {
@@ -94,3 +87,7 @@ export interface RegisteredDomains {
   domainHashes : Array<string>,
   txHash : string
 }
+
+export type User = { id: string, domains: Domain[] };
+export type InvalidDomain = { message: string, domain: Domain };
+export type ValidatedUser = { address: string, validDomains: Domain[], invalidDomains: InvalidDomain[] };
