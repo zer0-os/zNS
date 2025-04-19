@@ -10,7 +10,6 @@ import { znsNames } from "../src/deploy/missions/contracts/names";
 import { expect } from "chai";
 import {
   AccessType,
-  ADMIN_ROLE,
   curvePriceConfigEmpty,
   DEFAULT_PRICE_CONFIG,
   distrConfigEmpty,
@@ -32,6 +31,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { updateDbAndVerifyAll } from "../src/upgrade/db";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 import { getGitTag } from "../src/utils/git-tag/get-tag";
+import { withdrawStakedByGovernon } from "../src/scripts/witdrawStaked";
 
 
 describe("ZNS Upgrade and Pause Test", () => {
@@ -758,7 +758,6 @@ describe("ZNS Upgrade and Pause Test", () => {
     );
   });
 
-  // TODO: pause the system and withdraw funds from treasury (znsUpgraded.treasury)
   describe("#withdrawStaked()", () => {
     before(async () => {
       await znsUpgraded.treasury.connect(deployer).unpause();
@@ -768,7 +767,7 @@ describe("ZNS Upgrade and Pause Test", () => {
       await znsUpgraded.treasury.connect(deployer).pause();
     });
 
-    it("Should withdraw the correct amount", async () => {
+    it("should withdraw the correct amount", async () => {
       await zns.accessController.connect(deployer).grantRole(
         REGISTRAR_ROLE,
         deployer.address
@@ -813,7 +812,7 @@ describe("ZNS Upgrade and Pause Test", () => {
       );
     });
 
-    it("Should revert when called by NON Governor", async () => {
+    it("should revert when called by NON Governor", async () => {
       const {
         paymentConfig,
       } = domainConfigs[5].fullConfig;
@@ -825,6 +824,40 @@ describe("ZNS Upgrade and Pause Test", () => {
         )
       ).to.be.revertedWith(
         getAccessRevertMsg(lvl5SubOwner.address, GOVERNOR_ROLE)
+      );
+    });
+
+    it("should withdraw funds from upgraded treasury using #withdrawStakedByGovernon()", async () => {
+      const stakeAmt = ethers.parseEther("1000");
+
+      await zns.meowToken.connect(lvl5SubOwner).approve(
+        znsUpgraded.treasury.target,
+        stakeAmt
+      );
+
+      // the deployer already has the `REGISTRAR_ROLE`
+      await znsUpgraded.treasury.connect(deployer).stakeForDomain(
+        ethers.ZeroHash,
+        domainHashes[5],
+        lvl5SubOwner.address,
+        stakeAmt,
+        BigInt(0),
+        BigInt(0),
+      );
+
+      const balanceBeforeWithdraw = await zns.meowToken.balanceOf(lvl5SubOwner.address);
+
+      await withdrawStakedByGovernon({
+        token: zns.meowToken.target.toString(),
+        to: lvl5SubOwner.address,
+      });
+
+      const balanceAfterWithdraw = await zns.meowToken.balanceOf(lvl5SubOwner.address);
+
+      expect(
+        balanceAfterWithdraw - balanceBeforeWithdraw
+      ).to.eq(
+        stakeAmt
       );
     });
   });
