@@ -69,7 +69,7 @@ abstract contract AAccessControlled {
         if (_accessController == address(0)) revert ZeroAddressPassed();
         if (_accessController.code.length == 0) revert WrongAccessControlAddress(_accessController);
 
-        // bytes4 interfaceId = type(IZNSAccessController).interfaceId;
+        bytes4 interfaceId = type(IZNSAccessController).interfaceId;
         // (bool ok, bytes memory result) = _accessController.staticcall(
         //     abi.encodeWithSelector(0x01ffc9a7, interfaceId) // 0x01ffc9a7 = supportsInterface(bytes4)
         // );
