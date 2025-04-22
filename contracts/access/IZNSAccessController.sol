@@ -27,5 +27,5 @@ interface IZNSAccessController is IAccessControl {
 
     function isExecutor(address account) external view returns (bool);
 
-    function checkAccessControl() external view returns (bool);
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

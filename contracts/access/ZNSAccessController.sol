@@ -81,6 +81,17 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         return hasRole(EXECUTOR_ROLE, account);
     }
 
+    function supportsInterface(bytes4 interfaceId)
+    public
+    view
+    virtual
+    override(AccessControl, IZNSAccessController)
+    returns (bool) {
+        return
+            interfaceId == type(IZNSAccessController).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {
         _setRoleAdmin(role, adminRole);
     }
@@ -92,9 +103,5 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
 
             _grantRole(role, addresses[i]);
         }
-    }
-
-    function checkAccessControl() external view override returns (bool) {
-        return true;
     }
 }

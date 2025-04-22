@@ -67,18 +67,23 @@ abstract contract AAccessControlled {
      */
     function _setAccessController(address _accessController) internal {
         if (_accessController == address(0)) revert ZeroAddressPassed();
+        if (_accessController.code.length == 0) revert WrongAccessControlAddress(_accessController);
 
-        if (_accessController.code.length == 0) {
-            revert WrongAccessControlAddress(_accessController);
-        }
+        // bytes4 interfaceId = type(IZNSAccessController).interfaceId;
+        // (bool ok, bytes memory result) = _accessController.staticcall(
+        //     abi.encodeWithSelector(0x01ffc9a7, interfaceId) // 0x01ffc9a7 = supportsInterface(bytes4)
+        // );
+
+        // if (!ok || result.length < 32 || !abi.decode(result, (bool))) {
+        //     revert WrongAccessControlAddress(_accessController);
+        // }
 
         accessController = IZNSAccessController(_accessController);
 
-        try accessController.checkAccessControl() {
+        try accessController.supportsInterface(interfaceId) {
             emit AccessControllerSet(_accessController);
         } catch {
             revert WrongAccessControlAddress(_accessController);
         }
-
     }
 }

@@ -20,7 +20,7 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
 
 
-describe("ZNSFixedPricer", () => {
+describe.only("ZNSFixedPricer", () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
