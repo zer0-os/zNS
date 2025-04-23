@@ -87,9 +87,7 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
     virtual
     override(AccessControl, IZNSAccessController)
     returns (bool) {
-        return
-            interfaceId == type(IZNSAccessController).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IZNSAccessController).interfaceId;
     }
 
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external override onlyRole(GOVERNOR_ROLE) {

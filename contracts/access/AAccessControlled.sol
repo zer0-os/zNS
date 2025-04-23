@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
 import { ZeroAddressPassed, WrongAccessControlAddress } from "../utils/CommonErrors.sol";
+import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 
 /**
@@ -66,23 +67,11 @@ abstract contract AAccessControlled {
      * @param _accessController Address of the ZNSAccessController contract.
      */
     function _setAccessController(address _accessController) internal {
-        if (_accessController == address(0)) revert ZeroAddressPassed();
-        if (_accessController.code.length == 0) revert WrongAccessControlAddress(_accessController);
-
         bytes4 interfaceId = type(IZNSAccessController).interfaceId;
-        // (bool ok, bytes memory result) = _accessController.staticcall(
-        //     abi.encodeWithSelector(0x01ffc9a7, interfaceId) // 0x01ffc9a7 = supportsInterface(bytes4)
-        // );
-
-        // if (!ok || result.length < 32 || !abi.decode(result, (bool))) {
-        //     revert WrongAccessControlAddress(_accessController);
-        // }
-
-        accessController = IZNSAccessController(_accessController);
-
-        try accessController.supportsInterface(interfaceId) {
+        if (ERC165(_accessController).supportsInterface(interfaceId)) {
+            accessController = IZNSAccessController(_accessController);
             emit AccessControllerSet(_accessController);
-        } catch {
+        } else {
             revert WrongAccessControlAddress(_accessController);
         }
     }
