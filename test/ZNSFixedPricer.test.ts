@@ -20,7 +20,7 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
 
 
-describe.only("ZNSFixedPricer", () => {
+describe("ZNSFixedPricer", () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
@@ -281,7 +281,7 @@ describe.only("ZNSFixedPricer", () => {
       .withArgs(random.address, ADMIN_ROLE);
   });
 
-  // TODO pause: move those to pausable test.
+  // TODO pause: move those to pausable test when it will appera.
   it.skip("Should revert when NON-admin tries to set #PAUSE", async () => {
     await expect(
       zns.fixedPricer.connect(user).pause()
@@ -314,7 +314,7 @@ describe.only("ZNSFixedPricer", () => {
     }
   });
 
-  it("#setAccessController() should revert with `WrongAccessControlAddress(SIGNER.address)`", async () => {
+  it("#setAccessController() should be reverted with passed EOA", async () => {
     await expect(
       zns.fixedPricer.setAccessController(random.address)
     ).to.reverted;

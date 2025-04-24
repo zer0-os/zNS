@@ -279,4 +279,19 @@ describe("ZNSAccessController", () => {
         .withArgs(random.address, EXECUTOR_ROLE);
     });
   });
+
+  describe("#supportsInterface", () => {
+    it("should return true for IZNSAccessController interfaceId", async () => {
+      const interfaceId = await accessController.supportsInterface(
+        // TODO AC: add interfaceId constant
+      );
+      expect(interfaceId).to.be.true;
+    });
+
+    it("should return false for unsupported interfaceId", async () => {
+      const unsupportedInterfaceId = "0xffffffff"; // Random unsupported interfaceId
+      const supports = await accessController.supportsInterface(unsupportedInterfaceId);
+      expect(supports).to.be.false;
+    });
+  });
 });
