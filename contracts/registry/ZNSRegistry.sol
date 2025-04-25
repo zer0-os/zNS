@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import { ZeroAddressPassed, ZeroValuePassed, AddressIsNotAContract, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -148,13 +148,13 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     function getDomainPricer(
         bytes32 domainHash
-    ) external view returns (address) { // TODO override
+    ) external view override returns (address) {
         return records[domainHash].pricer;
     }
 
     function getDomainPriceConfig(
         bytes32 domainHash
-    ) external view returns (bytes memory) { // TODO override
+    ) external view override returns (bytes memory) {
         return records[domainHash].priceConfig;
     }
 
@@ -173,12 +173,15 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address owner,
         address pricer,
-        bytes calldata priceConfig,
+        bytes memory priceConfig,
         string calldata resolverType
-    ) external onlyRegistrar { // TODO override
+    ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
-        // _setDomainPricer
-        // _setDomainPriceConfig
+
+        if (pricer != address(0) && priceConfig.length > 0) {
+            _setDomainPricer(domainHash, pricer);
+            _setDomainPriceConfig(domainHash, priceConfig);
+        }
 
         // We allow creation of partial domain data with no resolver address
         if (bytes(resolverType).length != 0) {
@@ -272,6 +275,17 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         _setDomainResolver(domainHash, resolverType);
     }
 
+    // TODO natspec
+    // when changing pricer, must also change price config
+    function updateDomainPricerAndConfig(
+        bytes32 domainHash,
+        address pricer,
+        bytes memory priceConfig
+    ) external override onlyOwnerOrOperator(domainHash) {
+        _setDomainPricer(domainHash, pricer);
+        _setDomainPriceConfig(domainHash, priceConfig);
+    }
+
     /**
      * @notice Deletes a domain's record from this contract's state.
      * This can ONLY be called by the `ZNSRootRegistrar.sol` contract as part of the Revoke flow
@@ -326,19 +340,22 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         bytes32 domainHash,
         address pricer
     ) internal {
-        // if (pricer == address(0)) revert ZeroAddress
-        // if (!supportsInterface(type(pricer).interfaceId)) revert InvalidPricer
-        // records[domainHash].pricer = pricer;
-        // emit DomainPricerSet
+        if (pricer == address(0)) revert ZeroAddressPassed();
+        if (pricer.code.length == 0) revert AddressIsNotAContract();
+        // TODO ERC165 `supportsInterface`
+
+        records[domainHash].pricer = pricer;
+        emit DomainPricerSet(domainHash, pricer);
     }
 
     function _setDomainPriceConfig(
         bytes32 domainHash,
-        bytes calldata priceConfig
+        bytes memory priceConfig
     ) internal {
-        // if (config == 0x0) revert EmptyBytes;
-        // records[domainHash].priceConfig = config;
-        // emit DomainPriceConfigSet
+        if (priceConfig.length == 0) revert ZeroValuePassed();
+
+        records[domainHash].priceConfig = priceConfig;
+        emit DomainPriceConfigSet(domainHash, priceConfig);
     }
 
     /**

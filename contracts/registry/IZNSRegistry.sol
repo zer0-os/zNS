@@ -45,6 +45,18 @@ interface IZNSRegistry {
         address indexed resolver
     );
 
+    // TODO natspec
+    event DomainPricerSet(
+        bytes32 indexed domainHash,
+        address indexed pricer
+    );
+
+    // TODO natspec
+    event DomainPriceConfigSet(
+        bytes32 indexed domainHash,
+        bytes indexed priceConfig
+    );
+
     /**
      * @notice Emits when a domain record is deleted
      * @param domainHash The hash of a domain's name
@@ -117,9 +129,19 @@ interface IZNSRegistry {
         bytes32 domainHash
     ) external view returns (address);
 
+    function getDomainPricer(
+        bytes32 domainHash
+    ) external view returns (address);
+
+    function getDomainPriceConfig(
+        bytes32 domainHash
+    ) external view returns (bytes memory);
+
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
+        address pricer,
+        bytes calldata priceConfig,
         string calldata resolverType
     ) external;
 
@@ -147,6 +169,12 @@ interface IZNSRegistry {
     function updateDomainResolver(
         bytes32 domainHash,
         string calldata resolverType
+    ) external;
+
+    function updateDomainPricerAndConfig(
+        bytes32 domainHash,
+        address pricer,
+        bytes memory priceConfig
     ) external;
 
     function deleteRecord(bytes32 domainHash) external;

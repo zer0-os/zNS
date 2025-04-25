@@ -179,13 +179,25 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, "address");
+            registry.createDomainRecord(
+                args.domainHash,
+                args.registrant,
+                address(0), // TODO TEMP
+                bytes("0"), // TODO TEMP
+                "address"
+            );
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
-            registry.createDomainRecord(args.domainHash, args.registrant, "");
+            registry.createDomainRecord(
+                args.domainHash, 
+                args.registrant,
+                address(0), // TODO TEMP
+                bytes("0"), // TODO TEMP
+                ""
+            );
         }
 
         // Because we check in the web app for the existance of both values in a payment config,
