@@ -27,6 +27,7 @@ import { registrationWithSetup } from "./helpers/register-setup";
 import { getProxyImplAddress, getRandomString } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
+import { znsCurvePricerMockSol } from "../typechain/contracts/upgrade-test-mocks/distribution";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -86,6 +87,18 @@ describe("ZNSCurvePricer", () => {
     const dbAdapter = await getMongoAdapter();
     await dbAdapter.dropDB();
   });
+
+  it.only("encode/decode", async () => {
+    await zns.curvePricer.encodeConfig(DEFAULT_PRICE_CONFIG);
+
+    const data = await zns.curvePricer.data()
+    console.log(data);
+
+    const newConfig = await zns.curvePricer.decodeConfig(data);
+
+    // Decodes correctly
+    console.log(newConfig);
+  })
 
   it("Should NOT let initialize the implementation contract", async () => {
     const factory = new ZNSCurvePricer__factory(deployer);

@@ -66,6 +66,69 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         setPriceConfig(0x0, zeroPriceConfig_);
     }
 
+    bytes public data;
+    function encodeConfig(
+        CurvePriceConfig calldata config
+    ) external {
+        bytes32 maxPrice = bytes32(config.maxPrice);
+        bytes32 curveMultiplier = bytes32(config.curveMultiplier);
+        bytes32 maxLength = bytes32(config.maxLength);
+        bytes32 baseLength = bytes32(config.baseLength);
+        bytes32 precisionMultiplier = bytes32(config.precisionMultiplier);
+        bytes32 feePercentage = bytes32(config.feePercentage);
+        bytes32 isSet = bytes32(abi.encode(config.isSet));
+
+
+        // TODO hash with salt? then can unhash when decode?
+        data =
+            abi.encodePacked(
+                maxPrice,
+                curveMultiplier,
+                maxLength,
+                baseLength,
+                precisionMultiplier,
+                feePercentage,
+                isSet
+            );
+    }
+
+    function decodeConfig(
+        bytes calldata inData
+    ) external pure returns (CurvePriceConfig memory config) {
+        (
+            uint256 maxPrice,
+            uint256 curveMultiplier,
+            uint256 maxLength,
+            uint256 baseLength,
+            uint256 precisionMultiplier,
+            uint256 feePercentage,
+            bool isSet
+        ) = abi.decode(
+            inData,
+            (
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                bool
+            )
+        );
+
+        CurvePriceConfig memory localConfig = CurvePriceConfig(
+            maxPrice,
+            curveMultiplier,
+            maxLength,
+            baseLength,
+            precisionMultiplier,
+            feePercentage,
+            isSet
+        );
+
+        return localConfig;
+    }
+
     /**
      * @notice Get the price of a given domain name
      * @dev `skipValidityCheck` param is added to provide proper revert when the user is
