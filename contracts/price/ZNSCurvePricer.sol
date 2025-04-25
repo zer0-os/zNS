@@ -66,13 +66,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @dev Exposes IZNSCurvePricer interfaceId
-     */
-    function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSCurvePricer).interfaceId;
-    }
-
-    /**
      * @notice Get the price of a given domain name
      * @dev `skipValidityCheck` param is added to provide proper revert when the user is
      * calling this to find out the price of a domain that is not valid. But in Registrar contracts

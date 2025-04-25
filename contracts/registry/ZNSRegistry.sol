@@ -102,13 +102,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     }
 
     /**
-     * @dev Exposes IZNSRegistry interfaceId
-     */
-    function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSRegistry).interfaceId;
-    }
-
-    /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for ALL
      * domains owned by the owner `msg.sender`.
      * Emits an `OperatorPermissionSet` event.

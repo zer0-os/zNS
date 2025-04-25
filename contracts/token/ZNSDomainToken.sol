@@ -190,13 +190,6 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @dev Exposes IZNSDomainToken interfaceId
-     */
-    function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSDomainToken).interfaceId;
-    }
-
-    /**
      * @notice We override the standard transfer function to update the owner for both the `registry` and `token`
      * This non-standard transfer is to behave similarly to the default transfer that only updates the `token`
      *

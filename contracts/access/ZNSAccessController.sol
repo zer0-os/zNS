@@ -81,6 +81,10 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         return hasRole(EXECUTOR_ROLE, account);
     }
 
+    function getInterfaceId() public pure returns (bytes4) {
+        return type(IZNSAccessController).interfaceId;
+    }
+
     function supportsInterface(bytes4 interfaceId)
     public
     view

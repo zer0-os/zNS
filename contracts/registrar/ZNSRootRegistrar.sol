@@ -381,13 +381,6 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @dev Exposes IZNSRootRegistrar interfaceId
-     */
-    function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSRootRegistrar).interfaceId;
-    }
-
-    /**
      * @notice Setter for `ZNSSubRegistrar` contract. Only ADMIN in `ZNSAccessController` can call this function.
      * @param subRegistrar_ Address of the `ZNSSubRegistrar` contract
     */

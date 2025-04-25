@@ -95,8 +95,6 @@ interface IZNSRegistry {
         address owner
     ) external view returns (bool);
 
-    function getInterfaceId() external pure returns (bytes4);
-
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by `msg.sender`

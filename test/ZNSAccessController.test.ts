@@ -293,21 +293,10 @@ describe.only("ZNSAccessController", () => {
 
   describe("#supportsInterface", () => {
     it("should return true when calling #supportsInterface for IZNSAccessController interfaceId", async () => {
-      for (
-        const [key, contract] of
-        Object.entries(zns).filter(([key, c]) =>
-          c !== zns.accessController &&
-          c !== zns.meowToken &&
-          c !== zns.zeroVaultAddress &&
-          c !== zns.registry
-        )
-      ) {
-        console.log(key);
-        const interfaceId = await accessController.supportsInterface(
-          await contract.getInterfaceId()
-        );
-        expect(interfaceId).to.be.true;
-      }
+      const interfaceId = await accessController.supportsInterface(
+        await accessController.getInterfaceId()
+      );
+      expect(interfaceId).to.be.true;
     });
 
     it("should return false for unsupported interfaceId", async () => {

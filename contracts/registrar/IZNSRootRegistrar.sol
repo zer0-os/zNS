@@ -159,7 +159,5 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setDomainToken(address domainToken_) external;
 
-    function getInterfaceId() external pure returns (bytes4);
-
     function setSubRegistrar(address subRegistrar_) external;
 }

@@ -104,8 +104,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
         string calldata label
     ) external pure returns (bytes32);
 
-    function getInterfaceId() external pure returns (bytes4);
-
     function setDistributionConfigForDomain(
         bytes32 parentHash,
         DistributionConfig calldata config

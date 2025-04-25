@@ -171,13 +171,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
-     * @dev Exposes IZNSSubRegistrar interfaceId
-     */
-    function getInterfaceId() public pure override returns (bytes4) {
-        return type(IZNSSubRegistrar).interfaceId;
-    }
-
-    /**
      * @notice Setter for `distrConfigs[domainHash]`.
      * Only domain owner/operator or ZNSRootRegistrar can call this function.
      * @dev This config can be changed by the domain owner/operator at any time or be set
