@@ -26,7 +26,7 @@ import {
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
@@ -41,7 +41,6 @@ import {
 import { PaymentConfigStruct } from "../typechain/contracts/treasury/IZNSTreasury";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
-import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
@@ -296,7 +295,7 @@ describe("ZNSRootRegistrar", () => {
 
     const registrarFactory = new ZNSRootRegistrar__factory(user);
 
-    const tx = upgrades.deployProxy(
+    const tx = hre.upgrades.deployProxy(
       registrarFactory,
       [
         await zns.accessController.getAddress(),
@@ -1252,32 +1251,6 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("State Setters", () => {
-    describe("#setAccessController", () => {
-      it("Should set AccessController and fire AccessControllerSet event", async () => {
-        const currentAC = await zns.rootRegistrar.getAccessController();
-        const tx = await zns.rootRegistrar.connect(deployer).setAccessController(randomUser.address);
-        const newAC = await zns.rootRegistrar.getAccessController();
-
-        await expect(tx).to.emit(zns.rootRegistrar, "AccessControllerSet").withArgs(randomUser.address);
-
-        expect(newAC).to.equal(randomUser.address);
-        expect(currentAC).to.not.equal(newAC);
-      });
-
-      it("Should revert if not called by ADMIN", async () => {
-        const tx = zns.rootRegistrar.connect(user).setAccessController(randomUser.address);
-        await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-          .withArgs(user.address,ADMIN_ROLE);
-      });
-
-      it("Should revert if new AccessController is address zero", async () => {
-        const tx = zns.rootRegistrar.connect(deployer).setAccessController(ethers.ZeroAddress);
-        await expect(tx).to.be.revertedWithCustomError(
-          zns.rootRegistrar,
-          ZERO_ADDRESS_ERR
-        );
-      });
-    });
 
     describe("#setRegistry", () => {
       it("Should set ZNSRegistry and fire RegistrySet event", async () => {
@@ -1378,6 +1351,73 @@ describe("ZNSRootRegistrar", () => {
           zns.subRegistrar,
           ZERO_ADDRESS_ERR
         );
+      });
+    });
+
+    describe("#setAccessController", () => {
+
+      it("should allow ADMIN to set a valid AccessController", async () => {
+        await zns.rootRegistrar.connect(deployer).setAccessController(zns.accessController.target);
+
+        const currentAccessController = await zns.rootRegistrar.getAccessController();
+
+        expect(currentAccessController).to.equal(zns.accessController.target);
+      });
+
+      it("should allow re-setting the AccessController to another valid contract", async () => {
+        expect(
+          await zns.rootRegistrar.getAccessController()
+        ).to.equal(
+          zns.accessController.target
+        );
+
+        const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+        const newAccessController = await ZNSAccessControllerFactory.deploy(
+          [deployer.address],
+          [deployer.address]
+        );
+
+        // then change the AccessController
+        await zns.rootRegistrar.connect(deployer).setAccessController(newAccessController.target);
+
+        expect(
+          await zns.rootRegistrar.getAccessController()
+        ).to.equal(
+          newAccessController.target
+        );
+      });
+
+      it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+        await expect(
+          zns.rootRegistrar.connect(deployer).setAccessController(zns.accessController.target)
+        ).to.emit(
+          zns.rootRegistrar,
+          "AccessControllerSet"
+        ).withArgs(zns.accessController.target);
+      });
+
+      it("should revert when a non-ADMIN tries to set AccessController", async () => {
+        await expect(
+          zns.rootRegistrar.connect(user).setAccessController(zns.accessController.target)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting an AccessController as EOA address", async () => {
+        await expect(
+          zns.rootRegistrar.connect(deployer).setAccessController(user.address)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting an AccessController as another non-AC contract address", async () => {
+        await expect(
+          zns.rootRegistrar.connect(deployer).setAccessController(zns.rootRegistrar.target)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting a zero address as AccessController", async () => {
+        await expect(
+          zns.rootRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
+        ).to.be.reverted;
       });
     });
   });

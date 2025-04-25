@@ -135,6 +135,13 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
+     * @dev Exposes IZNSFixedPricer interfaceId
+     */
+    function getInterfaceId() public pure override returns (bytes4) {
+        return type(IZNSFixedPricer).interfaceId;
+    }
+
+    /**
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWired`.
     */

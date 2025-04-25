@@ -65,4 +65,6 @@ interface IZNSFixedPricer is IZNSPricer {
     ) external;
 
     function setRegistry(address registry_) external;
+
+    function getInterfaceId() external pure returns (bytes4);
 }

@@ -273,6 +273,13 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
     }
 
     /**
+     * @dev Exposes IZNSTreasury interfaceId
+     */
+    function getInterfaceId() public pure override returns (bytes4) {
+        return type(IZNSTreasury).interfaceId;
+    }
+
+    /**
      * @notice Sets the registry address in state.
      * @dev This function is required for all contracts inheriting `ARegistryWired`.
     */

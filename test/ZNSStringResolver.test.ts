@@ -12,7 +12,7 @@ import {
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
@@ -164,20 +164,6 @@ describe("ZNSStringResolver", () => {
         accessController,
         AC_UNAUTHORIZED_ERR
       );
-    });
-
-    it("Should setAccessController() correctly with ADMIN_ROLE " +
-      "(It cannot rewrite AC address after an incorrect address has been submitted to it)", async () => {
-
-      await expect(
-        stringResolver.connect(admin).setAccessController(admin.address)
-      ).to.emit(
-        stringResolver, "AccessControllerSet"
-      ).withArgs(admin.address);
-
-      expect(
-        await stringResolver.getAccessController()
-      ).to.equal(admin.address);
     });
   });
 
@@ -332,27 +318,6 @@ describe("ZNSStringResolver", () => {
       ).to.equal(curString);
     });
 
-    it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
-      await expect(
-        stringResolver.connect(admin).setAccessController(admin.address)
-      ).to.emit(
-        stringResolver, "AccessControllerSet"
-      ).withArgs(admin.address);
-
-      expect(
-        await stringResolver.getAccessController()
-      ).to.equal(admin.address);
-    });
-
-    it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
-      await expect(
-        stringResolver.connect(user).setAccessController(user.address)
-      ).to.be.revertedWithCustomError(
-        accessController,
-        AC_UNAUTHORIZED_ERR
-      );
-    });
-
     it("Should support the IZNSAddressResolver interface ID", async () => {
       const interfaceId = await stringResolver.getInterfaceId();
       const supported = await stringResolver.supportsInterface(interfaceId);
@@ -374,6 +339,71 @@ describe("ZNSStringResolver", () => {
       ).to.be.false;
     });
 
+    describe("#setAccessController", () => {
+      it("should allow ADMIN to set a valid AccessController", async () => {
+        await stringResolver.connect(deployer).setAccessController(accessController.target);
+
+        const currentAccessController = await stringResolver.getAccessController();
+
+        expect(currentAccessController).to.equal(accessController.target);
+      });
+
+      it("should allow re-setting the AccessController to another valid contract", async () => {
+        expect(
+          await stringResolver.getAccessController()
+        ).to.equal(
+          accessController.target
+        );
+
+        const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+        const newAccessController = await ZNSAccessControllerFactory.deploy(
+          [deployer.address],
+          [deployer.address]
+        );
+
+        // then change the AccessController
+        await stringResolver.connect(deployer).setAccessController(newAccessController.target);
+
+        expect(
+          await stringResolver.getAccessController()
+        ).to.equal(
+          newAccessController.target
+        );
+      });
+
+      it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(accessController.target)
+        ).to.emit(
+          stringResolver,
+          "AccessControllerSet"
+        ).withArgs(accessController.target);
+      });
+
+      it("should revert when a non-ADMIN tries to set AccessController", async () => {
+        await expect(
+          stringResolver.connect(user).setAccessController(accessController.target)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting an AccessController as EOA address", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(user.address)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting an AccessController as another non-AC contract address", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(stringResolver.target)
+        ).to.be.reverted;
+      });
+
+      it("should revert when setting a zero address as AccessController", async () => {
+        await expect(
+          stringResolver.connect(admin).setAccessController(ethers.ZeroAddress)
+        ).to.be.reverted;
+      });
+    });
 
     describe("UUPS", () => {
 

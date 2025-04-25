@@ -17,6 +17,7 @@ import {
   validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, NOT_AUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
+import { ethers } from "hardhat";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -108,14 +109,6 @@ describe("ZNSAddressResolver", () => {
       .withArgs(operator.address, ADMIN_ROLE);
   });
 
-  it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
-    expect(await zns.addressResolver.connect(deployer).setAccessController(operator.address))
-      .to.emit(zns.addressResolver, "AccessControllerSet")
-      .withArgs(operator.address);
-
-    expect(await zns.addressResolver.getAccessController()).to.equal(operator.address);
-  });
-
   it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
     await expect(
       zns.addressResolver.connect(operator).setAccessController(operator.address)
@@ -202,6 +195,72 @@ describe("ZNSAddressResolver", () => {
 
     const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
     expect(resolvedAddress).to.eq(user.address);
+  });
+
+  describe("#setAccessController", () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.addressResolver.connect(deployer).setAccessController(zns.accessController.target);
+
+      const currentAccessController = await zns.addressResolver.getAccessController();
+
+      expect(currentAccessController).to.equal(zns.accessController.target);
+    });
+
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.addressResolver.getAccessController()
+      ).to.equal(
+        zns.accessController.target
+      );
+
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
+
+      // then change the AccessController
+      await zns.addressResolver.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.addressResolver.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
+    });
+
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.addressResolver.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.addressResolver,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.addressResolver.connect(user).setAccessController(zns.accessController.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.addressResolver.connect(deployer).setAccessController(user.address)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.addressResolver.connect(deployer).setAccessController(zns.addressResolver.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.addressResolver.connect(deployer).setAccessController(ethers.ZeroAddress)
+      ).to.be.reverted;
+    });
   });
 
   describe("UUPS", () => {

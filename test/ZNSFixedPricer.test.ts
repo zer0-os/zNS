@@ -12,12 +12,12 @@ import {
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 import { IZNSContractsLocal } from "./helpers/types";
+import { ethers } from "hardhat";
 
 
 describe("ZNSFixedPricer", () => {
@@ -274,13 +274,6 @@ describe("ZNSFixedPricer", () => {
       .withArgs(random.address, ADMIN_ROLE);
   });
 
-  it("#setAccessController() should revert if called by anyone other than ADMIN_ROLE", async () => {
-    await expect(
-      zns.fixedPricer.connect(random).setAccessController(random.address)
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(random.address, ADMIN_ROLE);
-  });
-
   // TODO pause: move those to pausable test when it will appera.
   it.skip("Should revert when NON-admin tries to set #PAUSE", async () => {
     await expect(
@@ -314,37 +307,84 @@ describe("ZNSFixedPricer", () => {
     }
   });
 
-  it("#setAccessController() should be reverted with passed EOA", async () => {
-    await expect(
-      zns.fixedPricer.setAccessController(random.address)
-    ).to.reverted;
+  describe("#setAccessController", () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.fixedPricer.connect(deployer).setAccessController(zns.accessController.target);
 
-    // set back for other tests.
-    await zns.fixedPricer.connect(admin).setAccessController(
-      zns.accessController.target
-    );
-  });
+      const currentAccessController = await zns.fixedPricer.getAccessController();
 
-  it("#setAccessController() should change current Access Control to another propper one", async () => {
-    await zns.fixedPricer.connect(admin).setAccessController(zns.accessController.target);
+      expect(currentAccessController).to.equal(zns.accessController.target);
+    });
 
-    expect(
-      await zns.fixedPricer.getAccessController()
-    ).to.equal(zns.accessController.target);
-  });
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.fixedPricer.getAccessController()
+      ).to.equal(
+        zns.accessController.target
+      );
 
-  it("#setAccessController() should revert with `WrongAccessControlAddress(CONTRACT.target)`", async () => {
-    await expect(
-      zns.fixedPricer.setAccessController(zns.domainToken.target)
-    ).to.revertedWithCustomError(
-      zns.fixedPricer,
-      "WrongAccessControlAddress"
-    ).withArgs(zns.domainToken.target);
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
 
-    // set back for other tests.
-    await zns.fixedPricer.connect(admin).setAccessController(
-      zns.accessController.target
-    );
+      // then change the AccessController
+      await zns.fixedPricer.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.fixedPricer.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
+    });
+
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.fixedPricer.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.fixedPricer,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.fixedPricer.connect(user).setAccessController(zns.accessController.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.fixedPricer.connect(deployer).setAccessController(user.address)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.fixedPricer.connect(deployer).setAccessController(zns.fixedPricer.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.fixedPricer.connect(admin).setAccessController(ethers.ZeroAddress)
+      ).to.be.reverted;
+    });
+
+    it("should revert with `WrongAccessControlAddress(CONTRACT.target)`", async () => {
+      await expect(
+        zns.fixedPricer.setAccessController(zns.domainToken.target)
+      ).to.revertedWithCustomError(
+        zns.fixedPricer,
+        "WrongAccessControlAddress"
+      ).withArgs(zns.domainToken.target);
+
+      // set back for other tests.
+      await zns.fixedPricer.connect(admin).setAccessController(
+        zns.accessController.target
+      );
+    });
   });
 
   describe("UUPS", () => {

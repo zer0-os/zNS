@@ -5,7 +5,7 @@ import {
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { ethers } from "hardhat";
 import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
@@ -117,6 +117,72 @@ describe("ZNSDomainToken", () => {
         zns.rootRegistrar,
         ZERO_ADDRESS_ERR
       );
+    });
+  });
+
+  describe("#setAccessController", () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.domainToken.connect(deployer).setAccessController(zns.accessController.target);
+
+      const currentAccessController = await zns.domainToken.getAccessController();
+
+      expect(currentAccessController).to.equal(zns.accessController.target);
+    });
+
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.domainToken.getAccessController()
+      ).to.equal(
+        zns.accessController.target
+      );
+
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
+
+      // then change the AccessController
+      await zns.domainToken.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.domainToken.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
+    });
+
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.domainToken,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(caller).setAccessController(zns.accessController.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(caller.address)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(zns.domainToken.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(ethers.ZeroAddress)
+      ).to.be.reverted;
     });
   });
 
@@ -338,11 +404,6 @@ describe("ZNSDomainToken", () => {
 
       // Verify token has not been burned
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
-    });
-
-    it("Should set access controller if caller has ADMIN_ROLE", async () => {
-      await zns.domainToken.connect(deployer).setAccessController(caller.address);
-      expect(await zns.domainToken.getAccessController()).to.equal(caller.address);
     });
 
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {

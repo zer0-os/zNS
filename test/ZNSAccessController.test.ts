@@ -1,17 +1,25 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZNSAccessController } from "../typechain";
-import { AC_UNAUTHORIZED_ERR, deployAccessController, ZERO_ADDRESS_ERR } from "./helpers";
+import {
+  AC_UNAUTHORIZED_ERR,
+  deployAccessController,
+  deployZNS,
+  DeployZNSParams,
+  IZNSContractsLocal,
+  ZERO_ADDRESS_ERR,
+} from "./helpers";
 import { expect } from "chai";
 import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
 
-describe("ZNSAccessController", () => {
+describe.only("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
   let accessController : ZNSAccessController;
   let governorAccs : Array<SignerWithAddress>;
   let adminAccs : Array<SignerWithAddress>;
   let randomAccs : Array<SignerWithAddress>;
+  let zns : IZNSContractsLocal;
 
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners();
@@ -20,11 +28,14 @@ describe("ZNSAccessController", () => {
     adminAccs = accounts.slice(4, 7);
     randomAccs = accounts.slice(7, 10);
 
-    accessController = await deployAccessController({
+    const params : DeployZNSParams = {
       deployer,
       governorAddresses: governorAccs.map(acc => acc.address),
       adminAddresses: adminAccs.map(acc => acc.address),
-    });
+    };
+
+    zns = await deployZNS(params);
+    accessController = zns.accessController;
   });
 
   describe("Initial Setup", () => {
@@ -281,11 +292,22 @@ describe("ZNSAccessController", () => {
   });
 
   describe("#supportsInterface", () => {
-    it("should return true for IZNSAccessController interfaceId", async () => {
-      const interfaceId = await accessController.supportsInterface(
-        // TODO AC: add interfaceId constant
-      );
-      expect(interfaceId).to.be.true;
+    it("should return true when calling #supportsInterface for IZNSAccessController interfaceId", async () => {
+      for (
+        const [key, contract] of
+        Object.entries(zns).filter(([key, c]) =>
+          c !== zns.accessController &&
+          c !== zns.meowToken &&
+          c !== zns.zeroVaultAddress &&
+          c !== zns.registry
+        )
+      ) {
+        console.log(key);
+        const interfaceId = await accessController.supportsInterface(
+          await contract.getInterfaceId()
+        );
+        expect(interfaceId).to.be.true;
+      }
     });
 
     it("should return false for unsupported interfaceId", async () => {

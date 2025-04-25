@@ -151,6 +151,8 @@ interface IZNSTreasury {
         address paymentToken
     ) external;
 
+    function getInterfaceId() external pure returns (bytes4);
+
     function setRegistry(address registry_) external;
 
     function initialize(

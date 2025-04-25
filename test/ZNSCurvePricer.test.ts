@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { ethers } from "hardhat";
 import {
   deployZNS,
   getCurvePrice,
@@ -872,30 +872,68 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#setAccessController", () => {
-    it("Successfully sets the access controller", async () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.curvePricer.connect(deployer).setAccessController(zns.accessController.target);
+
       const currentAccessController = await zns.curvePricer.getAccessController();
-      expect(currentAccessController).to.not.eq(randomAcc.address);
 
-      const tx = await zns.curvePricer.setAccessController(randomAcc.address);
-
-      const newAccessController = await zns.curvePricer.getAccessController();
-      expect(newAccessController).to.eq(randomAcc.address);
-
-      await expect(tx).to.emit(zns.curvePricer, "AccessControllerSet").withArgs(randomAcc.address);
+      expect(currentAccessController).to.equal(zns.accessController.target);
     });
 
-    it("Disallows an unauthorized user to set the access controller", async () => {
-      const tx = zns.curvePricer.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(user.address,ADMIN_ROLE);
-    });
-
-    it("Disallows setting the access controller to the zero address", async () => {
-      const tx = zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        ZERO_ADDRESS_ERR
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.curvePricer.getAccessController()
+      ).to.equal(
+        zns.accessController.target
       );
+
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
+
+      // then change the AccessController
+      await zns.curvePricer.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.curvePricer.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
+    });
+
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.curvePricer.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.curvePricer,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.curvePricer.connect(user).setAccessController(zns.accessController.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.curvePricer.connect(deployer).setAccessController(user.address)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.curvePricer.connect(deployer).setAccessController(zns.curvePricer.target)
+      ).to.be.reverted;
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress)
+      ).to.be.reverted;
     });
   });
 
