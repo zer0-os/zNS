@@ -78,8 +78,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 feePercentage = bytes32(config.feePercentage);
         bytes32 isSet = bytes32(abi.encode(config.isSet));
 
-
-        // TODO hash with salt? then can unhash when decode?
         data =
             abi.encodePacked(
                 maxPrice,

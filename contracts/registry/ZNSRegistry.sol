@@ -146,6 +146,18 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         return records[domainHash].resolver;
     }
 
+    function getDomainPricer(
+        bytes32 domainHash
+    ) external view returns (address) { // TODO override
+        return records[domainHash].pricer;
+    }
+
+    function getDomainPriceConfig(
+        bytes32 domainHash
+    ) external view returns (bytes memory) { // TODO override
+        return records[domainHash].priceConfig;
+    }
+
     /**
      * @notice Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
      * or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
@@ -160,9 +172,13 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
+        address pricer,
+        bytes calldata priceConfig,
         string calldata resolverType
-    ) external override onlyRegistrar {
+    ) external onlyRegistrar { // TODO override
         _setDomainOwner(domainHash, owner);
+        // _setDomainPricer
+        // _setDomainPriceConfig
 
         // We allow creation of partial domain data with no resolver address
         if (bytes(resolverType).length != 0) {
@@ -218,6 +234,8 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolverType);
+        // _setDomainPricer
+        // _setDomainPriceConfig
     }
 
     /**
@@ -302,6 +320,25 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);
+    }
+
+    function _setDomainPricer(
+        bytes32 domainHash,
+        address pricer
+    ) internal {
+        // if (pricer == address(0)) revert ZeroAddress
+        // if (!supportsInterface(type(pricer).interfaceId)) revert InvalidPricer
+        // records[domainHash].pricer = pricer;
+        // emit DomainPricerSet
+    }
+
+    function _setDomainPriceConfig(
+        bytes32 domainHash,
+        bytes calldata priceConfig
+    ) internal {
+        // if (config == 0x0) revert EmptyBytes;
+        // records[domainHash].priceConfig = config;
+        // emit DomainPriceConfigSet
     }
 
     /**

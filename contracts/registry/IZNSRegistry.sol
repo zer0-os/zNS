@@ -21,6 +21,8 @@ interface IZNSRegistry {
     struct DomainRecord {
         address owner;
         address resolver;
+        address pricer;
+        bytes priceConfig;
     }
 
     /**
