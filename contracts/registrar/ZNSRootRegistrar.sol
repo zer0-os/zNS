@@ -95,6 +95,7 @@ contract ZNSRootRegistrar is
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
+        // TODO 15: move this to coreRegister()
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -122,6 +123,8 @@ contract ZNSRootRegistrar is
             )
         );
 
+        // TODO 15: rework this to only do this for root domains and set config for subdomains
+        // TODO 15: since we start at SubRegistrar already
         if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
@@ -146,6 +149,9 @@ contract ZNSRootRegistrar is
     */
     function coreRegister(
         CoreRegisterArgs memory args
+    // TODO 15: change this from AC to validating msg.sender against a mapping here
+    //  that stores Registrar contract per domain!
+    // TODO 15: also remove this role from ZNSAccessController along with all the functions!
     ) external override onlyRegistrar {
         _coreRegister(
             args

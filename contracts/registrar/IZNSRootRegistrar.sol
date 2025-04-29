@@ -15,7 +15,7 @@ struct CoreRegisterArgs {
     address registrant;
     address domainAddress;
     uint256 price;
-    uint256 stakeFee;
+    uint256 stakeFee; // TODO 15: can we get rid of this?
     string label;
     string tokenURI;
     bool isStakePayment;

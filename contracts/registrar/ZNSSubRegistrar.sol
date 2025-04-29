@@ -91,6 +91,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
+        // TODO 15: move this to coreRegister()
         // Confirms string values are only [a-z0-9-]
         label.validate();
 
@@ -158,6 +159,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     /**
      * @notice Helper function to hash a child label with a parent domain hash.
     */
+    // TODO 15: figure out a way to refactor this:
+    //  1. move this to an abstract BaseRegistrar if it's needed - analyze against the case of Custom Registrars
+    //  2. make an inline library
+    //  3. just leave it manually copied (not a good option!)
     function hashWithParent(
         bytes32 parentHash,
         string calldata label
