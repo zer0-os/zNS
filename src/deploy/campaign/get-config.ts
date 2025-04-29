@@ -80,11 +80,11 @@ export const getConfig = async ({
   let zeroVaultAddressConf;
 
   if (process.env.ENV_LEVEL === EnvironmentLevels.dev) {
-    requires(
-      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
-      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
-    );
-    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+    if (!zeroVaultAddress && !process.env.ZERO_VAULT_ADDRESS) {
+      zeroVaultAddressConf = deployerAddress;
+    } else {
+      zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+    }
   } else {
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }
