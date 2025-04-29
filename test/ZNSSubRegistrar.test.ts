@@ -696,7 +696,6 @@ describe("ZNSSubRegistrar", () => {
               beneficiary: lvl5SubOwner.address,
             },
             priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
-
           },
         },
         {

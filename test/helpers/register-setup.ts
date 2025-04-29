@@ -126,7 +126,7 @@ export const registrationWithSetup = async ({
   fullConfig = fullDistrConfigEmpty,
   setConfigs = true,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;
