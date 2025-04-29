@@ -95,15 +95,8 @@ contract ZNSRootRegistrar is
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
-        // TODO 15: move this to coreRegister()
-        // Confirms string values are only [a-z0-9-]
-        name.validate();
-
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(name));
-
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
         uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
@@ -169,6 +162,12 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
+        // Confirms string values are only [a-z0-9-]
+        args.label.validate();
+
+        if (registry.exists(args.domainHash))
+            revert DomainAlreadyExists(args.domainHash);
+
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);

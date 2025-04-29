@@ -7,7 +7,7 @@ import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZNSControlledRegistrar } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { AccessType, NOT_AUTHORIZED_ERR, REGISTRAR_ROLE } from "./helpers";
+import { AccessType, DOMAIN_EXISTS_ERR, INVALID_LABEL_ERR, NOT_AUTHORIZED_ERR, REGISTRAR_ROLE } from "./helpers";
 import { getDomainHashFromEvent } from "./helpers/events";
 
 
@@ -21,6 +21,8 @@ describe.only("ZNSControlledRegistrar Test", () => {
   let controlledRegistrar : ZNSControlledRegistrar;
 
   let rootDomainHash : string;
+
+  let mainSubLabel : string;
 
   before(async () => {
     [deployer, parentOwner, user] = await hre.ethers.getSigners();
@@ -81,7 +83,7 @@ describe.only("ZNSControlledRegistrar Test", () => {
   });
 
   it("should register a subdomain as an owner of parent domain", async () => {
-    const subLabel = "controlled-subdomain";
+    mainSubLabel = "controlled-subdomain";
 
     // make sure parent domain is LOCKED in SubRegistrar
     const { accessType } = await zns.subRegistrar.distrConfigs(rootDomainHash);
@@ -90,7 +92,7 @@ describe.only("ZNSControlledRegistrar Test", () => {
     // register subdomain for user
     const subTokenURI = "https://example.com/subdomain";
     await controlledRegistrar.connect(parentOwner).registerSubdomain(
-      subLabel,
+      mainSubLabel,
       user.address,
       user.address,
       subTokenURI,
@@ -105,7 +107,7 @@ describe.only("ZNSControlledRegistrar Test", () => {
     // make sure hash is calced correctly
     const subHashRef = await zns.subRegistrar.hashWithParent(
       rootDomainHash,
-      subLabel,
+      mainSubLabel,
     );
     expect(subdomainHash).to.equal(subHashRef);
 
@@ -131,8 +133,39 @@ describe.only("ZNSControlledRegistrar Test", () => {
         "dummy-token-uri",
       ),
     ).to.be.revertedWithCustomError(
-      controlledRegistrar,
+      zns.registry,
       NOT_AUTHORIZED_ERR,
     );
   });
+
+  it("should revert when trying to register a subdomain with invalid characters", async () => {
+    await expect(
+      controlledRegistrar.connect(parentOwner).registerSubdomain(
+        "invalid-subdomain-!",
+        user.address,
+        user.address,
+        "dummy-token-uri",
+      )
+    ).to.be.revertedWithCustomError(
+      zns.rootRegistrar,
+      INVALID_LABEL_ERR,
+    );
+  });
+
+  it("should revert when registering a duplicate domain", async () => {
+    await expect(
+      controlledRegistrar.connect(parentOwner).registerSubdomain(
+        mainSubLabel,
+        user.address,
+        user.address,
+        "dummy-token-uri",
+      )
+    ).to.be.revertedWithCustomError(
+      zns.rootRegistrar,
+      DOMAIN_EXISTS_ERR,
+    );
+  });
+
+  // TODO 15: add tests:
+  //  1. registering sub as operator
 });

@@ -91,13 +91,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig calldata distrConfig,
         PaymentConfig calldata paymentConfig
     ) external override returns (bytes32) {
-        // TODO 15: move this to coreRegister()
-        // Confirms string values are only [a-z0-9-]
-        label.validate();
-
         bytes32 domainHash = hashWithParent(parentHash, label);
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
