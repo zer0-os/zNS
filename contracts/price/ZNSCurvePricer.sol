@@ -34,12 +34,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     uint256 public constant FACTOR_SCALE = 1000;
 
-    /**
-     * @notice Mapping of domainHash to the price config for that domain set by the parent domain owner.
-     * @dev Zero, for pricing root domains, uses this mapping as well under 0x0 hash.
-    */
-    mapping(bytes32 domainHash => CurvePriceConfig config) public priceConfigs;
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -53,32 +47,38 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * - `setPrecisionMultiplier()` to validate precision multiplier
      * @param accessController_ the address of the ZNSAccessController contract.
      * @param registry_ the address of the ZNSRegistry contract.
-     * @param zeroPriceConfig_ a number of variables that participate in the price calculation for subdomains.
      */
     function initialize(
         address accessController_,
-        address registry_,
-        CurvePriceConfig calldata zeroPriceConfig_
+        address registry_
+        // CurvePriceConfig calldata zeroPriceConfig_
     ) external override initializer {
         _setAccessController(accessController_);
         _setRegistry(registry_);
 
-        setPriceConfig(0x0, zeroPriceConfig_);
+        // TODO how / where do we set the 0x0 price config?
+        // in root registrar init?
+        // setPriceConfig(0x0, zeroPriceConfig_);
     }
 
-    bytes public data;
+    /**
+     * @notice Real encoding happens off chain, but we keep this here as a
+     * helper function for users to ensure that their data is correct
+     * 
+     * @param config The price config to encode
+     */
     function encodeConfig(
         CurvePriceConfig calldata config
-    ) external {
+    ) external pure returns(bytes memory) {
         bytes32 maxPrice = bytes32(config.maxPrice);
         bytes32 curveMultiplier = bytes32(config.curveMultiplier);
         bytes32 maxLength = bytes32(config.maxLength);
         bytes32 baseLength = bytes32(config.baseLength);
         bytes32 precisionMultiplier = bytes32(config.precisionMultiplier);
         bytes32 feePercentage = bytes32(config.feePercentage);
-        bytes32 isSet = bytes32(abi.encode(config.isSet));
+        bytes32 isSet = bytes32(abi.encode(config.isSet)); // maybe dont need
 
-        data =
+        return
             abi.encodePacked(
                 maxPrice,
                 curveMultiplier,
@@ -90,9 +90,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             );
     }
 
-    function decodeConfig(
-        bytes calldata inData
-    ) external pure returns (CurvePriceConfig memory config) {
+    // todo move internal func when finished
+    function _decodePriceConfig(
+        bytes memory priceConfig
+    ) internal pure returns(CurvePriceConfig memory) {
         (
             uint256 maxPrice,
             uint256 curveMultiplier,
@@ -102,7 +103,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             uint256 feePercentage,
             bool isSet
         ) = abi.decode(
-            inData,
+            priceConfig,
             (
                 uint256,
                 uint256,
@@ -114,7 +115,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             )
         );
 
-        CurvePriceConfig memory localConfig = CurvePriceConfig(
+        CurvePriceConfig memory config = CurvePriceConfig(
             maxPrice,
             curveMultiplier,
             maxLength,
@@ -124,7 +125,19 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             isSet
         );
 
-        return localConfig;
+        return config;
+    }
+
+    function validatePriceConfig(
+        bytes memory priceConfig
+    ) external pure {
+        CurvePriceConfig memory localConfig = _decodePriceConfig(priceConfig);
+
+        _validatePrecisionMultiplier(localConfig.precisionMultiplier);
+        _validateBaseLength(localConfig.baseLength, localConfig);
+        _validateCurveMultiplier(localConfig.curveMultiplier, localConfig);
+        _validateMaxLength(localConfig.maxLength, localConfig);
+        _validateFeePercentage(localConfig.feePercentage);
     }
 
     /**
@@ -136,16 +149,22 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Note that if calling this function directly to find out the price, a user should always pass "false"
      * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
      * possible to register.
-     * @param parentHash The hash of the parent domain under which price is determined
+     * @param parentPriceConfig The hash of the parent domain under which price is determined
      * @param label The label of the subdomain candidate to get the price for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
      */
     function getPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
     ) public view override returns (uint256) {
-        if (!priceConfigs[parentHash].isSet) revert ParentPriceConfigNotSet(parentHash);
+        CurvePriceConfig memory config = _decodePriceConfig(parentPriceConfig);
+
+        // TODO if still want/need isset leave this, otherwise delete
+        // and just pass bytes to internal func to decode there
+        // ideally if always set at the same time as pricerContract then shouldnt need
+        // but need to be sure they cant be set separately first
+        if (!config.isSet) revert ParentPriceConfigNotSet();
 
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
@@ -156,7 +175,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         // No pricing is set for 0 length domains
         if (length == 0) return 0;
 
-        return _getPrice(parentHash, length);
+        return _getPrice(parentPriceConfig, length);
     }
 
     /**
@@ -170,7 +189,8 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 parentHash,
         uint256 price
     ) public view override returns (uint256) {
-        return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
+        // todo
+        // return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**
@@ -185,223 +205,90 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         string calldata label,
         bool skipValidityCheck
     ) external view override returns (uint256 price, uint256 stakeFee) {
-        price = getPrice(parentHash, label, skipValidityCheck);
-        stakeFee = getFeeForPrice(parentHash, price);
-        return (price, stakeFee);
+        // TODO
+        // price = getPrice(parentHash, label, skipValidityCheck);
+        // stakeFee = getFeeForPrice(parentHash, price);
+        // return (price, stakeFee);
     }
 
-    /**
-     * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
-     * @dev Validates the value of the `precisionMultiplier`.
-     * fires `PriceConfigSet` event.
-     * Only the owner of the domain or an allowed operator can call this function.
-     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
-     * > Use the other individual setters to modify only, since they do not set this variable!
-     * @param domainHash The domain hash to set the price config for
-     * @param priceConfig The new price config to set
-     */
-    function setPriceConfig(
-        bytes32 domainHash,
-        CurvePriceConfig calldata priceConfig
-    ) public override {
-        _validateSetPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
-        _validateSetBaseLength(domainHash, priceConfig.baseLength, priceConfig);
-        priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
-        _validateSetCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
-        _validateSetMaxLength(domainHash, priceConfig.maxLength, priceConfig);
-        _validateSetFeePercentage(domainHash, priceConfig.feePercentage);
-        priceConfigs[domainHash].isSet = true;
+    // /**
+    //  * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
+    //  * @dev Validates the value of the `precisionMultiplier`.
+    //  * fires `PriceConfigSet` event.
+    //  * Only the owner of the domain or an allowed operator can call this function.
+    //  * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
+    //  * > Use the other individual setters to modify only, since they do not set this variable!
+    //  * @param domainHash The domain hash to set the price config for
+    //  * @param priceConfig The new price config to set
+    //  */
+    // function setPriceConfig(
+    //     bytes32 domainHash,
+    //     CurvePriceConfig calldata priceConfig
+    // ) public override {
 
-        emit PriceConfigSet(
-            domainHash,
-            priceConfig.maxPrice,
-            priceConfig.curveMultiplier,
-            priceConfig.maxLength,
-            priceConfig.baseLength,
-            priceConfig.precisionMultiplier,
-            priceConfig.feePercentage
-        );
-    }
+    //     // call to individual validations
+    //     _validateSetPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
+    //     _validateSetBaseLength(domainHash, priceConfig.baseLength, priceConfig);
+    //     priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
+    //     _validateSetCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
+    //     _validateSetMaxLength(domainHash, priceConfig.maxLength, priceConfig);
+    //     _validateSetFeePercentage(domainHash, priceConfig.feePercentage);
+    //     priceConfigs[domainHash].isSet = true;
 
-    /**
-     * @notice Sets the max price for domains. Validates the config with the new price.
-     * Fires `MaxPriceSet` event.
-     * Only domain owner can call this function.
-     * > `maxPrice` can be set to 0 along with `baseLength` to make all domains free!
-     * > `maxPrice` cannot be 0 when:
-     *   - `maxLength` is 0;
-     *   - `baseLength` AND `curveMultiplier` are 0;
-     * @dev In the case of 0 we do not validate, since setting it to 0 will make all subdomains free.
-     * @param domainHash The domain hash to set the `maxPrice` for it
-     * @param maxPrice The maximum price to set
-     */
-    function setMaxPrice(
-        bytes32 domainHash,
-        uint256 maxPrice
-    ) external override onlyOwnerOrOperator(domainHash) {
-        priceConfigs[domainHash].maxPrice = maxPrice;
-        emit MaxPriceSet(domainHash, maxPrice);
-    }
+    //     emit PriceConfigSet( // have this emit in registrar
+    //         domainHash,
+    //         priceConfig.maxPrice,
+    //         priceConfig.curveMultiplier,
+    //         priceConfig.maxLength,
+    //         priceConfig.baseLength,
+    //         priceConfig.precisionMultiplier,
+    //         priceConfig.feePercentage
+    //     );
+    // }
 
-    /**
-     * @notice Sets the multiplier for domains calculations
-     * to allow the hyperbolic price curve to be bent all the way to a straight line.
-     * Validates the config with the new multiplier in case where `baseLength` is 0 too.
-     * Fires `CurveMultiplier` event.
-     * Only domain owner can call this function.
-     * - If `curveMultiplier` = 1.000 - default. Makes a canonical hyperbola fucntion.
-     * - It can be "0", which makes all domain prices max.
-     * - If it is less than 1.000, then it pulls the bend towards the straight line.
-     * - If it is bigger than 1.000, then it makes bigger slope on the chart.
-     * @param domainHash The domain hash to set the price config for
-     * @param curveMultiplier Multiplier for bending the price function (graph)
-     */
-    function setCurveMultiplier(
-        bytes32 domainHash,
-        uint256 curveMultiplier
-    ) external override onlyOwnerOrOperator(domainHash) {
-        CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateSetCurveMultiplier(domainHash, curveMultiplier, config);
-        emit CurveMultiplierSet(domainHash, curveMultiplier);
-    }
-
-    function _validateSetCurveMultiplier(
-        bytes32 domainHash,
+    function _validateCurveMultiplier(
         uint256 curveMultiplier,
         CurvePriceConfig memory config
-    ) internal onlyOwnerOrOperator(domainHash) {
+    ) internal pure {
         if (curveMultiplier == 0 && config.baseLength == 0)
-            revert DivisionByZero(domainHash);
-
-        priceConfigs[domainHash].curveMultiplier = curveMultiplier;
+            revert DivisionByZero();
     }
 
-    /**
-     * @notice Set the value of the domain name length boundary where the `maxPrice` applies
-     * e.g. A value of '5' means all domains <= 5 in length cost the `maxPrice` price
-     * Validates the config with the new length. Fires `BaseLengthSet` event.
-     * Only domain owner/operator can call this function.
-     * > `baseLength` can be set to 0 to make all domains free.
-     * > `baseLength` can be = `maxLength` to make all domain prices max.
-     * > This indicates to the system that we are
-     * > currently in a special phase where we define an exact price for all domains
-     * > e.g. promotions or sales
-     * @param domainHash The domain hash to set the `baseLength` for
-     * @param baseLength Boundary to set
-     */
-    function setBaseLength(
-        bytes32 domainHash,
-        uint256 baseLength
-    ) external override onlyOwnerOrOperator(domainHash) {
-        CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateSetBaseLength(domainHash, baseLength, config);
-        emit BaseLengthSet(domainHash, baseLength);
-    }
-
-    function _validateSetBaseLength(
-        bytes32 domainHash,
+    function _validateBaseLength(
         uint256 baseLength,
         CurvePriceConfig memory config
-    ) internal onlyOwnerOrOperator(domainHash) {
-
+    ) internal pure {
         if (config.maxLength < baseLength)
-            revert MaxLengthSmallerThanBaseLength(domainHash);
+            revert MaxLengthSmallerThanBaseLength();
 
         if (baseLength == 0 && config.curveMultiplier == 0)
-            revert DivisionByZero(domainHash);
-
-        priceConfigs[domainHash].baseLength = baseLength;
+            revert DivisionByZero();
     }
 
-    /**
-     * @notice Set the maximum length of a domain name to which price formula applies.
-     * All domain names (labels) that are longer than this value will cost the lowest price at maxLength.
-     * Validates the config with the new length.
-     * Fires `MaxLengthSet` event.
-     * Only domain owner/operator can call this function.
-     * > `maxLength` can't be set to 0 or less than `baseLength`!
-     * > If `maxLength` = `baseLength` it makes all domain prices max.
-     * @param domainHash The domain hash to set the `maxLength` for
-     * @param maxLength The maximum length to set
-     */
-    function setMaxLength(
-        bytes32 domainHash,
-        uint256 maxLength
-    ) external override onlyOwnerOrOperator(domainHash) {
-        CurvePriceConfig memory config = priceConfigs[domainHash];
-        _validateSetMaxLength(domainHash, maxLength, config);
-        emit MaxLengthSet(domainHash, maxLength);
-    }
-
-    function _validateSetMaxLength(
-        bytes32 domainHash,
+    function _validateMaxLength(
         uint256 maxLength,
         CurvePriceConfig memory config
-    ) internal onlyOwnerOrOperator(domainHash) {
+    ) internal pure {
         if (
             (maxLength < config.baseLength) ||
             maxLength == 0
-        ) revert MaxLengthSmallerThanBaseLength(domainHash);
-
-        priceConfigs[domainHash].maxLength = maxLength;
+        ) revert MaxLengthSmallerThanBaseLength();
     }
 
-    /**
-     * @notice Sets the precision multiplier for the price calculation.
-     * Multiplier This should be picked based on the number of token decimals
-     * to calculate properly.
-     * e.g. if we use a token with 18 decimals, and want precision of 2,
-     * our precision multiplier will be equal to `10^(18 - 2) = 10^16`
-     * Fires `PrecisionMultiplierSet` event.
-     * Only domain owner/operator can call this function.
-     * > Multiplier should be less or equal to 10^18 and greater than 0!
-     * @param domainHash The domain hash to set `PrecisionMultiplier`
-     * @param multiplier The multiplier to set
-     */
-    function setPrecisionMultiplier(
-        bytes32 domainHash,
+    function _validatePrecisionMultiplier(
         uint256 multiplier
-    ) public override onlyOwnerOrOperator(domainHash) {
-        _validateSetPrecisionMultiplier(domainHash, multiplier);
-        emit PrecisionMultiplierSet(domainHash, multiplier);
+    ) internal pure {
+        if (multiplier == 0 || multiplier > 10**18) revert InvalidPrecisionMultiplierPassed();
     }
 
-    function _validateSetPrecisionMultiplier(
-        bytes32 domainHash,
-        uint256 multiplier
-    ) internal {
-        if (multiplier == 0 || multiplier > 10**18) revert InvalidPrecisionMultiplierPassed(domainHash);
-
-        priceConfigs[domainHash].precisionMultiplier = multiplier;
-    }
-
-    /**
-     * @notice Sets the fee percentage for domain registration.
-     * @dev Fee percentage is set according to the basis of 10000, outlined in `PERCENTAGE_BASIS`.
-     * Fires `FeePercentageSet` event.
-     * Only domain owner/operator can call this function.
-     * @param domainHash The domain hash to set the fee percentage for
-     * @param feePercentage The fee percentage to set
-     */
-    function setFeePercentage(
-        bytes32 domainHash,
+    function _validateFeePercentage(
         uint256 feePercentage
-    ) public override onlyOwnerOrOperator(domainHash) {
-        _validateSetFeePercentage(domainHash, feePercentage);
-        emit FeePercentageSet(domainHash, feePercentage);
-    }
-
-    function _validateSetFeePercentage(
-        bytes32 domainHash,
-        uint256 feePercentage
-    ) internal onlyOwnerOrOperator(domainHash) {
+    ) internal pure {
         if (feePercentage > PERCENTAGE_BASIS)
             revert FeePercentageValueTooLarge(
                 feePercentage,
                 PERCENTAGE_BASIS
             );
-
-        priceConfigs[domainHash].feePercentage = feePercentage;
     }
 
     /**
@@ -433,14 +320,15 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * what we care about, then multiplied by the same precision multiplier to get the actual value
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
-     * @param parentHash The parent hash
+     * @param priceConfig The parent price config
      * @param length The length of the domain name
      */
     function _getPrice(
-        bytes32 parentHash,
+        bytes memory priceConfig,
         uint256 length
     ) internal view returns (uint256) {
-        CurvePriceConfig memory config = priceConfigs[parentHash];
+        // todo if we keep isset then this func takes in config struct itself
+        CurvePriceConfig memory config = _decodePriceConfig(priceConfig);
 
         // We use `maxPrice` as 0 to indicate free domains
         if (config.maxPrice == 0) return 0;

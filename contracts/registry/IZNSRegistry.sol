@@ -21,8 +21,8 @@ interface IZNSRegistry {
     struct DomainRecord {
         address owner;
         address resolver;
-        address pricer;
-        bytes priceConfig;
+        // address pricer;
+        // bytes priceConfig;
     }
 
     /**
@@ -46,16 +46,16 @@ interface IZNSRegistry {
     );
 
     // TODO natspec
-    event DomainPricerSet(
-        bytes32 indexed domainHash,
-        address indexed pricer
-    );
+    // event DomainPricerSet(
+    //     bytes32 indexed domainHash,
+    //     address indexed pricer
+    // );
 
-    // TODO natspec
-    event DomainPriceConfigSet(
-        bytes32 indexed domainHash,
-        bytes indexed priceConfig
-    );
+    // // TODO natspec
+    // event DomainPriceConfigSet(
+    //     bytes32 indexed domainHash,
+    //     bytes indexed priceConfig
+    // );
 
     /**
      * @notice Emits when a domain record is deleted
@@ -129,19 +129,19 @@ interface IZNSRegistry {
         bytes32 domainHash
     ) external view returns (address);
 
-    function getDomainPricer(
-        bytes32 domainHash
-    ) external view returns (address);
+    // function getDomainPricer(
+    //     bytes32 domainHash
+    // ) external view returns (address);
 
-    function getDomainPriceConfig(
-        bytes32 domainHash
-    ) external view returns (bytes memory);
+    // function getDomainPriceConfig(
+    //     bytes32 domainHash
+    // ) external view returns (bytes memory);
 
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
-        address pricer,
-        bytes calldata priceConfig,
+        // address pricer,
+        // bytes calldata priceConfig,
         string calldata resolverType
     ) external;
 
@@ -161,6 +161,8 @@ interface IZNSRegistry {
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
+        // address pricer,
+        // bytes memory priceConfig,
         string calldata resolverType
     ) external;
 
@@ -171,11 +173,11 @@ interface IZNSRegistry {
         string calldata resolverType
     ) external;
 
-    function updateDomainPricerAndConfig(
-        bytes32 domainHash,
-        address pricer,
-        bytes memory priceConfig
-    ) external;
+    // function updateDomainPricerAndConfig(
+    //     bytes32 domainHash,
+    //     address pricer,
+    //     bytes memory priceConfig
+    // ) external;
 
     function deleteRecord(bytes32 domainHash) external;
 }

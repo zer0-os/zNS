@@ -9,7 +9,14 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import {
+    DomainAlreadyExists,
+    ZeroAddressPassed,
+    ZeroValuePassed,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
+
+import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 
 
 /**
@@ -31,7 +38,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * These configs are used to determine how subdomains are distributed for every parent.
      * @dev Note that the rules outlined in the DistributionConfig are only applied to direct children!
     */
-    mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
+    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
 
     struct Mintlist {
         mapping(uint256 idx => mapping(address candidate => bool allowed)) list;
@@ -98,6 +105,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
+        // If this exists we know it has already been validated here
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
@@ -137,7 +145,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        parentHash,
+                        parentConfig.priceConfig,
                         label,
                         true
                     );
@@ -186,8 +194,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();
 
+        if (config.priceConfig.length == 0)
+            revert ZeroValuePassed();
+
+        // Will revert if invalid
+        IZNSPricer(config.pricerContract).validatePriceConfig(config.priceConfig);
+
         distrConfigs[domainHash] = config;
 
+        // emit price config?
         emit DistributionConfigSet(
             domainHash,
             config.pricerContract,
@@ -202,10 +217,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * Only domain owner/operator can call this function.
      * Fires `PricerContractSet` event.
      * @param domainHash The domain hash to set the pricer contract for
+     * @param priceConfig The price config data for the given pricer
      * @param pricerContract The new pricer contract to set
     */
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory priceConfig,
         IZNSPricer pricerContract
     ) public override {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
@@ -214,7 +231,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
 
+        if (priceConfig.length == 0)
+            revert ZeroValuePassed();
+
         distrConfigs[domainHash].pricerContract = pricerContract;
+        distrConfigs[domainHash].priceConfig = priceConfig;
 
         emit PricerContractSet(domainHash, address(pricerContract));
     }

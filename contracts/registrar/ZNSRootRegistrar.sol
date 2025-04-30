@@ -11,7 +11,12 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    ZeroValuePassed,
+    AddressIsNotAContract,
+    DomainAlreadyExists
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -59,12 +64,14 @@ contract ZNSRootRegistrar is
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes memory priceConfig_,
         address treasury_,
         address domainToken_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setRootPricer(rootPricer_);
+        // TODO pass this as param? or set some default?
+        setRootPricer(rootPricer_, priceConfig_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
     }
@@ -105,8 +112,9 @@ contract ZNSRootRegistrar is
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
-
+        // TODO fix below
+        // uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
+        uint256 domainPrice = 0; // TEMP
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
@@ -182,8 +190,6 @@ contract ZNSRootRegistrar is
             registry.createDomainRecord(
                 args.domainHash,
                 args.registrant,
-                address(0), // TODO TEMP
-                bytes("0"), // TODO TEMP
                 "address"
             );
 
@@ -194,8 +200,6 @@ contract ZNSRootRegistrar is
             registry.createDomainRecord(
                 args.domainHash, 
                 args.registrant,
-                address(0), // TODO TEMP
-                bytes("0"), // TODO TEMP
                 ""
             );
         }
@@ -355,9 +359,18 @@ contract ZNSRootRegistrar is
      * Only ADMIN in `ZNSAccessController` can call this function.
      * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
     */
-    function setRootPricer(address rootPricer_) public override onlyAdmin {
+    function setRootPricer(
+        address rootPricer_,
+        bytes memory priceConfig_    
+    ) public override onlyAdmin {
         if (rootPricer_ == address(0))
             revert ZeroAddressPassed();
+
+        if (priceConfig_.length == 0) revert ZeroValuePassed();
+
+        if (rootPricer_.code.length == 0) revert AddressIsNotAContract();
+
+        IZNSPricer(rootPricer).validatePriceConfig(priceConfig_);
 
         rootPricer = IZNSPricer(rootPricer_);
 

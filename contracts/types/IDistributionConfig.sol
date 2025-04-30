@@ -40,5 +40,28 @@ interface IDistributionConfig {
         IZNSPricer pricerContract;
         PaymentType paymentType;
         AccessType accessType;
+        address pricer;
+        bytes priceConfig;
+        bool isSet; // instead of isSet in individual priceconfig
     }
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
+     */
+    event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.accessType` is set for a domain.
+     */
+    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+
+    /**
+     * @notice Emitted when a new full `DistributionConfig` is set for a domain at once.
+     */
+    event DistributionConfigSet(
+        bytes32 indexed domainHash,
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
 }

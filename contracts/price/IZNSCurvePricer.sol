@@ -11,7 +11,8 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
      * @notice Reverted when multiplier passed by the domain owner
      * is equal to 0 or more than 10^18, which is too large.
      */
-    error InvalidPrecisionMultiplierPassed(bytes32 domainHash);
+    // error InvalidPrecisionMultiplierPassed(bytes32 domainHash);
+    error InvalidPrecisionMultiplierPassed();
 
     /**
      * @notice Emitted when the `maxPrice` is set in `CurvePriceConfig`
@@ -70,12 +71,16 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
 
     function initialize(
         address accessController_,
-        address registry_,
-        CurvePriceConfig calldata zeroPriceConfig_
+        address registry_
+        // CurvePriceConfig calldata zeroPriceConfig_
     ) external;
 
+    function encodeConfig(
+        CurvePriceConfig calldata config
+    ) external returns(bytes memory);
+
     function getPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
     ) external view returns (uint256);
@@ -93,23 +98,6 @@ interface IZNSCurvePricer is ICurvePriceConfig, IZNSPricer {
         uint256 price,
         uint256 stakeFee
     );
-
-    function setPriceConfig(
-        bytes32 domainHash,
-        CurvePriceConfig calldata priceConfig
-    ) external;
-
-    function setMaxPrice(bytes32 domainHash, uint256 maxPrice) external;
-
-    function setBaseLength(bytes32 domainHash, uint256 length) external;
-
-    function setMaxLength(bytes32 domainHash, uint256 length) external;
-
-    function setCurveMultiplier(bytes32 domainHash, uint256 curveMultiplier) external;
-
-    function setPrecisionMultiplier(bytes32 domainHash, uint256 multiplier) external;
-
-    function setFeePercentage(bytes32 domainHash, uint256 feePercentage) external;
 
     function setRegistry(address registry_) external;
 }

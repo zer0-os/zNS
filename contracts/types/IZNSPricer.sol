@@ -11,7 +11,7 @@ interface IZNSPricer {
      * @notice Reverted when someone is trying to buy a subdomain under a parent that is not set up for distribution.
      * Specifically it's prices for subdomains.
      */
-    error ParentPriceConfigNotSet(bytes32 parentHash);
+    error ParentPriceConfigNotSet();
 
     /**
      * @notice Reverted when domain owner is trying to set it's stake fee percentage
@@ -22,12 +22,14 @@ interface IZNSPricer {
     /**
      * @notice Reverted when `maxLength` smaller than `baseLength`.
      */
-    error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
+    error MaxLengthSmallerThanBaseLength();
+    // error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
 
     /**
      * @notice Reverted when `curveMultiplier` AND `baseLength` are 0.
      */
-    error DivisionByZero(bytes32 domainHash);
+    error DivisionByZero();
+    // error DivisionByZero(bytes32 domainHash);
 
     /**
      * @dev `parentHash` param is here to allow pricer contracts
@@ -41,7 +43,7 @@ interface IZNSPricer {
      * possible to register.
      */
     function getPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
     ) external view returns (uint256);
@@ -55,14 +57,19 @@ interface IZNSPricer {
         bytes32 parentHash,
         string calldata label,
         bool skipValidityCheck
-    ) external view returns (uint256 price, uint256 fee);
+    ) external pure  returns (uint256 price, uint256 fee);
 
     /**
      * @notice Returns the fee for a given price.
      * @dev Fees are only supported for PaymentType.STAKE !
      */
     function getFeeForPrice(
-        bytes32 parentHash,
-        uint256 price
-    ) external view returns (uint256);
+        bytes memory parentPriceConfig
+    ) external pure returns (uint256);
+
+    function validatePriceConfig(
+        bytes memory priceConfig
+    ) external pure;
+
+    // todo public encode func?
 }

@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
+// import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 
 
 /**
@@ -31,26 +32,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
-     */
-    event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
-
-    /**
-     * @notice Emitted when a new `DistributionConfig.accessType` is set for a domain.
-     */
-    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
-
-    /**
-     * @notice Emitted when a new full `DistributionConfig` is set for a domain at once.
-     */
-    event DistributionConfigSet(
-        bytes32 indexed domainHash,
-        IZNSPricer pricerContract,
-        PaymentType paymentType,
-        AccessType accessType
-    );
-
-    /**
      * @notice Emitted when a `mintlist` is updated for a domain.
      */
     event MintlistUpdated(
@@ -71,13 +52,13 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     event RootRegistrarSet(address registrar);
 
-    function distrConfigs(
-        bytes32 domainHash
-    ) external view returns (
-        IZNSPricer pricerContract,
-        PaymentType paymentType,
-        AccessType accessType
-    );
+
+    // TODO implementation
+    // function getDistrConfigs(
+    //     bytes32 domainHash
+    // ) external view returns (
+    //     DistributionConfig memory distrConfig
+    // );
 
     function isMintlistedForDomain(
         bytes32 domainHash,
@@ -109,8 +90,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
         DistributionConfig calldata config
     ) external;
 
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory priceConfig,
         IZNSPricer pricerContract
     ) external;
 

@@ -129,6 +129,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes memory priceConfig_,
         address treasury_,
         address domainToken_
     ) external;
@@ -153,7 +154,10 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setRootPricer(address rootPricer_) external;
+    function setRootPricer(
+        address rootPricer_,
+        bytes memory priceConfig_
+    ) external;
 
     function setTreasury(address treasury_) external;
 

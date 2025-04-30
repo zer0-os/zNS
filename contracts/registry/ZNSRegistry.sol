@@ -146,17 +146,17 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         return records[domainHash].resolver;
     }
 
-    function getDomainPricer(
-        bytes32 domainHash
-    ) external view override returns (address) {
-        return records[domainHash].pricer;
-    }
+    // function getDomainPricer(
+    //     bytes32 domainHash
+    // ) external view override returns (address) {
+    //     return records[domainHash].pricer;
+    // }
 
-    function getDomainPriceConfig(
-        bytes32 domainHash
-    ) external view override returns (bytes memory) {
-        return records[domainHash].priceConfig;
-    }
+    // function getDomainPriceConfig(
+    //     bytes32 domainHash
+    // ) external view override returns (bytes memory) {
+    //     return records[domainHash].priceConfig;
+    // }
 
     /**
      * @notice Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
@@ -172,16 +172,16 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
-        address pricer,
-        bytes memory priceConfig,
+        // address pricer,
+        // bytes memory priceConfig,
         string calldata resolverType
     ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
 
-        if (pricer != address(0) && priceConfig.length > 0) {
-            _setDomainPricer(domainHash, pricer);
-            _setDomainPriceConfig(domainHash, priceConfig);
-        }
+        // if (pricer != address(0) && priceConfig.length > 0) {
+        //     _setDomainPricer(domainHash, pricer);
+        //     _setDomainPriceConfig(domainHash, priceConfig);
+        // }
 
         // We allow creation of partial domain data with no resolver address
         if (bytes(resolverType).length != 0) {
@@ -232,13 +232,15 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
+        // address pricer,
+        // bytes memory priceConfig,
         string calldata resolverType
     ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolverType);
-        // _setDomainPricer
-        // _setDomainPriceConfig
+        // _setDomainPricer(domainHash, pricer);
+        // _setDomainPriceConfig(domainHash, priceConfig);
     }
 
     /**
@@ -277,14 +279,14 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     // TODO natspec
     // when changing pricer, must also change price config
-    function updateDomainPricerAndConfig(
-        bytes32 domainHash,
-        address pricer,
-        bytes memory priceConfig
-    ) external override onlyOwnerOrOperator(domainHash) {
-        _setDomainPricer(domainHash, pricer);
-        _setDomainPriceConfig(domainHash, priceConfig);
-    }
+    // function updateDomainPricerAndConfig(
+    //     bytes32 domainHash,
+    //     address pricer,
+    //     bytes memory priceConfig
+    // ) external override onlyOwnerOrOperator(domainHash) {
+    //     _setDomainPricer(domainHash, pricer);
+    //     _setDomainPriceConfig(domainHash, priceConfig);
+    // }
 
     /**
      * @notice Deletes a domain's record from this contract's state.
@@ -336,27 +338,27 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         emit DomainResolverSet(domainHash, resolver);
     }
 
-    function _setDomainPricer(
-        bytes32 domainHash,
-        address pricer
-    ) internal {
-        if (pricer == address(0)) revert ZeroAddressPassed();
-        if (pricer.code.length == 0) revert AddressIsNotAContract();
-        // TODO ERC165 `supportsInterface`
+    // function _setDomainPricer(
+    //     bytes32 domainHash,
+    //     address pricer
+    // ) internal {
+    //     if (pricer == address(0)) revert ZeroAddressPassed();
+    //     if (pricer.code.length == 0) revert AddressIsNotAContract();
+    //     // TODO ERC165 `supportsInterface`
 
-        records[domainHash].pricer = pricer;
-        emit DomainPricerSet(domainHash, pricer);
-    }
+    //     records[domainHash].pricer = pricer;
+    //     emit DomainPricerSet(domainHash, pricer);
+    // } 
 
-    function _setDomainPriceConfig(
-        bytes32 domainHash,
-        bytes memory priceConfig
-    ) internal {
-        if (priceConfig.length == 0) revert ZeroValuePassed();
+    // function _setDomainPriceConfig(
+    //     bytes32 domainHash,
+    //     bytes memory priceConfig
+    // ) internal {
+    //     if (priceConfig.length == 0) revert ZeroValuePassed();
 
-        records[domainHash].priceConfig = priceConfig;
-        emit DomainPriceConfigSet(domainHash, priceConfig);
-    }
+    //     records[domainHash].priceConfig = priceConfig;
+    //     emit DomainPriceConfigSet(domainHash, priceConfig);
+    // }
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized

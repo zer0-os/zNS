@@ -20,7 +20,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     /**
      * @notice Mapping of domainHash to price config set by the domain owner/operator
     */
-    mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
+    // mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -33,12 +33,42 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     }
 
     /**
-     * @notice Sets the price for a domain. Only callable by domain owner/operator. Emits a `PriceSet` event.
-     * @param domainHash The hash of the domain who sets the price for subdomains
-     * @param _price The new price value set
-    */
-    function setPrice(bytes32 domainHash, uint256 _price) public override onlyOwnerOrOperator(domainHash) {
-        _setPrice(domainHash, _price);
+     * @notice Real encoding happens off chain, but we keep this here as a
+     * helper function for users to ensure that their data is correct
+     * 
+     * @param config The price to encode
+     */
+    function encodeConfig(
+        PriceConfig memory config
+    ) external pure returns(bytes memory) {
+        // TODO necessary to have this if only single var?
+        bytes32 price = bytes32(config.price);
+        bytes32 feePercentage = bytes32(config.feePercentage);
+        bytes32 isSet = bytes32(abi.encode(config.isSet)); // TODO maybe dont need?
+
+        return abi.encodePacked(
+            price,
+            feePercentage,
+            isSet
+        );
+    }
+
+    function _decodePriceConfig(
+        bytes memory priceConfig
+    ) internal pure returns(PriceConfig memory) {
+        (
+            uint256 price,
+            uint256 feePercentage,
+            bool isSet
+        ) = abi.decode(priceConfig, (uint256, uint256, bool));
+
+        PriceConfig memory config = PriceConfig(
+            price,
+            feePercentage,
+            isSet
+        );
+
+        return config;
     }
 
     /**
@@ -50,70 +80,44 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * Note that if calling this function directly to find out the price, a user should always pass "false"
      * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
      * possible to register.
-     * @param parentHash The hash of the parent domain to check the price under
+     * @param parentPriceConfig The hash of the parent domain to check the price under
      * @param label The label of the subdomain candidate to check the price for
      * @param skipValidityCheck If true, skips the validity check for the label
     */
     // solhint-disable-next-line no-unused-vars
     function getPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
-    ) public override view returns (uint256) {
-        if (!priceConfigs[parentHash].isSet) revert ParentPriceConfigNotSet(parentHash);
-
+    ) public override pure returns (uint256) {
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
             label.validate();
         }
 
-        return priceConfigs[parentHash].price;
+        PriceConfig memory config = _decodePriceConfig(parentPriceConfig);
+
+        return config.price;
     }
 
-    /**
-     * @notice Sets the feePercentage for a domain. Only callable by domain owner/operator.
-     * Emits a `FeePercentageSet` event.
-     * @dev `feePercentage` is set as a part of the `PERCENTAGE_BASIS` of 10,000 where 1% = 100
-     * @param domainHash The hash of the domain who sets the feePercentage for subdomains
-     * @param feePercentage The new feePercentage value set
-    */
-    function setFeePercentage(
-        bytes32 domainHash,
-        uint256 feePercentage
-    ) public override onlyOwnerOrOperator(domainHash) {
-        _setFeePercentage(domainHash, feePercentage);
-    }
-
-    /**
-     * @notice Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
-     * @dev Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
-     * and `FeePercentageSet` events.
-     * > This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
-     * > Use the other individual setters to modify only, since they do not set this variable!
-     * @param domainHash The domain hash to set the price config for
-     * @param priceConfig The new price config to set
-     */
-    function setPriceConfig(
-        bytes32 domainHash,
-        PriceConfig calldata priceConfig
-    ) external override {
-        setPrice(domainHash, priceConfig.price);
-        setFeePercentage(domainHash, priceConfig.feePercentage);
-        priceConfigs[domainHash].isSet = true;
+    function validatePriceConfig(bytes memory priceConfig) external pure {
+        // TODO
+        // not really needed for single variable pricers
+        // but to fulfill interface IZNSPricer we must define this
+        // decode like curvepricer, then modify validators in same way
     }
 
     /**
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. It returns fee for a given price
      * based on the value set by the owner of the parent domain.
-     * @param parentHash The hash of the parent domain under which fee is determined
-     * @param price The price to get the fee for
+     * @param parentPriceConfig The hash of the parent domain under which fee is determined
     */
     function getFeeForPrice(
-        bytes32 parentHash,
-        uint256 price
-    ) public view override returns (uint256) {
-        return (price * priceConfigs[parentHash].feePercentage) / PERCENTAGE_BASIS;
+        bytes memory parentPriceConfig
+    ) public pure override returns (uint256) {
+        PriceConfig memory config = _decodePriceConfig(parentPriceConfig);
+        return (config.price * config.feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**
@@ -129,9 +133,9 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         string calldata label,
         bool skipValidityCheck
     ) external view override returns (uint256 price, uint256 fee) {
-        price = getPrice(parentHash, label, skipValidityCheck);
-        fee = getFeeForPrice(parentHash, price);
-        return (price, fee);
+        // price = getPrice(parentHash, label, skipValidityCheck);
+        // fee = getFeeForPrice(parentHash, price);
+        // return (price, fee);
     }
 
     /**
@@ -142,28 +146,6 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         _setRegistry(registry_);
     }
 
-    /**
-     * @notice Internal function for set price
-     * @param domainHash The hash of the domain
-     * @param price The new price
-     */
-    function _setPrice(bytes32 domainHash, uint256 price) internal {
-        priceConfigs[domainHash].price = price;
-        emit PriceSet(domainHash, price);
-    }
-
-    /**
-     * @notice Internal function for setFeePercentage
-     * @param domainHash The hash of the domain
-     * @param feePercentage The new feePercentage
-     */
-    function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal {
-        if (feePercentage > PERCENTAGE_BASIS)
-            revert FeePercentageValueTooLarge(feePercentage, PERCENTAGE_BASIS);
-
-        priceConfigs[domainHash].feePercentage = feePercentage;
-        emit FeePercentageSet(domainHash, feePercentage);
-    }
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The new implementation contract to upgrade to.
