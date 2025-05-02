@@ -8,6 +8,7 @@ import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extension
 import { ERC721Votes } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import { ERC2981 } from "@openzeppelin/contracts/token/common/ERC2981.sol";
 
 
 contract SubdomainToken is
@@ -16,11 +17,18 @@ contract SubdomainToken is
     ERC721URIStorage,
     EIP712,
     ERC721Votes,
+    ERC2981,
     ARegistryWired {
 
     uint256 private _totalSupply;
 
+    string private baseURI;
+
     event TokenURISet(uint256 indexed tokenId, string tokenURI);
+
+    event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
+
+    event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
 
     constructor(
         string memory name_,
@@ -86,10 +94,32 @@ contract SubdomainToken is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable, ERC721URIStorage)
+        override(ERC721, ERC721Enumerable, ERC721URIStorage, ERC2981)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    // TODO: add access control, when it's ready
+    function setDefaultRoyalty(address receiver, uint96 royaltyFraction)
+    external
+    {
+        _setDefaultRoyalty(receiver, royaltyFraction);
+
+        emit DefaultRoyaltySet(royaltyFraction);
+    }
+
+    // TODO: add access control, when it's ready
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 royaltyFraction
+    )
+    external
+    {
+        _setTokenRoyalty(tokenId, receiver, royaltyFraction);
+
+        emit TokenRoyaltySet(tokenId, royaltyFraction);
     }
 
     function setRegistry(address registry_)
@@ -121,5 +151,9 @@ contract SubdomainToken is
         override(ERC721, ERC721Enumerable, ERC721Votes)
     {
         super._increaseBalance(account, value);
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 }
