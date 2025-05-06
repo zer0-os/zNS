@@ -26,6 +26,8 @@ contract ZNSSubdomainToken is
 
     event TokenURISet(uint256 indexed tokenId, string tokenURI);
 
+    event BaseURISet(string baseURI);
+
     event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
 
     event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
@@ -128,6 +130,15 @@ contract ZNSSubdomainToken is
         _setRegistry(registry_);
     }
 
+    // TODO: add access control, when it's ready
+    // TODO: do we check the passed string?
+    function setBaseURI(string memory baseURI_)
+        external
+    {
+        baseURI = baseURI_;
+        emit BaseURISet(baseURI_);
+    }
+
     function tokenURI(uint256 tokenId)
         public
         view
@@ -135,6 +146,14 @@ contract ZNSSubdomainToken is
         returns (string memory)
     {
         return ERC721URIStorage.tokenURI(tokenId);
+    }
+
+    function getBaseURI()
+        public
+        view
+        returns (string memory)
+    {
+        return baseURI;
     }
 
     function _update(address to, uint256 tokenId, address auth)

@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 interface ISubdomainToken {
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
+    event BaseURISet(string indexed baseURI);
+
     event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
 
     event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);

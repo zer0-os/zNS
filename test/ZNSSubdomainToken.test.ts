@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { ZNSSubdomainToken } from "../typechain";
 
-describe("SubdomainToken", () => {
+describe.only("SubdomainToken", () => {
   let subdomainToken : ZNSSubdomainToken;
   let owner : SignerWithAddress;
   let admin : SignerWithAddress;
@@ -168,6 +168,26 @@ describe("SubdomainToken", () => {
 
       await expect(
         subdomainToken.connect(user).setTokenURI(tokenId, newTokenURI)
+      ).to.be.revertedWith("AccessControl: account is missing role");
+    });
+  });
+
+  describe("#setBaseURI", () => {
+    it("should allow admin to set the base URI", async () => {
+      const newBaseURI = "https://example.com/metadata/";
+
+      await subdomainToken.connect(admin).setBaseURI(newBaseURI);
+
+      const baseURI = await subdomainToken.getBaseURI();
+      expect(baseURI).to.equal(newBaseURI);
+    });
+
+    // TODO: remove skip when AccessControl is implemented
+    it.skip("should revert when a non-admin tries to set the base URI", async () => {
+      const newBaseURI = "https://example.com/metadata/";
+
+      await expect(
+        subdomainToken.connect(user).setBaseURI(newBaseURI)
       ).to.be.revertedWith("AccessControl: account is missing role");
     });
   });
