@@ -11,7 +11,7 @@ import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extension
 import { ERC2981 } from "@openzeppelin/contracts/token/common/ERC2981.sol";
 
 
-contract SubdomainToken is
+contract ZNSSubdomainToken is
     ERC721,
     ERC721Enumerable,
     ERC721URIStorage,
@@ -33,7 +33,6 @@ contract SubdomainToken is
     constructor(
         string memory name_,
         string memory symbol_,
-        // TODO: do we pass a version?
         string memory version_,
         address registry_,
         address accessController_
@@ -59,6 +58,7 @@ contract SubdomainToken is
         --_totalSupply;
     }
 
+    // TODO: add access control, when it's ready
     function setTokenURI(uint256 tokenId, string memory _tokenURI)
         external
     {
@@ -81,7 +81,6 @@ contract SubdomainToken is
         // registry.updateDomainOwner(bytes32(abi.encodePacked(tokenId)), to);
     }
 
-    // TODO: add access control, when it's ready
     function totalSupply()
         public
         view
@@ -102,7 +101,7 @@ contract SubdomainToken is
 
     // TODO: add access control, when it's ready
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction)
-    external
+        external
     {
         _setDefaultRoyalty(receiver, royaltyFraction);
 
