@@ -1,6 +1,6 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
+import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_CURVE_PRICE_CONFIG } from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -38,11 +38,11 @@ describe("Transaction Gas Costs Test", () => {
       deployer,
       governorAddresses: [deployer.address, governor.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_PRICE_CONFIG,
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_PRICE_CONFIG);
+    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_CURVE_PRICE_CONFIG);
 
     config = {
       pricerContract: await zns.fixedPricer.getAddress(),
@@ -74,7 +74,7 @@ describe("Transaction Gas Costs Test", () => {
           token: await zns.meowToken.getAddress(),
           beneficiary: rootOwner.address,
         },
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
       },
     });
 

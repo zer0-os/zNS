@@ -19,13 +19,17 @@ import {
   paymentConfigEmpty,
   PaymentType,
   DEFAULT_PRECISION,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   validateUpgrade,
   AC_UNAUTHORIZED_ERR,
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   NOT_OWNER_OF_ERR,
   ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
+  DEFAULT_PRECISION_MULTIPLIER,
+  DEFAULT_PROTOCOL_FEE_PERCENT,
+  encodePriceConfig,
+  decodePriceConfig,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -44,6 +48,7 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
+import { ICurvePriceConfigIndices } from "../src/deploy/missions/types";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -84,7 +89,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
       // Give funds to users
@@ -224,7 +229,7 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
-          priceConfig: DEFAULT_PRICE_CONFIG,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         },
       });
 
@@ -523,7 +528,7 @@ describe("ZNSSubRegistrar", () => {
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: paymentConfigEmpty,
-          priceConfig: DEFAULT_PRICE_CONFIG,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         },
       });
 
@@ -595,7 +600,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -646,7 +651,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl2SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -662,7 +667,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -678,7 +683,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl4SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
 
           },
         },
@@ -712,7 +717,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl6SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
       ];
@@ -765,7 +770,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: zeroVault.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -782,7 +787,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -816,7 +821,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -833,7 +838,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: zeroVault.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
         {
@@ -1086,7 +1091,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: branchLvl2Owner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
       ];
@@ -1424,7 +1429,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -1915,7 +1920,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         feePercentage: BigInt(0),
       };
 
@@ -2070,7 +2075,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + DirectPayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         maxPrice: BigInt(0),
       };
 
@@ -2158,7 +2163,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + StakePayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         maxPrice: BigInt(0),
       };
 
@@ -2480,7 +2485,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -2934,6 +2939,7 @@ describe("ZNSSubRegistrar", () => {
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
     let fixedFeePercentage : bigint;
+    let randomAcc : SignerWithAddress;
 
     before(async () => {
       [
@@ -2948,13 +2954,14 @@ describe("ZNSSubRegistrar", () => {
         lvl4SubOwner,
         lvl5SubOwner,
         lvl6SubOwner,
+        randomAcc
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -3023,7 +3030,7 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
           },
         },
       ];
@@ -3214,6 +3221,128 @@ describe("ZNSSubRegistrar", () => {
     });
 
     describe("#setPricerContractForDomain()", () => {
+      // TODO update properly
+      it("Should set the config for any existing domain hash, including 0x0", async () => {
+            const newConfig = {
+              baseLength: BigInt("6"),
+              maxLength: BigInt("35"),
+              maxPrice: ethers.parseEther("150"),
+              curveMultiplier: DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
+              precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+              feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+              isSet: true,
+            };
+      
+            const asBytes = encodePriceConfig(newConfig);
+
+            const domainHash = regResults[1].domainHash;
+
+      
+            // as a user of "domainHash" that's not 0x0
+            await zns.subRegistrar.connect(lvl2SubOwner).setPricerDataForDomain(
+              domainHash,
+              asBytes,
+              await zns.curvePricer.getAddress()
+            );
+      
+            // as a ZNS deployer who owns the 0x0 hash
+            await zns.subRegistrar.connect(deployer).setPricerDataForDomain(
+              ethers.ZeroHash,
+              asBytes,
+              await zns.curvePricer.getAddress()
+            );
+      
+            // Verify new config was set for the user
+            const configUser = decodePriceConfig(
+              (await zns.subRegistrar.distrConfigs(domainHash)).priceConfig
+            );
+      
+            expect(configUser[ICurvePriceConfigIndices.BaseLength]).to.eq(newConfig.baseLength);
+            expect(configUser[ICurvePriceConfigIndices.MaxLength]).to.eq(newConfig.maxLength);
+            expect(configUser[ICurvePriceConfigIndices.MaxPrice]).to.eq(newConfig.maxPrice);
+            expect(configUser[ICurvePriceConfigIndices.CurveMultiplier]).to.eq(newConfig.curveMultiplier);
+            expect(configUser[ICurvePriceConfigIndices.PrecisionMultiplier]).to.eq(newConfig.precisionMultiplier);
+            expect(configUser[ICurvePriceConfigIndices.FeePercentage]).to.eq(newConfig.feePercentage);
+      
+            // Verify new config was set for the deployer
+            const configDeployer = decodePriceConfig(
+              (await zns.subRegistrar.distrConfigs(ethers.ZeroHash)).priceConfig
+            );
+      
+            expect(configDeployer[ICurvePriceConfigIndices.BaseLength]).to.eq(newConfig.baseLength);
+            expect(configDeployer[ICurvePriceConfigIndices.MaxLength]).to.eq(newConfig.maxLength);
+            expect(configDeployer[ICurvePriceConfigIndices.MaxPrice]).to.eq(newConfig.maxPrice);
+            expect(configDeployer[ICurvePriceConfigIndices.CurveMultiplier]).to.eq(newConfig.curveMultiplier);
+            expect(configDeployer[ICurvePriceConfigIndices.PrecisionMultiplier]).to.eq(newConfig.precisionMultiplier);
+            expect(configDeployer[ICurvePriceConfigIndices.FeePercentage]).to.eq(newConfig.feePercentage);
+          });
+      
+      it("Should revert if called by anyone other than owner or operator", async () => {
+        const newConfig = {
+          baseLength: BigInt("6"),
+          maxLength: BigInt("20"),
+          maxPrice: ethers.parseEther("10"),
+          curveMultiplier: DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
+          precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+          feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+          isSet: true,
+        };
+
+        const asBytes = encodePriceConfig(newConfig);
+  
+
+        // TODO this test should be in root registrar instead maybe
+        // For user's domain
+        await expect(
+          zns.subRegistrar.connect(randomAcc).setPricerDataForDomain(
+            domainHash,
+            asBytes,
+            await zns.curvePricer.getAddress()
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR
+        );
+  
+        // For deployer's domain
+        await expect(
+          zns.subRegistrar.connect(randomAcc).setPricerDataForDomain(
+            ZeroHash,
+            asBytes,
+            await zns.curvePricer.getAddress()
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR
+        );
+      });
+  
+      it("Should emit PricerDataSet event with correct parameters", async () => {
+        const newConfig = {
+          baseLength: BigInt("6"),
+          maxLength: BigInt("35"),
+          maxPrice: ethers.parseEther("150"),
+          curveMultiplier: DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
+          precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
+          feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+          isSet: true,
+        };
+  
+        const asBytes = encodePriceConfig(newConfig);
+  
+        const tx = zns.subRegistrar.connect(user).setPricerDataForDomain(
+          domainHash,
+          asBytes,
+          await zns.curvePricer.getAddress()
+        );
+  
+        await expect(tx).to.emit(zns.subRegistrar, "PricerDataSet").withArgs(
+          domainHash,
+          asBytes,
+          await zns.curvePricer.getAddress()
+        );
+      });
+
       it("should re-set pricer contract for an existing subdomain", async () => {
         const domainHash = regResults[2].domainHash;
 
@@ -3470,7 +3599,7 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 

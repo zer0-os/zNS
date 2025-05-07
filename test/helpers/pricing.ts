@@ -1,7 +1,8 @@
-import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
+import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_CURVE_PRICE_CONFIG } from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
+import { ethers } from "ethers";
 
 /**
  * Get the domain name price base on its length when given
@@ -13,7 +14,7 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
  */
 export const getCurvePrice = (
   name : string,
-  priceConfig = DEFAULT_PRICE_CONFIG,
+  priceConfig = DEFAULT_CURVE_PRICE_CONFIG,
 ) : bigint => {
   // Get price configuration for contract
   const {
@@ -44,7 +45,7 @@ export const getCurvePrice = (
 
 export const getStakingOrProtocolFee = (
   forAmount : bigint,
-  feePercentage : bigint = DEFAULT_PRICE_CONFIG.feePercentage,
+  feePercentage : bigint = DEFAULT_CURVE_PRICE_CONFIG.feePercentage,
 ) => forAmount * feePercentage / DEFAULT_PERCENTAGE_BASIS;
 
 /**
@@ -57,7 +58,7 @@ export const getStakingOrProtocolFee = (
  */
 export const getPriceObject = (
   name : string,
-  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = DEFAULT_PRICE_CONFIG,
+  priceConfig : Partial<ICurvePriceConfig> | Partial<IFixedPriceConfig> = DEFAULT_CURVE_PRICE_CONFIG,
 ) : {
   totalPrice : bigint;
   expectedPrice : bigint;
@@ -85,3 +86,83 @@ export const getPriceObject = (
     stakeFee,
   };
 };
+
+export const encodePriceConfig = (
+  config : ICurvePriceConfig | IFixedPriceConfig,
+) => {
+  if (Object.keys(config).length > 2) {
+    return encodeCurvePriceConfig(config as ICurvePriceConfig);
+  } else {
+    return encodeFixedPriceConfig(config as IFixedPriceConfig);
+  }
+}
+
+export const decodePriceConfig = (
+  config : string
+) => {
+  if (Object.keys(config).length > 2) {
+    return decodeCurvePriceConfig(config);
+  } else {
+    return decodeFixedPriceConfig(config);
+  }
+}
+
+
+const encodeCurvePriceConfig = (config : ICurvePriceConfig) => {
+  return ethers.AbiCoder.defaultAbiCoder().encode(
+    [
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256"
+    ],
+    [
+      config.maxPrice,
+      config.curveMultiplier,
+      config.maxLength,
+      config.baseLength,
+      config.precisionMultiplier,
+      config.feePercentage
+    ]
+  )
+}
+
+const encodeFixedPriceConfig = (config : IFixedPriceConfig) => {
+  return ethers.AbiCoder.defaultAbiCoder().encode(
+    [
+      "uint256",
+      "uint256",
+    ],
+    [
+      config.price,
+      config.feePercentage
+    ]
+  )
+}
+
+
+const decodeCurvePriceConfig = (config : string) => {
+  return ethers.AbiCoder.defaultAbiCoder().decode(
+    [
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256",
+      "uint256",
+    ],
+    config
+  );
+}
+
+const decodeFixedPriceConfig = (config : string) => {
+  return ethers.AbiCoder.defaultAbiCoder().decode(
+    [
+      "uint256",
+      "uint256",
+    ],
+    config
+  );
+}

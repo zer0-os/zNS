@@ -73,9 +73,10 @@ export interface IFixedPriceConfig {
 }
 
 export interface RegistrarConfig {
-  treasuryAddress : string;
   registryAddress : string;
   curvePricerAddress : string;
+  curvePriceConfig : string; // 0x bytes
+  treasuryAddress : string;
   domainTokenAddress : string;
 }
 
@@ -107,6 +108,8 @@ export interface IDistributionConfig {
   pricerContract : string;
   paymentType : bigint;
   accessType : bigint;
+  priceConfig : string;
+  isSet : boolean;
 }
 
 export interface IPaymentConfig {
@@ -117,7 +120,6 @@ export interface IPaymentConfig {
 export interface IFullDistributionConfig {
   paymentConfig : IPaymentConfig;
   distrConfig : IDistributionConfig;
-  priceConfig : ICurvePriceConfig | IFixedPriceConfig | undefined;
 }
 
 export interface IDomainConfigForTest {

@@ -108,8 +108,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         // If this exists we know it has already been validated here
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
+        if (!parentConfig.isSet) revert ParentPriceConfigNotSet();
+
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
+        if ((parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator))
             revert ParentLockedOrDoesntExist(parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
@@ -138,7 +140,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        parentHash,
+                        parentConfig.priceConfig,
                         label,
                         true
                     );
@@ -201,6 +203,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         IZNSPricer(config.pricerContract).validatePriceConfig(config.priceConfig);
 
         distrConfigs[domainHash] = config;
+        distrConfigs[domainHash].isSet = true;
 
         // emit price config?
         emit DistributionConfigSet(
@@ -217,12 +220,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * Only domain owner/operator can call this function.
      * Fires `PricerContractSet` event.
      * @param domainHash The domain hash to set the pricer contract for
-     * @param priceConfig The price config data for the given pricer
+     * @param config The price config data for the given pricer
      * @param pricerContract The new pricer contract to set
     */
     function setPricerDataForDomain(
         bytes32 domainHash,
-        bytes memory priceConfig,
+        bytes memory config,
         IZNSPricer pricerContract
     ) public override {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
@@ -231,13 +234,16 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
 
-        if (priceConfig.length == 0)
+        if (config.length == 0)
             revert ZeroValuePassed();
 
-        distrConfigs[domainHash].pricerContract = pricerContract;
-        distrConfigs[domainHash].priceConfig = priceConfig;
+        IZNSPricer(pricerContract).validatePriceConfig(config);
 
-        emit PricerContractSet(domainHash, address(pricerContract));
+        distrConfigs[domainHash].pricerContract = pricerContract;
+        distrConfigs[domainHash].priceConfig = config;
+        distrConfigs[domainHash].isSet = true;
+
+        emit PricerDataSet(domainHash, config, address(pricerContract));
     }
 
     /**

@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
-// import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 
 
 /**
@@ -26,8 +25,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
      */
-    event PricerContractSet(
+    event PricerDataSet(
         bytes32 indexed domainHash,
+        bytes indexed priceConfig,
         address indexed pricerContract
     );
 
@@ -51,14 +51,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
      * @notice Emitted when the ZNSRootRegistrar address is set in state.
      */
     event RootRegistrarSet(address registrar);
-
-
-    // TODO implementation
-    // function getDistrConfigs(
-    //     bytes32 domainHash
-    // ) external view returns (
-    //     DistributionConfig memory distrConfig
-    // );
 
     function isMintlistedForDomain(
         bytes32 domainHash,

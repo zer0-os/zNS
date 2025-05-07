@@ -1,5 +1,8 @@
 import { ethers } from "hardhat";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, IPaymentConfig } from "./types";
+import { encodePriceConfig } from "./pricing";
+import { ZeroHash } from "ethers";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
@@ -34,15 +37,23 @@ export const PaymentType = {
   STAKE: 1n,
 };
 
-export const DEFAULT_PRICE_CONFIG : ICurvePriceConfig = {
+export const DEFAULT_CURVE_PRICE_CONFIG : ICurvePriceConfig = {
   maxPrice: ethers.parseEther("25000"),
   curveMultiplier: BigInt("1000"),
   maxLength: BigInt(50),
   baseLength: BigInt(4),
   precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
   feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
-  isSet: true,
 };
+
+export const DEFAULT_CURVE_PRICE_CONFIG_BYTES = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
+
+export const DEFAULT_FIXED_PRICER_CONFIG : IFixedPriceConfig = {
+  price: ethers.parseEther("50"),
+  feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT
+}
+
+export const DEFAULT_FIXED_PRICER_CONFIG_BYTES = encodePriceConfig(DEFAULT_FIXED_PRICER_CONFIG);
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
@@ -51,24 +62,24 @@ export const curvePriceConfigEmpty : ICurvePriceConfig = {
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
   feePercentage: BigInt(0),
-  isSet: true,
 };
 
-export const paymentConfigEmpty = {
+export const paymentConfigEmpty : IPaymentConfig = {
   token: ethers.ZeroAddress,
   beneficiary: ethers.ZeroAddress,
 };
 
-export const distrConfigEmpty = {
+export const distrConfigEmpty : IDistributionConfig = {
   pricerContract: ethers.ZeroAddress,
   paymentType: PaymentType.DIRECT,
   accessType: AccessType.LOCKED,
+  priceConfig: ZeroHash,
+  isSet: false
 };
 
-export const fullDistrConfigEmpty = {
-  distrConfig: distrConfigEmpty,
-  priceConfig: undefined,
+export const fullDistrConfigEmpty : IFullDistributionConfig = {
   paymentConfig: paymentConfigEmpty,
+  distrConfig: distrConfigEmpty,
 };
 
 export const implSlotErc1967 = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";

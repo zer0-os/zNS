@@ -57,6 +57,6 @@ interface ICurvePriceConfig {
          * This value is checked by other contracts to avoid giving out free domains for users who
          * haven't yet managed to set their config.
         */
-        bool isSet;
+        // bool isSet;
     }
 }

@@ -30,26 +30,27 @@ interface IZNSFixedPricer is IZNSPricer {
     struct PriceConfig {
         uint256 price;
         uint256 feePercentage;
-        bool isSet;
+        // bool isSet; // move to DistrConfig
     }
 
     function initialize(address _accessController, address _registry) external;
 
-    function getPrice(
-        bytes memory parentPriceConfig,
-        string calldata label,
-        bool skipValidityCheck
-    ) external pure returns (uint256);
+    // function getPrice(
+    //     bytes memory parentPriceConfig,
+    //     string calldata label,
+    //     bool skipValidityCheck
+    // ) external pure returns (uint256);
 
-    function getFeeForPrice(
-        bytes memory parentPriceConfig
-    ) external view returns (uint256);
+    // function getFeeForPrice(
+    //     bytes memory parentPriceConfig,
+    //     uint256 price
+    // ) external pure returns (uint256);
 
-    function getPriceAndFee(
-        bytes32 parentHash,
-        string calldata label,
-        bool skipValidityCheck
-    ) external view returns (uint256 price, uint256 fee);
+    // function getPriceAndFee(
+    //     bytes memory parentPriceConfig,
+    //     string calldata label,
+    //     bool skipValidityCheck
+    // ) external pure returns (uint256 price, uint256 fee);
 
     function setRegistry(address registry_) external;
 }

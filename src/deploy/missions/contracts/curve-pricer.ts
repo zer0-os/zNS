@@ -26,12 +26,12 @@ IZNSContracts
   async deployArgs () : Promise<TDeployArgs> {
     const {
       accessController,
-      registry,
-      config: {
-        rootPriceConfig,
-      },
+      registry
+      // config: {
+      //   rootPriceConfig,
+      // },
     } = this.campaign;
 
-    return [await accessController.getAddress(), await registry.getAddress(), rootPriceConfig];
+    return [await accessController.getAddress(), await registry.getAddress()];
   }
 }

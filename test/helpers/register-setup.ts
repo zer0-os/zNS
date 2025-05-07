@@ -2,8 +2,8 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
   IFixedPriceConfig,
-  IFullDistributionConfig, IZNSContractsLocal,
-
+  IFullDistributionConfig,
+  IZNSContractsLocal,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -126,6 +126,7 @@ export const registrationWithSetup = async ({
   fullConfig = fullDistrConfigEmpty,
   setConfigs = true,
 } : {
+  // TODO fix after, no nullables before non-nullables 
   zns : IZNSContractsLocal;
   user : SignerWithAddress;
   parentHash ?: string;
@@ -179,21 +180,21 @@ export const registrationWithSetup = async ({
 
   // set up prices
   if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    await zns.fixedPricer.connect(user).setPriceConfig(
-      domainHash,
-      {
-        ...fullConfig.priceConfig as IFixedPriceConfig,
-        isSet: true,
-      },
-    );
+    // await zns.fixedPricer.connect(user).setPriceConfig(
+    //   domainHash,
+    //   {
+    //     ...fullConfig.priceConfig as IFixedPriceConfig,
+    //     isSet: true,
+    //   },
+    // );
   } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    await zns.curvePricer.connect(user).setPriceConfig(
-      domainHash,
-      {
-        ...fullConfig.priceConfig as ICurvePriceConfig,
-        isSet: true,
-      },
-    );
+    // await zns.curvePricer.connect(user).setPriceConfig(
+    //   domainHash,
+    //   {
+    //     ...fullConfig.priceConfig as ICurvePriceConfig,
+    //     isSet: true,
+    //   },
+    // );
   }
 
   if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {

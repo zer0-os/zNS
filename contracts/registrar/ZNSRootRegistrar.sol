@@ -18,6 +18,7 @@ import {
     DomainAlreadyExists
 } from "../utils/CommonErrors.sol";
 
+import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -40,6 +41,7 @@ contract ZNSRootRegistrar is
     using StringUtils for string;
 
     IZNSPricer public rootPricer;
+    bytes public rootPriceConfig;
     IZNSTreasury public treasury;
     IZNSDomainToken public domainToken;
     IZNSSubRegistrar public subRegistrar;
@@ -57,6 +59,7 @@ contract ZNSRootRegistrar is
      * @param accessController_ Address of the ZNSAccessController contract
      * @param registry_ Address of the ZNSRegistry contract
      * @param rootPricer_ Address of the IZNSPricer type contract that Zero chose to use for the root domains
+     * @param priceConfig_  IZNSPricer pricer config data encoded as bytes for the root domain
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
      */
@@ -64,13 +67,16 @@ contract ZNSRootRegistrar is
         address accessController_,
         address registry_,
         address rootPricer_,
-        bytes memory priceConfig_,
+        bytes calldata priceConfig_,
         address treasury_,
         address domainToken_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        // TODO pass this as param? or set some default?
+        
+        // console.log("in call to 'init'");
+        // console.logBytes(priceConfig_);
+
         setRootPricer(rootPricer_, priceConfig_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
@@ -113,8 +119,7 @@ contract ZNSRootRegistrar is
 
         // Get price for the domain
         // TODO fix below
-        // uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
-        uint256 domainPrice = 0; // TEMP
+        uint256 domainPrice = rootPricer.getPrice(rootPriceConfig, name, true);
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
@@ -227,7 +232,7 @@ contract ZNSRootRegistrar is
     */
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
+        uint256 protocolFee = rootPricer.getFeeForPrice(rootPriceConfig, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -294,7 +299,7 @@ contract ZNSRootRegistrar is
         bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
-            uint256 protocolFee = rootPricer.getFeeForPrice(0x0, stakedAmount);
+            uint256 protocolFee = rootPricer.getFeeForPrice(rootPriceConfig, stakedAmount);
 
             treasury.unstakeForDomain(domainHash, owner, protocolFee);
             stakeRefunded = true;
@@ -361,20 +366,22 @@ contract ZNSRootRegistrar is
     */
     function setRootPricer(
         address rootPricer_,
-        bytes memory priceConfig_    
+        bytes memory rootPriceConfig_   
     ) public override onlyAdmin {
         if (rootPricer_ == address(0))
             revert ZeroAddressPassed();
 
-        if (priceConfig_.length == 0) revert ZeroValuePassed();
+        if (rootPriceConfig_.length == 0) revert ZeroValuePassed();
 
         if (rootPricer_.code.length == 0) revert AddressIsNotAContract();
 
-        IZNSPricer(rootPricer).validatePriceConfig(priceConfig_);
-
         rootPricer = IZNSPricer(rootPricer_);
 
-        emit RootPricerSet(rootPricer_);
+        IZNSPricer(rootPricer).validatePriceConfig(rootPriceConfig_);
+
+        rootPriceConfig = rootPriceConfig_;
+
+        emit RootPricerSet(rootPricer_, rootPriceConfig_);
     }
 
     /**

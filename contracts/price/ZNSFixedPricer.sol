@@ -41,31 +41,23 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function encodeConfig(
         PriceConfig memory config
     ) external pure returns(bytes memory) {
-        // TODO necessary to have this if only single var?
-        bytes32 price = bytes32(config.price);
-        bytes32 feePercentage = bytes32(config.feePercentage);
-        bytes32 isSet = bytes32(abi.encode(config.isSet)); // TODO maybe dont need?
-
         return abi.encodePacked(
-            price,
-            feePercentage,
-            isSet
+            config.price,
+            config.feePercentage
         );
     }
 
-    function _decodePriceConfig(
+    function decodePriceConfig(
         bytes memory priceConfig
-    ) internal pure returns(PriceConfig memory) {
+    ) public pure returns(PriceConfig memory) {
         (
             uint256 price,
-            uint256 feePercentage,
-            bool isSet
-        ) = abi.decode(priceConfig, (uint256, uint256, bool));
+            uint256 feePercentage
+        ) = abi.decode(priceConfig, (uint256, uint256));
 
         PriceConfig memory config = PriceConfig(
             price,
-            feePercentage,
-            isSet
+            feePercentage
         );
 
         return config;
@@ -95,16 +87,14 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             label.validate();
         }
 
-        PriceConfig memory config = _decodePriceConfig(parentPriceConfig);
+        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
 
         return config.price;
     }
 
     function validatePriceConfig(bytes memory priceConfig) external pure {
-        // TODO
-        // not really needed for single variable pricers
-        // but to fulfill interface IZNSPricer we must define this
-        // decode like curvepricer, then modify validators in same way
+        // We have this to match the IZNSPricer
+        // But there is no validation required for the FixPricer contract
     }
 
     /**
@@ -114,28 +104,41 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @param parentPriceConfig The hash of the parent domain under which fee is determined
     */
     function getFeeForPrice(
-        bytes memory parentPriceConfig
+        bytes memory parentPriceConfig,
+        uint256 price
     ) public pure override returns (uint256) {
-        PriceConfig memory config = _decodePriceConfig(parentPriceConfig);
-        return (config.price * config.feePercentage) / PERCENTAGE_BASIS;
+        // todo dont need 2 params for fixed price here, always same value
+        // but breaks interface in IZNSPricer otherwise
+        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
+        return _getFeeForPrice(config, price);
     }
 
     /**
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. Returns both price and fee for a given label
      * under the given parent.
-     * @param parentHash The hash of the parent domain under which price and fee are determined
+     * @param parentPriceConfig The price config of the parent domain under which price and fee are determined
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
     */
     function getPriceAndFee(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
-    ) external view override returns (uint256 price, uint256 fee) {
-        // price = getPrice(parentHash, label, skipValidityCheck);
-        // fee = getFeeForPrice(parentHash, price);
-        // return (price, fee);
+    ) external pure override returns (uint256, uint256) {
+        // To match the IZNSPricer interface, we have unused params here
+        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
+        return (
+            config.price,
+            _getFeeForPrice(config, config.price)
+        );
+    }
+
+    function _getFeeForPrice(
+        PriceConfig memory parentPriceConfig,
+        uint256 price
+    ) internal pure returns(uint256) {
+        return (price * parentPriceConfig.feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**

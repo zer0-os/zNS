@@ -40,10 +40,14 @@ interface IDistributionConfig {
         IZNSPricer pricerContract;
         PaymentType paymentType;
         AccessType accessType;
-        address pricer;
         bytes priceConfig;
-        bool isSet; // instead of isSet in individual priceconfig
+        bool isSet;
     }
+
+    /**
+     * @notice Reverted when someone is trying to buy a subdomain under a parent that is not set up for distribution.
+     */
+    error ParentPriceConfigNotSet();
 
     /**
      * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.

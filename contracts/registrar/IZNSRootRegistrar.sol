@@ -104,8 +104,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when the `rootPricer` address is set in state.
      * @param rootPricer The new address of any IZNSPricer type contract
+     * @param priceConfig The encoded bytes for the price config
      */
-    event RootPricerSet(address rootPricer);
+    event RootPricerSet(
+        address rootPricer,
+        bytes priceConfig
+    );
 
     /**
      * @notice Emitted when the `treasury` address is set in state.

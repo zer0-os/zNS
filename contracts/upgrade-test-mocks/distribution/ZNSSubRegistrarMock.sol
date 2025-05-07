@@ -33,7 +33,7 @@ struct DistributionConfig {
     AccessType accessType;
     address pricer;
     bytes priceConfig;
-    bool isSet; // todo instead of isSet in individual priceconfig, need for mock?
+    bool isSet;
     address newAddress;
     uint256 newUint;
 }
@@ -135,7 +135,7 @@ contract ZNSSubRegistrarUpgradeMock is
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(
-                    parentHash,
+                    parentConfig.priceConfig,
                     label,
                     true
                 );

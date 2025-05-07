@@ -30,7 +30,7 @@ import {
   domainTokenName,
   erc1967ProxyName,
   fixedPricerName,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   curvePricerName,
   registrarName,
   registryName,
@@ -44,8 +44,8 @@ import {
 } from "../constants";
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
-import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
+import { encodePriceConfig } from "../pricing";
 
 
 export const deployAccessController = async ({
@@ -245,13 +245,13 @@ export const deployCurvePricer = async ({
   deployer,
   accessControllerAddress,
   registryAddress,
-  priceConfig,
+  // priceConfig,
   isTenderlyRun,
 } : {
   deployer : SignerWithAddress;
   accessControllerAddress : string;
   registryAddress : string;
-  priceConfig : ICurvePriceConfig;
+  // priceConfig : ICurvePriceConfig;
   isTenderlyRun : boolean;
 }) : Promise<ZNSCurvePricer> => {
   const curveFactory = new ZNSCurvePricer__factory(deployer);
@@ -261,7 +261,7 @@ export const deployCurvePricer = async ({
     [
       accessControllerAddress,
       registryAddress,
-      priceConfig,
+      // priceConfig,
     ],
     {
       kind: "uups",
@@ -359,6 +359,7 @@ export const deployRootRegistrar = async (
       await accessController.getAddress(),
       config.registryAddress,
       config.curvePricerAddress,
+      config.curvePriceConfig,
       config.treasuryAddress,
       config.domainTokenAddress,
     ],
@@ -508,7 +509,7 @@ export const deployZNS = async ({
   deployer,
   governorAddresses,
   adminAddresses,
-  priceConfig = DEFAULT_PRICE_CONFIG,
+  priceConfig = DEFAULT_CURVE_PRICE_CONFIG,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<IZNSContractsLocal> => {
@@ -561,7 +562,7 @@ export const deployZNS = async ({
     deployer,
     accessControllerAddress: await accessController.getAddress(),
     registryAddress: await registry.getAddress(),
-    priceConfig,
+    // priceConfig,
     isTenderlyRun,
   });
 
@@ -575,9 +576,10 @@ export const deployZNS = async ({
   });
 
   const config : RegistrarConfig = {
-    treasuryAddress: await treasury.getAddress(),
     registryAddress: await registry.getAddress(),
     curvePricerAddress: await curvePricer.getAddress(),
+    curvePriceConfig: encodePriceConfig(priceConfig),
+    treasuryAddress: await treasury.getAddress(),
     domainTokenAddress: await domainToken.getAddress(),
   };
 

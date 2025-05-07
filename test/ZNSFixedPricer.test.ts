@@ -7,7 +7,7 @@ import {
   NOT_AUTHORIZED_ERR,
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -41,7 +41,7 @@ describe("ZNSFixedPricer", () => {
       deployer,
       governorAddresses: [deployer.address, deployer.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_PRICE_CONFIG,
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
@@ -296,7 +296,7 @@ describe("ZNSFixedPricer", () => {
         deployer,
         governorAddresses: [deployer.address, deployer.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 

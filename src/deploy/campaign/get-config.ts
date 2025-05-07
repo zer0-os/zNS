@@ -6,7 +6,7 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_DECIMALS,
   DEFAULT_PRECISION,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
@@ -214,22 +214,22 @@ const getValidateRootPriceConfig = () => {
   const maxPrice =
     process.env.MAX_PRICE
       ? ethers.parseEther(process.env.MAX_PRICE)
-      : DEFAULT_PRICE_CONFIG.maxPrice;
+      : DEFAULT_CURVE_PRICE_CONFIG.maxPrice;
 
   const curveMultiplier =
     process.env.CURVE_MULTIPLIER
       ? BigInt(process.env.CURVE_MULTIPLIER)
-      : DEFAULT_PRICE_CONFIG.curveMultiplier;
+      : DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier;
 
   const maxLength =
     process.env.MAX_LENGTH
       ? BigInt(process.env.MAX_LENGTH)
-      : DEFAULT_PRICE_CONFIG.maxLength;
+      : DEFAULT_CURVE_PRICE_CONFIG.maxLength;
 
   const baseLength =
     process.env.BASE_LENGTH
       ? BigInt(process.env.BASE_LENGTH)
-      : DEFAULT_PRICE_CONFIG.baseLength;
+      : DEFAULT_CURVE_PRICE_CONFIG.baseLength;
 
   const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
   const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
