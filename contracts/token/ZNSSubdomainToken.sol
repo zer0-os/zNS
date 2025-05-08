@@ -1,164 +1,92 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+import { ZNSDomainToken } from "./ZNSDomainToken.sol";
+import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import { ERC721Votes } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
-import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { ERC721URIStorage } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import { ERC2981 } from "@openzeppelin/contracts/token/common/ERC2981.sol";
+import { ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import { ERC721VotesUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
+import { ISubdomainToken } from "./IZNSSubdomainToken.sol";
 
 
 contract ZNSSubdomainToken is
-    ERC721,
-    ERC721Enumerable,
-    ERC721URIStorage,
-    EIP712,
-    ERC721Votes,
-    ERC2981,
-    ARegistryWired {
-
-    uint256 private _totalSupply;
+    ERC721Upgradeable,
+    ERC721EnumerableUpgradeable,
+    ERC721VotesUpgradeable,
+    ZNSDomainToken,
+    ISubdomainToken {
 
     string private baseURI;
 
-    event TokenURISet(uint256 indexed tokenId, string tokenURI);
+    constructor() {
+        _disableInitializers();
+    }
 
-    event BaseURISet(string baseURI);
-
-    event DefaultRoyaltySet(uint96 indexed defaultRoyalty);
-
-    event TokenRoyaltySet(uint256 indexed tokenId, uint96 indexed royalty);
-
-    constructor(
+    function initialize(
+        address accessController_,
         string memory name_,
         string memory symbol_,
-        string memory version_,
-        address registry_,
-        address accessController_
-    )
-        ERC721(name_, symbol_)
-        EIP712(name_, version_)
-    {
-        _setRegistry(registry_);
+        address defaultRoyaltyReceiver,
+        uint96 defaultRoyaltyFraction,
+        address registry_
+    ) public override(ZNSDomainToken) initializer {
+        __ERC721Votes_init();
+        __ERC721Enumerable_init();
+
+        // ZNSDomainToken
+        super.initialize(
+            accessController_,
+            name_,
+            symbol_,
+            defaultRoyaltyReceiver,
+            defaultRoyaltyFraction,
+            registry_
+        );
     }
 
-    function register(address to, uint256 tokenId, string memory _tokenURI)
-        external
+    function tokenURI (uint256 tokenId)
+        public
+        view
+        override(ERC721Upgradeable, ZNSDomainToken)
+        returns (string memory)
     {
-        ++_totalSupply;
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, _tokenURI);
-    }
-
-    function revoke(uint256 tokenId)
-        external
-    {
-        _burn(tokenId);
-        --_totalSupply;
-    }
-
-    // TODO: add access control, when it's ready
-    function setTokenURI(uint256 tokenId, string memory _tokenURI)
-        external
-    {
-        _setTokenURI(tokenId, _tokenURI);
-        emit TokenURISet(tokenId, _tokenURI);
+        return super.tokenURI(tokenId);
     }
 
     function transferFrom(
         address from,
         address to,
         uint256 tokenId
-    ) 
+    )
         public 
-        override(ERC721, IERC721) 
+        override(ERC721Upgradeable, IERC721, ZNSDomainToken) 
     {
         // Transfer the token
         super.transferFrom(from, to, tokenId);
-
-        // TODO: make a fucntion or update existing one in the registry
-        // registry.updateDomainOwner(bytes32(abi.encodePacked(tokenId)), to);
     }
 
     function totalSupply()
         public
         view
-        override(ERC721Enumerable)
+        override(ZNSDomainToken, ERC721EnumerableUpgradeable)
         returns (uint256)
     {
-        return _totalSupply;
+        return super.totalSupply();
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable, ERC721URIStorage, ERC2981)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ZNSDomainToken)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
 
-    // TODO: add access control, when it's ready
-    function setDefaultRoyalty(address receiver, uint96 royaltyFraction)
-        external
-    {
-        _setDefaultRoyalty(receiver, royaltyFraction);
-
-        emit DefaultRoyaltySet(royaltyFraction);
-    }
-
-    // TODO: add access control, when it's ready
-    function setTokenRoyalty(
-        uint256 tokenId,
-        address receiver,
-        uint96 royaltyFraction
-    )
-    external
-    {
-        _setTokenRoyalty(tokenId, receiver, royaltyFraction);
-
-        emit TokenRoyaltySet(tokenId, royaltyFraction);
-    }
-
-    function setRegistry(address registry_)
-        external
-        override(ARegistryWired)
-    {
-        _setRegistry(registry_);
-    }
-
-    // TODO: add access control, when it's ready
-    // TODO: do we check the passed string?
-    function setBaseURI(string memory baseURI_)
-        external
-    {
-        baseURI = baseURI_;
-        emit BaseURISet(baseURI_);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return ERC721URIStorage.tokenURI(tokenId);
-    }
-
-    function getBaseURI()
-        public
-        view
-        returns (string memory)
-    {
-        return baseURI;
-    }
-
     function _update(address to, uint256 tokenId, address auth)
         internal
-        override(ERC721, ERC721Enumerable, ERC721Votes)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721VotesUpgradeable)
         returns (address)
     {
         return super._update(to, tokenId, auth);
@@ -166,12 +94,17 @@ contract ZNSSubdomainToken is
 
     function _increaseBalance(address account, uint128 value)
         internal
-        override(ERC721, ERC721Enumerable, ERC721Votes)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721VotesUpgradeable)
     {
         super._increaseBalance(account, value);
     }
 
-    function _baseURI() internal view override returns (string memory) {
+    function _baseURI()
+        internal
+        view
+        override (ERC721Upgradeable, ZNSDomainToken)
+        returns (string memory)
+    {
         return baseURI;
     }
 }

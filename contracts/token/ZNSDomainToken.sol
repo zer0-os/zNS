@@ -10,6 +10,7 @@ import { ERC721URIStorageUpgradeable }
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { ADomainToken } from "./ADomainToken.sol";
 
 
 /**
@@ -20,6 +21,7 @@ import { AAccessControlled } from "../access/AAccessControlled.sol";
  */
 contract ZNSDomainToken is
     AAccessControlled,
+    ADomainToken,
     ERC721URIStorageUpgradeable,
     ERC2981Upgradeable,
     UUPSUpgradeable,
@@ -57,7 +59,7 @@ contract ZNSDomainToken is
         address defaultRoyaltyReceiver,
         uint96 defaultRoyaltyFraction,
         address registry_
-    ) external override initializer {
+    ) public virtual override initializer {
         __ERC721_init(name_, symbol_);
         _setAccessController(accessController_);
         _setDefaultRoyalty(defaultRoyaltyReceiver, defaultRoyaltyFraction);
@@ -67,7 +69,7 @@ contract ZNSDomainToken is
     /**
      * @notice Returns the total supply of all tokens
      */
-    function totalSupply() external view override returns (uint256) {
+    function totalSupply() public view virtual override(ADomainToken, IZNSDomainToken) returns (uint256) {
         return _totalSupply;
     }
 
@@ -103,7 +105,8 @@ contract ZNSDomainToken is
     function tokenURI(uint256 tokenId)
     public
     view
-    override(ERC721URIStorageUpgradeable, IZNSDomainToken)
+    virtual
+    override(ERC721URIStorageUpgradeable, ADomainToken, IZNSDomainToken)
     returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -130,7 +133,7 @@ contract ZNSDomainToken is
      * > Note that if `baseURI` and `tokenURI` are set, the `tokenURI` will be appended to the `baseURI`!
      * @param baseURI_ The baseURI to be set for all tokens
     */
-    function setBaseURI(string memory baseURI_) external override onlyAdmin {
+    function setBaseURI(string memory baseURI_) public override(ADomainToken, IZNSDomainToken) onlyAdmin {
         baseURI = baseURI_;
         emit BaseURISet(baseURI_);
     }
@@ -184,7 +187,7 @@ contract ZNSDomainToken is
     public
     view
     virtual
-    override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
+    override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, ADomainToken, IZNSDomainToken)
     returns (bool) {
         return super.supportsInterface(interfaceId);
     }
@@ -210,7 +213,7 @@ contract ZNSDomainToken is
         address from,
         address to,
         uint256 tokenId
-    ) public override(ERC721Upgradeable, IERC721) {
+    ) public virtual override(ERC721Upgradeable, IERC721) {
         // Transfer the token
         super.transferFrom(from, to, tokenId);
 
@@ -224,7 +227,7 @@ contract ZNSDomainToken is
     /**
      * @notice Return the baseURI
      */
-    function _baseURI() internal view override returns (string memory) {
+    function _baseURI() internal view virtual override returns (string memory) {
         return baseURI;
     }
 
