@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// TODO 15: review ALL imports and remove unused !
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
@@ -14,7 +15,8 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import {
     ZeroAddressPassed,
     DomainAlreadyExists,
-    NotFullDomainOwner
+    NotFullDomainOwner,
+    NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
 
 
@@ -267,8 +269,8 @@ contract ZNSRootRegistrar is
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH))
-            revert NotTheOwnerOf(OwnerOf.BOTH, msg.sender, domainHash);
+        if (msg.sender != registry.getDomainOwner(domainHash))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
