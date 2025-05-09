@@ -290,7 +290,14 @@ describe.only("Controlled Domains Test", () => {
   it("should allow parent domain owner to revoke subdomain", async () => {
     const tokenOwner = await zns.domainToken.ownerOf(subdomainHash);
     const registryOwner = await zns.registry.getDomainOwner(subdomainHash);
-    expect(registryOwner).to.not.equal(tokenOwner);
+
+    // if in this test owner is unified already, we are splitting it again to test
+    // that Registry owner can revoke the subdomain if owners are split
+    try {
+      expect(registryOwner).to.not.equal(tokenOwner);
+    } catch {
+      await zns.registry.connect(user).updateDomainOwner(subdomainHash, parentOwner.address);
+    }
 
     await zns.rootRegistrar.connect(parentOwner).revokeDomain(subdomainHash);
 
