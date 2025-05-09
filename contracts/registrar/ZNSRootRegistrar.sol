@@ -11,7 +11,11 @@ import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    DomainAlreadyExists,
+    NotFullDomainOwner
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -303,16 +307,20 @@ contract ZNSRootRegistrar is
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
-    function reclaimDomain(bytes32 domainHash)
+    function reclaimDomainToken(bytes32 domainHash)
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN))
-            revert NotTheOwnerOf(OwnerOf.TOKEN, msg.sender, domainHash);
+        address registryOwner = registry.getDomainOwner(domainHash);
+        if (msg.sender != registryOwner)
+            revert NotFullDomainOwner(msg.sender, domainHash);
 
-        registry.updateDomainOwner(domainHash, msg.sender);
+        domainToken.reclaim(
+            registryOwner,
+            uint256(domainHash)
+        );
 
-        emit DomainReclaimed(domainHash, msg.sender);
+        emit DomainTokenReclaimed(domainHash, msg.sender);
     }
 
     /**
@@ -321,6 +329,7 @@ contract ZNSRootRegistrar is
      * @param candidate Address of the candidate to check for ownership of the above domain's properties
      * @param ownerOf Enum value to determine which ownership to check for: NAME, TOKEN, BOTH
     */
+    // TODO 15: do we still need this function ?!?!?
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) public view override returns (bool) {
         if (ownerOf == OwnerOf.NAME) {
             return candidate == registry.getDomainOwner(domainHash);

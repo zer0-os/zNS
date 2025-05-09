@@ -94,11 +94,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
      * @param domainHash The hash of the domain reclaimed
-     * @param registrant The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
+     * @param fullOwner The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
      */
-    event DomainReclaimed(
+    event DomainTokenReclaimed(
         bytes32 indexed domainHash,
-        address indexed registrant
+        address indexed fullOwner
     );
 
     /**
@@ -147,7 +147,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function revokeDomain(bytes32 domainHash) external;
 
-    function reclaimDomain(bytes32 domainHash) external;
+    function reclaimDomainToken(bytes32 domainHash) external;
 
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
