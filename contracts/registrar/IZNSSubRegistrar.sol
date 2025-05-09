@@ -10,6 +10,16 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
+    struct SubdomainRegisterArgs {
+        bytes32 parentHash;
+        string label;
+        address domainAddress;
+        address tokenOwner;
+        string tokenURI;
+        DistributionConfig distrConfig;
+        PaymentConfig paymentConfig;
+    }
+
     /**
      * @notice Reverted when someone other than parent owner is trying to buy
      * a subdomain under the parent that is locked
@@ -90,14 +100,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         address _rootRegistrar
     ) external;
 
-    function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
-    ) external returns (bytes32);
+    function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32);
 
     function hashWithParent(
         bytes32 parentHash,

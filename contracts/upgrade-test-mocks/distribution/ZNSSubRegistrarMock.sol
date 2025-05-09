@@ -35,6 +35,15 @@ struct DistributionConfig {
     uint256 newUint;
 }
 
+struct SubdomainRegisterArgs {
+    bytes32 parentHash;
+    string label;
+    address domainAddress;
+    address tokenOwner;
+    string tokenURI;
+    DistributionConfig distrConfig;
+    PaymentConfig paymentConfig;
+}
 
 contract ZNSSubRegistrarMainState {
     IZNSRootRegistrar public rootRegistrar;
@@ -85,62 +94,56 @@ contract ZNSSubRegistrarUpgradeMock is
         setRootRegistrar(_rootRegistrar);
     }
 
-    function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
-    ) external returns (bytes32) {
+    function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        label.validate();
+        regArgs.label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
+        bytes32 domainHash = hashWithParent(regArgs.parentHash, regArgs.label);
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
+        DistributionConfig memory parentConfig = distrConfigs[regArgs.parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(regArgs.parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(parentHash);
+            revert ParentLockedOrDoesntExist(regArgs.parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
-                !mintlist[parentHash]
+                !mintlist[regArgs.parentHash]
             .list
-            [mintlist[parentHash].ownerIndex]
+            [mintlist[regArgs.parentHash].ownerIndex]
             [msg.sender]
-            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
+            ) revert SenderNotApprovedForPurchase(regArgs.parentHash, msg.sender);
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
+            parentHash: regArgs.parentHash,
             domainHash: domainHash,
-            label: label,
-            registrant: msg.sender,
+            label: regArgs.label,
+            domainOwner: msg.sender,
+            tokenOwner: regArgs.tokenOwner == address(0) ? msg.sender : regArgs.tokenOwner,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: regArgs.domainAddress,
+            tokenURI: regArgs.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: regArgs.paymentConfig
         });
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(
-                    parentHash,
-                    label,
+                    regArgs.parentHash,
+                    regArgs.label,
                     true
                 );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                    parentHash,
-                    label,
+                    regArgs.parentHash,
+                    regArgs.label,
                     true
                 );
             }
@@ -148,8 +151,8 @@ contract ZNSSubRegistrarUpgradeMock is
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        if (address(distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+        if (address(regArgs.distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, regArgs.distrConfig);
         }
 
         return domainHash;

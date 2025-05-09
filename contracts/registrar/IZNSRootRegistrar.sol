@@ -12,7 +12,8 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    address registrant;
+    address domainOwner;
+    address tokenOwner;
     address domainAddress;
     uint256 price;
     uint256 stakeFee; // TODO 15: can we get rid of this?
@@ -66,16 +67,18 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param tokenURI The tokenURI of the domain registered
-     * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
+     * @param domainOwner The address became owner in Registry record
      * @param domainAddress The domain address of the domain registered
      */
+    // TODO 15: refine this event !!
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
         string label,
-        uint256 indexed tokenId,
+        uint256 tokenId,
         string tokenURI,
-        address indexed registrant,
+        address indexed domainOwner,
+        address indexed tokenOwner,
         address domainAddress
     );
 
@@ -136,6 +139,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function registerRootDomain(
         string calldata name,
         address domainAddress,
+        address tokenOwner,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig

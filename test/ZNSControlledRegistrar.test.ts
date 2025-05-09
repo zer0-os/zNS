@@ -105,12 +105,8 @@ describe.only("Controlled Domains Test", () => {
     // check that the subdomain is registered
     subdomainHash = await getDomainHashFromEvent({
       zns,
-      user,
+      user: parentOwner,
     });
-
-    // TODO 15: rework this into Registrar logic to specify who gets the token and possibly registry owner !
-    //  and remove from here !!!
-    await zns.registry.connect(user).updateDomainOwner(subdomainHash, parentOwner.address);
 
     // make sure hash is calced correctly
     const subHashRef = await zns.subRegistrar.hashWithParent(
@@ -122,7 +118,7 @@ describe.only("Controlled Domains Test", () => {
     const record = await zns.registry.getDomainRecord(subdomainHash);
     const { owner, resolver } = record;
     expect(resolver).to.equal(zns.addressResolver.target);
-    expect(owner).to.equal(user.address);
+    expect(owner).to.equal(parentOwner.address);
 
     const subTokenOwner = await zns.domainToken.ownerOf(subdomainHash);
     expect(subTokenOwner).to.equal(user.address);

@@ -95,6 +95,7 @@ contract ZNSRootRegistrar is
     function registerRootDomain(
         string calldata name,
         address domainAddress,
+        address tokenOwner,
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
@@ -110,6 +111,7 @@ contract ZNSRootRegistrar is
                 bytes32(0),
                 domainHash,
                 msg.sender,
+                tokenOwner == address(0) ? msg.sender : tokenOwner,
                 domainAddress,
                 domainPrice,
                 0,
@@ -180,7 +182,7 @@ contract ZNSRootRegistrar is
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);
         // mint token
-        domainToken.register(args.registrant, tokenId, args.tokenURI);
+        domainToken.register(args.tokenOwner, tokenId, args.tokenURI);
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
@@ -188,13 +190,13 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, "address");
+            registry.createDomainRecord(args.domainHash, args.domainOwner, "address");
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
-            registry.createDomainRecord(args.domainHash, args.registrant, "");
+            registry.createDomainRecord(args.domainHash, args.domainOwner, "");
         }
 
         // Because we check in the web app for the existance of both values in a payment config,
@@ -209,7 +211,8 @@ contract ZNSRootRegistrar is
             args.label,
             tokenId,
             args.tokenURI,
-            args.registrant,
+            args.domainOwner,
+            args.tokenOwner,
             args.domainAddress
         );
     }
@@ -226,7 +229,7 @@ contract ZNSRootRegistrar is
             treasury.stakeForDomain(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                args.domainOwner,
                 args.price,
                 args.stakeFee,
                 protocolFee
@@ -235,7 +238,7 @@ contract ZNSRootRegistrar is
             treasury.processDirectPayment(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                args.domainOwner,
                 args.price,
                 protocolFee
             );

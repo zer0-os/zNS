@@ -48,6 +48,7 @@ export const getDomainHashFromEvent = async ({
     undefined,
     user.address,
     undefined,
+    undefined,
   );
 
   const events = await zns.rootRegistrar.queryFilter(filter, latestBlock - 2, latestBlock);

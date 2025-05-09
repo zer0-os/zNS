@@ -8,6 +8,7 @@ import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
+// TODO 15: delete this if not required
 contract ZNSControlledRegistrar is ARegistryWired {
     IZNSRootRegistrar public rootRegistrar;
 
@@ -50,7 +51,8 @@ contract ZNSControlledRegistrar is ARegistryWired {
             parentHash: parentDomainHash,
             domainHash: domainHash,
             label: label,
-            registrant: owner,
+            domainOwner: msg.sender,
+            tokenOwner: owner,
             domainAddress: domainAddress,
             price: 0,
             stakeFee: 0,

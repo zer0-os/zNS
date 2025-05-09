@@ -20,6 +20,7 @@ export const defaultRootRegistration = async ({
   user,
   zns,
   domainName,
+  tokenOwner = user.address,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
@@ -27,6 +28,7 @@ export const defaultRootRegistration = async ({
   user : SignerWithAddress;
   zns : IZNSContractsLocal | IZNSContracts;
   domainName : string;
+  tokenOwner ?: string;
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
@@ -36,6 +38,7 @@ export const defaultRootRegistration = async ({
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
     domainName,
     domainContent, // Arbitrary address value
+    tokenOwner,
     tokenURI,
     distrConfig,
     paymentConfigEmpty
@@ -86,6 +89,7 @@ export const defaultSubdomainRegistration = async ({
   user,
   zns,
   parentHash,
+  tokenOwner = user.address,
   subdomainLabel,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
@@ -105,6 +109,7 @@ export const defaultSubdomainRegistration = async ({
     parentHash,
     subdomainLabel,
     domainContent, // Arbitrary address value
+    tokenOwner,
     tokenURI,
     distrConfig,
     paymentConfigEmpty
@@ -121,6 +126,7 @@ export const registrationWithSetup = async ({
   user,
   parentHash,
   domainLabel,
+  tokenOwner,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
   fullConfig = fullDistrConfigEmpty,
@@ -130,6 +136,7 @@ export const registrationWithSetup = async ({
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;
+  tokenOwner ?: string;
   domainContent ?: string;
   tokenURI ?: string;
   fullConfig ?: IFullDistributionConfig;
@@ -146,6 +153,7 @@ export const registrationWithSetup = async ({
       user,
       zns,
       domainName: domainLabel,
+      tokenOwner,
       domainContent,
       tokenURI,
       distrConfig,
@@ -162,6 +170,7 @@ export const registrationWithSetup = async ({
       user,
       zns,
       parentHash,
+      tokenOwner,
       subdomainLabel: domainLabel,
       domainContent,
       tokenURI,
