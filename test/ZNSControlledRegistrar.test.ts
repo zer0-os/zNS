@@ -4,15 +4,14 @@ import { getConfig } from "../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MongoDBAdapter } from "@zero-tech/zdc";
 import { IZNSContracts } from "../src/deploy/campaign/types";
-import { ZNSControlledRegistrar } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import {
-  AccessType, distrConfigEmpty,
+  AccessType, distrConfigEmpty, DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   DOMAIN_EXISTS_ERR,
   INVALID_LABEL_ERR,
   NONEXISTENT_TOKEN_ERC_ERR,
-  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, NOT_OWNER_OF_ERR, paymentConfigEmpty, REGISTRAR_ROLE,
+  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, paymentConfigEmpty, REGISTRAR_ROLE,
 } from "./helpers";
 import { getDomainHashFromEvent } from "./helpers/events";
 
@@ -24,7 +23,6 @@ describe.only("Controlled Domains Test", () => {
 
   let zns : IZNSContracts;
   let mongoAdapter : MongoDBAdapter;
-  let controlledRegistrar : ZNSControlledRegistrar;
 
   let rootDomainHash : string;
   let subdomainHash : string;
@@ -60,32 +58,10 @@ describe.only("Controlled Domains Test", () => {
       user: parentOwner,
       domainLabel: "controlling-root",
     });
-
-    // TODO 15: move it to the campaign ?!?!?
-    // deploy ControlledRegistrar
-    const fact = await hre.ethers.getContractFactory("ZNSControlledRegistrar");
-    controlledRegistrar = await fact.deploy(
-      zns.rootRegistrar.target,
-      zns.registry.target,
-      rootDomainHash,
-    );
-
-    // TODO 15: remove this if we don't need the extra Registrar !
-    await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, controlledRegistrar.target);
   });
 
   after(async () => {
     await mongoAdapter.dropDB();
-  });
-
-  it("should set all state vars correctly at deploy", async () => {
-    const rootRegistrar = await controlledRegistrar.rootRegistrar();
-    const registry = await controlledRegistrar.registry();
-    const rootDomain = await controlledRegistrar.parentDomainHash();
-
-    expect(rootRegistrar).to.equal(zns.rootRegistrar.target);
-    expect(registry).to.equal(zns.registry.target);
-    expect(rootDomain).to.equal(rootDomainHash);
   });
 
   it("should register a subdomain as an owner of parent domain", async () => {
@@ -155,28 +131,34 @@ describe.only("Controlled Domains Test", () => {
 
   it("should revert when trying to register a subdomain as anyone other than owner or operator of parent", async () => {
     await expect(
-      controlledRegistrar.connect(user).registerSubdomain(
-        "controlled-subdomain-2",
-        user.address,
-        user.address,
-        "dummy-token-uri",
-        controlledRegistrar,
+      zns.subRegistrar.connect(user).registerSubdomain(
+        {
+          parentHash: rootDomainHash,
+          label: "controlled-subdomain-2",
+          domainAddress: user.address,
+          tokenOwner: user.address,
+          tokenURI: "dummy-token-uri",
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        }
       ),
     ).to.be.revertedWithCustomError(
-      zns.registry,
-      NOT_AUTHORIZED_ERR,
+      zns.subRegistrar,
+      DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
     );
   });
 
   it("should revert when trying to register a subdomain with invalid characters", async () => {
     await expect(
-      controlledRegistrar.connect(parentOwner).registerSubdomain(
-        "invalid-subdomain-!",
-        user.address,
-        user.address,
-        "dummy-token-uri",
-        controlledRegistrar,
-      )
+      zns.subRegistrar.connect(parentOwner).registerSubdomain({
+        parentHash: rootDomainHash,
+        label: "invalid-subdomain-!",
+        domainAddress: user.address,
+        tokenOwner: user.address,
+        tokenURI: "dummy-token-uri",
+        distrConfig: distrConfigEmpty,
+        paymentConfig: paymentConfigEmpty,
+      })
     ).to.be.revertedWithCustomError(
       zns.rootRegistrar,
       INVALID_LABEL_ERR,
@@ -185,12 +167,15 @@ describe.only("Controlled Domains Test", () => {
 
   it("should revert when registering a duplicate domain", async () => {
     await expect(
-      controlledRegistrar.connect(parentOwner).registerSubdomain(
-        mainSubLabel,
-        user.address,
-        user.address,
-        "dummy-token-uri",
-      )
+      zns.subRegistrar.connect(parentOwner).registerSubdomain({
+        parentHash: rootDomainHash,
+        label: mainSubLabel,
+        domainAddress: user.address,
+        tokenOwner: user.address,
+        tokenURI: "dummy-token-uri",
+        distrConfig: distrConfigEmpty,
+        paymentConfig: paymentConfigEmpty,
+      })
     ).to.be.revertedWithCustomError(
       zns.rootRegistrar,
       DOMAIN_EXISTS_ERR,
