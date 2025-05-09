@@ -8,9 +8,11 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ERC721EnumerableUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import { ERC721VotesUpgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721VotesUpgradeable.sol";
 import { ISubdomainToken } from "./IZNSSubdomainToken.sol";
+import { ADomainToken } from "./ADomainToken.sol";
 
 
 contract ZNSSubdomainToken is
+    ADomainToken,
     ERC721Upgradeable,
     ERC721EnumerableUpgradeable,
     ERC721VotesUpgradeable,
@@ -48,7 +50,7 @@ contract ZNSSubdomainToken is
     function tokenURI (uint256 tokenId)
         public
         view
-        override(ERC721Upgradeable, ZNSDomainToken)
+        override(ADomainToken, ERC721Upgradeable, ZNSDomainToken)
         returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -69,7 +71,7 @@ contract ZNSSubdomainToken is
     function totalSupply()
         public
         view
-        override(ZNSDomainToken, ERC721EnumerableUpgradeable)
+        override(ADomainToken, ZNSDomainToken, ERC721EnumerableUpgradeable)
         returns (uint256)
     {
         return super.totalSupply();
@@ -78,7 +80,7 @@ contract ZNSSubdomainToken is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ZNSDomainToken)
+        override(ADomainToken, ERC721Upgradeable, ERC721EnumerableUpgradeable, ZNSDomainToken)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
