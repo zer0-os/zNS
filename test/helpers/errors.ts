@@ -19,6 +19,7 @@ export const INSUFFICIENT_ALLOWANCE_ERC_ERR = "ERC20InsufficientAllowance";
 export const ZERO_ADDRESS_ERR = "ZeroAddressPassed";
 export const DOMAIN_EXISTS_ERR = "DomainAlreadyExists";
 export const NOT_AUTHORIZED_ERR = "NotAuthorizedForDomain";
+export const NOT_FULL_OWNER_ERR = "NotFullDomainOwner";
 
 // IZNSPricer.sol
 export const PARENT_CONFIG_NOT_SET_ERR = "ParentPriceConfigNotSet";
