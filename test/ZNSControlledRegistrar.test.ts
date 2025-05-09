@@ -8,11 +8,11 @@ import { ZNSControlledRegistrar } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import {
-  AccessType,
+  AccessType, distrConfigEmpty,
   DOMAIN_EXISTS_ERR,
   INVALID_LABEL_ERR,
   NONEXISTENT_TOKEN_ERC_ERR,
-  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, REGISTRAR_ROLE,
+  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, NOT_OWNER_OF_ERR, paymentConfigEmpty, REGISTRAR_ROLE,
 } from "./helpers";
 import { getDomainHashFromEvent } from "./helpers/events";
 
@@ -95,12 +95,15 @@ describe.only("Controlled Domains Test", () => {
 
     // register subdomain for user
     const subTokenURI = "https://example.com/subdomain";
-    await controlledRegistrar.connect(parentOwner).registerSubdomain(
-      mainSubLabel,
-      user.address,
-      user.address,
-      subTokenURI,
-    );
+    await zns.subRegistrar.connect(parentOwner).registerSubdomain({
+      parentHash: rootDomainHash,
+      label: mainSubLabel,
+      domainAddress: user.address,
+      tokenOwner: user.address,
+      tokenURI: subTokenURI,
+      distrConfig: distrConfigEmpty,
+      paymentConfig: paymentConfigEmpty,
+    });
 
     // check that the subdomain is registered
     subdomainHash = await getDomainHashFromEvent({
@@ -129,7 +132,7 @@ describe.only("Controlled Domains Test", () => {
     expect(domainResolution).to.equal(user.address);
   });
 
-  it.skip("should NOT let subdomain user access domain management functions", async () => {
+  it("should NOT let subdomain user access domain management functions", async () => {
     await expect(
       zns.subRegistrar.connect(user).setPricerContractForDomain(
         subdomainHash,
@@ -141,7 +144,7 @@ describe.only("Controlled Domains Test", () => {
     );
   });
 
-  it.skip("should NOT allow subdomain owner to revoke his domain", async () => {
+  it("should NOT allow subdomain owner to revoke his domain", async () => {
     await expect(
       zns.rootRegistrar.connect(user).revokeDomain(subdomainHash)
     ).to.be.revertedWithCustomError(
@@ -191,22 +194,6 @@ describe.only("Controlled Domains Test", () => {
     ).to.be.revertedWithCustomError(
       zns.rootRegistrar,
       DOMAIN_EXISTS_ERR,
-    );
-  });
-
-  it.skip("should allow parent domain owner to revoke subdomain", async () => {
-    await zns.rootRegistrar.connect(parentOwner).revokeDomain(subdomainHash);
-
-    // check that the subdomain is revoked
-    const record = await zns.registry.getDomainRecord(subdomainHash);
-    const { owner, resolver } = record;
-    expect(owner).to.equal(hre.ethers.ZeroAddress);
-    expect(resolver).to.equal(hre.ethers.ZeroAddress);
-
-    // check that the token is burned
-    await expect(zns.domainToken.ownerOf(subdomainHash)).to.be.revertedWithCustomError(
-      zns.domainToken,
-      NONEXISTENT_TOKEN_ERC_ERR,
     );
   });
 
@@ -280,7 +267,45 @@ describe.only("Controlled Domains Test", () => {
     expect(newRegistryOwner).to.equal(parentOwner.address);
   });
 
-  it("should allow approved spender to transfer the subdomain token", async () => {});
+  it("should allow approved spender to transfer the subdomain token", async () => {
+    const tokenOwner = await zns.domainToken.ownerOf(subdomainHash);
+    const registryOwner = await zns.registry.getDomainOwner(subdomainHash);
+    expect(registryOwner).to.equal(tokenOwner);
+
+    await zns.domainToken.connect(parentOwner).approve(deployer.address, subdomainHash);
+
+    await zns.domainToken.connect(deployer).transferFrom(
+      parentOwner.address,
+      user.address,
+      subdomainHash,
+    );
+
+    // validate
+    const newTokenOwner = await zns.domainToken.ownerOf(subdomainHash);
+    const newRegistryOwner = await zns.registry.getDomainOwner(subdomainHash);
+    expect(newTokenOwner).to.equal(user.address);
+    expect(newRegistryOwner).to.equal(user.address);
+  });
+
+  it("should allow parent domain owner to revoke subdomain", async () => {
+    const tokenOwner = await zns.domainToken.ownerOf(subdomainHash);
+    const registryOwner = await zns.registry.getDomainOwner(subdomainHash);
+    expect(registryOwner).to.not.equal(tokenOwner);
+
+    await zns.rootRegistrar.connect(parentOwner).revokeDomain(subdomainHash);
+
+    // check that the subdomain is revoked
+    const record = await zns.registry.getDomainRecord(subdomainHash);
+    const { owner, resolver } = record;
+    expect(owner).to.equal(hre.ethers.ZeroAddress);
+    expect(resolver).to.equal(hre.ethers.ZeroAddress);
+
+    // check that the token is burned
+    await expect(zns.domainToken.ownerOf(subdomainHash)).to.be.revertedWithCustomError(
+      zns.domainToken,
+      NONEXISTENT_TOKEN_ERC_ERR,
+    );
+  });
 
   // TODO 15: add tests:
   //  1. registering/revoking sub as operator + all setters (probably to their respective test files per contract)
