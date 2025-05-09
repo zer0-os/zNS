@@ -25,7 +25,7 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
-    error CallerNotOwner(); 
+    error CallerNotOwner();
 
     function initialize(
         address accessController,
@@ -38,6 +38,8 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function totalSupply() external view returns (uint256);
 
+    function isFullyOwned(bytes32 domainHash) external view returns (bool);
+
     function register(
         address to,
         uint256 tokenId,
@@ -45,6 +47,11 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     ) external;
 
     function revoke(uint256 tokenId) external;
+
+    function reclaim(
+        address to,
+        uint256 tokenId
+    ) external;
 
     function tokenURI(uint256 tokenId)
     external
@@ -56,8 +63,6 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external;
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
-
-    function updateTokenOwner(address from, address to, uint256 tokenId) external;
 
     function setTokenRoyalty(
         uint256 tokenId,

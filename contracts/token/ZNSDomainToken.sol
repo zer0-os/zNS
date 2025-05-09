@@ -10,6 +10,7 @@ import { ERC721URIStorageUpgradeable }
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
+import { NotFullDomainOwner, AlreadyFullOwner } from "../utils/CommonErrors.sol";
 
 
 /**
@@ -80,7 +81,11 @@ contract ZNSDomainToken is
      * @param tokenId The TokenId that the caller wishes to mint/register.
      * @param _tokenURI The tokenURI to be set for the token minted.
      */
-    function register(address to, uint256 tokenId, string memory _tokenURI) external override onlyRegistrar {
+    function register(
+        address to,
+        uint256 tokenId,
+        string memory _tokenURI
+    ) external override onlyRegistrar {
         ++_totalSupply;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, _tokenURI);
@@ -189,18 +194,12 @@ contract ZNSDomainToken is
         return super.supportsInterface(interfaceId);
     }
 
-    /**
-     * @notice We override the standard transfer function to update the owner for both the `registry` and `token`
-     * This non-standard transfer is to behave similarly to the default transfer that only updates the `token`
-     *
-     * @param from Owner of the token
-     * @param to Address to send the token to
-     * @param tokenId The token being transferred
-     */
-    function updateTokenOwner(address from, address to, uint256 tokenId) public override {
-        super.transferFrom(from, to, tokenId);
+    // TODO 15: should this be called something better ??
+    function isFullyOwned(bytes32 domainHash) external view override returns (bool) {
+        return registry.getDomainOwner(domainHash) == ownerOf(uint256(domainHash));
     }
 
+    // TODO 15: will all these transfers work properly with approvals ?? test !!
     /**
      * @notice Override the standard transferFrom function to update the owner for both the `registry` and `token`
      *
@@ -211,6 +210,11 @@ contract ZNSDomainToken is
         address to,
         uint256 tokenId
     ) public override(ERC721Upgradeable, IERC721) {
+        bytes32 domainHash = bytes32(abi.encodePacked(tokenId));
+
+        if (registry.getDomainOwner(domainHash) != from)
+            revert NotFullDomainOwner(msg.sender, domainHash);
+
         // Transfer the token
         super.transferFrom(from, to, tokenId);
 
@@ -218,7 +222,19 @@ contract ZNSDomainToken is
         // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here
         // We `encodePacked` here to ensure that any values that result in leading zeros are converted correctly
-        registry.updateDomainOwner(bytes32(abi.encodePacked(tokenId)), to);
+        registry.updateDomainOwner(domainHash, to);
+    }
+
+    // TODO 15: rest AC here and in transferFrom() above in DomainTokenTest !
+    function reclaim(
+        address to,
+        uint256 tokenId
+    ) external override onlyRegistrar {
+        address from = ownerOf(tokenId);
+        if (from == to) revert AlreadyFullOwner(from, bytes32(abi.encodePacked(tokenId)));
+
+        // Transfer the token
+        super._update(to, tokenId, from);
     }
 
     /**
