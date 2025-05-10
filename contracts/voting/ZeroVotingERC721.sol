@@ -83,7 +83,7 @@ contract ZeroVotingERC721 is ERC721Votes, ERC721URIStorage, AccessControl, IZero
         address to,
         uint256 tokenId,
         string memory tokenUri
-    ) public override onlyRole(MINTER_ROLE) {
+    ) public virtual override onlyRole(MINTER_ROLE) {
         ++_totalSupply;
 
         _mint(
