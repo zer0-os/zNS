@@ -86,15 +86,23 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 //     *  but all the parameters inside are required.
 //    */
     function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external override returns (bytes32) {
-        bytes32 domainHash = hashWithParent(regArgs.parentHash, regArgs.label);
+        // TODO 15: implement this smartly and optimize with other access logic here !
+        address domainRecordOwner;
+        address parentOwner = registry.getDomainOwner(regArgs.parentHash);
+        bool isOwner = msg.sender == parentOwner;
+        bool isOperator = registry.isOperatorFor(msg.sender, parentOwner);
 
         DistributionConfig memory parentConfig = distrConfigs[regArgs.parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(regArgs.parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(regArgs.parentHash);
-
-        if (parentConfig.accessType == AccessType.MINTLIST) {
+        if (parentConfig.accessType == AccessType.LOCKED) {
+            if (isOwner) {
+                domainRecordOwner = msg.sender;
+            } else if (isOperator) {
+                domainRecordOwner = parentOwner;
+            } else {
+                revert ParentLockedOrDoesntExist(regArgs.parentHash);
+            }
+        } else if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
                 !mintlist[regArgs.parentHash]
                     .list
@@ -103,12 +111,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             ) revert SenderNotApprovedForPurchase(regArgs.parentHash, msg.sender);
         }
 
+        bytes32 domainHash = hashWithParent(regArgs.parentHash, regArgs.label);
+
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: regArgs.parentHash,
             domainHash: domainHash,
             label: regArgs.label,
-            domainOwner: msg.sender,
-            tokenOwner: regArgs.tokenOwner == address(0) ? msg.sender : regArgs.tokenOwner,
+            domainOwner: domainRecordOwner,
+            tokenOwner: regArgs.tokenOwner == address(0) ? domainRecordOwner : regArgs.tokenOwner,
             price: 0,
             stakeFee: 0,
             domainAddress: regArgs.domainAddress,
@@ -117,7 +127,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             paymentConfig: regArgs.paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
+        if (!isOwner && !isOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
