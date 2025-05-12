@@ -38,7 +38,7 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function totalSupply() external view returns (uint256);
 
-    function isFullyOwned(bytes32 domainHash) external view returns (bool);
+    function isControlled(bytes32 domainHash) external view returns (bool);
 
     function register(
         address to,
@@ -48,7 +48,7 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function revoke(uint256 tokenId) external;
 
-    function reclaim(
+    function transferOverride(
         address to,
         uint256 tokenId
     ) external;

@@ -43,6 +43,7 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    // TODO 15: delete ??
     error NotTheOwnerOf(
         OwnerOf ownerOf,
         address candidate,
@@ -50,6 +51,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     error InvalidOwnerOfEnumValue(OwnerOf value);
+
+    error AlreadyTokenOwner(
+        bytes32 domainHash,
+        address currentOwner
+    );
 
     enum OwnerOf {
         NAME,
@@ -97,11 +103,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
      * @param domainHash The hash of the domain reclaimed
-     * @param fullOwner The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
+     * @param newOwner The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
      */
-    event DomainTokenReclaimed(
+    event DomainTokenReassigned(
         bytes32 indexed domainHash,
-        address indexed fullOwner
+        address indexed newOwner
     );
 
     /**
@@ -151,7 +157,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function revokeDomain(bytes32 domainHash) external;
 
-    function reclaimDomainToken(bytes32 domainHash) external;
+    function assignDomainToken(bytes32 domainHash, address to) external;
 
     function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 

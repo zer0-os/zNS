@@ -194,12 +194,10 @@ contract ZNSDomainToken is
         return super.supportsInterface(interfaceId);
     }
 
-    // TODO 15: should this be called something better ??
-    function isFullyOwned(bytes32 domainHash) external view override returns (bool) {
-        return registry.getDomainOwner(domainHash) == ownerOf(uint256(domainHash));
+    function isControlled(bytes32 domainHash) external view override returns (bool) {
+        return registry.getDomainOwner(domainHash) != ownerOf(uint256(domainHash));
     }
 
-    // TODO 15: will all these transfers work properly with approvals ?? test !!
     /**
      * @notice Override the standard transferFrom function to update the owner for both the `registry` and `token`
      *
@@ -225,8 +223,8 @@ contract ZNSDomainToken is
         registry.updateDomainOwner(domainHash, to);
     }
 
-    // TODO 15: rest AC here and in transferFrom() above in DomainTokenTest !
-    function reclaim(
+    // TODO 15: test AC here and in transferFrom() above in DomainTokenTest !
+    function transferOverride(
         address to,
         uint256 tokenId
     ) external override onlyRegistrar {

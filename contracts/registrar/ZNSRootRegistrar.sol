@@ -15,7 +15,6 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import {
     ZeroAddressPassed,
     DomainAlreadyExists,
-    NotFullDomainOwner,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
 
@@ -150,9 +149,6 @@ contract ZNSRootRegistrar is
     */
     function coreRegister(
         CoreRegisterArgs memory args
-    // TODO 15: change this from AC to validating msg.sender against a mapping here
-    //  that stores Registrar contract per domain!
-    // TODO 15: also remove this role from ZNSAccessController along with all the functions!
     ) external override onlyRegistrar {
         _coreRegister(
             args
@@ -312,20 +308,23 @@ contract ZNSRootRegistrar is
      * A user needs to only be the owner of the Token to be able to Reclaim.
      * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
      */
-    function reclaimDomainToken(bytes32 domainHash)
+    function assignDomainToken(bytes32 domainHash, address to)
     external
     override
     {
-        address registryOwner = registry.getDomainOwner(domainHash);
-        if (msg.sender != registryOwner)
-            revert NotFullDomainOwner(msg.sender, domainHash);
+        if (msg.sender != registry.getDomainOwner(domainHash))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
-        domainToken.reclaim(
-            registryOwner,
+        address curTokenOwner = domainToken.ownerOf(uint256(domainHash));
+        if (curTokenOwner == to)
+            revert AlreadyTokenOwner(domainHash, curTokenOwner);
+
+        domainToken.transferOverride(
+            to,
             uint256(domainHash)
         );
 
-        emit DomainTokenReclaimed(domainHash, msg.sender);
+        emit DomainTokenReassigned(domainHash, to);
     }
 
     /**

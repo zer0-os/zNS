@@ -62,6 +62,7 @@ contract ZNSAddressResolver is
      * @param domainHash The identifying hash of a domain's name
      * @param newAddress The new address to map the domain to
      */
+    // TODO 15: should this be accessible to owner of the token in controlled cases ??
     function setAddress(
         bytes32 domainHash,
         address newAddress

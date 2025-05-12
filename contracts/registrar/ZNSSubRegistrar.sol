@@ -45,6 +45,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     mapping(bytes32 domainHash => Mintlist mintStruct) public mintlist;
 
+    // TODO 15: check access control everywhere with the new split ownership model
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         if (
             !registry.isOwnerOrOperator(domainHash, msg.sender)
