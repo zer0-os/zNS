@@ -27,33 +27,41 @@ contract ZNSVoting is ZeroVotingERC721, ARegistryWired {
         __baseURI = baseUri;
     }
 
-    function register(
-        address to,
-        uint256 tokenId,
+    function mint(
+        bytes32 domainHash,
+        // TODO: do we pass URI?
         string memory tokenUri
-    ) public onlyRole(MINTER_ROLE) {
-        // TODO: registry check. Does the domain exist?
-        // TODO: check owner against msg.sender
-        // TODO: check if it's a child domain (subdomain)
-        registry.exists(
-            domainHash
-        );
-        registry.getDomainOwner(
-            domainHash
+    ) public override onlyRole(MINTER_ROLE) {
+        require(
+            registry.exists(domainHash),
+            "Domain does not exist"
         );
 
+        require(
+            registry.getDomainOwner(domainHash) == msg.sender,
+            "Not the owner of the domain"
+        );
 
-        registry.createDomainRecord(
-            domainHash,
+        super._mint(
             msg.sender,
-            "string"
+            uint256(domainHash),
+            string(abi.encodePacked(__baseURI, tokenUri))
         );
-        mint(to, tokenId, tokenUri);
     }
 
-    function mint(
-        address to,
-        uint256 tokenId,
-        string memory tokenUri
-    ) public override onlyRole(MINTER_ROLE) {}
+    function burn(
+        bytes32 domainHash
+    ) public override onlyRole(BURNER_ROLE) {
+        require(
+            registry.exists(domainHash),
+            "Domain does not exist"
+        );
+
+        require(
+            registry.getDomainOwner(domainHash) == msg.sender,
+            "Not the owner of the domain"
+        );
+
+        super.burn(tokenId);
+    }
 }
