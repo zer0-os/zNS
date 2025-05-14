@@ -223,7 +223,6 @@ contract ZNSDomainToken is
         registry.updateDomainOwner(domainHash, to);
     }
 
-    // TODO 15: test AC here and in transferFrom() above in DomainTokenTest !
     function transferOverride(
         address to,
         uint256 tokenId

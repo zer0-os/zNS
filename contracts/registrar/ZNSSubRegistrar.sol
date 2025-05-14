@@ -86,21 +86,18 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 //     *  but all the parameters inside are required.
 //    */
     function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external override returns (bytes32) {
-        // TODO 15: implement this smartly and optimize with other access logic here !
-        address domainRecordOwner;
+        address domainRecordOwner = msg.sender;
         address parentOwner = registry.getDomainOwner(regArgs.parentHash);
         bool isOwner = msg.sender == parentOwner;
         bool isOperator = registry.isOperatorFor(msg.sender, parentOwner);
 
-        DistributionConfig memory parentConfig = distrConfigs[regArgs.parentHash];
+        DistributionConfig storage parentConfig = distrConfigs[regArgs.parentHash];
 
         if (parentConfig.accessType == AccessType.LOCKED) {
-            if (isOwner) {
-                domainRecordOwner = msg.sender;
+            if (!isOwner && !isOperator) {
+                revert ParentLockedOrDoesntExist(regArgs.parentHash);
             } else if (isOperator) {
                 domainRecordOwner = parentOwner;
-            } else {
-                revert ParentLockedOrDoesntExist(regArgs.parentHash);
             }
         } else if (parentConfig.accessType == AccessType.MINTLIST) {
             if (

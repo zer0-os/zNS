@@ -16,7 +16,7 @@ struct CoreRegisterArgs {
     address tokenOwner;
     address domainAddress;
     uint256 price;
-    uint256 stakeFee; // TODO 15: can we get rid of this?
+    uint256 stakeFee;
     string label;
     string tokenURI;
     bool isStakePayment;
@@ -26,10 +26,6 @@ struct CoreRegisterArgs {
 /**
  * @title IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.
  * @notice Below are docs for the types in this file:
- *  - `OwnerOf`: Enum signifying ownership of ZNS entities
- *      + NAME: The owner of the Name only
- *      + TOKEN: The owner of the Token only
- *      + BOTH: The owner of both the Name and the Token
  *  - `CoreRegisterArgs`: Struct containing all the arguments required to register a domain
  *  with ZNSRootRegistrar.coreRegister():
  *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
@@ -43,25 +39,11 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
-    // TODO 15: delete ??
-    error NotTheOwnerOf(
-        OwnerOf ownerOf,
-        address candidate,
-        bytes32 domainHash
-    );
-
-    error InvalidOwnerOfEnumValue(OwnerOf value);
-
     error AlreadyTokenOwner(
         bytes32 domainHash,
         address currentOwner
     );
 
-    enum OwnerOf {
-        NAME,
-        TOKEN,
-        BOTH
-    }
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.
@@ -74,9 +56,9 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * @param tokenId The tokenId of the domain registered
      * @param tokenURI The tokenURI of the domain registered
      * @param domainOwner The address became owner in Registry record
+     * @param tokenOwner The optinal address the token will be assigned to, to offer domain usage without ownership
      * @param domainAddress The domain address of the domain registered
      */
-    // TODO 15: refine this event !!
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
@@ -158,8 +140,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function revokeDomain(bytes32 domainHash) external;
 
     function assignDomainToken(bytes32 domainHash, address to) external;
-
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
     function setRegistry(address registry_) external;
 

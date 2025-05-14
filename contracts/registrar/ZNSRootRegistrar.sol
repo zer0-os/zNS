@@ -108,23 +108,21 @@ contract ZNSRootRegistrar is
         uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
 
         _coreRegister(
-            CoreRegisterArgs(
-                bytes32(0),
-                domainHash,
-                msg.sender,
-                tokenOwner == address(0) ? msg.sender : tokenOwner,
-                domainAddress,
-                domainPrice,
-                0,
-                name,
-                tokenURI,
-                true,
-                paymentConfig
-            )
+            CoreRegisterArgs({
+                parentHash: bytes32(0),
+                domainHash: domainHash,
+                domainOwner: msg.sender,
+                tokenOwner: tokenOwner == address(0) ? msg.sender : tokenOwner,
+                domainAddress: domainAddress,
+                price: domainPrice,
+                stakeFee: 0,
+                label: name,
+                tokenURI: tokenURI,
+                isStakePayment: true,
+                paymentConfig: paymentConfig
+            })
         );
 
-        // TODO 15: rework this to only do this for root domains and set config for subdomains
-        // TODO 15: since we start at SubRegistrar already
         if (address(distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
             subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
@@ -325,26 +323,6 @@ contract ZNSRootRegistrar is
         );
 
         emit DomainTokenReassigned(domainHash, to);
-    }
-
-    /**
-     * @notice Function to validate that a given candidate is the owner of his Name, Token or both.
-     * @param domainHash Hash of the domain to check
-     * @param candidate Address of the candidate to check for ownership of the above domain's properties
-     * @param ownerOf Enum value to determine which ownership to check for: NAME, TOKEN, BOTH
-    */
-    // TODO 15: do we still need this function ?!?!?
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) public view override returns (bool) {
-        if (ownerOf == OwnerOf.NAME) {
-            return candidate == registry.getDomainOwner(domainHash);
-        } else if (ownerOf == OwnerOf.TOKEN) {
-            return candidate == domainToken.ownerOf(uint256(domainHash));
-        } else if (ownerOf == OwnerOf.BOTH) {
-            return candidate == registry.getDomainOwner(domainHash)
-                && candidate == domainToken.ownerOf(uint256(domainHash));
-        }
-
-        revert InvalidOwnerOfEnumValue(ownerOf);
     }
 
     /**
