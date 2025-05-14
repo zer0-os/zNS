@@ -23,7 +23,7 @@ import {
   ZERO_ADDRESS_ERR,
   DeployZNSParams,
   IZNSContractsLocal,
-  getProxyImplAddress,
+  getProxyImplAddress, ALREADY_FULL_OWNER_ERR, NOT_FULL_OWNER_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -203,7 +203,7 @@ describe("ZNSDomainToken", () => {
     });
   });
 
-  describe("Updated Transfers",  () => {
+  describe("Transfers",  () => {
     const tokenId = 1;
     const domainHash = ethers.solidityPacked(["uint256"], [tokenId]);
 
@@ -222,21 +222,6 @@ describe("ZNSDomainToken", () => {
       expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
     });
 
-    it("Should update owner for DomainToken and not for Registry when called with non-standard transfer", async () => {
-      // Setup for caller as owner of both
-      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
-
-      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
-      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
-
-      // After calling the reg owner will be the same but the token owner is different
-      await zns.domainToken.connect(caller).updateTokenOwner(caller.address, deployer.address, tokenId);
-
-      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
-      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
-    });
-
     it("Allows the owner of the domain record in the registry to update the owner", async () => {
       // Setup for caller as owner of both
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
@@ -252,22 +237,8 @@ describe("ZNSDomainToken", () => {
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
-    it("Fails when non-owner tries to transfer through `updateTokenOwner`", async () => {
-      // Setup for caller as owner of both
-      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
-      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
-
-      await expect(
-        zns.domainToken.connect(deployer).updateTokenOwner(caller.address, deployer.address, tokenId)
-      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_NOT_APPROVED_ERR);
-
-      // After deployer is approved by caller, updateTokenOwner succeeds
-      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
-      await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
-    });
-
     // it fails when non-owner uses either safeTransferFrom function
-    it("Fails when non-owner tries to transfer through `safeTransferFrom`", async () => {
+    it("Fails when non-owner tries to transfer through `safeTransferFrom` and transfers with approval when token and registry record owned by the same address", async () => {
       // Setup for caller as owner of both
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
@@ -289,6 +260,10 @@ describe("ZNSDomainToken", () => {
       await zns.domainToken.connect(deployer)
         ["safeTransferFrom(address,address,uint256)"]
         (caller.address, deployer.address, tokenId);
+
+      // validate
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
     });
 
     it("Fails when non-owner tries to transfer through `transferFrom`", async () => {
@@ -303,6 +278,56 @@ describe("ZNSDomainToken", () => {
       // Approve deployer to spend on behalf of caller, then deployer transferFrom passes
       await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
       await zns.domainToken.connect(deployer).transferFrom(caller.address, deployer.address, tokenId);
+
+      // validate
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
+    });
+
+    it("#transferFrom() should fail when called by address that only owns the token and not registry record", async () => {
+      // Setup for caller as owner of token only
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, deployer.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(caller).transferFrom(caller.address, deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, NOT_FULL_OWNER_ERR);
+    });
+
+    it("#transferOverride() should fail when called by non-registrar", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(deployer).transferOverride(deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
+    });
+
+    it("#transferOverride() should update owner for DomainToken only and not for Registry", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+
+      // After calling the reg owner will be the same but the token owner is different
+      await zns.domainToken.connect(mockRegistrar).transferOverride(deployer.address, tokenId);
+
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(deployer.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(caller.address);
+    });
+
+    it("#transferOverride() should revert when transferring to an existing owner", async () => {
+      // Setup for caller as owner of both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(mockRegistrar).transferOverride(caller.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ALREADY_FULL_OWNER_ERR)
+        .withArgs(caller.address, domainHash);
     });
   });
 

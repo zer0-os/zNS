@@ -108,7 +108,7 @@ const makeSetupFixture = async () => {
   };
 };
 
-describe.only("Controlled Domains Test", () => {
+describe("Controlled Domains Test", () => {
   let deployer : SignerWithAddress;
   let parentOwner : SignerWithAddress;
   let rootOwner : SignerWithAddress;

@@ -208,6 +208,7 @@ contract ZNSDomainToken is
         address to,
         uint256 tokenId
     ) public override(ERC721Upgradeable, IERC721) {
+        // We `encodePacked()` here to ensure that any values that result in leading zeros are converted correctly
         bytes32 domainHash = bytes32(abi.encodePacked(tokenId));
 
         if (registry.getDomainOwner(domainHash) != from)
@@ -219,7 +220,6 @@ contract ZNSDomainToken is
         // TODO v1.5: do we need to clear the mintlist (update ownerIdx) here so it's not inherited by the new owner?
         // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here
-        // We `encodePacked` here to ensure that any values that result in leading zeros are converted correctly
         registry.updateDomainOwner(domainHash, to);
     }
 
