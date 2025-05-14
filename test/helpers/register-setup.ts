@@ -2,8 +2,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
   IFixedPriceConfig,
-  IFullDistributionConfig, IZNSContractsLocal,
-
+  IFullDistributionConfig, IPaymentConfig, IZNSContractsLocal,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -20,10 +19,11 @@ export const defaultRootRegistration = async ({
   user,
   zns,
   domainName,
-  tokenOwner = user.address,
+  tokenOwner = ZeroAddress,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
+  paymentConfig = paymentConfigEmpty,
 } : {
   user : SignerWithAddress;
   zns : IZNSContractsLocal | IZNSContracts;
@@ -32,6 +32,7 @@ export const defaultRootRegistration = async ({
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
+  paymentConfig ?: IPaymentConfig;
 }) : Promise<ContractTransactionReceipt | null> => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
@@ -41,7 +42,7 @@ export const defaultRootRegistration = async ({
     tokenOwner,
     tokenURI,
     distrConfig,
-    paymentConfigEmpty
+    paymentConfig,
   );
 
   const supplyAfter = await zns.domainToken.totalSupply();
@@ -89,31 +90,34 @@ export const defaultSubdomainRegistration = async ({
   user,
   zns,
   parentHash,
-  tokenOwner = user.address,
+  tokenOwner = ZeroAddress,
   subdomainLabel,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
-  distrConfig,
+  distrConfig = distrConfigEmpty,
+  paymentConfig = paymentConfigEmpty,
 } : {
   user : SignerWithAddress;
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
+  tokenOwner ?: string;
   subdomainLabel : string;
   domainContent ?: string;
   tokenURI ?: string;
-  distrConfig : IDistributionConfig;
+  distrConfig ?: IDistributionConfig;
+  paymentConfig ?: IPaymentConfig;
 }) => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
-  const tx = await zns.subRegistrar.connect(user).registerSubdomain(
+  const tx = await zns.subRegistrar.connect(user).registerSubdomain({
     parentHash,
-    subdomainLabel,
-    domainContent, // Arbitrary address value
+    label: subdomainLabel,
+    domainAddress: domainContent, // Arbitrary address value
     tokenOwner,
     tokenURI,
     distrConfig,
-    paymentConfigEmpty
-  );
+    paymentConfig,
+  });
 
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
