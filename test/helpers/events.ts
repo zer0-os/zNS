@@ -35,9 +35,11 @@ export const getDomainRegisteredEvents = async ({
 export const getDomainHashFromEvent = async ({
   zns,
   user,
+  tokenOwner,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
+  tokenOwner ?: SignerWithAddress;
 }) : Promise<string> => {
   const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
@@ -47,7 +49,7 @@ export const getDomainHashFromEvent = async ({
     undefined,
     undefined,
     user.address,
-    undefined,
+    tokenOwner,
     undefined,
   );
 
