@@ -90,8 +90,8 @@ export const defaultSubdomainRegistration = async ({
   user,
   zns,
   parentHash,
-  tokenOwner = ZeroAddress,
   subdomainLabel,
+  tokenOwner = ZeroAddress,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
@@ -100,8 +100,8 @@ export const defaultSubdomainRegistration = async ({
   user : SignerWithAddress;
   zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
-  tokenOwner ?: string;
   subdomainLabel : string;
+  tokenOwner ?: string;
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
@@ -186,6 +186,7 @@ export const registrationWithSetup = async ({
   const domainHash = await getDomainHashFromEvent({
     zns,
     user,
+    tokenOwner,
   });
 
   if (!hasConfig) return domainHash;

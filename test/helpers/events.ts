@@ -39,7 +39,7 @@ export const getDomainHashFromEvent = async ({
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   user : SignerWithAddress;
-  tokenOwner ?: SignerWithAddress;
+  tokenOwner ?: string;
 }) : Promise<string> => {
   const latestBlock = await time.latestBlock();
   const filter = zns.rootRegistrar.filters.DomainRegistered(
