@@ -2,11 +2,9 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
   AC_UNAUTHORIZED_ERR,
-  distrConfigEmpty,
   GOVERNOR_ROLE,
   hashDomainLabel,
   INITIALIZED_ERR, NOT_AUTHORIZED_ERR,
-  paymentConfigEmpty,
   validateUpgrade,
 } from "./helpers";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
@@ -16,7 +14,7 @@ import * as ethers from "ethers";
 import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
-  ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
+  ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
   ZNSStringResolver,
   ZNSStringResolverUpgradeMock__factory,
   ZNSTreasury,
@@ -45,7 +43,6 @@ describe("ZNSStringResolver", () => {
     IZNSCampaignConfig,
     IZNSContracts
     >;
-    let rootRegistrar : ZNSRootRegistrar;
     let accessController : ZNSAccessController;
 
     let userBalance : bigint;
@@ -86,7 +83,6 @@ describe("ZNSStringResolver", () => {
         registry,
         meowToken,
         treasury,
-        rootRegistrar,
         dbAdapter: mongoAdapter,
       } = campaign);
 

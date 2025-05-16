@@ -237,7 +237,7 @@ describe("ZNSDomainToken", () => {
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
-    // it fails when non-owner uses either safeTransferFrom function
+    // eslint-disable-next-line max-len
     it("Fails when non-owner tries to transfer through `safeTransferFrom` and transfers with approval when token and registry record owned by the same address", async () => {
       // Setup for caller as owner of both
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
@@ -284,6 +284,7 @@ describe("ZNSDomainToken", () => {
       expect(await zns.registry.getDomainOwner(domainHash)).to.equal(deployer.address);
     });
 
+    // eslint-disable-next-line max-len
     it("#transferFrom() should fail when called by address that only owns the token and not registry record", async () => {
       // Setup for caller as owner of token only
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
@@ -369,6 +370,7 @@ describe("ZNSDomainToken", () => {
       );
     });
 
+    // eslint-disable-next-line max-len
     it("#transferOverride() should revert when transferring to address zero (should NOT let to burn the token)", async () => {
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
@@ -378,6 +380,7 @@ describe("ZNSDomainToken", () => {
       ).to.be.revertedWithCustomError(zns.domainToken, CANNOT_BURN_TOKEN_ERR);
     });
 
+    // eslint-disable-next-line max-len
     it("#transferOverride() should revert when transferring to a contract not implementing #onERC721Received()", async () => {
       await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
       await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");

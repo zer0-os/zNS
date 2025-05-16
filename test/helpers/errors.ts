@@ -30,9 +30,6 @@ export const INVALID_PRICE_CONFIG_ERR = "InvalidConfigCausingPriceSpikes";
 export const INVALID_BASE_OR_MAX_LENGTH_ERR = "MaxLengthSmallerThanBaseLength";
 export const DIVISION_BY_ZERO_ERR = "DivisionByZero";
 
-// ZNSRootRegistrar.sol
-export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";
-
 // Subdomain Registrar
 // eslint-disable-next-line max-len
 export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ParentLockedOrDoesntExist";

@@ -242,11 +242,11 @@ describe("Controlled Domains Test", () => {
       let owner : SignerWithAddress;
       let tokenOwner : SignerWithAddress;
       let hash : string;
-      let operator : SignerWithAddress;
+      let operatorLocal : SignerWithAddress;
 
       before(async () => {
         const ctx = await loadFixture(makeSetupFixture);
-        ({ operator } = ctx);
+        ({ operator: operatorLocal } = ctx);
 
         if (name === "Root Domain") {
           ({
@@ -320,7 +320,7 @@ describe("Controlled Domains Test", () => {
         const { accessType } = await zns.subRegistrar.distrConfigs(controlledSubHash);
         expect(accessType).to.equal(AccessType.LOCKED);
 
-        await [owner, operator].reduce(
+        await [owner, operatorLocal].reduce(
           async (acc, signer, idx) => {
             // register subdomain for user
             const subTokenURI = "https://example.com/subdomain";
@@ -400,9 +400,9 @@ describe("Controlled Domains Test", () => {
         });
 
         it("should NOT allow approved spender to transfer the controlled domain token", async () => {
-          const tokenOwner = await zns.domainToken.ownerOf(controlledSubHash);
+          const tokenOwnerLocal = await zns.domainToken.ownerOf(controlledSubHash);
           const registryOwner = await zns.registry.getDomainOwner(controlledSubHash);
-          expect(registryOwner).to.not.equal(tokenOwner);
+          expect(registryOwner).to.not.equal(tokenOwnerLocal);
 
           await zns.domainToken.connect(subOwner).approve(deployer.address, controlledSubHash);
 
@@ -440,10 +440,10 @@ describe("Controlled Domains Test", () => {
           expect(registryOwnerAfter).to.equal(owner.address);
 
           // now assign to someone else
-          await zns.rootRegistrar.connect(owner).assignDomainToken(hash, operator.address);
+          await zns.rootRegistrar.connect(owner).assignDomainToken(hash, operatorLocal.address);
           const tokenOwnerAfter2 = await zns.domainToken.ownerOf(hash);
           const registryOwnerAfter2 = await zns.registry.getDomainOwner(hash);
-          expect(tokenOwnerAfter2).to.equal(operator.address);
+          expect(tokenOwnerAfter2).to.equal(operatorLocal.address);
           expect(registryOwnerAfter2).to.equal(owner.address);
         });
 

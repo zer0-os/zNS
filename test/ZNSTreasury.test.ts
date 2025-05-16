@@ -2,9 +2,8 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
-  checkBalance, DEFAULT_TOKEN_URI, deployTreasury,
+  checkBalance, deployTreasury,
   deployZNS,
-  distrConfigEmpty,
   getPriceObject,
   NO_BENEFICIARY_ERR,
   INITIALIZED_ERR,
