@@ -7,6 +7,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { ERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import { ERC721URIStorageUpgradeable }
     from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import { IZNSDomainToken } from "./IZNSDomainToken.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -194,14 +195,26 @@ contract ZNSDomainToken is
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @notice Check if the domain (hash) is a controlled domain (has split ownership between hash and token).
+     * @dev Added to be used for quick verification in 3rd party apps to see if domain token can be transferred
+     * or if domain token owner has full rights. If owners are split token can NOT be transferred in the regular way.
+     * Only through `RootRegistrar.assignDomainToken()`.
+     * @param domainHash The hash of the domain to check
+     * @return true if the domain owners are split
+     */
     function isControlled(bytes32 domainHash) external view override returns (bool) {
         return registry.getDomainOwner(domainHash) != ownerOf(uint256(domainHash));
     }
 
     /**
-     * @notice Override the standard transferFrom function to update the owner for both the `registry` and `token`
-     *
-     * @dev See {IERC721-transferFrom}
+     * @notice Override the standard transferFrom function to update the owner for both the domain (hash) and the token
+     * @dev Only the owner of both: hash and token can transfer the token! Same goes for transfers under approvals.
+     * An address that owns just the token can NOT transfer, owner in Registry and this contract must be the same.
+     * This should cover safe transfers as well since `safeTransferFrom` would call this overriden function internally.
+     * @param from The address that is transferring the token and the domain hash
+     * @param to The address that will receive the token and the domain
+     * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to transfer
      */
     function transferFrom(
         address from,
@@ -217,21 +230,46 @@ contract ZNSDomainToken is
         // Transfer the token
         super.transferFrom(from, to, tokenId);
 
-        // TODO v1.5: do we need to clear the mintlist (update ownerIdx) here so it's not inherited by the new owner?
         // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here
         registry.updateDomainOwner(domainHash, to);
     }
 
+    /**
+     * @notice A special function to allow the true domain (hash) owner in Registry to transfer the token separately
+     * from transferring the Registry owner itself.
+     * @dev Can only be called through the entry point in `RootRegistrar.assignDomainToken()`.
+     * This does NOT work with approvals and overrides them, since it's a system-specific function
+     * separate from the standard transfers!
+     * This function does NOT use `msg.sender`! It uses the owner of the domain (hash) the ultimate power to transfer
+     * even if that owner has a different address.
+     * @param to The address that will receive the token
+     * @param tokenId The tokenId (as `uint256(domainHash)`) to transfer
+     */
     function transferOverride(
         address to,
         uint256 tokenId
     ) external override onlyRegistrar {
         address from = ownerOf(tokenId);
         if (from == to) revert AlreadyFullOwner(from, bytes32(abi.encodePacked(tokenId)));
+        if (to == address(0)) revert CannotBurnToken();
 
         // Transfer the token
         super._update(to, tokenId, from);
+
+        // Safe transfer check for contracts
+        // This is a simpler implementation of the `_checkOnERC721Received()` private function of `ERC721Upgradeable`
+        if (to.code.length != 0) {
+            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, "") returns (bytes4 retval) {
+                if (retval != IERC721Receiver.onERC721Received.selector) {
+                    revert ERC721InvalidReceiver(to);
+                }
+            } catch {
+                revert ERC721InvalidReceiver(to);
+            }
+        }
+
+        emit OverrideTransfer(from, to, tokenId);
     }
 
     /**

@@ -25,7 +25,19 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
-    error CallerNotOwner();
+    /**
+     * @notice Emitted when doing an override transfer of the token separately from the domain hash.
+     */
+    event OverrideTransfer(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId
+    );
+
+    /**
+     * @notice Revert when trying to burn the token separately from domain revocation.
+     */
+    error CannotBurnToken();
 
     function initialize(
         address accessController,
