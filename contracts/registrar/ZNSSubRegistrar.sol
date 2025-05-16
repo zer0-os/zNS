@@ -45,7 +45,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     mapping(bytes32 domainHash => Mintlist mintStruct) public mintlist;
 
-    // TODO 15: check access control everywhere with the new split ownership model
     modifier onlyOwnerOperatorOrRegistrar(bytes32 domainHash) {
         if (
             !registry.isOwnerOrOperator(domainHash, msg.sender)
@@ -69,22 +68,31 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         setRootRegistrar(_rootRegistrar);
     }
 
-// TODO 15: fix NatSpec here !
-//    /**
-//     * @notice Entry point to register a subdomain under a parent domain specified.
-//     * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
-//     * checks if the sender is allowed to register, check if subdomain is available,
-//     * acquires the price and other data needed to finalize the registration
-//     * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-//     * @param parentHash The hash of the parent domain to register the subdomain under
-//     * @param label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
-//     * @param domainAddress (optional) The address to which the subdomain will be resolved to
-//     * @param tokenURI (required) The tokenURI for the subdomain to be registered
-//     * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
-//     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
-//     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
-//     *  but all the parameters inside are required.
-//    */
+    /**
+     * @notice Entry point to register a subdomain under a parent domain specified.
+     * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
+     * checks if the sender is allowed to register, check if subdomain is available,
+     * acquires the price and other data needed to finalize the registration
+     * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
+     * If operator is calling the function, the domain owner is set to the owner of the parent domain,
+     * NOT the operator itself!
+     * A non-zero optional `tokenOwner` address can be passed to assign the domain token to another address
+     * which would mint the token to that address and let that address use the domain without ownership or the ability
+     * to revoke it or manage its data in the system. This can let parent domain owner to mint subdomains
+     * in the controlled fashion when the parent domain is LOCKED and give these domains to other users while preventing
+     * them from transferring the ownership of the domain token or domain itself to another address or sell their own
+     * subdomains.
+     * @param regArgs SubdomainRegisterArgs type struct with props:
+     * - `parentHash` The hash of the parent domain to register the subdomain under
+     * - `label` The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
+     * - `domainAddress` (optional) The address to which the subdomain will be resolved to
+     * - `tokenOwner` (optional) The address the token will be assigned to, to offer domain usage without ownership
+     * - `tokenURI` (required) The tokenURI for the subdomain to be registered
+     * - `distrConfig` (optional) The distribution config to be set for the subdomain to set rules for children
+     * - `paymentConfig` (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
+     *  but all the parameters inside are required.
+     */
     function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external override returns (bytes32) {
         address domainRecordOwner = msg.sender;
         address parentOwner = registry.getDomainOwner(regArgs.parentHash);

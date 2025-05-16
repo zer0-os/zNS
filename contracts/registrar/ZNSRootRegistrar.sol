@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-// TODO 15: review ALL imports and remove unused !
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
@@ -82,8 +81,14 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
+     * @dev A non-zero optional `tokenOwner` address can be passed to assign the domain token to another address
+     * which would mint the token to that address and let that address use the domain without ownership or the ability
+     * to revoke it or manage its data in the system. This would also prevent the token owner
+     * from transferring the domain or the token and from selling subdomains, since only hash owner (registry record)
+     * is able to do that.
      * @param name Name (label) of the domain to register
      * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
+     * @param tokenOwner (optional) Address to assign the domain token to (to offer domain usage without ownership)
      * @param tokenURI URI to assign to the Domain Token issued for the domain
      * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
@@ -138,13 +143,15 @@ contract ZNSRootRegistrar is
      *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
      *      + `domainHash`: The hash of the domain to be registered
      *      + `label`: The label of the domain to be registered
-     *      + `registrant`: The address of the user who is registering the domain
+     *      + `domainOwner`: The address that will be set as owner in Registry record
+     *      + `tokenOwner`: The address that will be set as owner in DomainToken contract
      *      + `price`: The determined price for the domain to be registered based on parent rules
      *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
      *      + `domainAddress`: The address to which the domain will be resolved to
      *      + `tokenURI`: The tokenURI for the domain to be registered
      *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
-    */
+     *      + `paymentConfig`: The payment config for the domain to be registered
+     */
     function coreRegister(
         CoreRegisterArgs memory args
     ) external override onlyRegistrar {
@@ -157,8 +164,8 @@ contract ZNSRootRegistrar is
      * @dev Internal function that is called by this contract to finalize the registration of a domain.
      * This function as also called by the external `coreRegister()` function as a part of
      * registration of subdomains.
-     * This function kicks off payment processing logic, mints the token, sets the domain data in the `ZNSRegistry`
-     * and fires a `DomainRegistered` event.
+     * This function valiates the domain label, checks domain existence, kicks off payment processing logic,
+     * mints the token, sets the domain data in the `ZNSRegistry` and fires a `DomainRegistered` event.
      * For params see external `coreRegister()` docs.
     */
     function _coreRegister(
@@ -243,7 +250,7 @@ contract ZNSRootRegistrar is
 
     /**
      * @notice This function is the main entry point for the Revoke flow.
-     * Revokes a domain such as `0://wilder`.
+     * Revokes a domain such as `0://zero`.
      * Gets `tokenId` from casted domain hash to uint256, calls `ZNSDomainToken` to burn the token,
      * deletes the domain data from the `ZNSRegistry` and calls `ZNSTreasury` to unstake and withdraw funds
      * user staked for the domain. Emits a `DomainRevoked` event.
@@ -255,8 +262,9 @@ contract ZNSRootRegistrar is
      * If a user wants to clear his data from `ZNSAddressResolver`, he can call `ZNSAddressResolver` directly himself
      * BEFORE he calls to revoke, otherwise, `ZNSRegistry` owner check will fail, since the owner there
      * will be 0x0 address.
-     * Also note that in order to Revoke, a caller has to be the owner of both:
-     * Name (in `ZNSRegistry`) and Token (in `ZNSDomainToken`).
+     * Also note that in order to Revoke, a caller has to be the owner of the hash in the `ZNSRegistry`.
+     * And that owner can revoke and burn the token even if he is NOT the owner of the token.
+     * Ownership of the hash in Registry always overrides ownership of the token!
      * @param domainHash Hash of the domain to revoke
      */
     function revokeDomain(bytes32 domainHash)

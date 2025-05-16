@@ -12,12 +12,12 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
+    string label;
     address domainOwner;
     address tokenOwner;
-    address domainAddress;
     uint256 price;
     uint256 stakeFee;
-    string label;
+    address domainAddress;
     string tokenURI;
     bool isStakePayment;
     PaymentConfig paymentConfig;
@@ -31,14 +31,21 @@ struct CoreRegisterArgs {
  *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
  *      + `domainHash`: The hash of the domain to be registered
  *      + `label`: The label of the domain to be registered
- *      + `registrant`: The address of the user who is registering the domain
+ *      + `domainOwner`: The address that will be set as owner in Registry record
+ *      + `tokenOwner`: The address that will be set as owner in DomainToken contract
  *      + `price`: The determined price for the domain to be registered based on parent rules
  *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
  *      + `domainAddress`: The address to which the domain will be resolved to
  *      + `tokenURI`: The tokenURI for the domain to be registered
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
+ *      + `paymentConfig`: The payment config for the domain to be registered
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    /**
+     * @notice Reverted when trying to assign a token to address that is already an owner
+     * @param domainHash The hash of the domain
+     * @param currentOwner The address that is already an owner of the token
+     */
     error AlreadyTokenOwner(
         bytes32 domainHash,
         address currentOwner
@@ -83,7 +90,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
+     * @notice Emitted when the hash (registry record) owner is sending a token to another address
+     * through the RootRegistrar.
      * @param domainHash The hash of the domain reclaimed
      * @param newOwner The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
      */
