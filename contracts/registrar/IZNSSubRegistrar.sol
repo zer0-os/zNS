@@ -1,15 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 
 
 /**
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
+
+    /**
+     * @notice Reverted when the parent is not setup with a distribution configuration
+     * to sell subdomains
+     * 
+     * @param parentHash The parent domain hash
+     */
+    error ParentNotSet(bytes32 parentHash);
+    
     /**
      * @notice Reverted when someone other than parent owner is trying to buy
      * a subdomain under the parent that is locked

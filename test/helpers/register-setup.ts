@@ -7,7 +7,7 @@ import {
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
@@ -59,18 +59,23 @@ export const approveForParent = async ({
   domainLabel : string;
 }) => {
   const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
+  const { priceConfig } = await zns.subRegistrar.distrConfigs(parentHash);
+
   let price = BigInt(0);
   let parentFee = BigInt(0);
+
   if (pricerContract === await zns.curvePricer.getAddress()) {
-    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
+    [price, parentFee] = await zns.curvePricer.getPriceAndFee(priceConfig, domainLabel, false);
   } else if (pricerContract === await zns.fixedPricer.getAddress()) {
-    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel, false);
+    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(priceConfig, domainLabel, false);
   }
 
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
   const tokenContract = getTokenContract(tokenAddress, user);
 
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
+
+  const rootPriceConfig = await zns.rootRegistrar.rootPriceConfig();
+  const protocolFee = await zns.curvePricer.getFeeForPrice(rootPriceConfig, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
 
   return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
@@ -101,6 +106,8 @@ export const defaultSubdomainRegistration = async ({
 }) => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
+
+  console.log(distrConfig);
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
@@ -123,7 +130,7 @@ export const registrationWithSetup = async ({
   domainLabel,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
-  fullConfig = fullDistrConfigEmpty,
+  fullConfig = fullConfigEmpty,
   setConfigs = true,
 } : {
   // TODO fix after, no nullables before non-nullables 
@@ -180,6 +187,7 @@ export const registrationWithSetup = async ({
 
   // set up prices
   if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
+    // TODO uncomment and fix these!
     // await zns.fixedPricer.connect(user).setPriceConfig(
     //   domainHash,
     //   {

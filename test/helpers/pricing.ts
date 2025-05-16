@@ -1,4 +1,4 @@
-import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_CURVE_PRICE_CONFIG } from "./constants";
+import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_CURVE_PRICE_CONFIG, ZERO_VALUE_CURVE_PRICE_CONFIG, DEFAULT_CURVE_PRICE_CONFIG_BYTES, DEFAULT_FIXED_PRICER_CONFIG_BYTES, DEFAULT_FIXED_PRICE_CONFIG } from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -31,7 +31,7 @@ export const getCurvePrice = (
     return maxPrice;
   }
 
-  if (BigInt(name.length) > maxLength) {
+  if (length > maxLength) {
     length = maxLength;
   }
 
@@ -66,6 +66,7 @@ export const getPriceObject = (
 } => {
   let expectedPrice;
   const configLen = Object.keys(priceConfig).length;
+
   if (configLen === 7 || configLen === 6) {
     expectedPrice = getCurvePrice(name, priceConfig as ICurvePriceConfig);
   } else if (configLen === 3 || configLen === 2) {
@@ -87,6 +88,29 @@ export const getPriceObject = (
   };
 };
 
+// TODO can we make one single fucntion to route for both?
+export const createEncodeFixedPriceConfig = (config : Partial<IFixedPriceConfig>) => {
+  const createdConfig : IFixedPriceConfig = {
+    price: config.price ?? DEFAULT_FIXED_PRICE_CONFIG.price,
+    feePercentage: config.feePercentage ?? DEFAULT_CURVE_PRICE_CONFIG.feePercentage,
+  }
+
+  return encodeFixedPriceConfig(createdConfig);
+}
+
+export const createEncodeCurvePriceConfig = (config : Partial<ICurvePriceConfig>) => {
+  const createdConfig : ICurvePriceConfig = {
+    maxPrice: config.maxPrice ?? DEFAULT_CURVE_PRICE_CONFIG.maxPrice,
+    maxLength: config.maxLength ?? DEFAULT_CURVE_PRICE_CONFIG.maxLength,
+    baseLength: config.baseLength ?? DEFAULT_CURVE_PRICE_CONFIG.baseLength,
+    curveMultiplier: config.curveMultiplier ?? DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
+    precisionMultiplier: config.precisionMultiplier ?? DEFAULT_CURVE_PRICE_CONFIG.precisionMultiplier,
+    feePercentage: config.feePercentage ?? DEFAULT_CURVE_PRICE_CONFIG.feePercentage,
+  }
+
+  return encodeCurvePriceConfig(createdConfig);
+}
+
 export const encodePriceConfig = (
   config : ICurvePriceConfig | IFixedPriceConfig,
 ) => {
@@ -100,7 +124,7 @@ export const encodePriceConfig = (
 export const decodePriceConfig = (
   config : string
 ) => {
-  if (Object.keys(config).length > 2) {
+  if (config.length > DEFAULT_FIXED_PRICER_CONFIG_BYTES.length) {
     return decodeCurvePriceConfig(config);
   } else {
     return decodeFixedPriceConfig(config);
@@ -144,7 +168,7 @@ const encodeFixedPriceConfig = (config : IFixedPriceConfig) => {
 
 
 const decodeCurvePriceConfig = (config : string) => {
-  return ethers.AbiCoder.defaultAbiCoder().decode(
+  const results = ethers.AbiCoder.defaultAbiCoder().decode(
     [
       "uint256",
       "uint256",
@@ -154,7 +178,18 @@ const decodeCurvePriceConfig = (config : string) => {
       "uint256",
     ],
     config
-  );
+  )
+
+  const toReturn : ICurvePriceConfig = {
+    maxPrice: results[0],
+    curveMultiplier: results[1],
+    maxLength: results[2],
+    baseLength: results[3],
+    precisionMultiplier: results[4],
+    feePercentage: results[5]
+  }
+
+  return toReturn;
 }
 
 const decodeFixedPriceConfig = (config : string) => {

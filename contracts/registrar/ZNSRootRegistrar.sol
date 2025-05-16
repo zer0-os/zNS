@@ -8,7 +8,7 @@ import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import {
@@ -73,13 +73,20 @@ contract ZNSRootRegistrar is
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        
-        // console.log("in call to 'init'");
-        // console.logBytes(priceConfig_);
 
-        setRootPricer(rootPricer_, priceConfig_);
+        setRootPricer(rootPricer_, priceConfig_, false);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
+    }
+
+    /**
+     * @notice Get the price of a root domain
+     * @param name The name for the domain
+     */
+    // TODO have this for users to more simply get names without providing encoded config
+    // but probably not necessary right? can just get config from here and call directly on pricer
+    function getRootPrice(string calldata name) external view override returns(uint256) {
+        return IZNSPricer(rootPricer).getPrice(rootPriceConfig, name, true);
     }
 
     /**
@@ -118,7 +125,6 @@ contract ZNSRootRegistrar is
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        // TODO fix below
         uint256 domainPrice = rootPricer.getPrice(rootPriceConfig, name, true);
         _coreRegister(
             CoreRegisterArgs(
@@ -176,15 +182,20 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
+        // console.log("args.price: ", args.price);
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
         }
 
+        // console.log("after processPayment");
+
+
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);
         // mint token
         domainToken.register(args.registrant, tokenId, args.tokenURI);
+        // console.log("after domainToken.register");
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
@@ -192,6 +203,7 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
+
             registry.createDomainRecord(
                 args.domainHash,
                 args.registrant,
@@ -200,7 +212,9 @@ contract ZNSRootRegistrar is
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
+
         } else {
+
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(
                 args.domainHash, 
@@ -212,7 +226,10 @@ contract ZNSRootRegistrar is
         // Because we check in the web app for the existance of both values in a payment config,
         // it's fine to just check for one here
         if (args.paymentConfig.beneficiary != address(0)) {
+            // should be failing in this call
+            // console.log("before setPaymentConfig");
             treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
+            // console.log("after setPaymentConfig");
         }
 
         emit DomainRegistered(
@@ -366,7 +383,8 @@ contract ZNSRootRegistrar is
     */
     function setRootPricer(
         address rootPricer_,
-        bytes memory rootPriceConfig_   
+        bytes memory rootPriceConfig_,
+        bool skipValidityCheck
     ) public override onlyAdmin {
         if (rootPricer_ == address(0))
             revert ZeroAddressPassed();
@@ -377,7 +395,9 @@ contract ZNSRootRegistrar is
 
         rootPricer = IZNSPricer(rootPricer_);
 
-        IZNSPricer(rootPricer).validatePriceConfig(rootPriceConfig_);
+        if (!skipValidityCheck) {
+            IZNSPricer(rootPricer).validatePriceConfig(rootPriceConfig_);
+        }
 
         rootPriceConfig = rootPriceConfig_;
 

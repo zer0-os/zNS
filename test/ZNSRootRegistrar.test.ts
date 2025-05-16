@@ -30,6 +30,7 @@ import {
   DOMAIN_EXISTS_ERR,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+  ZERO_VALUE_CURVE_PRICE_CONFIG,
 } from "./helpers";
 import { IDistributionConfig, IFixedPriceConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -37,7 +38,7 @@ import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
+import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 import {
   IERC20,
   ZNSRootRegistrar,
@@ -92,7 +93,7 @@ describe("ZNSRootRegistrar", () => {
     zns = campaign.state.contracts;
 
     // TODO put this back
-    // await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
+    await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
 
     mongoAdapter = campaign.dbAdapter;
 
@@ -247,6 +248,7 @@ describe("ZNSRootRegistrar", () => {
   });
 
   it("Confirms a new 0x0 owner can modify the configs in the treasury and curve pricer", async () => {
+    await zns.accessController.connect(deployer).grantRole(ADMIN_ROLE, user);
     await zns.registry.updateDomainOwner(ethers.ZeroHash, user.address);
 
     const newTreasuryConfig : PaymentConfigStruct = {
@@ -287,6 +289,7 @@ describe("ZNSRootRegistrar", () => {
     const pricerTx = await zns.rootRegistrar.connect(user).setRootPricer(
       await zns.curvePricer.getAddress(),
       asBytes,
+      false
     );
 
     await expect(pricerTx).to.emit(zns.rootRegistrar, "RootPricerSet").withArgs(
@@ -315,6 +318,7 @@ describe("ZNSRootRegistrar", () => {
         await zns.accessController.getAddress(),
         await zns.registry.getAddress(),
         await zns.curvePricer.getAddress(),
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         await zns.treasury.getAddress(),
         await zns.domainToken.getAddress(),
       ],
@@ -730,13 +734,18 @@ describe("ZNSRootRegistrar", () => {
         zns,
         domainName: defaultDomain,
       });
-      const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(ZeroHash, defaultDomain, true);
+
+      // price returns as 0 when given config is 0, valid?
+      const { price, stakeFee } = await zns.curvePricer.getPriceAndFee(
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        defaultDomain,
+        true
+      );
 
       await expect(tx).to.be.revertedWithCustomError(
         zns.meowToken,
         INSUFFICIENT_BALANCE_ERC_ERR
-      )
-        .withArgs(user.address, 0n, price + stakeFee);
+      ).withArgs(user.address, 0n, price + stakeFee);
     });
 
     it("Disallows creation of a duplicate domain", async () => {
@@ -745,6 +754,7 @@ describe("ZNSRootRegistrar", () => {
         zns,
         domainName: defaultDomain,
       });
+
       const failTx = defaultRootRegistration({
         user: deployer,
         zns,
@@ -820,23 +830,10 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
-      // set config on CurvePricer for the price to be 0
-
-      // setRootPricer on root registrar
-      const newConfig : ICurvePriceConfig = {
-              baseLength: BigInt("6"),
-              maxLength: BigInt("35"),
-              maxPrice: ethers.parseEther("150"),
-              curveMultiplier: DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
-              precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-              feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
-            };
-      
-      const asBytes = encodePriceConfig(newConfig);
-
       await zns.rootRegistrar.connect(deployer).setRootPricer(
         await zns.curvePricer.getAddress(),
-        asBytes
+        ZERO_VALUE_CURVE_PRICE_CONFIG,
+        true
       );
 
       const userBalanceBefore = await zns.meowToken.balanceOf(user.address);
@@ -1063,8 +1060,16 @@ describe("ZNSRootRegistrar", () => {
         user,
       });
 
-      const price = await zns.curvePricer.getPrice(ethers.ZeroHash, defaultDomain, false);
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
+      const price = await zns.curvePricer.getPrice(
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        defaultDomain,
+        false
+      );
+
+      const protocolFee = await zns.curvePricer.getFeeForPrice(
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        price
+      );
 
       const balanceBefore = await zns.meowToken.balanceOf(user.address);
 
@@ -1118,7 +1123,7 @@ describe("ZNSRootRegistrar", () => {
         zns.fixedPricer.target,
       )
 
-      expect(await zns.fixedPricer.getPrice(domainHash, defaultDomain, false)).to.eq(ogPrice);
+      expect(await zns.fixedPricer.getPrice(asBytes, defaultDomain, false)).to.eq(ogPrice);
 
       const tokenId = BigInt(
         await getDomainHashFromEvent({
@@ -1405,11 +1410,12 @@ describe("ZNSRootRegistrar", () => {
     });
 
     describe("#setRootPricer", () => {
-      it("#setRootPricer() should set the rootPricer correctly", async () => {
+      it("should set the rootPricer correctly", async () => {
         const newPricer = zns.fixedPricer.target;
         await zns.rootRegistrar.connect(admin).setRootPricer(
           newPricer,
-          DEFAULT_FIXED_PRICER_CONFIG_BYTES
+          DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+          false
         );
 
         expect(await zns.rootRegistrar.rootPricer()).to.eq(newPricer);
@@ -1417,18 +1423,20 @@ describe("ZNSRootRegistrar", () => {
         // set back
         await zns.rootRegistrar.connect(admin).setRootPricer(
           zns.curvePricer.target,
-          DEFAULT_CURVE_PRICE_CONFIG_BYTES
+          DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+          false
         );
       });
 
-      it("#setRootPricer() should NOT let set 0x0 address as the new pricer", async () => {
+      it("should NOT let set 0x0 address as the new pricer", async () => {
         await expect(
           zns.rootRegistrar.connect(admin).setRootPricer(
             ethers.ZeroAddress,
-            ethers.ZeroHash
+            ethers.ZeroHash,
+            false
           )
         ).to.be.revertedWithCustomError(
-          zns.rootRegistrar,
+          zns.rootRegistrar,  
           ZERO_ADDRESS_ERR
         );
       });
@@ -1490,7 +1498,6 @@ describe("ZNSRootRegistrar", () => {
         }
       );
 
-
       const contractCalls = [
         zns.rootRegistrar.getAccessController(),
         zns.rootRegistrar.registry(),
@@ -1500,7 +1507,7 @@ describe("ZNSRootRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.curvePricer.getPrice(ethers.ZeroHash, domainName, false),
+        zns.curvePricer.getPrice(ZERO_VALUE_CURVE_PRICE_CONFIG, domainName, false),
       ];
 
       await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);

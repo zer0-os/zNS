@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
@@ -150,6 +150,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         CoreRegisterArgs memory args
     ) external;
 
+    function getRootPrice(string calldata name) external returns(uint256);
+
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
@@ -160,7 +162,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setRootPricer(
         address rootPricer_,
-        bytes memory priceConfig_
+        bytes memory priceConfig_,
+        bool skipValidityCheck
     ) external;
 
     function setTreasury(address treasury_) external;

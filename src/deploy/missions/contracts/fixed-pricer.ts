@@ -15,19 +15,9 @@ IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: true,
-    kind: ProxyKinds.uups,
+    isProxy: false,
   };
 
   contractName = znsNames.fixedPricer.contract;
   instanceName = znsNames.fixedPricer.instance;
-
-  async deployArgs () : Promise<TDeployArgs> {
-    const {
-      accessController,
-      registry,
-    } = this.campaign;
-
-    return [await accessController.getAddress(), await registry.getAddress()];
-  }
 }

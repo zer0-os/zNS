@@ -16,22 +16,10 @@ IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: true,
+    isProxy: false,
     kind: ProxyKinds.uups,
   };
 
   contractName = znsNames.curvePricer.contract;
   instanceName = znsNames.curvePricer.instance;
-
-  async deployArgs () : Promise<TDeployArgs> {
-    const {
-      accessController,
-      registry
-      // config: {
-      //   rootPriceConfig,
-      // },
-    } = this.campaign;
-
-    return [await accessController.getAddress(), await registry.getAddress()];
-  }
 }

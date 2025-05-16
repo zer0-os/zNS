@@ -6,7 +6,6 @@ export interface ICurvePriceConfig {
   baseLength : bigint;
   precisionMultiplier : bigint;
   feePercentage : bigint;
-  // isSet : boolean;
 }
 
 export enum ICurvePriceConfigIndices {
@@ -16,5 +15,4 @@ export enum ICurvePriceConfigIndices {
   BaseLength = 3,
   PrecisionMultiplier = 4,
   FeePercentage = 5,
-  // IsSet = 6
 }

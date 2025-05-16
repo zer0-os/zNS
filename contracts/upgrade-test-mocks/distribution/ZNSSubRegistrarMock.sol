@@ -6,7 +6,7 @@ pragma solidity 0.8.26;
 import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
 import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
-import { IZNSPricer } from "../../types/IZNSPricer.sol";
+import { IZNSPricer } from "../../price/IZNSPricer.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
 import { AAccessControlled } from "../../access/AAccessControlled.sol";
 import { ARegistryWired } from "../../registry/ARegistryWired.sol";

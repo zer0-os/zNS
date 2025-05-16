@@ -59,7 +59,6 @@ export const getPriceBulk = async (
       parent = ethers.ZeroHash;
     }
 
-    // temp, can do one call `getPRiceAndFee` but debugging where failure occurs
     const price = await zns.curvePricer.getPrice(parent, domain, true);
     const stakeFee = await zns.curvePricer.getFeeForPrice(parent, price);
 

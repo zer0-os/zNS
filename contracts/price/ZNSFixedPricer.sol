@@ -1,36 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
+import { console } from "hardhat/console.sol";
 
 /**
  * @notice Pricer contract that uses the most straightforward fixed pricing model
  * that doesn't depend on the length of the label.
 */
-contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSFixedPricer {
+contract ZNSFixedPricer is IZNSFixedPricer {
     using StringUtils for string;
 
     uint256 public constant PERCENTAGE_BASIS = 10000;
-
-    /**
-     * @notice Mapping of domainHash to price config set by the domain owner/operator
-    */
-    // mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(address _accessController, address _registry) external override initializer {
-        _setAccessController(_accessController);
-        setRegistry(_registry);
-    }
 
     /**
      * @notice Real encoding happens off chain, but we keep this here as a
@@ -50,6 +33,8 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     function decodePriceConfig(
         bytes memory priceConfig
     ) public pure returns(PriceConfig memory) {
+        // console.log("in fp decodePriceConfig");
+        // console.logBytes(priceConfig);
         (
             uint256 price,
             uint256 feePercentage
@@ -125,7 +110,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
-    ) external pure override returns (uint256, uint256) {
+    ) external pure override returns (uint256 price, uint256 fee) {
         // To match the IZNSPricer interface, we have unused params here
         PriceConfig memory config = decodePriceConfig(parentPriceConfig);
         return (
@@ -134,27 +119,14 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         );
     }
 
+    ////////////////////////
+    //// INTERNAL FUNCS ////
+    ////////////////////////
+
     function _getFeeForPrice(
         PriceConfig memory parentPriceConfig,
         uint256 price
     ) internal pure returns(uint256) {
         return (price * parentPriceConfig.feePercentage) / PERCENTAGE_BASIS;
-    }
-
-    /**
-     * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
-    */
-    function setRegistry(address registry_) public override(ARegistryWired, IZNSFixedPricer) onlyAdmin {
-        _setRegistry(registry_);
-    }
-
-    /**
-     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-     * @param newImplementation The new implementation contract to upgrade to.
-     */
-    // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal view override {
-        accessController.checkGovernor(msg.sender);
     }
 }

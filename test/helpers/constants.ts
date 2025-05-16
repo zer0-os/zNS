@@ -48,12 +48,21 @@ export const DEFAULT_CURVE_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const DEFAULT_CURVE_PRICE_CONFIG_BYTES = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
 
-export const DEFAULT_FIXED_PRICER_CONFIG : IFixedPriceConfig = {
+export const ZERO_VALUE_CURVE_PRICE_CONFIG = ZeroHash
+  + ZeroHash.slice(2)
+  + ZeroHash.slice(2)
+  + ZeroHash.slice(2)
+  + ZeroHash.slice(2)
+  + ZeroHash.slice(2);
+
+export const DEFAULT_FIXED_PRICE_CONFIG : IFixedPriceConfig = {
   price: ethers.parseEther("50"),
   feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT
 }
 
-export const DEFAULT_FIXED_PRICER_CONFIG_BYTES = encodePriceConfig(DEFAULT_FIXED_PRICER_CONFIG);
+export const ZERO_VALUE_FIXED_PRICE_CONFIG = ZeroHash + ZeroHash.slice(2);
+
+export const DEFAULT_FIXED_PRICER_CONFIG_BYTES = encodePriceConfig(DEFAULT_FIXED_PRICE_CONFIG);
 
 export const curvePriceConfigEmpty : ICurvePriceConfig = {
   maxPrice: BigInt(0),
@@ -73,11 +82,10 @@ export const distrConfigEmpty : IDistributionConfig = {
   pricerContract: ethers.ZeroAddress,
   paymentType: PaymentType.DIRECT,
   accessType: AccessType.LOCKED,
-  priceConfig: ZeroHash,
-  isSet: false
+  priceConfig: ZeroHash, // TODO zero hash a problem?
 };
 
-export const fullDistrConfigEmpty : IFullDistributionConfig = {
+export const fullConfigEmpty : IFullDistributionConfig = {
   paymentConfig: paymentConfigEmpty,
   distrConfig: distrConfigEmpty,
 };

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
@@ -15,8 +15,6 @@ import {
     ZeroValuePassed,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
-
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
 
 
 /**
@@ -75,6 +73,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         setRootRegistrar(_rootRegistrar);
     }
 
+    function getPrice(bytes32 parentHash, string calldata label) external returns(uint256) {
+        //TODO 
+    }
+
     /**
      * @notice Entry point to register a subdomain under a parent domain specified.
      * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,
@@ -108,7 +110,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         // If this exists we know it has already been validated here
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
-        if (!parentConfig.isSet) revert ParentPriceConfigNotSet();
+        if (address(parentConfig.pricerContract) == address(0))
+            revert ParentNotSet(parentHash);
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         if ((parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator))
@@ -203,7 +206,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         IZNSPricer(config.pricerContract).validatePriceConfig(config.priceConfig);
 
         distrConfigs[domainHash] = config;
-        distrConfigs[domainHash].isSet = true;
 
         // emit price config?
         emit DistributionConfigSet(
@@ -241,7 +243,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         distrConfigs[domainHash].pricerContract = pricerContract;
         distrConfigs[domainHash].priceConfig = config;
-        distrConfigs[domainHash].isSet = true;
 
         emit PricerDataSet(domainHash, config, address(pricerContract));
     }

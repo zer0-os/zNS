@@ -8,6 +8,8 @@ export const getAccessRevertMsg = (addr : string, role : string) : string =>
 export const ERC721_NOT_OWNER_ERR = "ERC721: transfer caller is not owner nor approved";
 export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
 
+export const HARDHAT_INFER_ERR = "Transaction reverted and Hardhat couldn't infer the reason";
+
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
 

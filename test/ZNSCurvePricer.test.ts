@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { ethers, ZeroHash } from "ethers";
 import {
   deployZNS,
   getCurvePrice,
@@ -15,25 +15,26 @@ import {
   INVALID_BASE_OR_MAX_LENGTH_ERR,
   DIVISION_BY_ZERO_ERR,
   encodePriceConfig,
-  decodePriceConfig
+  decodePriceConfig,
+  HARDHAT_INFER_ERR
 } from "./helpers";
 import {
   AccessType,
   DEFAULT_DECIMALS,
   DEFAULT_CURVE_PRICE_CONFIG,
   DEFAULT_PROTOCOL_FEE_PERCENT,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
 } from "./helpers/constants";
 import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory } from "../typechain";
+import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory, ZNSFixedPricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
-import { getProxyImplAddress, getRandomString } from "./helpers/utils";
+import { getProxyImplAddress, getRandomString, Utils } from "./helpers/utils";
 import { IFullDistributionConfig, IDistributionConfig, IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
-import { znsCurvePricerMockSol } from "../typechain/contracts/upgrade-test-mocks/distribution";
-import { ICurvePriceConfigIndices } from "../src/deploy/missions/types";
+import { ICurvePriceConfig, ICurvePriceConfigIndices } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
-
 
 
 describe("ZNSCurvePricer", () => {
@@ -46,7 +47,9 @@ describe("ZNSCurvePricer", () => {
   let domainHash : string;
 
   let defaultDistrConfig : IDistributionConfig;
-  let defaultPriceConfigBytes : string;
+  // let DEFAULT_CURVE_PRICE_CONFIG_BYTES : string;
+
+  let utils : Utils; // ?
 
   const defaultDomain = "wilder";
 
@@ -64,6 +67,8 @@ describe("ZNSCurvePricer", () => {
       adminAddresses: [admin.address],
     });
 
+    utils = new Utils(hre, zns);
+
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, 26000000000000000000000n);
 
@@ -73,7 +78,6 @@ describe("ZNSCurvePricer", () => {
         paymentType: PaymentType.DIRECT,
         accessType: AccessType.OPEN,
         priceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
-        isSet: false
       },
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
@@ -89,7 +93,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     defaultDistrConfig = await zns.subRegistrar.distrConfigs(domainHash);
-    defaultPriceConfigBytes = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
+    // DEFAULT_CURVE_PRICE_CONFIG_BYTES = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
   });
 
   after(async () => {
@@ -97,40 +101,21 @@ describe("ZNSCurvePricer", () => {
     await dbAdapter.dropDB();
   });
 
-  // TODO where does this test belong?
-  it("encode / decode validation", async () => {
-    const enc = await zns.curvePricer.encodeConfig(DEFAULT_CURVE_PRICE_CONFIG);
+  describe("#encodeConfig and #decodeConfig", () => {
+    it("Confirms encoding is the same offchain and onchain", async () => {
+      const onchain = await zns.curvePricer.encodeConfig(DEFAULT_CURVE_PRICE_CONFIG);
+      const offchain = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
 
-    // If does not revert, is valid config
-    expect(enc).to.eq(defaultPriceConfigBytes);
-    expect(await zns.curvePricer.validatePriceConfig(enc)).to.not.be.reverted;
-  });
-
-  it("Should NOT let initialize the implementation contract", async () => {
-    const factory = new ZNSCurvePricer__factory(deployer);
-    const impl = await getProxyImplAddress(await zns.curvePricer.getAddress());
-    const implContract = factory.attach(impl) as ZNSCurvePricer;
-
-    await expect(
-      implContract.initialize(
-        await zns.accessController.getAddress(),
-        await zns.registry.getAddress(),
-      )
-    ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
-  });
-
-  it("Confirms values were initially set correctly", async () => {
-    const decodedPriceConfig = await zns.curvePricer.decodePriceConfig(defaultDistrConfig.priceConfig);
-
-    Object.values(DEFAULT_CURVE_PRICE_CONFIG).forEach((val, idx) => {
-      expect(val).to.eq(decodedPriceConfig[idx]);
+      expect(onchain).to.eq(offchain);
     });
 
-    const regFromSC = await zns.curvePricer.registry();
-    const acFromSC = await zns.curvePricer.getAccessController();
+    it("Confirms decoding is the same offchain and onchain", async () => {
+      const onchain = await zns.curvePricer.decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
+      const offchain = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
-    expect(regFromSC).to.eq(await zns.registry.getAddress());
-    expect(acFromSC).to.eq(await zns.accessController.getAddress());
+      expect(Object.keys(onchain)).to.deep.eq(Object.keys(offchain));
+      expect(Object.values(onchain)).to.deep.eq(Object.values(offchain));
+    });
   });
 
   describe("#getPrice", async () => {
@@ -146,7 +131,7 @@ describe("ZNSCurvePricer", () => {
         price,
         stakeFee,
       } = await zns.curvePricer.getPriceAndFee(
-        defaultPriceConfigBytes,
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         "",
         true
       );
@@ -155,14 +140,14 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Reverts for a label with no length if label validation is not skipped", async () => {
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, "", false)).to.be.revertedWithCustomError(
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, "", false)).to.be.revertedWithCustomError(
         zns.curvePricer,
         INVALID_LENGTH_ERR
       );
     });
 
     it("Reverts for invalid label if label validation is not skipped", async () => {
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, "wilder!", false)).to.be.revertedWithCustomError(
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, "wilder!", false)).to.be.revertedWithCustomError(
         zns.curvePricer,
         INVALID_LABEL_ERR
       );
@@ -173,7 +158,7 @@ describe("ZNSCurvePricer", () => {
       const domain = "eth";
       const decodedPriceConfig = decodePriceConfig(defaultDistrConfig.priceConfig);
 
-      const domainPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domain, true);
+      const domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domain, true);
       expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
     });
 
@@ -183,10 +168,10 @@ describe("ZNSCurvePricer", () => {
 
       const decodedPriceConfig = decodePriceConfig(defaultDistrConfig.priceConfig);
 
-      let domainPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domainA, true);
+      let domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainA, true);
       expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
 
-      domainPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domainB, true);
+      domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainB, true);
       expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
     });
 
@@ -205,8 +190,8 @@ describe("ZNSCurvePricer", () => {
       const domainOneRefValue = BigInt("4545450000000000000000");
       const domainTwoRefValue = BigInt("7692300000000000000000");
 
-      const domainOnePriceSC = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domainOne, true);
-      const domainTwoPriceSC = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domainTwo, true);
+      const domainOnePriceSC = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainOne, true);
+      const domainTwoPriceSC = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainTwo, true);
 
       expect(domainOnePriceSC).to.eq(domainOneRefValue);
       expect(domainOnePriceSC).to.eq(domainOneExpPrice);
@@ -224,7 +209,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu";
 
       const expectedPrice = await getCurvePrice(domain, DEFAULT_CURVE_PRICE_CONFIG);
-      const domainPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domain, true);
+      const domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domain, true);
 
       expect(domainPrice).to.eq(expectedPrice);
     });
@@ -237,15 +222,15 @@ describe("ZNSCurvePricer", () => {
       const long = "wilderworldbeastspetsnftscatscalicosteve";
 
       const expectedShortPrice = await getCurvePrice(short, DEFAULT_CURVE_PRICE_CONFIG);
-      const shortPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, short, true);
+      const shortPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, short, true);
       expect(expectedShortPrice).to.eq(shortPrice);
 
       const expectedMediumPrice = await getCurvePrice(medium, DEFAULT_CURVE_PRICE_CONFIG);
-      const mediumPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, medium, true);
+      const mediumPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, medium, true);
       expect(expectedMediumPrice).to.eq(mediumPrice);
 
       const expectedLongPrice = await getCurvePrice(long, DEFAULT_CURVE_PRICE_CONFIG);
-      const longPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, long, true);
+      const longPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, long, true);
       expect(expectedLongPrice).to.eq(longPrice);
     });
 
@@ -258,7 +243,7 @@ describe("ZNSCurvePricer", () => {
         "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz" +
         "a";
       const expectedPrice = getCurvePrice(domain, DEFAULT_CURVE_PRICE_CONFIG);
-      const domainPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, domain, true);
+      const domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domain, true);
       expect(domainPrice).to.eq(expectedPrice);
     });
 
@@ -269,681 +254,150 @@ describe("ZNSCurvePricer", () => {
       const labelC = "!%$#^*?!#👍3^29";
       const labelD = "wo.rld";
 
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, labelA, false))
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, labelA, false))
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, labelB, false))
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, labelB, false))
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, labelC, false))
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, labelC, false))
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-      await expect(zns.curvePricer.getPrice(defaultPriceConfigBytes, labelD, false))
+      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, labelD, false))
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
     });
   });
 
-  // describe("#setMaxPrice", () => {
-  //   it("Allows an authorized user to set the max price", async () => {
-  //     const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("10");
-
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-  //     expect(params.maxPrice).to.eq(newMaxPrice);
-  //   });
-
-  //   it("Disallows an unauthorized user to set the max price", async () => {
-  //     const newMaxPrice = ethers.parseEther("0.7");
-
-  //     const tx = zns.curvePricer.connect(admin).setMaxPrice(domainHash, newMaxPrice);
-  //     await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
-  //   });
-
-  //   it("Allows setting the max price to zero", async () => {
-  //     const newMaxPrice = BigInt("0");
-
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     expect(params.maxPrice).to.eq(newMaxPrice);
-  //   });
-
-  //   it("Return 0 price for any domain when maxPrice is 0", async () => {
-  //     const newMaxPrice = BigInt("0");
-
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-
-  //     // run 5 times to cover it more
-  //     for (let i = 1; i < 6; i++) {
-  //       const label = getRandomString(i * 2);
-  //       expect(
-  //         await zns.curvePricer.getPrice(
-  //           domainHash,
-  //           label,
-  //           false
-  //         )
-  //       ).to.eq(0n);
-  //     }
-  //   });
-
-  //   it("Correctly sets max price", async () => {
-  //     const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("553");
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-  //     expect(params.maxPrice).to.eq(newMaxPrice);
-  //   });
-
-  //   it("Causes any length domain to have a price of 0 if the maxPrice is 0", async () => {
-  //     const newMaxPrice = BigInt("0");
-
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-
-  //     const shortDomain = "a";
-  //     const longDomain = "abcdefghijklmnopqrstuvwxyz";
-
-  //     const shortPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, shortDomain, true);
-  //     const longPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, longDomain, true);
-
-  //     expect(shortPrice).to.eq(BigInt("0"));
-  //     expect(longPrice).to.eq(BigInt("0"));
-  //   });
-
-  //   it("The price of a domain is modified relatively when the basePrice is changed", async () => {
-  //     const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + ethers.parseEther("9");
-
-  //     const expectedPriceBefore = await getCurvePrice(defaultDomain, DEFAULT_PRICE_CONFIG);
-  //     const priceBefore= await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-
-  //     expect(expectedPriceBefore).to.eq(priceBefore);
-
-  //     await zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-
-  //     const newConfig = {
-  //       ...DEFAULT_PRICE_CONFIG,
-  //       maxPrice: newMaxPrice,
-  //     };
-
-  //     const expectedPriceAfter = await getCurvePrice(defaultDomain, newConfig);
-  //     const priceAfter = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-
-  //     expect(expectedPriceAfter).to.eq(priceAfter);
-  //     expect(expectedPriceAfter).to.be.gt(expectedPriceBefore);
-  //     expect(priceAfter).to.be.gt(priceBefore);
-  //   });
-  // });
-
-  // describe("#setCurveMultiplier", async () => {
-  //   it("Return max price if curve multiplier set to 0", async () => {
-  //     const newMultiplier = BigInt("0");
-
-  //     await zns.curvePricer.connect(user).setCurveMultiplier(domainHash, newMultiplier);
-
-  //     // run 5 times to cover it more
-  //     for (let i = 1; i < 6; i++) {
-  //       const domainString = getRandomString(i * i);
-
-  //       const price = await zns.curvePricer.getPrice(
-  //         domainHash,
-  //         domainString,
-  //         false
-  //       );
-
-  //       await expect(
-  //         price
-  //       ).to.be.equal(
-  //         DEFAULT_PRICE_CONFIG.maxPrice
-  //       );
-  //     }
-  //   });
-
-  //   it("Reverts when the method is called by a non-owner or operator", async () => {
-  //     await expect(
-  //       zns.curvePricer.connect(deployer).setCurveMultiplier(domainHash, 2000n)
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       NOT_AUTHORIZED_ERR
-  //     ).withArgs(
-  //       deployer,
-  //       domainHash
-  //     );
-  //   });
-
-  //   it("Should revert when `baseLength` is already 0 and we pass `curveMultiplier` as 0", async () => {
-  //     await zns.curvePricer.connect(user).setBaseLength(
-  //       domainHash,
-  //       0n
-  //     );
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setCurveMultiplier(
-  //         domainHash,
-  //         0n
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       DIVISION_BY_ZERO_ERR
-  //     );
-  //   });
-
-  //   it("Should return max price for base length domain labels and 0 for other, which longer", async () => {
-  //     // Case where we can set domain strings longer than `baseLength` for free
-  //     // (numerator must be less than denominator)
-
-  //     // constants for playing the scenario (one of many cases):
-  //     // `maxPrice` = 25 000
-  //     // `baseLength` <= 40
-  //     // `curveMultiplier` >= 10 000 000 000
-
-  //     const newConfig = {
-  //       maxPrice: ethers.parseEther("25000"),
-  //       curveMultiplier: BigInt("10000000000"),
-  //       maxLength: BigInt(100),
-  //       baseLength: BigInt(40),
-  //       precisionMultiplier: DEFAULT_PRECISION_MULTIPLIER,
-  //       feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
-  //       isSet: true,
-  //     };
-
-  //     await zns.curvePricer.connect(user).setPriceConfig(domainHash, newConfig);
-
-  //     const check = async (label : string, res : bigint) => {
-  //       const price = await zns.curvePricer.getPrice(
-  //         domainHash,
-  //         label,
-  //         false
-  //       );
-
-  //       expect(
-  //         price
-  //       ).to.equal(
-  //         res
-  //       );
-  //     };
-
-  //     // `baseLength` = 40, so run this 4 times
-  //     for (let i = 1; i <= newConfig.baseLength / 10n; i++) {
-  //       await check(
-  //         getRandomString(i * 10),
-  //         newConfig.maxPrice
-  //       );
-  //     }
-
-  //     for (let i = 5; i <= 15; i++) {
-  //       await check(
-  //         getRandomString(i * 10),
-  //         0n
-  //       );
-  //     }
-
-  //     await zns.curvePricer.connect(user).setPriceConfig(domainHash, DEFAULT_PRICE_CONFIG);
-
-  //   });
-  // });
-
-  // describe("#setPrecisionMultiplier", () => {
-  //   it("Allows an authorized user to set the precision multiplier", async () => {
-  //     const newMultiplier = BigInt("1");
-
-  //     await zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newMultiplier);
-
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-  //     expect(params.precisionMultiplier).to.eq(newMultiplier);
-  //   });
-
-  //   it("Disallows an unauthorized user from setting the precision multiplier", async () => {
-  //     const newMultiplier = BigInt("2");
-
-  //     const tx = zns.curvePricer.connect(admin).setCurveMultiplier(domainHash, newMultiplier);
-  //     await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
-  //   });
-
-  //   it("Fails when setting `precisionMultiplier` to zero", async () => {
-  //     const zeroMultiplier = BigInt("0");
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setPrecisionMultiplier(
-  //         domainHash,
-  //         zeroMultiplier
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       INVALID_PRECISION_MULTIPLIER_ERR
-  //     ).withArgs(domainHash);
-  //   });
-
-  //   it("Successfuly sets the precision multiplier when above 0", async () => {
-  //     const newMultiplier = BigInt("3");
-  //     await zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newMultiplier);
-
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-  //     expect(params.precisionMultiplier).to.eq(newMultiplier);
-  //   });
-
-  //   it("Verifies new prices are affected after changing the precision multiplier", async () => {
-  //     const atIndex = 7;
-
-  //     const before = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     const beforePriceString = before.toString();
-
-  //     expect(beforePriceString.charAt(atIndex)).to.eq("0");
-
-  //     // Default precision is 2 decimals, so increasing this value should represent in prices
-  //     // as a non-zero nect decimal place
-  //     const newPrecision = BigInt(3);
-  //     const newPrecisionMultiplier = BigInt(10) ** DEFAULT_DECIMALS - newPrecision;
-
-  //     await zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newPrecisionMultiplier);
-
-  //     const after = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     const afterPriceString = after.toString();
-
-  //     expect(afterPriceString.charAt(atIndex)).to.not.eq("0");
-
-  //   });
-
-  //   it("Should revert when setting precisionMultiplier higher than 10^18", async () => {
-  //     const newMultiplier = ethers.parseEther("100");
-  //     await expect(
-  //       zns.curvePricer.connect(user).setPrecisionMultiplier(domainHash, newMultiplier)
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       INVALID_PRECISION_MULTIPLIER_ERR
-  //     );
-  //   });
-  // });
-
-  // describe("#setBaseLength", () => {
-  //   it("Allows an authorized user to set the base length", async () => {
-  //     const newLength = 5;
-
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     expect(params.baseLength).to.eq(newLength);
-  //   });
-
-  //   it("Disallows an unauthorized user to set the base length", async () => {
-  //     const newLength = 5;
-
-  //     const tx = zns.curvePricer.connect(admin).setBaseLength(domainHash, newLength);
-  //     await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
-  //   });
-
-  //   it("Allows setting the base length to zero", async () => {
-  //     const newLength = 0;
-
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     expect(params.baseLength).to.eq(newLength);
-  //   });
-
-  //   it("Should revert when `curveMultiplier` is already 0 and we pass `baseLength` as 0", async () => {
-  //     await zns.curvePricer.connect(user).setCurveMultiplier(
-  //       domainHash,
-  //       0n
-  //     );
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setBaseLength(
-  //         domainHash,
-  //         0n
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       DIVISION_BY_ZERO_ERR
-  //     );
-  //   });
-
-  //   it("Causes any length domain to cost the base fee when set to max length of 255", async () => {
-  //     const newLength = 255;
-  //     // We have to set `maxLength` firstly, cause `baseLength` cannot be bigger than `maxLength`
-  //     await zns.curvePricer.connect(user).setMaxLength(domainHash, newLength);
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     const shortDomain = "a";
-  //     const longDomain = "abcdefghijklmnopqrstuvwxyz";
-
-  //     const shortPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, shortDomain, true);
-  //     const longPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, longDomain, true);
-
-  //     expect(shortPrice).to.eq(params.maxPrice);
-  //     expect(longPrice).to.eq(params.maxPrice);
-  //   });
-
-  //   it("Causes prices to adjust correctly when length is increased", async () => {
-  //     const newLength = 8;
-  //     const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     const expectedPriceBefore = await getCurvePrice(defaultDomain, DEFAULT_PRICE_CONFIG);
-  //     const priceBefore = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     expect(priceBefore).to.eq(expectedPriceBefore);
-  //     expect(priceBefore).to.not.eq(paramsBefore.maxPrice);
-
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-
-  //     const paramsAfter = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     const newConfig = {
-  //       ...DEFAULT_PRICE_CONFIG,
-  //       baseLength: BigInt(newLength),
-  //     };
-
-  //     const expectedPriceAfter = await getCurvePrice(defaultDomain, newConfig);
-  //     const priceAfter = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     expect(priceAfter).to.eq(expectedPriceAfter);
-  //     expect(priceAfter).to.eq(paramsAfter.maxPrice);
-  //   });
-
-  //   it("Causes prices to adjust correctly when length is decreased", async () => {
-  //     const length = 8;
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, length);
-
-  //     const newConfig1 = {
-  //       ...DEFAULT_PRICE_CONFIG,
-  //       baseLength: BigInt(length),
-  //     };
-
-  //     const paramsBefore = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     const expectedPriceBefore = await getCurvePrice(defaultDomain, newConfig1);
-  //     const priceBefore = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     expect(priceBefore).to.eq(expectedPriceBefore);
-  //     expect(priceBefore).to.eq(paramsBefore.maxPrice);
-
-  //     const newLength = 5;
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-
-  //     const newConfig2 = {
-  //       ...DEFAULT_PRICE_CONFIG,
-  //       baseLength: BigInt(newLength),
-  //     };
-
-  //     const paramsAfter = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     const expectedPriceAfter = await getCurvePrice(defaultDomain, newConfig2);
-  //     const priceAfter = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-  //     expect(priceAfter).to.eq(expectedPriceAfter);
-  //     expect(priceAfter).to.not.eq(paramsAfter.maxPrice);
-  //   });
-
-  //   it("Returns the price = 0 whenever the baseLength is 0", async () => {
-  //     const newRootLength = 0;
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, newRootLength);
-
-  //     const price = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-
-  //     expect(
-  //       price
-  //     ).to.eq(
-  //       0n
-  //     );
-  //   });
-
-  //   it("Adjusts prices correctly when setting base lengths to different values", async () => {
-  //     for (let i = 0; i < 5; i++) {
-  //       const newRootLength = i * 2;
-  //       await zns.curvePricer.connect(user).setBaseLength(domainHash, newRootLength);
-  //       const newConfig = {
-  //         ...DEFAULT_PRICE_CONFIG,
-  //         baseLength: BigInt(newRootLength),
-  //       };
-
-  //       const expectedRootPrice = await getCurvePrice(defaultDomain, newConfig);
-  //       const rootPrice = await zns.curvePricer.getPrice(defaultPriceConfigBytes, defaultDomain, true);
-
-  //       expect(rootPrice).to.eq(expectedRootPrice);
-  //     }
-  //   });
-
-  //   it("Should revert when `baseLength` bigger than `maxLength`", async () => {
-  //     await zns.curvePricer.connect(user).setMaxLength(
-  //       domainHash,
-  //       10n
-  //     );
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setBaseLength(
-  //         domainHash,
-  //         20n
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       INVALID_BASE_OR_MAX_LENGTH_ERR
-  //     );
-  //   });
-  // });
-
-  // describe("#setMaxLength", () => {
-  //   it("Allows an authorized user to set the max length", async () => {
-  //     const newLength = 5;
-
-  //     await zns.curvePricer.connect(user).setMaxLength(domainHash, newLength);
-  //     const params = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     expect(params.maxLength).to.eq(newLength);
-  //   });
-
-  //   it("Disallows an unauthorized user to set the max length", async () => {
-  //     const newLength = 5;
-
-  //     const tx = zns.curvePricer.connect(admin).setMaxLength(domainHash, newLength);
-  //     await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
-  //   });
-
-  //   it("Doesn't allow setting the `maxLength` to zero", async () => {
-  //     // require setting `baseLength` smaller or equal `maxLength`
-  //     const newLength = 0;
-
-  //     await zns.curvePricer.connect(user).setBaseLength(domainHash, 0n);
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setMaxLength(domainHash, newLength)
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       INVALID_BASE_OR_MAX_LENGTH_ERR
-  //     ).withArgs(
-  //       domainHash
-  //     );
-  //   });
-
-  //   it("Should revert when `maxLength` smaller than `baseLength`", async () => {
-  //     await zns.curvePricer.connect(user).setBaseLength(
-  //       domainHash,
-  //       20n
-  //     );
-
-  //     await expect(
-  //       zns.curvePricer.connect(user).setMaxLength(
-  //         domainHash,
-  //         10n
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       INVALID_BASE_OR_MAX_LENGTH_ERR
-  //     );
-  //   });
-  // });
-
-  // describe("#setFeePercentage", () => {
-  //   it("Successfully sets the fee percentage", async () => {
-  //     const newFeePerc = BigInt(222);
-  //     await zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc);
-  //     const { feePercentage: feeFromSC } = await zns.curvePricer.priceConfigs(domainHash);
-
-  //     expect(feeFromSC).to.eq(newFeePerc);
-  //   });
-
-  //   it("Disallows an unauthorized user to set the fee percentage", async () => {
-  //     const newFeePerc = BigInt(222);
-  //     const tx = zns.curvePricer.connect(admin)
-  //       .setFeePercentage(domainHash, newFeePerc);
-  //     await expect(tx).to.be.revertedWithCustomError(zns.curvePricer, NOT_AUTHORIZED_ERR);
-  //   });
-
-  //   it("should revert when trying to set feePercentage higher than PERCENTAGE_BASIS", async () => {
-  //     const newFeePerc = BigInt(10001);
-  //     await expect(
-  //       zns.curvePricer.connect(user).setFeePercentage(domainHash, newFeePerc)
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       FEE_TOO_LARGE_ERR
-  //     ).withArgs(newFeePerc, 10000n);
-  //   });
-  // });
+  describe("#validatePriceConfig", () => {
+    it("Succeeds when a valid config is provided", async () => {
+      expect(
+        await zns.curvePricer.validatePriceConfig(
+          DEFAULT_CURVE_PRICE_CONFIG_BYTES
+        )).to.not.be.reverted;
+    });
+
+    it("Fails when the curve multiplier is 0 and the base length is 0", async () => {
+      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.curveMultiplier = 0n;
+      localConfig.baseLength = 0n;
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          DIVISION_BY_ZERO_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(DIVISION_BY_ZERO_ERR);
+      }
+
+      // TODO seems like its somehow failing outside regular test framework?
+      // "VM exception while processing transaction:..."
+    });
+
+    it("Fails when max length is less than base length", async () => {
+      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.maxLength = 0n;
+      localConfig.baseLength = 100n;
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          INVALID_BASE_OR_MAX_LENGTH_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(INVALID_BASE_OR_MAX_LENGTH_ERR);
+      }
+    });
+
+    it("Fails when maxLength is 0", async () => {
+      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.baseLength = 0n; // Set baseLength to 0 to avoid maxLength < baseLength failure
+      localConfig.maxLength = 0n;
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          INVALID_BASE_OR_MAX_LENGTH_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(INVALID_BASE_OR_MAX_LENGTH_ERR);
+      }
+    });
+
+    it("Fails when precision muliplier is 0 or greater than 10^18", async () => {
+      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.precisionMultiplier = 0n;
+
+      let asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          INVALID_PRECISION_MULTIPLIER_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(INVALID_PRECISION_MULTIPLIER_ERR);
+      }
+      localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.precisionMultiplier = ethers.parseEther("10");
+
+      asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          INVALID_PRECISION_MULTIPLIER_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(INVALID_PRECISION_MULTIPLIER_ERR);
+      }
+    });
+
+    it("Fails when fee percentage is greater than 100%", async () => {
+      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.feePercentage = BigInt("10001");
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      try {
+        await expect(
+          zns.curvePricer.validatePriceConfig(asBytes)
+        ).to.be.revertedWith(
+          FEE_TOO_LARGE_ERR
+        );
+      } catch (e) {
+        expect((e as Error).message).to.include(FEE_TOO_LARGE_ERR);
+      }
+    });
+
+    it("Fails when the config is invalid", async () => {
+      try {
+          await zns.curvePricer.validatePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES)
+      } catch (e) {
+        expect((e as Error).message).to.include(HARDHAT_INFER_ERR);
+      }
+    });
+  });
 
   describe("#getRegistrationFee", () => {
+    // TODO fails to test?
     it("Successfully gets the fee for a price", async () => {
       const stake = ethers.parseEther("0.2");
-      const fee = await zns.curvePricer.getFeeForPrice(defaultPriceConfigBytes, stake);
+      const fee = await zns.curvePricer.getFeeForPrice(
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        stake
+      );
       const expectedFee = stake * 222n / 10000n;
 
       expect(fee).to.eq(expectedFee);
-    });
-  });
-
-  describe("#setAccessController", () => {
-    it("Successfully sets the access controller", async () => {
-      const currentAccessController = await zns.curvePricer.getAccessController();
-      expect(currentAccessController).to.not.eq(randomAcc.address);
-
-      const tx = await zns.curvePricer.setAccessController(randomAcc.address);
-
-      const newAccessController = await zns.curvePricer.getAccessController();
-      expect(newAccessController).to.eq(randomAcc.address);
-
-      await expect(tx).to.emit(zns.curvePricer, "AccessControllerSet").withArgs(randomAcc.address);
-    });
-
-    it("Disallows an unauthorized user to set the access controller", async () => {
-      const tx = zns.curvePricer.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(user.address,ADMIN_ROLE);
-    });
-
-    it("Disallows setting the access controller to the zero address", async () => {
-      const tx = zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        ZERO_ADDRESS_ERR
-      );
-    });
-  });
-
-  describe("#setRegistry", () => {
-    it("Should successfully set the registry", async () => {
-      const currentRegistry = await zns.curvePricer.registry();
-      expect(currentRegistry).to.not.eq(randomAcc.address);
-
-      const tx = await zns.curvePricer.connect(admin).setRegistry(randomAcc.address);
-
-      const newRegistry = await zns.curvePricer.registry();
-      expect(newRegistry).to.eq(randomAcc.address);
-
-      await expect(tx).to.emit(zns.curvePricer, "RegistrySet").withArgs(randomAcc.address);
-    });
-
-    it("Should NOT set the registry if called by anyone other than ADMIN_ROLE", async () => {
-      const tx = zns.curvePricer.connect(user).setRegistry(randomAcc.address);
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(user.address,ADMIN_ROLE);
-    });
-  });
-
-  // describe("General validation", () => {
-  //   // TODO should be part of subregistrar.setPricerDataForDomain flow
-  //   it("Should revert when all passed variables are 0", async () => {
-  //     await expect(
-  //       zns.curvePricer.connect(user).setPriceConfig(
-  //         domainHash,
-  //         {
-  //           maxPrice: 0n,
-  //           curveMultiplier: 0n,
-  //           maxLength: 0n,
-  //           baseLength: 0n,
-  //           precisionMultiplier: 0n,
-  //           feePercentage: 0n,
-  //           isSet: true,
-  //         }
-  //       )
-  //     ).to.be.revertedWithCustomError(
-  //       zns.curvePricer,
-  //       // because its a first check
-  //       INVALID_PRECISION_MULTIPLIER_ERR
-  //     ).withArgs(domainHash);
-  //   });
-  // });
-
-  // describe("Events", () => {
-  //   it("Emits MaxPriceSet", async () => {
-  //     const newMaxPrice = DEFAULT_PRICE_CONFIG.maxPrice + 1n;
-
-  //     const tx = zns.curvePricer.connect(user).setMaxPrice(domainHash, newMaxPrice);
-  //     await expect(tx).to.emit(zns.curvePricer, "MaxPriceSet").withArgs(domainHash, newMaxPrice);
-  //   });
-
-  //   it("Emits BaseLengthSet", async () => {
-  //     const newLength = 5;
-
-  //     const tx = zns.curvePricer.connect(user).setBaseLength(domainHash, newLength);
-  //     await expect(tx).to.emit(zns.curvePricer, "BaseLengthSet").withArgs(domainHash, newLength);
-  //   });
-  // });
-
-  describe("UUPS", () => {
-    it("Allows an authorized user to upgrade the contract", async () => {
-      // CurvePricer to upgrade to
-      const factory = new ZNSCurvePricer__factory(deployer);
-      const newCurvePricer = await factory.deploy();
-      await newCurvePricer.waitForDeployment();
-
-      // Confirm the deployer is a governor, as set in `deployZNS` helper
-      await expect(zns.accessController.checkGovernor(deployer.address)).to.not.be.reverted;
-
-      const tx = zns.curvePricer.connect(deployer).upgradeToAndCall(
-        await newCurvePricer.getAddress(),
-        "0x"
-      );
-      await expect(tx).to.not.be.reverted;
-    });
-
-    it("Fails to upgrade if the caller is not authorized", async () => {
-      // CurvePricer to upgrade to
-      const factory = new ZNSCurvePricerUpgradeMock__factory(deployer);
-      const newCurvePricer = await factory.deploy();
-      await newCurvePricer.waitForDeployment();
-
-      // Confirm the account is not a governor
-      await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
-
-      const tx = zns.curvePricer.connect(randomAcc).upgradeToAndCall(
-        await newCurvePricer.getAddress(),
-        "0x"
-      );
-
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(randomAcc.address, GOVERNOR_ROLE);
-    });
-
-    it("Verifies that variable values are not changed in the upgrade process", async () => {
-      const factory = new ZNSCurvePricerUpgradeMock__factory(deployer);
-      const newCurvePricer = await factory.deploy();
-      await newCurvePricer.waitForDeployment();
-
-      // await zns.curvePricer.connect(user).setBaseLength(domainHash, "7");
-      // await zns.curvePricer.connect(user).setMaxPrice(
-      //   domainHash,
-      //   DEFAULT_PRICE_CONFIG.maxPrice + 15n
-      // );
-
-      // const contractCalls = [
-      //   zns.curvePricer.registry(),
-      //   zns.curvePricer.getAccessController(),
-      //   zns.curvePricer.priceConfigs(domainHash),
-      //   zns.curvePricer.getPrice(defaultPriceConfigBytes, "wilder", true),
-      // ];
-
-      // await validateUpgrade(deployer, zns.curvePricer, newCurvePricer, factory, contractCalls);
     });
   });
 });

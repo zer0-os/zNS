@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IZNSCurvePricer } from "./IZNSCurvePricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { AAccessControlled } from "../access/AAccessControlled.sol";
-import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
 
 /**
@@ -17,7 +14,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
  * The price after `maxLength` is fixed and equals the price on the hyperbola graph at the point `maxLength`
  * and is determined using the formula where `length` = `maxLength`.
  */
-contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSCurvePricer {
+contract ZNSCurvePricer is IZNSCurvePricer {
 
     using StringUtils for string;
 
@@ -33,29 +30,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      * @dev > Canot be "0".
      */
     uint256 public constant FACTOR_SCALE = 1000;
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    /**
-     * @notice Proxy initializer to set the initial state of the contract after deployment.
-     * Only Owner of the 0x0 hash (Zero owned address) can call this function.
-     * @dev > Note the for PriceConfig we set each value individually and calling
-     * 2 important functions that validate all of the config's values against the formula:
-     * - `setPrecisionMultiplier()` to validate precision multiplier
-     * @param accessController_ the address of the ZNSAccessController contract.
-     * @param registry_ the address of the ZNSRegistry contract.
-     */
-    function initialize(
-        address accessController_,
-        address registry_
-    ) external override initializer {
-        _setAccessController(accessController_);
-        _setRegistry(registry_);
-        // TODO above also taken away? need AC?
-    }
 
     /**
      * @notice Encode a given CurvePriceConfig into bytes
@@ -73,7 +47,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
                 config.baseLength,
                 config.precisionMultiplier,
                 config.feePercentage
-                // config.isSet
             );
     }
 
@@ -92,7 +65,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             uint256 baseLength,
             uint256 precisionMultiplier,
             uint256 feePercentage
-            // bool isSet
         ) = abi.decode(
             priceConfig,
             (
@@ -102,7 +74,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
                 uint256,
                 uint256,
                 uint256
-                // bool
             )
         );
 
@@ -113,7 +84,6 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
             baseLength,
             precisionMultiplier,
             feePercentage
-            // isSet
         );
 
         return config;
@@ -127,18 +97,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
      */
     function validatePriceConfig(
         bytes memory priceConfig
-    ) public pure {
+    ) public override pure {
         CurvePriceConfig memory config = decodePriceConfig(priceConfig);
         _validatePriceConfig(config);
-    }
-
-    function _validatePriceConfig(CurvePriceConfig memory config) internal pure {
-        // TODO consider all in one, no longer need independent validator funcs
-        _validatePrecisionMultiplier(config.precisionMultiplier);
-        _validateBaseLength(config.baseLength, config);
-        _validateCurveMultiplier(config.curveMultiplier, config);
-        _validateMaxLength(config.maxLength, config);
-        _validateFeePercentage(config.feePercentage);
     }
 
     /**
@@ -161,13 +122,10 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     ) public pure override returns (uint256) {
         CurvePriceConfig memory config = decodePriceConfig(parentPriceConfig);
 
-        // TODO can we trust validation has always happened by now?
-        // add in `if` below?
-        // _validatePriceConfig(config);
-
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
             label.validate();
+            _validatePriceConfig(config);
         }
 
         // No pricing is set for 0 length domains
@@ -188,17 +146,9 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes memory parentPriceConfig,
         uint256 price
     ) public pure override returns (uint256) {
-        // TODO in proper registrar flow is already validated
-        // but because public, anyone can call with unvalidated one
-        // do anything about this?
-
         CurvePriceConfig memory config = decodePriceConfig(parentPriceConfig);
 
         return _getFeeForPrice(config, price);
-    }
-
-    function _getFeeForPrice(CurvePriceConfig memory config, uint256 price) internal pure returns(uint256) {
-        return (price * config.feePercentage) / PERCENTAGE_BASIS;
     }
 
     /**
@@ -217,9 +167,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
         if (!skipValidityCheck) {
             label.validate();
-            // TODO eval in what flows is data validated already or not 
-            // like this is fine? or internal edxternal thing was planning before?
-            // validatePriceConfig(parentPriceConfig);
+            _validatePriceConfig(config);
         }
 
         price = _getPrice(config, label.strlen());
@@ -227,59 +175,27 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         return (price, stakeFee);
     }
 
-    /**
-     * @notice Sets the registry address in state.
-     * @dev This function is required for all contracts inheriting `ARegistryWired`.
-    */
-    function setRegistry(address registry_) external override(ARegistryWired, IZNSCurvePricer) onlyAdmin {
-        _setRegistry(registry_);
-    }
-
     ////////////////////////
     //// INTERNAL FUNCS ////
     ////////////////////////
 
-    function _validateCurveMultiplier(
-        uint256 curveMultiplier,
-        CurvePriceConfig memory config
-    ) internal pure {
-        if (curveMultiplier == 0 && config.baseLength == 0)
-            revert DivisionByZero();
+    function _getFeeForPrice(CurvePriceConfig memory config, uint256 price) internal pure returns(uint256) {
+        return (price * config.feePercentage) / PERCENTAGE_BASIS;
     }
 
-    function _validateBaseLength(
-        uint256 baseLength,
-        CurvePriceConfig memory config
-    ) internal pure {
-        if (config.maxLength < baseLength)
+    function _validatePriceConfig(CurvePriceConfig memory config) internal pure {
+        if (config.curveMultiplier == 0 && config.baseLength == 0)
+            revert DivisionByZero();
+
+        if (config.maxLength < config.baseLength || config.maxLength == 0)
             revert MaxLengthSmallerThanBaseLength();
 
-        if (baseLength == 0 && config.curveMultiplier == 0)
-            revert DivisionByZero();
-    }
+        if (config.precisionMultiplier == 0 || config.precisionMultiplier > 10**18)
+            revert InvalidPrecisionMultiplierPassed();
 
-    function _validateMaxLength(
-        uint256 maxLength,
-        CurvePriceConfig memory config
-    ) internal pure {
-        if (
-            (maxLength < config.baseLength) ||
-            maxLength == 0
-        ) revert MaxLengthSmallerThanBaseLength();
-    }
-
-    function _validatePrecisionMultiplier(
-        uint256 multiplier
-    ) internal pure {
-        if (multiplier == 0 || multiplier > 10**18) revert InvalidPrecisionMultiplierPassed();
-    }
-
-    function _validateFeePercentage(
-        uint256 feePercentage
-    ) internal pure {
-        if (feePercentage > PERCENTAGE_BASIS)
+        if (config.feePercentage > PERCENTAGE_BASIS)
             revert FeePercentageValueTooLarge(
-                feePercentage,
+                config.feePercentage,
                 PERCENTAGE_BASIS
             );
     }
@@ -327,14 +243,5 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         return ((config.baseLength * config.maxPrice * FACTOR_SCALE) /
         (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))) /
         config.precisionMultiplier * config.precisionMultiplier;
-    }
-
-    /**
-     * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-     * @param newImplementation The new implementation contract to upgrade to.
-     */
-    // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal view override {
-        accessController.checkGovernor(msg.sender);
     }
 }
