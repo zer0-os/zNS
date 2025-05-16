@@ -144,8 +144,6 @@ export const deployDomainToken = async (
 
   const proxyAddress = await domainToken.getAddress();
 
-  await accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, proxyAddress);
-
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,

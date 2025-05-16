@@ -34,8 +34,6 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _setRoleAdmin(GOVERNOR_ROLE, GOVERNOR_ROLE);
         // all of the admins control registrar
         _setRoleAdmin(REGISTRAR_ROLE, ADMIN_ROLE);
-        // all of the admins control domain token
-        _setRoleAdmin(DOMAIN_TOKEN_ROLE, ADMIN_ROLE);
     }
 
     // ** Access Validators **
@@ -56,10 +54,6 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
         _checkRole(REGISTRAR_ROLE, account);
     }
 
-    function checkDomainToken(address account) external view override {
-        _checkRole(DOMAIN_TOKEN_ROLE, account);
-    }
-
     // "is...()" functions return a boolean
     function isAdmin(address account) external view override returns (bool) {
         return hasRole(ADMIN_ROLE, account);
@@ -67,10 +61,6 @@ contract ZNSAccessController is AccessControl, ZNSRoles, IZNSAccessController {
 
     function isRegistrar(address account) external view override returns (bool) {
         return hasRole(REGISTRAR_ROLE, account);
-    }
-
-    function isDomainToken(address account) external view override returns (bool) {
-        return hasRole(DOMAIN_TOKEN_ROLE, account);
     }
 
     function isGovernor(address account) external view override returns (bool) {

@@ -233,8 +233,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     ) external override {
         if (
             msg.sender != records[domainHash].owner &&
-            !accessController.isRegistrar(msg.sender) && 
-            !accessController.isDomainToken(msg.sender)
+            !accessController.isRegistrar(msg.sender)
         ) revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         _setDomainOwner(domainHash, owner);
