@@ -57,7 +57,7 @@ export const approveForParent = async ({
   user,
   domainLabel,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
