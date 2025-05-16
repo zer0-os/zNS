@@ -264,7 +264,6 @@ describe("Controlled Domains Test", () => {
       });
 
       it(`should NOT let ${name} token owner access domain management functions`, async () => {
-        // TODO 15: move these tests to the specific contract test files and check every setter there if not already checked
         await expect(
           zns.subRegistrar.connect(tokenOwner).setPricerContractForDomain(
             controlledSubHash,
