@@ -8,10 +8,8 @@ import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import {
   AccessType, distrConfigEmpty, DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
-  DOMAIN_EXISTS_ERR,
-  INVALID_LABEL_ERR,
   NONEXISTENT_TOKEN_ERC_ERR,
-  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, paymentConfigEmpty, REGISTRAR_ROLE,
+  NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, paymentConfigEmpty,
 } from "./helpers";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
@@ -70,7 +68,7 @@ const makeSetupFixture = async () => {
   const controlledSubHash = await getDomainHashFromEvent({
     zns,
     user: parentOwner,
-    tokenOwner: subOwner,
+    tokenOwner: subOwner.address,
   });
 
   const tokenURI = "https://example.com/rootdomain";
@@ -266,6 +264,7 @@ describe("Controlled Domains Test", () => {
       });
 
       it(`should NOT let ${name} token owner access domain management functions`, async () => {
+        // eslint-disable-next-line max-len
         // TODO 15: move these tests to the specific contract test files and check every setter there if not already checked
         await expect(
           zns.subRegistrar.connect(tokenOwner).setPricerContractForDomain(
@@ -482,4 +481,6 @@ describe("Controlled Domains Test", () => {
   //  1. all setters (probably to their respective test files per contract)
   //  5. figure out which tests to add to DomainToken and other contracts since their logic changed
   //  6. Parent owner should be able to mint subs of controlled sub
+  //  7. go through all the solidity changes and find things to test
+  //  8. rename this file !!
 });
