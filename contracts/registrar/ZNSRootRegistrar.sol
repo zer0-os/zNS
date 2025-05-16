@@ -304,15 +304,16 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice This function is the main entry point for the Reclaim flow. This flow is used to
-     * reclaim full ownership of a domain (through becoming the owner of the Name) from the ownership of the Token.
-     * This is used for different types of ownership transfers, such as:
-     * - domain sale - a user will sell the Token, then the new owner has to call this function to reclaim the Name
-     * - domain transfer - a user will transfer the Token, then the new owner
-     * has to call this function to reclaim the Name
+     * @notice This function lets domain owner in Registry to transfer the token separately from any address
+     * to any other address (except the zero address), since the Registry owner always overrides the token owner.
+     * @dev This is the ONLY way to transfer the token separately from the domain hash
+     * and only Registry owner can do this! This can also be used to send the token to yourself as Registry owner
+     * if you moved it or minted it initially to somebody else to use your domain.
+     * Transferring the token away from yourself with this function make the domain "controlled" in a sense
+     * that token owner could use the domain, but not revoke it, transfer it to another address or access
+     * domain management functions across the system.
      *
-     * A user needs to only be the owner of the Token to be able to Reclaim.
-     * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
+     * Updates the token owner in the `ZNSDomainToken` to the "to" address and emits a `DomainTokenReassigned` event.
      */
     function assignDomainToken(bytes32 domainHash, address to)
     external
