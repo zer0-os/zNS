@@ -43,4 +43,38 @@ IZNSContracts
       await registry.getAddress(),
     ];
   }
+
+  async needsPostDeploy () {
+    const {
+      accessController,
+      domainToken,
+      config: { deployAdmin },
+    } = this.campaign;
+
+    const isDomainToken = await accessController
+      .connect(deployAdmin)
+      .isDomainToken(await domainToken.getAddress());
+
+    const msg = !isDomainToken ? "needs" : "doesn't need";
+
+    this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
+
+    return !isDomainToken;
+  }
+
+  async postDeploy () {
+    const {
+      accessController,
+      domainToken,
+      config: {
+        deployAdmin,
+      },
+    } = this.campaign;
+
+    await accessController
+      .connect(deployAdmin)
+      .grantRole(DOMAIN_TOKEN_ROLE, await domainToken.getAddress());
+
+    this.logger.debug(`${this.contractName} post deploy sequence completed`);
+  }
 }
