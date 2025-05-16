@@ -2,9 +2,10 @@
 // When adding a revert test, check if this message is already present in other tests
 //  if it is, add a new constant here and use it in all tests
 
-export const ERC721_NOT_OWNER_ERR = "ERC721: transfer caller is not owner nor approved";
+export const ERC721_INVALID_RECEIVER_ERR = "ERC721InvalidReceiver";
 export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
 export const ALREADY_FULL_OWNER_ERR = "AlreadyFullOwner";
+export const CANNOT_BURN_TOKEN_ERR = "CannotBurnToken";
 
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";

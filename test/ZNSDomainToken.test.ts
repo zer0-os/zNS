@@ -23,7 +23,7 @@ import {
   ZERO_ADDRESS_ERR,
   DeployZNSParams,
   IZNSContractsLocal,
-  getProxyImplAddress, ALREADY_FULL_OWNER_ERR, NOT_FULL_OWNER_ERR,
+  getProxyImplAddress, ALREADY_FULL_OWNER_ERR, NOT_FULL_OWNER_ERR, CANNOT_BURN_TOKEN_ERR, ERC721_INVALID_RECEIVER_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -328,6 +328,63 @@ describe("ZNSDomainToken", () => {
         zns.domainToken.connect(mockRegistrar).transferOverride(caller.address, tokenId)
       ).to.be.revertedWithCustomError(zns.domainToken, ALREADY_FULL_OWNER_ERR)
         .withArgs(caller.address, domainHash);
+    });
+
+    it("#transferOverride() should override approvals", async () => {
+      // Setup for different addresses owning hash and token
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, beneficiary.address, "0x0");
+
+      // Approve deployer
+      await zns.domainToken.connect(caller).approve(deployer.address, tokenId);
+      // if called by Registrar it should override the approval and be able to transfer anywhere
+      await zns.domainToken.connect(mockRegistrar).transferOverride(mockRegistry.address, tokenId);
+
+      // validate this cleared the approval
+      const approvedAddress = await zns.domainToken.getApproved(tokenId);
+      expect(approvedAddress).to.equal(ethers.ZeroAddress);
+
+      // should revert if called by the approved address
+      await zns.domainToken.connect(mockRegistry).approve(deployer.address, tokenId);
+      await expect(
+        zns.domainToken.connect(deployer).transferOverride(deployer.address, tokenId)
+      ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(deployer.address, REGISTRAR_ROLE);
+
+      // validate
+      expect(await zns.domainToken.ownerOf(tokenId)).to.equal(mockRegistry.address);
+      expect(await zns.registry.getDomainOwner(domainHash)).to.equal(beneficiary.address);
+    });
+
+    it("#transferOverride() should emit a `Transfer` event", async () => {
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(mockRegistrar).transferOverride(deployer.address, tokenId)
+      ).to.emit(zns.domainToken, "Transfer").withArgs(
+        caller.address,
+        deployer.address,
+        tokenId
+      );
+    });
+
+    it("#transferOverride() should revert when transferring to address zero (should NOT let to burn the token)", async () => {
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(mockRegistrar).transferOverride(ethers.ZeroAddress, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, CANNOT_BURN_TOKEN_ERR);
+    });
+
+    it("#transferOverride() should revert when transferring to a contract not implementing #onERC721Received()", async () => {
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(mockRegistrar).transferOverride(zns.registry.target, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_INVALID_RECEIVER_ERR);
     });
   });
 
