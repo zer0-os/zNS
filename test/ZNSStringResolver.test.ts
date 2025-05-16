@@ -13,7 +13,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types"
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
 import * as ethers from "ethers";
-import { registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
   ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry, ZNSRootRegistrar,
@@ -115,13 +115,14 @@ describe("ZNSStringResolver", () => {
 
       const newString = "hippopotamus";
 
-      await rootRegistrar.connect(user).registerRootDomain(
+      await defaultRootRegistration({
+        user,
+        zns: campaign.state.contracts,
         domainName,
-        ethers.ZeroAddress,
-        uri,
-        distrConfigEmpty,
-        paymentConfigEmpty,
-      );
+        tokenURI: uri,
+        domainContent: ethers.ZeroAddress,
+      });
+
       await stringResolver.connect(user).setString(domainNameHash, newString);
 
       expect(

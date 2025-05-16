@@ -44,7 +44,7 @@ const getCustomAddresses = (
     addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
   }
 
-  if (!accounts || accounts.length === 0) {
+  if (!accounts || accounts.length === 0 || process.env.ENV_LEVEL === EnvironmentLevels.dev) {
     // No custom governors / admins provided, use the deployer as the default
     addresses.push(deployerAddress);
   }
