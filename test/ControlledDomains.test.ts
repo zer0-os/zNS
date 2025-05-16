@@ -264,12 +264,51 @@ describe("Controlled Domains Test", () => {
       });
 
       it(`should NOT let ${name} token owner access domain management functions`, async () => {
-        // eslint-disable-next-line max-len
         // TODO 15: move these tests to the specific contract test files and check every setter there if not already checked
         await expect(
           zns.subRegistrar.connect(tokenOwner).setPricerContractForDomain(
             controlledSubHash,
             zns.fixedPricer.target,
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR,
+        );
+
+        await expect(
+          zns.subRegistrar.connect(tokenOwner).setDistributionConfigForDomain(
+            controlledSubHash,
+            distrConfigEmpty,
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR,
+        );
+
+        await expect(
+          zns.treasury.connect(tokenOwner).setPaymentConfig(
+            controlledSubHash,
+            paymentConfigEmpty,
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR,
+        );
+
+        await expect(
+          zns.registry.connect(tokenOwner).updateDomainOwner(
+            controlledSubHash,
+            tokenOwner.address,
+          )
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          NOT_AUTHORIZED_ERR,
+        );
+
+        await expect(
+          zns.addressResolver.connect(tokenOwner).setAddress(
+            controlledSubHash,
+            tokenOwner.address,
           )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
@@ -476,11 +515,4 @@ describe("Controlled Domains Test", () => {
       });
     });
   });
-
-  // TODO 15: add tests:
-  //  1. all setters (probably to their respective test files per contract)
-  //  5. figure out which tests to add to DomainToken and other contracts since their logic changed
-  //  6. Parent owner should be able to mint subs of controlled sub
-  //  7. go through all the solidity changes and find things to test
-  //  8. rename this file !!
 });
