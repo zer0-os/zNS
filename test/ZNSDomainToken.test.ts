@@ -207,7 +207,8 @@ describe("ZNSDomainToken", () => {
       );
     });
 
-    it("#isControlled() should return the correct boolean depending on the domain-token ownership config", async () => {
+    // eslint-disable-next-line max-len
+    it("#isControlled() should return the correct boolean based on the domain-token ownership config", async () => {
       const domainHash = hashDomainLabel("tesst");
 
       // same owner for both
