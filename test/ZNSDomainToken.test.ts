@@ -23,7 +23,12 @@ import {
   ZERO_ADDRESS_ERR,
   DeployZNSParams,
   IZNSContractsLocal,
-  getProxyImplAddress, ALREADY_FULL_OWNER_ERR, NOT_FULL_OWNER_ERR, CANNOT_BURN_TOKEN_ERR, ERC721_INVALID_RECEIVER_ERR,
+  getProxyImplAddress,
+  ALREADY_FULL_OWNER_ERR,
+  NOT_FULL_OWNER_ERR,
+  CANNOT_BURN_TOKEN_ERR,
+  ERC721_INVALID_RECEIVER_ERR,
+  hashDomainLabel,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -200,6 +205,21 @@ describe("ZNSDomainToken", () => {
         zns.domainToken,
         NONEXISTENT_TOKEN_ERC_ERR
       );
+    });
+
+    it("#isControlled() should return the correct boolean depending on the domain-token ownership config", async () => {
+      const domainHash = hashDomainLabel("tesst");
+
+      // same owner for both
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, BigInt(domainHash), "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      expect(await zns.domainToken.isControlled(domainHash)).to.be.false;
+
+      // split owners
+      await zns.domainToken.connect(mockRegistrar).transferOverride(deployer.address, domainHash);
+
+      expect(await zns.domainToken.isControlled(domainHash)).to.be.true;
     });
   });
 
@@ -391,7 +411,7 @@ describe("ZNSDomainToken", () => {
     });
   });
 
-  describe("Require Statement Validation", () => {
+  describe("Custom Error Validation", () => {
     it("Only the registrar can call to register a token", async () => {
       const tokenId = BigInt("1");
       const registerTx = zns.domainToken
