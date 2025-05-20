@@ -113,7 +113,7 @@ export interface IDistributionConfig {
 }
 
 export interface IDistributionConfigExtended extends Typed {
-  [k: string] : any;
+  [k : string] : any;
 }
 
 export interface IPaymentConfig {

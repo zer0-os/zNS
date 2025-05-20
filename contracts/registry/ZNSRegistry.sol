@@ -4,7 +4,10 @@ pragma solidity 0.8.26;
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, ZeroValuePassed, AddressIsNotAContract, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -268,17 +271,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         _setDomainResolver(domainHash, resolverType);
     }
 
-    // TODO natspec
-    // when changing pricer, must also change price config
-    // function updateDomainPricerAndConfig(
-    //     bytes32 domainHash,
-    //     address pricer,
-    //     bytes memory priceConfig
-    // ) external override onlyOwnerOrOperator(domainHash) {
-    //     _setDomainPricer(domainHash, pricer);
-    //     _setDomainPriceConfig(domainHash, priceConfig);
-    // }
-
     /**
      * @notice Deletes a domain's record from this contract's state.
      * This can ONLY be called by the `ZNSRootRegistrar.sol` contract as part of the Revoke flow
@@ -328,28 +320,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         records[domainHash].resolver = resolver;
         emit DomainResolverSet(domainHash, resolver);
     }
-
-    // function _setDomainPricer(
-    //     bytes32 domainHash,
-    //     address pricer
-    // ) internal {
-    //     if (pricer == address(0)) revert ZeroAddressPassed();
-    //     if (pricer.code.length == 0) revert AddressIsNotAContract();
-    //     // TODO ERC165 `supportsInterface`
-
-    //     records[domainHash].pricer = pricer;
-    //     emit DomainPricerSet(domainHash, pricer);
-    // } 
-
-    // function _setDomainPriceConfig(
-    //     bytes32 domainHash,
-    //     bytes memory priceConfig
-    // ) internal {
-    //     if (priceConfig.length == 0) revert ZeroValuePassed();
-
-    //     records[domainHash].priceConfig = priceConfig;
-    //     emit DomainPriceConfigSet(domainHash, priceConfig);
-    // }
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized

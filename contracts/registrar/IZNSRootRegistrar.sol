@@ -150,8 +150,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
         CoreRegisterArgs memory args
     ) external;
 
-    function getRootPrice(string calldata name) external returns(uint256);
-
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;

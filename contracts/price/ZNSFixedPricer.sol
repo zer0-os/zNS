@@ -4,8 +4,6 @@ pragma solidity 0.8.26;
 import { IZNSFixedPricer } from "./IZNSFixedPricer.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 
-import { console } from "hardhat/console.sol";
-
 /**
  * @notice Pricer contract that uses the most straightforward fixed pricing model
  * that doesn't depend on the length of the label.
@@ -23,7 +21,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      */
     function encodeConfig(
         PriceConfig memory config
-    ) external pure returns(bytes memory) {
+    ) external pure override returns(bytes memory) {
         return abi.encodePacked(
             config.price,
             config.feePercentage
@@ -32,9 +30,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) public pure returns(PriceConfig memory) {
-        // console.log("in fp decodePriceConfig");
-        // console.logBytes(priceConfig);
+    ) public pure override returns(PriceConfig memory) {
         (
             uint256 price,
             uint256 feePercentage
@@ -77,7 +73,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         return config.price;
     }
 
-    function validatePriceConfig(bytes memory priceConfig) external pure {
+    function validatePriceConfig(bytes memory priceConfig) external override pure {
         // We have this to match the IZNSPricer
         // But there is no validation required for the FixPricer contract
     }
@@ -87,13 +83,12 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * for any pricing contracts used with ZNS. It returns fee for a given price
      * based on the value set by the owner of the parent domain.
      * @param parentPriceConfig The hash of the parent domain under which fee is determined
+     * @param price The price for a domain
     */
     function getFeeForPrice(
         bytes memory parentPriceConfig,
         uint256 price
     ) public pure override returns (uint256) {
-        // todo dont need 2 params for fixed price here, always same value
-        // but breaks interface in IZNSPricer otherwise
         PriceConfig memory config = decodePriceConfig(parentPriceConfig);
         return _getFeeForPrice(config, price);
     }

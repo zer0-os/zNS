@@ -58,8 +58,8 @@ export const ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES = ZeroHash
 
 export const DEFAULT_FIXED_PRICE_CONFIG : IFixedPriceConfig = {
   price: ethers.parseEther("50"),
-  feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT
-}
+  feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+};
 
 export const ZERO_VALUE_FIXED_PRICE_CONFIG = ZeroHash + ZeroHash.slice(2);
 

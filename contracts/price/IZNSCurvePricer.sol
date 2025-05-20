@@ -68,10 +68,10 @@ interface IZNSCurvePricer is IZNSPricer {
 
     function encodeConfig(
         CurvePriceConfig calldata config
-    ) external returns(bytes memory);
+    ) external pure returns(bytes memory);
 
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) external returns(CurvePriceConfig memory);
+    ) external pure returns(CurvePriceConfig memory);
 }

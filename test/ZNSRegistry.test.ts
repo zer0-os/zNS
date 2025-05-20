@@ -16,7 +16,6 @@ import {
   AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   ZERO_ADDRESS_ERR,
-  DEFAULT_CURVE_PRICE_CONFIG,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 

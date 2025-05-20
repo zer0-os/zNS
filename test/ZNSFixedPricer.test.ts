@@ -1,29 +1,20 @@
 import {
-  ADMIN_ROLE,
-  deployFixedPricer,
   deployZNS,
-  GOVERNOR_ROLE,
-  INITIALIZED_ERR, INVALID_LABEL_ERR,
-  NOT_AUTHORIZED_ERR,
-  PaymentType,
+  INVALID_LABEL_ERR,
   DEFAULT_PERCENTAGE_BASIS,
-  DEFAULT_CURVE_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
   DEFAULT_FIXED_PRICE_CONFIG,
   encodePriceConfig,
   decodePriceConfig,
   DEFAULT_PROTOCOL_FEE_PERCENT,
-  subRegistrarName,
+  IZNSContractsLocal,
+  Utils,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
-import { ZNSFixedPricer__factory, ZNSFixedPricer, ZNSFixedPricerUpgradeMock__factory } from "../typechain";
-import { getProxyImplAddress, Utils } from "./helpers/utils";
-import { IFixedPriceConfig, IFullDistributionConfig, IZNSContractsLocal } from "./helpers/types";
 
 
 describe("ZNSFixedPricer", () => {
@@ -36,16 +27,8 @@ describe("ZNSFixedPricer", () => {
   let zns : IZNSContractsLocal;
   let domainHash : string;
 
-  let parentPrice : bigint = ethers.parseEther("2223");
-  let parentFeePercentage : bigint = BigInt(2310);
-
-  let parentPriceConfig : IFixedPriceConfig = {
-    price: parentPrice,
-    feePercentage: parentFeePercentage
-  }
-
   let utils : Utils;
-  
+
   before(async () => {
     [deployer, admin, user, zeroVault, random] = await hre.ethers.getSigners();
 
@@ -53,7 +36,6 @@ describe("ZNSFixedPricer", () => {
       deployer,
       governorAddresses: [deployer.address, deployer.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
@@ -89,8 +71,8 @@ describe("ZNSFixedPricer", () => {
     const newPrice = ethers.parseEther("3213");
     const newConfig = {
       price: newPrice,
-      feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT
-    }
+      feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+    };
 
     const asBytes = encodePriceConfig(newConfig);
 
@@ -117,8 +99,8 @@ describe("ZNSFixedPricer", () => {
 
     const newConfig = {
       price: newPrice,
-      feePercentage: newFee
-    }
+      feePercentage: newFee,
+    };
 
     const asBytes = encodePriceConfig(newConfig);
 

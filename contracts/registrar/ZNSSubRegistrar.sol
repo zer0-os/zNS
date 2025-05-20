@@ -73,10 +73,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         setRootRegistrar(_rootRegistrar);
     }
 
-    function getPrice(bytes32 parentHash, string calldata label) external returns(uint256) {
-        //TODO 
-    }
-
     /**
      * @notice Entry point to register a subdomain under a parent domain specified.
      * @dev Reads the `DistributionConfig` for the parent domain to determine how to distribute,

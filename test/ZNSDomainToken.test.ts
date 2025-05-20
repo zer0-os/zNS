@@ -47,7 +47,6 @@ describe("ZNSDomainToken", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     };
 
     zns = await deployZNS(

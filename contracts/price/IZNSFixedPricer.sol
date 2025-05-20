@@ -31,4 +31,12 @@ interface IZNSFixedPricer is IZNSPricer {
         uint256 price;
         uint256 feePercentage;
     }
+
+    function encodeConfig(
+        PriceConfig memory config
+    ) external pure returns(bytes memory);
+
+    function decodePriceConfig(
+        bytes memory priceConfig
+    ) external pure returns(PriceConfig memory);
 }

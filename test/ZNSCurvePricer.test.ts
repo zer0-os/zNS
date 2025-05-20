@@ -5,34 +5,26 @@ import { ethers, ZeroHash } from "ethers";
 import {
   deployZNS,
   getCurvePrice,
-  DEFAULT_PRECISION_MULTIPLIER,
-  validateUpgrade,
   PaymentType,
-  NOT_AUTHORIZED_ERR,
   INVALID_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
-  INVALID_LABEL_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR, FEE_TOO_LARGE_ERR,
+  INVALID_LABEL_ERR,
+  FEE_TOO_LARGE_ERR,
   INVALID_BASE_OR_MAX_LENGTH_ERR,
   DIVISION_BY_ZERO_ERR,
   encodePriceConfig,
   decodePriceConfig,
-  HARDHAT_INFER_ERR
+  HARDHAT_INFER_ERR,
 } from "./helpers";
 import {
   AccessType,
-  DEFAULT_DECIMALS,
   DEFAULT_CURVE_PRICE_CONFIG,
-  DEFAULT_PROTOCOL_FEE_PERCENT,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
 } from "./helpers/constants";
-import { ADMIN_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
-import { ZNSCurvePricer, ZNSCurvePricerUpgradeMock__factory, ZNSCurvePricer__factory, ZNSFixedPricer__factory } from "../typechain";
 import { registrationWithSetup } from "./helpers/register-setup";
-import { getProxyImplAddress, getRandomString, Utils } from "./helpers/utils";
-import { IFullDistributionConfig, IDistributionConfig, IZNSContractsLocal } from "./helpers/types";
+import { IFullDistributionConfig, IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
-import { ICurvePriceConfig, ICurvePriceConfigIndices } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -45,8 +37,6 @@ describe("ZNSCurvePricer", () => {
 
   let zns : IZNSContractsLocal;
   let domainHash : string;
-
-  let utils : Utils; // ?
 
   const defaultDomain = "wilder";
 
@@ -62,10 +52,7 @@ describe("ZNSCurvePricer", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     });
-
-    utils = new Utils(hre, zns);
 
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, 26000000000000000000000n);
@@ -109,7 +96,7 @@ describe("ZNSCurvePricer", () => {
       const offchain = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
       Object.values(offchain).forEach((value, index) => {
-        expect(onchain[index]).to.eq(value)
+        expect(onchain[index]).to.eq(value);
       });
     });
   });
@@ -263,7 +250,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Fails when the curve multiplier is 0 and the base length is 0", async () => {
-      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.curveMultiplier = 0n;
       localConfig.baseLength = 0n;
 
@@ -284,7 +271,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Fails when max length is less than base length", async () => {
-      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.maxLength = 0n;
       localConfig.baseLength = 100n;
 
@@ -302,7 +289,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Fails when maxLength is 0", async () => {
-      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.baseLength = 0n; // Set baseLength to 0 to avoid maxLength < baseLength failure
       localConfig.maxLength = 0n;
 
@@ -351,7 +338,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Fails when fee percentage is greater than 100%", async () => {
-      let localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.feePercentage = BigInt("10001");
 
       const asBytes = encodePriceConfig(localConfig);
@@ -369,7 +356,7 @@ describe("ZNSCurvePricer", () => {
 
     it("Fails when the config is invalid", async () => {
       try {
-          await zns.curvePricer.validatePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES)
+        await zns.curvePricer.validatePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
       } catch (e) {
         expect((e as Error).message).to.include(HARDHAT_INFER_ERR);
       }

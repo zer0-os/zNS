@@ -9,15 +9,15 @@ import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
 
 interface DomainObj {
-  domainHash: string;
-  userBalanceBefore: bigint;
-  userBalanceAfter: bigint;
-  parentBalanceBefore: bigint;
-  parentBalanceAfter: bigint;
-  treasuryBalanceBefore: bigint;
-  treasuryBalanceAfter: bigint;
-  zeroVaultBalanceBefore: bigint;
-  zeroVaultBalanceAfter: bigint;
+  domainHash : string;
+  userBalanceBefore : bigint;
+  userBalanceAfter : bigint;
+  parentBalanceBefore : bigint;
+  parentBalanceAfter : bigint;
+  treasuryBalanceBefore : bigint;
+  treasuryBalanceAfter : bigint;
+  zeroVaultBalanceBefore : bigint;
+  zeroVaultBalanceAfter : bigint;
 }
 
 export const registerDomainPath = async ({
@@ -170,7 +170,7 @@ export const validatePathRegistration = async ({
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricer.getPriceAndFee(config.priceConfig, domainLabel, false))
+        } = await zns.fixedPricer.getPriceAndFee(config.priceConfig, domainLabel, false));
       } else {
         const priceConfig = await (await zns.subRegistrar.distrConfigs(parentHashFound)).priceConfig;
 

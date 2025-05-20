@@ -45,18 +45,6 @@ interface IZNSRegistry {
         address indexed resolver
     );
 
-    // TODO natspec
-    // event DomainPricerSet(
-    //     bytes32 indexed domainHash,
-    //     address indexed pricer
-    // );
-
-    // // TODO natspec
-    // event DomainPriceConfigSet(
-    //     bytes32 indexed domainHash,
-    //     bytes indexed priceConfig
-    // );
-
     /**
      * @notice Emits when a domain record is deleted
      * @param domainHash The hash of a domain's name

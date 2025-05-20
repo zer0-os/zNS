@@ -47,7 +47,7 @@ describe("Transaction Gas Costs Test", () => {
       await zns.curvePricer.getAddress(),
       DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       false
-    )
+    );
 
     config = {
       pricerContract: await zns.fixedPricer.getAddress(),

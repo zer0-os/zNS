@@ -84,8 +84,8 @@ const _createConfig = async (
       pricerContract: distrConfig.pricerContract ? distrConfig.pricerContract : await zns.curvePricer.getAddress(),
       priceConfig: distrConfig.priceConfig ? distrConfig.priceConfig : DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       paymentType: distrConfig.paymentType ? distrConfig.paymentType : PaymentType.DIRECT,
-      accessType: distrConfig.accessType ? distrConfig.accessType : AccessType.OPEN
-    }
+      accessType: distrConfig.accessType ? distrConfig.accessType : AccessType.OPEN,
+    };
   } else {
     distrConfigToUse = distrConfigEmpty;
   }
@@ -93,46 +93,46 @@ const _createConfig = async (
   if (paymentConfig) {
     paymentConfigToUse = {
       token: paymentConfig.token ? paymentConfig.token : await zns.meowToken.getAddress(),
-      beneficiary: paymentConfig.beneficiary ? paymentConfig.beneficiary : user.address
-    }
+      beneficiary: paymentConfig.beneficiary ? paymentConfig.beneficiary : user.address,
+    };
   } else {
     // Only set default payment config  if distrConfig is not empty
     if (distrConfigToUse != distrConfigEmpty) {
       paymentConfigToUse = {
         token: await zns.meowToken.getAddress(),
-        beneficiary: user.address
-      }
+        beneficiary: user.address,
+      };
     } else {
       paymentConfigToUse = paymentConfigEmpty;
     }
   }
 
-  let createdConfig : IDomainConfigForTest = {
+  const createdConfig : IDomainConfigForTest = {
     user,
     domainLabel,
     parentHash: parentHash ?? ethers.ZeroHash,
     fullConfig: {
       distrConfig: distrConfigToUse,
-      paymentConfig: paymentConfigToUse
-    }
-  }
+      paymentConfig: paymentConfigToUse,
+    },
+  };
 
   return createdConfig;
-}
+};
 
 interface CreateConfigArgs {
-  user : SignerWithAddress,
-  domainLabel ?: string,
-  parentHash ?: string,
-  distrConfig ?: Partial<IDistributionConfig>,
-  paymentConfig ?: Partial<IPaymentConfig>,
+  user : SignerWithAddress;
+  domainLabel ?: string;
+  parentHash ?: string;
+  distrConfig ?: Partial<IDistributionConfig>;
+  paymentConfig ?: Partial<IPaymentConfig>;
 }
 
 export class Utils {
   hre : HardhatRuntimeEnvironment;
   zns : IZNSContractsLocal;
 
-  constructor(
+  constructor (
     hre : HardhatRuntimeEnvironment,
     zns : IZNSContractsLocal
   ) {
@@ -151,7 +151,7 @@ export class Utils {
       args.parentHash ?? this.hre.ethers.ZeroHash,
       args.distrConfig,
       args.paymentConfig
-    )
+    );
   }
 
   async getDefaultFullConfigFixed (user : SignerWithAddress) {
@@ -165,8 +165,8 @@ export class Utils {
       paymentConfig: {
         token: this.zns.meowToken.target,
         beneficiary: user.address,
-      }
-    } as IFullDistributionConfig
+      },
+    } as IFullDistributionConfig;
   }
 
   async getDefaultFullConfigCurve (user : SignerWithAddress) {
@@ -180,8 +180,8 @@ export class Utils {
       paymentConfig: {
         token: this.zns.meowToken.target,
         beneficiary: user.address,
-      }
-    } as IFullDistributionConfig
+      },
+    } as IFullDistributionConfig;
   }
 
   // Create a random label of default length 10
@@ -190,7 +190,7 @@ export class Utils {
     length ?: number
   ) {
     let result = "";
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 
     // If no length specified use 10 as a default
     for (let i = 0; i < (length ?? 10); i++) {

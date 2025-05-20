@@ -18,7 +18,6 @@ import {
     DomainAlreadyExists
 } from "../utils/CommonErrors.sol";
 
-import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -77,16 +76,6 @@ contract ZNSRootRegistrar is
         setRootPricer(rootPricer_, priceConfig_, false);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
-    }
-
-    /**
-     * @notice Get the price of a root domain
-     * @param name The name for the domain
-     */
-    // TODO have this for users to more simply get names without providing encoded config
-    // but probably not necessary right? can just get config from here and call directly on pricer
-    function getRootPrice(string calldata name) external view override returns(uint256) {
-        return IZNSPricer(rootPricer).getPrice(rootPriceConfig, name, true);
     }
 
     /**

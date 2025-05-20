@@ -52,7 +52,7 @@ import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
-import { ICurvePriceConfig,  } from "../src/deploy/missions/types";
+import { ICurvePriceConfig  } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -1105,8 +1105,8 @@ describe("ZNSRootRegistrar", () => {
 
       const newConfig : IFixedPriceConfig = {
         price: ogPrice,
-        feePercentage: BigInt(0)
-      }
+        feePercentage: BigInt(0),
+      };
 
       const asBytes = encodePriceConfig(newConfig);
 
@@ -1114,7 +1114,7 @@ describe("ZNSRootRegistrar", () => {
         domainHash,
         asBytes,
         zns.fixedPricer.target,
-      )
+      );
 
       expect(await zns.fixedPricer.getPrice(asBytes, defaultDomain, false)).to.eq(ogPrice);
 
@@ -1429,7 +1429,7 @@ describe("ZNSRootRegistrar", () => {
             false
           )
         ).to.be.revertedWithCustomError(
-          zns.rootRegistrar,  
+          zns.rootRegistrar,
           ZERO_ADDRESS_ERR
         );
       });

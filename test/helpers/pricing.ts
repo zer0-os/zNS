@@ -93,10 +93,10 @@ export const createEncodeFixedPriceConfig = (config : Partial<IFixedPriceConfig>
   const createdConfig : IFixedPriceConfig = {
     price: config.price ?? DEFAULT_FIXED_PRICE_CONFIG.price,
     feePercentage: config.feePercentage ?? DEFAULT_CURVE_PRICE_CONFIG.feePercentage,
-  }
+  };
 
   return encodeFixedPriceConfig(createdConfig);
-}
+};
 
 export const createEncodeCurvePriceConfig = (config : Partial<ICurvePriceConfig>) => {
   const createdConfig : ICurvePriceConfig = {
@@ -106,10 +106,10 @@ export const createEncodeCurvePriceConfig = (config : Partial<ICurvePriceConfig>
     curveMultiplier: config.curveMultiplier ?? DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier,
     precisionMultiplier: config.precisionMultiplier ?? DEFAULT_CURVE_PRICE_CONFIG.precisionMultiplier,
     feePercentage: config.feePercentage ?? DEFAULT_CURVE_PRICE_CONFIG.feePercentage,
-  }
+  };
 
   return encodeCurvePriceConfig(createdConfig);
-}
+};
 
 export const encodePriceConfig = (
   config : ICurvePriceConfig | IFixedPriceConfig,
@@ -119,7 +119,7 @@ export const encodePriceConfig = (
   } else {
     return encodeFixedPriceConfig(config as IFixedPriceConfig);
   }
-}
+};
 
 export const decodePriceConfig = (
   config : string
@@ -129,42 +129,38 @@ export const decodePriceConfig = (
   } else {
     return decodeFixedPriceConfig(config);
   }
-}
+};
 
 
-const encodeCurvePriceConfig = (config : ICurvePriceConfig) => {
-  return ethers.AbiCoder.defaultAbiCoder().encode(
-    [
-      "uint256",
-      "uint256",
-      "uint256",
-      "uint256",
-      "uint256",
-      "uint256"
-    ],
-    [
-      config.maxPrice,
-      config.curveMultiplier,
-      config.maxLength,
-      config.baseLength,
-      config.precisionMultiplier,
-      config.feePercentage
-    ]
-  )
-}
+const encodeCurvePriceConfig = (config : ICurvePriceConfig) => ethers.AbiCoder.defaultAbiCoder().encode(
+  [
+    "uint256",
+    "uint256",
+    "uint256",
+    "uint256",
+    "uint256",
+    "uint256",
+  ],
+  [
+    config.maxPrice,
+    config.curveMultiplier,
+    config.maxLength,
+    config.baseLength,
+    config.precisionMultiplier,
+    config.feePercentage,
+  ]
+);
 
-const encodeFixedPriceConfig = (config : IFixedPriceConfig) => {
-  return ethers.AbiCoder.defaultAbiCoder().encode(
-    [
-      "uint256",
-      "uint256",
-    ],
-    [
-      config.price,
-      config.feePercentage
-    ]
-  )
-}
+const encodeFixedPriceConfig = (config : IFixedPriceConfig) => ethers.AbiCoder.defaultAbiCoder().encode(
+  [
+    "uint256",
+    "uint256",
+  ],
+  [
+    config.price,
+    config.feePercentage,
+  ]
+);
 
 
 const decodeCurvePriceConfig = (config : string) => {
@@ -178,7 +174,7 @@ const decodeCurvePriceConfig = (config : string) => {
       "uint256",
     ],
     config
-  )
+  );
 
   const toReturn : ICurvePriceConfig = {
     maxPrice: results[0],
@@ -186,18 +182,16 @@ const decodeCurvePriceConfig = (config : string) => {
     maxLength: results[2],
     baseLength: results[3],
     precisionMultiplier: results[4],
-    feePercentage: results[5]
-  }
+    feePercentage: results[5],
+  };
 
   return toReturn;
-}
+};
 
-const decodeFixedPriceConfig = (config : string) => {
-  return ethers.AbiCoder.defaultAbiCoder().decode(
-    [
-      "uint256",
-      "uint256",
-    ],
-    config
-  );
-}
+const decodeFixedPriceConfig = (config : string) => ethers.AbiCoder.defaultAbiCoder().decode(
+  [
+    "uint256",
+    "uint256",
+  ],
+  config
+);

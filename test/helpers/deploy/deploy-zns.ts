@@ -263,7 +263,7 @@ export const deployCurvePricer = async ({
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: curvePricerName,
-      address: address,
+      address,
     });
 
     console.log(`${curvePricerName} deployed at: ${address}`);
@@ -390,7 +390,7 @@ export const deployFixedPricer = async ({
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: fixedPricerName,
-      address: address,
+      address,
     });
 
     console.log(
