@@ -5,7 +5,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
-import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
+import { hashDomainLabel, PaymentType, AccessType, DEFAULT_CURVE_PRICE_CONFIG_BYTES } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
@@ -94,6 +94,7 @@ describe("zNS + zDC Single Integration Test", () => {
     //  CurvePricer, stake, open
     distConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };

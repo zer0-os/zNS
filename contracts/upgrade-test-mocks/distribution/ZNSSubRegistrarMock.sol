@@ -31,9 +31,7 @@ struct DistributionConfig {
     IZNSPricer pricerContract;
     PaymentType paymentType;
     AccessType accessType;
-    address pricer;
     bytes priceConfig;
-    bool isSet;
     address newAddress;
     uint256 newUint;
 }

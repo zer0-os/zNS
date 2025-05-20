@@ -41,6 +41,7 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
 } from "../constants";
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
@@ -470,7 +471,6 @@ export const deployZNS = async ({
   deployer,
   governorAddresses,
   adminAddresses,
-  priceConfig,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
 } : DeployZNSParams) : Promise<IZNSContractsLocal> => {
@@ -536,7 +536,7 @@ export const deployZNS = async ({
   const config : RegistrarConfig = {
     registryAddress: await registry.getAddress(),
     curvePricerAddress: await curvePricer.getAddress(),
-    curvePriceConfig: encodePriceConfig(priceConfig),
+    curvePriceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
     treasuryAddress: await treasury.getAddress(),
     domainTokenAddress: await domainToken.getAddress(),
   };

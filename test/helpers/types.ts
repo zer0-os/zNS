@@ -28,7 +28,7 @@ import {
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-import { Addressable } from "ethers";
+import { Addressable, Typed } from "ethers";
 
 
 export type Maybe<T> = T | undefined;
@@ -100,7 +100,6 @@ export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig : ICurvePriceConfig;
   registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
@@ -108,9 +107,13 @@ export interface DeployZNSParams {
 
 export interface IDistributionConfig {
   pricerContract : string | Addressable;
+  priceConfig : string;
   paymentType : bigint;
   accessType : bigint;
-  priceConfig : string;
+}
+
+export interface IDistributionConfigExtended extends Typed {
+  [k: string] : any;
 }
 
 export interface IPaymentConfig {
@@ -123,13 +126,22 @@ export interface IFullDistributionConfig {
   paymentConfig : IPaymentConfig;
 }
 
-export interface IDomainConfigForTest {
+interface ConfigArgsBase {
   user : SignerWithAddress;
   domainLabel : string;
-  fullConfig : IFullDistributionConfig;
   domainContent ?: string;
   parentHash ?: string;
   tokenURI ?: string;
+}
+
+export interface IDomainConfigForTest extends ConfigArgsBase {
+  fullConfig : IFullDistributionConfig;
+}
+
+export interface IRegisterWithSetupArgs extends ConfigArgsBase {
+  zns : IZNSContractsLocal;
+  fullConfig ?: IFullDistributionConfig;
+  setConfigs ?: boolean;
 }
 
 export interface IPathRegResult {

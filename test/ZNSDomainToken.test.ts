@@ -24,6 +24,7 @@ import {
   DeployZNSParams,
   IZNSContractsLocal,
   getProxyImplAddress,
+  DEFAULT_CURVE_PRICE_CONFIG,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -46,7 +47,9 @@ describe("ZNSDomainToken", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     };
+
     zns = await deployZNS(
       deployParams
     );

@@ -46,9 +46,6 @@ describe("ZNSCurvePricer", () => {
   let zns : IZNSContractsLocal;
   let domainHash : string;
 
-  let defaultDistrConfig : IDistributionConfig;
-  // let DEFAULT_CURVE_PRICE_CONFIG_BYTES : string;
-
   let utils : Utils; // ?
 
   const defaultDomain = "wilder";
@@ -65,6 +62,7 @@ describe("ZNSCurvePricer", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [admin.address],
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     });
 
     utils = new Utils(hre, zns);
@@ -75,9 +73,9 @@ describe("ZNSCurvePricer", () => {
     const fullConfig : IFullDistributionConfig = {
       distrConfig: {
         pricerContract: await zns.curvePricer.getAddress(),
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         paymentType: PaymentType.DIRECT,
         accessType: AccessType.OPEN,
-        priceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
       },
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
@@ -91,9 +89,6 @@ describe("ZNSCurvePricer", () => {
       domainLabel: "testdomain",
       fullConfig,
     });
-
-    defaultDistrConfig = await zns.subRegistrar.distrConfigs(domainHash);
-    // DEFAULT_CURVE_PRICE_CONFIG_BYTES = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
   });
 
   after(async () => {
@@ -113,19 +108,13 @@ describe("ZNSCurvePricer", () => {
       const onchain = await zns.curvePricer.decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
       const offchain = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
-      expect(Object.keys(onchain)).to.deep.eq(Object.keys(offchain));
-      expect(Object.values(onchain)).to.deep.eq(Object.values(offchain));
+      Object.values(offchain).forEach((value, index) => {
+        expect(onchain[index]).to.eq(value)
+      });
     });
   });
 
   describe("#getPrice", async () => {
-    // CASES
-    // validatePriceConfig should have its own `describe` suite
-    // passes when exact # params given and are valid
-    // fails when exact # params given but is invalid
-    // fails when wrong # params given
-    // TODO validation calls for each function?
-      // getPrice, getFeeForPrice, getPriceAndFee
     it("Returns 0 price for a label with no length if label validation is skipped", async () => {
       const {
         price,
@@ -153,26 +142,26 @@ describe("ZNSCurvePricer", () => {
       );
     });
 
-    it("Returns the base price for domains that are equal to the base length", async () => {
+    it("Returns the max price for domains that are equal to the base length", async () => {
       // Using the default length of 3
       const domain = "eth";
-      const decodedPriceConfig = decodePriceConfig(defaultDistrConfig.priceConfig);
+      const decodedPriceConfig = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
       const domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domain, true);
-      expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
+      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
     });
 
-    it("Returns the base price for domains that are less than the base length", async () => {
+    it("Returns the max price for domains that are less than the base length", async () => {
       const domainA = "et";
       const domainB = "e";
 
-      const decodedPriceConfig = decodePriceConfig(defaultDistrConfig.priceConfig);
+      const decodedPriceConfig = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
       let domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainA, true);
-      expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
+      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
 
       domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainB, true);
-      expect(domainPrice).to.eq(decodedPriceConfig[ICurvePriceConfigIndices.MaxPrice]);
+      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
     });
 
     it("Returns expected prices for a domain greater than the base length", async () => {
@@ -388,7 +377,6 @@ describe("ZNSCurvePricer", () => {
   });
 
   describe("#getRegistrationFee", () => {
-    // TODO fails to test?
     it("Successfully gets the fee for a price", async () => {
       const stake = ethers.parseEther("0.2");
       const fee = await zns.curvePricer.getFeeForPrice(

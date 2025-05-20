@@ -30,7 +30,7 @@ import {
   DOMAIN_EXISTS_ERR,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
-  ZERO_VALUE_CURVE_PRICE_CONFIG,
+  ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES,
 } from "./helpers";
 import { IDistributionConfig, IFixedPriceConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -120,7 +120,6 @@ describe("ZNSRootRegistrar", () => {
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
       priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      isSet: false
     };
 
     await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -138,7 +137,6 @@ describe("ZNSRootRegistrar", () => {
     const config = await zns.treasury.paymentConfigs(domainHash);
     expect(config.token).to.eq(await zns.meowToken.getAddress());
     expect(config.beneficiary).to.eq(user.address);
-    expect((await zns.subRegistrar.distrConfigs(domainHash)).isSet).to.be.true;
   });
 
   it("Does not set the payment config when the beneficiary is the zero address", async () => {
@@ -148,7 +146,6 @@ describe("ZNSRootRegistrar", () => {
       priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
-      isSet: false
     };
 
     await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -172,7 +169,6 @@ describe("ZNSRootRegistrar", () => {
       paymentType: PaymentType.STAKE,
       priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       accessType: AccessType.OPEN,
-      isSet: false
     };
 
     await zns.rootRegistrar.connect(deployer).registerRootDomain(
@@ -624,7 +620,6 @@ describe("ZNSRootRegistrar", () => {
         priceConfig: ZeroHash, // TODO fix by adding helper
         accessType: AccessType.OPEN,
         paymentType: PaymentType.DIRECT,
-        isSet: false
       };
 
       const tokenURI = "https://example.com/817c64af";
@@ -832,7 +827,7 @@ describe("ZNSRootRegistrar", () => {
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
       await zns.rootRegistrar.connect(deployer).setRootPricer(
         await zns.curvePricer.getAddress(),
-        ZERO_VALUE_CURVE_PRICE_CONFIG,
+        ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES,
         true
       );
 
@@ -1051,7 +1046,6 @@ describe("ZNSRootRegistrar", () => {
           priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           paymentType: PaymentType.STAKE,
           accessType: AccessType.OPEN,
-          isSet: false
         },
       });
 
@@ -1092,7 +1086,6 @@ describe("ZNSRootRegistrar", () => {
           priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
           paymentType: PaymentType.DIRECT,
           accessType: AccessType.OPEN,
-          isSet: false
         },
       });
 
@@ -1507,7 +1500,7 @@ describe("ZNSRootRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.curvePricer.getPrice(ZERO_VALUE_CURVE_PRICE_CONFIG, domainName, false),
+        zns.curvePricer.getPrice(ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES, domainName, true),
       ];
 
       await validateUpgrade(deployer, zns.rootRegistrar, registrar, registrarFactory, contractCalls);

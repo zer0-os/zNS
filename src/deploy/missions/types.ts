@@ -7,12 +7,3 @@ export interface ICurvePriceConfig {
   precisionMultiplier : bigint;
   feePercentage : bigint;
 }
-
-export enum ICurvePriceConfigIndices {
-  MaxPrice = 0,
-  CurveMultiplier = 1,
-  MaxLength = 2,
-  BaseLength = 3,
-  PrecisionMultiplier = 4,
-  FeePercentage = 5,
-}

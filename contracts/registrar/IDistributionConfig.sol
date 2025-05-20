@@ -50,11 +50,6 @@ interface IDistributionConfig {
     }
 
     /**
-     * @notice Reverted when someone is trying to buy a subdomain under a parent that is not set up for distribution.
-     */
-    error ParentPriceConfigNotSet();
-
-    /**
      * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
      */
     event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);

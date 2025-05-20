@@ -48,12 +48,13 @@ export const DEFAULT_CURVE_PRICE_CONFIG : ICurvePriceConfig = {
 
 export const DEFAULT_CURVE_PRICE_CONFIG_BYTES = encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG);
 
-export const ZERO_VALUE_CURVE_PRICE_CONFIG = ZeroHash
+export const ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES = ZeroHash
   + ZeroHash.slice(2)
   + ZeroHash.slice(2)
   + ZeroHash.slice(2)
   + ZeroHash.slice(2)
   + ZeroHash.slice(2);
+
 
 export const DEFAULT_FIXED_PRICE_CONFIG : IFixedPriceConfig = {
   price: ethers.parseEther("50"),
@@ -82,7 +83,7 @@ export const distrConfigEmpty : IDistributionConfig = {
   pricerContract: ethers.ZeroAddress,
   paymentType: PaymentType.DIRECT,
   accessType: AccessType.LOCKED,
-  priceConfig: ZeroHash, // TODO zero hash a problem?
+  priceConfig: ZeroHash,
 };
 
 export const fullConfigEmpty : IFullDistributionConfig = {

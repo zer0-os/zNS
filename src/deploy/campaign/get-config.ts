@@ -247,7 +247,6 @@ const getValidateRootPriceConfig = () => {
     baseLength,
     precisionMultiplier,
     feePercentage,
-    isSet: true,
   };
 
   validateConfig(priceConfig);

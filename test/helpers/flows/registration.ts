@@ -8,6 +8,17 @@ import { getDomainRegisteredEvents } from "../events";
 import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
 
+interface DomainObj {
+  domainHash: string;
+  userBalanceBefore: bigint;
+  userBalanceAfter: bigint;
+  parentBalanceBefore: bigint;
+  parentBalanceAfter: bigint;
+  treasuryBalanceBefore: bigint;
+  treasuryBalanceAfter: bigint;
+  zeroVaultBalanceBefore: bigint;
+  zeroVaultBalanceAfter: bigint;
+}
 
 export const registerDomainPath = async ({
   zns,
@@ -15,7 +26,7 @@ export const registerDomainPath = async ({
 } : {
   zns : IZNSContractsLocal;
   domainConfigs : Array<IDomainConfigForTest>;
-}) => domainConfigs.reduce(
+}) : Promise<Array<IPathRegResult>> => domainConfigs.reduce( // TODO how to provide return type?
   async (
     acc : Promise<Array<IPathRegResult>>,
     config,
@@ -73,7 +84,7 @@ export const registerDomainPath = async ({
     const treasuryBalanceAfter = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
     const zeroVaultBalanceAfter = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
 
-    const domainObj = {
+    const domainObj : DomainObj = {
       domainHash,
       userBalanceBefore,
       userBalanceAfter,
@@ -159,7 +170,7 @@ export const validatePathRegistration = async ({
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel, false))
+        } = await zns.fixedPricer.getPriceAndFee(config.priceConfig, domainLabel, false))
       } else {
         const priceConfig = await (await zns.subRegistrar.distrConfigs(parentHashFound)).priceConfig;
 

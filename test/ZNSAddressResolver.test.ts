@@ -15,8 +15,12 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, NOT_AUTHORIZED_ERR,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_CURVE_PRICE_CONFIG,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
+
+import { DEFAULT_FIXED_PRICER_CONFIG_BYTES } from "./helpers";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
@@ -43,7 +47,9 @@ describe("ZNSAddressResolver", () => {
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     };
+
     zns = await deployZNS(params);
 
     // Have to get this value for every test, but can be fixed

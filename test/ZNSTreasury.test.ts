@@ -57,6 +57,7 @@ describe("ZNSTreasury", () => {
       governorAddresses: [governor.address],
       adminAddresses: [admin.address],
       zeroVaultAddress: zeroVault.address,
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG
     };
 
     zns = await deployZNS(params);

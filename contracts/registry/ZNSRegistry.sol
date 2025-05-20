@@ -172,16 +172,9 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function createDomainRecord(
         bytes32 domainHash,
         address owner,
-        // address pricer,
-        // bytes memory priceConfig,
         string calldata resolverType
     ) external override onlyRegistrar {
         _setDomainOwner(domainHash, owner);
-
-        // if (pricer != address(0) && priceConfig.length > 0) {
-        //     _setDomainPricer(domainHash, pricer);
-        //     _setDomainPriceConfig(domainHash, priceConfig);
-        // }
 
         // We allow creation of partial domain data with no resolver address
         if (bytes(resolverType).length != 0) {
@@ -239,8 +232,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         // `exists` is checked implicitly through the modifier
         _setDomainOwner(domainHash, owner);
         _setDomainResolver(domainHash, resolverType);
-        // _setDomainPricer(domainHash, pricer);
-        // _setDomainPriceConfig(domainHash, priceConfig);
     }
 
     /**

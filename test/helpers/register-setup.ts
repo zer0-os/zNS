@@ -3,6 +3,7 @@ import {
   IDistributionConfig,
   IFixedPriceConfig,
   IFullDistributionConfig,
+  IRegisterWithSetupArgs,
   IZNSContractsLocal,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
@@ -107,7 +108,7 @@ export const defaultSubdomainRegistration = async ({
   const supplyBefore = await zns.domainToken.totalSupply();
 
 
-  console.log(distrConfig);
+  // console.log(distrConfig);
   const tx = await zns.subRegistrar.connect(user).registerSubdomain(
     parentHash,
     subdomainLabel,
@@ -132,17 +133,7 @@ export const registrationWithSetup = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   fullConfig = fullConfigEmpty,
   setConfigs = true,
-} : {
-  // TODO fix after, no nullables before non-nullables 
-  zns : IZNSContractsLocal;
-  user : SignerWithAddress;
-  parentHash ?: string;
-  domainLabel : string;
-  domainContent ?: string;
-  tokenURI ?: string;
-  fullConfig ?: IFullDistributionConfig;
-  setConfigs ?: boolean;
-}) => {
+} : IRegisterWithSetupArgs) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
     ? fullConfig.distrConfig
