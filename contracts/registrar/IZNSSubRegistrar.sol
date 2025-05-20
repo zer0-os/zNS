@@ -92,12 +92,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        SubdomainRegistrationParams calldata registration
     ) external returns (bytes32);
 
     function registerMultipleSubdomains(

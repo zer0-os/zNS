@@ -143,11 +143,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        RootDomainRegistrationParams calldata registration
     ) external returns (bytes32);
 
     function registerMultipleRootDomains(

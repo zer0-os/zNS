@@ -167,7 +167,7 @@ describe("ZNSRootRegistrar", () => {
     // Attempt to register the same domain again
     await expect(
       zns.rootRegistrar.connect(user).registerMultipleRootDomains([domainObj, domainObj])
-    ).to.be.revertedWithCustomError(zns.rootRegistrar, "DomainAlreadyExists");
+    ).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
   });
 
   it("Sets the payment config when provided with the domain registration", async () => {

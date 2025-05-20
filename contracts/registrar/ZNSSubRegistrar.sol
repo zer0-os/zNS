@@ -74,71 +74,67 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * checks if the sender is allowed to register, check if subdomain is available,
      * acquires the price and other data needed to finalize the registration
      * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-     * @param parentHash The hash of the parent domain to register the subdomain under
-     * @param label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
-     * @param domainAddress (optional) The address to which the subdomain will be resolved to
-     * @param tokenURI (required) The tokenURI for the subdomain to be registered
-     * @param distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     * @param registration A struct of subdomain registration data:
+     *        + parentHash The hash of the parent domain to register the subdomain under
+     *        + label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
+     *        + domainAddress (optional) The address to which the subdomain will be resolved to
+     *        + tokenURI (required) The tokenURI for the subdomain to be registered
+     *        + distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
+     *        + paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
     */
     function registerSubdomain(
-        bytes32 parentHash,
-        string memory label,
-        address domainAddress,
-        string memory tokenURI,
-        DistributionConfig memory distrConfig,
-        PaymentConfig memory paymentConfig
+        SubdomainRegistrationParams memory registration
     ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        label.validate();
+        registration.label.validate();
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
+        bytes32 domainHash = hashWithParent(registration.parentHash, registration.label);
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
+        DistributionConfig memory parentConfig = distrConfigs[registration.parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(registration.parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(parentHash);
+            revert ParentLockedOrDoesntExist(registration.parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
-                !mintlist[parentHash]
+                !mintlist[registration.parentHash]
                     .list
-                    [mintlist[parentHash].ownerIndex]
+                    [mintlist[registration.parentHash].ownerIndex]
                     [msg.sender]
-            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
+            ) revert SenderNotApprovedForPurchase(registration.parentHash, msg.sender);
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
+            parentHash: registration.parentHash,
             domainHash: domainHash,
-            label: label,
+            label: registration.label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: registration.domainAddress,
+            tokenURI: registration.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: registration.paymentConfig
         });
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        parentHash,
-                        label,
+                        registration.parentHash,
+                        registration.label,
                         true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        parentHash,
-                        label,
+                        registration.parentHash,
+                        registration.label,
                         true
                     );
             }
@@ -148,8 +144,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        if (address(distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+        if (address(registration.distributionConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, registration.distributionConfig);
         }
 
         return domainHash;
@@ -195,14 +191,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
                 revert ZeroParentHash(subRegistrations[i].label);
             }
 
-            domainHashes[i] = registerSubdomain(
-                subRegistrations[i].parentHash,
-                subRegistrations[i].label,
-                subRegistrations[i].domainAddress,
-                subRegistrations[i].tokenURI,
-                subRegistrations[i].distributionConfig,
-                subRegistrations[i].paymentConfig
-            );
+            domainHashes[i] = registerSubdomain(subRegistrations[i]);
         }
 
         return domainHashes;

@@ -49,7 +49,7 @@ import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
-describe("ZNSSubRegistrar", () => {
+describe.only("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -209,21 +209,12 @@ describe("ZNSSubRegistrar", () => {
         registrations.push(subdomainObj);
 
         // first goes with rootHash
-        if (i === 0) {
-          parentHashes.push(
-            await zns.subRegistrar.hashWithParent(
-              rootHash,
-              subdomainObj.label
-            )
-          );
-        } else {
-          parentHashes.push(
-            await zns.subRegistrar.hashWithParent(
-              parentHashes[i - 1],
-              subdomainObj.label
-            )
-          );
-        }
+        parentHashes.push(
+          await zns.subRegistrar.hashWithParent(
+            i === 0 ? rootHash : parentHashes[i - 1],
+            subdomainObj.label
+          )
+        );
       }
 
       // Add allowance

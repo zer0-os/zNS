@@ -77,54 +77,51 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param name Name (label) of the domain to register
-     * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
-     * @param tokenURI URI to assign to the Domain Token issued for the domain
-     * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
+     * @param registration A struct of domain registration data:
+     *       + name Name (label) of the domain to register
+     *       + domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
+     *       + tokenURI URI to assign to the Domain Token issued for the domain
+     *       + distributionConfig (optional) Distribution config for the domain to set in the same tx
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
      *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
      *      but all the parameters inside are required.
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *       + paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        RootDomainRegistrationParams calldata registration
     ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        name.validate();
+        registration.name.validate();
 
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(name));
+        bytes32 domainHash = keccak256(bytes(registration.name));
 
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
+        uint256 domainPrice = rootPricer.getPrice(0x0, registration.name, true);
 
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
                 msg.sender,
-                domainAddress,
+                registration.domainAddress,
                 domainPrice,
                 0,
-                name,
-                tokenURI,
+                registration.name,
+                registration.tokenURI,
                 true,
-                paymentConfig
+                registration.paymentConfig
             )
         );
 
-        if (address(distributionConfig.pricerContract) != address(0)) {
+        if (address(registration.distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, registration.distributionConfig);
         }
 
         return domainHash;
@@ -150,13 +147,7 @@ contract ZNSRootRegistrar is
         bytes32[] memory domainHashes = new bytes32[](registrations.length);
 
         for (uint256 i = 0; i < registrations.length; i++) {
-            domainHashes[i] = registerRootDomain(
-                registrations[i].name,
-                registrations[i].domainAddress,
-                registrations[i].tokenURI,
-                registrations[i].distributionConfig,
-                registrations[i].paymentConfig
-            );
+            domainHashes[i] = registerRootDomain(registrations[i]);
         }
 
         return domainHashes;
