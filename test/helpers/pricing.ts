@@ -131,7 +131,6 @@ export const decodePriceConfig = (
   }
 };
 
-
 const encodeCurvePriceConfig = (config : ICurvePriceConfig) => ethers.AbiCoder.defaultAbiCoder().encode(
   [
     "uint256",
@@ -162,7 +161,6 @@ const encodeFixedPriceConfig = (config : IFixedPriceConfig) => ethers.AbiCoder.d
   ]
 );
 
-
 const decodeCurvePriceConfig = (config : string) => {
   const results = ethers.AbiCoder.defaultAbiCoder().decode(
     [
@@ -188,10 +186,19 @@ const decodeCurvePriceConfig = (config : string) => {
   return toReturn;
 };
 
-const decodeFixedPriceConfig = (config : string) => ethers.AbiCoder.defaultAbiCoder().decode(
-  [
-    "uint256",
-    "uint256",
-  ],
-  config
-);
+const decodeFixedPriceConfig = (config : string) => {
+    const results = ethers.AbiCoder.defaultAbiCoder().decode(
+    [
+      "uint256",
+      "uint256",
+    ],
+    config
+  );
+
+  const toReturn : IFixedPriceConfig = {
+    price: results[0],
+    feePercentage: results[1]
+  }
+
+  return toReturn;
+}

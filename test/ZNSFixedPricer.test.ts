@@ -9,6 +9,7 @@ import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
   IZNSContractsLocal,
   Utils,
+  IFixedPriceConfig,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -61,10 +62,10 @@ describe("ZNSFixedPricer", () => {
 
   it("Confirms decoding is the same offchain and onchain", async () => {
     const onchain = await zns.fixedPricer.decodePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
-    const offchain = decodePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
+    const offchain = decodePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES) as IFixedPriceConfig;
 
-    expect(Object.keys(onchain)).to.deep.eq(Object.keys(offchain));
-    expect(Object.values(onchain)).to.deep.eq(Object.values(offchain));
+    expect(onchain.price).to.eq(offchain.price);
+    expect(onchain.feePercentage).to.eq(offchain.feePercentage);
   });
 
   it("#getPrice should return the correct price", async () => {
