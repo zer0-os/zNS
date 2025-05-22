@@ -73,13 +73,13 @@ describe("ZNSTreasury", () => {
     await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
 
     // register random domain
-    await zns.rootRegistrar.connect(user).registerRootDomain(
-      domainName,
-      user.address,
-      DEFAULT_TOKEN_URI,
-      distrConfigEmpty,
+    await zns.rootRegistrar.connect(user).registerRootDomain({
+      name: domainName,
+      domainAddress: user.address,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distributionConfig: distrConfigEmpty,
       paymentConfig,
-    );
+    });
   });
 
   it("Should initialize correctly", async () => {
