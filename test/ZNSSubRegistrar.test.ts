@@ -50,7 +50,7 @@ import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
-describe("ZNSSubRegistrar", () => {
+describe.only("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -294,6 +294,171 @@ describe("ZNSSubRegistrar", () => {
         zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj])
       ).to.be.revertedWithCustomError(zns.subRegistrar, ZERO_PARENTHASH_ERR);
     });
+
+
+    //
+    //
+
+
+    it.only("registers a mix of nested and non-nested subdomains and validates parent hashes", async () => {
+      const parentHash = rootHash;
+      const subRegistrations = [];
+      const labels = [
+        "nested0",
+        "nested1",
+        "nested2",
+        "nested3",
+        "non0nested0with0parent0",
+        "non0nested0with0parent1",
+        "after0non0nested1",
+        "after0non0nested2",
+        "non0nested3",
+        "non0nested4",
+      ];
+      const domainHashes = [];
+
+      // 4 nested — first has parentHash, the rest have parentHash = 0
+      for (let i = 0; i < 4; i++) {
+        subRegistrations.push({
+          parentHash: i === 0 ? parentHash : ethers.ZeroHash,
+          label: `${labels[i]}`,
+          domainAddress: ethers.ZeroAddress,
+          tokenURI: `uri${i}`,
+          distributionConfig: {
+            pricerContract: ethers.ZeroAddress,
+            paymentType: 0,
+            accessType: 0,
+          },
+          paymentConfig: {
+            token: ethers.ZeroAddress,
+            beneficiary: ethers.ZeroAddress,
+          },
+        });
+      }
+
+      // 2 non-nested with specific parentHash
+      for (let i = 0; i < 2; i++) {
+        const prntHsh = await registrationWithSetup({
+          zns,
+          user: rootOwner,
+          domainLabel: `parent${i}`,
+          fullConfig: {
+            distrConfig: {
+              accessType: AccessType.OPEN,
+              pricerContract: await zns.fixedPricer.getAddress(),
+              paymentType: PaymentType.DIRECT,
+            },
+            paymentConfig: {
+              token: await zns.meowToken.getAddress(),
+              beneficiary: rootOwner.address,
+            },
+            priceConfig: rootPriceConfig,
+          },
+        });
+
+        subRegistrations.push({
+          parentHash: prntHsh,
+          label: `${labels[4 + i]}`,  // non0nested0with0parent0 / non0nested0with0parent1
+          domainAddress: ethers.ZeroAddress,
+          tokenURI: `uri${i * 200}`,
+          distributionConfig: {
+            pricerContract: ethers.ZeroAddress,
+            paymentType: 0,
+            accessType: 0,
+          },
+          paymentConfig: {
+            token: ethers.ZeroAddress,
+            beneficiary: ethers.ZeroAddress,
+          },
+        });
+      }
+
+      // 2 nested after non-nested
+      subRegistrations.push({
+        parentHash: ethers.ZeroHash,
+        label: `${labels[6]}`,  // after0non0nested1
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: "",
+        distributionConfig: {
+          pricerContract: ethers.ZeroAddress,
+          paymentType: 0,
+          accessType: 0,
+        },
+        paymentConfig: {
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
+        },
+      });
+      subRegistrations.push({
+        parentHash: ethers.ZeroHash,
+        label: `${labels[7]}`,  // after0non0nested2
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: "",
+        distributionConfig: {
+          pricerContract: ethers.ZeroAddress,
+          paymentType: 0,
+          accessType: 0,
+        },
+        paymentConfig: {
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
+        },
+      });
+
+      // 2 last ones — non-nested with parentHash = `parentHash`
+      subRegistrations.push({
+        parentHash,
+        label: `${labels[8]}`,  // non0nested3
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: "",
+        distributionConfig: {
+          pricerContract: ethers.ZeroAddress,
+          paymentType: 0,
+          accessType: 0,
+        },
+        paymentConfig: {
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
+        },
+      });
+      subRegistrations.push({
+        parentHash,
+        label: `${labels[9]}`,  // non0nested4
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: "",
+        distributionConfig: {
+          pricerContract: ethers.ZeroAddress,
+          paymentType: 0,
+          accessType: 0,
+        },
+        paymentConfig: {
+          token: ethers.ZeroAddress,
+          beneficiary: ethers.ZeroAddress,
+        },
+      });
+
+      const tx = await zns.subRegistrar.connect(rootOwner).registerMultipleSubdomains(subRegistrations);
+      await tx.wait();
+
+      // Check that each subdomain is registered under the correct parent
+      const expectedHashes : Array<string> = [];
+      let currentParent = parentHash;
+      for (let i = 0; i < 4; i++) {
+        const hash = await zns.subRegistrar.hashWithParent(currentParent, `nested${i}`);
+        expectedHashes.push(hash);
+        currentParent = hash;
+      }
+
+      expect(domainHashes.length).to.equal(expectedHashes.length);
+      for (let i = 0; i < domainHashes.length; i++) {
+        expect(domainHashes[i]).to.equal(expectedHashes[i]);
+      }
+    });
+
+
+    //
+    //
+
 
     it("Sets the payment config when given", async () => {
       const subdomain = "world-subdomain";
