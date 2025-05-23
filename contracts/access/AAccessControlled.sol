@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZeroAddressPassed, WrongAccessControlAddress } from "../utils/CommonErrors.sol";
+import { ZeroAddressPassed, WrongAccessControllerAddress } from "../utils/CommonErrors.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 
@@ -72,7 +72,7 @@ abstract contract AAccessControlled {
             accessController = IZNSAccessController(_accessController);
             emit AccessControllerSet(_accessController);
         } else {
-            revert WrongAccessControlAddress(_accessController);
+            revert WrongAccessControllerAddress(_accessController);
         }
     }
 }

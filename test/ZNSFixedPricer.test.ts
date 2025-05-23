@@ -372,12 +372,12 @@ describe("ZNSFixedPricer", () => {
       ).to.be.reverted;
     });
 
-    it("should revert with `WrongAccessControlAddress(CONTRACT.target)`", async () => {
+    it("should revert with `WrongAccessControllerAddress(CONTRACT.target)`", async () => {
       await expect(
         zns.fixedPricer.setAccessController(zns.domainToken.target)
       ).to.revertedWithCustomError(
         zns.fixedPricer,
-        "WrongAccessControlAddress"
+        "WrongAccessControllerAddress"
       ).withArgs(zns.domainToken.target);
 
       // set back for other tests.

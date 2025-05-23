@@ -13,7 +13,7 @@ import { expect } from "chai";
 import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
 
-describe.only("ZNSAccessController", () => {
+describe("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
   let accessController : ZNSAccessController;
   let governorAccs : Array<SignerWithAddress>;
