@@ -303,11 +303,6 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWithCustomError(zns.subRegistrar, ZERO_PARENTHASH_ERR);
     });
 
-
-    //
-    //
-
-
     it("Should register a mix of nested and non-nested subdomains and validates hashes", async () => {
       // Structure of domains (- rootDomainName; + subdomain):
       //

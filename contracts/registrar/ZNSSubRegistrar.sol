@@ -7,7 +7,6 @@ import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { DomainAlreadyExists, ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
