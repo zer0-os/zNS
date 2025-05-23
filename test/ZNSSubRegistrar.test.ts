@@ -34,7 +34,7 @@ import {
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   NOT_OWNER_OF_ERR,
   ZERO_ADDRESS_ERR,
-  PARENT_NOT_SET_ERR,
+  PARENT_NOT_SETUP_ERR,
   DOMAIN_EXISTS_ERR,
   SENDER_NOT_APPROVED_ERR,
   DEFAULT_PRECISION_MULTIPLIER,
@@ -199,25 +199,10 @@ describe("ZNSSubRegistrar", () => {
         },
       });
 
-      // try {
       // Confirm 0 pricer contract and config
       const localConfig = await zns.subRegistrar.distrConfigs(newRootHash);
       expect(localConfig.pricerContract).to.eq(ethers.ZeroAddress);
       expect(localConfig.priceConfig).to.eq("0x");
-
-      // await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-      //   newRootHash, // parenthash
-      //   "subunset",
-      //   lvl2SubOwner.address,
-      //   subTokenURI,
-      //   distrConfigEmpty,
-      //   {
-      //     token: await zns.meowToken.getAddress(),
-      //     beneficiary: rootOwner.address,
-      //   });
-      // } catch (e) {
-      //   console.log((e as Error).message);
-      // }
 
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
@@ -232,7 +217,7 @@ describe("ZNSSubRegistrar", () => {
           })
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       );
     });
 
@@ -264,7 +249,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       );
     });
 
@@ -388,7 +373,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       ).withArgs(ethers.ZeroHash);
 
       // check that a random non-existent hash can NOT be passed as parentHash
@@ -404,7 +389,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       );
     });
 
@@ -484,7 +469,6 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // transfer back for other tests
-      // TODO refactor later
       await zns.meowToken.connect(deployer).transfer(lvl2SubOwner.address, userBalance);
     });
 
@@ -2657,7 +2641,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       );
     });
 
@@ -2963,7 +2947,7 @@ describe("ZNSSubRegistrar", () => {
         )
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
-        PARENT_NOT_SET_ERR
+        PARENT_NOT_SETUP_ERR
       );
     });
   });
@@ -3255,8 +3239,6 @@ describe("ZNSSubRegistrar", () => {
         accessType: AccessType.MINTLIST,
       };
 
-      console.log(lvl2SubOwner.address);
-
       await expect(
         zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
           domainHash,
@@ -3282,7 +3264,6 @@ describe("ZNSSubRegistrar", () => {
       const asBytes = encodePriceConfig(newConfig);
 
       const domainHash = regResults[1].domainHash;
-      console.log(`dhash[1]: ${domainHash}`);
 
       // as a user of "domainHash" that's not 0x0
       await zns.subRegistrar.connect(lvl2SubOwner).setPricerDataForDomain(
@@ -3444,7 +3425,6 @@ describe("ZNSSubRegistrar", () => {
         ZERO_ADDRESS_ERR
       );
     });
-    // });
 
     describe("#setPaymentTypeForDomain()", () => {
       it("should re-set payment type for an existing subdomain", async () => {
@@ -3668,6 +3648,7 @@ describe("ZNSSubRegistrar", () => {
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("1000000")))
       );
+
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       fixedPrice = ethers.parseEther("397.13");
@@ -3676,6 +3657,7 @@ describe("ZNSSubRegistrar", () => {
         price: fixedPrice,
         feePercentage: BigInt(0),
       }),
+
       // register root domain
       rootHash = await registrationWithSetup({
         zns,
@@ -3797,38 +3779,40 @@ describe("ZNSSubRegistrar", () => {
       const newRegistrar = await factory.deploy();
       await newRegistrar.waitForDeployment();
 
-      const tx = zns.subRegistrar.connect(deployer).upgradeToAndCall(
+      await zns.subRegistrar.connect(deployer).upgradeToAndCall(
         await newRegistrar.getAddress(),
         "0x"
       );
 
-      await expect(tx).to.not.be.reverted;
-
       // create new proxy object
-      const newRegistrarProxy = factory.attach(await zns.subRegistrar.getAddress()) as ZNSSubRegistrarUpgradeMock;
+      const newSubRegistrarProxy = factory.attach(await zns.subRegistrar.getAddress()) as ZNSSubRegistrarUpgradeMock;
 
       // check values in storage
-      const rootConfigBefore = await newRegistrarProxy.distrConfigs(rootHash);
+      const rootConfigBefore = await newSubRegistrarProxy.distrConfigs(rootHash);
       expect(rootConfigBefore.accessType).to.eq(AccessType.OPEN);
       expect(rootConfigBefore.pricerContract).to.eq(await zns.fixedPricer.getAddress());
       expect(rootConfigBefore.priceConfig).to.eq(rootConfigBytes);
       expect(rootConfigBefore.paymentType).to.eq(PaymentType.DIRECT);
+      expect(rootConfigBefore.newAddress).to.eq(ethers.ZeroAddress);
+      expect(rootConfigBefore.newUint).to.eq(0n);
 
       await zns.meowToken.mint(lvl2SubOwner.address, ethers.parseEther("1000000"));
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.parseEther("1000000"));
 
       // Extended config type also extends `Typed` base interface to appease ethers/typechain
+      const newUintVal = BigInt(1912171236);
+      
       const subConfigToSet = {
         accessType: AccessType.MINTLIST,
         pricerContract: await zns.curvePricer.getAddress(),
         priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         paymentType: PaymentType.STAKE,
         newAddress: lvl2SubOwner.address,
-        newUint: BigInt(1912171236),
+        newUint: newUintVal,
       } as unknown as IDistributionConfigExtended;
 
       // register a subdomain with new logic
-      await newRegistrarProxy.connect(lvl2SubOwner).registerSubdomain(
+      await newSubRegistrarProxy.connect(lvl2SubOwner).registerSubdomain(
         rootHash,
         "subbb",
         lvl2SubOwner.address,
@@ -3842,12 +3826,11 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
       });
 
-      const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);
+      const rootConfigAfter = await newSubRegistrarProxy.distrConfigs(rootHash);
       expect(rootConfigAfter.accessType).to.eq(rootConfigBefore.accessType);
       expect(rootConfigAfter.pricerContract).to.eq(rootConfigBefore.pricerContract);
       expect(rootConfigAfter.priceConfig).to.eq(rootConfigBefore.priceConfig);
       expect(rootConfigAfter.paymentType).to.eq(rootConfigBefore.paymentType);
-      // expect(rootConfigAfter.length).to.eq(rootConfigBefore.length);
 
       const updatedStructConfig = {
         accessType: AccessType.OPEN,
@@ -3859,14 +3842,14 @@ describe("ZNSSubRegistrar", () => {
       } as unknown as IDistributionConfigExtended;
 
       // try setting new fields to the new struct
-      await newRegistrarProxy.connect(rootOwner).setDistributionConfigForDomain(
+      await newSubRegistrarProxy.connect(rootOwner).setDistributionConfigForDomain(
         rootHash,
         updatedStructConfig,
       );
 
       // check what we got for new
-      const rootConfigFinal = await newRegistrarProxy.distrConfigs(rootHash);
-      const subConfigAfter = await newRegistrarProxy.distrConfigs(subHash);
+      const rootConfigFinal = await newSubRegistrarProxy.distrConfigs(rootHash);
+      const subConfigAfter = await newSubRegistrarProxy.distrConfigs(subHash);
 
       // validate the new config has been set correctly
       expect(subConfigAfter.accessType).to.eq(subConfigToSet.accessType);
@@ -3883,9 +3866,9 @@ describe("ZNSSubRegistrar", () => {
       expect(rootConfigFinal.newUint).to.eq(updatedStructConfig.newUint);
 
       // check that crucial state vars stayed the same
-      expect(await newRegistrarProxy.getAccessController()).to.eq(await zns.accessController.getAddress());
-      expect(await newRegistrarProxy.registry()).to.eq(await zns.registry.getAddress());
-      expect(await newRegistrarProxy.rootRegistrar()).to.eq(await zns.rootRegistrar.getAddress());
+      expect(await newSubRegistrarProxy.getAccessController()).to.eq(await zns.accessController.getAddress());
+      expect(await newSubRegistrarProxy.registry()).to.eq(await zns.registry.getAddress());
+      expect(await newSubRegistrarProxy.rootRegistrar()).to.eq(await zns.rootRegistrar.getAddress());
     });
   });
 });

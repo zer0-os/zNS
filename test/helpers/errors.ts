@@ -22,8 +22,7 @@ export const ZERO_ADDRESS_ERR = "ZeroAddressPassed";
 export const DOMAIN_EXISTS_ERR = "DomainAlreadyExists";
 export const NOT_AUTHORIZED_ERR = "NotAuthorizedForDomain";
 
-
-export const PARENT_NOT_SET_ERR = "ParentNotSet";
+export const PARENT_NOT_SETUP_ERR = "ParentNotSetupForDistribution";
 export const FEE_TOO_LARGE_ERR = "FeePercentageValueTooLarge";
 
 // ZNSCurvePricer.sol

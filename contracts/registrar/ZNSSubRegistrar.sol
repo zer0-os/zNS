@@ -36,7 +36,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * These configs are used to determine how subdomains are distributed for every parent.
      * @dev Note that the rules outlined in the DistributionConfig are only applied to direct children!
     */
-    mapping(bytes32 domainHash => DistributionConfig config) public distrConfigs;
+    mapping(bytes32 domainHash => DistributionConfig config) public override distrConfigs;
 
     struct Mintlist {
         mapping(uint256 idx => mapping(address candidate => bool allowed)) list;
@@ -107,10 +107,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
         if (address(parentConfig.pricerContract) == address(0))
-            revert ParentNotSet(parentHash);
+            revert ParentNotSetupForDistribution(parentHash);
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if ((parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator))
+        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
             revert ParentLockedOrDoesntExist(parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
@@ -203,10 +203,10 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         distrConfigs[domainHash] = config;
 
-        // emit price config?
         emit DistributionConfigSet(
             domainHash,
             config.pricerContract,
+            config.priceConfig,
             config.paymentType,
             config.accessType
         );

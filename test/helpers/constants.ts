@@ -61,7 +61,7 @@ export const DEFAULT_FIXED_PRICE_CONFIG : IFixedPriceConfig = {
   feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
 };
 
-export const ZERO_VALUE_FIXED_PRICE_CONFIG = ZeroHash + ZeroHash.slice(2);
+export const ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES = ZeroHash + ZeroHash.slice(2);
 
 export const DEFAULT_FIXED_PRICER_CONFIG_BYTES = encodePriceConfig(DEFAULT_FIXED_PRICE_CONFIG);
 

@@ -177,23 +177,18 @@ export const registrationWithSetup = async ({
   if (!hasConfig) return domainHash;
 
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    // TODO uncomment and fix these!
-    // await zns.fixedPricer.connect(user).setPriceConfig(
-    //   domainHash,
-    //   {
-    //     ...fullConfig.priceConfig as IFixedPriceConfig,
-    //     isSet: true,
-    //   },
-    // );
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.target && setConfigs) {
+    await zns.subRegistrar.connect(user).setPricerDataForDomain(
+      domainHash,
+      fullConfig.distrConfig.priceConfig,
+      zns.fixedPricer.target
+    );
   } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    // await zns.curvePricer.connect(user).setPriceConfig(
-    //   domainHash,
-    //   {
-    //     ...fullConfig.priceConfig as ICurvePriceConfig,
-    //     isSet: true,
-    //   },
-    // );
+    await zns.subRegistrar.connect(user).setPricerDataForDomain(
+      domainHash,
+      fullConfig.distrConfig.priceConfig,
+      zns.curvePricer.target
+    );
   }
 
   if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {

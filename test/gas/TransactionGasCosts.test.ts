@@ -39,14 +39,12 @@ describe("Transaction Gas Costs Test", () => {
       deployer,
       governorAddresses: [deployer.address, governor.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.rootRegistrar.connect(deployer).setRootPricer(
+    await zns.rootRegistrar.connect(deployer).setRootPricerAndConfig(
       await zns.curvePricer.getAddress(),
       DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      false
     );
 
     config = {

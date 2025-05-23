@@ -102,13 +102,22 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `rootPricer` address is set in state.
+     * @notice Emitted when the `rootPricer` address and the `rootPriceConfig`
+     * values are set in state.
      * @param rootPricer The new address of any IZNSPricer type contract
      * @param priceConfig The encoded bytes for the price config
      */
     event RootPricerSet(
         address rootPricer,
         bytes priceConfig
+    );
+
+    /**
+     * @notice Emitted when the `rootPriceConfig` value is set in state.
+     * @param priceConfig The encoded bytes for the price config
+     */
+    event RootPriceConfigSet(
+        bytes indexed priceConfig
     );
 
     /**
@@ -158,10 +167,14 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setRootPricer(
+    function setRootPricerAndConfig(
         address rootPricer_,
-        bytes memory priceConfig_,
-        bool skipValidityCheck
+        bytes memory priceConfig_
+    ) external;
+
+    function setRootPriceConfig(
+        address rootPricer_,
+        bytes memory priceConfig_
     ) external;
 
     function setTreasury(address treasury_) external;

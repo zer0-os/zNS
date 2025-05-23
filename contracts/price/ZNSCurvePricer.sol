@@ -38,7 +38,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      */
     function encodeConfig(
         CurvePriceConfig calldata config
-    ) external pure override returns(bytes memory) {
+    ) external pure override returns (bytes memory) {
         return
             abi.encodePacked(
                 config.maxPrice,
@@ -57,7 +57,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      */
     function decodePriceConfig(
         bytes memory priceConfig
-    ) public pure override returns(CurvePriceConfig memory) {
+    ) public pure override returns (CurvePriceConfig memory) {
         (
             uint256 maxPrice,
             uint256 curveMultiplier,
@@ -77,16 +77,14 @@ contract ZNSCurvePricer is IZNSCurvePricer {
             )
         );
 
-        CurvePriceConfig memory config = CurvePriceConfig(
-            maxPrice,
-            curveMultiplier,
-            maxLength,
-            baseLength,
-            precisionMultiplier,
-            feePercentage
-        );
-
-        return config;
+        return CurvePriceConfig({
+            maxPrice: maxPrice,
+            curveMultiplier: curveMultiplier,
+            maxLength: maxLength,
+            baseLength: baseLength,
+            precisionMultiplier: precisionMultiplier,
+            feePercentage: feePercentage
+        });
     }
 
     /**
@@ -98,8 +96,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     function validatePriceConfig(
         bytes memory priceConfig
     ) public override pure {
-        CurvePriceConfig memory config = decodePriceConfig(priceConfig);
-        _validatePriceConfig(config);
+        _validatePriceConfig(decodePriceConfig(priceConfig));
     }
 
     /**
@@ -125,12 +122,10 @@ contract ZNSCurvePricer is IZNSCurvePricer {
         if (!skipValidityCheck) {
             // Confirms string values are only [a-z0-9-]
             label.validate();
-            _validatePriceConfig(config);
         }
 
         // No pricing is set for 0 length domains
         uint256 length = label.strlen();
-        if (length == 0) return 0;
 
         return _getPrice(config, length);
     }
@@ -146,9 +141,10 @@ contract ZNSCurvePricer is IZNSCurvePricer {
         bytes memory parentPriceConfig,
         uint256 price
     ) public pure override returns (uint256) {
-        CurvePriceConfig memory config = decodePriceConfig(parentPriceConfig);
-
-        return _getFeeForPrice(config, price);
+        return _getFeeForPrice(
+            decodePriceConfig(parentPriceConfig).feePercentage,
+            price
+        );
     }
 
     /**
@@ -159,19 +155,21 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
     */
     function getPriceAndFee(
-        bytes memory parentPriceConfig,
+        bytes calldata parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
     ) external pure override returns (uint256 price, uint256 stakeFee) {
-        CurvePriceConfig memory config = decodePriceConfig(parentPriceConfig);
-
         if (!skipValidityCheck) {
             label.validate();
-            _validatePriceConfig(config);
         }
 
-        price = _getPrice(config, label.strlen());
+        price = _getPrice(
+            decodePriceConfig(parentPriceConfig),
+            label.strlen()
+        );
+
         stakeFee = getFeeForPrice(parentPriceConfig, price);
+
         return (price, stakeFee);
     }
 
@@ -179,8 +177,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     //// INTERNAL FUNCS ////
     ////////////////////////
 
-    function _getFeeForPrice(CurvePriceConfig memory config, uint256 price) internal pure returns(uint256) {
-        return (price * config.feePercentage) / PERCENTAGE_BASIS;
+    function _getFeeForPrice(uint256 feePercentage, uint256 price) internal pure returns (uint256) {
+        return (price * feePercentage) / PERCENTAGE_BASIS;
     }
 
     function _validatePriceConfig(CurvePriceConfig memory config) internal pure {

@@ -25,6 +25,7 @@ import {
 import { registrationWithSetup } from "./helpers/register-setup";
 import { IFullDistributionConfig, IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
+import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -135,7 +136,7 @@ describe("ZNSCurvePricer", () => {
       const decodedPriceConfig = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
       const domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domain, true);
-      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
+      expect(domainPrice).to.eq((decodedPriceConfig as ICurvePriceConfig).maxPrice);
     });
 
     it("Returns the max price for domains that are less than the base length", async () => {
@@ -145,10 +146,10 @@ describe("ZNSCurvePricer", () => {
       const decodedPriceConfig = decodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
 
       let domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainA, true);
-      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
+      expect(domainPrice).to.eq((decodedPriceConfig as ICurvePriceConfig).maxPrice);
 
       domainPrice = await zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, domainB, true);
-      expect(domainPrice).to.eq(decodedPriceConfig.maxPrice);
+      expect(domainPrice).to.eq((decodedPriceConfig as ICurvePriceConfig).maxPrice);
     });
 
     it("Returns expected prices for a domain greater than the base length", async () => {
@@ -265,9 +266,6 @@ describe("ZNSCurvePricer", () => {
       } catch (e) {
         expect((e as Error).message).to.include(DIVISION_BY_ZERO_ERR);
       }
-
-      // TODO seems like its somehow failing outside regular test framework?
-      // "VM exception while processing transaction:..."
     });
 
     it("Fails when max length is less than base length", async () => {

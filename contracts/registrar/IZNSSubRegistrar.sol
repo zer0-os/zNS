@@ -17,7 +17,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
      * 
      * @param parentHash The parent domain hash
      */
-    error ParentNotSet(bytes32 parentHash);
+    error ParentNotSetupForDistribution(bytes32 parentHash);
     
     /**
      * @notice Reverted when someone other than parent owner is trying to buy
@@ -71,6 +71,17 @@ interface IZNSSubRegistrar is IDistributionConfig {
         address _registry,
         address _rootRegistrar
     ) external;
+
+    // function distrConfigs(bytes32 domainHash) external view returns (DistributionConfig calldata config);
+
+    function distrConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        IZNSPricer pricerContract,
+        bytes memory priceConfig,
+        PaymentType paymentType,
+        AccessType accessType
+    );
 
     function registerSubdomain(
         bytes32 parentHash,

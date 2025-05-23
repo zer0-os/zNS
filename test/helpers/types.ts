@@ -77,7 +77,7 @@ export interface IFixedPriceConfig {
 export interface RegistrarConfig {
   registryAddress : string;
   curvePricerAddress : string;
-  curvePriceConfig : string; // 0x bytes
+  curvePriceConfig : string;
   treasuryAddress : string;
   domainTokenAddress : string;
 }

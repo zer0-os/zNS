@@ -149,18 +149,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
         return records[domainHash].resolver;
     }
 
-    // function getDomainPricer(
-    //     bytes32 domainHash
-    // ) external view override returns (address) {
-    //     return records[domainHash].pricer;
-    // }
-
-    // function getDomainPriceConfig(
-    //     bytes32 domainHash
-    // ) external view override returns (bytes memory) {
-    //     return records[domainHash].priceConfig;
-    // }
-
     /**
      * @notice Creates a new domain record. Only callable by the `ZNSRootRegistrar.sol`
      * or an address that has REGISTRAR_ROLE. This is one of the last calls in the Register
@@ -189,7 +177,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
      * @param resolverType The resolver type as a string, e.g. "address"
      */
-    function getResolverType(string calldata resolverType) public view override returns(address) {
+    function getResolverType(string calldata resolverType) public view override returns (address) {
         return resolvers[resolverType];
     }
 
@@ -228,8 +216,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     function updateDomainRecord(
         bytes32 domainHash,
         address owner,
-        // address pricer,
-        // bytes memory priceConfig,
         string calldata resolverType
     ) external override onlyOwner(domainHash) {
         // `exists` is checked implicitly through the modifier

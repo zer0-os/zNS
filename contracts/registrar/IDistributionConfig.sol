@@ -44,9 +44,9 @@ interface IDistributionConfig {
      */
     struct DistributionConfig {
         IZNSPricer pricerContract;
+        bytes priceConfig;
         PaymentType paymentType;
         AccessType accessType;
-        bytes priceConfig;
     }
 
     /**
@@ -65,6 +65,7 @@ interface IDistributionConfig {
     event DistributionConfigSet(
         bytes32 indexed domainHash,
         IZNSPricer pricerContract,
+        bytes pricerConfig,
         PaymentType paymentType,
         AccessType accessType
     );

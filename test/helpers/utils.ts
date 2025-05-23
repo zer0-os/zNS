@@ -36,33 +36,6 @@ export const getRandomString = (length : number) => {
   return result;
 };
 
-// export const createConfigs = async (
-//   zns : IZNSContractsLocal,
-//   users : Array<SignerWithAddress>,
-//   domainLabels : Array<string>,
-//   parentHashes : Array<string | undefined>,
-//   distrConfigs : Array<Partial<IDistributionConfig>>,
-//   paymentConfigs : Array<Partial<IPaymentConfig>>,
-// ) : Promise<Array<IDomainConfigForTest>> => {
-
-//   let configs : Array<IDomainConfigForTest> = [];
-
-//   for (let i = 0; i < users.length; i++) {
-//     configs.push(
-//       await createConfig(
-//         zns,
-//         users[i],
-//         domainLabels[i],
-//         parentHashes[i],
-//         distrConfigs[i],
-//         paymentConfigs[i],
-//       )
-//     );
-//   }
-
-//   return configs;
-// }
-
 const _createConfig = async (
   zns : IZNSContractsLocal,
   user : SignerWithAddress,
@@ -74,10 +47,6 @@ const _createConfig = async (
 
   let distrConfigToUse : IDistributionConfig;
   let paymentConfigToUse : IPaymentConfig;
-
-  // TODO could technically break this by handing independent pieces that dont mesh
-  // like curve pricer address and price config for fixed pricer
-  // but this SHOULD fail when using it because of validation in pricer contracts
 
   if (distrConfig) {
     distrConfigToUse = {

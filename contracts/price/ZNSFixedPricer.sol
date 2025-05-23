@@ -21,7 +21,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      */
     function encodeConfig(
         PriceConfig memory config
-    ) external pure override returns(bytes memory) {
+    ) external pure override returns (bytes memory) {
         return abi.encodePacked(
             config.price,
             config.feePercentage
@@ -30,7 +30,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) public pure override returns(PriceConfig memory) {
+    ) public pure override returns (PriceConfig memory) {
         (
             uint256 price,
             uint256 feePercentage
@@ -68,9 +68,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
             label.validate();
         }
 
-        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
-
-        return config.price;
+        return decodePriceConfig(parentPriceConfig).price;
     }
 
     function validatePriceConfig(bytes memory priceConfig) external override pure {
@@ -89,8 +87,10 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         bytes memory parentPriceConfig,
         uint256 price
     ) public pure override returns (uint256) {
-        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
-        return _getFeeForPrice(config, price);
+        return _getFeeForPrice(
+            decodePriceConfig(parentPriceConfig).feePercentage,
+            price
+        );
     }
 
     /**
@@ -110,7 +110,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         PriceConfig memory config = decodePriceConfig(parentPriceConfig);
         return (
             config.price,
-            _getFeeForPrice(config, config.price)
+            _getFeeForPrice(config.feePercentage, config.price)
         );
     }
 
@@ -119,9 +119,9 @@ contract ZNSFixedPricer is IZNSFixedPricer {
     ////////////////////////
 
     function _getFeeForPrice(
-        PriceConfig memory parentPriceConfig,
+        uint256 feePercentage,
         uint256 price
-    ) internal pure returns(uint256) {
-        return (price * parentPriceConfig.feePercentage) / PERCENTAGE_BASIS;
+    ) internal pure returns (uint256) {
+        return (price * feePercentage) / PERCENTAGE_BASIS;
     }
 }

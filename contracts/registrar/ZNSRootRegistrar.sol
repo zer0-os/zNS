@@ -18,6 +18,7 @@ import {
     DomainAlreadyExists
 } from "../utils/CommonErrors.sol";
 
+import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.
@@ -73,7 +74,7 @@ contract ZNSRootRegistrar is
         _setAccessController(accessController_);
         setRegistry(registry_);
 
-        setRootPricer(rootPricer_, priceConfig_, false);
+        setRootPricerAndConfig(rootPricer_, priceConfig_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
     }
@@ -171,20 +172,15 @@ contract ZNSRootRegistrar is
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
-        // console.log("args.price: ", args.price);
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
         }
 
-        // console.log("after processPayment");
-
-
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);
         // mint token
         domainToken.register(args.registrant, tokenId, args.tokenURI);
-        // console.log("after domainToken.register");
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
@@ -216,9 +212,7 @@ contract ZNSRootRegistrar is
         // it's fine to just check for one here
         if (args.paymentConfig.beneficiary != address(0)) {
             // should be failing in this call
-            // console.log("before setPaymentConfig");
             treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
-            // console.log("after setPaymentConfig");
         }
 
         emit DomainRegistered(
@@ -368,29 +362,26 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
+     * @param pricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
+     * @param priceConfig_ The price config, encoded as bytes, for the given IZNSPricer contract
     */
-    function setRootPricer(
-        address rootPricer_,
-        bytes memory rootPriceConfig_,
-        bool skipValidityCheck
+    function setRootPricerAndConfig(
+        address pricer_,
+        bytes memory priceConfig_
     ) public override onlyAdmin {
-        if (rootPricer_ == address(0))
+        if (pricer_ == address(0))
             revert ZeroAddressPassed();
 
-        if (rootPriceConfig_.length == 0) revert ZeroValuePassed();
+        if (pricer_.code.length == 0) revert AddressIsNotAContract();
 
-        if (rootPricer_.code.length == 0) revert AddressIsNotAContract();
+        _setRootPriceConfig(pricer_, priceConfig_);
+        rootPricer = IZNSPricer(pricer_);
 
-        rootPricer = IZNSPricer(rootPricer_);
+        emit RootPricerSet(pricer_, priceConfig_);
+    }
 
-        if (!skipValidityCheck) {
-            IZNSPricer(rootPricer).validatePriceConfig(rootPriceConfig_);
-        }
-
-        rootPriceConfig = rootPriceConfig_;
-
-        emit RootPricerSet(rootPricer_, rootPriceConfig_);
+    function setRootPriceConfig(address pricer_, bytes memory priceConfig_) public override onlyAdmin {
+        _setRootPriceConfig(pricer_, priceConfig_);
     }
 
     /**
@@ -440,5 +431,15 @@ contract ZNSRootRegistrar is
     // solhint-disable-next-line
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
+    }
+
+    function _setRootPriceConfig(address pricer_, bytes memory priceConfig_) internal {
+        if (priceConfig_.length == 0) revert ZeroValuePassed();
+
+        IZNSPricer(pricer_).validatePriceConfig(priceConfig_);
+
+        rootPriceConfig = priceConfig_;
+
+        emit RootPriceConfigSet(priceConfig_);
     }
 }

@@ -34,9 +34,9 @@ interface IZNSFixedPricer is IZNSPricer {
 
     function encodeConfig(
         PriceConfig memory config
-    ) external pure returns(bytes memory);
+    ) external pure returns (bytes memory);
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) external pure returns(PriceConfig memory);
+    ) external pure returns (PriceConfig memory);
 }
