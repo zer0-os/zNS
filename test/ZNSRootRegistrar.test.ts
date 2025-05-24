@@ -824,7 +824,7 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
-      
+
       const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.maxPrice = 0n;
 

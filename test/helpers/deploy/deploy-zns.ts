@@ -30,7 +30,6 @@ import {
   domainTokenName,
   erc1967ProxyName,
   fixedPricerName,
-  DEFAULT_CURVE_PRICE_CONFIG,
   curvePricerName,
   registrarName,
   registryName,
@@ -46,7 +45,6 @@ import {
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
-import { encodePriceConfig } from "../pricing";
 
 
 export const deployAccessController = async ({

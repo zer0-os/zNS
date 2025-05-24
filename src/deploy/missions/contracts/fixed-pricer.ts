@@ -1,7 +1,5 @@
-import { ProxyKinds } from "../../constants";
 import {
   BaseDeployMission,
-  TDeployArgs,
 } from "@zero-tech/zdc";
 import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";

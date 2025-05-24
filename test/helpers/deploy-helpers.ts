@@ -61,7 +61,7 @@ export const getPriceBulk = async (
 
     let config : string;
 
-    if (parent == ethers.ZeroHash) {
+    if (parent === ethers.ZeroHash) {
       // roots
       config = await zns.rootRegistrar.rootPriceConfig();
       const price = await zns.curvePricer.getPrice(config, domain, true);

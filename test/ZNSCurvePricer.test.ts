@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers, ZeroHash } from "ethers";
+import { ethers } from "ethers";
 import {
   deployZNS,
   getCurvePrice,
@@ -38,8 +38,6 @@ describe("ZNSCurvePricer", () => {
 
   let zns : IZNSContractsLocal;
   let domainHash : string;
-
-  const defaultDomain = "wilder";
 
   beforeEach(async () => {
     [
@@ -124,7 +122,9 @@ describe("ZNSCurvePricer", () => {
     });
 
     it("Reverts for invalid label if label validation is not skipped", async () => {
-      await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, "wilder!", false)).to.be.revertedWithCustomError(
+      await expect(
+        zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, "wilder!", false)
+      ).to.be.revertedWithCustomError(
         zns.curvePricer,
         INVALID_LABEL_ERR
       );
@@ -244,7 +244,7 @@ describe("ZNSCurvePricer", () => {
 
   describe("#validatePriceConfig", () => {
     it("Succeeds when a valid config is provided", async () => {
-      expect(
+      await expect(
         await zns.curvePricer.validatePriceConfig(
           DEFAULT_CURVE_PRICE_CONFIG_BYTES
         )).to.not.be.reverted;

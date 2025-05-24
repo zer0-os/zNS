@@ -28,7 +28,7 @@ import {
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-import { Addressable, Typed } from "ethers";
+import { Addressable } from "ethers";
 
 
 export type Maybe<T> = T | undefined;
@@ -110,10 +110,6 @@ export interface IDistributionConfig {
   priceConfig : string;
   paymentType : bigint;
   accessType : bigint;
-}
-
-export interface IDistributionConfigExtended extends Typed {
-  [k : string] : any;
 }
 
 export interface IPaymentConfig {

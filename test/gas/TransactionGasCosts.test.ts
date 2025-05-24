@@ -1,11 +1,15 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_CURVE_PRICE_CONFIG, DEFAULT_CURVE_PRICE_CONFIG_BYTES, DEFAULT_FIXED_PRICER_CONFIG_BYTES } from "../helpers";
+import { AccessType,
+  DEFAULT_TOKEN_URI, deployZNS,
+  PaymentType,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+} from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import fs from "fs";
-import { deploy } from "@openzeppelin/hardhat-upgrades/dist/utils";
 
 
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;

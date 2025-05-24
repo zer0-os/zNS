@@ -7,6 +7,7 @@ import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
 import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
+import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 
 interface DomainObj {
   domainHash : string;
@@ -26,7 +27,7 @@ export const registerDomainPath = async ({
 } : {
   zns : IZNSContractsLocal;
   domainConfigs : Array<IDomainConfigForTest>;
-}) : Promise<Array<IPathRegResult>> => domainConfigs.reduce( // TODO how to provide return type?
+}) : Promise<Array<IPathRegResult>> => domainConfigs.reduce(
   async (
     acc : Promise<Array<IPathRegResult>>,
     config,
@@ -138,7 +139,7 @@ export const validatePathRegistration = async ({
       baseLength,
       precisionMultiplier,
       feePercentage,
-    } = decodePriceConfig(rootConfigBytes);
+    } = decodePriceConfig(rootConfigBytes) as ICurvePriceConfig;
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
@@ -181,7 +182,7 @@ export const validatePathRegistration = async ({
           baseLength,
           precisionMultiplier,
           feePercentage,
-        } = decodePriceConfig(priceConfig);
+        } = decodePriceConfig(priceConfig) as ICurvePriceConfig;
 
         ({
           expectedPrice,

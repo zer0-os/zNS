@@ -3,8 +3,10 @@ import * as ethers from "ethers";
 import {
   deployZNS,
   hashDomainLabel, PaymentType,
-  DEFAULT_CURVE_PRICE_CONFIG,
   AccessType,
+  IFullDistributionConfig,
+  encodePriceConfig,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
@@ -30,19 +32,16 @@ export const runAllFlows = async () => {
   const rootPrice = BigInt(ethers.parseEther("200"));
   const rootFeePercentage = BigInt(250);
 
-  const fullRootConfig = {
+  const fullRootConfig : IFullDistributionConfig = {
     distrConfig: {
       pricerContract: await zns.fixedPricer.getAddress(),
+      priceConfig: encodePriceConfig({ price: rootPrice, feePercentage: rootFeePercentage }),
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     },
     paymentConfig: {
       token: await zns.meowToken.getAddress(),
       beneficiary: governor.address,
-    },
-    priceConfig: {
-      price: rootPrice,
-      feePercentage: rootFeePercentage,
     },
   };
 
@@ -57,9 +56,10 @@ export const runAllFlows = async () => {
   });
 
   const subdomainLabel = "subdomain";
-  const fullSubConfig = {
+  const fullSubConfig : IFullDistributionConfig = {
     distrConfig: {
       pricerContract: await zns.curvePricer.getAddress(),
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     },
@@ -67,7 +67,6 @@ export const runAllFlows = async () => {
       token: await zns.meowToken.getAddress(),
       beneficiary: user.address,
     },
-    priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
   };
 
   await zns.meowToken.transfer(user.address, ethers.parseEther("10000"));

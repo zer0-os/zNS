@@ -1,4 +1,9 @@
-import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_CURVE_PRICE_CONFIG, DEFAULT_FIXED_PRICER_CONFIG_BYTES, DEFAULT_FIXED_PRICE_CONFIG } from "./constants";
+import {
+  DEFAULT_PERCENTAGE_BASIS,
+  DEFAULT_CURVE_PRICE_CONFIG,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+  DEFAULT_FIXED_PRICE_CONFIG,
+} from "./constants";
 import { IFixedPriceConfig } from "./types";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
@@ -88,7 +93,6 @@ export const getPriceObject = (
   };
 };
 
-// TODO can we make one single fucntion to route for both?
 export const createEncodeFixedPriceConfig = (config : Partial<IFixedPriceConfig>) => {
   const createdConfig : IFixedPriceConfig = {
     price: config.price ?? DEFAULT_FIXED_PRICE_CONFIG.price,
@@ -187,7 +191,7 @@ const decodeCurvePriceConfig = (config : string) => {
 };
 
 const decodeFixedPriceConfig = (config : string) => {
-    const results = ethers.AbiCoder.defaultAbiCoder().decode(
+  const results = ethers.AbiCoder.defaultAbiCoder().decode(
     [
       "uint256",
       "uint256",
@@ -197,8 +201,8 @@ const decodeFixedPriceConfig = (config : string) => {
 
   const toReturn : IFixedPriceConfig = {
     price: results[0],
-    feePercentage: results[1]
-  }
+    feePercentage: results[1],
+  };
 
   return toReturn;
-}
+};

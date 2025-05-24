@@ -1,7 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { ethers, upgrades } from "hardhat";
-import { AccessType, DEFAULT_CURVE_PRICE_CONFIG, DEFAULT_CURVE_PRICE_CONFIG_BYTES, DEFAULT_FIXED_PRICER_CONFIG_BYTES, distrConfigEmpty, implSlotErc1967, paymentConfigEmpty, PaymentType } from "./constants";
-import { IDistributionConfig, IDomainConfigForTest, IFullDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "./types";
+import {
+  AccessType,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+  distrConfigEmpty,
+  implSlotErc1967,
+  paymentConfigEmpty,
+  PaymentType,
+} from "./constants";
+import {
+  IDistributionConfig,
+  IDomainConfigForTest,
+  IFullDistributionConfig,
+  IPaymentConfig,
+  IZNSContractsLocal,
+} from "./types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -36,7 +50,7 @@ export const getRandomString = (length : number) => {
   return result;
 };
 
-const _createConfig = async (
+const createConfig = async (
   zns : IZNSContractsLocal,
   user : SignerWithAddress,
   domainLabel : string,
@@ -66,7 +80,7 @@ const _createConfig = async (
     };
   } else {
     // Only set default payment config  if distrConfig is not empty
-    if (distrConfigToUse != distrConfigEmpty) {
+    if (distrConfigToUse !== distrConfigEmpty) {
       paymentConfigToUse = {
         token: await zns.meowToken.getAddress(),
         beneficiary: user.address,
@@ -113,7 +127,7 @@ export class Utils {
   async createConfig (
     args : CreateConfigArgs
   ) : Promise<IDomainConfigForTest>  {
-    return await _createConfig(
+    return createConfig(
       this.zns,
       args.user,
       args.domainLabel ?? this.createLabel(),

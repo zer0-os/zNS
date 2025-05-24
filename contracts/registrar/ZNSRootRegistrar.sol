@@ -18,7 +18,6 @@ import {
     DomainAlreadyExists
 } from "../utils/CommonErrors.sol";
 
-import { console } from "hardhat/console.sol";
 
 /**
  * @title Main entry point for the three main flows of ZNS - Register Root Domain, Reclaim and Revoke any domain.

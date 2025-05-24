@@ -1,6 +1,5 @@
 import {
   BaseDeployMission,
-  TDeployArgs,
 } from "@zero-tech/zdc";
 import { ProxyKinds } from "../../constants";
 import { znsNames } from "./names";

@@ -6,7 +6,6 @@ import {
   IZNSContractsLocal,
   IDistributionConfig,
   IRegisterWithSetupArgs,
-  IDistributionConfigExtended,
 } from "./helpers/types";
 import {
   AccessType,
@@ -60,7 +59,7 @@ import {
   ZNSSubRegistrarUpgradeMock__factory,
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
-import { getProxyImplAddress, Utils } from "./helpers/utils";
+import { getProxyImplAddress } from "./helpers/utils";
 import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 
@@ -82,10 +81,10 @@ describe("ZNSSubRegistrar", () => {
 
   let zns : IZNSContractsLocal;
   let zeroVault : SignerWithAddress;
+  let rootPriceConfig : IFixedPriceConfig;
 
   describe("Single Subdomain Registration", () => {
     let rootHash : string;
-    let rootPriceConfig : IFixedPriceConfig;
     const subTokenURI = "https://token-uri.com/8756a4b6f";
 
     before(async () => {
@@ -550,8 +549,6 @@ describe("ZNSSubRegistrar", () => {
           domainLabel: "sub2",
         })
       ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
-
-      const rootPriceConfig = await zns.rootRegistrar.rootPriceConfig();
 
       const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.feePercentage = 0n;
@@ -1158,7 +1155,7 @@ describe("ZNSSubRegistrar", () => {
 
       // check a couple of fields from price config
       const priceConfig = (await zns.subRegistrar.distrConfigs(lvl2Hash)).priceConfig;
-      let decodedConfig = decodePriceConfig(priceConfig);
+      const decodedConfig = decodePriceConfig(priceConfig);
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       if ("maxPrice" in decodedConfig) {
@@ -3656,7 +3653,7 @@ describe("ZNSSubRegistrar", () => {
       rootConfigBytes = encodePriceConfig({
         price: fixedPrice,
         feePercentage: BigInt(0),
-      }),
+      });
 
       // register root domain
       rootHash = await registrationWithSetup({
@@ -3801,7 +3798,7 @@ describe("ZNSSubRegistrar", () => {
 
       // Extended config type also extends `Typed` base interface to appease ethers/typechain
       const newUintVal = BigInt(1912171236);
-      
+
       const subConfigToSet = {
         accessType: AccessType.MINTLIST,
         pricerContract: await zns.curvePricer.getAddress(),
@@ -3809,7 +3806,7 @@ describe("ZNSSubRegistrar", () => {
         paymentType: PaymentType.STAKE,
         newAddress: lvl2SubOwner.address,
         newUint: newUintVal,
-      } as unknown as IDistributionConfigExtended;
+      };
 
       // register a subdomain with new logic
       await newSubRegistrarProxy.connect(lvl2SubOwner).registerSubdomain(
@@ -3839,7 +3836,7 @@ describe("ZNSSubRegistrar", () => {
         paymentType: PaymentType.DIRECT,
         newAddress: lvl2SubOwner.address,
         newUint: BigInt(123),
-      } as unknown as IDistributionConfigExtended;
+      };
 
       // try setting new fields to the new struct
       await newSubRegistrarProxy.connect(rootOwner).setDistributionConfigForDomain(

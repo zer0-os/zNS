@@ -7,7 +7,7 @@ import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
-import { DEFAULT_CURVE_PRICE_CONFIG_BYTES, encodePriceConfig } from "../../../../test/helpers";
+import { encodePriceConfig } from "../../../../test/helpers";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
@@ -31,7 +31,7 @@ IZNSContracts
       curvePricer,
       treasury,
       domainToken,
-      config
+      config,
     } = this.campaign;
 
     return [
