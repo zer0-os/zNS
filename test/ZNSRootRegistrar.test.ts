@@ -24,6 +24,7 @@ import {
   NOT_AUTHORIZED_ERR,
   INVALID_LABEL_ERR,
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
+  AC_NOTAUTHORIZED_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import { ethers } from "hardhat";
@@ -309,7 +310,7 @@ describe("ZNSRootRegistrar", () => {
       }
     );
 
-    await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+    await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_NOTAUTHORIZED_ERR)
       .withArgs(user.address, ADMIN_ROLE);
   });
 

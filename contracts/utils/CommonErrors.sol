@@ -9,3 +9,5 @@ error DomainAlreadyExists(bytes32 domainHash);
 error NotAuthorizedForDomain(address caller, bytes32 domainHash);
 
 error WrongAccessControllerAddress(address accessController);
+
+error NotAuthorized(address caller);

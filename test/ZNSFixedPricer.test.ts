@@ -9,6 +9,7 @@ import {
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
   validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
+  AC_NOTAUTHORIZED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -135,7 +136,7 @@ describe("ZNSFixedPricer", () => {
         acAddress: await zns.accessController.getAddress(),
         regAddress: await zns.registry.getAddress(),
       }),
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+    ).to.be.revertedWithCustomError(zns.accessController, AC_NOTAUTHORIZED_ERR)
       .withArgs(random.address, ADMIN_ROLE);
   });
 

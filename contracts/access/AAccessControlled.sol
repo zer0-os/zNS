@@ -2,8 +2,10 @@
 pragma solidity 0.8.26;
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZeroAddressPassed, WrongAccessControllerAddress } from "../utils/CommonErrors.sol";
+import { ZeroAddressPassed, WrongAccessControllerAddress, NotAuthorized } from "../utils/CommonErrors.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { ZNSRoles } from "./ZNSRoles.sol";
 
 
 /**
@@ -12,7 +14,7 @@ import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  * @dev In order to connect an arbitrary module to `ZNSAccessController` and it's functionality,
  * this contract needs to be inherited by the module.
  */
-abstract contract AAccessControlled {
+abstract contract AAccessControlled is ZNSRoles {
     /**
      * @notice Emitted when the access controller contract address is set.
      */
@@ -67,12 +69,23 @@ abstract contract AAccessControlled {
      * @param _accessController Address of the ZNSAccessController contract.
      */
     function _setAccessController(address _accessController) internal {
-        bytes4 interfaceId = type(IZNSAccessController).interfaceId;
-        if (ERC165(_accessController).supportsInterface(interfaceId)) {
-            accessController = IZNSAccessController(_accessController);
-            emit AccessControllerSet(_accessController);
-        } else {
+        // Validate if `msg.sender` has the admin role in the *current* contract
+        if (accessController != IZNSAccessController(address(0))) {
+            if (!IAccessControl(accessController).hasRole(ADMIN_ROLE, msg.sender)) {
+                revert NotAuthorized(msg.sender);
+            }
+        }
+
+        // Similarly, validate admin alignment in the *new* contract
+        try IAccessControl(_accessController).hasRole(ADMIN_ROLE, msg.sender) returns (bool valid) {
+            if (!valid) {
+                revert WrongAccessControllerAddress(_accessController);
+            }
+        } catch {
             revert WrongAccessControllerAddress(_accessController);
         }
+
+        accessController = IZNSAccessController(_accessController);
+        emit AccessControllerSet(_accessController);
     }
 }

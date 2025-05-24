@@ -10,6 +10,7 @@ export const ERC721_NOT_APPROVED_ERR = "ERC721InsufficientApproval";
 
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
+export const AC_NOTAUTHORIZED_ERR = "NotAuthorized";
 
 // ERC20
 export const INSUFFICIENT_BALANCE_ERC_ERR = "ERC20InsufficientBalance";
