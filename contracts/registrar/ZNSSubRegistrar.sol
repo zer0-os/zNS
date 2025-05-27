@@ -12,7 +12,6 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import {
     DomainAlreadyExists,
     ZeroAddressPassed,
-    ZeroValuePassed,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
 
@@ -195,9 +194,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();
 
-        if (config.priceConfig.length == 0)
-            revert ZeroValuePassed();
-
         // Will revert if invalid
         IZNSPricer(config.pricerContract).validatePriceConfig(config.priceConfig);
 
@@ -231,9 +227,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
-
-        if (config.length == 0)
-            revert ZeroValuePassed();
 
         IZNSPricer(pricerContract).validatePriceConfig(config);
 

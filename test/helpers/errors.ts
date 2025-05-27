@@ -34,6 +34,9 @@ export const DIVISION_BY_ZERO_ERR = "DivisionByZero";
 // ZNSRootRegistrar.sol
 export const NOT_OWNER_OF_ERR = "NotTheOwnerOf";
 
+// IZNSFixedPRicer.sol
+export const INVALID_CONFIG_LENGTH_ERR = "IncorrectPriceConfigLength";
+
 // Subdomain Registrar
 // eslint-disable-next-line max-len
 export const DISTRIBUTION_LOCKED_NOT_EXIST_ERR = "ParentLockedOrDoesntExist";

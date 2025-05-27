@@ -58,6 +58,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     function decodePriceConfig(
         bytes memory priceConfig
     ) public pure override returns (CurvePriceConfig memory) {
+        _checkLength(priceConfig);
+
         (
             uint256 maxPrice,
             uint256 curveMultiplier,
@@ -96,6 +98,9 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     function validatePriceConfig(
         bytes memory priceConfig
     ) public override pure {
+        // No need to check incoming bytes length here like we do in `fixedPricer`
+        // If incorrect bytes length, downstream errors are thrown
+        _checkLength(priceConfig);
         _validatePriceConfig(decodePriceConfig(priceConfig));
     }
 
@@ -176,6 +181,13 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     ////////////////////////
     //// INTERNAL FUNCS ////
     ////////////////////////
+
+    function _checkLength(bytes memory priceConfig) internal pure {
+        // 6 props * 32 bytes each = 192 bytes
+        if (priceConfig.length != 192) {
+            revert IncorrectPriceConfigLength();
+        }
+    }
 
     function _getFeeForPrice(uint256 feePercentage, uint256 price) internal pure returns (uint256) {
         return (price * feePercentage) / PERCENTAGE_BASIS;

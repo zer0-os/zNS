@@ -31,6 +31,8 @@ contract ZNSFixedPricer is IZNSFixedPricer {
     function decodePriceConfig(
         bytes memory priceConfig
     ) public pure override returns (PriceConfig memory) {
+        _checkLength(priceConfig);
+
         (
             uint256 price,
             uint256 feePercentage
@@ -71,9 +73,20 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         return decodePriceConfig(parentPriceConfig).price;
     }
 
+    /**
+     * @notice Verify that the given price config is valid for this pricer
+     * @param priceConfig The price config to validate
+     */
     function validatePriceConfig(bytes memory priceConfig) external override pure {
-        // We have this to match the IZNSPricer
-        // But there is no validation required for the FixPricer contract
+        _checkLength(priceConfig);
+
+        PriceConfig memory config = decodePriceConfig(priceConfig);
+
+        if (config.feePercentage > PERCENTAGE_BASIS)
+            revert FeePercentageValueTooLarge(
+                config.feePercentage,
+                PERCENTAGE_BASIS
+            );
     }
 
     /**
@@ -117,6 +130,13 @@ contract ZNSFixedPricer is IZNSFixedPricer {
     ////////////////////////
     //// INTERNAL FUNCS ////
     ////////////////////////
+
+    function _checkLength(bytes memory priceConfig) internal pure {
+        // 2 props * 32 bytes each = 64 bytes
+        if (priceConfig.length != 64) {
+            revert IncorrectPriceConfigLength();
+        }
+    }
 
     function _getFeeForPrice(
         uint256 feePercentage,

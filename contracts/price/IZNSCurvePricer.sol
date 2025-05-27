@@ -51,12 +51,6 @@ interface IZNSCurvePricer is IZNSPricer {
     error InvalidPrecisionMultiplierPassed();
 
     /**
-     * @notice Reverted when domain owner is trying to set it's stake fee percentage
-     * higher than 100% (uint256 "10,000").
-     */
-    error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
-
-    /**
      * @notice Reverted when `maxLength` smaller than `baseLength`.
      */
     error MaxLengthSmallerThanBaseLength();

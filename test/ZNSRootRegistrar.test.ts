@@ -32,6 +32,7 @@ import {
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
   ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES,
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
+  DIVISION_BY_ZERO_ERR,
 } from "./helpers";
 import { IDistributionConfig, IFixedPriceConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -1421,7 +1422,7 @@ describe("ZNSRootRegistrar", () => {
         );
       });
 
-      it("should NOT let set 0x0 address as the new pricer", async () => {
+      it("Fails when setting 0x0 address as the new pricer", async () => {
         await expect(
           zns.rootRegistrar.connect(admin).setRootPricerAndConfig(
             ethers.ZeroAddress,
@@ -1430,6 +1431,108 @@ describe("ZNSRootRegistrar", () => {
         ).to.be.revertedWithCustomError(
           zns.rootRegistrar,
           ZERO_ADDRESS_ERR
+        );
+      });
+      // fails when giving an invalid config with a pricer
+      it("Fails when setting an invalid config with a pricer", async () => {
+        const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        invalidConfig.baseLength = 0n;
+        invalidConfig.curveMultiplier = 0n;
+
+        const asBytes = encodePriceConfig(invalidConfig);
+
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPricerAndConfig(
+            zns.curvePricer.target,
+            asBytes
+          )
+        ).to.be.revertedWithCustomError(
+          zns.curvePricer,
+          DIVISION_BY_ZERO_ERR
+        );
+      });
+
+      // fails when anyone except the admin tries to set the pricer
+      it("Fails when setting an invalid config with a pricer", async () => {
+        const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        invalidConfig.baseLength = 0n;
+        invalidConfig.curveMultiplier = 0n;
+
+        const asBytes = encodePriceConfig(invalidConfig);
+
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPricerAndConfig(
+            zns.curvePricer.target,
+            asBytes
+          )
+        ).to.be.revertedWithCustomError(
+          zns.curvePricer,
+          DIVISION_BY_ZERO_ERR
+        );
+      });
+    });
+
+    describe("#setRootPriceConfig", () => {
+      it("should set the rootPricer config correctly", async () => {
+        await zns.rootRegistrar.connect(admin).setRootPriceConfig(
+          zns.fixedPricer.target,
+          DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+        );
+
+        expect(await zns.rootRegistrar.rootPriceConfig()).to.eq(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
+
+        // set back
+        await zns.rootRegistrar.connect(admin).setRootPriceConfig(
+          zns.curvePricer.target,
+          DEFAULT_CURVE_PRICE_CONFIG_BYTES
+        );
+      });
+
+      it("Fails when setting 0x0 bytes as the new config", async () => {
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPriceConfig(
+            ethers.ZeroAddress,
+            ethers.ZeroHash
+          )).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          ZERO_ADDRESS_ERR
+        );
+      });
+
+      // fails when anyone except the admin tries to set the config
+      it("Fails when setting an invalid config with a pricer", async () => {
+        const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        invalidConfig.baseLength = 0n;
+        invalidConfig.curveMultiplier = 0n;
+
+        const asBytes = encodePriceConfig(invalidConfig);
+
+        await expect(
+          zns.rootRegistrar.connect(randomUser).setRootPriceConfig(
+            zns.curvePricer.target,
+            asBytes
+          )
+        ).to.be.revertedWithCustomError(
+          zns.accessController,
+          AC_UNAUTHORIZED_ERR
+        ).withArgs(randomUser.address, ADMIN_ROLE);
+      });
+
+      it("Fails when setting an invalid config with a pricer", async () => {
+        const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        invalidConfig.baseLength = 0n;
+        invalidConfig.curveMultiplier = 0n;
+
+        const asBytes = encodePriceConfig(invalidConfig);
+
+        await expect(
+          zns.rootRegistrar.connect(admin).setRootPriceConfig(
+            zns.curvePricer.target,
+            asBytes
+          )
+        ).to.be.revertedWithCustomError(
+          zns.curvePricer,
+          DIVISION_BY_ZERO_ERR
         );
       });
     });

@@ -8,6 +8,17 @@ pragma solidity 0.8.26;
  */
 interface IZNSPricer {
     /**
+     * @notice Emitted when the given price config is not the expected length
+     */
+    error IncorrectPriceConfigLength();
+
+    /**
+     * @notice Reverted when domain owner is trying to set it's stake fee percentage
+     * higher than 100% (uint256 "10,000").
+     */
+    error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
+
+    /**
      * @dev `parentHash` param is here to allow pricer contracts
      *  to have different price configs for different subdomains
      * `skipValidityCheck` param is added to provide proper revert when the user is

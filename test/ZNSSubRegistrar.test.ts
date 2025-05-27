@@ -42,6 +42,7 @@ import {
   decodePriceConfig,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  INVALID_CONFIG_LENGTH_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -82,10 +83,10 @@ describe("ZNSSubRegistrar", () => {
   let zns : IZNSContractsLocal;
   let zeroVault : SignerWithAddress;
   let rootPriceConfig : IFixedPriceConfig;
+  const subTokenURI = "https://token-uri.com/8756a4b6f";
 
   describe("Single Subdomain Registration", () => {
     let rootHash : string;
-    const subTokenURI = "https://token-uri.com/8756a4b6f";
 
     before(async () => {
       [
@@ -3247,6 +3248,53 @@ describe("ZNSSubRegistrar", () => {
       );
     });
 
+    // #setDistributionConfigForDomain()
+    it("Fails when giving an empty config for a pricer", async () => {
+      const subdomain = "world-subdomain";
+
+      // add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      // register subdomain
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
+        regResults[1].domainHash,
+        subdomain,
+        lvl2SubOwner.address,
+        subTokenURI,
+        distrConfigEmpty,
+        paymentConfigEmpty
+      );
+
+      const subHash = await zns.subRegistrar.hashWithParent(regResults[1].domainHash, subdomain);
+
+      await expect(zns.subRegistrar.connect(lvl2SubOwner).setDistributionConfigForDomain(
+        subHash,
+        {
+          pricerContract: zns.fixedPricer.target,
+          priceConfig: "0x",
+          paymentType: PaymentType.DIRECT,
+          accessType: AccessType.OPEN,
+        }
+      )).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        INVALID_CONFIG_LENGTH_ERR
+      );
+
+      // Length does not need to be enforced here because it will fail downstream
+      await expect(zns.subRegistrar.connect(lvl2SubOwner).setDistributionConfigForDomain(
+        subHash,
+        {
+          pricerContract: zns.curvePricer.target,
+          priceConfig: "0x",
+          paymentType: PaymentType.DIRECT,
+          accessType: AccessType.OPEN,
+        }
+      )).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        INVALID_CONFIG_LENGTH_ERR
+      );
+    });
+
     // #setPricerContractForDomain()
     it("Should set the config for any existing domain hash, including 0x0", async () => {
       const newConfig : ICurvePriceConfig = {
@@ -3713,8 +3761,10 @@ describe("ZNSSubRegistrar", () => {
         "0x"
       );
 
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.accessController,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
     });
 
     it("Verifies that variable values are not changed in the upgrade process", async () => {
@@ -3754,7 +3804,7 @@ describe("ZNSSubRegistrar", () => {
 
       await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
 
-      const rootConfig = await zns.rootRegistrar.rootPriceConfig();
+      const rootConfig = await (await zns.subRegistrar.distrConfigs(rootHash)).priceConfig;
 
       const contractCalls = [
         zns.subRegistrar.getAccessController(),

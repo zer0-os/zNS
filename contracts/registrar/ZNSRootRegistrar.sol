@@ -352,6 +352,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter function for the `ZNSRegistry` address in state.
      * Only ADMIN in `ZNSAccessController` can call this function.
+     * 
      * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
@@ -361,6 +362,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
+     * 
      * @param pricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
      * @param priceConfig_ The price config, encoded as bytes, for the given IZNSPricer contract
     */
@@ -379,7 +381,21 @@ contract ZNSRootRegistrar is
         emit RootPricerSet(pricer_, priceConfig_);
     }
 
+    /**
+     * @notice Set the price configuration for root domains
+     * @dev Note this function takes in a pricer contract address as a param
+     * but does not modify this address in state.
+     * 
+     * @param pricer_ The current pricer contract address
+     * @param priceConfig_ The price configuration for root domains, encoded as bytes
+     */
     function setRootPriceConfig(address pricer_, bytes memory priceConfig_) public override onlyAdmin {
+        // TODO by receiving as param, we enable setting a config that
+        // passes validation of THE GIVEN pricer, not the one in state, possible bug
+        // but we are the only people who can change this value anyways
+        if (pricer_ == address(0))
+            revert ZeroAddressPassed();
+
         _setRootPriceConfig(pricer_, priceConfig_);
     }
 

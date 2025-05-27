@@ -15,6 +15,7 @@ import {
   encodePriceConfig,
   decodePriceConfig,
   HARDHAT_INFER_ERR,
+  INVALID_CONFIG_LENGTH_ERR,
 } from "./helpers";
 import {
   AccessType,
@@ -352,12 +353,13 @@ describe("ZNSCurvePricer", () => {
       }
     });
 
-    it("Fails when the config is invalid", async () => {
-      try {
-        await zns.curvePricer.validatePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
-      } catch (e) {
-        expect((e as Error).message).to.include(HARDHAT_INFER_ERR);
-      }
+    it("Fails when the config bytes are invalid length", async () => {
+      await expect(
+        zns.curvePricer.validatePriceConfig(DEFAULT_FIXED_PRICER_CONFIG_BYTES)
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        INVALID_CONFIG_LENGTH_ERR
+      );
     });
   });
 

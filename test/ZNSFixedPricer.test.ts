@@ -10,6 +10,8 @@ import {
   IZNSContractsLocal,
   Utils,
   IFixedPriceConfig,
+  INVALID_CONFIG_LENGTH_ERR,
+  FEE_TOO_LARGE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -119,5 +121,56 @@ describe("ZNSFixedPricer", () => {
 
     expect(price).to.equal(newPrice);
     expect(fee).to.equal(newPrice * newFee / DEFAULT_PERCENTAGE_BASIS);
+  });
+
+  it("#getFeeForPrice should return the correct fee for a given price", async () => {
+    const newPrice = ethers.parseEther("3213");
+    const newFee = BigInt(1234);
+
+    const newConfig = {
+      price: newPrice,
+      feePercentage: newFee,
+    };
+
+    const asBytes = encodePriceConfig(newConfig);
+
+    await zns.subRegistrar.connect(user).setPricerDataForDomain(
+      domainHash,
+      asBytes,
+      zns.fixedPricer.target
+    );
+
+    const fee = await zns.fixedPricer.getFeeForPrice(asBytes, newPrice);
+
+    expect(fee).to.equal(newPrice * newFee / DEFAULT_PERCENTAGE_BASIS);
+  });
+
+  describe("#validatePriceConfig", () => {
+    it("Should pass if price config is valid", async () => {
+      const config = {
+        price: ethers.parseEther("1000"),
+        feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
+      };
+      expect(
+        await zns.fixedPricer.validatePriceConfig(encodePriceConfig(config))
+      ).to.not.be.reverted;
+    });
+
+    it("should revert if the price config bytes has invalid length", async () => {
+      await expect(
+        zns.fixedPricer.validatePriceConfig("0x")
+      ).to.be.revertedWithCustomError(zns.fixedPricer, INVALID_CONFIG_LENGTH_ERR);
+    });
+
+    it("should revert if the fee percentage is too high", async () => {
+      const config = {
+        price: ethers.parseEther("1000"),
+        feePercentage: BigInt(10001),
+      };
+
+      await expect(
+        zns.fixedPricer.validatePriceConfig(encodePriceConfig(config))
+      ).to.be.revertedWithCustomError(zns.fixedPricer, FEE_TOO_LARGE_ERR);
+    });
   });
 });
