@@ -13,5 +13,5 @@ jobs:
       - name: Check DoD
         uses: platisd/definition-of-done@master
         with:
-          dod_yaml: 'dod.yaml'
+          dod_yaml: './dod.yaml'
           github_token: ${{ secrets.GITHUB_TOKEN }}
