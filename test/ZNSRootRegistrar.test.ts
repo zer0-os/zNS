@@ -137,14 +137,14 @@ describe("ZNSRootRegistrar", () => {
       });
 
       // "DomainRegistered" event log
-      const args = logs[0].args;
+      const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[0].args;
 
-      expect(args[0]).to.eq(ethers.ZeroHash); // parentHash
-      expect(args[1]).to.eq(hashDomainLabel(domain.name)); // domainHash
-      expect(args[2]).to.eq(domain.name); // label
-      expect(args[4]).to.eq(domain.tokenURI); // tokenURI
-      expect(args[5]).to.eq(user.address); // registrant
-      expect(args[6]).to.eq(domain.domainAddress); // domainAddress
+      expect(parentHash).to.eq(ethers.ZeroHash);
+      expect(domainHash).to.eq(hashDomainLabel(domain.name));
+      expect(label).to.eq(domain.name);
+      expect(tokenURI).to.eq(domain.tokenURI);
+      expect(registrant).to.eq(user.address);
+      expect(domainAddress).to.eq(domain.domainAddress);
     }
   });
 

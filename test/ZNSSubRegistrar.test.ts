@@ -177,13 +177,13 @@ describe("ZNSSubRegistrar", () => {
         const subdomain = registrations[i];
 
         // "DomainRegistered" event log
-        const args = logs[i].args;
+        const { parentHash,label, tokenURI, registrant, domainAddress } = logs[i].args;
 
-        expect(args[0]).to.eq(rootHash); // parentHash
-        expect(args[2]).to.eq(subdomain.label); // label
-        expect(args[4]).to.eq(subdomain.tokenURI); // tokenURI
-        expect(args[5]).to.eq(lvl2SubOwner.address); // registrant
-        expect(args[6]).to.eq(subdomain.domainAddress); // domainAddress
+        expect(parentHash).to.eq(rootHash);
+        expect(label).to.eq(subdomain.label);
+        expect(tokenURI).to.eq(subdomain.tokenURI);
+        expect(registrant).to.eq(lvl2SubOwner.address);
+        expect(domainAddress).to.eq(subdomain.domainAddress);
       }
     });
 
@@ -240,16 +240,16 @@ describe("ZNSSubRegistrar", () => {
         const subdomain = registrations[i];
 
         // "DomainRegistered" event log
-        const args = logs[i].args;
+        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
 
         i > 0 ?
-          expect(args[0]).to.eq(parentHashes[i - 1]) :
-          expect(args[0]).to.eq(rootHash);              // parentHash
-        expect(args[1]).to.eq(parentHashes[i]);         // domainHash current
-        expect(args[2]).to.eq(subdomain.label);         // label
-        expect(args[4]).to.eq(subdomain.tokenURI);      // tokenURI
-        expect(args[5]).to.eq(lvl3SubOwner.address);    // registrant
-        expect(args[6]).to.eq(subdomain.domainAddress); // domainAddress
+          expect(parentHash).to.eq(parentHashes[i - 1]) :
+          expect(parentHash).to.eq(rootHash);
+        expect(domainHash).to.eq(parentHashes[i]);
+        expect(label).to.eq(subdomain.label);
+        expect(tokenURI).to.eq(subdomain.tokenURI);
+        expect(registrant).to.eq(lvl3SubOwner.address);
+        expect(domainAddress).to.eq(subdomain.domainAddress);
       }
     });
 
