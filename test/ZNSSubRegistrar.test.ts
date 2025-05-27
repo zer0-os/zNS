@@ -499,8 +499,8 @@ describe("ZNSSubRegistrar", () => {
         expectedHashes.push(hash);
       }
 
+      // check with the events
       expect(subRegEventsLog.length).to.equal(expectedHashes.length);
-
       for (let i = 0; i < subRegEventsLog.length; i++) {
         const {
           args: {
@@ -511,29 +511,24 @@ describe("ZNSSubRegistrar", () => {
           },
         } = subRegEventsLog[i];
 
-        expect(
-          domainHash
-        ).to.equal(
-          expectedHashes[i]
-        );
+        expect(domainHash).to.equal(expectedHashes[i]);
+        expect(label).to.equal(labels[i]);
+        expect(tokenURI).to.equal(subRegistrations[i].tokenURI);
+        expect(registrant).to.equal(specificSubOwner.address);
+      }
 
-        expect(
-          label
-        ).to.equal(
-          labels[i]
-        );
+      // check with the records
+      for (let i = 0; i < subRegistrations.length; i++) {
+        let record;
+        // check, does a record exist
+        try {
+          record = await zns.registry.getDomainRecord(expectedHashes[i]);
+        } catch (e) {
+          expect.fail(`Domain record for hash ${expectedHashes[i]} not found`);
+        }
 
-        expect(
-          tokenURI
-        ).to.equal(
-          subRegistrations[i].tokenURI
-        );
-
-        expect(
-          registrant
-        ).to.equal(
-          specificSubOwner.address
-        );
+        // check the owner
+        expect(record.owner).to.eq(specificSubOwner.address);
       }
     });
 
