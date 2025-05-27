@@ -173,7 +173,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function setRootPriceConfig(
-        address rootPricer_,
         bytes memory priceConfig_
     ) external;
 

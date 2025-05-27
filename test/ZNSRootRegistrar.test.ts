@@ -33,12 +33,13 @@ import {
   ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES,
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
   DIVISION_BY_ZERO_ERR,
+  INVALID_CONFIG_LENGTH_ERR,
 } from "./helpers";
 import { IDistributionConfig, IFixedPriceConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
-import { encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
+import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { getDomainHashFromEvent } from "./helpers/events";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 import {
@@ -55,6 +56,7 @@ import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
 import { ICurvePriceConfig  } from "../src/deploy/missions/types";
+import { ZNSCurvePricerDM } from "../src/deploy/missions/contracts";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -1474,34 +1476,42 @@ describe("ZNSRootRegistrar", () => {
 
     describe("#setRootPriceConfig", () => {
       it("should set the rootPricer config correctly", async () => {
+        // Verify the curve pricer is currently set
+        expect(
+          (await zns.rootRegistrar.rootPricer())
+        ).to.eq(zns.curvePricer.target);
+
+        const newMaxPrice = 1n;
+
+        const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        localConfig.maxPrice = newMaxPrice;
+
+        const asBytes = encodePriceConfig(localConfig);
+
+        // It will allow a valid curve config to be set
         await zns.rootRegistrar.connect(admin).setRootPriceConfig(
-          zns.fixedPricer.target,
-          DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+          asBytes,
         );
 
-        expect(await zns.rootRegistrar.rootPriceConfig()).to.eq(DEFAULT_FIXED_PRICER_CONFIG_BYTES);
+        expect(await zns.rootRegistrar.rootPriceConfig()).to.eq(asBytes);
 
-        // set back
-        await zns.rootRegistrar.connect(admin).setRootPriceConfig(
-          zns.curvePricer.target,
-          DEFAULT_CURVE_PRICE_CONFIG_BYTES
-        );
+        const decoded = decodePriceConfig(await zns.rootRegistrar.rootPriceConfig()) as ICurvePriceConfig;
+        expect(decoded.maxPrice).to.eq(newMaxPrice);
       });
 
       it("Fails when setting 0x0 bytes as the new config", async () => {
         await expect(
           zns.rootRegistrar.connect(admin).setRootPriceConfig(
-            ethers.ZeroAddress,
             ethers.ZeroHash
           )).to.be.revertedWithCustomError(
-          zns.rootRegistrar,
-          ZERO_ADDRESS_ERR
+          zns.curvePricer,
+          INVALID_CONFIG_LENGTH_ERR
         );
       });
 
-      // fails when anyone except the admin tries to set the config
       it("Fails when setting an invalid config with a pricer", async () => {
         const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+        // Breaks the validation
         invalidConfig.baseLength = 0n;
         invalidConfig.curveMultiplier = 0n;
 
@@ -1509,7 +1519,6 @@ describe("ZNSRootRegistrar", () => {
 
         await expect(
           zns.rootRegistrar.connect(randomUser).setRootPriceConfig(
-            zns.curvePricer.target,
             asBytes
           )
         ).to.be.revertedWithCustomError(
@@ -1519,20 +1528,14 @@ describe("ZNSRootRegistrar", () => {
       });
 
       it("Fails when setting an invalid config with a pricer", async () => {
-        const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
-        invalidConfig.baseLength = 0n;
-        invalidConfig.curveMultiplier = 0n;
-
-        const asBytes = encodePriceConfig(invalidConfig);
-
+        // Trying to set a fixed pricer config for the curve pricer will fail
         await expect(
           zns.rootRegistrar.connect(admin).setRootPriceConfig(
-            zns.curvePricer.target,
-            asBytes
+            DEFAULT_FIXED_PRICER_CONFIG_BYTES
           )
         ).to.be.revertedWithCustomError(
           zns.curvePricer,
-          DIVISION_BY_ZERO_ERR
+          INVALID_CONFIG_LENGTH_ERR
         );
       });
     });

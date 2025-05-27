@@ -375,7 +375,7 @@ contract ZNSRootRegistrar is
 
         if (pricer_.code.length == 0) revert AddressIsNotAContract();
 
-        _setRootPriceConfig(pricer_, priceConfig_);
+        _setRootPriceConfig(IZNSPricer(pricer_), priceConfig_);
         rootPricer = IZNSPricer(pricer_);
 
         emit RootPricerSet(pricer_, priceConfig_);
@@ -386,17 +386,13 @@ contract ZNSRootRegistrar is
      * @dev Note this function takes in a pricer contract address as a param
      * but does not modify this address in state.
      * 
-     * @param pricer_ The current pricer contract address
      * @param priceConfig_ The price configuration for root domains, encoded as bytes
      */
-    function setRootPriceConfig(address pricer_, bytes memory priceConfig_) public override onlyAdmin {
-        // TODO by receiving as param, we enable setting a config that
-        // passes validation of THE GIVEN pricer, not the one in state, possible bug
-        // but we are the only people who can change this value anyways
-        if (pricer_ == address(0))
+    function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
+        if (address(rootPricer) == address(0))
             revert ZeroAddressPassed();
 
-        _setRootPriceConfig(pricer_, priceConfig_);
+        _setRootPriceConfig(rootPricer, priceConfig_);
     }
 
     /**
@@ -448,10 +444,10 @@ contract ZNSRootRegistrar is
         accessController.checkGovernor(msg.sender);
     }
 
-    function _setRootPriceConfig(address pricer_, bytes memory priceConfig_) internal {
+    function _setRootPriceConfig(IZNSPricer pricer_, bytes memory priceConfig_) internal {
         if (priceConfig_.length == 0) revert ZeroValuePassed();
 
-        IZNSPricer(pricer_).validatePriceConfig(priceConfig_);
+        pricer_.validatePriceConfig(priceConfig_);
 
         rootPriceConfig = priceConfig_;
 
