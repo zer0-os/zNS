@@ -24,7 +24,6 @@ describe("ZNSFixedPricer", () => {
   let deployer : SignerWithAddress;
   let admin : SignerWithAddress;
   let user : SignerWithAddress;
-  let random : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
   let zns : IZNSContractsLocal;
@@ -33,7 +32,7 @@ describe("ZNSFixedPricer", () => {
   let utils : Utils;
 
   before(async () => {
-    [deployer, admin, user, zeroVault, random] = await hre.ethers.getSigners();
+    [deployer, admin, user, zeroVault] = await hre.ethers.getSigners();
 
     zns = await deployZNS({
       deployer,
@@ -151,7 +150,8 @@ describe("ZNSFixedPricer", () => {
         price: ethers.parseEther("1000"),
         feePercentage: DEFAULT_PROTOCOL_FEE_PERCENT,
       };
-      expect(
+
+      await expect(
         await zns.fixedPricer.validatePriceConfig(encodePriceConfig(config))
       ).to.not.be.reverted;
     });
