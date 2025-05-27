@@ -1,0 +1,7 @@
+dod:
+  - "Standards - Smart Contracts"
+  - "➡️ Every public function has natspec comments"
+  - "➡️ Every public function has a \"#[NAME]\" suite of unit tests"
+  - "Linter passes"
+  - "Code coverage passes"
+  - "At least one approval on PR"

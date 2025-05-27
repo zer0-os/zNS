@@ -14,7 +14,6 @@ import {
   DIVISION_BY_ZERO_ERR,
   encodePriceConfig,
   decodePriceConfig,
-  HARDHAT_INFER_ERR,
   INVALID_CONFIG_LENGTH_ERR,
 } from "./helpers";
 import {
@@ -240,6 +239,16 @@ describe("ZNSCurvePricer", () => {
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
       await expect(zns.curvePricer.getPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, labelD, false))
         .to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+    });
+
+    it("Returns price as 0 when the baseLength is 0", async () => {
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.baseLength = 0n;
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      const price = await zns.curvePricer.getPrice(asBytes, "test", true);
+      expect(price).to.eq(0n);
     });
   });
 

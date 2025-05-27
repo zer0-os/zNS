@@ -59,6 +59,8 @@ contract ZNSSubRegistrarUpgradeMock is
     UpgradeMock {
     using StringUtils for string;
 
+    error ParentNotSetupForDistribution(bytes32 domainHash);
+
     error ParentLockedOrDoesntExist(bytes32 parentHash);
 
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
@@ -102,6 +104,9 @@ contract ZNSSubRegistrarUpgradeMock is
             revert DomainAlreadyExists(domainHash);
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
+
+        if (address(parentConfig.pricerContract) == address(0))
+            revert ParentNotSetupForDistribution(parentHash);
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
@@ -178,8 +183,9 @@ contract ZNSSubRegistrarUpgradeMock is
         distrConfigs[domainHash] = config;
     }
 
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory config,
         IZNSPricer pricerContract
     ) public {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
@@ -188,7 +194,10 @@ contract ZNSSubRegistrarUpgradeMock is
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
 
+        IZNSPricer(pricerContract).validatePriceConfig(config);
+
         distrConfigs[domainHash].pricerContract = pricerContract;
+        distrConfigs[domainHash].priceConfig = config;
     }
 
     function setPaymentTypeForDomain(
