@@ -1,5 +1,4 @@
-
-
+/* eslint-disable no-shadow */
 const toBase64 = (str : string) => btoa(str);
 
 const fromBase64 = (str : string) => atob(str);

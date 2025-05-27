@@ -7,6 +7,7 @@ export const COLL_NAMES = {
 export const VERSION_TYPES = {
   temp: "TEMP",
   deployed: "DEPLOYED",
+  upgraded: "UPGRADED",
   archived: "ARCHIVED",
 };
 

@@ -98,6 +98,7 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
+    // TODO upg: add forking, but make an env var to turn it on/off in the upgrade test
     mainnet: {
       url: `${process.env.MAINNET_RPC_URL}`,
       gasPrice: 80000000000,
