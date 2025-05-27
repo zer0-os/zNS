@@ -389,9 +389,6 @@ contract ZNSRootRegistrar is
      * @param priceConfig_ The price configuration for root domains, encoded as bytes
      */
     function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
-        if (address(rootPricer) == address(0))
-            revert ZeroAddressPassed();
-
         _setRootPriceConfig(rootPricer, priceConfig_);
     }
 
