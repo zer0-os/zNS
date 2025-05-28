@@ -32,14 +32,6 @@ abstract contract AAccessControlled {
     }
 
     /**
-     * @notice Modifier to make a function callable only when caller is an Governor.
-     */
-    modifier onlyGovernor() {
-        accessController.checkGovernor(msg.sender);
-        _;
-    }
-
-    /**
      * @notice Revert if `msg.sender` is not the `ZNSRootRegistrar.sol` contract
      * or an address holding REGISTRAR_ROLE.
      */
