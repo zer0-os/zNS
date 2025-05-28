@@ -1,5 +1,11 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContractsLocal } from "./helpers/types";
+import {
+  IDomainConfigForTest,
+  IFixedPriceConfig,
+  IPathRegResult,
+  ISubRegistrarConfig,
+  IZNSContractsLocal,
+} from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -136,13 +142,13 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
-    it("Should #registerMultipleSubdomains and the event must be triggered", async () => {
-      const registrations = [];
+    it("Should #registerSubdomainBulk and the event must be triggered", async () => {
+      const registrations : Array<ISubRegistrarConfig> = [];
 
       for (let i = 0; i < 5; i++) {
         const isOdd = i % 2 !== 0;
 
-        const subdomainObj = {
+        const subdomainObj : ISubRegistrarConfig = {
           parentHash: rootHash,
           label: `subdomain${i + 1}`,
           domainAddress: admin.address,
@@ -164,7 +170,7 @@ describe("ZNSSubRegistrar", () => {
       // Add allowance
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
-      await zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains(registrations);
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk(registrations);
 
       // get by `registrant`
       const logs = await getDomainRegisteredEvents({
@@ -187,8 +193,8 @@ describe("ZNSSubRegistrar", () => {
       }
     });
 
-    it("Should register multiple NESTED subdomains using #registerMultipleSubdomains", async () => {
-      const registrations = [];
+    it("Should register multiple NESTED subdomains using #registerSubdomainBulk", async () => {
+      const registrations : Array<ISubRegistrarConfig> = [];
       const parentHashes : Array<string> = [];
 
       // how many nested domains (0://root.sub1.sub2.sub3....)
@@ -197,7 +203,7 @@ describe("ZNSSubRegistrar", () => {
       for (let i = 0; i < domainLevels; i++) {
         const isOdd = i % 2 !== 0;
 
-        const subdomainObj = {
+        const subdomainObj : ISubRegistrarConfig = {
           parentHash: rootHash,
           label: `sub${i + 1}`,
           domainAddress: lvl3SubOwner.address,
@@ -229,7 +235,7 @@ describe("ZNSSubRegistrar", () => {
       // Add allowance
       await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
-      await zns.subRegistrar.connect(lvl3SubOwner).registerMultipleSubdomains(registrations);
+      await zns.subRegistrar.connect(lvl3SubOwner).registerSubdomainBulk(registrations);
 
       const logs = await getDomainRegisteredEvents({
         zns,
@@ -253,8 +259,8 @@ describe("ZNSSubRegistrar", () => {
       }
     });
 
-    it("Should revert when register the same domain twice using #registerMultipleSubdomains", async () => {
-      const subdomainObj = {
+    it("Should revert when register the same domain twice using #registerSubdomainBulk", async () => {
+      const subdomainObj : ISubRegistrarConfig = {
         parentHash: rootHash,
         label: "subdomain1",
         domainAddress: admin.address,
@@ -274,12 +280,12 @@ describe("ZNSSubRegistrar", () => {
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj, subdomainObj])
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk([subdomainObj, subdomainObj])
       ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
     });
 
     it("Should revert with #ZeroAddressPassed when 1st level subdomain has zerohash", async () => {
-      const subdomainObj = {
+      const subdomainObj : ISubRegistrarConfig = {
         parentHash: ethers.ZeroHash,
         label: "subdomainzeroaAddresspassed",
         domainAddress: admin.address,
@@ -299,7 +305,7 @@ describe("ZNSSubRegistrar", () => {
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerMultipleSubdomains([subdomainObj])
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk([subdomainObj])
       ).to.be.revertedWithCustomError(zns.subRegistrar, ZERO_PARENTHASH_ERR);
     });
 
@@ -321,7 +327,7 @@ describe("ZNSSubRegistrar", () => {
       //   + non0nested0
       //   + non0nested1
 
-      const subRegistrations = [];
+      const subRegistrations : Array<ISubRegistrarConfig> = [];
       const labels = [
         "nested0",
         "nested1",
@@ -346,8 +352,8 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: `uri${i}`,
           distributionConfig: {
             pricerContract: ethers.ZeroAddress,
-            paymentType: 0,
-            accessType: 0,
+            paymentType: 0n,
+            accessType: 0n,
           },
           paymentConfig: {
             token: ethers.ZeroAddress,
@@ -385,8 +391,8 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: `uri${i * 200}`,
           distributionConfig: {
             pricerContract: ethers.ZeroAddress,
-            paymentType: 0,
-            accessType: 0,
+            paymentType: 0n,
+            accessType: 0n,
           },
           paymentConfig: {
             token: ethers.ZeroAddress,
@@ -403,8 +409,8 @@ describe("ZNSSubRegistrar", () => {
         tokenURI: "",
         distributionConfig: {
           pricerContract: ethers.ZeroAddress,
-          paymentType: 0,
-          accessType: 0,
+          paymentType: 0n,
+          accessType: 0n,
         },
         paymentConfig: {
           token: ethers.ZeroAddress,
@@ -418,8 +424,8 @@ describe("ZNSSubRegistrar", () => {
         tokenURI: "",
         distributionConfig: {
           pricerContract: ethers.ZeroAddress,
-          paymentType: 0,
-          accessType: 0,
+          paymentType: 0n,
+          accessType: 0n,
         },
         paymentConfig: {
           token: ethers.ZeroAddress,
@@ -435,8 +441,8 @@ describe("ZNSSubRegistrar", () => {
         tokenURI: "",
         distributionConfig: {
           pricerContract: ethers.ZeroAddress,
-          paymentType: 0,
-          accessType: 0,
+          paymentType: 0n,
+          accessType: 0n,
         },
         paymentConfig: {
           token: ethers.ZeroAddress,
@@ -450,8 +456,8 @@ describe("ZNSSubRegistrar", () => {
         tokenURI: "",
         distributionConfig: {
           pricerContract: ethers.ZeroAddress,
-          paymentType: 0,
-          accessType: 0,
+          paymentType: 0n,
+          accessType: 0n,
         },
         paymentConfig: {
           token: ethers.ZeroAddress,
@@ -459,7 +465,7 @@ describe("ZNSSubRegistrar", () => {
         },
       });
 
-      const tx = await zns.subRegistrar.connect(specificSubOwner).registerMultipleSubdomains(subRegistrations);
+      const tx = await zns.subRegistrar.connect(specificSubOwner).registerSubdomainBulk(subRegistrations);
       await tx.wait();
 
       const subRegEventsLog = await getDomainRegisteredEvents({

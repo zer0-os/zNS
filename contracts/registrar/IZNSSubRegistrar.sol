@@ -95,7 +95,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         SubdomainRegistrationParams calldata registration
     ) external returns (bytes32);
 
-    function registerMultipleSubdomains(
+    function registerSubdomainBulk(
         SubdomainRegistrationParams[] calldata subRegistrations
     ) external returns (bytes32[] memory);
 

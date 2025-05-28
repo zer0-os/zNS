@@ -140,3 +140,20 @@ export interface IPathRegResult {
   zeroVaultBalanceBefore : bigint;
   zeroVaultBalanceAfter : bigint;
 }
+
+export interface IRootdomainConfig {
+  name : string;
+  domainAddress : string;
+  tokenURI : string;
+  distributionConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
+}
+
+export interface ISubRegistrarConfig {
+  parentHash : string;
+  label : string;
+  domainAddress : string;
+  tokenURI : string;
+  distributionConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
+}

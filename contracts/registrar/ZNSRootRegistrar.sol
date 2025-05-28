@@ -141,13 +141,17 @@ contract ZNSRootRegistrar is
      *      + `paymentConfig`: The payment configuration for the domain (optional).
      * @return domainHashes An array of `bytes32` hashes representing the registered domains.
      */
-    function registerMultipleRootDomains(
+    function registerRootDomainBulk(
         RootDomainRegistrationParams[] calldata registrations
     ) external override returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](registrations.length);
 
-        for (uint256 i = 0; i < registrations.length; i++) {
+        for (uint256 i = 0; i < registrations.length;) {
             domainHashes[i] = registerRootDomain(registrations[i]);
+
+            unchecked {
+                ++i;
+            }
         }
 
         return domainHashes;

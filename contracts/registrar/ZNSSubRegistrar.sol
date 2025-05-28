@@ -176,21 +176,24 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *      + `paymentConfig`: The payment configuration for the subdomain.
      * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
      */
-    function registerMultipleSubdomains(
+    function registerSubdomainBulk(
         SubdomainRegistrationParams[] memory subRegistrations
     ) external override returns (bytes32[] memory) {
 
         bytes32[] memory domainHashes = new bytes32[](subRegistrations.length);
 
-        for (uint256 i = 0; i < subRegistrations.length; i++) {
-            if (subRegistrations[i].parentHash == bytes32(0) && i > 0) {
-                subRegistrations[i].parentHash = domainHashes[i - 1];
-
-            } else if (subRegistrations[i].parentHash == bytes32(0)) {
+        for (uint256 i = 0; i < subRegistrations.length;) {
+            if (i == 0 && subRegistrations[i].parentHash == bytes32(0)) {
                 revert ZeroParentHash(subRegistrations[i].label);
+            } else if (subRegistrations[i].parentHash == bytes32(0)) {
+                subRegistrations[i].parentHash = domainHashes[i - 1];
             }
 
             domainHashes[i] = registerSubdomain(subRegistrations[i]);
+
+            unchecked {
+                i++;
+            }
         }
 
         return domainHashes;

@@ -25,7 +25,7 @@ import {
   INVALID_LABEL_ERR,
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
 } from "./helpers";
-import { IDistributionConfig } from "./helpers/types";
+import { IDistributionConfig, IRootdomainConfig } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
@@ -104,12 +104,12 @@ describe("ZNSRootRegistrar", () => {
   });
 
   it("Should register an array of domains", async () => {
-    const registrations = [];
+    const registrations : Array<IRootdomainConfig> = [];
 
     for (let i = 0; i < 5; i++) {
       const isOdd = i % 2 !== 0;
 
-      const domainObj = {
+      const domainObj : IRootdomainConfig = {
         name: `domain${i + 1}`,
         domainAddress: user.address,
         tokenURI: `0://domainURI_${i + 1}`,
@@ -127,7 +127,7 @@ describe("ZNSRootRegistrar", () => {
       registrations.push(domainObj);
     }
 
-    await zns.rootRegistrar.connect(user).registerMultipleRootDomains(registrations);
+    await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
 
     for (const domain of registrations) {
       // get by `domainHash`
@@ -148,7 +148,7 @@ describe("ZNSRootRegistrar", () => {
     }
   });
 
-  it("Should revert when register the same domain twice using #registerMultipleRootDomains", async () => {
+  it("Should revert when register the same domain twice using #registerRootDomainBulk", async () => {
     const domainObj = {
       name: "root",
       domainAddress: user.address,
@@ -166,7 +166,7 @@ describe("ZNSRootRegistrar", () => {
 
     // Attempt to register the same domain again
     await expect(
-      zns.rootRegistrar.connect(user).registerMultipleRootDomains([domainObj, domainObj])
+      zns.rootRegistrar.connect(user).registerRootDomainBulk([domainObj, domainObj])
     ).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
   });
 

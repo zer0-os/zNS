@@ -146,7 +146,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         RootDomainRegistrationParams calldata registration
     ) external returns (bytes32);
 
-    function registerMultipleRootDomains(
+    function registerRootDomainBulk(
         RootDomainRegistrationParams[] calldata registrations
     ) external returns (bytes32[] memory);
 
