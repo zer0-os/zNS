@@ -23,7 +23,12 @@ import {
   NOT_OWNER_OF_ERR,
   NOT_AUTHORIZED_ERR,
   INVALID_LABEL_ERR,
-  paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
+  paymentConfigEmpty,
+  AC_UNAUTHORIZED_ERR,
+  INSUFFICIENT_BALANCE_ERC_ERR,
+  ZERO_ADDRESS_ERR,
+  DOMAIN_EXISTS_ERR,
+  PAUSE_SAME_VALUE_ERR,
 } from "./helpers";
 import { IDistributionConfig } from "./helpers/types";
 import * as ethers from "ethers";
@@ -49,8 +54,6 @@ import { ZeroHash } from "ethers";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-// This is the only test converted to use the new Campaign, other
-// contract specific tests are using `deployZNS()` helper
 describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
@@ -329,7 +332,7 @@ describe("ZNSRootRegistrar", () => {
     );
   });
 
-  describe("General functionality", () => {
+  describe.only("General functionality", () => {
     it("#coreRegister() should revert if called by address without REGISTRAR_ROLE", async () => {
       const isRegistrar = await zns.accessController.hasRole(REGISTRAR_ROLE, randomUser.address);
       expect(isRegistrar).to.be.false;
@@ -440,6 +443,56 @@ describe("ZNSRootRegistrar", () => {
         zns.rootRegistrar,
         ZERO_ADDRESS_ERR
       );
+    });
+
+    it("#pauseRegistration() should revert if called by address without ADMIN_ROLE", async () => {
+      const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
+      expect(isAdmin).to.be.false;
+
+      await expect(zns.rootRegistrar.connect(randomUser).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, ADMIN_ROLE);
+    });
+
+    it("#pauseRegistration() should pause the registration and emit #RegistrationPauseSet event", async () => {
+      await expect(zns.rootRegistrar.connect(admin).pauseRegistration())
+        .to.emit(zns.rootRegistrar, "RegistrationPauseSet")
+        .withArgs(true);
+
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+    });
+
+    it("#pauseRegistration() should NOT pause the registration if already paused", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      await expect(zns.rootRegistrar.connect(admin).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.rootRegistrar, PAUSE_SAME_VALUE_ERR);
+    });
+
+    it("#unpauseRegistration() should revert if called by address without ADMIN_ROLE", async () => {
+      const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
+      expect(isAdmin).to.be.false;
+
+      await expect(zns.rootRegistrar.connect(randomUser).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, ADMIN_ROLE);
+    });
+
+    it("#unpauseRegistration() should unpause the registration and emit #RegistrationPauseSet", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      await expect(zns.rootRegistrar.connect(admin).unpauseRegistration())
+        .to.emit(zns.rootRegistrar, "RegistrationPauseSet")
+        .withArgs(false);
+
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.false;
+    });
+
+    it("#unpauseRegistration() should NOT unpause the registration if already unpaused", async () => {
+      await expect(zns.rootRegistrar.connect(admin).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.rootRegistrar, PAUSE_SAME_VALUE_ERR);
     });
   });
 

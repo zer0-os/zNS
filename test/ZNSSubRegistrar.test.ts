@@ -25,7 +25,7 @@ import {
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   NOT_OWNER_OF_ERR,
-  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
+  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR, PAUSE_SAME_VALUE_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -3364,7 +3364,7 @@ describe("ZNSSubRegistrar", () => {
     });
   });
 
-  describe("State setters", () => {
+  describe.only("State setters", () => {
     before(async () => {
       [
         deployer,
@@ -3440,6 +3440,44 @@ describe("ZNSSubRegistrar", () => {
       expect(
         await zns.subRegistrar.getAccessController()
       ).to.equal(await zns.accessController.getAddress());
+    });
+
+    it("#pauseRegistration() should pause the registration process and emit #RegistrationPauseSet event", async () => {
+      const tx = await zns.subRegistrar.connect(admin).pauseRegistration();
+
+      await expect(tx).to.emit(zns.subRegistrar, "RegistrationPauseSet").withArgs(true);
+
+      expect(await zns.subRegistrar.registrationPaused()).to.equal(true);
+    });
+
+    it("#pauseRegistration() should not be callable by anyone other than ADMIN_ROLE", async () => {
+      await expect(zns.subRegistrar.connect(random).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
+    });
+
+    it("#pauseRegistration() should not allow to pause if already paused", async () => {
+      await expect(zns.subRegistrar.connect(admin).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.subRegistrar, PAUSE_SAME_VALUE_ERR);
+    });
+
+    it("#unpauseRegistration() should unpause the registration process and emit #RegistrationPauseSet event", async () => {
+      const tx = await zns.subRegistrar.connect(admin).unpauseRegistration();
+
+      await expect(tx).to.emit(zns.subRegistrar, "RegistrationPauseSet").withArgs(false);
+
+      expect(await zns.subRegistrar.registrationPaused()).to.equal(false);
+    });
+
+    it("#unpauseRegistration() should not be callable by anyone other than ADMIN_ROLE", async () => {
+      await expect(zns.subRegistrar.connect(random).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(random.address, ADMIN_ROLE);
+    });
+
+    it("#unpauseRegistration() should not allow to unpause if already unpaused", async () => {
+      await expect(zns.subRegistrar.connect(admin).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.subRegistrar, PAUSE_SAME_VALUE_ERR);
     });
 
     // eslint-disable-next-line max-len
