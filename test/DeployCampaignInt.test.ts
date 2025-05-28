@@ -88,6 +88,10 @@ describe("Deploy Campaign Test", () => {
       };
     });
 
+    afterEach(() => {
+      resetMongoAdapter();
+    });
+
     it("should deploy new MeowTokenMock when `mockMeowToken` is true", async () => {
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -357,6 +361,7 @@ describe("Deploy Campaign Test", () => {
 
     afterEach(async () => {
       await mongoAdapter.dropDB();
+      resetMongoAdapter();
     });
 
     // eslint-disable-next-line max-len
@@ -847,6 +852,8 @@ describe("Deploy Campaign Test", () => {
         },
       };
 
+      resetMongoAdapter();
+
       campaign = await runZnsCampaign({
         config: campaignConfig,
       });
@@ -884,6 +891,7 @@ describe("Deploy Campaign Test", () => {
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "true";
 
+      resetMongoAdapter();
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
@@ -932,6 +940,7 @@ describe("Deploy Campaign Test", () => {
       const initialArchiveVal = process.env.ARCHIVE_PREVIOUS_DB_VERSION;
       process.env.ARCHIVE_PREVIOUS_DB_VERSION = "false";
 
+      resetMongoAdapter();
       // run a new campaign
       const { dbAdapter: newDbAdapter } = await runZnsCampaign({
         config: campaignConfig,
@@ -971,6 +980,7 @@ describe("Deploy Campaign Test", () => {
       const initialDBVersionVal = process.env.MONGO_DB_VERSION;
       process.env.MONGO_DB_VERSION = initialDBVersion;
 
+      resetMongoAdapter();
       // run a new campaign
       const { state: { contracts: newContracts } } = await runZnsCampaign({
         config: campaignConfig,
@@ -1031,6 +1041,7 @@ describe("Deploy Campaign Test", () => {
 
     afterEach(async () => {
       await mongoAdapter.dropDB();
+      resetMongoAdapter();
     });
 
     it("should prepare the correct data for each contract when verifying on Etherscan", async () => {

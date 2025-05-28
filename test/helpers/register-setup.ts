@@ -5,12 +5,13 @@ import {
   IFullDistributionConfig,
   IZNSContracts,
 } from "./types";
-import { ContractTransactionReceipt, ethers } from "ethers";
+import { ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
+import { hashDomainLabel } from "./hashing";
 
 const { ZeroAddress } = ethers;
 
@@ -18,6 +19,7 @@ const { ZeroAddress } = ethers;
 export const defaultRootRegistration = async ({
   user,
   zns,
+  confirmations,
   domainName,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
@@ -25,11 +27,12 @@ export const defaultRootRegistration = async ({
 } : {
   user : SignerWithAddress;
   zns : IZNSContracts;
+  confirmations ?: number;
   domainName : string;
   domainContent ?: string;
   tokenURI ?: string;
   distrConfig ?: IDistributionConfig;
-}) : Promise<ContractTransactionReceipt | null> => {
+}) => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
@@ -39,20 +42,21 @@ export const defaultRootRegistration = async ({
     distrConfig,
     paymentConfigEmpty
   );
+  await tx.wait(confirmations);
 
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
-
-  return tx.wait();
 };
 
 export const approveForParent = async ({
   zns,
+  confirmations,
   parentHash,
   user,
   domainLabel,
 } : {
   zns : IZNSContracts;
+  confirmations ?: number;
   parentHash : string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -72,7 +76,8 @@ export const approveForParent = async ({
   const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
 
-  return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
+  const tx = await tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
+  return tx.wait(confirmations);
 };
 
 /**
@@ -84,6 +89,7 @@ export const approveForParent = async ({
 export const defaultSubdomainRegistration = async ({
   user,
   zns,
+  confirmations,
   parentHash,
   subdomainLabel,
   domainContent = user.address,
@@ -92,6 +98,7 @@ export const defaultSubdomainRegistration = async ({
 } : {
   user : SignerWithAddress;
   zns : IZNSContracts;
+  confirmations ?: number;
   parentHash : string;
   subdomainLabel : string;
   domainContent ?: string;
@@ -108,15 +115,15 @@ export const defaultSubdomainRegistration = async ({
     distrConfig,
     paymentConfigEmpty
   );
+  await tx.wait(confirmations);
 
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));
-
-  return tx.wait();
 };
 
 export const registrationWithSetup = async ({
   zns,
+  confirmations,
   user,
   parentHash,
   domainLabel,
@@ -126,6 +133,7 @@ export const registrationWithSetup = async ({
   setConfigs = true,
 } : {
   zns : IZNSContracts;
+  confirmations ?: number; // how many confirmations to wait for
   user : SignerWithAddress;
   parentHash ?: string;
   domainLabel : string;
@@ -144,6 +152,7 @@ export const registrationWithSetup = async ({
     await defaultRootRegistration({
       user,
       zns,
+      confirmations,
       domainName: domainLabel,
       domainContent,
       tokenURI,
@@ -152,6 +161,7 @@ export const registrationWithSetup = async ({
   } else {
     await approveForParent({
       zns,
+      confirmations,
       parentHash,
       user,
       domainLabel,
@@ -159,6 +169,7 @@ export const registrationWithSetup = async ({
 
     await defaultSubdomainRegistration({
       user,
+      confirmations,
       zns,
       parentHash,
       subdomainLabel: domainLabel,
@@ -169,38 +180,48 @@ export const registrationWithSetup = async ({
   }
 
   // get hash
-  const domainHash = await getDomainHashFromEvent({
-    zns,
-    user,
-  });
+  let domainHash;
+  try {
+    domainHash = await getDomainHashFromEvent({
+      zns,
+      user,
+    });
+  } catch (e) {
+    domainHash = !parentHash || parentHash === ethers.ZeroHash
+      ? hashDomainLabel(domainLabel)
+      : await zns.subRegistrar.hashWithParent(parentHash, domainLabel);
+  }
 
   if (!hasConfig) return domainHash;
 
   // set up prices
   if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    await zns.fixedPricer.connect(user).setPriceConfig(
+    const tx = await zns.fixedPricer.connect(user).setPriceConfig(
       domainHash,
       {
         ...fullConfig.priceConfig as IFixedPriceConfig,
         isSet: true,
       },
     );
+    if (confirmations) await tx.wait(confirmations);
   } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    await zns.curvePricer.connect(user).setPriceConfig(
+    const tx = await zns.curvePricer.connect(user).setPriceConfig(
       domainHash,
       {
         ...fullConfig.priceConfig as ICurvePriceConfig,
         isSet: true,
       },
     );
+    if (confirmations) await tx.wait(confirmations);
   }
 
   if (fullConfig.paymentConfig.token !== ZeroAddress && setConfigs) {
     // set up payment config
-    await zns.treasury.connect(user).setPaymentConfig(
+    const tx = await zns.treasury.connect(user).setPaymentConfig(
       domainHash,
       fullConfig.paymentConfig,
     );
+    if (confirmations) await tx.wait(confirmations);
   }
 
   return domainHash;

@@ -2,6 +2,7 @@ module.exports = {
   skipFiles: [
     'utils/StringUtils.sol',
     'token/mocks',
-    'upgrade-test-mocks'
+    'upgrade-test-mocks',
+    'zns-pausable'
   ]
 };
