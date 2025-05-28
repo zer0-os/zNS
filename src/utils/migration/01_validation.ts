@@ -1,66 +1,84 @@
 import * as hre from "hardhat";
-import { getUsersAndDomains } from "./subgraph";
+import { getDomains } from "./subgraph";
 import { Domain, InvalidDomain, User, ValidatedUser } from "./types";
 import { getDBAdapter } from "./database";
 import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate"
-import { ZeroAddress } from "ethers";
 
 
-// For pagination of data in subgraph we use 'first' and 'skip'
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
-  const users = await getUsersAndDomains() as Array<User>;
-
-  console.log(`Found ${users.length} users`);
+  // Keeping as separate collections from the start will help downstream registration
+  const rootDomainObjects = await getDomains(true);
+  const subdomainObjects = await getDomains(false);
   
-  const zns = await getZNS(migrationAdmin);
-  const validatedUsers : Array<ValidatedUser> = [];
+  console.log(`Found ${rootDomainObjects.length + subdomainObjects.length} domains`);
 
-  // for each user, iterate list of domains
-  for(let [index, user] of users.entries()) {
-    const validDomains : Array<Domain> = []
-    const invalidDomains : Array<InvalidDomain> = [];
+  const env = process.env.ENV_LEVEL;
 
-    for (const domain of user.domains) {
+  if (!env) throw Error("No ENV_LEVEL set in .env file");
+
+  const zns = await getZNS(migrationAdmin, env);
+
+  const validRoots : Array<Domain> = [];
+  const validSubs : Array<Domain> = [];
+  const invalidDomains : Array<InvalidDomain> = [];
+
+  // Doing this creates strong typing and extensibility that allows
+  // the below `insertMany` calls to add properties to the object for `_id`
+  const roots = rootDomainObjects.map((d) => { return d as Domain; });
+  const subs = subdomainObjects.map((d) => { return d as Domain; });
+  
+  // Can iterate all at once for simplicity
+  let index = 0;
+  for(let domain of [...roots, ...subs]) {
       try {
         await validateDomain(domain, zns);
-        validDomains.push(domain);
+
+        if (domain.isWorld) {
+          validRoots.push({ ...domain } as Domain);
+        } else {
+          validSubs.push({ ...domain } as Domain);
+        }
       } catch (e) {
-        // For debugging we keep invalid domains rather than throw
+        // For debugging we keep invalid domains rather than throw errors
         invalidDomains.push({ message: (e as Error).message, domain: domain });
       }
-    }
 
-    // Skip 0x0 address
-    if (user.id != ZeroAddress) {
-      validatedUsers.push({
-        address: user.id,
-        validDomains,
-        invalidDomains
-      });
-    }
-
-    console.log(`Users Processed: ${index + 1}`);
+    console.log(`Processed ${++index} domains`);
   }
 
-  const dbName = "zns-domain-migration";
-  const uri = process.env.MONGO_DB_URI_WRITE;
+  // Connect to database collection and write user domain data to DB
+  const dbName = process.env.MONGO_DB_NAME_WRITE;
+  if (!dbName) throw Error("No DB name given");
 
-  if (!uri) throw Error("No connection string provided");
+  const uri = process.env.MONGO_DB_URI_WRITE;
+  if (!uri) throw Error("No connection string given");
 
   let client = (await getDBAdapter(uri)).db(dbName);
 
-  // To avoid duplicate data, we clear the DB before any inserts
-  await client.dropCollection("user-domains");
-  await client.collection("user-domains").insertMany(validatedUsers);
+  const rootCollName = process.env.MONGO_DB_ROOT_COLL_NAME || "root-domains";
+  const subCollName = process.env.MONGO_DB_SUB_COLL_NAME || "subdomains";
 
-  // HH not exiting process properly, exit manually
-  process.exit(0);
+  // To avoid duplicate data, we clear the DB before any inserts
+  await client.dropCollection(rootCollName);
+  await client.collection(rootCollName).insertMany(validRoots);
+
+  await client.dropCollection(subCollName);
+  await client.collection(subCollName).insertMany(validSubs);
+
+  // Domains that have split ownership will be considered invalid domains
+  if (invalidDomains.length > 0) {
+    const invalidCollName = process.env.MONGO_DB_INVALID_COLL_NAME || "invalid-domains";
+    await client.dropCollection(invalidCollName);
+    await client.collection(invalidCollName).insertMany(invalidDomains);
+  }
 };
 
-main().catch(error => {
+main()
+  .then(() => process.exit(0))
+  .catch(error => {
   console.error(error);
   process.exitCode = 1;
 });

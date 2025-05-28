@@ -17,16 +17,26 @@ import {
 
 let znsCache : IZNSContracts | null = null;
 
-export const getZNS = async (signer : SignerWithAddress) => {
+export const getZNS = async (
+  signer : SignerWithAddress,
+  env : string
+) => {
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
+
+    const meowTokenAddress = zns.find((contract) => { 
+      if (env === "prod") {
+        return contract.name === znsNames.meowToken.contract;
+      } else {
+        contract.name === znsNames.meowToken.contractMock
+      }
+    });
 
     // Get each contract and manually connect to a factory.
     // Using `getContractFactory()` returns an incorrect type of factory here
     const acAddress = zns.find((contract) => contract.name === znsNames.accessController.contract);
     const regAddress = zns.find((contract) => contract.name === znsNames.registry.contract);
     const domainTokenAddress = zns.find((contract) => contract.name === znsNames.domainToken.contract);
-    const meowTokenAddress = zns.find((contract) => contract.name === znsNames.meowToken.contractMock); // contract on prod, contractMock on testnet
     const addressResolverAddress = zns.find((contract) => contract.name === znsNames.addressResolver.contract);
     const curvePricerAddress = zns.find((contract) => contract.name === znsNames.curvePricer.contract);
     const treasuryAddress = zns.find((contract) => contract.name === znsNames.treasury.contract);

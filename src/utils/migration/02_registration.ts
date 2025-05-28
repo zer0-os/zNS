@@ -6,105 +6,66 @@ import { postMigrationValidation, registerDomainsBulk } from "./registration";
 import { getZNS } from "./zns-contract-data";
 import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 import { IZNSContracts } from "../../deploy/campaign/types";
+import { getDBAdapter } from "./database";
 
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
   const [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
 
-  // Read domain data from file output of 01_validate.ts
-  const rootDomains = JSON.parse(fs.readFileSync(ROOTS_FILENAME, {
-    encoding: "utf8"
-  })) as Array<Domain>;
+  // Overall flow will be:
+  // connect to DB
+  // read all roots from mongodb
+  // while there are unregistered root domains:
+  //  register a batch
+  
+  // read all subs with depth 1 from mongodb
+  // while there are unregistered subdomains:
+  //  register a batch
+  // read all subs with depth 2 from mongodb
+  // while there are unregistered subdomains:
+  //  register a batch
+  // read all subs with depth 3 from mongodb
+  // while there are unregistered subdomains:
+  //  register a batch
 
-  const subdomains = JSON.parse(fs.readFileSync(SUBS_FILENAME, {
-    encoding: "utf8"
-  })) as Array<Domain>;
+  // During above we will pack transactions with to always have 50 domains
+  // so if only 45 root domains remain at the end, we will also send the first 5 depth 1 subdomains
+
+  // Steps to register a batch will mean using the Safe REST API to create a transaction
+  // for the owning safe that calls `registerRootDomainBulk` or `registerSubdomainBulk`
+  // Then we will wait for the transaction to be executed
+  // Technically we could also sign each tx and execute this way
 
   let zns : IZNSContracts;
 
-  if (hre.network.name === "hardhat") {
-    // Reset the network to be sure we aren't forking
-    await hre.network.provider.request({
-      method: "hardhat_reset",
-      params: [],
-    });
+  const env = process.env.ENV_LEVEL;
 
-    const params = {
-      deployer: migrationAdmin,
-      governorAddresses: [migrationAdmin.address, governor.address],
-      adminAddresses: [migrationAdmin.address, admin.address],
-    };
+  if (!env) throw Error("No ENV_LEVEL set in .env file");
 
-    // Recreate the domain tree with local ZNS
-    zns = await deployZNS(params);
-  } else if (hre.network.name === "sepolia") {
-    // Get instance of ZNS from DB
-    zns = await getZNS(migrationAdmin);
-  } else {
-    // TODO setup when zchain is deployed
-    throw new Error(`Network ${hre.network.name} not supported`);
-  }
+  // Get instance of ZNS from DB
+  zns = await getZNS(migrationAdmin, env);
 
-  await zns.meowToken.connect(migrationAdmin).approve(await zns.treasury.getAddress(), hre.ethers.MaxUint256);
-  await zns.meowToken.connect(migrationAdmin).mint(migrationAdmin.address, hre.ethers.parseEther("8000000"));
+  // Connect to database collection and write user domain data to DB
+  const dbName = process.env.MONGO_DB_NAME_WRITE;
+  if (!dbName) throw Error("No DB name given");
 
-  console.log(
-    `Balance of admin before: ${await zns.meowToken.balanceOf(migrationAdmin.address)}`
-  );
+  const uri = process.env.MONGO_DB_URI_WRITE;
+  if (!uri) throw Error("No connection string given");
 
-  // Give approval to the RootRegistrar and SubRegistrar to transfer on behalf of the migration admin
-  await zns.domainToken.connect(migrationAdmin).setApprovalForAll(await zns.rootRegistrar.getAddress(), true);
-  await zns.domainToken.connect(migrationAdmin).setApprovalForAll(await zns.subRegistrar.getAddress(), true);
+  let client = (await getDBAdapter(uri)).db(dbName);
+
+  const rootCollName = process.env.MONGO_DB_ROOT_COLL_NAME || "root-domains";
+
+  // Get all documents from collection
+  const domains = await client.collection(rootCollName).find().toArray();
+
+  console.log(domains.length);
 
   const startTime = Date.now();
 
   // How many domains we will register in a single transaction
   const sliceSize = 50;
-
-  // TODO because we no longer use the treasury at all we might be able to switch back to
-  // having owners just be the registrant for the domain, not the user then do a transfer
-  // would make it cheaper and faster, but on zchain gas probably won't matter
-  const start = 0;
-
-  console.log(`Registering ${rootDomains.length - start} root domains with slice size ${sliceSize}`);
-  const registeredDomains = await registerDomainsBulk(
-    migrationAdmin,
-    rootDomains,
-    zns,
-    sliceSize,
-    start
-  );
-
-  console.log(`Registering ${subdomains.length} subdomains with slice size ${sliceSize}`);
-  const registeredSubdomains = await registerDomainsBulk(
-    migrationAdmin,
-    subdomains,
-    zns,
-    sliceSize,
-    0
-  );
-
-  // // ms -> s -> min
-  const totalTime = (Date.now() - startTime) / 1000 / 60;
-  console.log(`Registered ${rootDomains.length + subdomains.length} groups of domains in ${totalTime} minutes`);
-  console.log("Done")
-
-  console.log(`txhash: ${registeredDomains[0].txHash}`);
-  console.log(`exists: ${await zns.registry.exists(registeredDomains[0].domainHashes[0])}`);
-
-  console.log(
-    `Balance of admin after: ${await zns.meowToken.balanceOf(migrationAdmin.address)}`
-  );
-
-  // console.log("TEMP just doing postmigration validation for now to test")
-  console.log("Confirming with post-migration validation...");
-  const fullDomains = rootDomains.concat(subdomains);
-  // await postMigrationValidation(
-  //   zns,
-  //   fullDomains
-  // )
-
-  // Manually exit here, HH runner doesn't exit properly
+  
   process.exit(0);
 };
 

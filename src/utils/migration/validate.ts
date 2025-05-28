@@ -10,20 +10,16 @@ export const validateDomain = async (
 ) => {
   // For speed in processing we group promises together
   const promises = [
-    zns.registry.exists(domain.id),
     zns.registry.getDomainOwner(domain.id),
     zns.domainToken.ownerOf(domain.tokenId),
     zns.addressResolver.resolveDomainAddress(domain.id)
   ]
 
   const [
-    exists,
     domainOwner,
     domainTokenOwner,
     domainAddress
-  ] = await Promise.all(promises) as unknown as [boolean, string, string, string];
-
-  assert.ok(!!exists, `Domain ${domain.id} does not exist in the registry`);
+  ] = await Promise.all(promises) as unknown as [string, string, string];
 
   // Domain is in reclaimable state
   assert.equal(

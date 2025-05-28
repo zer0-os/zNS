@@ -3,7 +3,6 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { RegisteredDomains, Domain } from "./types";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { paymentConfigEmpty } from "../../../test/helpers";
-import { IZNSContractsLocal } from "../../../test/helpers/types";
 import { DOMAIN_REGISTERED_TOPIC_SEPOLIA } from "./constants";
 import { expect } from "chai";
 import { validateDomain } from "./validate";
