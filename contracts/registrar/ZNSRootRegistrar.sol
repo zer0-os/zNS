@@ -12,6 +12,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import { ARegistrationPause } from "./ARegistrationPause.sol";
 
 
 /**
@@ -31,6 +32,7 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    ARegistrationPause,
     IZNSRootRegistrar {
     using StringUtils for string;
 
@@ -94,7 +96,8 @@ contract ZNSRootRegistrar is
         string calldata tokenURI,
         DistributionConfig calldata distributionConfig,
         PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+    // TODO 15: add this modifier to bulk registration functions on both contracts !!!
+    ) external override whenRegNotPaused(accessController) returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
         name.validate();
 
@@ -390,6 +393,27 @@ contract ZNSRootRegistrar is
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
+    }
+
+    // TODO 15: can we refactor this in a better way to not copy to both places?
+    // TODO 15: should we put it in the AAccessControlled.sol?
+    /**
+     * @notice Pauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     * @dev When registration is paused, only ADMINs can register new domains.
+     */
+    function pauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(true);
+    }
+
+    /**
+     * @notice Unpauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     */
+    function unpauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(false);
     }
 
     /**
