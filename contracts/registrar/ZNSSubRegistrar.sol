@@ -179,7 +179,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     function registerSubdomainBulk(
         SubdomainRegistrationParams[] memory subRegistrations
     ) external override returns (bytes32[] memory) {
-
         bytes32[] memory domainHashes = new bytes32[](subRegistrations.length);
 
         for (uint256 i = 0; i < subRegistrations.length;) {

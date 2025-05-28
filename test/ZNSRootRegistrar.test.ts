@@ -25,7 +25,7 @@ import {
   INVALID_LABEL_ERR,
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
 } from "./helpers";
-import { IDistributionConfig, IRootdomainConfig } from "./helpers/types";
+import { IDistributionConfig, IRootdomainConfig, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
@@ -43,8 +43,8 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
-import { IZNSContracts } from "../src/deploy/campaign/types";
 import { ZeroHash } from "ethers";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -58,7 +58,7 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IZNSContracts;
+  let zns : IZNSContractsLocal | IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;

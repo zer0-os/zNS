@@ -56,7 +56,7 @@ import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
-describe("ZNSSubRegistrar", () => {
+describe.only("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -182,10 +182,16 @@ describe("ZNSSubRegistrar", () => {
       for (let i = 0; i < logs.length; i++) {
         const subdomain = registrations[i];
 
+        const domainHashExpected = await zns.subRegistrar.hashWithParent(
+          subdomain.parentHash,
+          subdomain.label
+        );
+
         // "DomainRegistered" event log
-        const { parentHash,label, tokenURI, registrant, domainAddress } = logs[i].args;
+        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
 
         expect(parentHash).to.eq(rootHash);
+        expect(domainHashExpected).to.eq(domainHash);
         expect(label).to.eq(subdomain.label);
         expect(tokenURI).to.eq(subdomain.tokenURI);
         expect(registrant).to.eq(lvl2SubOwner.address);
@@ -284,7 +290,7 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
     });
 
-    it("Should revert with #ZeroAddressPassed when 1st level subdomain has zerohash", async () => {
+    it("Should revert with 'ZeroAddressPassed' error when 1st subdomain in the array has zerohash", async () => {
       const subdomainObj : ISubRegistrarConfig = {
         parentHash: ethers.ZeroHash,
         label: "subdomainzeroaAddresspassed",
