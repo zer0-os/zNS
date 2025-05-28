@@ -31,7 +31,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { updateDbAndVerifyAll } from "../src/upgrade/db";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 import { getGitTag } from "../src/utils/git-tag/get-tag";
-import { withdrawStakedByGovernon } from "../src/scripts/witdrawStaked";
+import { withdrawStakedByGovernor } from "../src/scripts/withdraw-staked";
 
 
 describe("ZNS Upgrade and Pause Test", () => {
@@ -128,11 +128,12 @@ describe("ZNS Upgrade and Pause Test", () => {
       lvl4SubOwner,
       lvl5SubOwner,
       lvl6SubOwner,
-    ].reduce(async (acc, { address }) => {
-      await acc;
-      const tx = await zns.meowToken.mint(address, ethers.parseEther("1000000"));
-      if (isRealNetwork) await tx.wait(2);
-    }, Promise.resolve()
+    ].reduce(
+      async (acc, { address }) => {
+        await acc;
+        const tx = await zns.meowToken.mint(address, ethers.parseEther("1000000"));
+        if (isRealNetwork) await tx.wait(2);
+      }, Promise.resolve()
     );
     const tx = await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     if (isRealNetwork) await tx.wait(2);
@@ -548,7 +549,7 @@ describe("ZNS Upgrade and Pause Test", () => {
       expect(contractsVersion).to.equal(getGitTag());
     });
 
-    it("should update docs for each upgraded contract properly", async () => {
+    it("should update db docs for each upgraded contract properly", async () => {
       await Object.values(contractNames).reduce(
         async (acc, { contract, instance }) => {
           await acc;
@@ -772,8 +773,13 @@ describe("ZNS Upgrade and Pause Test", () => {
         REGISTRAR_ROLE,
         deployer.address
       );
-      const stakeAmt = ethers.parseEther("1");
+      const stakeAmt = ethers.parseEther("1132");
       const protocolFee = ethers.parseEther("3");
+      // approve
+      await zns.meowToken.connect(lvl6SubOwner).approve(
+        znsUpgraded.treasury.target,
+        stakeAmt + protocolFee
+      );
 
       const contractBalanceBeforeStake = await zns.meowToken.balanceOf(zns.treasury.target);
 
@@ -798,18 +804,16 @@ describe("ZNS Upgrade and Pause Test", () => {
       );
 
       const balanceAfterWithdraw = await zns.meowToken.balanceOf(lvl6SubOwner.address);
+      const contractBalanceAfterWithdraw = await zns.meowToken.balanceOf(zns.treasury.target);
 
       expect(
         balanceAfterWithdraw - balanceBeforeWithdraw
       ).to.eq(
         contractBalanceBeforeStake + stakeAmt
       );
+      expect(contractBalanceAfterWithdraw).to.eq(0n);
 
-      expect(
-        token
-      ).to.eq(
-        await zns.meowToken.getAddress()
-      );
+      expect(token).to.eq(await zns.meowToken.getAddress());
     });
 
     it("should revert when called by NON Governor", async () => {
@@ -846,18 +850,25 @@ describe("ZNS Upgrade and Pause Test", () => {
       );
 
       const balanceBeforeWithdraw = await zns.meowToken.balanceOf(lvl5SubOwner.address);
+      const contractBalanceBeforeWithdraw = await zns.meowToken.balanceOf(zns.treasury.target);
 
-      await withdrawStakedByGovernon({
+      await withdrawStakedByGovernor({
         token: zns.meowToken.target.toString(),
         to: lvl5SubOwner.address,
       });
 
       const balanceAfterWithdraw = await zns.meowToken.balanceOf(lvl5SubOwner.address);
+      const contractBalanceAfterWithdraw = await zns.meowToken.balanceOf(zns.treasury.target);
 
       expect(
         balanceAfterWithdraw - balanceBeforeWithdraw
       ).to.eq(
         stakeAmt
+      );
+      expect(
+        contractBalanceAfterWithdraw
+      ).to.eq(
+        contractBalanceBeforeWithdraw - stakeAmt
       );
     });
   });
