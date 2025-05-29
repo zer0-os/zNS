@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
-import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
@@ -77,57 +77,84 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param name Name (label) of the domain to register
-     * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
-     * @param tokenURI URI to assign to the Domain Token issued for the domain
-     * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
+     * @param args A struct of domain registration data:
+     *       + name Name (label) of the domain to register
+     *       + domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
+     *       + tokenURI URI to assign to the Domain Token issued for the domain
+     *       + distributionConfig (optional) Distribution config for the domain to set in the same tx
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
      *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
      *      but all the parameters inside are required.
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *       + paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
+        RootDomainRegistrationArgs calldata args
+    ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        name.validate();
+        args.name.validate();
 
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(name));
+        bytes32 domainHash = keccak256(bytes(args.name));
 
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
+        uint256 domainPrice = rootPricer.getPrice(0x0, args.name, true);
 
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
                 msg.sender,
-                domainAddress,
+                args.domainAddress,
                 domainPrice,
                 0,
-                name,
-                tokenURI,
+                args.name,
+                args.tokenURI,
                 true,
-                paymentConfig
+                args.paymentConfig
             )
         );
 
-        if (address(distributionConfig.pricerContract) != address(0)) {
+        if (address(args.distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, args.distributionConfig);
         }
 
         return domainHash;
+    }
+
+    /**
+     * @notice This function allows registering multiple root domains in a single transaction.
+     * It iterates through an array of `SubdomainRegistrationArgs` objects, registering each domain
+     * by calling the `registerRootDomain` function for each entry.
+     * @dev This function reduces the number of transactions required to register multiple domains,
+     * saving gas and improving efficiency. Each domain registration is processed sequentially.
+     * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
+     *      + `name`: The name (label) of the domain to register.
+     *      + `domainAddress`: The address to associate with the domain in the resolver (optional).
+     *      + `tokenURI`: The URI to assign to the domain token.
+     *      + `distributionConfig`: The distribution configuration for the domain (optional).
+     *      + `paymentConfig`: The payment configuration for the domain (optional).
+     * @return domainHashes An array of `bytes32` hashes representing the registered domains.
+     */
+    function registerRootDomainBulk(
+        RootDomainRegistrationArgs[] calldata args
+    ) external override returns (bytes32[] memory) {
+        bytes32[] memory domainHashes = new bytes32[](args.length);
+
+        for (uint256 i = 0; i < args.length;) {
+            domainHashes[i] = registerRootDomain(args[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return domainHashes;
     }
 
     /**

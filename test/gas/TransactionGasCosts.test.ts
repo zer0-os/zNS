@@ -90,13 +90,13 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
-      "root",
-      rootOwner.address,
-      DEFAULT_TOKEN_URI,
-      config,
-      paymentConfig
-    );
+    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain({
+      name: "root",
+      domainAddress: rootOwner.address,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distributionConfig: config,
+      paymentConfig,
+    });
 
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
@@ -140,14 +140,14 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-      rootHashDirect,
-      "subdomain",
-      lvl2SubOwner.address,
-      DEFAULT_TOKEN_URI,
-      config,
-      paymentConfig
-    );
+    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
+      parentHash: rootHashDirect,
+      label: "subdomain",
+      domainAddress: lvl2SubOwner.address,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distributionConfig: config,
+      paymentConfig,
+    });
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
 

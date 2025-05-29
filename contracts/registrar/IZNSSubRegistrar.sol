@@ -10,17 +10,14 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
-    /**
-     * @notice Reverted when someone other than parent owner is trying to buy
-     * a subdomain under the parent that is locked
-     * or when the parent provided does not exist.
-     */
-    error ParentLockedOrDoesntExist(bytes32 parentHash);
-
-    /**
-     * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
-     */
-    error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
+    struct SubdomainRegisterArgs {
+        bytes32 parentHash;
+        string label;
+        address domainAddress;
+        string tokenURI;
+        DistributionConfig distributionConfig;
+        PaymentConfig paymentConfig;
+    }
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
@@ -71,18 +68,22 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     event RootRegistrarSet(address registrar);
 
-    function distrConfigs(
-        bytes32 domainHash
-    ) external view returns (
-        IZNSPricer pricerContract,
-        PaymentType paymentType,
-        AccessType accessType
-    );
+    /**
+     * @notice Reverted when someone other than parent owner is trying to buy
+     * a subdomain under the parent that is locked
+     * or when the parent provided does not exist.
+     */
+    error ParentLockedOrDoesntExist(bytes32 parentHash);
 
-    function isMintlistedForDomain(
-        bytes32 domainHash,
-        address candidate
-    ) external view returns (bool);
+    /**
+     * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
+     */
+    error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
+
+    /**
+     * @notice Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
+     */
+    error ZeroParentHash(string label);
 
     function initialize(
         address _accessController,
@@ -91,18 +92,12 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata configForSubdomains,
-        PaymentConfig calldata paymentConfig
+        SubdomainRegisterArgs calldata registration
     ) external returns (bytes32);
 
-    function hashWithParent(
-        bytes32 parentHash,
-        string calldata label
-    ) external pure returns (bytes32);
+    function registerSubdomainBulk(
+        SubdomainRegisterArgs[] calldata subRegistrations
+    ) external returns (bytes32[] memory);
 
     function setDistributionConfigForDomain(
         bytes32 parentHash,
@@ -137,4 +132,22 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
+
+    function distrConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType
+    );
+
+    function isMintlistedForDomain(
+        bytes32 domainHash,
+        address candidate
+    ) external view returns (bool);
+
+    function hashWithParent(
+        bytes32 parentHash,
+        string calldata label
+    ) external pure returns (bytes32);
 }
