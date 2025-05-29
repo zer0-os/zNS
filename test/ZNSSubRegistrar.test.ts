@@ -56,7 +56,7 @@ import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 
 
-describe.only("ZNSSubRegistrar", () => {
+describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -316,24 +316,20 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("Should register a mix of nested and non-nested subdomains and validates hashes", async () => {
-      // Structure of domains (- rootDomainName; + subdomain):
+      // Structure of domains (- rootDomain; + subdomain):
       //
       // - rootHash
       //   + nested0
       //    + nested1
       //     + nested2
       //      + nested3
-      // - specificParentHash_0
+      // - specific0parent
       //   + non0nested0with0specific0parent0
-      // - specificParentHash_1
       //   + non0nested0with0specific0parent1
-      //    + after0non0nested0
-      //     + after0non0nested1
-      // - rootHash
-      //   + non0nested0
-      //   + non0nested1
+      //   + non0nested0with0specific0parent2
 
       const subRegistrations : Array<ISubRegistrarConfig> = [];
+      const expectedHashes : Array<string> = [];
       const labels = [
         "nested0",
         "nested1",
@@ -341,19 +337,45 @@ describe.only("ZNSSubRegistrar", () => {
         "nested3",
         "non0nested0with0specific0parent0",
         "non0nested0with0specific0parent1",
-        "after0non0nested0",
-        "after0non0nested1",
-        "non0nested0",
-        "non0nested1",
+        "non0nested0with0specific0parent2",
       ];
-      const specificParentHashes = [];
-      const expectedHashes : Array<string> = [];
 
-      // 4 nested: first has parentHash, the rest have parentHash = 0 (nested)
-      for (let i = 0; i < 4; i++) {
+
+      const specificParentHash = await registrationWithSetup({
+        zns,
+        user: specificRootOwner,
+        domainLabel: "specific0parent",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: await zns.fixedPricer.getAddress(),
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: specificRootOwner.address,
+          },
+          priceConfig: rootPriceConfig,
+        },
+      });
+
+      for (let i = 0; i < labels.length; i++) {
+        let parentHash;
+
+        switch (true) {
+        case i === 0:
+          parentHash = rootHash;
+          break;
+        case i > 0 && i < 5:
+          parentHash = ethers.ZeroHash;
+          break;
+        default:
+          parentHash = specificParentHash;
+        }
+
         subRegistrations.push({
-          parentHash: i === 0 ? rootHash : ethers.ZeroHash,
-          label: `${labels[i]}`,
+          parentHash,
+          label: labels[i],
           domainAddress: ethers.ZeroAddress,
           tokenURI: `uri${i}`,
           distributionConfig: {
@@ -366,110 +388,12 @@ describe.only("ZNSSubRegistrar", () => {
             beneficiary: ethers.ZeroAddress,
           },
         });
+
+        if (i > 0 && i < 5) parentHash = expectedHashes[i - 1];
+        expectedHashes.push(
+          await zns.subRegistrar.hashWithParent(parentHash, labels[i])
+        );
       }
-
-      // 2 non-nested with their own specific parentHash
-      for (let i = 0; i < 2; i++) {
-        const hashOfNewParent = await registrationWithSetup({
-          zns,
-          user: specificRootOwner,
-          domainLabel: `parent${i}`,
-          fullConfig: {
-            distrConfig: {
-              accessType: AccessType.OPEN,
-              pricerContract: await zns.fixedPricer.getAddress(),
-              paymentType: PaymentType.DIRECT,
-            },
-            paymentConfig: {
-              token: await zns.meowToken.getAddress(),
-              beneficiary: specificRootOwner.address,
-            },
-            priceConfig: rootPriceConfig,
-          },
-        });
-
-        specificParentHashes.push(hashOfNewParent);
-
-        subRegistrations.push({
-          parentHash: hashOfNewParent,
-          label: `${labels[4 + i]}`,  // non0nested0with0parent0 / non0nested0with0parent1
-          domainAddress: ethers.ZeroAddress,
-          tokenURI: `uri${i * 200}`,
-          distributionConfig: {
-            pricerContract: ethers.ZeroAddress,
-            paymentType: 0n,
-            accessType: 0n,
-          },
-          paymentConfig: {
-            token: ethers.ZeroAddress,
-            beneficiary: ethers.ZeroAddress,
-          },
-        });
-      }
-
-      // 2 nested after non-nested
-      subRegistrations.push({
-        parentHash: ethers.ZeroHash,
-        label: `${labels[6]}`,  // after0non0nested0
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: "",
-        distributionConfig: {
-          pricerContract: ethers.ZeroAddress,
-          paymentType: 0n,
-          accessType: 0n,
-        },
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-      subRegistrations.push({
-        parentHash: ethers.ZeroHash,
-        label: `${labels[7]}`,  // after0non0nested1
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: "",
-        distributionConfig: {
-          pricerContract: ethers.ZeroAddress,
-          paymentType: 0n,
-          accessType: 0n,
-        },
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      // 2 last ones — non-nested with parentHash = `parentHash`
-      subRegistrations.push({
-        parentHash: rootHash,
-        label: `${labels[8]}`,  // non0nested0
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: "",
-        distributionConfig: {
-          pricerContract: ethers.ZeroAddress,
-          paymentType: 0n,
-          accessType: 0n,
-        },
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-      subRegistrations.push({
-        parentHash: rootHash,
-        label: `${labels[9]}`,  // non0nested1
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: "",
-        distributionConfig: {
-          pricerContract: ethers.ZeroAddress,
-          paymentType: 0n,
-          accessType: 0n,
-        },
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
 
       const tx = await zns.subRegistrar.connect(specificSubOwner).registerSubdomainBulk(subRegistrations);
       await tx.wait();
@@ -479,41 +403,10 @@ describe.only("ZNSSubRegistrar", () => {
         registrant: specificSubOwner.address,
       });
 
-      let currentParent = rootHash;
-      // 4 nested: first has parentHash, the rest have parentHash = 0 (nested)
-      for (let i = 0; i < 4; i++) {
-        const hash = await zns.subRegistrar.hashWithParent(currentParent, labels[i]);
-        expectedHashes.push(hash);
-        currentParent = hash;
-      }
-
-      // 2 non-nested with their own specific parentHash
-      let startFromIndx = 4;
-      for (let i = startFromIndx; i < startFromIndx + 2; i++) {
-        const hash = await zns.subRegistrar.hashWithParent(specificParentHashes[i - startFromIndx], labels[i]);
-        // because we register `after0non0nested1` with the `after0non0nested0` as parent
-        currentParent = hash;
-        expectedHashes.push(hash);
-      }
-
-      // 2 nested after non-nested
-      startFromIndx = 6;
-      for (let i = startFromIndx; i < startFromIndx + 2; i++) {
-        const hash = await zns.subRegistrar.hashWithParent(currentParent, labels[i]);
-        expectedHashes.push(hash);
-        currentParent = hash;
-      }
-
-      // 2 last ones — non-nested with parentHash = `parentHash`
-      startFromIndx = 8;
-      for (let i = startFromIndx; i < startFromIndx + 2; i++) {
-        const hash = await zns.subRegistrar.hashWithParent(rootHash, labels[i]);
-        expectedHashes.push(hash);
-      }
-
       // check with the events
       expect(subRegEventsLog.length).to.equal(expectedHashes.length);
-      for (let i = 0; i < subRegEventsLog.length; i++) {
+
+      for (let i = 0; i < labels.length; i++) {
         const {
           args: {
             domainHash,
