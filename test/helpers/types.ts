@@ -144,6 +144,7 @@ export interface IPathRegResult {
 export interface IRootdomainConfig {
   name : string;
   domainAddress : string;
+  tokenOwner : string;
   tokenURI : string;
   distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
