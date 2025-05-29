@@ -360,21 +360,22 @@ describe("ZNSSubRegistrar", () => {
 
       for (let i = 0; i < labels.length; i++) {
         let parentHash;
+        let referenceParentHash;
 
-        switch (true) {
-        case i === 0:
+        if (i === 0) {
           parentHash = rootHash;
-          break;
-        case i > 0 && i < 5:
+          referenceParentHash = parentHash;
+        } else if (i > 0 && i < 5) {
           parentHash = ethers.ZeroHash;
-
-          expectedHashes.push(
-            await zns.subRegistrar.hashWithParent(expectedHashes[i - 1], labels[i])
-          );
-          break;
-        default:
+          referenceParentHash = expectedHashes[i - 1];
+        } else {
           parentHash = specificParentHash;
+          referenceParentHash = parentHash;
         }
+
+        expectedHashes.push(
+          await zns.subRegistrar.hashWithParent(referenceParentHash, labels[i])
+        );
 
         subRegistrations.push({
           parentHash,
