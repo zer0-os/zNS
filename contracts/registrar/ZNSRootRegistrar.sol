@@ -77,7 +77,7 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param registration A struct of domain registration data:
+     * @param args A struct of domain registration data:
      *       + name Name (label) of the domain to register
      *       + domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
      *       + tokenURI URI to assign to the Domain Token issued for the domain
