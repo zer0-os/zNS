@@ -35,6 +35,15 @@ struct DistributionConfig {
     uint256 newUint;
 }
 
+struct SubdomainRegisterArgs {
+    bytes32 parentHash;
+    string label;
+    address domainAddress;
+    address tokenOwner;
+    string tokenURI;
+    DistributionConfig distrConfig;
+    PaymentConfig paymentConfig;
+}
 
 contract ZNSSubRegistrarMainState {
     IZNSRootRegistrar public rootRegistrar;
@@ -85,62 +94,58 @@ contract ZNSSubRegistrarUpgradeMock is
         setRootRegistrar(_rootRegistrar);
     }
 
-    function registerSubdomain(
-        bytes32 parentHash,
-        string calldata label,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distrConfig,
-        PaymentConfig calldata paymentConfig
-    ) external returns (bytes32) {
-        // Confirms string values are only [a-z0-9-]
-        label.validate();
+    function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32) {
+        address domainRecordOwner = msg.sender;
+        address parentOwner = registry.getDomainOwner(regArgs.parentHash);
+        bool isOwner = msg.sender == parentOwner;
+        bool isOperator = registry.isOperatorFor(msg.sender, parentOwner);
 
-        bytes32 domainHash = hashWithParent(parentHash, label);
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
+        DistributionConfig storage parentConfig = distrConfigs[regArgs.parentHash];
 
-        DistributionConfig memory parentConfig = distrConfigs[parentHash];
-
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(parentHash);
-
-        if (parentConfig.accessType == AccessType.MINTLIST) {
+        if (parentConfig.accessType == AccessType.LOCKED) {
+            if (!isOwner && !isOperator) {
+                revert ParentLockedOrDoesntExist(regArgs.parentHash);
+            } else if (isOperator) {
+                domainRecordOwner = parentOwner;
+            }
+        } else if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
-                !mintlist[parentHash]
+                !mintlist[regArgs.parentHash]
             .list
-            [mintlist[parentHash].ownerIndex]
+            [mintlist[regArgs.parentHash].ownerIndex]
             [msg.sender]
-            ) revert SenderNotApprovedForPurchase(parentHash, msg.sender);
+            ) revert SenderNotApprovedForPurchase(regArgs.parentHash, msg.sender);
         }
 
+        bytes32 domainHash = hashWithParent(regArgs.parentHash, regArgs.label);
+
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: parentHash,
+            parentHash: regArgs.parentHash,
             domainHash: domainHash,
-            label: label,
-            registrant: msg.sender,
+            label: regArgs.label,
+            domainOwner: domainRecordOwner,
+            tokenOwner: regArgs.tokenOwner == address(0) ? domainRecordOwner : regArgs.tokenOwner,
             price: 0,
             stakeFee: 0,
-            domainAddress: domainAddress,
-            tokenURI: tokenURI,
+            domainAddress: regArgs.domainAddress,
+            tokenURI: regArgs.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: paymentConfig
+            paymentConfig: regArgs.paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
+        if (!isOwner && !isOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(
-                    parentHash,
-                    label,
+                    regArgs.parentHash,
+                    regArgs.label,
                     true
                 );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                    parentHash,
-                    label,
+                    regArgs.parentHash,
+                    regArgs.label,
                     true
                 );
             }
@@ -148,8 +153,10 @@ contract ZNSSubRegistrarUpgradeMock is
 
         rootRegistrar.coreRegister(coreRegisterArgs);
 
-        if (address(distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, distrConfig);
+        // ! note that the config is set ONLY if ALL values in it are set, specifically,
+        // without pricerContract being specified, the config will NOT be set
+        if (address(regArgs.distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, regArgs.distrConfig);
         }
 
         return domainHash;

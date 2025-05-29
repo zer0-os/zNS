@@ -2,9 +2,8 @@ import * as hre from "hardhat";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
-  checkBalance, DEFAULT_TOKEN_URI, deployTreasury,
+  checkBalance, deployTreasury,
   deployZNS,
-  distrConfigEmpty,
   getPriceObject,
   NO_BENEFICIARY_ERR,
   INITIALIZED_ERR,
@@ -19,6 +18,7 @@ import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
+import { defaultRootRegistration } from "./helpers/register-setup";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -73,11 +73,11 @@ describe("ZNSTreasury", () => {
     await zns.meowToken.mint(user.address, ethers.parseEther("50000"));
 
     // register random domain
-    await zns.rootRegistrar.connect(user).registerRootDomain({
-      name: domainName,
-      domainAddress: user.address,
-      tokenURI: DEFAULT_TOKEN_URI,
-      distributionConfig: distrConfigEmpty,
+    await defaultRootRegistration({
+      user,
+      zns,
+      domainName,
+      tokenOwner: user.address,
       paymentConfig,
     });
   });

@@ -144,16 +144,19 @@ export interface IPathRegResult {
 export interface IRootdomainConfig {
   name : string;
   domainAddress : string;
+  tokenOwner : string;
   tokenURI : string;
-  distributionConfig : IDistributionConfig;
+  distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
 }
 
+// TODO 15: remove these interfaces, since we already have Struct interfaces created by typechain
 export interface ISubRegistrarConfig {
   parentHash : string;
   label : string;
   domainAddress : string;
+  tokenOwner : string;
   tokenURI : string;
-  distributionConfig : IDistributionConfig;
+  distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
 }
