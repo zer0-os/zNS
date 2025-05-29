@@ -34,17 +34,14 @@ describe("ZNSCurvePricer", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
-  let randomAcc : SignerWithAddress;
 
   let zns : IZNSContractsLocal;
-  let domainHash : string;
 
   beforeEach(async () => {
     [
       deployer,
       user,
       admin,
-      randomAcc,
     ] = await hre.ethers.getSigners();
 
     zns = await deployZNS({
@@ -55,26 +52,6 @@ describe("ZNSCurvePricer", () => {
 
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, 26000000000000000000000n);
-
-    const fullConfig : IFullDistributionConfig = {
-      distrConfig: {
-        pricerContract: await zns.curvePricer.getAddress(),
-        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-        paymentType: PaymentType.DIRECT,
-        accessType: AccessType.OPEN,
-      },
-      paymentConfig: {
-        token: await zns.meowToken.getAddress(),
-        beneficiary: user.address,
-      },
-    };
-
-    domainHash = await registrationWithSetup({
-      zns,
-      user,
-      domainLabel: "testdomain",
-      fullConfig,
-    });
   });
 
   after(async () => {
