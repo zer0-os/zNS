@@ -67,9 +67,8 @@ const main = async () => {
 
   // Domains that have split ownership will be considered invalid domains
   if (invalidDomains.length > 0) {
-    const invalidCollName = process.env.MONGO_DB_INVALID_COLL_NAME || "invalid-domains";
-    await client.dropCollection(invalidCollName);
-    await client.collection(invalidCollName).insertMany(invalidDomains);
+    await client.dropCollection(INVALID_COLL_NAME);
+    await client.collection(INVALID_COLL_NAME).insertMany(invalidDomains);
   }
 };
 
