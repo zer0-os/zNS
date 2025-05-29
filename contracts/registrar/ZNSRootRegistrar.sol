@@ -187,7 +187,6 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-
             registry.createDomainRecord(
                 args.domainHash,
                 args.registrant,
@@ -210,7 +209,6 @@ contract ZNSRootRegistrar is
         // Because we check in the web app for the existance of both values in a payment config,
         // it's fine to just check for one here
         if (args.paymentConfig.beneficiary != address(0)) {
-            // should be failing in this call
             treasury.setPaymentConfig(args.domainHash, args.paymentConfig);
         }
 

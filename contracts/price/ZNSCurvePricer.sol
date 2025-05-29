@@ -98,8 +98,6 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     function validatePriceConfig(
         bytes memory priceConfig
     ) public override pure {
-        // No need to check incoming bytes length here like we do in `fixedPricer`
-        // If incorrect bytes length, downstream errors are thrown
         _checkLength(priceConfig);
         _validatePriceConfig(decodePriceConfig(priceConfig));
     }

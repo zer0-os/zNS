@@ -16,7 +16,6 @@ IZNSContracts
 > {
   proxyData = {
     isProxy: false,
-    kind: ProxyKinds.uups,
   };
 
   contractName = znsNames.curvePricer.contract;

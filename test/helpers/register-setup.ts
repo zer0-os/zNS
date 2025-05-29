@@ -56,8 +56,7 @@ export const approveForParent = async ({
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
-  const { priceConfig } = await zns.subRegistrar.distrConfigs(parentHash);
+  const { pricerContract, priceConfig } = await zns.subRegistrar.distrConfigs(parentHash);
 
   let price = BigInt(0);
   let parentFee = BigInt(0);

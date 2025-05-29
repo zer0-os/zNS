@@ -59,8 +59,6 @@ contract ZNSSubRegistrarUpgradeMock is
     UpgradeMock {
     using StringUtils for string;
 
-    error ParentNotSetupForDistribution(bytes32 domainHash);
-
     error ParentLockedOrDoesntExist(bytes32 parentHash);
 
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
@@ -104,9 +102,6 @@ contract ZNSSubRegistrarUpgradeMock is
             revert DomainAlreadyExists(domainHash);
 
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
-
-        if (address(parentConfig.pricerContract) == address(0))
-            revert ParentNotSetupForDistribution(parentHash);
 
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)

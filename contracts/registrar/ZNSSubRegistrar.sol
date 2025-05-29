@@ -105,9 +105,6 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         // If this exists we know it has already been validated here
         DistributionConfig memory parentConfig = distrConfigs[parentHash];
 
-        if (address(parentConfig.pricerContract) == address(0))
-            revert ParentNotSetupForDistribution(parentHash);
-
         bool isOwnerOrOperator = registry.isOwnerOrOperator(parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
             revert ParentLockedOrDoesntExist(parentHash);
