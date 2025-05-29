@@ -40,6 +40,7 @@
     "lint"
   ],
   "devDependencies": {
+    "@apollo/client": "^3.5.6",
     "@ensdomains/ensjs": "2.1.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
@@ -57,6 +58,7 @@
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.11",
+    "@types/graphql": "^14.5.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^18.15.11",
     "@zero-tech/eslint-config-cpt": "0.2.7",
@@ -66,6 +68,7 @@
     "ethers": "^6.9.0",
     "hardhat": "^2.19.1",
     "hardhat-gas-reporter": "^1.0.9",
+    "react": "^19.1.0",
     "semantic-release": "^21.0.1",
     "solhint": "^4.0.0",
     "solidity-coverage": "^0.8.5",
