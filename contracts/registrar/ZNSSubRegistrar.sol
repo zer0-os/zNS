@@ -81,7 +81,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * in the controlled fashion when the parent domain is LOCKED and give these domains to other users while preventing
      * them from transferring the ownership of the domain token or domain itself to another address or sell their own
      * subdomains.
-     * @param regArgs SubdomainRegisterArgs type struct with props:
+     * @param args SubdomainRegisterArgs type struct with props:
      * - `parentHash` The hash of the parent domain to register the subdomain under
      * - `label` The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
      * - `domainAddress` (optional) The address to which the subdomain will be resolved to
