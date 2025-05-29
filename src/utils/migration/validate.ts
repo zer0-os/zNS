@@ -13,14 +13,14 @@ export const validateDomain = async (
     zns.registry.getDomainOwner(domain.id),
     zns.domainToken.ownerOf(domain.tokenId),
     zns.addressResolver.resolveDomainAddress(domain.id),
-    zns.subRegistrar.distrConfigs(domain.id)
+    zns.subRegistrar.distrConfigs(domain.id),
   ];
 
   const [
     domainOwner,
     domainTokenOwner,
     domainAddress,
-    distrConfig
+    distrConfig,
   ] = await Promise.all(promises) as unknown as [string, string, string, IDistributionConfig];
 
   assert.equal(

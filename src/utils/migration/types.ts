@@ -1,4 +1,3 @@
-import { ContractTransactionReceipt } from "ethers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 
 export interface Domain {
@@ -42,13 +41,6 @@ interface FixedPriceConfig {
   price : string;
 }
 
-interface PaymentToken {
-  id : string;
-  name : string;
-  symbol : string;
-  decimals : string;
-}
-
 interface Treasury {
   id : string;
   beneficiaryAddress : string;
@@ -90,4 +82,8 @@ export interface RegisteredDomains {
 
 export interface User { id : string; domains : Array<Domain>; }
 export interface InvalidDomain { message : string; domain : Domain; }
-export interface ValidatedUser { address : string; validDomains : Array<Domain>; invalidDomains : Array<InvalidDomain>; }
+export interface ValidatedUser {
+  address : string;
+  validDomains : Array<Domain>;
+  invalidDomains : Array<InvalidDomain>;
+}

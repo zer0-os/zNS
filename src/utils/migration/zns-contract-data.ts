@@ -45,16 +45,16 @@ export const getZNS = async (
     const subRegistrarAddress = zns.find(contract => contract.name === znsNames.subRegistrar.contract);
 
     znsCache = {
-      accessController: ZNSAccessController__factory.connect(acAddress!.address, signer),
-      registry: ZNSRegistry__factory.connect(regAddress!.address, signer),
-      domainToken: ZNSDomainToken__factory.connect(domainTokenAddress!.address, signer),
-      meowToken: MeowTokenMock__factory.connect(meowTokenAddress!.address, signer),
-      addressResolver: ZNSAddressResolver__factory.connect(addressResolverAddress!.address, signer),
-      curvePricer: ZNSCurvePricer__factory.connect(curvePricerAddress!.address, signer),
-      treasury: ZNSTreasury__factory.connect(treasuryAddress!.address, signer),
-      rootRegistrar: ZNSRootRegistrar__factory.connect(rootRegistrarAddress!.address, signer),
-      fixedPricer: ZNSFixedPricer__factory.connect(fixedPricerAddress!.address, signer),
-      subRegistrar: ZNSSubRegistrar__factory.connect(subRegistrarAddress!.address, signer),
+      accessController: ZNSAccessController__factory.connect(acAddress?.address, signer),
+      registry: ZNSRegistry__factory.connect(regAddress?.address, signer),
+      domainToken: ZNSDomainToken__factory.connect(domainTokenAddress?.address, signer),
+      meowToken: MeowTokenMock__factory.connect(meowTokenAddress?.address, signer),
+      addressResolver: ZNSAddressResolver__factory.connect(addressResolverAddress?.address, signer),
+      curvePricer: ZNSCurvePricer__factory.connect(curvePricerAddress?.address, signer),
+      treasury: ZNSTreasury__factory.connect(treasuryAddress?.address, signer),
+      rootRegistrar: ZNSRootRegistrar__factory.connect(rootRegistrarAddress?.address, signer),
+      fixedPricer: ZNSFixedPricer__factory.connect(fixedPricerAddress?.address, signer),
+      subRegistrar: ZNSSubRegistrar__factory.connect(subRegistrarAddress?.address, signer),
     };
   }
 

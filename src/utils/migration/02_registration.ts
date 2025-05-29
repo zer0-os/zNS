@@ -8,6 +8,10 @@ import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
 import { IZNSContracts } from "../../deploy/campaign/types";
 import { getDBAdapter } from "./database";
 
+// We will need to adjust this file in the future no matter what after merging happens
+// ignore this file for now
+/* eslint-disable */
+
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
   const [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();

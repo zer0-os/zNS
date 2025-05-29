@@ -16,17 +16,13 @@ export const getDBAdapter = async (
     }
   );
 
-  return await mongoClient.connect();
+  return mongoClient.connect();
 };
 
 export const getZNSFromDB = async () => {
-  let version;
-  let uri;
-  let dbName;
-
-  version = process.env.MONGO_DB_VERSION;
-  uri = process.env.MONGO_DB_URI;
-  dbName = process.env.MONGO_DB_NAME;
+  const version = process.env.MONGO_DB_VERSION;
+  const uri = process.env.MONGO_DB_URI;
+  const dbName = process.env.MONGO_DB_NAME;
 
   if (!uri) {
     throw new Error("Failed to connect: missing MongoDB URI or version");
