@@ -37,7 +37,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
 // keep it commented out and uncomment when using DevNet
 // locally.
 // !!! Uncomment this when using Tenderly !!!
-tenderly.setup({ automaticVerifications: false });
+// tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {

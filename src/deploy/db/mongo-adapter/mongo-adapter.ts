@@ -242,6 +242,16 @@ export class MongoDBAdapter {
     return v;
   }
 
+  async getUpgradedVersion () : Promise<IDBVersion | null> {
+    const v = await this.versions.findOne({
+      type: VERSION_TYPES.upgraded,
+    });
+
+    if (!v) return null;
+
+    return v;
+  }
+
   async getLatestVersion () : Promise<IDBVersion | null> {
     const v = await this.getTempVersion();
 
