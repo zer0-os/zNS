@@ -10,7 +10,7 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  * @title IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.
  */
 interface IZNSSubRegistrar is IDistributionConfig {
-    struct SubdomainRegistrationParams {
+    struct SubdomainRegisterArgs {
         bytes32 parentHash;
         string label;
         address domainAddress;
@@ -92,11 +92,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
     ) external;
 
     function registerSubdomain(
-        SubdomainRegistrationParams calldata registration
+        SubdomainRegisterArgs calldata registration
     ) external returns (bytes32);
 
     function registerSubdomainBulk(
-        SubdomainRegistrationParams[] calldata subRegistrations
+        SubdomainRegisterArgs[] calldata subRegistrations
     ) external returns (bytes32[] memory);
 
     function setDistributionConfigForDomain(

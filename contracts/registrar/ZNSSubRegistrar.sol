@@ -73,7 +73,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * checks if the sender is allowed to register, check if subdomain is available,
      * acquires the price and other data needed to finalize the registration
      * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-     * @param registration A struct of subdomain registration data:
+     * @param args A struct of subdomain registration data:
      *        + parentHash The hash of the parent domain to register the subdomain under
      *        + label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
      *        + domainAddress (optional) The address to which the subdomain will be resolved to
@@ -84,56 +84,56 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *  but all the parameters inside are required.
     */
     function registerSubdomain(
-        SubdomainRegistrationParams memory registration
+        SubdomainRegisterArgs memory args
     ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        registration.label.validate();
+        args.label.validate();
 
-        bytes32 domainHash = hashWithParent(registration.parentHash, registration.label);
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
-        DistributionConfig memory parentConfig = distrConfigs[registration.parentHash];
+        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
 
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(registration.parentHash, msg.sender);
+        bool isOwnerOrOperator = registry.isOwnerOrOperator(args.parentHash, msg.sender);
         if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(registration.parentHash);
+            revert ParentLockedOrDoesntExist(args.parentHash);
 
         if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
-                !mintlist[registration.parentHash]
+                !mintlist[args.parentHash]
                     .list
-                    [mintlist[registration.parentHash].ownerIndex]
+                    [mintlist[args.parentHash].ownerIndex]
                     [msg.sender]
-            ) revert SenderNotApprovedForPurchase(registration.parentHash, msg.sender);
+            ) revert SenderNotApprovedForPurchase(args.parentHash, msg.sender);
         }
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: registration.parentHash,
+            parentHash: args.parentHash,
             domainHash: domainHash,
-            label: registration.label,
+            label: args.label,
             registrant: msg.sender,
             price: 0,
             stakeFee: 0,
-            domainAddress: registration.domainAddress,
-            tokenURI: registration.tokenURI,
+            domainAddress: args.domainAddress,
+            tokenURI: args.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: registration.paymentConfig
+            paymentConfig: args.paymentConfig
         });
 
         if (!isOwnerOrOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        registration.parentHash,
-                        registration.label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        registration.parentHash,
-                        registration.label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             }
@@ -143,8 +143,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        if (address(registration.distributionConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, registration.distributionConfig);
+        if (address(args.distributionConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, args.distributionConfig);
         }
 
         return domainHash;
@@ -152,11 +152,11 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     /**
      * @notice Allows registering multiple subdomains in a single transaction.
-     * This function iterates through an array of `SubdomainRegistrationParams` objects and registers each subdomain
+     * This function iterates through an array of `SubdomainRegistrationArgs` objects and registers each subdomain
      * by calling the `registerSubdomain` function for each entry.
      * @dev This function reduces the number of transactions required to register multiple subdomains,
      * saving gas and improving efficiency. Each subdomain registration is processed sequentially.
-     * 
+     *
      * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash),
      * it will be treated as a nested domain.
      * In this case, the parent of the subdomain will be set to the domain hash of the
@@ -165,8 +165,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * - The first subdomain must have a valid `parentHash`.
      * - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
      * - This pattern can continue for deeper levels of nesting.
-     * 
-     * @param subRegistrations An array of `SubdomainRegistrationParams` structs, each containing:
+     *
+     * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
      *      + `parentHash`: The hash of the parent domain under which the subdomain is being registered.
      *                     If set to `0x000...`, the parent will be the previously registered subdomain.
      *      + `label`: The label of the subdomain to register (e.g., in `0://parent.child`, the label is `child`).
@@ -177,18 +177,18 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
      */
     function registerSubdomainBulk(
-        SubdomainRegistrationParams[] memory subRegistrations
+        SubdomainRegisterArgs[] memory args
     ) external override returns (bytes32[] memory) {
-        bytes32[] memory domainHashes = new bytes32[](subRegistrations.length);
+        bytes32[] memory domainHashes = new bytes32[](args.length);
 
-        for (uint256 i = 0; i < subRegistrations.length;) {
-            if (i == 0 && subRegistrations[i].parentHash == bytes32(0)) {
-                revert ZeroParentHash(subRegistrations[i].label);
-            } else if (subRegistrations[i].parentHash == bytes32(0)) {
-                subRegistrations[i].parentHash = domainHashes[i - 1];
+        for (uint256 i = 0; i < args.length;) {
+            if (i == 0 && args[i].parentHash == bytes32(0)) {
+                revert ZeroParentHash(args[i].label);
+            } else if (args[i].parentHash == bytes32(0)) {
+                args[i].parentHash = domainHashes[i - 1];
             }
 
-            domainHashes[i] = registerSubdomain(subRegistrations[i]);
+            domainHashes[i] = registerSubdomain(args[i]);
 
             unchecked {
                 i++;

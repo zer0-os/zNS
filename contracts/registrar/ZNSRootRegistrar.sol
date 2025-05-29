@@ -90,38 +90,38 @@ contract ZNSRootRegistrar is
      *  but all the parameters inside are required.
      */
     function registerRootDomain(
-        RootDomainRegistrationParams calldata registration
+        RootDomainRegistrationArgs calldata args
     ) public override returns (bytes32) {
         // Confirms string values are only [a-z0-9-]
-        registration.name.validate();
+        args.name.validate();
 
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(registration.name));
+        bytes32 domainHash = keccak256(bytes(args.name));
 
         if (registry.exists(domainHash))
             revert DomainAlreadyExists(domainHash);
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, registration.name, true);
+        uint256 domainPrice = rootPricer.getPrice(0x0, args.name, true);
 
         _coreRegister(
             CoreRegisterArgs(
                 bytes32(0),
                 domainHash,
                 msg.sender,
-                registration.domainAddress,
+                args.domainAddress,
                 domainPrice,
                 0,
-                registration.name,
-                registration.tokenURI,
+                args.name,
+                args.tokenURI,
                 true,
-                registration.paymentConfig
+                args.paymentConfig
             )
         );
 
-        if (address(registration.distributionConfig.pricerContract) != address(0)) {
+        if (address(args.distributionConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, registration.distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, args.distributionConfig);
         }
 
         return domainHash;
@@ -129,11 +129,11 @@ contract ZNSRootRegistrar is
 
     /**
      * @notice This function allows registering multiple root domains in a single transaction.
-     * It iterates through an array of `RootDomainRegistrationParams` objects, registering each domain
+     * It iterates through an array of `SubdomainRegistrationArgs` objects, registering each domain
      * by calling the `registerRootDomain` function for each entry.
      * @dev This function reduces the number of transactions required to register multiple domains,
      * saving gas and improving efficiency. Each domain registration is processed sequentially.
-     * @param registrations An array of `RootDomainRegistrationParams` structs, each containing:
+     * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
      *      + `name`: The name (label) of the domain to register.
      *      + `domainAddress`: The address to associate with the domain in the resolver (optional).
      *      + `tokenURI`: The URI to assign to the domain token.
@@ -142,12 +142,12 @@ contract ZNSRootRegistrar is
      * @return domainHashes An array of `bytes32` hashes representing the registered domains.
      */
     function registerRootDomainBulk(
-        RootDomainRegistrationParams[] calldata registrations
+        RootDomainRegistrationArgs[] calldata args
     ) external override returns (bytes32[] memory) {
-        bytes32[] memory domainHashes = new bytes32[](registrations.length);
+        bytes32[] memory domainHashes = new bytes32[](args.length);
 
-        for (uint256 i = 0; i < registrations.length;) {
-            domainHashes[i] = registerRootDomain(registrations[i]);
+        for (uint256 i = 0; i < args.length;) {
+            domainHashes[i] = registerRootDomain(args[i]);
 
             unchecked {
                 ++i;

@@ -42,7 +42,7 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
-    struct RootDomainRegistrationParams {
+    struct RootDomainRegistrationArgs {
         string name;
         address domainAddress;
         string tokenURI;
@@ -143,11 +143,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function registerRootDomain(
-        RootDomainRegistrationParams calldata registration
+        RootDomainRegistrationArgs calldata registration
     ) external returns (bytes32);
 
     function registerRootDomainBulk(
-        RootDomainRegistrationParams[] calldata registrations
+        RootDomainRegistrationArgs[] calldata registrations
     ) external returns (bytes32[] memory);
 
     function coreRegister(
