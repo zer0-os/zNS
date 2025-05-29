@@ -115,13 +115,13 @@ describe("ZNSStringResolver", () => {
 
       const newString = "hippopotamus";
 
-      await rootRegistrar.connect(user).registerRootDomain(
-        domainName,
-        ethers.ZeroAddress,
-        uri,
-        distrConfigEmpty,
-        paymentConfigEmpty,
-      );
+      await rootRegistrar.connect(user).registerRootDomain({
+        name: domainName,
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: uri,
+        distributionConfig: distrConfigEmpty,
+        paymentConfig: paymentConfigEmpty,
+      });
       await stringResolver.connect(user).setString(domainNameHash, newString);
 
       expect(

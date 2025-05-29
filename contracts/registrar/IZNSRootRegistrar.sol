@@ -42,19 +42,20 @@ struct CoreRegisterArgs {
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
-    error NotTheOwnerOf(
-        OwnerOf ownerOf,
-        address candidate,
-        bytes32 domainHash
-    );
-
-    error InvalidOwnerOfEnumValue(OwnerOf value);
+    struct RootDomainRegistrationArgs {
+        string name;
+        address domainAddress;
+        string tokenURI;
+        DistributionConfig distributionConfig;
+        PaymentConfig paymentConfig;
+    }
 
     enum OwnerOf {
         NAME,
         TOKEN,
         BOTH
     }
+
     /**
      * @notice Emitted when a NEW domain is registered.
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.
@@ -138,6 +139,14 @@ interface IZNSRootRegistrar is IDistributionConfig {
      */
     event SubRegistrarSet(address subRegistrar);
 
+    error NotTheOwnerOf(
+        OwnerOf ownerOf,
+        address candidate,
+        bytes32 domainHash
+    );
+
+    error InvalidOwnerOfEnumValue(OwnerOf value);
+
     function initialize(
         address accessController_,
         address registry_,
@@ -148,12 +157,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        RootDomainRegistrationArgs calldata registration
     ) external returns (bytes32);
+
+    function registerRootDomainBulk(
+        RootDomainRegistrationArgs[] calldata registrations
+    ) external returns (bytes32[] memory);
 
     function coreRegister(
         CoreRegisterArgs memory args
@@ -162,8 +171,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function revokeDomain(bytes32 domainHash) external;
 
     function reclaimDomain(bytes32 domainHash) external;
-
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 
     function setRegistry(address registry_) external;
 
@@ -181,4 +188,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
+
+    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 }
