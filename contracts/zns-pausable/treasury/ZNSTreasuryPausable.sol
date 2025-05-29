@@ -294,9 +294,31 @@ contract ZNSTreasuryPausable is AAccessControlled, ARegistryWiredPausable, UUPSU
     }
 
     /**
+     * @notice Withdraws all staked tokens from the contract to the specified address.
+     * Can only be called by the GOVERNOR_ROLE. Made specifically for the migration to another chain
+     * to free the tokens after the system is locked.
+     * @param token The address of the token to withdraw (ERC20).
+     * @param to The address to withdraw the tokens to.
+     */
+    function withdrawStaked(
+        address token,
+        address to
+    ) external {
+        accessController.checkGovernor(msg.sender);
+
+        require(token != address(0), "ZNSTreasury: token passed as 0x0 address");
+        require(to != address(0), "ZNSTreasury: to passed as 0x0 address");
+
+        IERC20(token).safeTransfer(
+            to,
+            IERC20(token).balanceOf(address(this))
+        );
+    }
+
+    /**
      * @notice Pauses the contract. Can only be called by the ADMIN_ROLE.
      */
-    function pause() external whenNotPaused onlyAdmin {
+    function pause() external override whenNotPaused onlyAdmin {
         _paused = true;
         emit Paused(msg.sender);
     }
@@ -304,7 +326,7 @@ contract ZNSTreasuryPausable is AAccessControlled, ARegistryWiredPausable, UUPSU
     /**
      * @notice Unpauses the contract. Can only be called by the ADMIN_ROLE.
      */
-    function unpause() external whenPaused onlyAdmin {
+    function unpause() external override whenPaused onlyAdmin {
         _paused = false;
         emit Unpaused(msg.sender);
     }
