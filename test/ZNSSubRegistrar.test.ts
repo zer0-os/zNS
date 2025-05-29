@@ -151,8 +151,9 @@ describe("ZNSSubRegistrar", () => {
           parentHash: rootHash,
           label: `subdomain${i + 1}`,
           domainAddress: admin.address,
+          tokenOwner: ethers.ZeroAddress,
           tokenURI: `0://tokenURI_${i + 1}`,
-          distributionConfig: {
+          distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
             paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
             accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
@@ -187,13 +188,14 @@ describe("ZNSSubRegistrar", () => {
         );
 
         // "DomainRegistered" event log
-        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
+        const { parentHash, domainHash, label, tokenOwner, tokenURI, domainOwner, domainAddress } = logs[i].args;
 
         expect(parentHash).to.eq(rootHash);
         expect(domainHashExpected).to.eq(domainHash);
         expect(label).to.eq(subdomain.label);
         expect(tokenURI).to.eq(subdomain.tokenURI);
-        expect(registrant).to.eq(lvl2SubOwner.address);
+        expect(tokenOwner).to.eq(domainOwner);
+        expect(domainOwner).to.eq(lvl2SubOwner.address);
         expect(domainAddress).to.eq(subdomain.domainAddress);
       }
     });
@@ -212,8 +214,9 @@ describe("ZNSSubRegistrar", () => {
           parentHash: rootHash,
           label: `sub${i + 1}`,
           domainAddress: lvl3SubOwner.address,
+          tokenOwner: ethers.ZeroAddress,
           tokenURI: `0://tokenURI_${i + 1}`,
-          distributionConfig: {
+          distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
             paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
             accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
@@ -251,7 +254,7 @@ describe("ZNSSubRegistrar", () => {
         const subdomain = registrations[i];
 
         // "DomainRegistered" event log
-        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
+        const { parentHash, domainHash, label, tokenURI, tokenOwner, domainOwner, domainAddress } = logs[i].args;
 
         i > 0 ?
           expect(parentHash).to.eq(parentHashes[i - 1]) :
@@ -259,7 +262,8 @@ describe("ZNSSubRegistrar", () => {
         expect(domainHash).to.eq(parentHashes[i]);
         expect(label).to.eq(subdomain.label);
         expect(tokenURI).to.eq(subdomain.tokenURI);
-        expect(registrant).to.eq(lvl3SubOwner.address);
+        expect(domainOwner).to.eq(lvl3SubOwner.address);
+        expect(tokenOwner).to.eq(lvl3SubOwner.address);
         expect(domainAddress).to.eq(subdomain.domainAddress);
       }
     });
@@ -269,8 +273,9 @@ describe("ZNSSubRegistrar", () => {
         parentHash: rootHash,
         label: "subdomain1",
         domainAddress: admin.address,
+        tokenOwner: ethers.ZeroAddress,
         tokenURI: "0://tokenURI",
-        distributionConfig: {
+        distrConfig: {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
@@ -286,7 +291,7 @@ describe("ZNSSubRegistrar", () => {
 
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk([subdomainObj, subdomainObj])
-      ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, "DomainAlreadyExists");
     });
 
     it("Should revert with 'ZeroAddressPassed' error when 1st subdomain in the array has zerohash", async () => {
@@ -294,8 +299,9 @@ describe("ZNSSubRegistrar", () => {
         parentHash: ethers.ZeroHash,
         label: "subdomainzeroaAddresspassed",
         domainAddress: admin.address,
+        tokenOwner: ethers.ZeroAddress,
         tokenURI: "0://tokenURI",
-        distributionConfig: {
+        distrConfig: {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
@@ -380,8 +386,9 @@ describe("ZNSSubRegistrar", () => {
           parentHash,
           label: labels[i],
           domainAddress: ethers.ZeroAddress,
+          tokenOwner: ethers.ZeroAddress,
           tokenURI: `uri${i}`,
-          distributionConfig: {
+          distrConfig: {
             pricerContract: ethers.ZeroAddress,
             paymentType: 0n,
             accessType: 0n,
@@ -410,14 +417,16 @@ describe("ZNSSubRegistrar", () => {
             domainHash,
             label,
             tokenURI,
-            registrant,
+            domainOwner,
+            tokenOwner,
           },
         } = subRegEventsLog[i];
 
         expect(domainHash).to.equal(expectedHashes[i]);
         expect(label).to.equal(labels[i]);
         expect(tokenURI).to.equal(subRegistrations[i].tokenURI);
-        expect(registrant).to.equal(specificSubOwner.address);
+        expect(domainOwner).to.equal(specificSubOwner.address);
+        expect(tokenOwner).to.equal(specificSubOwner.address);
       }
 
       // check with the records

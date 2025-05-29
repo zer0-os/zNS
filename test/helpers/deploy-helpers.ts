@@ -99,7 +99,8 @@ export const registerRootDomainBulk = async (
       name: domain,
       domainAddress: config.zeroVaultAddress,
       tokenURI: `${tokenUri}${index}`,
-      distributionConfig: distConfig,
+      tokenOwner: hre.ethers.ZeroAddress,
+      distrConfig: distConfig,
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
         beneficiary: config.zeroVaultAddress,

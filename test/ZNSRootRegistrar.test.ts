@@ -110,8 +110,9 @@ describe("ZNSRootRegistrar", () => {
       const domainObj : IRootdomainConfig = {
         name: `domain${i + 1}`,
         domainAddress: user.address,
+        tokenOwner: hre.ethers.ZeroAddress,
         tokenURI: `0://domainURI_${i + 1}`,
-        distributionConfig: {
+        distrConfig: {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
           accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
@@ -135,13 +136,14 @@ describe("ZNSRootRegistrar", () => {
       });
 
       // "DomainRegistered" event log
-      const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[0].args;
+      const { parentHash, domainHash, tokenOwner, label, tokenURI, domainOwner, domainAddress } = logs[0].args;
 
       expect(parentHash).to.eq(ethers.ZeroHash);
       expect(domainHash).to.eq(hashDomainLabel(domain.name));
       expect(label).to.eq(domain.name);
+      expect(tokenOwner).to.eq(domainOwner);
       expect(tokenURI).to.eq(domain.tokenURI);
-      expect(registrant).to.eq(user.address);
+      expect(domainOwner).to.eq(user.address);
       expect(domainAddress).to.eq(domain.domainAddress);
     }
   });
@@ -150,8 +152,9 @@ describe("ZNSRootRegistrar", () => {
     const domainObj = {
       name: "root",
       domainAddress: user.address,
+      tokenOwner: ethers.ZeroAddress,
       tokenURI: "0://tokenURI",
-      distributionConfig: {
+      distrConfig: {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
         accessType: AccessType.LOCKED,
@@ -620,7 +623,7 @@ describe("ZNSRootRegistrar", () => {
         domainAddress: ethers.ZeroAddress,
         tokenOwner: ethers.ZeroAddress,
         tokenURI,
-        distrConfig: distrConfig,
+        distrConfig,
         paymentConfig: {
           token: ethers.ZeroAddress,
           beneficiary: ethers.ZeroAddress,

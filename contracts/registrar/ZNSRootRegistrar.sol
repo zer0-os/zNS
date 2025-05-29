@@ -119,9 +119,9 @@ contract ZNSRootRegistrar is
             })
         );
 
-        if (address(args.distributionConfig.pricerContract) != address(0)) {
+        if (address(args.distrConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, args.distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, args.distrConfig);
         }
 
         return domainHash;

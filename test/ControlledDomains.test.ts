@@ -4,7 +4,7 @@ import { getConfig } from "../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MongoDBAdapter } from "@zero-tech/zdc";
 import { IZNSContracts } from "../src/deploy/campaign/types";
-import { registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import {
   AccessType, distrConfigEmpty, DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
@@ -73,14 +73,15 @@ const makeSetupFixture = async () => {
 
   const tokenURI = "https://example.com/rootdomain";
   // assign token to deployer as controlled token owner for this root domain
-  await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
-    controlledRootLabel,
-    rootOwner.address,
-    deployer.address,
+  await defaultRootRegistration({
+    zns,
+    user: rootOwner,
+    domainName: controlledRootLabel,
+    tokenOwner: deployer.address, // controlled token owner
     tokenURI,
-    distrConfigEmpty,
-    paymentConfigEmpty,
-  );
+    distrConfig: distrConfigEmpty,
+    paymentConfig: paymentConfigEmpty,
+  });
 
   // check that the subdomain is registered
   const controlledRootHash = await getDomainHashFromEvent({

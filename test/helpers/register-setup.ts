@@ -41,8 +41,8 @@ export const defaultRootRegistration = async ({
     domainAddress: domainContent, // Arbitrary address value
     tokenURI,
     tokenOwner,
-    distributionConfig: distrConfig,
-    paymentConfig: paymentConfigEmpty,
+    distrConfig,
+    paymentConfig,
   });
 
   const supplyAfter = await zns.domainToken.totalSupply();

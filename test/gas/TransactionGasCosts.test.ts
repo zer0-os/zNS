@@ -95,7 +95,7 @@ describe("Transaction Gas Costs Test", () => {
       domainAddress: rootOwner.address,
       tokenOwner: hre.ethers.ZeroAddress,
       tokenURI: DEFAULT_TOKEN_URI,
-      distributionConfig: config,
+      distrConfig: config,
       paymentConfig,
     });
 

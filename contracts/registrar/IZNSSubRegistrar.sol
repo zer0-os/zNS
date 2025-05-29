@@ -111,6 +111,14 @@ interface IZNSSubRegistrar is IDistributionConfig {
         SubdomainRegisterArgs[] calldata args
     ) external returns (bytes32[] memory);
 
+    /**
+     * @notice Helper function to hash a child label with a parent domain hash.
+     */
+    function hashWithParent(
+        bytes32 parentHash,
+        string memory label
+    ) external pure returns (bytes32);
+
     function setDistributionConfigForDomain(
         bytes32 parentHash,
         DistributionConfig calldata config

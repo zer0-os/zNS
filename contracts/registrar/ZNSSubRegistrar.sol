@@ -92,7 +92,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
-    function registerSubdomain(SubdomainRegisterArgs calldata args) external override returns (bytes32) {
+    function registerSubdomain(SubdomainRegisterArgs memory args) public override returns (bytes32) {
         address domainRecordOwner = msg.sender;
         address parentOwner = registry.getDomainOwner(args.parentHash);
         bool isOwner = msg.sender == parentOwner;
@@ -183,7 +183,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *      + `domainAddress`: The address to associate with the subdomain in the resolver.
      *      + `tokenOwner`: the address token will be assigned to (optionally different than msg.sender if not 0x0)
      *      + `tokenURI`: The URI to assign to the subdomain token.
-     *      + `distributionConfig`: The distribution configuration for the subdomain.
+     *      + `distrConfig`: The distribution configuration for the subdomain.
      *      + `paymentConfig`: The payment configuration for the subdomain.
      * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
      */
@@ -211,7 +211,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     /**
      * @notice Helper function to hash a child label with a parent domain hash.
-    */
+     */
     function hashWithParent(
         bytes32 parentHash,
         string memory label

@@ -44,8 +44,9 @@ interface IZNSRootRegistrar is IDistributionConfig {
     struct RootDomainRegistrationArgs {
         string name;
         address domainAddress;
+        address tokenOwner;
         string tokenURI;
-        DistributionConfig distributionConfig;
+        DistributionConfig distrConfig;
         PaymentConfig paymentConfig;
     }
 
