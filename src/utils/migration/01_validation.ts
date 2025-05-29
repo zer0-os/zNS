@@ -1,6 +1,6 @@
 import * as hre from "hardhat";
 import { getDomains } from "./subgraph";
-import { Domain, InvalidDomain, User, ValidatedUser } from "./types";
+import { Domain, InvalidDomain } from "./types";
 import { getDBAdapter } from "./database";
 import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
