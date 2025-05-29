@@ -4,7 +4,7 @@ export let dbVersion : string;
 
 export const getDBAdapter = async (
   connectionString : string
-): Promise<MongoClient> => {
+) : Promise<MongoClient> => {
   const mongoClient = new MongoClient(
     connectionString,
     {
@@ -12,12 +12,12 @@ export const getDBAdapter = async (
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-      }
+      },
     }
   );
 
   return await mongoClient.connect();
-}
+};
 
 export const getZNSFromDB = async () => {
   let version;
@@ -32,7 +32,7 @@ export const getZNSFromDB = async () => {
     throw new Error("Failed to connect: missing MongoDB URI or version");
   }
 
-  let dbAdapter = await getDBAdapter(uri);
+  const dbAdapter = await getDBAdapter(uri);
 
   if(!dbName) {
     throw new Error(`Failed to connect: database "${dbName}" not found`);
@@ -40,7 +40,7 @@ export const getZNSFromDB = async () => {
 
   const db = await dbAdapter.db(dbName);
 
-  let zns = await db.collection("contracts").find(
+  const zns = await db.collection("contracts").find(
     { version }
   ).toArray();
 

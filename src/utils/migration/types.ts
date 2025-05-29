@@ -84,10 +84,10 @@ export interface DomainData {
 }
 
 export interface RegisteredDomains {
-  domainHashes : Array<string>,
-  txHash : string
+  domainHashes : Array<string>;
+  txHash : string;
 }
 
-export type User = { id: string, domains: Domain[] };
-export type InvalidDomain = { message: string, domain: Domain };
-export type ValidatedUser = { address: string, validDomains: Domain[], invalidDomains: InvalidDomain[] };
+export interface User { id : string; domains : Array<Domain>; }
+export interface InvalidDomain { message : string; domain : Domain; }
+export interface ValidatedUser { address : string; validDomains : Array<Domain>; invalidDomains : Array<InvalidDomain>; }

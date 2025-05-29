@@ -14,7 +14,7 @@ export const getDomains = async (isWorld : boolean) => {
     variables: {
       first,
       skip,
-      isWorld
+      isWorld,
     },
   });
 
@@ -42,7 +42,7 @@ export const getDomains = async (isWorld : boolean) => {
       variables: {
         first,
         skip,
-        isWorld
+        isWorld,
       },
     });
   }

@@ -12,7 +12,7 @@ import {
   ZNSFixedPricer__factory,
   ZNSRootRegistrar__factory,
   ZNSSubRegistrar__factory,
-  ZNSTreasury__factory
+  ZNSTreasury__factory,
 } from "../../../typechain/index";
 
 let znsCache : IZNSContracts | null = null;
@@ -24,25 +24,25 @@ export const getZNS = async (
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
 
-    const meowTokenAddress = zns.find((contract) => { 
+    const meowTokenAddress = zns.find(contract => {
       if (env === "prod") {
         return contract.name === znsNames.meowToken.contract;
       } else {
-        contract.name === znsNames.meowToken.contractMock
+        contract.name === znsNames.meowToken.contractMock;
       }
     });
 
     // Get each contract and manually connect to a factory.
     // Using `getContractFactory()` returns an incorrect type of factory here
-    const acAddress = zns.find((contract) => contract.name === znsNames.accessController.contract);
-    const regAddress = zns.find((contract) => contract.name === znsNames.registry.contract);
-    const domainTokenAddress = zns.find((contract) => contract.name === znsNames.domainToken.contract);
-    const addressResolverAddress = zns.find((contract) => contract.name === znsNames.addressResolver.contract);
-    const curvePricerAddress = zns.find((contract) => contract.name === znsNames.curvePricer.contract);
-    const treasuryAddress = zns.find((contract) => contract.name === znsNames.treasury.contract);
-    const rootRegistrarAddress = zns.find((contract) => contract.name === znsNames.rootRegistrar.contract);
-    const fixedPricerAddress = zns.find((contract) => contract.name === znsNames.fixedPricer.contract);
-    const subRegistrarAddress = zns.find((contract) => contract.name === znsNames.subRegistrar.contract);
+    const acAddress = zns.find(contract => contract.name === znsNames.accessController.contract);
+    const regAddress = zns.find(contract => contract.name === znsNames.registry.contract);
+    const domainTokenAddress = zns.find(contract => contract.name === znsNames.domainToken.contract);
+    const addressResolverAddress = zns.find(contract => contract.name === znsNames.addressResolver.contract);
+    const curvePricerAddress = zns.find(contract => contract.name === znsNames.curvePricer.contract);
+    const treasuryAddress = zns.find(contract => contract.name === znsNames.treasury.contract);
+    const rootRegistrarAddress = zns.find(contract => contract.name === znsNames.rootRegistrar.contract);
+    const fixedPricerAddress = zns.find(contract => contract.name === znsNames.fixedPricer.contract);
+    const subRegistrarAddress = zns.find(contract => contract.name === znsNames.subRegistrar.contract);
 
     znsCache = {
       accessController: ZNSAccessController__factory.connect(acAddress!.address, signer),
@@ -55,7 +55,7 @@ export const getZNS = async (
       rootRegistrar: ZNSRootRegistrar__factory.connect(rootRegistrarAddress!.address, signer),
       fixedPricer: ZNSFixedPricer__factory.connect(fixedPricerAddress!.address, signer),
       subRegistrar: ZNSSubRegistrar__factory.connect(subRegistrarAddress!.address, signer),
-    }
+    };
   }
 
   return znsCache;

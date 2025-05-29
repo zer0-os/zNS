@@ -3,8 +3,8 @@ import { getDomains } from "./subgraph";
 import { Domain, InvalidDomain, User, ValidatedUser } from "./types";
 import { getDBAdapter } from "./database";
 import { getZNS } from "./zns-contract-data";
-import { validateDomain } from "./validate"
-
+import { validateDomain } from "./validate";
+import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
@@ -12,7 +12,7 @@ const main = async () => {
   // Keeping as separate collections from the start will help downstream registration
   const rootDomainObjects = await getDomains(true);
   const subdomainObjects = await getDomains(false);
-  
+
   console.log(`Found ${rootDomainObjects.length + subdomainObjects.length} domains`);
 
   const env = process.env.ENV_LEVEL;
@@ -27,24 +27,24 @@ const main = async () => {
 
   // Doing this creates strong typing and extensibility that allows
   // the below `insertMany` calls to add properties to the object for `_id`
-  const roots = rootDomainObjects.map((d) => { return d as Domain; });
-  const subs = subdomainObjects.map((d) => { return d as Domain; });
-  
+  const roots = rootDomainObjects.map(d => d as Domain);
+  const subs = subdomainObjects.map(d => d as Domain);
+
   // Can iterate all at once for simplicity
   let index = 0;
-  for(let domain of [...roots, ...subs]) {
-      try {
-        await validateDomain(domain, zns);
+  for(const domain of [...roots, ...subs]) {
+    try {
+      await validateDomain(domain, zns);
 
-        if (domain.isWorld) {
-          validRoots.push({ ...domain } as Domain);
-        } else {
-          validSubs.push({ ...domain } as Domain);
-        }
-      } catch (e) {
-        // For debugging we keep invalid domains rather than throw errors
-        invalidDomains.push({ message: (e as Error).message, domain: domain });
+      if (domain.isWorld) {
+        validRoots.push({ ...domain } as Domain);
+      } else {
+        validSubs.push({ ...domain } as Domain);
       }
+    } catch (e) {
+      // For debugging we keep invalid domains rather than throw errors
+      invalidDomains.push({ message: (e as Error).message, domain });
+    }
 
     console.log(`Processed ${++index} domains`);
   }
@@ -56,17 +56,14 @@ const main = async () => {
   const uri = process.env.MONGO_DB_URI_WRITE;
   if (!uri) throw Error("No connection string given");
 
-  let client = (await getDBAdapter(uri)).db(dbName);
-
-  const rootCollName = process.env.MONGO_DB_ROOT_COLL_NAME || "root-domains";
-  const subCollName = process.env.MONGO_DB_SUB_COLL_NAME || "subdomains";
+  const client = (await getDBAdapter(uri)).db(dbName);
 
   // To avoid duplicate data, we clear the DB before any inserts
-  await client.dropCollection(rootCollName);
-  await client.collection(rootCollName).insertMany(validRoots);
+  await client.dropCollection(ROOT_COLL_NAME);
+  await client.collection(ROOT_COLL_NAME).insertMany(validRoots);
 
-  await client.dropCollection(subCollName);
-  await client.collection(subCollName).insertMany(validSubs);
+  await client.dropCollection(SUB_COLL_NAME);
+  await client.collection(SUB_COLL_NAME).insertMany(validSubs);
 
   // Domains that have split ownership will be considered invalid domains
   if (invalidDomains.length > 0) {
@@ -79,6 +76,6 @@ const main = async () => {
 main()
   .then(() => process.exit(0))
   .catch(error => {
-  console.error(error);
-  process.exitCode = 1;
-});
+    console.error(error);
+    process.exitCode = 1;
+  });

@@ -17,7 +17,7 @@ const main = async () => {
   // read all roots from mongodb
   // while there are unregistered root domains:
   //  register a batch
-  
+
   // read all subs with depth 1 from mongodb
   // while there are unregistered subdomains:
   //  register a batch
@@ -52,7 +52,7 @@ const main = async () => {
   const uri = process.env.MONGO_DB_URI_WRITE;
   if (!uri) throw Error("No connection string given");
 
-  let client = (await getDBAdapter(uri)).db(dbName);
+  const client = (await getDBAdapter(uri)).db(dbName);
 
   const rootCollName = process.env.MONGO_DB_ROOT_COLL_NAME || "root-domains";
 
@@ -65,7 +65,7 @@ const main = async () => {
 
   // How many domains we will register in a single transaction
   const sliceSize = 50;
-  
+
   process.exit(0);
 };
 

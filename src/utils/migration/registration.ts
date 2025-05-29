@@ -37,31 +37,31 @@ export const registerDomainsBulk = async (
       const { domainHashes, txHash, retryData } = await registerBase({
         regAdmin,
         zns,
-        domains: domains.slice(i, i + sliceSize)
-      })
-  
+        domains: domains.slice(i, i + sliceSize),
+      });
+
       if (retryData) {
-        throw new Error("Error in registering domains")
+        throw new Error("Error in registering domains");
       }
-  
+
       registeredDomains.push({ domainHashes, txHash });
-  
+
       console.log("Registered domains: ", i + sliceSize);
     } else {
       console.log(`Skipping already registered domains: ${i} to ${i + sliceSize}}`);
     }
-  };
+  }
 
-  // In the likely case that the list of domains is not divisble by slice size, we 
+  // In the likely case that the list of domains is not divisble by slice size, we
   // want to make sure we do the last set of domains as well
   const { domainHashes, txHash, retryData } = await registerBase({
     regAdmin,
     zns,
-    domains: domains.slice(terminator) // terminator -> end of array
-  })
+    domains: domains.slice(terminator), // terminator -> end of array
+  });
 
   if (retryData) {
-    throw new Error("Error in registering domains")
+    throw new Error("Error in registering domains");
   }
 
   console.log("Registered additional domains: ", start + domainHashes.length);
@@ -74,14 +74,14 @@ export const registerDomainsBulk = async (
 export const registerBase = async ({
   zns,
   regAdmin,
-  domains
+  domains,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
   regAdmin : SignerWithAddress;
   domains : Array<Domain>;
 }) => {
 
-  const tokenOwners = domains.map((domain) => { 
+  const tokenOwners = domains.map(domain => {
     if (domain.domainToken.owner.id === hre.ethers.ZeroAddress) {
       // The ERC721 token has been burned, must mint with the record owner instead
       // to recreate the tree fully
@@ -91,11 +91,11 @@ export const registerBase = async ({
     }
   });
 
-  const distConfigs = domains.map((domain) => {
-    let config = {
+  const distConfigs = domains.map(domain => {
+    const config = {
       pricerContract: "",
       paymentType: 0n,
-      accessType: 1n // Always use `open` access type for migration
+      accessType: 1n, // Always use `open` access type for migration
     };
 
     // Get pricer contract
@@ -119,20 +119,18 @@ export const registerBase = async ({
   // when passing args to the function downstream. This is a workaround.
   const tokenAddress = await zns.meowToken.getAddress();
 
-  const paymentConfigs = domains.map((domain) => {
-    return {
-      beneficiary: !domain.treasury.beneficiaryAddress 
-        ? ZeroAddress 
-        : domain.treasury.beneficiaryAddress,
-      token: tokenAddress
-    }
-  });
+  const paymentConfigs = domains.map(domain => ({
+    beneficiary: !domain.treasury.beneficiaryAddress
+      ? ZeroAddress
+      : domain.treasury.beneficiaryAddress,
+    token: tokenAddress,
+  }));
 
-  const recordOwners = domains.map((domain) => { return domain.owner.id });
-  const parentHashes = domains.map((domain) => { return domain.parentHash });
-  const labels = domains.map((domain) => { return domain.label });
-  const domainAddresses = domains.map((domain) => {return domain.address });
-  const tokenURIs = domains.map((domain) => { return domain.tokenURI });
+  const recordOwners = domains.map(domain => domain.owner.id);
+  const parentHashes = domains.map(domain => domain.parentHash);
+  const labels = domains.map(domain => domain.label);
+  const domainAddresses = domains.map(domain => domain.address);
+  const tokenURIs = domains.map(domain => domain.tokenURI);
 
   let tx;
 
@@ -142,14 +140,14 @@ export const registerBase = async ({
     if (parentHashes[0] === hre.ethers.ZeroHash) {
 
       const bulkMigrationArgs = {
-        tokenOwners: tokenOwners,
-        recordOwners: recordOwners,
+        tokenOwners,
+        recordOwners,
         names: labels,
-        domainAddresses: domainAddresses,
-        tokenURIs: tokenURIs,
+        domainAddresses,
+        tokenURIs,
         distributionConfigs: distConfigs,
-        paymentConfigs: paymentConfigs,
-      }
+        paymentConfigs,
+      };
 
       // It is by intention that we aren't recreating user configs
       // We are just focusing on recreating the domain tree
@@ -162,14 +160,14 @@ export const registerBase = async ({
     } else {
       const bulkMigrationArgs = {
         domainToken: await zns.domainToken.getAddress(),
-        tokenOwners: tokenOwners,
-        recordOwners: recordOwners,
-        parentHashes: parentHashes,
-        labels: labels,
-        domainAddresses: domainAddresses,
-        tokenURIs: tokenURIs,
+        tokenOwners,
+        recordOwners,
+        parentHashes,
+        labels,
+        domainAddresses,
+        tokenURIs,
         distributionConfigs: distConfigs,
-        paymentConfigs: paymentConfigs,
+        paymentConfigs,
       };
 
       tx = await zns.subRegistrar.connect(regAdmin).registerSubdomainBulk(
@@ -183,13 +181,13 @@ export const registerBase = async ({
     return {
       domainHash: undefined,
       txHash: undefined,
-      retryData: domains
-    }
+      retryData: domains,
+    };
   }
 
   // Providing a number on hardhat will cause it to hang
   const blocks = hre.network.name === "hardhat" ? 0 : 5;
-  const txReceipt = await tx!.wait(blocks);
+  const txReceipt = await tx.wait(blocks);
 
   if (!txReceipt) {
     // Could this ever happen? Need this so downstream return states are never undefined
@@ -197,16 +195,16 @@ export const registerBase = async ({
   }
 
   // Collected the registered domains
-  let domainHashes = Array<string>();
+  const domainHashes = Array<string>();
 
-  const drEvents = txReceipt.logs.filter((log) => {
+  const drEvents = txReceipt.logs.filter(log => {
     if (log.topics[0] === DOMAIN_REGISTERED_TOPIC_SEPOLIA) {
       return log.topics[1]; // domainHash is always index 1 in this log
     }
-  })
+  });
   // console.log(`DREVENTS: ${drEvents.length}`);
 
-  drEvents.forEach((log) => {
+  drEvents.forEach(log => {
     domainHashes.push(log.topics[1]);
   });
 
@@ -231,4 +229,4 @@ export const postMigrationValidation = async (
       console.log("Error validating domain: ", error);
     }
   }
-}
+};

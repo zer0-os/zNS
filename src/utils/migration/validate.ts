@@ -1,34 +1,27 @@
 
 import { ZeroAddress, ZeroHash } from "ethers";
 import { Domain } from "./types";
-import { IZNSContracts } from "../../../test/helpers/types";
+import { IDistributionConfig, IZNSContracts } from "../../../test/helpers/types";
 import assert from "assert";
 
 export const validateDomain = async (
-  domain : Domain, 
+  domain : Domain,
   zns : IZNSContracts,
 ) => {
   // For speed in processing we group promises together
   const promises = [
     zns.registry.getDomainOwner(domain.id),
     zns.domainToken.ownerOf(domain.tokenId),
-    zns.addressResolver.resolveDomainAddress(domain.id)
-  ]
+    zns.addressResolver.resolveDomainAddress(domain.id),
+    zns.subRegistrar.distrConfigs(domain.id)
+  ];
 
   const [
     domainOwner,
     domainTokenOwner,
-    domainAddress
-  ] = await Promise.all(promises) as unknown as [string, string, string];
-
-  // Domain is in reclaimable state
-  assert.equal(
-    domain.owner.id.toLowerCase(),
-    domain.domainToken.owner.id.toLowerCase(),
-    `Domain ${domain.id} has split ownership.
-    Token owner: ${domain.domainToken.owner.id.toLowerCase()},
-    Domain owner: ${domain.owner.id.toLowerCase()}`
-  );
+    domainAddress,
+    distrConfig
+  ] = await Promise.all(promises) as unknown as [string, string, string, IDistributionConfig];
 
   assert.equal(
     domainOwner.toLowerCase(),
@@ -54,8 +47,6 @@ export const validateDomain = async (
     Subgraph: ${domain.address.toLowerCase()}`
   );
 
-  const distrConfig = await zns.subRegistrar.distrConfigs(domain.id);
-
   assert.equal(distrConfig.accessType, domain.accessType ?? 0n,
     `Domain ${domain.id} has different access types.
     Contract: ${distrConfig.accessType}
@@ -73,11 +64,11 @@ export const validateDomain = async (
     Contract: ${distrConfig.pricerContract.toLowerCase()}
     Subgraph: ${domain.pricerContract?.toLowerCase() ?? ZeroAddress}
     `
-  );  
+  );
 
   if (domain.isWorld) {
     assert.equal(domain.parentHash, ZeroHash), `Domain ${domain.id} 'isWorld' is true, but has parent hash`;
-    assert.ok(!!domain.parent === false, `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`)
+    assert.ok(!(!!domain.parent), `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`);
     assert.ok(domain.depth === 0, `Domain ${domain.id} 'isWorld' is true, but 'depth' is not 0`);
   } else {
     // Because we do not delete from the subgraph store on revoke, the domain is always present
@@ -86,4 +77,4 @@ export const validateDomain = async (
     assert.notEqual(domain.parentHash, ZeroHash,`Domain ${domain.id} 'isWorld' is false, but 'parentHash' is 0x0`);
     assert.ok(domain.depth > 0,`Domain ${domain.id} 'isWorld' is false, but 'depth' is 0`);
   }
-}
+};

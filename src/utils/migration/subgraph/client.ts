@@ -1,8 +1,8 @@
 import {
-  ApolloClient, 
-  HttpLink, 
-  InMemoryCache, 
-  NormalizedCacheObject
+  ApolloClient,
+  HttpLink,
+  InMemoryCache,
+  NormalizedCacheObject,
 } from "@apollo/client";
 
 
@@ -12,7 +12,7 @@ export const createClient = (subgraphUri ?: string) : ApolloClient<NormalizedCac
   if (!uri) throw Error("No Subgraph URI provided");
 
   const client = new ApolloClient({
-    link: new HttpLink({ uri: uri, fetch }),
+    link: new HttpLink({ uri, fetch }),
     cache: new InMemoryCache(),
   });
 
