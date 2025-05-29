@@ -16,6 +16,7 @@ export const INSUFFICIENT_ALLOWANCE_ERC_ERR = "ERC20InsufficientAllowance";
 
 // CommonErrors.sol
 export const ZERO_ADDRESS_ERR = "ZeroAddressPassed";
+export const ZERO_PARENTHASH_ERR = "ZeroParentHash";
 export const DOMAIN_EXISTS_ERR = "DomainAlreadyExists";
 export const NOT_AUTHORIZED_ERR = "NotAuthorizedForDomain";
 export const NOT_FULL_OWNER_ERR = "NotFullDomainOwner";

@@ -36,14 +36,14 @@ export const defaultRootRegistration = async ({
 }) : Promise<ContractTransactionReceipt | null> => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
-  const tx = await zns.rootRegistrar.connect(user).registerRootDomain(
-    domainName,
-    domainContent, // Arbitrary address value
-    tokenOwner,
+  const tx = await zns.rootRegistrar.connect(user).registerRootDomain({
+    name: domainName,
+    domainAddress: domainContent, // Arbitrary address value
     tokenURI,
-    distrConfig,
-    paymentConfig,
-  );
+    tokenOwner,
+    distributionConfig: distrConfig,
+    paymentConfig: paymentConfigEmpty,
+  });
 
   const supplyAfter = await zns.domainToken.totalSupply();
   expect(supplyAfter).to.equal(supplyBefore + BigInt(1));

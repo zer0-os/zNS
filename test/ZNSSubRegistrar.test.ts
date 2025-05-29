@@ -1,5 +1,11 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IDomainConfigForTest, IFixedPriceConfig, IPathRegResult, IZNSContractsLocal } from "./helpers/types";
+import {
+  IDomainConfigForTest,
+  IFixedPriceConfig,
+  IPathRegResult,
+  ISubRegistrarConfig,
+  IZNSContractsLocal,
+} from "./helpers/types";
 import {
   AccessType,
   ADMIN_ROLE,
@@ -24,7 +30,11 @@ import {
   AC_UNAUTHORIZED_ERR,
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
-  ZERO_ADDRESS_ERR, PARENT_CONFIG_NOT_SET_ERR, DOMAIN_EXISTS_ERR, SENDER_NOT_APPROVED_ERR,
+  ZERO_ADDRESS_ERR,
+  PARENT_CONFIG_NOT_SET_ERR,
+  DOMAIN_EXISTS_ERR,
+  SENDER_NOT_APPROVED_ERR,
+  ZERO_PARENTHASH_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import * as ethers from "ethers";
@@ -32,7 +42,7 @@ import { expect } from "chai";
 import { registerDomainPath, validatePathRegistration } from "./helpers/flows/registration";
 import assert from "assert";
 import { defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
-import { getDomainHashFromEvent } from "./helpers/events";
+import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import {
   CustomDecimalTokenMock,
@@ -48,6 +58,8 @@ import { getProxyImplAddress } from "./helpers/utils";
 describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
+  let specificRootOwner : SignerWithAddress;
+  let specificSubOwner : SignerWithAddress;
   let governor : SignerWithAddress;
   let admin : SignerWithAddress;
   let lvl2SubOwner : SignerWithAddress;
@@ -76,7 +88,10 @@ describe("ZNSSubRegistrar", () => {
         governor,
         admin,
         rootOwner,
+        specificRootOwner,
+        specificSubOwner,
         lvl2SubOwner,
+        lvl3SubOwner,
       ] = await hre.ethers.getSigners();
       // zeroVault address is used to hold the fee charged to the user when registering
       zns = await deployZNS({
@@ -90,11 +105,16 @@ describe("ZNSSubRegistrar", () => {
       await Promise.all(
         [
           rootOwner,
+          specificRootOwner,
+          specificSubOwner,
           lvl2SubOwner,
+          lvl3SubOwner,
         ].map(async ({ address }) =>
           zns.meowToken.mint(address, ethers.parseEther("100000000000000")))
       );
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.meowToken.connect(specificRootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+      await zns.meowToken.connect(specificSubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       rootPriceConfig = {
         price: ethers.parseEther("1375.612"),
@@ -119,6 +139,300 @@ describe("ZNSSubRegistrar", () => {
           priceConfig: rootPriceConfig,
         },
       });
+    });
+
+    it("Should #registerSubdomainBulk and the event must be triggered", async () => {
+      const registrations : Array<ISubRegistrarConfig> = [];
+
+      for (let i = 0; i < 5; i++) {
+        const isOdd = i % 2 !== 0;
+
+        const subdomainObj : ISubRegistrarConfig = {
+          parentHash: rootHash,
+          label: `subdomain${i + 1}`,
+          domainAddress: admin.address,
+          tokenURI: `0://tokenURI_${i + 1}`,
+          distributionConfig: {
+            pricerContract: await zns.curvePricer.getAddress(),
+            paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+            accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: isOdd ? admin.address : lvl2SubOwner.address,
+          },
+        };
+
+        registrations.push(subdomainObj);
+      }
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk(registrations);
+
+      // get by `registrant`
+      const logs = await getDomainRegisteredEvents({
+        zns,
+        registrant: lvl2SubOwner.address,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
+      for (let i = 0; i < logs.length; i++) {
+        const subdomain = registrations[i];
+
+        const domainHashExpected = await zns.subRegistrar.hashWithParent(
+          subdomain.parentHash,
+          subdomain.label
+        );
+
+        // "DomainRegistered" event log
+        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
+
+        expect(parentHash).to.eq(rootHash);
+        expect(domainHashExpected).to.eq(domainHash);
+        expect(label).to.eq(subdomain.label);
+        expect(tokenURI).to.eq(subdomain.tokenURI);
+        expect(registrant).to.eq(lvl2SubOwner.address);
+        expect(domainAddress).to.eq(subdomain.domainAddress);
+      }
+    });
+
+    it("Should register multiple NESTED subdomains using #registerSubdomainBulk", async () => {
+      const registrations : Array<ISubRegistrarConfig> = [];
+      const parentHashes : Array<string> = [];
+
+      // how many nested domains (0://root.sub1.sub2.sub3....)
+      const domainLevels = 15;
+
+      for (let i = 0; i < domainLevels; i++) {
+        const isOdd = i % 2 !== 0;
+
+        const subdomainObj : ISubRegistrarConfig = {
+          parentHash: rootHash,
+          label: `sub${i + 1}`,
+          domainAddress: lvl3SubOwner.address,
+          tokenURI: `0://tokenURI_${i + 1}`,
+          distributionConfig: {
+            pricerContract: await zns.curvePricer.getAddress(),
+            paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+            accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: isOdd ? lvl3SubOwner.address : lvl2SubOwner.address,
+          },
+        };
+
+        if (i > 0) subdomainObj.parentHash = ethers.ZeroHash;
+
+        registrations.push(subdomainObj);
+
+        // first goes with rootHash
+        parentHashes.push(
+          await zns.subRegistrar.hashWithParent(
+            i === 0 ? rootHash : parentHashes[i - 1],
+            subdomainObj.label
+          )
+        );
+      }
+
+      // Add allowance
+      await zns.meowToken.connect(lvl3SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await zns.subRegistrar.connect(lvl3SubOwner).registerSubdomainBulk(registrations);
+
+      const logs = await getDomainRegisteredEvents({
+        zns,
+        registrant: lvl3SubOwner.address,
+      });
+
+      for (let i = 0; i < domainLevels; i++) {
+        const subdomain = registrations[i];
+
+        // "DomainRegistered" event log
+        const { parentHash, domainHash, label, tokenURI, registrant, domainAddress } = logs[i].args;
+
+        i > 0 ?
+          expect(parentHash).to.eq(parentHashes[i - 1]) :
+          expect(parentHash).to.eq(rootHash);
+        expect(domainHash).to.eq(parentHashes[i]);
+        expect(label).to.eq(subdomain.label);
+        expect(tokenURI).to.eq(subdomain.tokenURI);
+        expect(registrant).to.eq(lvl3SubOwner.address);
+        expect(domainAddress).to.eq(subdomain.domainAddress);
+      }
+    });
+
+    it("Should revert when register the same domain twice using #registerSubdomainBulk", async () => {
+      const subdomainObj : ISubRegistrarConfig = {
+        parentHash: rootHash,
+        label: "subdomain1",
+        domainAddress: admin.address,
+        tokenURI: "0://tokenURI",
+        distributionConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk([subdomainObj, subdomainObj])
+      ).to.be.revertedWithCustomError(zns.subRegistrar, "DomainAlreadyExists");
+    });
+
+    it("Should revert with 'ZeroAddressPassed' error when 1st subdomain in the array has zerohash", async () => {
+      const subdomainObj : ISubRegistrarConfig = {
+        parentHash: ethers.ZeroHash,
+        label: "subdomainzeroaAddresspassed",
+        domainAddress: admin.address,
+        tokenURI: "0://tokenURI",
+        distributionConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Add allowance
+      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
+
+      await expect(
+        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomainBulk([subdomainObj])
+      ).to.be.revertedWithCustomError(zns.subRegistrar, ZERO_PARENTHASH_ERR);
+    });
+
+    it("Should register a mix of nested and non-nested subdomains and validates hashes", async () => {
+      // Structure of domains (- rootDomain; + subdomain):
+      //
+      // - rootHash
+      //   + nested0
+      //    + nested1
+      //     + nested2
+      //      + nested3
+      // - specific0parent
+      //   + non0nested0with0specific0parent0
+      //   + non0nested0with0specific0parent1
+      //   + non0nested0with0specific0parent2
+
+      const subRegistrations : Array<ISubRegistrarConfig> = [];
+      const expectedHashes : Array<string> = [];
+      const labels = [
+        "nested0",
+        "nested1",
+        "nested2",
+        "nested3",
+        "non0nested0with0specific0parent0",
+        "non0nested0with0specific0parent1",
+        "non0nested0with0specific0parent2",
+      ];
+
+      const specificParentHash = await registrationWithSetup({
+        zns,
+        user: specificRootOwner,
+        domainLabel: "specific0parent",
+        fullConfig: {
+          distrConfig: {
+            accessType: AccessType.OPEN,
+            pricerContract: await zns.fixedPricer.getAddress(),
+            paymentType: PaymentType.DIRECT,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: specificRootOwner.address,
+          },
+          priceConfig: rootPriceConfig,
+        },
+      });
+
+      for (let i = 0; i < labels.length; i++) {
+        let parentHash;
+        let referenceParentHash;
+
+        if (i === 0) {
+          parentHash = rootHash;
+          referenceParentHash = parentHash;
+        } else if (i > 0 && i < 5) {
+          parentHash = ethers.ZeroHash;
+          referenceParentHash = expectedHashes[i - 1];
+        } else {
+          parentHash = specificParentHash;
+          referenceParentHash = parentHash;
+        }
+
+        expectedHashes.push(
+          await zns.subRegistrar.hashWithParent(referenceParentHash, labels[i])
+        );
+
+        subRegistrations.push({
+          parentHash,
+          label: labels[i],
+          domainAddress: ethers.ZeroAddress,
+          tokenURI: `uri${i}`,
+          distributionConfig: {
+            pricerContract: ethers.ZeroAddress,
+            paymentType: 0n,
+            accessType: 0n,
+          },
+          paymentConfig: {
+            token: ethers.ZeroAddress,
+            beneficiary: ethers.ZeroAddress,
+          },
+        });
+      }
+
+      const tx = await zns.subRegistrar.connect(specificSubOwner).registerSubdomainBulk(subRegistrations);
+      await tx.wait();
+
+      const subRegEventsLog = await getDomainRegisteredEvents({
+        zns,
+        registrant: specificSubOwner.address,
+      });
+
+      // check with the events
+      expect(subRegEventsLog.length).to.equal(expectedHashes.length);
+
+      for (let i = 0; i < labels.length; i++) {
+        const {
+          args: {
+            domainHash,
+            label,
+            tokenURI,
+            registrant,
+          },
+        } = subRegEventsLog[i];
+
+        expect(domainHash).to.equal(expectedHashes[i]);
+        expect(label).to.equal(labels[i]);
+        expect(tokenURI).to.equal(subRegistrations[i].tokenURI);
+        expect(registrant).to.equal(specificSubOwner.address);
+      }
+
+      // check with the records
+      for (let i = 0; i < subRegistrations.length; i++) {
+        let record;
+        // check, does a record exist
+        try {
+          record = await zns.registry.getDomainRecord(expectedHashes[i]);
+        } catch (e) {
+          expect.fail(`Domain record for hash ${expectedHashes[i]} not found`);
+        }
+
+        // check the owner
+        expect(record.owner).to.eq(specificSubOwner.address);
+      }
     });
 
     it("Sets the payment config when given", async () => {

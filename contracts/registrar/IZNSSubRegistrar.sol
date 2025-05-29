@@ -33,6 +33,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
 
     /**
+     * @notice Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
+     */
+    error ZeroParentHash(string label);
+
+    /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
      */
     event PricerContractSet(
@@ -102,10 +107,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
 
     function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32);
 
-    function hashWithParent(
-        bytes32 parentHash,
-        string calldata label
-    ) external pure returns (bytes32);
+    function registerSubdomainBulk(
+        SubdomainRegisterArgs[] calldata args
+    ) external returns (bytes32[] memory);
 
     function setDistributionConfigForDomain(
         bytes32 parentHash,

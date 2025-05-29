@@ -12,7 +12,7 @@ export const getDomainRegisteredEvents = async ({
   registrant = undefined,
   blockRange = 50,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   domainHash ?: string | undefined;
   tokenId ?: bigint | undefined;
   registrant ?: string | undefined;

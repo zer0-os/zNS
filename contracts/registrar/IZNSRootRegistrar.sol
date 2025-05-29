@@ -41,6 +41,14 @@ struct CoreRegisterArgs {
  *      + `paymentConfig`: The payment config for the domain to be registered
  */
 interface IZNSRootRegistrar is IDistributionConfig {
+    struct RootDomainRegistrationArgs {
+        string name;
+        address domainAddress;
+        string tokenURI;
+        DistributionConfig distributionConfig;
+        PaymentConfig paymentConfig;
+    }
+
     /**
      * @notice Reverted when trying to assign a token to address that is already an owner
      * @param domainHash The hash of the domain
@@ -133,13 +141,12 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        address tokenOwner,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        RootDomainRegistrationArgs calldata args
     ) external returns (bytes32);
+
+    function registerRootDomainBulk(
+        RootDomainRegistrationArgs[] calldata args
+    ) external returns (bytes32[] memory);
 
     function coreRegister(
         CoreRegisterArgs memory args

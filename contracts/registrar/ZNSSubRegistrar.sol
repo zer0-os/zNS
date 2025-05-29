@@ -161,11 +161,60 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     }
 
     /**
+     * @notice Allows registering multiple subdomains in a single transaction.
+     * This function iterates through an array of `SubdomainRegistrationArgs` objects and registers each subdomain
+     * by calling the `registerSubdomain` function for each entry.
+     * @dev This function reduces the number of transactions required to register multiple subdomains,
+     * saving gas and improving efficiency. Each subdomain registration is processed sequentially.
+     *
+     * ! IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (null hash),
+     * it will be treated as a nested domain.
+     * In this case, the parent of the subdomain will be set to the domain hash of the
+     * previously registered subdomain in the array. This allows creating multi-level nested domains in a single
+     * transaction. For example:
+     * - The first subdomain must have a valid `parentHash`.
+     * - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
+     * - This pattern can continue for deeper levels of nesting.
+     *
+     * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
+     *      + `parentHash`: The hash of the parent domain under which the subdomain is being registered.
+     *                     If set to `0x000...`, the parent will be the previously registered subdomain.
+     *      + `label`: The label of the subdomain to register (e.g., in `0://parent.child`, the label is `child`).
+     *      + `domainAddress`: The address to associate with the subdomain in the resolver.
+     *      + `tokenOwner`: the address token will be assigned to (optionally different than msg.sender if not 0x0)
+     *      + `tokenURI`: The URI to assign to the subdomain token.
+     *      + `distributionConfig`: The distribution configuration for the subdomain.
+     *      + `paymentConfig`: The payment configuration for the subdomain.
+     * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
+     */
+    function registerSubdomainBulk(
+        SubdomainRegisterArgs[] memory args
+    ) external override returns (bytes32[] memory) {
+        bytes32[] memory domainHashes = new bytes32[](args.length);
+
+        for (uint256 i = 0; i < args.length;) {
+            if (i == 0 && args[i].parentHash == bytes32(0)) {
+                revert ZeroParentHash(args[i].label);
+            } else if (args[i].parentHash == bytes32(0)) {
+                args[i].parentHash = domainHashes[i - 1];
+            }
+
+            domainHashes[i] = registerSubdomain(args[i]);
+
+            unchecked {
+                i++;
+            }
+        }
+
+        return domainHashes;
+    }
+
+    /**
      * @notice Helper function to hash a child label with a parent domain hash.
     */
     function hashWithParent(
         bytes32 parentHash,
-        string calldata label
+        string memory label
     ) public pure override returns (bytes32) {
         return keccak256(
             abi.encodePacked(
@@ -186,7 +235,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
     */
     function setDistributionConfigForDomain(
         bytes32 domainHash,
-        DistributionConfig calldata config
+        DistributionConfig memory config
     ) public override onlyOwnerOperatorOrRegistrar(domainHash) {
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();

@@ -90,14 +90,14 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
-      "root",
-      rootOwner.address,
-      hre.ethers.ZeroAddress,
-      DEFAULT_TOKEN_URI,
-      config,
-      paymentConfig
-    );
+    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain({
+      name: "root",
+      domainAddress: rootOwner.address,
+      tokenOwner: hre.ethers.ZeroAddress,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distributionConfig: config,
+      paymentConfig,
+    });
 
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
