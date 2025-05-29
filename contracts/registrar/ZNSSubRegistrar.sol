@@ -92,58 +92,58 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
-    function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external override returns (bytes32) {
+    function registerSubdomain(SubdomainRegisterArgs calldata args) external override returns (bytes32) {
         address domainRecordOwner = msg.sender;
-        address parentOwner = registry.getDomainOwner(regArgs.parentHash);
+        address parentOwner = registry.getDomainOwner(args.parentHash);
         bool isOwner = msg.sender == parentOwner;
         bool isOperator = registry.isOperatorFor(msg.sender, parentOwner);
 
-        DistributionConfig storage parentConfig = distrConfigs[regArgs.parentHash];
+        DistributionConfig storage parentConfig = distrConfigs[args.parentHash];
 
         if (parentConfig.accessType == AccessType.LOCKED) {
             if (!isOwner && !isOperator) {
-                revert ParentLockedOrDoesntExist(regArgs.parentHash);
+                revert ParentLockedOrDoesntExist(args.parentHash);
             } else if (isOperator) {
                 domainRecordOwner = parentOwner;
             }
         } else if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
-                !mintlist[regArgs.parentHash]
+                !mintlist[args.parentHash]
                     .list
-                    [mintlist[regArgs.parentHash].ownerIndex]
+                    [mintlist[args.parentHash].ownerIndex]
                     [msg.sender]
-            ) revert SenderNotApprovedForPurchase(regArgs.parentHash, msg.sender);
+            ) revert SenderNotApprovedForPurchase(args.parentHash, msg.sender);
         }
 
-        bytes32 domainHash = hashWithParent(regArgs.parentHash, regArgs.label);
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
 
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
-            parentHash: regArgs.parentHash,
+            parentHash: args.parentHash,
             domainHash: domainHash,
-            label: regArgs.label,
+            label: args.label,
             domainOwner: domainRecordOwner,
-            tokenOwner: regArgs.tokenOwner == address(0) ? domainRecordOwner : regArgs.tokenOwner,
+            tokenOwner: args.tokenOwner == address(0) ? domainRecordOwner : args.tokenOwner,
             price: 0,
             stakeFee: 0,
-            domainAddress: regArgs.domainAddress,
-            tokenURI: regArgs.tokenURI,
+            domainAddress: args.domainAddress,
+            tokenURI: args.tokenURI,
             isStakePayment: parentConfig.paymentType == PaymentType.STAKE,
-            paymentConfig: regArgs.paymentConfig
+            paymentConfig: args.paymentConfig
         });
 
         if (!isOwner && !isOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        regArgs.parentHash,
-                        regArgs.label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        regArgs.parentHash,
-                        regArgs.label,
+                        args.parentHash,
+                        args.label,
                         true
                     );
             }
@@ -153,8 +153,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        if (address(regArgs.distrConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, regArgs.distrConfig);
+        if (address(args.distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, args.distrConfig);
         }
 
         return domainHash;
