@@ -340,7 +340,6 @@ describe("ZNSSubRegistrar", () => {
         "non0nested0with0specific0parent2",
       ];
 
-
       const specificParentHash = await registrationWithSetup({
         zns,
         user: specificRootOwner,
@@ -368,6 +367,10 @@ describe("ZNSSubRegistrar", () => {
           break;
         case i > 0 && i < 5:
           parentHash = ethers.ZeroHash;
+
+          expectedHashes.push(
+            await zns.subRegistrar.hashWithParent(expectedHashes[i - 1], labels[i])
+          );
           break;
         default:
           parentHash = specificParentHash;
@@ -388,11 +391,6 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: ethers.ZeroAddress,
           },
         });
-
-        if (i > 0 && i < 5) parentHash = expectedHashes[i - 1];
-        expectedHashes.push(
-          await zns.subRegistrar.hashWithParent(parentHash, labels[i])
-        );
       }
 
       const tx = await zns.subRegistrar.connect(specificSubOwner).registerSubdomainBulk(subRegistrations);
