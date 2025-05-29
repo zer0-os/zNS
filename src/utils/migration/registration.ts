@@ -11,6 +11,7 @@ import { ZeroAddress } from "ethers";
 // We will need to adjust this file in the future no matter what after merging happens
 // ignore this file for now
 /* eslint-disable */
+/* @typescript-eslint-disable */
 
 export const registerDomainsBulk = async (
   regAdmin : SignerWithAddress,
