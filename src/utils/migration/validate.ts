@@ -67,7 +67,7 @@ export const validateDomain = async (
   );
 
   if (domain.isWorld) {
-    assert.equal(domain.parentHash, ZeroHash), `Domain ${domain.id} 'isWorld' is true, but has parent hash`;
+    assert.equal(domain.parentHash, ZeroHash, `Domain ${domain.id} 'isWorld' is true, but has parent hash`);
     assert.ok(!(!!domain.parent), `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`);
     assert.ok(domain.depth === 0, `Domain ${domain.id} 'isWorld' is true, but 'depth' is not 0`);
   } else {
