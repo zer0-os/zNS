@@ -2,11 +2,14 @@
 pragma solidity 0.8.26;
 
 
+import { IZNSRoles } from "./IZNSRoles.sol";
+
+
 /**
  * @title Outlines the roles used in the ZNS system
  * @dev > Inherited ONLY by `ZNSAccessController`
  */
-abstract contract ZNSRoles {
+abstract contract ZNSRoles is IZNSRoles {
     /**
      * @notice The highest rank, assigns Admins, new roles and Role Admins
      */
@@ -15,7 +18,7 @@ abstract contract ZNSRoles {
     /**
      * @notice The main maintainer role, that gets access to all system functions
      */
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant override ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     /**
      * @notice This role is here specifically for the ZNSRootRegistrar.sol contract

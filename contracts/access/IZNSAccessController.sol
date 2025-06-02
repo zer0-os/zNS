@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
+import { IZNSRoles } from "./IZNSRoles.sol";
 
 
-interface IZNSAccessController is IAccessControl {
+interface IZNSAccessController is IAccessControl, IZNSRoles {
     function setRoleAdmin(bytes32 role, bytes32 adminRole) external;
 
     function checkGovernor(address account) external view;

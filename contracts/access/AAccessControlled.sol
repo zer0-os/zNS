@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+
 import { IZNSAccessController } from "./IZNSAccessController.sol";
 import { ZeroAddressPassed, WrongAccessControllerAddress, NotAuthorized } from "../utils/CommonErrors.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
@@ -14,7 +15,7 @@ import { ZNSRoles } from "./ZNSRoles.sol";
  * @dev In order to connect an arbitrary module to `ZNSAccessController` and it's functionality,
  * this contract needs to be inherited by the module.
  */
-abstract contract AAccessControlled is ZNSRoles {
+abstract contract AAccessControlled {
     /**
      * @notice Emitted when the access controller contract address is set.
      */
@@ -60,7 +61,7 @@ abstract contract AAccessControlled is ZNSRoles {
      */
     function setAccessController(address accessController_)
     external
-    onlyAdmin {
+    {
         _setAccessController(accessController_);
     }
 
@@ -70,14 +71,14 @@ abstract contract AAccessControlled is ZNSRoles {
      */
     function _setAccessController(address _accessController) internal {
         // Validate if `msg.sender` has the admin role in the *current* contract
-        if (accessController != IZNSAccessController(address(0))) {
-            if (!IAccessControl(accessController).hasRole(ADMIN_ROLE, msg.sender)) {
+        if (address(accessController) != address(0)) {
+            if (!IAccessControl(accessController).hasRole(accessController.ADMIN_ROLE(), msg.sender)) {
                 revert NotAuthorized(msg.sender);
             }
         }
 
         // Similarly, validate admin alignment in the *new* contract
-        try IAccessControl(_accessController).hasRole(ADMIN_ROLE, msg.sender) returns (bool valid) {
+        try IAccessControl(_accessController).hasRole(IZNSAccessController(_accessController).ADMIN_ROLE(), msg.sender) returns (bool valid) {
             if (!valid) {
                 revert WrongAccessControllerAddress(_accessController);
             }
