@@ -44,11 +44,10 @@ const getCustomAddresses = (
     addresses.push(...accounts); // The user provided custom governors / admins as a param for testing
   }
 
-  if (!addresses.includes(deployerAddress)) {
+  if (!accounts || accounts.length === 0 || process.env.ENV_LEVEL === EnvironmentLevels.dev) {
     // No custom governors / admins provided, use the deployer as the default
     addresses.push(deployerAddress);
   }
-
 
   return addresses;
 };
@@ -80,11 +79,11 @@ export const getConfig = async ({
   let zeroVaultAddressConf;
 
   if (process.env.ENV_LEVEL === EnvironmentLevels.dev) {
-    requires(
-      !!zeroVaultAddress || !!process.env.ZERO_VAULT_ADDRESS,
-      "Must pass `zeroVaultAddress` to `getConfig()` for `dev` environment"
-    );
-    zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+    if (!zeroVaultAddress && !process.env.ZERO_VAULT_ADDRESS) {
+      zeroVaultAddressConf = deployerAddress;
+    } else {
+      zeroVaultAddressConf = zeroVaultAddress || process.env.ZERO_VAULT_ADDRESS;
+    }
   } else {
     zeroVaultAddressConf = process.env.ZERO_VAULT_ADDRESS;
   }

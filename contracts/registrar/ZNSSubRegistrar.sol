@@ -9,7 +9,7 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {
-    DomainAlreadyExists,
+    DomainAlreadyExists, // TODO used?
     ZeroAddressPassed,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
@@ -77,33 +77,40 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * checks if the sender is allowed to register, check if subdomain is available,
      * acquires the price and other data needed to finalize the registration
      * and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
-     * @param args A struct of subdomain registration data:
-     *        + parentHash The hash of the parent domain to register the subdomain under
-     *        + label The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
-     *        + domainAddress (optional) The address to which the subdomain will be resolved to
-     *        + tokenURI (required) The tokenURI for the subdomain to be registered
-     *        + distrConfig (optional) The distribution config to be set for the subdomain to set rules for children
-     *        + paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     * If operator is calling the function, the domain owner is set to the owner of the parent domain,
+     * NOT the operator itself!
+     * A non-zero optional `tokenOwner` address can be passed to assign the domain token to another address
+     * which would mint the token to that address and let that address use the domain without ownership or the ability
+     * to revoke it or manage its data in the system. This can let parent domain owner to mint subdomains
+     * in the controlled fashion when the parent domain is LOCKED and give these domains to other users while preventing
+     * them from transferring the ownership of the domain token or domain itself to another address or sell their own
+     * subdomains.
+     * @param args SubdomainRegisterArgs type struct with props:
+     * - `parentHash` The hash of the parent domain to register the subdomain under
+     * - `label` The label of the subdomain to register (e.g. in 0://zero.child the label would be "child").
+     * - `domainAddress` (optional) The address to which the subdomain will be resolved to
+     * - `tokenOwner` (optional) The address the token will be assigned to, to offer domain usage without ownership
+     * - `tokenURI` (required) The tokenURI for the subdomain to be registered
+     * - `distrConfig` (optional) The distribution config to be set for the subdomain to set rules for children
+     * - `paymentConfig` (optional) Payment config for the domain to set on ZNSTreasury in the same tx
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
-    */
-    function registerSubdomain(
-        SubdomainRegisterArgs memory args
-    ) public override returns (bytes32) {
-        // Confirms string values are only [a-z0-9-]
-        args.label.validate();
+     */
+    function registerSubdomain(SubdomainRegisterArgs memory args) public override returns (bytes32) {
+        address domainRecordOwner = msg.sender;
+        address parentOwner = registry.getDomainOwner(args.parentHash);
+        bool isOwner = msg.sender == parentOwner;
+        bool isOperator = registry.isOperatorFor(msg.sender, parentOwner);
 
-        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
+        DistributionConfig storage parentConfig = distrConfigs[args.parentHash];
 
-        DistributionConfig memory parentConfig = distrConfigs[args.parentHash];
-
-        bool isOwnerOrOperator = registry.isOwnerOrOperator(args.parentHash, msg.sender);
-        if (parentConfig.accessType == AccessType.LOCKED && !isOwnerOrOperator)
-            revert ParentLockedOrDoesntExist(args.parentHash);
-
-        if (parentConfig.accessType == AccessType.MINTLIST) {
+        if (parentConfig.accessType == AccessType.LOCKED) {
+            if (!isOwner && !isOperator) {
+                revert ParentLockedOrDoesntExist(args.parentHash);
+            } else if (isOperator) {
+                domainRecordOwner = parentOwner;
+            }
+        } else if (parentConfig.accessType == AccessType.MINTLIST) {
             if (
                 !mintlist[args.parentHash]
                     .list
@@ -112,11 +119,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             ) revert SenderNotApprovedForPurchase(args.parentHash, msg.sender);
         }
 
+        bytes32 domainHash = hashWithParent(args.parentHash, args.label);
+
         CoreRegisterArgs memory coreRegisterArgs = CoreRegisterArgs({
             parentHash: args.parentHash,
             domainHash: domainHash,
             label: args.label,
-            registrant: msg.sender,
+            domainOwner: domainRecordOwner,
+            tokenOwner: args.tokenOwner == address(0) ? domainRecordOwner : args.tokenOwner,
             price: 0,
             stakeFee: 0,
             domainAddress: args.domainAddress,
@@ -125,7 +135,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             paymentConfig: args.paymentConfig
         });
 
-        if (!isOwnerOrOperator) {
+        if (!isOwner && !isOperator) {
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
@@ -147,8 +157,8 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
         // ! note that the config is set ONLY if ALL values in it are set, specifically,
         // without pricerContract being specified, the config will NOT be set
-        if (address(args.distributionConfig.pricerContract) != address(0)) {
-            setDistributionConfigForDomain(coreRegisterArgs.domainHash, args.distributionConfig);
+        if (address(args.distrConfig.pricerContract) != address(0)) {
+            setDistributionConfigForDomain(coreRegisterArgs.domainHash, args.distrConfig);
         }
 
         return domainHash;
@@ -175,8 +185,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *                     If set to `0x000...`, the parent will be the previously registered subdomain.
      *      + `label`: The label of the subdomain to register (e.g., in `0://parent.child`, the label is `child`).
      *      + `domainAddress`: The address to associate with the subdomain in the resolver.
+     *      + `tokenOwner`: the address token will be assigned to (optionally different than msg.sender if not 0x0)
      *      + `tokenURI`: The URI to assign to the subdomain token.
-     *      + `distributionConfig`: The distribution configuration for the subdomain.
+     *      + `distrConfig`: The distribution configuration for the subdomain.
      *      + `paymentConfig`: The payment configuration for the subdomain.
      * @return domainHashes An array of `bytes32` hashes representing the registered subdomains.
      */
@@ -204,7 +215,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
 
     /**
      * @notice Helper function to hash a child label with a parent domain hash.
-    */
+     */
     function hashWithParent(
         bytes32 parentHash,
         string memory label

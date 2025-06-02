@@ -103,7 +103,8 @@ export const registerRootDomainBulk = async (
       name: domain,
       domainAddress: config.zeroVaultAddress,
       tokenURI: `${tokenUri}${index}`,
-      distributionConfig: distrConfig,
+      tokenOwner: signers[index],
+      distrConfig: distrConfig,
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
         beneficiary: config.zeroVaultAddress,
@@ -152,8 +153,9 @@ export const registerSubdomainBulk = async (
       parentHash: parents[index],
       label: subdomain,
       domainAddress,
+      tokenOwner: hre.ethers.ZeroAddress,
       tokenURI: `${tokenUri}${index}`,
-      distributionConfig: distConfig,
+      distrConfig: distConfig,
       paymentConfig: paymentConfigEmpty,
     });
 
@@ -177,7 +179,6 @@ export const registerSubdomainBulk = async (
 
       expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
     }
-
 
     expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
 

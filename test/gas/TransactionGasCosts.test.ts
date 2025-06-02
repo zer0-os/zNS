@@ -102,8 +102,9 @@ describe("Transaction Gas Costs Test", () => {
     const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain({
       name: "root",
       domainAddress: rootOwner.address,
+      tokenOwner: hre.ethers.ZeroAddress,
       tokenURI: DEFAULT_TOKEN_URI,
-      distributionConfig: config,
+      distrConfig: config,
       paymentConfig,
     });
 
@@ -153,10 +154,12 @@ describe("Transaction Gas Costs Test", () => {
       parentHash: rootHashDirect,
       label: "subdomain",
       domainAddress: lvl2SubOwner.address,
+      tokenOwner: hre.ethers.ZeroAddress,
       tokenURI: DEFAULT_TOKEN_URI,
-      distributionConfig: config,
+      distrConfig: config,
       paymentConfig,
     });
+
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
 

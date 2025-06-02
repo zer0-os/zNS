@@ -283,17 +283,17 @@ describe("zNS + zDC Single Integration Test", () => {
 
     if (hre.network.name !== "hardhat") await tx.wait(1);
 
-    const tx1 = await zns.rootRegistrar.connect(userB).reclaimDomain(freeMediumSubHash);
+    const tx1 = await zns.rootRegistrar.connect(userA).assignDomainToken(freeMediumSubHash, userA.address);
 
     if (hre.network.name !== "hardhat") await tx1.wait(1);
 
-    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeMediumSubHash, userB.address);
-    expect(await zns.registry.getDomainOwner(freeMediumSubHash)).to.equal(userB.address);
+    await expect(tx1).to.emit(zns.rootRegistrar, "DomainTokenReassigned").withArgs(freeMediumSubHash, userA.address);
+    expect(await zns.domainToken.ownerOf(freeMediumSubHash)).to.equal(userA.address);
 
-    logger.info(`Subdomain ${freeMediumSubHash} reclaimed by user ${userB.address} from user ${userA.address}`);
+    logger.info(`Subdomain token ${freeMediumSubHash} reclaimed by user ${userA.address} from user ${userB.address}`);
   });
 
-  it("Reclaims then revokes correctly", async () => {
+  it("Revokes the domain correctly", async () => {
     // 5. Reclaim and revoke domain
     const tx = await zns.registry.connect(userC).updateDomainOwner(freeLongSubHash, userA.address);
     await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
@@ -301,18 +301,12 @@ describe("zNS + zDC Single Integration Test", () => {
 
     if (hre.network.name !== "hardhat") await tx.wait(1);
 
-    const tx1 = await zns.rootRegistrar.connect(userC).reclaimDomain(freeLongSubHash);
-    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);
-
-    if (hre.network.name !== "hardhat") await tx1.wait(1);
-
-    logger.info(`Subdomain ${freeLongSubHash} reclaimed by user ${userC.address}`);
-    expect(await zns.registry.getDomainOwner(freeLongSubHash)).to.equal(userC.address);
-
-    const tx2 = await zns.rootRegistrar.connect(userC).revokeDomain(freeLongSubHash);
+    const tx2 = await zns.rootRegistrar.connect(userA).revokeDomain(freeLongSubHash);
     if (hre.network.name !== "hardhat") await tx2.wait(1);
 
-    await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userC.address, false);
-    logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userC.address}`);
+    expect(await zns.registry.exists(freeLongSubHash)).to.be.false;
+
+    await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userA.address, false);
+    logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userA.address}`);
   });
 });

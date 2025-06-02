@@ -14,10 +14,28 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes32 parentHash;
         string label;
         address domainAddress;
+        address tokenOwner;
         string tokenURI;
-        DistributionConfig distributionConfig;
+        DistributionConfig distrConfig;
         PaymentConfig paymentConfig;
     }
+
+    /**
+     * @notice Reverted when someone other than parent owner is trying to buy
+     * a subdomain under the parent that is locked
+     * or when the parent provided does not exist.
+     */
+    error ParentLockedOrDoesntExist(bytes32 parentHash);
+
+    /**
+     * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
+     */
+    error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
+
+    /**
+     * @notice Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
+     */
+    error ZeroParentHash(string label);
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
@@ -49,30 +67,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     event RootRegistrarSet(address registrar);
 
-    /**
-     * @notice Reverted when someone other than parent owner is trying to buy
-     * a subdomain under the parent that is locked
-     * or when the parent provided does not exist.
-     */
-    error ParentLockedOrDoesntExist(bytes32 parentHash);
-
-    /**
-     * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
-     */
-    error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
-
-    /**
-     * @notice Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
-     */
-    error ZeroParentHash(string label);
-
     function initialize(
         address _accessController,
         address _registry,
         address _rootRegistrar
     ) external;
-
-    // function distrConfigs(bytes32 domainHash) external view returns (DistributionConfig calldata config);
 
     function distrConfigs(
         bytes32 domainHash
@@ -86,9 +85,9 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function registerSubdomain(
         SubdomainRegisterArgs calldata registration
     ) external returns (bytes32);
-
+    
     function registerSubdomainBulk(
-        SubdomainRegisterArgs[] calldata subRegistrations
+        SubdomainRegisterArgs[] calldata args
     ) external returns (bytes32[] memory);
 
     function setDistributionConfigForDomain(

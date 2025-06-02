@@ -12,11 +12,12 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    address registrant;
-    address domainAddress;
+    string label;
+    address domainOwner;
+    address tokenOwner;
     uint256 price;
     uint256 stakeFee;
-    string label;
+    address domainAddress;
     string tokenURI;
     bool isStakePayment;
     PaymentConfig paymentConfig;
@@ -25,36 +26,39 @@ struct CoreRegisterArgs {
 /**
  * @title IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.
  * @notice Below are docs for the types in this file:
- *  - `OwnerOf`: Enum signifying ownership of ZNS entities
- *      + NAME: The owner of the Name only
- *      + TOKEN: The owner of the Token only
- *      + BOTH: The owner of both the Name and the Token
  *  - `CoreRegisterArgs`: Struct containing all the arguments required to register a domain
  *  with ZNSRootRegistrar.coreRegister():
  *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
  *      + `domainHash`: The hash of the domain to be registered
  *      + `label`: The label of the domain to be registered
- *      + `registrant`: The address of the user who is registering the domain
+ *      + `domainOwner`: The address that will be set as owner in Registry record
+ *      + `tokenOwner`: The address that will be set as owner in DomainToken contract
  *      + `price`: The determined price for the domain to be registered based on parent rules
  *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
  *      + `domainAddress`: The address to which the domain will be resolved to
  *      + `tokenURI`: The tokenURI for the domain to be registered
  *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
+ *      + `paymentConfig`: The payment config for the domain to be registered
  */
 interface IZNSRootRegistrar is IDistributionConfig {
     struct RootDomainRegistrationArgs {
         string name;
         address domainAddress;
+        address tokenOwner;
         string tokenURI;
-        DistributionConfig distributionConfig;
+        DistributionConfig distrConfig;
         PaymentConfig paymentConfig;
     }
 
-    enum OwnerOf {
-        NAME,
-        TOKEN,
-        BOTH
-    }
+    /**
+     * @notice Reverted when trying to assign a token to address that is already an owner
+     * @param domainHash The hash of the domain
+     * @param currentOwner The address that is already an owner of the token
+     */
+    error AlreadyTokenOwner(
+        bytes32 domainHash,
+        address currentOwner
+    );
 
     /**
      * @notice Emitted when a NEW domain is registered.
@@ -67,16 +71,18 @@ interface IZNSRootRegistrar is IDistributionConfig {
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param tokenURI The tokenURI of the domain registered
-     * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
+     * @param domainOwner The address became owner in Registry record
+     * @param tokenOwner The optinal address the token will be assigned to, to offer domain usage without ownership
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
         string label,
-        uint256 indexed tokenId,
+        uint256 tokenId,
         string tokenURI,
-        address indexed registrant,
+        address indexed domainOwner,
+        address indexed tokenOwner,
         address domainAddress
     );
 
@@ -93,13 +99,14 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
+     * @notice Emitted when the hash (registry record) owner is sending a token to another address
+     * through the RootRegistrar.
      * @param domainHash The hash of the domain reclaimed
-     * @param registrant The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
+     * @param newOwner The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
      */
-    event DomainReclaimed(
+    event DomainTokenReassigned(
         bytes32 indexed domainHash,
-        address indexed registrant
+        address indexed newOwner
     );
 
     /**
@@ -139,14 +146,6 @@ interface IZNSRootRegistrar is IDistributionConfig {
      */
     event SubRegistrarSet(address subRegistrar);
 
-    error NotTheOwnerOf(
-        OwnerOf ownerOf,
-        address candidate,
-        bytes32 domainHash
-    );
-
-    error InvalidOwnerOfEnumValue(OwnerOf value);
-
     function initialize(
         address accessController_,
         address registry_,
@@ -157,11 +156,11 @@ interface IZNSRootRegistrar is IDistributionConfig {
     ) external;
 
     function registerRootDomain(
-        RootDomainRegistrationArgs calldata registration
+        RootDomainRegistrationArgs calldata args
     ) external returns (bytes32);
 
     function registerRootDomainBulk(
-        RootDomainRegistrationArgs[] calldata registrations
+        RootDomainRegistrationArgs[] calldata args
     ) external returns (bytes32[] memory);
 
     function coreRegister(
@@ -170,7 +169,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function revokeDomain(bytes32 domainHash) external;
 
-    function reclaimDomain(bytes32 domainHash) external;
+    function assignDomainToken(bytes32 domainHash, address to) external;
 
     function setRegistry(address registry_) external;
 
@@ -188,6 +187,4 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
-
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
 }

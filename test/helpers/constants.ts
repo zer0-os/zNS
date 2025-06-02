@@ -25,13 +25,6 @@ export const AccessType  = {
 };
 
 // eslint-disable-next-line no-shadow
-export const OwnerOf = {
-  NAME: 0n,
-  TOKEN: 1n,
-  BOTH: 2n,
-};
-
-// eslint-disable-next-line no-shadow
 export const PaymentType = {
   DIRECT: 0n,
   STAKE: 1n,

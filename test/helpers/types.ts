@@ -125,6 +125,7 @@ export interface IFullDistributionConfig {
 interface ConfigArgsBase {
   user : SignerWithAddress;
   domainLabel : string;
+  tokenOwner : string;
   domainContent ?: string;
   parentHash ?: string;
   tokenURI ?: string;
@@ -152,19 +153,22 @@ export interface IPathRegResult {
   zeroVaultBalanceAfter : bigint;
 }
 
-export interface IRootdomainConfig {
+export interface IRootDomainConfig {
   name : string;
   domainAddress : string;
+  tokenOwner : string;
   tokenURI : string;
   distributionConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
 }
 
+// TODO 15: remove these interfaces, since we already have Struct interfaces created by typechain
 export interface ISubRegistrarConfig {
   parentHash : string;
   label : string;
   domainAddress : string;
+  tokenOwner : string;
   tokenURI : string;
-  distributionConfig : IDistributionConfig;
+  distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
 }
