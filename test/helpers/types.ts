@@ -29,6 +29,7 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 
 export type Maybe<T> = T | undefined;
@@ -141,6 +142,18 @@ export interface IRegisterWithSetupArgs extends ConfigArgsBase {
   setConfigs ?: boolean;
 }
 
+export interface DefaultRootRegistrationArgs {
+  user : SignerWithAddress;
+  zns : IZNSContractsLocal | IZNSContracts;
+  domainName : string;
+  tokenOwner ?: string;
+  domainContent ?: string;
+  tokenURI ?: string;
+  distrConfig ?: IDistributionConfig;
+  paymentConfig ?: IPaymentConfig;
+}
+
+
 export interface IPathRegResult {
   domainHash : string;
   userBalanceBefore : bigint;
@@ -158,7 +171,7 @@ export interface IRootDomainConfig {
   domainAddress : string;
   tokenOwner : string;
   tokenURI : string;
-  distributionConfig : IDistributionConfig;
+  distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
 }
 

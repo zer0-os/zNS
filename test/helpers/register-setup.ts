@@ -4,6 +4,7 @@ import {
   IRegisterWithSetupArgs,
   IPaymentConfig,
   IZNSContractsLocal,
+  DefaultRootRegistrationArgs,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
@@ -24,16 +25,7 @@ export const defaultRootRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
   paymentConfig = paymentConfigEmpty,
-} : {
-  user : SignerWithAddress;
-  zns : IZNSContractsLocal | IZNSContracts;
-  domainName : string;
-  tokenOwner ?: string;
-  domainContent ?: string;
-  tokenURI ?: string;
-  distrConfig ?: IDistributionConfig;
-  paymentConfig ?: IPaymentConfig;
-}) : Promise<ContractTransactionReceipt | null> => {
+} : DefaultRootRegistrationArgs) : Promise<ContractTransactionReceipt | null> => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain({

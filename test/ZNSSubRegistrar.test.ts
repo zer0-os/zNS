@@ -538,7 +538,7 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary : rootOwner.address,
           },
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -571,7 +571,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -714,7 +714,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -731,7 +731,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -808,7 +808,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.meowToken,
         INSUFFICIENT_BALANCE_ERC_ERR
@@ -833,7 +833,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.meowToken,
         INSUFFICIENT_ALLOWANCE_ERC_ERR
@@ -1313,7 +1313,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -1389,7 +1389,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -1635,7 +1635,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -1671,7 +1671,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -1716,7 +1716,7 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: branchLvl1Owner.address,
           },
         },
-      } as IRegisterWithSetupArgs);
+      });
 
       expect(newHash).to.eq(regResults[1].domainHash);
 
@@ -1739,7 +1739,7 @@ describe("ZNSSubRegistrar", () => {
         parentHash: newHash,
         domainLabel: "newchildddd",
         fullConfig: fullConfigEmpty,
-      } as IRegisterWithSetupArgs);
+      });
 
       const childBalAfter = await zns.meowToken.balanceOf(branchLvl2Owner.address);
 
@@ -1907,7 +1907,7 @@ describe("ZNSSubRegistrar", () => {
         parentHash: subdomainParentHash,
         domainLabel: label,
         fullConfig: fullConfigEmpty,
-      } as IRegisterWithSetupArgs);
+      });
 
       const parentBalAfter = await token5.balanceOf(lvl2SubOwner.address);
       const childBalAfter = await token5.balanceOf(lvl3SubOwner.address);
@@ -1947,7 +1947,7 @@ describe("ZNSSubRegistrar", () => {
         user: rootOwner,
         parentHash: rootHash,
         domainLabel: "subdomain",
-      } as IRegisterWithSetupArgs);
+      });
 
       const balanceBefore = await zns.meowToken.balanceOf(rootOwner.address);
 
@@ -2140,7 +2140,7 @@ describe("ZNSSubRegistrar", () => {
             beneficiary: lvl2SubOwner.address,
           },
         },
-      });
+      } );
 
       const label = "curvestakechild";
 
@@ -2800,7 +2800,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.meowToken,
         INSUFFICIENT_ALLOWANCE_ERC_ERR
@@ -2891,7 +2891,7 @@ describe("ZNSSubRegistrar", () => {
               beneficiary: rootOwner.address,
             },
           },
-        },
+        } as IDomainConfigForTest,
         {
           user: lvl2SubOwner,
           domainLabel: "levelone",
@@ -2907,7 +2907,7 @@ describe("ZNSSubRegistrar", () => {
               beneficiary: lvl2SubOwner.address,
             },
           },
-        },
+        } as IDomainConfigForTest,
       ];
 
       regResults = await registerDomainPath({
@@ -3030,7 +3030,7 @@ describe("ZNSSubRegistrar", () => {
             // when we do not specify accessType or config, it defaults to LOCKED
             // we can also set it as 0 specifically if setting a config
             fullConfig: fullConfigEmpty,
-          },
+          } as IDomainConfigForTest,
         ],
       });
 
@@ -3044,7 +3044,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -3150,7 +3150,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         SENDER_NOT_APPROVED_ERR
@@ -3173,7 +3173,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         SENDER_NOT_APPROVED_ERR
@@ -3268,7 +3268,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -3350,7 +3350,7 @@ describe("ZNSSubRegistrar", () => {
           tokenURI: DEFAULT_TOKEN_URI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        } as ISubRegistrarConfig)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -3659,9 +3659,10 @@ describe("ZNSSubRegistrar", () => {
         label: subdomain,
         domainAddress: lvl2SubOwner.address,
         tokenURI: subTokenURI,
-        distributionConfig: distrConfigEmpty,
+        tokenOwner: lvl2SubOwner.address,
+        distrConfig: distrConfigEmpty,
         paymentConfig: paymentConfigEmpty
-      });
+      } as ISubRegistrarConfig);
 
       const subHash = await zns.subRegistrar.hashWithParent(regResults[1].domainHash, subdomain);
 
@@ -4260,7 +4261,7 @@ describe("ZNSSubRegistrar", () => {
         tokenURI: DEFAULT_TOKEN_URI,
         distrConfig: subConfigToSet,
         paymentConfig: paymentConfigEmpty,
-      });
+      } as ISubRegistrarConfig);
 
       const subHash = await getDomainHashFromEvent({
         zns,
