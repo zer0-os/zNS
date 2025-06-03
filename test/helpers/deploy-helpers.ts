@@ -95,16 +95,17 @@ export const registerRootDomainBulk = async (
 
   for(const domain of domains) {
     const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
-    const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain(
-      domain,
-      config.zeroVaultAddress,
-      `${tokenUri}${index}`,
-      distConfig,
-      {
+    const tx = await zns.rootRegistrar.connect(signers[index]).registerRootDomain({
+      name: domain,
+      domainAddress: config.zeroVaultAddress,
+      tokenURI: `${tokenUri}${index}`,
+      tokenOwner: hre.ethers.ZeroAddress,
+      distrConfig: distConfig,
+      paymentConfig: {
         token: await zns.meowToken.getAddress(),
         beneficiary: config.zeroVaultAddress,
-      }
-    );
+      },
+    });
     logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
       await tx.wait(3);
@@ -141,14 +142,15 @@ export const registerSubdomainBulk = async (
 
   for (const subdomain of subdomains) {
     const balanceBefore = await zns.meowToken.balanceOf(signers[index].address);
-    const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain(
-      parents[index],
-      subdomain,
+    const tx = await zns.subRegistrar.connect(signers[index]).registerSubdomain({
+      parentHash: parents[index],
+      label: subdomain,
       domainAddress,
-      `${tokenUri}${index}`,
-      distConfig,
-      paymentConfigEmpty
-    );
+      tokenOwner: hre.ethers.ZeroAddress,
+      tokenURI: `${tokenUri}${index}`,
+      distrConfig: distConfig,
+      paymentConfig: paymentConfigEmpty,
+    });
 
     logger.info("Deploy transaction submitted, waiting...");
 
@@ -168,7 +170,6 @@ export const registerSubdomainBulk = async (
 
       expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
     }
-
 
     expect(await zns.registry.exists(subdomainHashes[index])).to.be.true;
 

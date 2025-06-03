@@ -4,14 +4,18 @@ pragma solidity 0.8.26;
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
-import { IZNSTreasury, PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
 import { IZNSPricer } from "../types/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
-import { ZeroAddressPassed, DomainAlreadyExists } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    DomainAlreadyExists,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -77,57 +81,80 @@ contract ZNSRootRegistrar is
      * Calls `ZNSTreasury` to do the staking part, gets `tokenId` for the new token to be minted
      * as domain hash casted to uint256, mints the token and sets the domain data in the `ZNSRegistry`
      * and, possibly, `ZNSAddressResolver`. Emits a `DomainRegistered` event.
-     * @param name Name (label) of the domain to register
-     * @param domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
-     * @param tokenURI URI to assign to the Domain Token issued for the domain
-     * @param distributionConfig (optional) Distribution config for the domain to set in the same tx
+     * @param args A struct of domain registration data:
+     *       + name Name (label) of the domain to register
+     *       + domainAddress (optional) Address for the `ZNSAddressResolver` to return when requested
+     *       + tokenOwner (optional) Address to assign the domain token to (to offer domain usage without ownership)
+     *       + tokenURI URI to assign to the Domain Token issued for the domain
+     *       + distributionConfig (optional) Distribution config for the domain to set in the same tx
      *     > Please note that passing distribution config will add more gas to the tx and most importantly -
      *      - the distributionConfig HAS to be passed FULLY filled or all zeros. It is optional as a whole,
      *      but all the parameters inside are required.
-     * @param paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
+     *       + paymentConfig (optional) Payment config for the domain to set on ZNSTreasury in the same tx
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
-    ) external override returns (bytes32) {
-        // Confirms string values are only [a-z0-9-]
-        name.validate();
-
+        RootDomainRegistrationArgs calldata args
+    ) public override returns (bytes32) {
         // Create hash for given domain name
-        bytes32 domainHash = keccak256(bytes(name));
-
-        if (registry.exists(domainHash))
-            revert DomainAlreadyExists(domainHash);
+        bytes32 domainHash = keccak256(bytes(args.name));
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, name, true);
+        uint256 domainPrice = rootPricer.getPrice(0x0, args.name, true);
 
         _coreRegister(
-            CoreRegisterArgs(
-                bytes32(0),
-                domainHash,
-                msg.sender,
-                domainAddress,
-                domainPrice,
-                0,
-                name,
-                tokenURI,
-                true,
-                paymentConfig
-            )
+            CoreRegisterArgs({
+                parentHash: bytes32(0),
+                domainHash: domainHash,
+                domainOwner: msg.sender,
+                tokenOwner: args.tokenOwner == address(0) ? msg.sender : args.tokenOwner,
+                domainAddress: args.domainAddress,
+                price: domainPrice,
+                stakeFee: 0,
+                label: args.name,
+                tokenURI: args.tokenURI,
+                isStakePayment: true,
+                paymentConfig: args.paymentConfig
+            })
         );
 
-        if (address(distributionConfig.pricerContract) != address(0)) {
+        if (address(args.distrConfig.pricerContract) != address(0)) {
             // this adds additional gas to the register tx if passed
-            subRegistrar.setDistributionConfigForDomain(domainHash, distributionConfig);
+            subRegistrar.setDistributionConfigForDomain(domainHash, args.distrConfig);
         }
 
         return domainHash;
+    }
+
+    /**
+     * @notice This function allows registering multiple root domains in a single transaction.
+     * It iterates through an array of `SubdomainRegistrationArgs` objects, registering each domain
+     * by calling the `registerRootDomain` function for each entry.
+     * @dev This function reduces the number of transactions required to register multiple domains,
+     * saving gas and improving efficiency. Each domain registration is processed sequentially.
+     * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
+     *      + `name`: The name (label) of the domain to register.
+     *      + `domainAddress`: The address to associate with the domain in the resolver (optional).
+     *      + `tokenURI`: The URI to assign to the domain token.
+     *      + `distributionConfig`: The distribution configuration for the domain (optional).
+     *      + `paymentConfig`: The payment configuration for the domain (optional).
+     * @return domainHashes An array of `bytes32` hashes representing the registered domains.
+     */
+    function registerRootDomainBulk(
+        RootDomainRegistrationArgs[] calldata args
+    ) external override returns (bytes32[] memory) {
+        bytes32[] memory domainHashes = new bytes32[](args.length);
+
+        for (uint256 i = 0; i < args.length;) {
+            domainHashes[i] = registerRootDomain(args[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        return domainHashes;
     }
 
     /**
@@ -137,13 +164,15 @@ contract ZNSRootRegistrar is
      *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
      *      + `domainHash`: The hash of the domain to be registered
      *      + `label`: The label of the domain to be registered
-     *      + `registrant`: The address of the user who is registering the domain
+     *      + `domainOwner`: The address that will be set as owner in Registry record
+     *      + `tokenOwner`: The address that will be set as owner in DomainToken contract
      *      + `price`: The determined price for the domain to be registered based on parent rules
      *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
      *      + `domainAddress`: The address to which the domain will be resolved to
      *      + `tokenURI`: The tokenURI for the domain to be registered
      *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
-    */
+     *      + `paymentConfig`: The payment config for the domain to be registered
+     */
     function coreRegister(
         CoreRegisterArgs memory args
     ) external override onlyRegistrar {
@@ -156,13 +185,19 @@ contract ZNSRootRegistrar is
      * @dev Internal function that is called by this contract to finalize the registration of a domain.
      * This function as also called by the external `coreRegister()` function as a part of
      * registration of subdomains.
-     * This function kicks off payment processing logic, mints the token, sets the domain data in the `ZNSRegistry`
-     * and fires a `DomainRegistered` event.
+     * This function valiates the domain label, checks domain existence, kicks off payment processing logic,
+     * mints the token, sets the domain data in the `ZNSRegistry` and fires a `DomainRegistered` event.
      * For params see external `coreRegister()` docs.
     */
     function _coreRegister(
         CoreRegisterArgs memory args
     ) internal {
+        // Confirms string values are only [a-z0-9-]
+        args.label.validate();
+
+        if (registry.exists(args.domainHash))
+            revert DomainAlreadyExists(args.domainHash);
+
         // payment part of the logic
         if (args.price > 0) {
             _processPayment(args);
@@ -171,7 +206,7 @@ contract ZNSRootRegistrar is
         // Get tokenId for the new token to be minted for the new domain
         uint256 tokenId = uint256(args.domainHash);
         // mint token
-        domainToken.register(args.registrant, tokenId, args.tokenURI);
+        domainToken.register(args.tokenOwner, tokenId, args.tokenURI);
 
         // set data on Registry (for all) + Resolver (optional)
         // If no domain address is given, only the domain owner is set, otherwise
@@ -179,13 +214,13 @@ contract ZNSRootRegistrar is
         // If the `domainAddress` is not provided upon registration, a user can call `ZNSAddressResolver.setAddress`
         // to set the address themselves.
         if (args.domainAddress != address(0)) {
-            registry.createDomainRecord(args.domainHash, args.registrant, "address");
+            registry.createDomainRecord(args.domainHash, args.domainOwner, "address");
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
         } else {
             // By passing an empty string we tell the registry to not add a resolver
-            registry.createDomainRecord(args.domainHash, args.registrant, "");
+            registry.createDomainRecord(args.domainHash, args.domainOwner, "");
         }
 
         // Because we check in the web app for the existance of both values in a payment config,
@@ -200,7 +235,8 @@ contract ZNSRootRegistrar is
             args.label,
             tokenId,
             args.tokenURI,
-            args.registrant,
+            args.domainOwner,
+            args.tokenOwner,
             args.domainAddress
         );
     }
@@ -217,7 +253,7 @@ contract ZNSRootRegistrar is
             treasury.stakeForDomain(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                args.domainOwner,
                 args.price,
                 args.stakeFee,
                 protocolFee
@@ -226,7 +262,7 @@ contract ZNSRootRegistrar is
             treasury.processDirectPayment(
                 args.parentHash,
                 args.domainHash,
-                args.registrant,
+                args.domainOwner,
                 args.price,
                 protocolFee
             );
@@ -235,7 +271,7 @@ contract ZNSRootRegistrar is
 
     /**
      * @notice This function is the main entry point for the Revoke flow.
-     * Revokes a domain such as `0://wilder`.
+     * Revokes a domain such as `0://zero`.
      * Gets `tokenId` from casted domain hash to uint256, calls `ZNSDomainToken` to burn the token,
      * deletes the domain data from the `ZNSRegistry` and calls `ZNSTreasury` to unstake and withdraw funds
      * user staked for the domain. Emits a `DomainRevoked` event.
@@ -247,16 +283,17 @@ contract ZNSRootRegistrar is
      * If a user wants to clear his data from `ZNSAddressResolver`, he can call `ZNSAddressResolver` directly himself
      * BEFORE he calls to revoke, otherwise, `ZNSRegistry` owner check will fail, since the owner there
      * will be 0x0 address.
-     * Also note that in order to Revoke, a caller has to be the owner of both:
-     * Name (in `ZNSRegistry`) and Token (in `ZNSDomainToken`).
+     * Also note that in order to Revoke, a caller has to be the owner of the hash in the `ZNSRegistry`.
+     * And that owner can revoke and burn the token even if he is NOT the owner of the token.
+     * Ownership of the hash in Registry always overrides ownership of the token!
      * @param domainHash Hash of the domain to revoke
      */
     function revokeDomain(bytes32 domainHash)
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.BOTH))
-            revert NotTheOwnerOf(OwnerOf.BOTH, msg.sender, domainHash);
+        if (msg.sender != registry.getDomainOwner(domainHash))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
         subRegistrar.clearMintlistAndLock(domainHash);
         _coreRevoke(domainHash, msg.sender);
@@ -288,45 +325,34 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice This function is the main entry point for the Reclaim flow. This flow is used to
-     * reclaim full ownership of a domain (through becoming the owner of the Name) from the ownership of the Token.
-     * This is used for different types of ownership transfers, such as:
-     * - domain sale - a user will sell the Token, then the new owner has to call this function to reclaim the Name
-     * - domain transfer - a user will transfer the Token, then the new owner
-     * has to call this function to reclaim the Name
+     * @notice This function lets domain owner in Registry to transfer the token separately from any address
+     * to any other address (except the zero address), since the Registry owner always overrides the token owner.
+     * @dev This is the ONLY way to transfer the token separately from the domain hash
+     * and only Registry owner can do this! This can also be used to send the token to yourself as Registry owner
+     * if you moved it or minted it initially to somebody else to use your domain.
+     * Transferring the token away from yourself with this function make the domain "controlled" in a sense
+     * that token owner could use the domain, but not revoke it, transfer it to another address or access
+     * domain management functions across the system.
      *
-     * A user needs to only be the owner of the Token to be able to Reclaim.
-     * Updates the domain owner in the `ZNSRegistry` to the owner of the token and emits a `DomainReclaimed` event.
+     * Updates the token owner in the `ZNSDomainToken` to the "to" address and emits a `DomainTokenReassigned` event.
      */
-    function reclaimDomain(bytes32 domainHash)
+    function assignDomainToken(bytes32 domainHash, address to)
     external
     override
     {
-        if (!isOwnerOf(domainHash, msg.sender, OwnerOf.TOKEN))
-            revert NotTheOwnerOf(OwnerOf.TOKEN, msg.sender, domainHash);
+        if (msg.sender != registry.getDomainOwner(domainHash))
+            revert NotAuthorizedForDomain(msg.sender, domainHash);
 
-        registry.updateDomainOwner(domainHash, msg.sender);
+        address curTokenOwner = domainToken.ownerOf(uint256(domainHash));
+        if (curTokenOwner == to)
+            revert AlreadyTokenOwner(domainHash, curTokenOwner);
 
-        emit DomainReclaimed(domainHash, msg.sender);
-    }
+        domainToken.transferOverride(
+            to,
+            uint256(domainHash)
+        );
 
-    /**
-     * @notice Function to validate that a given candidate is the owner of his Name, Token or both.
-     * @param domainHash Hash of the domain to check
-     * @param candidate Address of the candidate to check for ownership of the above domain's properties
-     * @param ownerOf Enum value to determine which ownership to check for: NAME, TOKEN, BOTH
-    */
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) public view override returns (bool) {
-        if (ownerOf == OwnerOf.NAME) {
-            return candidate == registry.getDomainOwner(domainHash);
-        } else if (ownerOf == OwnerOf.TOKEN) {
-            return candidate == domainToken.ownerOf(uint256(domainHash));
-        } else if (ownerOf == OwnerOf.BOTH) {
-            return candidate == registry.getDomainOwner(domainHash)
-                && candidate == domainToken.ownerOf(uint256(domainHash));
-        }
-
-        revert InvalidOwnerOfEnumValue(ownerOf);
+        emit DomainTokenReassigned(domainHash, to);
     }
 
     /**

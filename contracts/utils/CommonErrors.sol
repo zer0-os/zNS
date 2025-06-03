@@ -11,3 +11,7 @@ error NotAuthorizedForDomain(address caller, bytes32 domainHash);
 error WrongAccessControllerAddress(address accessController);
 
 error NotAuthorized(address caller);
+
+error NotFullDomainOwner(address caller, bytes32 domainHash);
+
+error AlreadyFullOwner(address owner, bytes32 domainHash);

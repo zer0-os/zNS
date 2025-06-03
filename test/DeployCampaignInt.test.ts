@@ -665,9 +665,7 @@ describe("Deploy Campaign Test", () => {
 
       expect(await localConfig.deployAdmin.getAddress()).to.eq(deployAdmin.address);
       expect(localConfig.governorAddresses[0]).to.eq(governor.address);
-      expect(localConfig.governorAddresses[1]).to.eq(deployAdmin.address);
       expect(localConfig.adminAddresses[0]).to.eq(admin.address);
-      expect(localConfig.adminAddresses[1]).to.eq(deployAdmin.address);
       expect(localConfig.domainToken.name).to.eq(ZNS_DOMAIN_TOKEN_NAME);
       expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
       expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(zeroVault.address);

@@ -7,10 +7,11 @@ import { StringUtils } from "../utils/StringUtils.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 
+
 /**
  * @title Implementation of the Curve Pricing, module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
- * This module uses an hyperbolic curve that starts at (`baseLength`; `maxPrice`) 
+ * This module uses an hyperbolic curve that starts at (`baseLength`; `maxPrice`)
  * for all domains <= `baseLength`.
  * Then the price is reduced using the price calculation function below.
  * The price after `maxLength` is fixed and equals the price on the hyperbola graph at the point `maxLength`
@@ -27,7 +28,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
     uint256 public constant PERCENTAGE_BASIS = 10000;
 
     /**
-     * @notice Multiply the entire hyperbola formula by this number to be able to reduce the `curveMultiplier` 
+     * @notice Multiply the entire hyperbola formula by this number to be able to reduce the `curveMultiplier`
      * by 3 digits, which gives us more flexibility in defining the hyperbola function.
      * @dev > Canot be "0".
      */
@@ -142,7 +143,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         CurvePriceConfig calldata priceConfig
     ) public override {
-        _setPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
+        _validateSetPrecisionMultiplier(domainHash, priceConfig.precisionMultiplier);
         _validateSetBaseLength(domainHash, priceConfig.baseLength, priceConfig);
         priceConfigs[domainHash].maxPrice = priceConfig.maxPrice;
         _validateSetCurveMultiplier(domainHash, priceConfig.curveMultiplier, priceConfig);
@@ -208,7 +209,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         uint256 curveMultiplier,
         CurvePriceConfig memory config
     ) internal onlyOwnerOrOperator(domainHash) {
-        if (curveMultiplier == 0 && config.baseLength == 0) 
+        if (curveMultiplier == 0 && config.baseLength == 0)
             revert DivisionByZero(domainHash);
 
         priceConfigs[domainHash].curveMultiplier = curveMultiplier;
@@ -245,7 +246,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         if (config.maxLength < baseLength)
             revert MaxLengthSmallerThanBaseLength(domainHash);
 
-        if (baseLength == 0 && config.curveMultiplier == 0) 
+        if (baseLength == 0 && config.curveMultiplier == 0)
             revert DivisionByZero(domainHash);
 
         priceConfigs[domainHash].baseLength = baseLength;
@@ -277,7 +278,7 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         CurvePriceConfig memory config
     ) internal onlyOwnerOrOperator(domainHash) {
         if (
-            (maxLength < config.baseLength) || 
+            (maxLength < config.baseLength) ||
             maxLength == 0
         ) revert MaxLengthSmallerThanBaseLength(domainHash);
 
@@ -300,11 +301,11 @@ contract ZNSCurvePricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
         bytes32 domainHash,
         uint256 multiplier
     ) public override onlyOwnerOrOperator(domainHash) {
-        _setPrecisionMultiplier(domainHash, multiplier);
+        _validateSetPrecisionMultiplier(domainHash, multiplier);
         emit PrecisionMultiplierSet(domainHash, multiplier);
     }
 
-    function _setPrecisionMultiplier(
+    function _validateSetPrecisionMultiplier(
         bytes32 domainHash,
         uint256 multiplier
     ) internal {

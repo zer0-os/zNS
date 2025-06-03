@@ -19,7 +19,7 @@ contract ZNSFixedPricer is AAccessControlled, ARegistryWired, UUPSUpgradeable, I
 
     /**
      * @notice Mapping of domainHash to price config set by the domain owner/operator
-    */
+     */
     mapping(bytes32 domainHash => PriceConfig config) public priceConfigs;
 
     /// @custom:oz-upgrades-unsafe-allow constructor

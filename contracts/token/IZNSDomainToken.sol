@@ -4,8 +4,8 @@ pragma solidity 0.8.26;
 import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-interface IZNSDomainToken is IERC2981, IERC721 {
 
+interface IZNSDomainToken is IERC2981, IERC721 {
     /**
      * @notice Emitted when a Default Royalty (for all tokens) is set.
     */
@@ -25,7 +25,19 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
 
-    error CallerNotOwner(); 
+    /**
+     * @notice Emitted when doing an override transfer of the token separately from the domain hash.
+     */
+    event OverrideTransfer(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId
+    );
+
+    /**
+     * @notice Revert when trying to burn the token separately from domain revocation.
+     */
+    error CannotBurnToken();
 
     function initialize(
         address accessController,
@@ -38,6 +50,8 @@ interface IZNSDomainToken is IERC2981, IERC721 {
 
     function totalSupply() external view returns (uint256);
 
+    function isControlled(bytes32 domainHash) external view returns (bool);
+
     function register(
         address to,
         uint256 tokenId,
@@ -45,6 +59,11 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     ) external;
 
     function revoke(uint256 tokenId) external;
+
+    function transferOverride(
+        address to,
+        uint256 tokenId
+    ) external;
 
     function tokenURI(uint256 tokenId)
     external
@@ -56,8 +75,6 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     function setTokenURI(uint256 tokenId, string memory _tokenURI) external;
 
     function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external;
-
-    function updateTokenOwner(address from, address to, uint256 tokenId) external;
 
     function setTokenRoyalty(
         uint256 tokenId,
