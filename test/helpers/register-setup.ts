@@ -11,6 +11,7 @@ import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
+import { ERC20Mock } from "../../typechain";
 
 const { ZeroAddress } = ethers;
 
@@ -51,18 +52,26 @@ export const defaultRootRegistration = async ({
   return tx.wait();
 };
 
-export const approveForParent = async ({
+export const fundApprove = async ({
   zns,
   parentHash,
   user,
   domainLabel,
 } : {
   zns : IZNSContractsLocal | IZNSContracts;
-  parentHash : string;
+  parentHash ?: string;
   user : SignerWithAddress;
   domainLabel : string;
 }) => {
-  const { pricerContract } = await zns.subRegistrar.distrConfigs(parentHash);
+  let pricerContract;
+  parentHash = parentHash || ethers.ZeroHash;
+
+  if (parentHash === ethers.ZeroHash) {
+    (pricerContract = await zns.rootRegistrar.rootPricer());
+  } else {
+    ({ pricerContract } = await zns.subRegistrar.distrConfigs(parentHash));
+  }
+
   let price = BigInt(0);
   let parentFee = BigInt(0);
   if (pricerContract === await zns.curvePricer.getAddress()) {
@@ -76,6 +85,11 @@ export const approveForParent = async ({
 
   const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
+
+  const userBalance = await tokenContract.balanceOf(user.address);
+  if (userBalance < toApprove) {
+    await tokenContract.connect(user).mint(user.address, toApprove);
+  }
 
   return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
 };
@@ -151,6 +165,13 @@ export const registrationWithSetup = async ({
     ? fullConfig.distrConfig
     : distrConfigEmpty;
 
+  await fundApprove({
+    zns,
+    parentHash,
+    user,
+    domainLabel,
+  });
+
   // register domain
   if (!parentHash || parentHash === ethers.ZeroHash) {
     await defaultRootRegistration({
@@ -163,13 +184,6 @@ export const registrationWithSetup = async ({
       distrConfig,
     });
   } else {
-    await approveForParent({
-      zns,
-      parentHash,
-      user,
-      domainLabel,
-    });
-
     await defaultSubdomainRegistration({
       user,
       zns,
