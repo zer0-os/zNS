@@ -44,19 +44,10 @@ const config : HardhatUserConfig = {
           },
         },
       },
-      {
-        version: "0.8.3",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
     ],
     overrides: {
       "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
-        version: "0.8.20",
+        version: "0.8.22",
         settings: {
           optimizer: {
             enabled: true,
@@ -65,7 +56,7 @@ const config : HardhatUserConfig = {
         },
       },
       "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
-        version: "0.8.20",
+        version: "0.8.22",
         settings: {
           optimizer: {
             enabled: true,
