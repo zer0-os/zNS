@@ -197,7 +197,7 @@ contract ZNSSubRegistrar is
      */
     function registerSubdomainBulk(
         SubdomainRegisterArgs[] memory args
-    ) external override returns (bytes32[] memory) {
+    ) external override whenRegNotPaused(accessController) returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](args.length);
 
         for (uint256 i = 0; i < args.length;) {

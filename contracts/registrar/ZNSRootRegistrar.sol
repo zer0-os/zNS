@@ -98,7 +98,7 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomain(
         RootDomainRegistrationArgs calldata args
-    ) public override returns (bytes32) {
+    ) public override whenRegNotPaused(accessController) returns (bytes32) {
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(args.name));
 
@@ -145,7 +145,7 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomainBulk(
         RootDomainRegistrationArgs[] calldata args
-    ) external override returns (bytes32[] memory) {
+    ) external override whenRegNotPaused(accessController) returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](args.length);
 
         for (uint256 i = 0; i < args.length;) {
