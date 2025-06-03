@@ -14,6 +14,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes32 parentHash;
         string label;
         address domainAddress;
+        address tokenOwner;
         string tokenURI;
         DistributionConfig distrConfig;
         PaymentConfig paymentConfig;
@@ -30,6 +31,11 @@ interface IZNSSubRegistrar is IDistributionConfig {
      * @notice Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
      */
     error SenderNotApprovedForPurchase(bytes32 parentHash, address sender);
+
+    /**
+     * @notice Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
+     */
+    error ZeroParentHash(string label);
 
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
@@ -101,9 +107,16 @@ interface IZNSSubRegistrar is IDistributionConfig {
 
     function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32);
 
+    function registerSubdomainBulk(
+        SubdomainRegisterArgs[] calldata args
+    ) external returns (bytes32[] memory);
+
+    /**
+     * @notice Helper function to hash a child label with a parent domain hash.
+     */
     function hashWithParent(
         bytes32 parentHash,
-        string calldata label
+        string memory label
     ) external pure returns (bytes32);
 
     function setDistributionConfigForDomain(
