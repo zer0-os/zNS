@@ -123,10 +123,19 @@ export interface IFullDistributionConfig {
   paymentConfig : IPaymentConfig;
 }
 
+export interface CreateConfigArgs {
+  user : SignerWithAddress;
+  tokenOwner ?: string;
+  domainLabel ?: string;
+  parentHash ?: string;
+  distrConfig ?: Partial<IDistributionConfig>;
+  paymentConfig ?: Partial<IPaymentConfig>;
+}
+
 interface ConfigArgsBase {
   user : SignerWithAddress;
   domainLabel : string;
-  tokenOwner : string;
+  tokenOwner ?: string;
   domainContent ?: string;
   parentHash ?: string;
   tokenURI ?: string;
@@ -137,7 +146,7 @@ export interface IDomainConfigForTest extends ConfigArgsBase {
 }
 
 export interface IRegisterWithSetupArgs extends ConfigArgsBase {
-  zns : IZNSContractsLocal;
+  zns : IZNSContractsLocal | IZNSContracts;
   fullConfig ?: IFullDistributionConfig;
   setConfigs ?: boolean;
 }

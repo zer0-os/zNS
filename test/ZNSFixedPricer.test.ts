@@ -49,6 +49,7 @@ describe("ZNSFixedPricer", () => {
     domainHash = await registrationWithSetup({
       zns,
       user,
+      tokenOwner: user.address,
       domainLabel: "test",
       fullConfig: await utils.getDefaultFullConfigFixed(user),
     });

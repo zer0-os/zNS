@@ -10,6 +10,7 @@ import {
   PaymentType,
 } from "./constants";
 import {
+  CreateConfigArgs,
   IDistributionConfig,
   IDomainConfigForTest,
   IFullDistributionConfig,
@@ -52,38 +53,55 @@ export const getRandomString = (length : number) => {
 
 const createConfig = async (
   zns : IZNSContractsLocal,
-  user : SignerWithAddress,
-  domainLabel : string,
-  parentHash ?: string,
-  distrConfig ?: Partial<IDistributionConfig>,
-  paymentConfig ?: Partial<IPaymentConfig>
+  args : CreateConfigArgs
 ) : Promise<IDomainConfigForTest> => {
-
   let distrConfigToUse : IDistributionConfig;
   let paymentConfigToUse : IPaymentConfig;
 
-  if (distrConfig) {
+  if (args.distrConfig) {
+    // Option variables are only used only if not specified specified
+    const paymentTypeOption = Math.random() < 0.5 ? PaymentType.DIRECT : PaymentType.STAKE;
+
+    let accessTypeOption
+    const accessTypeSwitch = Math.random();
+
+    if (accessTypeSwitch < 0.3333) {
+      accessTypeOption = AccessType.OPEN;
+    } else if (accessTypeSwitch < 0.6666) {
+      accessTypeOption = AccessType.LOCKED;
+    } else {
+      accessTypeOption = AccessType.MINTLIST;
+    }
+
     distrConfigToUse = {
-      pricerContract: distrConfig.pricerContract ? distrConfig.pricerContract : await zns.curvePricer.getAddress(),
-      priceConfig: distrConfig.priceConfig ? distrConfig.priceConfig : DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      paymentType: distrConfig.paymentType ? distrConfig.paymentType : PaymentType.DIRECT,
-      accessType: distrConfig.accessType ? distrConfig.accessType : AccessType.OPEN,
+      pricerContract: args.distrConfig.pricerContract ? args.distrConfig.pricerContract : zns.curvePricer.target,
+      priceConfig: args.distrConfig.priceConfig ? args.distrConfig.priceConfig : DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      paymentType: args.distrConfig.paymentType ? args.distrConfig.paymentType : paymentTypeOption,
+      accessType: args.distrConfig.accessType ? args.distrConfig.accessType : accessTypeOption,
     };
+
+    // Be sure we always set the contract and config to be the matching pair
+    if (
+      (distrConfigToUse.pricerContract === zns.curvePricer.target && distrConfigToUse.priceConfig!.length !== DEFAULT_CURVE_PRICE_CONFIG_BYTES.length)
+      || (distrConfigToUse.pricerContract === zns.fixedPricer.target && distrConfigToUse.priceConfig!.length !== DEFAULT_FIXED_PRICER_CONFIG_BYTES.length)
+    ) {
+        throw Error("Mismatch in distribution config: price config given does not match the price contract");
+    }
   } else {
     distrConfigToUse = distrConfigEmpty;
   }
 
-  if (paymentConfig) {
+  if (args.paymentConfig) {
     paymentConfigToUse = {
-      token: paymentConfig.token ? paymentConfig.token : await zns.meowToken.getAddress(),
-      beneficiary: paymentConfig.beneficiary ? paymentConfig.beneficiary : user.address,
+      token: args.paymentConfig.token ? args.paymentConfig.token : await zns.meowToken.getAddress(),
+      beneficiary: args.paymentConfig.beneficiary ? args.paymentConfig.beneficiary : args.user.address,
     };
   } else {
     // Only set default payment config  if distrConfig is not empty
     if (distrConfigToUse !== distrConfigEmpty) {
       paymentConfigToUse = {
         token: await zns.meowToken.getAddress(),
-        beneficiary: user.address,
+        beneficiary: args.user.address,
       };
     } else {
       paymentConfigToUse = paymentConfigEmpty;
@@ -91,9 +109,10 @@ const createConfig = async (
   }
 
   const createdConfig : IDomainConfigForTest = {
-    user,
-    domainLabel,
-    parentHash: parentHash ?? ethers.ZeroHash,
+    user: args.user,
+    domainLabel: args.domainLabel!, // we know it is set at this point
+    tokenOwner: args.user.address,
+    parentHash: args.parentHash ?? ethers.ZeroHash,
     fullConfig: {
       distrConfig: distrConfigToUse,
       paymentConfig: paymentConfigToUse,
@@ -102,14 +121,6 @@ const createConfig = async (
 
   return createdConfig;
 };
-
-interface CreateConfigArgs {
-  user : SignerWithAddress;
-  domainLabel ?: string;
-  parentHash ?: string;
-  distrConfig ?: Partial<IDistributionConfig>;
-  paymentConfig ?: Partial<IPaymentConfig>;
-}
 
 export class Utils {
   hre : HardhatRuntimeEnvironment;
@@ -126,18 +137,41 @@ export class Utils {
   // Create a domain config for testing
   async createConfig (
     args : CreateConfigArgs
-  ) : Promise<IDomainConfigForTest>  {
+  ) : Promise<IDomainConfigForTest> {
     return createConfig(
       this.zns,
-      args.user,
-      args.domainLabel ?? this.createLabel(),
-      args.parentHash ?? this.hre.ethers.ZeroHash,
-      args.distrConfig,
-      args.paymentConfig
+      args
     );
   }
 
-  async getDefaultFullConfigFixed (user : SignerWithAddress) {
+  async createConfigs (
+    args : Array<CreateConfigArgs>
+  ) : Promise<Array<IDomainConfigForTest>> {
+    let configs = [];
+
+    for (let arg of args) {
+      // For variance in length, if one is not specified
+      // we create a random one of a random length
+      if (!arg.domainLabel) {
+        arg.domainLabel = await this.createLabel(Math.floor(Math.random() * 16) + 1);
+      }
+
+      configs.push(await createConfig(
+        this.zns,
+        arg
+        // user,
+        // arg.tokenOwner ?? arg.user.address,
+        // arg.domainLabel ?? this.createLabel(),
+        // arg.parentHash ?? this.hre.ethers.ZeroHash,
+        // arg.distrConfig,
+        // arg.paymentConfig
+      ));
+    }
+
+    return configs;
+  }
+
+  async getDefaultFullConfigFixed (user : SignerWithAddress){
     return {
       distrConfig: {
         pricerContract: this.zns.fixedPricer.target,
@@ -149,7 +183,7 @@ export class Utils {
         token: this.zns.meowToken.target,
         beneficiary: user.address,
       },
-    } as IFullDistributionConfig;
+    };
   }
 
   async getDefaultFullConfigCurve (user : SignerWithAddress) {
@@ -169,15 +203,20 @@ export class Utils {
 
   // Create a random label of default length 10
   // Specify a length to override this value
-  createLabel (
+  async createLabel (
     length ?: number
-  ) {
+  ) : Promise<string> {
     let result = "";
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-    // If no length specified use 10 as a default
-    for (let i = 0; i < (length ?? 10); i++) {
+    // If no length specified use 16 as a default
+    for (let i = 0; i < (length ?? 16); i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    if (await this.zns.registry.exists(result)) {
+      // If the label already exists, recursively call to create a new one
+      return this.createLabel(length);
     }
 
     return result;

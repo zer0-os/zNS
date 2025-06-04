@@ -48,6 +48,7 @@ const makeSetupFixture = async () => {
   // Register the root domain for the Registrar
   const baseRootDomainHash = await registrationWithSetup({
     zns,
+    tokenOwner: parentOwner.address,
     user: parentOwner,
     domainLabel: "controlling-root",
   });

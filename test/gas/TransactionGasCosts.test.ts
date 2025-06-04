@@ -71,6 +71,7 @@ describe("Transaction Gas Costs Test", () => {
 
     rootHashDirect = await registrationWithSetup({
       zns,
+      tokenOwner: hre.ethers.ZeroAddress,
       user: rootOwner,
       domainLabel: "rootdirect",
       fullConfig: {

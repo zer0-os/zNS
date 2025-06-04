@@ -12,6 +12,8 @@ import { distrConfigEmpty, fullConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpt
 import { getTokenContract } from "./tokens";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
+import { decodePriceConfig } from "./pricing";
+import { ERC20Mock__factory } from "../../typechain";
 
 const { ZeroAddress } = ethers;
 
@@ -149,12 +151,25 @@ export const registrationWithSetup = async ({
       distrConfig,
     });
   } else {
+    const paymentConfig = await zns.treasury.paymentConfigs(parentHash);
+
+    // because we dont have a handle for the token we just use a dummy for now
+    const fakeToken = ERC20Mock__factory.connect(
+      paymentConfig.token,
+      user
+    );
+
+    const balanceBefore = await fakeToken.balanceOf(user.address);
+
     await approveForParent({
       zns,
       parentHash,
       user,
       domainLabel,
     });
+
+    const balanceAfter = await fakeToken.balanceOf(user.address);
+
 
     await defaultSubdomainRegistration({
       user,
@@ -172,7 +187,6 @@ export const registrationWithSetup = async ({
   const domainHash = await getDomainHashFromEvent({
     zns,
     user,
-    tokenOwner,
   });
 
   if (!hasConfig) return domainHash;

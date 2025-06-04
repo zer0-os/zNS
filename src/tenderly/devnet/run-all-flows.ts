@@ -7,6 +7,7 @@ import {
   IFullDistributionConfig,
   encodePriceConfig,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  IRegisterWithSetupArgs,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
@@ -50,6 +51,7 @@ export const runAllFlows = async () => {
 
   const rootHash = await registrationWithSetup({
     zns,
+    tokenOwner: governor.address,
     user: governor,
     domainLabel: domainName,
     fullConfig: fullRootConfig,
@@ -75,10 +77,11 @@ export const runAllFlows = async () => {
   await registrationWithSetup({
     zns,
     user,
+    tokenOwner: user.address,
     parentHash: rootHash,
     domainLabel: subdomainLabel,
     fullConfig: fullSubConfig,
-  });
+  } as IRegisterWithSetupArgs);
 
   // Transfer Domain
   await zns.domainToken.connect(governor).transferFrom(governor.address, user.address, tokenId);
