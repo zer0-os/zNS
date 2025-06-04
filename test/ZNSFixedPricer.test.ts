@@ -8,13 +8,11 @@ import {
   decodePriceConfig,
   DEFAULT_PROTOCOL_FEE_PERCENT,
   IZNSContractsLocal,
-  Utils,
   IFixedPriceConfig,
   INVALID_CONFIG_LENGTH_ERR,
   FEE_TOO_LARGE_ERR,
   PaymentType,
   AccessType,
-  curvePriceConfigEmpty,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";

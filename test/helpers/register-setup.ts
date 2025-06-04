@@ -12,7 +12,6 @@ import { distrConfigEmpty, fullConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpt
 import { getTokenContract } from "./tokens";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
-import { ERC20Mock__factory } from "../../typechain";
 
 const { ZeroAddress } = ethers;
 
