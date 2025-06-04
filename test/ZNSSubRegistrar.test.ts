@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDomainConfigForTest,
-  IFixedPriceConfig,
   IPathRegResult,
   ISubRegistrarConfig,
   IZNSContractsLocal,
@@ -53,6 +52,7 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
+import { IFixedPriceConfig } from "../src/deploy/missions/types";
 
 
 describe("ZNSSubRegistrar", () => {

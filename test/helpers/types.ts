@@ -18,7 +18,9 @@ import {
   ZNSRegistryUpgradeMock__factory,
   ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSStringResolverUpgradeMock,
+  ZNSStringResolverUpgradeMock__factory,
   ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
@@ -27,7 +29,7 @@ import {
   ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 
 
 export type Maybe<T> = T | undefined;
@@ -66,11 +68,6 @@ export type ZNSContractMock =
   ZNSAddressResolverUpgradeMock |
   ZNSDomainTokenUpgradeMock |
   ZNSStringResolverUpgradeMock;
-
-export interface IFixedPriceConfig {
-  price : bigint;
-  feePercentage : bigint;
-}
 
 export interface RegistrarConfig {
   treasuryAddress : string;

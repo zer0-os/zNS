@@ -1,6 +1,5 @@
 import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
-import { IFixedPriceConfig } from "./types";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 
 
 /**

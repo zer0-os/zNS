@@ -1,14 +1,13 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
-  IFixedPriceConfig,
   IFullDistributionConfig, IPaymentConfig, IZNSContractsLocal,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
 import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 

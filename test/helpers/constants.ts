@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 
 export const DEFAULT_RESOLVER_TYPE = "address";
 export const ZNS_DOMAIN_TOKEN_NAME = "ZERO ID";
@@ -44,7 +44,11 @@ export const curvePriceConfigEmpty : ICurvePriceConfig = {
   baseLength: BigInt(0),
   precisionMultiplier: BigInt(0),
   feePercentage: BigInt(0),
-  isSet: true,
+};
+
+export const fixedPriceConfigEmpty : IFixedPriceConfig = {
+  price: BigInt(0),
+  feePercentage: BigInt(0),
 };
 
 export const paymentConfigEmpty = {
