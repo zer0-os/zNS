@@ -69,7 +69,7 @@ describe("ZNSFixedPricer", () => {
       user,
       tokenOwner: user.address,
       domainLabel: "test",
-      fullConfig
+      fullConfig,
     });
   });
 
