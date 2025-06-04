@@ -11,7 +11,6 @@ import { getTokenContract } from "./tokens";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
-import { ERC20Mock } from "../../typechain";
 
 const { ZeroAddress } = ethers;
 

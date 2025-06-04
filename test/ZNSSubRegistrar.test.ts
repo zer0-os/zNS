@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow, no-shadow */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDomainConfigForTest,

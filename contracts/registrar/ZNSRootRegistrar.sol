@@ -420,8 +420,6 @@ contract ZNSRootRegistrar is
         emit SubRegistrarSet(subRegistrar_);
     }
 
-    // TODO 15: can we refactor this in a better way to not copy to both places?
-    // TODO 15: should we put it in the AAccessControlled.sol?
     /**
      * @notice Pauses the registration of new domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
