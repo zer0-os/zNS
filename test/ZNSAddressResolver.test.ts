@@ -15,6 +15,7 @@ import {
   REGISTRAR_ROLE,
   deployZNS,
   validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, NOT_AUTHORIZED_ERR,
+  AC_NOTAUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
@@ -112,8 +113,8 @@ describe("ZNSAddressResolver", () => {
   it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
     await expect(
       zns.addressResolver.connect(operator).setAccessController(operator.address)
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(operator.address, ADMIN_ROLE);
+    ).to.be.revertedWithCustomError(zns.addressResolver, AC_NOTAUTHORIZED_ERR)
+      .withArgs(operator.address);
   });
 
   it("Should not allow non-owner address to setAddress", async () => {

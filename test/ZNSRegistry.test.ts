@@ -16,6 +16,7 @@ import {
   AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   ZERO_ADDRESS_ERR,
+  AC_NOTAUTHORIZED_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 
@@ -108,8 +109,8 @@ describe("ZNSRegistry", () => {
   it("Should revert when setting access controller without ADMIN_ROLE", async () => {
     await expect(
       zns.registry.connect(randomUser).setAccessController(deployer.address)
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(randomUser.address, ADMIN_ROLE);
+    ).to.be.revertedWithCustomError(zns.registry, AC_NOTAUTHORIZED_ERR)
+      .withArgs(randomUser.address);
   });
 
   describe("Audit fix with approved address resolvers", () => {

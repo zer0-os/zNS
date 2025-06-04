@@ -10,6 +10,7 @@ import {
   DEFAULT_PRICE_CONFIG,
   validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
   AC_NOTAUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -136,8 +137,10 @@ describe("ZNSFixedPricer", () => {
         acAddress: await zns.accessController.getAddress(),
         regAddress: await zns.registry.getAddress(),
       }),
-    ).to.be.revertedWithCustomError(zns.accessController, AC_NOTAUTHORIZED_ERR)
-      .withArgs(random.address, ADMIN_ROLE);
+    ).to.be.revertedWithCustomError(
+      zns.fixedPricer,
+      AC_NOTAUTHORIZED_ERR
+    ).withArgs(random.address);
   });
 
   it("#setPrice() should work correctly and emit #PriceSet event", async () => {
@@ -275,39 +278,6 @@ describe("ZNSFixedPricer", () => {
       .withArgs(random.address, ADMIN_ROLE);
   });
 
-  // TODO pause: move those to pausable test when it will appera.
-  it.skip("Should revert when NON-admin tries to set #PAUSE", async () => {
-    await expect(
-      zns.fixedPricer.connect(user).pause()
-    ).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR);
-  });
-
-  it.skip("Should revert on every suspendable function call when the contract is PAUSED", async () => {
-    await zns.fixedPricer.connect(admin).pause();
-
-    const functionsToTest = [
-      async () => zns.fixedPricer.connect(user).setPrice(domainHash, ethers.parseEther("1")),
-      async () => zns.fixedPricer.connect(user).setFeePercentage(domainHash, 100n),
-      async () => zns.fixedPricer.connect(user).setPriceConfig(
-        domainHash,
-        {
-          price: ethers.parseEther("1"),
-          feePercentage: 100n,
-          isSet: true,
-        }
-      ),
-    ];
-
-    for (const call of functionsToTest) {
-      await expect(
-        call()
-      ).to.be.revertedWithCustomError(
-        zns.fixedPricer,
-        "EnforcedPause"
-      );
-    }
-  });
-
   describe("#setAccessController", () => {
     it("should allow ADMIN to set a valid AccessController", async () => {
       await zns.fixedPricer.connect(deployer).setAccessController(zns.accessController.target);
@@ -375,10 +345,10 @@ describe("ZNSFixedPricer", () => {
 
     it("should revert with `WrongAccessControllerAddress(CONTRACT.target)`", async () => {
       await expect(
-        zns.fixedPricer.setAccessController(zns.domainToken.target)
+        zns.fixedPricer.connect(admin).setAccessController(zns.domainToken.target)
       ).to.revertedWithCustomError(
         zns.fixedPricer,
-        "WrongAccessControllerAddress"
+        AC_WRONGADDRESS_ERR
       ).withArgs(zns.domainToken.target);
 
       // set back for other tests.

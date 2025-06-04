@@ -23,9 +23,10 @@ import {
   INVALID_LABEL_ERR,
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
   AC_NOTAUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { IDistributionConfig, IRootdomainConfig, IZNSContractsLocal } from "./helpers/types";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
@@ -378,8 +379,8 @@ describe("ZNSRootRegistrar", () => {
       }
     );
 
-    await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_NOTAUTHORIZED_ERR)
-      .withArgs(user.address, ADMIN_ROLE);
+    await expect(tx).to.be.revertedWithCustomError(zns.registry, AC_NOTAUTHORIZED_ERR)
+      .withArgs(user.address);
   });
 
   it("Should NOT initialize twice", async () => {

@@ -78,9 +78,9 @@ abstract contract AAccessControlled {
         }
 
         // Similarly, validate admin alignment in the *new* contract
-        try IAccessControl(_accessController).hasRole(IZNSAccessController(_accessController).ADMIN_ROLE(), msg.sender) returns (bool valid) {
-            if (!valid) {
-                revert WrongAccessControllerAddress(_accessController);
+        try IZNSAccessController(_accessController).ADMIN_ROLE() returns (bytes32 adminRole) {
+            if (!IAccessControl(_accessController).hasRole(adminRole, msg.sender)) {
+                revert NotAuthorized(msg.sender);
             }
         } catch {
             revert WrongAccessControllerAddress(_accessController);

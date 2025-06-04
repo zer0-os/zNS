@@ -1,6 +1,7 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
+  AC_NOTAUTHORIZED_ERR,
   AC_UNAUTHORIZED_ERR,
   GOVERNOR_ROLE,
   hashDomainLabel,
@@ -10,7 +11,7 @@ import {
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
@@ -158,8 +159,8 @@ describe("ZNSStringResolver", () => {
       await expect(
         stringResolver.connect(user).setAccessController(user.address)
       ).to.be.revertedWithCustomError(
-        accessController,
-        AC_UNAUTHORIZED_ERR
+        stringResolver,
+        AC_NOTAUTHORIZED_ERR
       );
     });
   });

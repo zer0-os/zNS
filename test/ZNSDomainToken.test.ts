@@ -29,6 +29,7 @@ import {
   CANNOT_BURN_TOKEN_ERR,
   ERC721_INVALID_RECEIVER_ERR,
   hashDomainLabel,
+  AC_NOTAUTHORIZED_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -514,8 +515,8 @@ describe("ZNSDomainToken", () => {
 
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
       await expect(zns.domainToken.connect(caller).setAccessController(caller.address))
-        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(caller.address,ADMIN_ROLE);
+        .to.be.revertedWithCustomError(zns.domainToken, AC_NOTAUTHORIZED_ERR)
+        .withArgs(caller.address);
     });
   });
 

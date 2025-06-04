@@ -10,6 +10,7 @@ export const CANNOT_BURN_TOKEN_ERR = "CannotBurnToken";
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
 export const AC_NOTAUTHORIZED_ERR = "NotAuthorized";
+export const AC_WRONGADDRESS_ERR = "WrongAccessControllerAddress";
 
 // ERC20
 export const INSUFFICIENT_BALANCE_ERC_ERR = "ERC20InsufficientBalance";
