@@ -17,8 +17,6 @@ import {
   ZToken as MeowToken,
 } from "../../../typechain";
 
-import { IContractV6 } from "@zero-tech/zdc";
-
 export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
 export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {

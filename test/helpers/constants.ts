@@ -65,7 +65,7 @@ export const FULL_DISTR_CONFIG_EMPTY : IFullDistributionConfig = {
     token: ethers.ZeroAddress,
     beneficiary: ethers.ZeroAddress,
   },
-}
+};
 
 export const ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES = ZeroHash + ZeroHash.slice(2);
 

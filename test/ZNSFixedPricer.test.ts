@@ -12,6 +12,9 @@ import {
   IFixedPriceConfig,
   INVALID_CONFIG_LENGTH_ERR,
   FEE_TOO_LARGE_ERR,
+  PaymentType,
+  AccessType,
+  curvePriceConfigEmpty,
 } from "./helpers";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -29,10 +32,14 @@ describe("ZNSFixedPricer", () => {
   let zns : IZNSContractsLocal;
   let domainHash : string;
 
-  let utils : Utils;
+  let parentPrice : bigint;
+  let parentFeePercentage : bigint;
 
   before(async () => {
     [deployer, admin, user, zeroVault] = await hre.ethers.getSigners();
+
+    parentPrice = ethers.parseEther("2223");
+    parentFeePercentage = BigInt(2310);
 
     zns = await deployZNS({
       deployer,
@@ -41,17 +48,28 @@ describe("ZNSFixedPricer", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    utils = new Utils(hre, zns);
-
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, ethers.parseEther("10000000000000"));
+
+    const fullConfig = {
+      distrConfig: {
+        pricerContract: await zns.fixedPricer.getAddress(),
+        priceConfig: encodePriceConfig({ price: parentPrice, feePercentage: parentFeePercentage }),
+        paymentType: PaymentType.DIRECT,
+        accessType: AccessType.OPEN,
+      },
+      paymentConfig: {
+        token: await zns.meowToken.getAddress(),
+        beneficiary: user.address,
+      },
+    };
 
     domainHash = await registrationWithSetup({
       zns,
       user,
       tokenOwner: user.address,
       domainLabel: "test",
-      fullConfig: await utils.getDefaultFullConfigFixed(user),
+      fullConfig
     });
   });
 

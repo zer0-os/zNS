@@ -9,7 +9,6 @@ import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {
-    DomainAlreadyExists, // TODO used?
     ZeroAddressPassed,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";

@@ -38,7 +38,13 @@ import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers
 import { checkBalance } from "./helpers/balances";
 import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
-import { DefaultRootRegistrationArgs, IDistributionConfig, IFixedPriceConfig, IRootDomainConfig, IZNSContractsLocal } from "./helpers/types";
+import {
+  DefaultRootRegistrationArgs,
+  IDistributionConfig,
+  IFixedPriceConfig,
+  IRootDomainConfig,
+  IZNSContractsLocal,
+} from "./helpers/types";
 import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import {
   IERC20,

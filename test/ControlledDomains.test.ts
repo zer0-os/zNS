@@ -29,7 +29,7 @@ const makeSetupFixture = async () => {
     config,
   });
 
-  const zns = campaign.state.contracts as IZNSContracts;
+  const zns = campaign.state.contracts ;
   const mongoAdapter = campaign.dbAdapter;
 
   // Give funds and approve

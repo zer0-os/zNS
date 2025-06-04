@@ -62,7 +62,7 @@ const createConfig = async (
     // Option variables are only used only if not specified specified
     const paymentTypeOption = Math.random() < 0.5 ? PaymentType.DIRECT : PaymentType.STAKE;
 
-    let accessTypeOption
+    let accessTypeOption;
     const accessTypeSwitch = Math.random();
 
     if (accessTypeSwitch < 0.3333) {
@@ -82,10 +82,15 @@ const createConfig = async (
 
     // Be sure we always set the contract and config to be the matching pair
     if (
-      (distrConfigToUse.pricerContract === zns.curvePricer.target && distrConfigToUse.priceConfig!.length !== DEFAULT_CURVE_PRICE_CONFIG_BYTES.length)
-      || (distrConfigToUse.pricerContract === zns.fixedPricer.target && distrConfigToUse.priceConfig!.length !== DEFAULT_FIXED_PRICER_CONFIG_BYTES.length)
+      (
+        distrConfigToUse.pricerContract === zns.curvePricer.target
+        && distrConfigToUse.priceConfig.length !== DEFAULT_CURVE_PRICE_CONFIG_BYTES.length
+      ) || (
+        distrConfigToUse.pricerContract === zns.fixedPricer.target
+        && distrConfigToUse.priceConfig.length !== DEFAULT_FIXED_PRICER_CONFIG_BYTES.length
+      )
     ) {
-        throw Error("Mismatch in distribution config: price config given does not match the price contract");
+      throw Error("Mismatch in distribution config: price config given does not match the price contract");
     }
   } else {
     distrConfigToUse = distrConfigEmpty;
@@ -147,9 +152,9 @@ export class Utils {
   async createConfigs (
     args : Array<CreateConfigArgs>
   ) : Promise<Array<IDomainConfigForTest>> {
-    let configs = [];
+    const configs = [];
 
-    for (let arg of args) {
+    for (const arg of args) {
       // For variance in length, if one is not specified
       // we create a random one of a random length
       if (!arg.domainLabel) {

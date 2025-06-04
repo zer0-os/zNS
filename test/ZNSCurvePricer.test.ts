@@ -5,7 +5,6 @@ import { ethers } from "ethers";
 import {
   deployZNS,
   getCurvePrice,
-  PaymentType,
   INVALID_PRECISION_MULTIPLIER_ERR,
   INVALID_LENGTH_ERR,
   INVALID_LABEL_ERR,
@@ -17,13 +16,11 @@ import {
   INVALID_CONFIG_LENGTH_ERR,
 } from "./helpers";
 import {
-  AccessType,
   DEFAULT_CURVE_PRICE_CONFIG,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
 } from "./helpers/constants";
-import { registrationWithSetup } from "./helpers/register-setup";
-import { IFullDistributionConfig, IZNSContractsLocal } from "./helpers/types";
+import { IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
 import { ICurvePriceConfig } from "../src/deploy/missions/types";
 

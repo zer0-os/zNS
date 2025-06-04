@@ -104,7 +104,7 @@ export const registerRootDomainBulk = async (
       domainAddress: config.zeroVaultAddress,
       tokenURI: `${tokenUri}${index}`,
       tokenOwner: signers[index],
-      distrConfig: distrConfig,
+      distrConfig,
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
         beneficiary: config.zeroVaultAddress,
