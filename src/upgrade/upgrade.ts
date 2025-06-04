@@ -36,7 +36,7 @@ export const upgradeZNS = async ({
       upgradedContracts[instanceName] = await upgradeZNSContract({
         contractName,
         contractAddress: address,
-        governor: governor as SignerWithAddress,
+        governor,
         logger,
       });
 

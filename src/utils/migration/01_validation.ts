@@ -6,6 +6,7 @@ import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
 import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 
+
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 

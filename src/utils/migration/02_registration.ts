@@ -1,12 +1,7 @@
 import * as hre from "hardhat";
-import { Domain } from "./types";
-import * as fs from "fs";
-import { deployZNS } from "../../../test/helpers";
-import { postMigrationValidation, registerDomainsBulk } from "./registration";
 import { getZNS } from "./zns-contract-data";
-import { ROOTS_FILENAME, SUBS_FILENAME } from "./constants";
-import { IZNSContracts } from "../../deploy/campaign/types";
 import { getDBAdapter } from "./database";
+import { IZNSContracts } from "../../../test/helpers/types";
 
 // We will need to adjust this file in the future no matter what after merging happens
 // ignore this file for now

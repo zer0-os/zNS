@@ -1,12 +1,9 @@
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { RegisteredDomains, Domain } from "./types";
-import { IZNSContracts } from "../../deploy/campaign/types";
-import { paymentConfigEmpty } from "../../../test/helpers";
-import { DOMAIN_REGISTERED_TOPIC_SEPOLIA } from "./constants";
-import { expect } from "chai";
 import { validateDomain } from "./validate";
 import { ZeroAddress } from "ethers";
+import { IZNSContracts } from "../../../test/helpers/types";
 
 // We will need to adjust this file in the future no matter what after merging happens
 // ignore this file for now
@@ -16,7 +13,7 @@ import { ZeroAddress } from "ethers";
 export const registerDomainsBulk = async (
   regAdmin : SignerWithAddress,
   domains : Array<Domain>, // imagine this is ALL domains
-  zns : IZNSContracts,
+  zns :   IZNSContracts,
   sliceSize : number,
   start : number,
 ) => {
@@ -80,7 +77,7 @@ export const registerBase = async ({
   regAdmin,
   domains,
 } : {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   regAdmin : SignerWithAddress;
   domains : Array<Domain>;
 }) => {
