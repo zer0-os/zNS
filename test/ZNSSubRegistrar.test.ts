@@ -353,7 +353,7 @@ describe("ZNSSubRegistrar", () => {
       expect(tokenURI).to.eq(subTokenURI);
     });
 
-    it("Can register a subdomain with characters [a-z0-9]", async () => {
+    it("Can register a subdomain with characters [a-z0-9-]", async () => {
       const alphaNumeric = "0x0dwidler0x0";
 
       // Add allowance
