@@ -12,15 +12,15 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    string label;
+    bool isStakePayment;
     address domainOwner;
     address tokenOwner;
+    address domainAddress;
     uint256 price;
     uint256 stakeFee;
-    address domainAddress;
-    string tokenURI;
-    bool isStakePayment;
     PaymentConfig paymentConfig;
+    string label;
+    string tokenURI;
 }
 
 /**
