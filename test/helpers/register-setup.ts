@@ -1,14 +1,15 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDistributionConfig,
-  IFixedPriceConfig,
-  IFullDistributionConfig, IPaymentConfig, IZNSContractsLocal,
+  IRegisterWithSetupArgs,
+  IPaymentConfig,
+  IZNSContractsLocal,
+  DefaultRootRegistrationArgs,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
 import { getDomainHashFromEvent } from "./events";
-import { distrConfigEmpty, fullDistrConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
+import { distrConfigEmpty, fullConfigEmpty, DEFAULT_TOKEN_URI, paymentConfigEmpty } from "./constants";
 import { getTokenContract } from "./tokens";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { expect } from "chai";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
@@ -24,16 +25,7 @@ export const defaultRootRegistration = async ({
   tokenURI = DEFAULT_TOKEN_URI,
   distrConfig = distrConfigEmpty,
   paymentConfig = paymentConfigEmpty,
-} : {
-  user : SignerWithAddress;
-  zns : IZNSContractsLocal | IZNSContracts;
-  domainName : string;
-  tokenOwner ?: string;
-  domainContent ?: string;
-  tokenURI ?: string;
-  distrConfig ?: IDistributionConfig;
-  paymentConfig ?: IPaymentConfig;
-}) : Promise<ContractTransactionReceipt | null> => {
+} : DefaultRootRegistrationArgs) : Promise<ContractTransactionReceipt | null> => {
   const supplyBefore = await zns.domainToken.totalSupply();
 
   const tx = await zns.rootRegistrar.connect(user).registerRootDomain({
@@ -63,26 +55,31 @@ export const fundApprove = async ({
   domainLabel : string;
 }) => {
   let pricerContract;
+  let priceConfig;
   parentHash = parentHash || ethers.ZeroHash;
 
   if (parentHash === ethers.ZeroHash) {
     (pricerContract = await zns.rootRegistrar.rootPricer());
   } else {
-    ({ pricerContract } = await zns.subRegistrar.distrConfigs(parentHash));
+    ({ pricerContract, priceConfig } = await zns.subRegistrar.distrConfigs(parentHash));
   }
+
 
   let price = BigInt(0);
   let parentFee = BigInt(0);
+
   if (pricerContract === await zns.curvePricer.getAddress()) {
-    [price, parentFee] = await zns.curvePricer.getPriceAndFee(parentHash, domainLabel, false);
+    [price, parentFee] = await zns.curvePricer.getPriceAndFee(priceConfig, domainLabel, false);
   } else if (pricerContract === await zns.fixedPricer.getAddress()) {
-    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(parentHash, domainLabel, false);
+    [price, parentFee] = await zns.fixedPricer.getPriceAndFee(priceConfig, domainLabel, false);
   }
 
   const { token: tokenAddress } = await zns.treasury.paymentConfigs(parentHash);
   const tokenContract = getTokenContract(tokenAddress, user);
 
-  const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + parentFee);
+
+  const rootPriceConfig = await zns.rootRegistrar.rootPriceConfig();
+  const protocolFee = await zns.curvePricer.getFeeForPrice(rootPriceConfig, price + parentFee);
   const toApprove = price + parentFee + protocolFee;
 
   const userBalance = await tokenContract.balanceOf(user.address);
@@ -146,19 +143,9 @@ export const registrationWithSetup = async ({
   tokenOwner,
   domainContent = user.address,
   tokenURI = DEFAULT_TOKEN_URI,
-  fullConfig = fullDistrConfigEmpty,
+  fullConfig = fullConfigEmpty,
   setConfigs = true,
-} : {
-  zns : IZNSContractsLocal | IZNSContracts;
-  user : SignerWithAddress;
-  parentHash ?: string;
-  domainLabel : string;
-  tokenOwner ?: string;
-  domainContent ?: string;
-  tokenURI ?: string;
-  fullConfig ?: IFullDistributionConfig;
-  setConfigs ?: boolean;
-}) => {
+} : IRegisterWithSetupArgs) => {
   const hasConfig = !!fullConfig;
   const distrConfig = hasConfig
     ? fullConfig.distrConfig
@@ -199,27 +186,22 @@ export const registrationWithSetup = async ({
   const domainHash = await getDomainHashFromEvent({
     zns,
     user,
-    tokenOwner,
   });
 
   if (!hasConfig) return domainHash;
 
   // set up prices
-  if (fullConfig.distrConfig.pricerContract === await zns.fixedPricer.getAddress() && setConfigs) {
-    await zns.fixedPricer.connect(user).setPriceConfig(
+  if (fullConfig.distrConfig.pricerContract === zns.fixedPricer.target && setConfigs) {
+    await zns.subRegistrar.connect(user).setPricerDataForDomain(
       domainHash,
-      {
-        ...fullConfig.priceConfig as IFixedPriceConfig,
-        isSet: true,
-      },
+      fullConfig.distrConfig.priceConfig,
+      zns.fixedPricer.target
     );
   } else if (fullConfig.distrConfig.pricerContract === await zns.curvePricer.getAddress() && setConfigs) {
-    await zns.curvePricer.connect(user).setPriceConfig(
+    await zns.subRegistrar.connect(user).setPricerDataForDomain(
       domainHash,
-      {
-        ...fullConfig.priceConfig as ICurvePriceConfig,
-        isSet: true,
-      },
+      fullConfig.distrConfig.priceConfig,
+      zns.curvePricer.target
     );
   }
 

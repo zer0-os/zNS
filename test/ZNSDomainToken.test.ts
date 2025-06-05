@@ -52,6 +52,7 @@ describe("ZNSDomainToken", () => {
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
     };
+
     zns = await deployZNS(
       deployParams
     );

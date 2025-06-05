@@ -7,10 +7,11 @@ import {
   getPriceObject,
   NO_BENEFICIARY_ERR,
   INITIALIZED_ERR,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   validateUpgrade,
   NOT_AUTHORIZED_ERR,
   getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
@@ -156,11 +157,13 @@ describe("ZNSTreasury", () => {
       const zeroVaultBalanceBeforeStake = await zns.meowToken.balanceOf(zeroVault.address);
 
       const expectedStake = await zns.curvePricer.getPrice(
-        ethers.ZeroHash,
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         domainName,
         false
       );
-      const fee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, expectedStake);
+
+      const rootConfig = await zns.rootRegistrar.rootPriceConfig();
+      const fee = await zns.curvePricer.getFeeForPrice(rootConfig, expectedStake);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,
@@ -204,7 +207,7 @@ describe("ZNSTreasury", () => {
         stakeFee: protocolFee,
       } = getPriceObject(
         domainName,
-        DEFAULT_PRICE_CONFIG
+        DEFAULT_CURVE_PRICE_CONFIG
       );
 
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
@@ -626,7 +629,7 @@ describe("ZNSTreasury", () => {
 
       const newLabel = "world";
       const newHash = hashSubdomainName(newLabel);
-      const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
+      const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_CURVE_PRICE_CONFIG);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,

@@ -6,5 +6,4 @@ export interface ICurvePriceConfig {
   baseLength : bigint;
   precisionMultiplier : bigint;
   feePercentage : bigint;
-  isSet : boolean;
 }

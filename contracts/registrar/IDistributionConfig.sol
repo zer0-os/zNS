@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 
 
 /**
@@ -24,7 +24,6 @@ import { IZNSPricer } from "../types/IZNSPricer.sol";
  *      + `STAKE`: The subdomains are paid for by staking an amount of token chosen by the owner to ZNSTreasury
 */
 interface IDistributionConfig {
-
     enum AccessType {
         LOCKED,
         OPEN,
@@ -36,9 +35,38 @@ interface IDistributionConfig {
         STAKE
     }
 
+    /**
+     * @notice Struct to define the entirety of the distribution of subdomains for a domain
+     *
+     * @param pricerContract The address of the contract used for pricing subdomains
+     * @param paymentType The type of payment system used for selling subdomains
+     * @param accessType The type of access that users have
+     */
     struct DistributionConfig {
         IZNSPricer pricerContract;
         PaymentType paymentType;
         AccessType accessType;
+        bytes priceConfig;
     }
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
+     */
+    event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
+
+    /**
+     * @notice Emitted when a new `DistributionConfig.accessType` is set for a domain.
+     */
+    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
+
+    /**
+     * @notice Emitted when a new full `DistributionConfig` is set for a domain at once.
+     */
+    event DistributionConfigSet(
+        bytes32 indexed domainHash,
+        IZNSPricer pricerContract,
+        bytes pricerConfig,
+        PaymentType paymentType,
+        AccessType accessType
+    );
 }

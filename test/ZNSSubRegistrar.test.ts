@@ -14,7 +14,7 @@ import {
   deployZNS,
   distrConfigEmpty,
   DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
-  fullDistrConfigEmpty,
+  FULL_DISTR_CONFIG_EMPTY,
   getPriceObject,
   getStakingOrProtocolFee,
   GOVERNOR_ROLE,
@@ -26,16 +26,19 @@ import {
   paymentConfigEmpty,
   PaymentType,
   DEFAULT_PRECISION,
-  DEFAULT_PRICE_CONFIG,
   validateUpgrade,
   AC_UNAUTHORIZED_ERR,
   INSUFFICIENT_BALANCE_ERC_ERR,
   INSUFFICIENT_ALLOWANCE_ERC_ERR,
   ZERO_ADDRESS_ERR,
-  PARENT_CONFIG_NOT_SET_ERR,
   DOMAIN_EXISTS_ERR,
   SENDER_NOT_APPROVED_ERR,
   ZERO_PARENTHASH_ERR,
+  encodePriceConfig,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_CURVE_PRICE_CONFIG,
+  decodePriceConfig,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
   PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -55,6 +58,7 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
+import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -100,7 +104,6 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
       // Give funds to users
@@ -127,18 +130,19 @@ describe("ZNSSubRegistrar", () => {
       rootHash = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "root",
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(rootPriceConfig),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
-          priceConfig: rootPriceConfig,
         },
       });
     });
@@ -191,21 +195,14 @@ describe("ZNSSubRegistrar", () => {
       const newRootHash = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "rootunsetfixed",
         setConfigs: false,
         fullConfig: {
-          distrConfig: {
-            accessType: AccessType.OPEN,
-            pricerContract: await zns.fixedPricer.getAddress(),
-            paymentType: PaymentType.DIRECT,
-          },
+          distrConfig: distrConfigEmpty,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
-          },
-          priceConfig: {
-            price: BigInt(0),
-            feePercentage: BigInt(0),
           },
         },
       });
@@ -224,8 +221,8 @@ describe("ZNSSubRegistrar", () => {
           },
         })
       ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        PARENT_CONFIG_NOT_SET_ERR
+        zns.subRegistrar,
+        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
     });
 
@@ -235,19 +232,15 @@ describe("ZNSSubRegistrar", () => {
       const newRootHash = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: lvl2SubOwner.address,
         domainLabel: "rootunsetcurve",
         setConfigs: false,
         fullConfig: {
-          distrConfig: {
-            accessType: AccessType.OPEN,
-            pricerContract: await zns.curvePricer.getAddress(),
-            paymentType: PaymentType.DIRECT,
-          },
+          distrConfig: distrConfigEmpty,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
-          priceConfig: DEFAULT_PRICE_CONFIG,
         },
       });
 
@@ -262,8 +255,8 @@ describe("ZNSSubRegistrar", () => {
           paymentConfig: paymentConfigEmpty,
         })
       ).to.be.revertedWithCustomError(
-        zns.curvePricer,
-        PARENT_CONFIG_NOT_SET_ERR
+        zns.subRegistrar,
+        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
       );
     });
 
@@ -328,22 +321,23 @@ describe("ZNSSubRegistrar", () => {
       const subHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "sub",
         tokenURI: subTokenURI,
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: ethers.parseEther("777.325"),
+              feePercentage: BigInt(0),
+            }),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
-          },
-          priceConfig: {
-            price: ethers.parseEther("777.325"),
-            feePercentage: BigInt(0),
           },
         },
       });
@@ -491,22 +485,23 @@ describe("ZNSSubRegistrar", () => {
       const subHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "a",
         tokenURI: subTokenURI,
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: ethers.parseEther("777.325"),
+              feePercentage: BigInt(0),
+            }),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
-          },
-          priceConfig: {
-            price: ethers.parseEther("777.325"),
-            feePercentage: BigInt(0),
           },
         },
       });
@@ -526,10 +521,11 @@ describe("ZNSSubRegistrar", () => {
       const subHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "a".repeat(100000),
         tokenURI: subTokenURI,
-        fullConfig: fullDistrConfigEmpty,
+        fullConfig: FULL_DISTR_CONFIG_EMPTY,
       });
 
       const tokenId = BigInt(subHash).toString();
@@ -599,15 +595,16 @@ describe("ZNSSubRegistrar", () => {
       const parentHash1 = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "parentnoconfigdirect",
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(rootPriceConfig),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: paymentConfigEmpty,
-          priceConfig: rootPriceConfig,
         },
       });
 
@@ -618,15 +615,16 @@ describe("ZNSSubRegistrar", () => {
       const parentHash2 = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "parentnoconfigstake",
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
           paymentConfig: paymentConfigEmpty,
-          priceConfig: DEFAULT_PRICE_CONFIG,
         },
       });
 
@@ -637,6 +635,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         registrationWithSetup({
           zns,
+          tokenOwner: lvl2SubOwner.address,
           user: lvl2SubOwner,
           parentHash: parentHash1,
           domainLabel: "sub1",
@@ -646,6 +645,7 @@ describe("ZNSSubRegistrar", () => {
       await expect(
         registrationWithSetup({
           zns,
+          tokenOwner: lvl2SubOwner.address,
           user: lvl2SubOwner,
           parentHash: parentHash2,
           domainLabel: "sub2",
@@ -653,14 +653,21 @@ describe("ZNSSubRegistrar", () => {
       ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
 
       // change stakeFee to 0
-      await zns.curvePricer.connect(rootOwner).setFeePercentage(
+      const currDistrConfig = await zns.subRegistrar.distrConfigs(parentHash2);
+      const decodedConfig = decodePriceConfig(currDistrConfig.priceConfig);
+
+      decodedConfig.feePercentage = BigInt(0);
+
+      await zns.subRegistrar.connect(rootOwner).setPricerDataForDomain(
         parentHash2,
-        BigInt(0)
+        encodePriceConfig(decodedConfig),
+        currDistrConfig.pricerContract
       );
 
       // try register a subdomain again
       const subHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl2SubOwner.address,
         user: lvl2SubOwner,
         parentHash: parentHash2,
         domainLabel: "sub2",
@@ -1012,6 +1019,11 @@ describe("ZNSSubRegistrar", () => {
     const fixedPrice = ethers.parseEther("1375.612");
     const fixedFeePercentage = BigInt(200);
 
+    const fixedPriceConfigBytes = encodePriceConfig({
+      price: fixedPrice,
+      feePercentage: fixedFeePercentage,
+    });
+
     before(async () => {
       [
         deployer,
@@ -1033,7 +1045,6 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -1061,6 +1072,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: fixedPriceConfigBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -1068,7 +1080,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: rootOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
@@ -1077,6 +1088,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.STAKE,
               accessType: AccessType.OPEN,
             },
@@ -1084,7 +1096,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl2SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -1093,6 +1104,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -1100,7 +1112,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
@@ -1109,6 +1120,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.STAKE,
               accessType: AccessType.OPEN,
             },
@@ -1116,8 +1128,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl4SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
-
           },
         },
         {
@@ -1126,6 +1136,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: fixedPriceConfigBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -1133,7 +1144,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl5SubOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
         {
@@ -1142,6 +1152,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.STAKE,
               accessType: AccessType.OPEN,
             },
@@ -1149,7 +1160,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl6SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -1171,13 +1181,15 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("should be able to register multiple domains under multiple levels for the same owner", async () => {
-      const configs = [
+      const configs : Array<IDomainConfigForTest> = [
         {
           user: multiOwner,
           domainLabel: "multiownerdomone",
+          tokenOwner: multiOwner.address,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: encodePriceConfig({ price: fixedPrice, feePercentage: BigInt(0) }),
               accessType: AccessType.OPEN,
               paymentType: PaymentType.DIRECT,
             },
@@ -1185,16 +1197,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomtwo",
           parentHash: regResults[0].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               accessType: AccessType.LOCKED,
               paymentType: PaymentType.STAKE,
             },
@@ -1202,16 +1215,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: zeroVault.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomthree",
           parentHash: regResults[1].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               accessType: AccessType.MINTLIST,
               paymentType: PaymentType.DIRECT,
             },
@@ -1219,16 +1233,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomfour",
           parentHash: regResults[2].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage }),
               accessType: AccessType.OPEN,
               paymentType: PaymentType.STAKE,
             },
@@ -1236,16 +1251,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: zeroVault.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomfive",
           parentHash: regResults[3].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               accessType: AccessType.OPEN,
               paymentType: PaymentType.DIRECT,
             },
@@ -1253,16 +1269,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomsix",
           parentHash: regResults[4].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               accessType: AccessType.OPEN,
               paymentType: PaymentType.STAKE,
             },
@@ -1270,16 +1287,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: zeroVault.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
         {
           user: multiOwner,
+          tokenOwner: multiOwner.address,
           domainLabel: "multiownerdomseven",
           parentHash: regResults[5].domainHash,
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage }),
               accessType: AccessType.OPEN,
               paymentType: PaymentType.DIRECT,
             },
@@ -1287,7 +1305,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: multiOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
       ];
@@ -1301,6 +1318,7 @@ describe("ZNSSubRegistrar", () => {
           acc : Promise<Array<string>>,
           {
             user,
+            tokenOwner,
             parentHash,
             domainLabel,
             fullConfig,
@@ -1310,6 +1328,7 @@ describe("ZNSSubRegistrar", () => {
           const newHash = await registrationWithSetup({
             zns,
             user,
+            tokenOwner,
             parentHash,
             domainLabel,
             fullConfig,
@@ -1494,7 +1513,7 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("should register a new 2 lvl path at lvl 3 of the existing path", async () => {
-      const newConfigs = [
+      const newConfigs : Array<IDomainConfigForTest> = [
         {
           user: branchLvl1Owner,
           domainLabel: "lvlthreenew",
@@ -1502,6 +1521,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: fixedPriceConfigBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -1509,7 +1529,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: branchLvl1Owner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
         {
@@ -1518,6 +1537,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.STAKE,
               accessType: AccessType.OPEN,
             },
@@ -1525,7 +1545,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: branchLvl2Owner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -1582,10 +1601,13 @@ describe("ZNSSubRegistrar", () => {
       expect(parentDistrConfig.pricerContract).to.eq(await zns.curvePricer.getAddress());
 
       // check a couple of fields from price config
-      const priceConfig = await zns.curvePricer.priceConfigs(lvl2Hash);
+      const distrConfig = await zns.subRegistrar.distrConfigs(lvl2Hash);
+      const priceConfig = decodePriceConfig(distrConfig.priceConfig);
+      const priceConfigFromDomain = decodePriceConfig(domainConfigs[1].fullConfig.distrConfig.priceConfig);
+
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      if ("maxPrice" in domainConfigs[1].fullConfig.priceConfig!) {
-        expect(priceConfig.maxPrice).to.eq(domainConfigs[1].fullConfig.priceConfig.maxPrice);
+      if ("maxPrice" in priceConfigFromDomain) {
+        expect((priceConfig as ICurvePriceConfig).maxPrice).to.eq(priceConfigFromDomain.maxPrice);
       }
 
       // make sure the child's stake is still there
@@ -1645,6 +1667,7 @@ describe("ZNSSubRegistrar", () => {
         const newHash = await registrationWithSetup({
           zns,
           user: lvl2SubOwner,
+          tokenOwner: lvl2SubOwner.address,
           parentHash,
           domainLabel: domainConfigs[1].domainLabel,
           fullConfig: domainConfigs[1].fullConfig,
@@ -1658,7 +1681,6 @@ describe("ZNSSubRegistrar", () => {
         lvl2Hash,
       );
 
-      // someone else is taking it
       const newConfig = [
         {
           user: branchLvl1Owner,
@@ -1667,6 +1689,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage }),
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -1674,7 +1697,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: branchLvl1Owner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
       ];
@@ -1721,6 +1743,7 @@ describe("ZNSSubRegistrar", () => {
       await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         parentHash: ethers.ZeroHash,
         domainLabel: domainConfigs[0].domainLabel,
         fullConfig: domainConfigs[0].fullConfig,
@@ -1760,6 +1783,7 @@ describe("ZNSSubRegistrar", () => {
         await registrationWithSetup({
           zns,
           user: lvl2SubOwner,
+          tokenOwner: lvl2SubOwner.address,
           parentHash: regResults[0].domainHash,
           domainLabel: domainConfigs[1].domainLabel,
           fullConfig: domainConfigs[1].fullConfig,
@@ -1775,11 +1799,16 @@ describe("ZNSSubRegistrar", () => {
       const newHash = await registrationWithSetup({
         zns,
         user: branchLvl1Owner,
+        tokenOwner: branchLvl1Owner.address,
         parentHash: regResults[0].domainHash,
         domainLabel: domainConfigs[1].domainLabel,
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: fixedPrice,
+              feePercentage: BigInt(0),
+            }),
             paymentType: PaymentType.DIRECT,
             accessType: AccessType.MINTLIST,
           },
@@ -1787,7 +1816,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: branchLvl1Owner.address,
           },
-          priceConfig: { price: fixedPrice, feePercentage: BigInt(0) },
         },
       });
 
@@ -1809,9 +1837,10 @@ describe("ZNSSubRegistrar", () => {
       const newChildHash = await registrationWithSetup({
         zns,
         user: branchLvl2Owner,
+        tokenOwner: branchLvl2Owner.address,
         parentHash: newHash,
         domainLabel: "newchildddd",
-        fullConfig: fullDistrConfigEmpty,
+        fullConfig: FULL_DISTR_CONFIG_EMPTY,
       });
 
       const childBalAfter = await zns.meowToken.balanceOf(branchLvl2Owner.address);
@@ -1865,7 +1894,6 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -1905,20 +1933,21 @@ describe("ZNSSubRegistrar", () => {
       rootHash = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "root",
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: ethers.parseEther("1375.612"),
+              feePercentage: BigInt(0),
+            }),
             paymentType: PaymentType.DIRECT,
+            accessType: AccessType.OPEN,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
-          },
-          priceConfig: {
-            price: ethers.parseEther("1375.612"),
-            feePercentage: BigInt(0),
           },
         },
       });
@@ -1939,11 +1968,13 @@ describe("ZNSSubRegistrar", () => {
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "fixedstake",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             paymentType: PaymentType.STAKE,
             accessType: AccessType.OPEN,
           },
@@ -1951,7 +1982,6 @@ describe("ZNSSubRegistrar", () => {
             token: await token5.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -1975,10 +2005,11 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        fullConfig: fullDistrConfigEmpty,
+        fullConfig: FULL_DISTR_CONFIG_EMPTY,
       });
 
       const parentBalAfter = await token5.balanceOf(lvl2SubOwner.address);
@@ -2016,6 +2047,7 @@ describe("ZNSSubRegistrar", () => {
     it("Does not charge the owner of a parent domain when they revoke a subdomain", async () => {
       const subdomainHash = await registrationWithSetup({
         zns,
+        tokenOwner: rootOwner.address,
         user: rootOwner,
         parentHash: rootHash,
         domainLabel: "subdomain",
@@ -2038,11 +2070,13 @@ describe("ZNSSubRegistrar", () => {
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "fixedstakenofee",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
@@ -2050,7 +2084,6 @@ describe("ZNSSubRegistrar", () => {
             token: await token18.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2072,6 +2105,7 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2115,19 +2149,20 @@ describe("ZNSSubRegistrar", () => {
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "fixeddirectnofee",
         fullConfig: {
           distrConfig: {
-            paymentType: PaymentType.DIRECT,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
+            paymentType: PaymentType.DIRECT,
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
             token: await token8.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2149,10 +2184,11 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        fullConfig: fullDistrConfigEmpty,
+        fullConfig: FULL_DISTR_CONFIG_EMPTY,
       });
 
       const parentBalAfter = await token8.balanceOf(lvl2SubOwner.address);
@@ -2193,25 +2229,25 @@ describe("ZNSSubRegistrar", () => {
           decimalValues.thirteen - DEFAULT_PRECISION
         ),
         feePercentage: BigInt(185),
-        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "asympstake",
         fullConfig: {
           distrConfig: {
-            paymentType: PaymentType.STAKE,
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
+            paymentType: PaymentType.STAKE,
             accessType: AccessType.OPEN,
           },
           paymentConfig: {
             token: await token13.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2238,10 +2274,11 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
-        fullConfig: fullDistrConfigEmpty,
+        fullConfig: FULL_DISTR_CONFIG_EMPTY,
       });
 
       const contractBalAfter = await token13.balanceOf(await zns.treasury.getAddress());
@@ -2280,17 +2317,18 @@ describe("ZNSSubRegistrar", () => {
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
         feePercentage: BigInt(0),
-        isSet: true,
       };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "curvestakenofee",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
@@ -2298,7 +2336,6 @@ describe("ZNSSubRegistrar", () => {
             token: await token2.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2320,6 +2357,7 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2356,18 +2394,20 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer - DirectPayment - no fee - 18 decimals", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         feePercentage: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "curvedirectnofee",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
@@ -2376,7 +2416,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2389,6 +2428,7 @@ describe("ZNSSubRegistrar", () => {
 
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2433,11 +2473,13 @@ describe("ZNSSubRegistrar", () => {
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "zeroprice",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
@@ -2445,7 +2487,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2457,6 +2498,7 @@ describe("ZNSSubRegistrar", () => {
       const label = "zeropricechild";
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2511,18 +2553,20 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + DirectPayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         maxPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "zeropricead",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
@@ -2530,7 +2574,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2542,6 +2585,7 @@ describe("ZNSSubRegistrar", () => {
       const label = "zeropricechildad";
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2599,18 +2643,20 @@ describe("ZNSSubRegistrar", () => {
 
     it("CurvePricer + StakePayment with price = 0 - should NOT perform any transfers", async () => {
       const priceConfig = {
-        ...DEFAULT_PRICE_CONFIG,
+        ...DEFAULT_CURVE_PRICE_CONFIG,
         maxPrice: BigInt(0),
       };
 
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "zeropriceas",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
@@ -2618,7 +2664,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2630,6 +2675,7 @@ describe("ZNSSubRegistrar", () => {
       const label = "zeropricechildas";
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2693,11 +2739,13 @@ describe("ZNSSubRegistrar", () => {
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "zeropricefs",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfig),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
@@ -2705,7 +2753,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig,
         },
       });
 
@@ -2717,6 +2764,7 @@ describe("ZNSSubRegistrar", () => {
       const label = "zeropricechildfs";
       const childHash = await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2771,25 +2819,26 @@ describe("ZNSSubRegistrar", () => {
 
     it("Setting price config in incorrect decimals triggers incorrect pricing", async () => {
       // we will use token with 5 decimals, but set prices in 18 decimals
-      const priceConfigIncorrect = {
+      const priceConfigIncorrect : ICurvePriceConfig = {
         maxPrice: ethers.parseUnits("234.46", decimalValues.eighteen),
         curveMultiplier: BigInt(1000),
         maxLength: BigInt(20),
         baseLength: BigInt(2),
         precisionMultiplier: BigInt(1),
         feePercentage: BigInt(111),
-        isSet: true,
       };
 
       // see `token` in paymentConfig
       const subdomainParentHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: rootHash,
         domainLabel: "incorrectparent",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
+            priceConfig: encodePriceConfig(priceConfigIncorrect),
             accessType: AccessType.OPEN,
             paymentType: PaymentType.STAKE,
           },
@@ -2798,7 +2847,6 @@ describe("ZNSSubRegistrar", () => {
             token: await token5.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
-          priceConfig: priceConfigIncorrect,
         },
       });
 
@@ -2809,30 +2857,43 @@ describe("ZNSSubRegistrar", () => {
         maxPrice: ethers.parseUnits("234.46", decimalValues.five),
       };
 
+      // For protocol fee calculations
+      const rootPriceConfig = await zns.rootRegistrar.rootPriceConfig();
+
       // calc prices off-chain
       const {
         expectedPrice: priceIncorrect,
         stakeFee: stakeFeeIncorrect,
       } = getPriceObject(label, priceConfigIncorrect);
-      const protocolFeeIncorrect = getStakingOrProtocolFee(priceIncorrect + stakeFeeIncorrect);
+      const protocolFeeIncorrect = getStakingOrProtocolFee(
+        priceIncorrect + stakeFeeIncorrect,
+        decodePriceConfig(rootPriceConfig).feePercentage
+      );
 
       const {
         expectedPrice: priceCorrect,
         stakeFee: stakeFeeCorrect,
       } = getPriceObject(label, priceConfigCorrect);
-      const protocolFeeCorrect = getStakingOrProtocolFee(priceCorrect + stakeFeeCorrect);
+      const protocolFeeCorrect = getStakingOrProtocolFee(
+        priceCorrect + stakeFeeCorrect,
+        decodePriceConfig(rootPriceConfig).feePercentage
+      );
 
-      // get prices from SC
+      const distrConfig = await zns.subRegistrar.distrConfigs(subdomainParentHash);
+
+      expect(distrConfig.priceConfig).to.eq(encodePriceConfig(priceConfigIncorrect));
+
       const {
         price: priceFromSC,
         stakeFee: feeFromSC,
       } = await zns.curvePricer.getPriceAndFee(
-        subdomainParentHash,
+        distrConfig.priceConfig,
         label,
         true
       );
+
       const protocolFeeFromSC = await zns.curvePricer.getFeeForPrice(
-        ethers.ZeroHash,
+        rootPriceConfig,
         priceFromSC + feeFromSC
       );
 
@@ -2849,15 +2910,13 @@ describe("ZNSSubRegistrar", () => {
         BigInt(10) ** decimalValues.eighteen
       );
 
-      // let's see how much a user actually paid
-
       // we sending him 10^20 tokens
       await token5.connect(deployer).transfer(
         lvl3SubOwner.address,
         ethers.parseUnits("10000000000000000000", decimalValues.five)
       );
 
-      // client tx approving the correct price will fail
+      // client tx approving the correct price will fail registration
       await token5.connect(lvl3SubOwner).approve(
         await zns.treasury.getAddress(),
         priceCorrect + stakeFeeCorrect + protocolFeeCorrect
@@ -2883,6 +2942,7 @@ describe("ZNSSubRegistrar", () => {
 
       await registrationWithSetup({
         zns,
+        tokenOwner: lvl3SubOwner.address,
         user: lvl3SubOwner,
         parentHash: subdomainParentHash,
         domainLabel: label,
@@ -2898,10 +2958,12 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Registration access", () => {
-    let fixedPrice : bigint;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
+    let fixedPrice : bigint;
     let fixedFeePercentage : bigint;
+
+    let configBytes : string;
 
     before(async () => {
       [
@@ -2922,12 +2984,13 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
       fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
+
+      configBytes = encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage });
 
       await Promise.all(
         [
@@ -2950,6 +3013,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: configBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -2957,7 +3021,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: rootOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
         {
@@ -2966,6 +3029,7 @@ describe("ZNSSubRegistrar", () => {
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: configBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -2973,7 +3037,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl2SubOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
       ];
@@ -2995,6 +3058,7 @@ describe("ZNSSubRegistrar", () => {
       const hash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         parentHash: regResults[1].domainHash,
         domainLabel: "ownercheck",
       });
@@ -3093,11 +3157,12 @@ describe("ZNSSubRegistrar", () => {
         domainConfigs: [
           {
             user: lvl3SubOwner,
+            tokenOwner: lvl3SubOwner.address,
             domainLabel: "leveltwo",
             parentHash: regResults[1].domainHash,
             // when we do not specify accessType or config, it defaults to LOCKED
             // we can also set it as 0 specifically if setting a config
-            fullConfig: fullDistrConfigEmpty,
+            fullConfig: FULL_DISTR_CONFIG_EMPTY,
           },
         ],
       });
@@ -3127,7 +3192,7 @@ describe("ZNSSubRegistrar", () => {
         expectedPrice,
       } = getPriceObject(
         domainLabel,
-        domainConfigs[1].fullConfig.priceConfig
+        decodePriceConfig(domainConfigs[1].fullConfig.distrConfig.priceConfig)
       );
 
       const protocolFee = getStakingOrProtocolFee(expectedPrice);
@@ -3168,11 +3233,16 @@ describe("ZNSSubRegistrar", () => {
       const parentHash = await registrationWithSetup({
         zns,
         user: lvl3SubOwner,
+        tokenOwner: lvl3SubOwner.address,
         parentHash: regResults[1].domainHash,
         domainLabel: "mintlistparent",
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: fixedPrice,
+              feePercentage: fixedFeePercentage,
+            }),
             paymentType: PaymentType.DIRECT,
             accessType: AccessType.MINTLIST,
           },
@@ -3180,7 +3250,6 @@ describe("ZNSSubRegistrar", () => {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl3SubOwner.address,
           },
-          priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
         },
       });
 
@@ -3195,6 +3264,7 @@ describe("ZNSSubRegistrar", () => {
       const hash = await registrationWithSetup({
         zns,
         user: lvl4SubOwner,
+        tokenOwner: lvl4SubOwner.address,
         parentHash,
         domainLabel: "mintlisted",
       });
@@ -3364,8 +3434,9 @@ describe("ZNSSubRegistrar", () => {
         stakeFee,
       } = getPriceObject(
         label,
-        domainConfigs[1].fullConfig.priceConfig
+        decodePriceConfig(domainConfigs[1].fullConfig.distrConfig.priceConfig)
       );
+
       const paymentToParent = domainConfigs[1].fullConfig.distrConfig.paymentType === PaymentType.STAKE
         ? expectedPrice + stakeFee
         : expectedPrice;
@@ -3405,9 +3476,10 @@ describe("ZNSSubRegistrar", () => {
       const parentHash = await registrationWithSetup({
         zns,
         user: lvl3SubOwner,
+        tokenOwner: lvl3SubOwner.address,
         parentHash: regResults[1].domainHash,
         domainLabel: "parentnoconfig",
-        fullConfig: fullDistrConfigEmpty, // accessType is 0 when supplying empty config
+        fullConfig: FULL_DISTR_CONFIG_EMPTY, // accessType is 0 when supplying empty config
       });
 
       await expect(
@@ -3428,10 +3500,12 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Existing subdomain ops", () => {
-    let fixedPrice : bigint;
     let domainConfigs : Array<IDomainConfigForTest>;
     let regResults : Array<IPathRegResult>;
     let fixedFeePercentage : bigint;
+    let fixedPrice : bigint;
+
+    let priceConfigBytes : string;
 
     before(async () => {
       [
@@ -3452,12 +3526,13 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
       fixedPrice = ethers.parseEther("397");
       fixedFeePercentage = BigInt(200);
+
+      priceConfigBytes = encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage });
 
       await Promise.all(
         [
@@ -3476,10 +3551,12 @@ describe("ZNSSubRegistrar", () => {
       domainConfigs = [
         {
           user: rootOwner,
+          tokenOwner: rootOwner.address,
           domainLabel: "root",
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: encodePriceConfig({ price: fixedPrice, feePercentage: fixedFeePercentage }),
               paymentType: PaymentType.STAKE,
               accessType: AccessType.OPEN,
             },
@@ -3487,16 +3564,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: rootOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
         {
           user: lvl2SubOwner,
+          tokenOwner: lvl2SubOwner.address,
           domainLabel: "leveltwo",
           tokenURI: "http://example.com/leveltwo",
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.fixedPricer.getAddress(),
+              priceConfig: priceConfigBytes,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -3504,16 +3582,17 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl2SubOwner.address,
             },
-            priceConfig: { price: fixedPrice, feePercentage: fixedFeePercentage },
           },
         },
         {
           user: lvl3SubOwner,
+          tokenOwner: lvl3SubOwner.address,
           domainLabel: "lvlthree",
           tokenURI: "http://example.com/lvlthree",
           fullConfig: {
             distrConfig: {
               pricerContract: await zns.curvePricer.getAddress(),
+              priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
               paymentType: PaymentType.DIRECT,
               accessType: AccessType.OPEN,
             },
@@ -3521,7 +3600,6 @@ describe("ZNSSubRegistrar", () => {
               token: await zns.meowToken.getAddress(),
               beneficiary: lvl3SubOwner.address,
             },
-            priceConfig: DEFAULT_PRICE_CONFIG,
           },
         },
       ];
@@ -3624,6 +3702,7 @@ describe("ZNSSubRegistrar", () => {
 
         const newConfig = {
           pricerContract: await zns.fixedPricer.getAddress(),
+          priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
           paymentType: PaymentType.STAKE,
           accessType: AccessType.MINTLIST,
         };
@@ -3668,15 +3747,18 @@ describe("ZNSSubRegistrar", () => {
       it("should NOT allow to set distribution config for a non-authorized account", async () => {
         const domainHash = regResults[1].domainHash;
 
-
         const newConfig = {
           pricerContract: await zns.curvePricer.getAddress(),
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           paymentType: PaymentType.STAKE,
           accessType: AccessType.MINTLIST,
         };
 
         await expect(
-          zns.subRegistrar.connect(deployer).setDistributionConfigForDomain(domainHash, newConfig)
+          zns.subRegistrar.connect(deployer).setDistributionConfigForDomain(
+            domainHash,
+            newConfig
+          )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           NOT_AUTHORIZED_ERR
@@ -3688,12 +3770,16 @@ describe("ZNSSubRegistrar", () => {
 
         const newConfig = {
           pricerContract: ethers.ZeroAddress,
+          priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
           paymentType: PaymentType.STAKE,
           accessType: AccessType.MINTLIST,
         };
 
         await expect(
-          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(domainHash, newConfig)
+          zns.subRegistrar.connect(lvl3SubOwner).setDistributionConfigForDomain(
+            domainHash,
+            newConfig
+          )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           ZERO_ADDRESS_ERR
@@ -3701,15 +3787,16 @@ describe("ZNSSubRegistrar", () => {
       });
     });
 
-    describe("#setPricerContractForDomain()", () => {
+    describe("#setPricerDataForDomain()", () => {
       it("should re-set pricer contract for an existing subdomain", async () => {
         const domainHash = regResults[2].domainHash;
 
         const pricerContractBefore = await zns.subRegistrar.distrConfigs(domainHash);
         expect(pricerContractBefore.pricerContract).to.eq(domainConfigs[2].fullConfig.distrConfig.pricerContract);
 
-        await zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
+        await zns.subRegistrar.connect(lvl3SubOwner).setPricerDataForDomain(
           domainHash,
+          DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           await zns.curvePricer.getAddress(),
         );
 
@@ -3717,8 +3804,9 @@ describe("ZNSSubRegistrar", () => {
         expect(pricerContractAfter.pricerContract).to.eq(await zns.curvePricer.getAddress());
 
         // reset it back
-        await zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(
+        await zns.subRegistrar.connect(lvl3SubOwner).setPricerDataForDomain(
           domainHash,
+          domainConfigs[2].fullConfig.distrConfig.priceConfig,
           domainConfigs[2].fullConfig.distrConfig.pricerContract,
         );
       });
@@ -3727,8 +3815,9 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl2SubOwner).setPricerContractForDomain(
+          zns.subRegistrar.connect(lvl2SubOwner).setPricerDataForDomain(
             domainHash,
+            DEFAULT_CURVE_PRICE_CONFIG_BYTES,
             await zns.curvePricer.getAddress()
           )
         ).to.be.revertedWithCustomError(
@@ -3741,7 +3830,11 @@ describe("ZNSSubRegistrar", () => {
         const domainHash = regResults[2].domainHash;
 
         await expect(
-          zns.subRegistrar.connect(lvl3SubOwner).setPricerContractForDomain(domainHash, ethers.ZeroAddress)
+          zns.subRegistrar.connect(lvl3SubOwner).setPricerDataForDomain(
+            domainHash,
+            DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+            ethers.ZeroAddress
+          )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           ZERO_ADDRESS_ERR
@@ -3984,7 +4077,6 @@ describe("ZNSSubRegistrar", () => {
         deployer,
         governorAddresses: [deployer.address, governor.address],
         adminAddresses: [admin.address],
-        priceConfig: DEFAULT_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
       });
 
@@ -4003,20 +4095,21 @@ describe("ZNSSubRegistrar", () => {
       rootHash = await registrationWithSetup({
         zns,
         user: rootOwner,
+        tokenOwner: rootOwner.address,
         domainLabel: "root",
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: fixedPrice,
+              feePercentage: BigInt(0),
+            }),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
-          },
-          priceConfig: {
-            price: fixedPrice,
-            feePercentage: BigInt(0),
           },
         },
       });
@@ -4080,17 +4173,18 @@ describe("ZNSSubRegistrar", () => {
       const domainHash = await registrationWithSetup({
         zns,
         user: lvl2SubOwner,
+        tokenOwner: lvl2SubOwner.address,
         domainLabel,
         parentHash: rootHash,
         fullConfig: {
           distrConfig: {
-            accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig({
+              price: fixedPrice,
+              feePercentage: BigInt(0),
+            }),
+            accessType: AccessType.OPEN,
             paymentType: PaymentType.DIRECT,
-          },
-          priceConfig: {
-            price: fixedPrice,
-            feePercentage: BigInt(0),
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -4101,6 +4195,8 @@ describe("ZNSSubRegistrar", () => {
 
       await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
 
+      const rootDistrConfig = await zns.subRegistrar.distrConfigs(rootHash);
+
       const contractCalls = [
         zns.subRegistrar.getAccessController(),
         zns.subRegistrar.registry(),
@@ -4109,7 +4205,7 @@ describe("ZNSSubRegistrar", () => {
         zns.treasury.stakedForDomain(domainHash),
         zns.domainToken.name(),
         zns.domainToken.symbol(),
-        zns.fixedPricer.getPrice(rootHash, domainLabel, false),
+        zns.fixedPricer.getPrice(rootDistrConfig.priceConfig, domainLabel, false),
       ];
 
       await validateUpgrade(deployer, zns.subRegistrar, registrar, registrarFactory, contractCalls);
@@ -4142,6 +4238,7 @@ describe("ZNSSubRegistrar", () => {
       const subConfigToSet = {
         accessType: AccessType.MINTLIST,
         pricerContract: await zns.curvePricer.getAddress(),
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         paymentType: PaymentType.STAKE,
         newAddress: lvl2SubOwner.address,
         newUint: BigInt(1912171236),
@@ -4166,12 +4263,14 @@ describe("ZNSSubRegistrar", () => {
       const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);
       expect(rootConfigAfter.accessType).to.eq(rootConfigBefore.accessType);
       expect(rootConfigAfter.pricerContract).to.eq(rootConfigBefore.pricerContract);
+      expect(rootConfigAfter.priceConfig).to.eq(rootConfigBefore.priceConfig);
       expect(rootConfigAfter.paymentType).to.eq(rootConfigBefore.paymentType);
-      expect(rootConfigAfter.length).to.eq(3);
+      expect(rootConfigAfter.length).to.eq(4);
 
       const updatedStructConfig = {
         accessType: AccessType.OPEN,
         pricerContract: await zns.fixedPricer.getAddress(),
+        priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
         paymentType: PaymentType.DIRECT,
         newAddress: lvl2SubOwner.address,
         newUint: BigInt(123),

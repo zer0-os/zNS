@@ -46,7 +46,6 @@ Emitted when the `PriceConfig.feePercentage` is set in state for a specific `dom
 struct PriceConfig {
   uint256 price;
   uint256 feePercentage;
-  bool isSet;
 }
 ```
 

@@ -8,26 +8,15 @@ pragma solidity 0.8.26;
  */
 interface IZNSPricer {
     /**
-     * @notice Reverted when someone is trying to buy a subdomain under a parent that is not set up for distribution.
-     * Specifically it's prices for subdomains.
+     * @notice Emitted when the given price config is not the expected length
      */
-    error ParentPriceConfigNotSet(bytes32 parentHash);
+    error IncorrectPriceConfigLength();
 
     /**
      * @notice Reverted when domain owner is trying to set it's stake fee percentage
      * higher than 100% (uint256 "10,000").
      */
     error FeePercentageValueTooLarge(uint256 feePercentage, uint256 maximum);
-
-    /**
-     * @notice Reverted when `maxLength` smaller than `baseLength`.
-     */
-    error MaxLengthSmallerThanBaseLength(bytes32 domainHash);
-
-    /**
-     * @notice Reverted when `curveMultiplier` AND `baseLength` are 0.
-     */
-    error DivisionByZero(bytes32 domainHash);
 
     /**
      * @dev `parentHash` param is here to allow pricer contracts
@@ -41,10 +30,10 @@ interface IZNSPricer {
      * possible to register.
      */
     function getPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
-    ) external view returns (uint256);
+    ) external pure returns (uint256);
 
     /**
      * @dev Fees are only supported for PaymentType.STAKE !
@@ -52,17 +41,25 @@ interface IZNSPricer {
      *  Instead `getPrice()` will be called.
      */
     function getPriceAndFee(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         string calldata label,
         bool skipValidityCheck
-    ) external view returns (uint256 price, uint256 fee);
+    ) external pure returns (uint256 price, uint256 fee);
 
     /**
      * @notice Returns the fee for a given price.
      * @dev Fees are only supported for PaymentType.STAKE !
      */
     function getFeeForPrice(
-        bytes32 parentHash,
+        bytes memory parentPriceConfig,
         uint256 price
-    ) external view returns (uint256);
+    ) external pure returns (uint256);
+
+    /**
+     * @notice Validate a given price config
+     * @param priceConfig The price config to validate
+     */
+    function validatePriceConfig(
+        bytes memory priceConfig
+    ) external pure;
 }
