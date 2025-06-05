@@ -35,6 +35,7 @@ import {
   DOMAIN_EXISTS_ERR,
   SENDER_NOT_APPROVED_ERR,
   ZERO_PARENTHASH_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
 import { ethers } from "hardhat";
@@ -3859,25 +3860,37 @@ describe("ZNSSubRegistrar", () => {
       it("should revert when a non-ADMIN tries to set AccessController", async () => {
         await expect(
           zns.subRegistrar.connect(lvl2SubOwner).setAccessController(zns.accessController.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          AC_UNAUTHORIZED_ERR
+        ).withArgs(lvl2SubOwner.address, ADMIN_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
         await expect(
           zns.subRegistrar.connect(deployer).setAccessController(lvl2SubOwner.address)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(lvl2SubOwner.address);
       });
 
       it("should revert when setting an AccessController as another non-AC contract address", async () => {
         await expect(
           zns.subRegistrar.connect(deployer).setAccessController(zns.subRegistrar.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(zns.subRegistrar.target);
       });
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
           zns.subRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.subRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(ethers.ZeroAddress);
       });
     });
   });
@@ -3969,7 +3982,12 @@ describe("ZNSSubRegistrar", () => {
       await newRegistrar.waitForDeployment();
 
       // Confirm the account is not a governor
-      await expect(zns.accessController.checkGovernor(lvl2SubOwner.address)).to.be.reverted;
+      await expect(
+        zns.accessController.checkGovernor(lvl2SubOwner.address)
+      ).to.be.revertedWithCustomError(
+        zns.accessController,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
 
       const tx = zns.subRegistrar.connect(lvl2SubOwner).upgradeToAndCall(
         await newRegistrar.getAddress(),

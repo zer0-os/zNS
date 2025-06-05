@@ -3,10 +3,9 @@ pragma solidity 0.8.26;
 
 
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZeroAddressPassed, WrongAccessControllerAddress, NotAuthorized } from "../utils/CommonErrors.sol";
+import { ZeroAddressPassed, WrongAccessControllerAddress } from "../utils/CommonErrors.sol";
 import { ERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { ZNSRoles } from "./ZNSRoles.sol";
 
 
 /**
@@ -73,16 +72,20 @@ abstract contract AAccessControlled {
         // Validate if `msg.sender` has the admin role in the *current* contract
         if (address(accessController) != address(0)) {
             if (!IAccessControl(accessController).hasRole(accessController.ADMIN_ROLE(), msg.sender)) {
-                revert NotAuthorized(msg.sender);
+                revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, accessController.ADMIN_ROLE());
             }
         }
 
         // Similarly, validate admin alignment in the *new* contract
-        try IZNSAccessController(_accessController).ADMIN_ROLE() returns (bytes32 adminRole) {
-            if (!IAccessControl(_accessController).hasRole(adminRole, msg.sender)) {
-                revert NotAuthorized(msg.sender);
+        if (_accessController.code.length != 0) {
+            try IZNSAccessController(_accessController).ADMIN_ROLE() returns (bytes32 adminRole) {
+                if (!IAccessControl(_accessController).hasRole(adminRole, msg.sender)) {
+                    revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, adminRole);
+                }
+            } catch {
+                revert WrongAccessControllerAddress(_accessController);
             }
-        } catch {
+        } else {
             revert WrongAccessControllerAddress(_accessController);
         }
 

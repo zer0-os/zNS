@@ -21,8 +21,11 @@ import {
   DEFAULT_PROTOCOL_FEE_PERCENT,
   NOT_AUTHORIZED_ERR,
   INVALID_LABEL_ERR,
-  paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
-  AC_NOTAUTHORIZED_ERR,
+  paymentConfigEmpty,
+  AC_UNAUTHORIZED_ERR,
+  INSUFFICIENT_BALANCE_ERC_ERR,
+  ZERO_ADDRESS_ERR,
+  DOMAIN_EXISTS_ERR,
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { IDistributionConfig, IRootdomainConfig, IZNSContractsLocal } from "./helpers/types";
@@ -379,8 +382,8 @@ describe("ZNSRootRegistrar", () => {
       }
     );
 
-    await expect(tx).to.be.revertedWithCustomError(zns.registry, AC_NOTAUTHORIZED_ERR)
-      .withArgs(user.address);
+    await expect(tx).to.be.revertedWithCustomError(zns.registry, AC_UNAUTHORIZED_ERR)
+      .withArgs(user.address, ADMIN_ROLE);
   });
 
   it("Should NOT initialize twice", async () => {
@@ -1434,25 +1437,37 @@ describe("ZNSRootRegistrar", () => {
       it("should revert when a non-ADMIN tries to set AccessController", async () => {
         await expect(
           zns.rootRegistrar.connect(user).setAccessController(zns.accessController.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          AC_UNAUTHORIZED_ERR
+        ).withArgs(user.address, ADMIN_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
         await expect(
           zns.rootRegistrar.connect(deployer).setAccessController(user.address)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(user.address);
       });
 
       it("should revert when setting an AccessController as another non-AC contract address", async () => {
         await expect(
           zns.rootRegistrar.connect(deployer).setAccessController(zns.rootRegistrar.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(zns.rootRegistrar.target);
       });
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
           zns.rootRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          zns.rootRegistrar,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(ethers.ZeroAddress);
       });
     });
   });

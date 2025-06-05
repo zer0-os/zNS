@@ -14,8 +14,11 @@ import {
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
-  validateUpgrade, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, NOT_AUTHORIZED_ERR,
-  AC_NOTAUTHORIZED_ERR,
+  validateUpgrade,
+  INITIALIZED_ERR,
+  AC_UNAUTHORIZED_ERR,
+  NOT_AUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
@@ -113,8 +116,8 @@ describe("ZNSAddressResolver", () => {
   it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
     await expect(
       zns.addressResolver.connect(operator).setAccessController(operator.address)
-    ).to.be.revertedWithCustomError(zns.addressResolver, AC_NOTAUTHORIZED_ERR)
-      .withArgs(operator.address);
+    ).to.be.revertedWithCustomError(zns.addressResolver, AC_UNAUTHORIZED_ERR)
+      .withArgs(operator.address, ADMIN_ROLE);
   });
 
   it("Should not allow non-owner address to setAddress", async () => {
@@ -242,25 +245,29 @@ describe("ZNSAddressResolver", () => {
     it("should revert when a non-ADMIN tries to set AccessController", async () => {
       await expect(
         zns.addressResolver.connect(user).setAccessController(zns.accessController.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(zns.addressResolver, AC_UNAUTHORIZED_ERR)
+        .withArgs(user.address, ADMIN_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
       await expect(
         zns.addressResolver.connect(deployer).setAccessController(user.address)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(zns.addressResolver, AC_WRONGADDRESS_ERR)
+        .withArgs(user.address);
     });
 
     it("should revert when setting an AccessController as another non-AC contract address", async () => {
       await expect(
         zns.addressResolver.connect(deployer).setAccessController(zns.addressResolver.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(zns.addressResolver, AC_WRONGADDRESS_ERR)
+        .withArgs(zns.addressResolver.target);
     });
 
     it("should revert when setting a zero address as AccessController", async () => {
       await expect(
         zns.addressResolver.connect(deployer).setAccessController(ethers.ZeroAddress)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(zns.addressResolver, AC_WRONGADDRESS_ERR)
+        .withArgs(ethers.ZeroAddress);
     });
   });
 

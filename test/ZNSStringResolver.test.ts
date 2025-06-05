@@ -1,8 +1,9 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
-  AC_NOTAUTHORIZED_ERR,
   AC_UNAUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
+  ADMIN_ROLE,
   GOVERNOR_ROLE,
   hashDomainLabel,
   INITIALIZED_ERR, NOT_AUTHORIZED_ERR,
@@ -160,7 +161,7 @@ describe("ZNSStringResolver", () => {
         stringResolver.connect(user).setAccessController(user.address)
       ).to.be.revertedWithCustomError(
         stringResolver,
-        AC_NOTAUTHORIZED_ERR
+        AC_UNAUTHORIZED_ERR
       );
     });
   });
@@ -381,25 +382,37 @@ describe("ZNSStringResolver", () => {
       it("should revert when a non-ADMIN tries to set AccessController", async () => {
         await expect(
           stringResolver.connect(user).setAccessController(accessController.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_UNAUTHORIZED_ERR
+        ).withArgs(user.address, ADMIN_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
         await expect(
           stringResolver.connect(deployer).setAccessController(user.address)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(user.address);
       });
 
       it("should revert when setting an AccessController as another non-AC contract address", async () => {
         await expect(
           stringResolver.connect(deployer).setAccessController(stringResolver.target)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(stringResolver.target);
       });
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
           stringResolver.connect(admin).setAccessController(ethers.ZeroAddress)
-        ).to.be.reverted;
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(ethers.ZeroAddress);
       });
     });
 

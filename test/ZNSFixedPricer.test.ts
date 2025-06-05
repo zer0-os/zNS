@@ -8,8 +8,10 @@ import {
   PaymentType,
   DEFAULT_PERCENTAGE_BASIS,
   DEFAULT_PRICE_CONFIG,
-  validateUpgrade, AccessType, AC_UNAUTHORIZED_ERR, FEE_TOO_LARGE_ERR,
-  AC_NOTAUTHORIZED_ERR,
+  validateUpgrade,
+  AccessType,
+  AC_UNAUTHORIZED_ERR,
+  FEE_TOO_LARGE_ERR,
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import * as hre from "hardhat";
@@ -139,8 +141,8 @@ describe("ZNSFixedPricer", () => {
       }),
     ).to.be.revertedWithCustomError(
       zns.fixedPricer,
-      AC_NOTAUTHORIZED_ERR
-    ).withArgs(random.address);
+      AC_UNAUTHORIZED_ERR
+    ).withArgs(random.address, ADMIN_ROLE);
   });
 
   it("#setPrice() should work correctly and emit #PriceSet event", async () => {
@@ -322,25 +324,37 @@ describe("ZNSFixedPricer", () => {
     it("should revert when a non-ADMIN tries to set AccessController", async () => {
       await expect(
         zns.fixedPricer.connect(user).setAccessController(zns.accessController.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(user.address, ADMIN_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
       await expect(
         zns.fixedPricer.connect(deployer).setAccessController(user.address)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(user.address);
     });
 
     it("should revert when setting an AccessController as another non-AC contract address", async () => {
       await expect(
         zns.fixedPricer.connect(deployer).setAccessController(zns.fixedPricer.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(zns.fixedPricer.target);
     });
 
     it("should revert when setting a zero address as AccessController", async () => {
       await expect(
         zns.fixedPricer.connect(admin).setAccessController(ethers.ZeroAddress)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.fixedPricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(ethers.ZeroAddress);
     });
 
     it("should revert with `WrongAccessControllerAddress(CONTRACT.target)`", async () => {
@@ -425,7 +439,12 @@ describe("ZNSFixedPricer", () => {
       await newFixedPricer.waitForDeployment();
 
       // Confirm the account is not a governor
-      await expect(zns.accessController.checkGovernor(random.address)).to.be.reverted;
+      await expect(
+        zns.accessController.checkGovernor(random.address)
+      ).to.be.revertedWithCustomError(
+        zns.accessController,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(random.address, GOVERNOR_ROLE);
 
       const tx = zns.fixedPricer.connect(random).upgradeToAndCall(
         await newFixedPricer.getAddress(),

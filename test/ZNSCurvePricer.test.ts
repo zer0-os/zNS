@@ -14,6 +14,7 @@ import {
   INVALID_LABEL_ERR, INITIALIZED_ERR, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR, FEE_TOO_LARGE_ERR,
   INVALID_BASE_OR_MAX_LENGTH_ERR,
   DIVISION_BY_ZERO_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import {
   AccessType,
@@ -915,25 +916,37 @@ describe("ZNSCurvePricer", () => {
     it("should revert when a non-ADMIN tries to set AccessController", async () => {
       await expect(
         zns.curvePricer.connect(user).setAccessController(zns.accessController.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.accessController,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(user.address, ADMIN_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
       await expect(
         zns.curvePricer.connect(deployer).setAccessController(user.address)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(user.address);
     });
 
     it("should revert when setting an AccessController as another non-AC contract address", async () => {
       await expect(
         zns.curvePricer.connect(deployer).setAccessController(zns.curvePricer.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(zns.curvePricer.target);
     });
 
     it("should revert when setting a zero address as AccessController", async () => {
       await expect(
         zns.curvePricer.connect(admin).setAccessController(ethers.ZeroAddress)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.curvePricer,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(ethers.ZeroAddress);
     });
   });
 
@@ -1020,7 +1033,12 @@ describe("ZNSCurvePricer", () => {
       await newCurvePricer.waitForDeployment();
 
       // Confirm the account is not a governor
-      await expect(zns.accessController.checkGovernor(randomAcc.address)).to.be.reverted;
+      await expect(
+        zns.accessController.checkGovernor(randomAcc.address)
+      ).to.be.revertedWithCustomError(
+        zns.accessController,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(randomAcc.address, GOVERNOR_ROLE);
 
       const tx = zns.curvePricer.connect(randomAcc).upgradeToAndCall(
         await newCurvePricer.getAddress(),

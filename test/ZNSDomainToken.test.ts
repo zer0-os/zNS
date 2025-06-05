@@ -29,7 +29,7 @@ import {
   CANNOT_BURN_TOKEN_ERR,
   ERC721_INVALID_RECEIVER_ERR,
   hashDomainLabel,
-  AC_NOTAUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -170,25 +170,37 @@ describe("ZNSDomainToken", () => {
     it("should revert when a non-ADMIN tries to set AccessController", async () => {
       await expect(
         zns.domainToken.connect(caller).setAccessController(zns.accessController.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(caller.address, ADMIN_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
       await expect(
         zns.domainToken.connect(deployer).setAccessController(caller.address)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(caller.address);
     });
 
     it("should revert when setting an AccessController as another non-AC contract address", async () => {
       await expect(
         zns.domainToken.connect(deployer).setAccessController(zns.domainToken.target)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(zns.domainToken.target);
     });
 
     it("should revert when setting a zero address as AccessController", async () => {
       await expect(
         zns.domainToken.connect(deployer).setAccessController(ethers.ZeroAddress)
-      ).to.be.reverted;
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(ethers.ZeroAddress);
     });
   });
 
@@ -515,8 +527,8 @@ describe("ZNSDomainToken", () => {
 
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
       await expect(zns.domainToken.connect(caller).setAccessController(caller.address))
-        .to.be.revertedWithCustomError(zns.domainToken, AC_NOTAUTHORIZED_ERR)
-        .withArgs(caller.address);
+        .to.be.revertedWithCustomError(zns.domainToken, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
     });
   });
 

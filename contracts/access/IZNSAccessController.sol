@@ -28,6 +28,4 @@ interface IZNSAccessController is IAccessControl, IZNSRoles {
     function isGovernor(address account) external view returns (bool);
 
     function isExecutor(address account) external view returns (bool);
-
-    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
