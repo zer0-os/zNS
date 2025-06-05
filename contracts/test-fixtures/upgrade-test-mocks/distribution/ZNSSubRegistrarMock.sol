@@ -3,17 +3,17 @@
 pragma solidity 0.8.26;
 
 // solhint-disable
-import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
-import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+import { ZNSSubRegistrar } from "../../../registrar/ZNSSubRegistrar.sol";
+import { IZNSSubRegistrar } from "../../../registrar/IZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
-import { IZNSPricer } from "../../price/IZNSPricer.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
-import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { IZNSPricer } from "../../../price/IZNSPricer.sol";
+import { IZNSRootRegistrar, CoreRegisterArgs } from "../../../registrar/IZNSRootRegistrar.sol";
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringUtils } from "../../utils/StringUtils.sol";
-import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
-import { NotAuthorizedForDomain, ZeroAddressPassed, DomainAlreadyExists } from "../../utils/CommonErrors.sol";
+import { StringUtils } from "../../../utils/StringUtils.sol";
+import { PaymentConfig } from "../../../treasury/IZNSTreasury.sol";
+import { NotAuthorizedForDomain, ZeroAddressPassed, DomainAlreadyExists } from "../../../utils/CommonErrors.sol";
 
 
 enum AccessType {
