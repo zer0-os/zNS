@@ -37,16 +37,16 @@ interface IDistributionConfig {
 
     /**
      * @notice Struct to define the entirety of the distribution of subdomains for a domain
-     * 
+     *
      * @param pricerContract The address of the contract used for pricing subdomains
-     * @param paymentType The type of payment system used for selling subdomains 
-     * @param accessType The type of access that users have 
+     * @param paymentType The type of payment system used for selling subdomains
+     * @param accessType The type of access that users have
      */
     struct DistributionConfig {
         IZNSPricer pricerContract;
-        bytes priceConfig;
         PaymentType paymentType;
         AccessType accessType;
+        bytes priceConfig;
     }
 
     /**
