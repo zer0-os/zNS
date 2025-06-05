@@ -7,8 +7,7 @@ import { IZNSPricer } from "./IZNSPricer.sol";
 interface IZNSCurvePricer is IZNSPricer {
 
     /**
-     * @notice Struct for each configurable variable for price calculations.
-     * Does NOT include variables for calcs of registration fees.
+     * @notice Struct for each configurable variable for price and fee calculations.
      */
     struct CurvePriceConfig {
         /**
