@@ -3,8 +3,9 @@ pragma solidity 0.8.26;
 
 import { IZNSPricer } from "./IZNSPricer.sol";
 
+
 /**
- * @title IZNSFixedPricer.sol Below is the doc for PriceConfig struct.
+ * @title IZNSFixedPricer.sol Below is the doc for FixedPriceConfig struct.
  * @notice Struct for price configurations per domainHash that is used in the `priceConfigs` mapping
  *  - price The value determining how much a subdomain under a particular parent would cost
  *  - feePercentage The value determining how much fee is charged for a subdomain registration
@@ -14,29 +15,29 @@ import { IZNSPricer } from "./IZNSPricer.sol";
  */
 interface IZNSFixedPricer is IZNSPricer {
     /**
-     * @notice Emitted when the `PriceConfig.price` is set in state for a specific `domainHash`
+     * @notice Emitted when the `FixedPriceConfig.price` is set in state for a specific `domainHash`
      * @param domainHash The hash of the domain who sets the price for subdomains
      * @param newPrice The new price value set
     */
     event PriceSet(bytes32 indexed domainHash, uint256 indexed newPrice);
 
     /**
-     * @notice Emitted when the `PriceConfig.feePercentage` is set in state for a specific `domainHash`
+     * @notice Emitted when the `FixedPriceConfig.feePercentage` is set in state for a specific `domainHash`
      * @param domainHash The hash of the domain who sets the feePercentage for subdomains
      * @param feePercentage The new feePercentage value set
     */
     event FeePercentageSet(bytes32 indexed domainHash, uint256 indexed feePercentage);
 
-    struct PriceConfig {
+    struct FixedPriceConfig {
         uint256 price;
         uint256 feePercentage;
     }
 
     function encodeConfig(
-        PriceConfig memory config
+        FixedPriceConfig memory config
     ) external pure returns (bytes memory);
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) external pure returns (PriceConfig memory);
+    ) external pure returns (FixedPriceConfig memory);
 }

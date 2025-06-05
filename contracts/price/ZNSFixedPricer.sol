@@ -16,11 +16,11 @@ contract ZNSFixedPricer is IZNSFixedPricer {
     /**
      * @notice Real encoding happens off chain, but we keep this here as a
      * helper function for users to ensure that their data is correct
-     * 
+     *
      * @param config The price to encode
      */
     function encodeConfig(
-        PriceConfig memory config
+        FixedPriceConfig memory config
     ) external pure override returns (bytes memory) {
         return abi.encodePacked(
             config.price,
@@ -30,7 +30,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
 
     function decodePriceConfig(
         bytes memory priceConfig
-    ) public pure override returns (PriceConfig memory) {
+    ) public pure override returns (FixedPriceConfig memory) {
         _checkLength(priceConfig);
 
         (
@@ -38,7 +38,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
             uint256 feePercentage
         ) = abi.decode(priceConfig, (uint256, uint256));
 
-        PriceConfig memory config = PriceConfig(
+        FixedPriceConfig memory config = FixedPriceConfig(
             price,
             feePercentage
         );
@@ -80,7 +80,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
     function validatePriceConfig(bytes memory priceConfig) external override pure {
         _checkLength(priceConfig);
 
-        PriceConfig memory config = decodePriceConfig(priceConfig);
+        FixedPriceConfig memory config = decodePriceConfig(priceConfig);
 
         if (config.feePercentage > PERCENTAGE_BASIS)
             revert FeePercentageValueTooLarge(
@@ -120,7 +120,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         bool skipValidityCheck
     ) external pure override returns (uint256 price, uint256 fee) {
         // To match the IZNSPricer interface, we have unused params here
-        PriceConfig memory config = decodePriceConfig(parentPriceConfig);
+        FixedPriceConfig memory config = decodePriceConfig(parentPriceConfig);
         return (
             config.price,
             _getFeeForPrice(config.feePercentage, config.price)
