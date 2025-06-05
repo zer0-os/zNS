@@ -77,15 +77,15 @@ interface IZNSSubRegistrar is IDistributionConfig {
         bytes32 domainHash
     ) external view returns (
         IZNSPricer pricerContract,
-        bytes memory priceConfig,
         PaymentType paymentType,
-        AccessType accessType
+        AccessType accessType,
+        bytes memory priceConfig
     );
 
     function registerSubdomain(
         SubdomainRegisterArgs calldata registration
     ) external returns (bytes32);
-    
+
     function registerSubdomainBulk(
         SubdomainRegisterArgs[] calldata args
     ) external returns (bytes32[] memory);
