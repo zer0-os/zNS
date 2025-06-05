@@ -33,7 +33,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
     /**
      * @notice Encode a given CurvePriceConfig into bytes
-     * 
+     *
      * @param config The CurvePriceConfig to encode into bytes
      */
     function encodeConfig(
@@ -52,7 +52,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
     /**
      * @notice Decode bytes into a CurvePriceConfig
-     * 
+     *
      * @param priceConfig The bytes to decode
      */
     function decodePriceConfig(
@@ -92,7 +92,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     /**
      * @notice Validate the inputs for each variable in a price config
      * @dev Will revert if incoming config is invalid
-     * 
+     *
      * @param priceConfig The price config to evaluate
      */
     function validatePriceConfig(
@@ -127,10 +127,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
             label.validate();
         }
 
-        // No pricing is set for 0 length domains
-        uint256 length = label.strlen();
-
-        return _getPrice(config, length);
+        return _getPrice(config, label.strlen());
     }
 
     /**
