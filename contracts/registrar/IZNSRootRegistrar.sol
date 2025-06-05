@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 
 
@@ -110,10 +110,23 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `rootPricer` address is set in state.
+     * @notice Emitted when the `rootPricer` address and the `rootPriceConfig`
+     * values are set in state.
      * @param rootPricer The new address of any IZNSPricer type contract
+     * @param priceConfig The encoded bytes for the price config
      */
-    event RootPricerSet(address rootPricer);
+    event RootPricerSet(
+        address rootPricer,
+        bytes priceConfig
+    );
+
+    /**
+     * @notice Emitted when the `rootPriceConfig` value is set in state.
+     * @param priceConfig The encoded bytes for the price config
+     */
+    event RootPriceConfigSet(
+        bytes indexed priceConfig
+    );
 
     /**
      * @notice Emitted when the `treasury` address is set in state.
@@ -137,6 +150,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes memory priceConfig_,
         address treasury_,
         address domainToken_
     ) external;
@@ -159,7 +173,14 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setRootPricer(address rootPricer_) external;
+    function setRootPricerAndConfig(
+        address rootPricer_,
+        bytes memory priceConfig_
+    ) external;
+
+    function setRootPriceConfig(
+        bytes memory priceConfig_
+    ) external;
 
     function setTreasury(address treasury_) external;
 

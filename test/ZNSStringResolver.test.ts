@@ -259,6 +259,7 @@ describe("ZNSStringResolver", () => {
 
       await registrationWithSetup({
         zns,
+        tokenOwner: operator.address,
         user: operator,
         domainLabel: curStringDomain,
         domainContent: ethers.ZeroAddress,
@@ -280,6 +281,7 @@ describe("ZNSStringResolver", () => {
       await registrationWithSetup({
         zns,
         user,
+        tokenOwner: user.address,
         domainLabel: curString,
         domainContent: ethers.ZeroAddress,
       });
@@ -308,6 +310,7 @@ describe("ZNSStringResolver", () => {
       await registrationWithSetup({
         zns,
         user: deployer,
+        tokenOwner: deployer.address,
         domainLabel: curDomain,
         domainContent: ethers.ZeroAddress,
       });
@@ -419,6 +422,7 @@ describe("ZNSStringResolver", () => {
 
         await registrationWithSetup({
           zns,
+          tokenOwner: deployer.address,
           user: deployer,
           domainLabel: curString,
           domainContent: ethers.ZeroAddress,

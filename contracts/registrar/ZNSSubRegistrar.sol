@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 import { IZNSRootRegistrar, CoreRegisterArgs } from "./IZNSRootRegistrar.sol";
 import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { ARegistryWired } from "../registry/ARegistryWired.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -135,14 +138,14 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                     .getPriceAndFee(
-                        args.parentHash,
+                        parentConfig.priceConfig,
                         args.label,
                         true
                     );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                        args.parentHash,
+                        parentConfig.priceConfig,
                         args.label,
                         true
                     );
@@ -240,11 +243,15 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(config.pricerContract) == address(0))
             revert ZeroAddressPassed();
 
+        // Will revert if invalid
+        IZNSPricer(config.pricerContract).validatePriceConfig(config.priceConfig);
+
         distrConfigs[domainHash] = config;
 
         emit DistributionConfigSet(
             domainHash,
             config.pricerContract,
+            config.priceConfig,
             config.paymentType,
             config.accessType
         );
@@ -256,10 +263,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      * Only domain owner/operator can call this function.
      * Fires `PricerContractSet` event.
      * @param domainHash The domain hash to set the pricer contract for
+     * @param config The price config data for the given pricer
      * @param pricerContract The new pricer contract to set
     */
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory config,
         IZNSPricer pricerContract
     ) public override {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
@@ -268,9 +277,12 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
 
-        distrConfigs[domainHash].pricerContract = pricerContract;
+        IZNSPricer(pricerContract).validatePriceConfig(config);
 
-        emit PricerContractSet(domainHash, address(pricerContract));
+        distrConfigs[domainHash].pricerContract = pricerContract;
+        distrConfigs[domainHash].priceConfig = config;
+
+        emit PricerDataSet(domainHash, config, address(pricerContract));
     }
 
     /**
