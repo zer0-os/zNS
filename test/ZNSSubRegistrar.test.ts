@@ -694,6 +694,7 @@ describe("ZNSSubRegistrar", () => {
             pricerContract: await zns.curvePricer.getAddress(),
             paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
             accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -757,6 +758,7 @@ describe("ZNSSubRegistrar", () => {
             pricerContract: await zns.curvePricer.getAddress(),
             paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
             accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -816,6 +818,7 @@ describe("ZNSSubRegistrar", () => {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),
@@ -842,6 +845,7 @@ describe("ZNSSubRegistrar", () => {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),
@@ -891,12 +895,12 @@ describe("ZNSSubRegistrar", () => {
             accessType: AccessType.OPEN,
             pricerContract: await zns.fixedPricer.getAddress(),
             paymentType: PaymentType.DIRECT,
+            priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: specificRootOwner.address,
           },
-          priceConfig: rootPriceConfig,
         },
       });
 
@@ -929,6 +933,7 @@ describe("ZNSSubRegistrar", () => {
             pricerContract: ethers.ZeroAddress,
             paymentType: 0n,
             accessType: 0n,
+            priceConfig: hre.ethers.ZeroHash,
           },
           paymentConfig: {
             token: ethers.ZeroAddress,

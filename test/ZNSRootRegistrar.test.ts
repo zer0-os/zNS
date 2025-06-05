@@ -886,6 +886,7 @@ describe("ZNSRootRegistrar", () => {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
         accessType: AccessType.OPEN,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       };
 
       await defaultRootRegistration({
@@ -912,6 +913,7 @@ describe("ZNSRootRegistrar", () => {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
         accessType: AccessType.OPEN,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       };
 
       await defaultRootRegistration({
@@ -1358,12 +1360,12 @@ describe("ZNSRootRegistrar", () => {
 
   describe("Bulk Root Domain Registration", () => {
     it("Should register an array of domains using #registerRootDomainBulk", async () => {
-      const registrations : Array<IRootdomainConfig> = [];
+      const registrations : Array<IRootDomainConfig> = [];
 
       for (let i = 0; i < 5; i++) {
         const isOdd = i % 2 !== 0;
 
-        const domainObj : IRootdomainConfig = {
+        const domainObj : IRootDomainConfig = {
           name: `domain${i + 1}`,
           domainAddress: user.address,
           tokenOwner: hre.ethers.ZeroAddress,
@@ -1372,6 +1374,7 @@ describe("ZNSRootRegistrar", () => {
             pricerContract: await zns.curvePricer.getAddress(),
             paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
             accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           },
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -1414,6 +1417,7 @@ describe("ZNSRootRegistrar", () => {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),
@@ -1437,6 +1441,7 @@ describe("ZNSRootRegistrar", () => {
           pricerContract: await zns.curvePricer.getAddress(),
           paymentType: PaymentType.STAKE,
           accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),

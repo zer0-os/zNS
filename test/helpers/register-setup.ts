@@ -60,6 +60,7 @@ export const fundApprove = async ({
 
   if (parentHash === ethers.ZeroHash) {
     (pricerContract = await zns.rootRegistrar.rootPricer());
+    (priceConfig = await zns.rootRegistrar.rootPriceConfig());
   } else {
     ({ pricerContract, priceConfig } = await zns.subRegistrar.distrConfigs(parentHash));
   }
