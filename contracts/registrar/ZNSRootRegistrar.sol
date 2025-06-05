@@ -18,6 +18,7 @@ import {
     DomainAlreadyExists,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
+import { ARegistrationPause } from "./ARegistrationPause.sol";
 
 
 /**
@@ -37,14 +38,15 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    ARegistrationPause,
     IZNSRootRegistrar {
     using StringUtils for string;
 
-    IZNSPricer public rootPricer;
-    bytes public rootPriceConfig;
-    IZNSTreasury public treasury;
-    IZNSDomainToken public domainToken;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSPricer public override rootPricer;
+    bytes public override rootPriceConfig;
+    IZNSTreasury public override treasury;
+    IZNSDomainToken public override domainToken;
+    IZNSSubRegistrar public override subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -102,7 +104,7 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomain(
         RootDomainRegistrationArgs calldata args
-    ) public override returns (bytes32) {
+    ) public override whenRegNotPaused(accessController) returns (bytes32) {
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(args.name));
 
@@ -148,7 +150,7 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomainBulk(
         RootDomainRegistrationArgs[] calldata args
-    ) external override returns (bytes32[] memory) {
+    ) external override whenRegNotPaused(accessController) returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](args.length);
 
         for (uint256 i = 0; i < args.length;) {
@@ -365,7 +367,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter function for the `ZNSRegistry` address in state.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * 
+     *
      * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
@@ -375,7 +377,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * 
+     *
      * @param pricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
      * @param priceConfig_ The price config, encoded as bytes, for the given IZNSPricer contract
     */
@@ -398,7 +400,7 @@ contract ZNSRootRegistrar is
      * @notice Set the price configuration for root domains
      * @dev Note this function takes in a pricer contract address as a param
      * but does not modify this address in state.
-     * 
+     *
      * @param priceConfig_ The price configuration for root domains, encoded as bytes
      */
     function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
@@ -443,6 +445,25 @@ contract ZNSRootRegistrar is
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
+    }
+
+    /**
+     * @notice Pauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     * @dev When registration is paused, only ADMINs can register new domains.
+     */
+    function pauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(true);
+    }
+
+    /**
+     * @notice Unpauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     */
+    function unpauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(false);
     }
 
     /**

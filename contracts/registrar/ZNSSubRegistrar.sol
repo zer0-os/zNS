@@ -12,6 +12,7 @@ import {
     ZeroAddressPassed,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
+import { ARegistrationPause } from "./ARegistrationPause.sol";
 
 
 /**
@@ -20,13 +21,18 @@ import {
  * the ZNSRootRegistrar back to finalize registration. Common logic for domains
  * of any level is in the `ZNSRootRegistrar.coreRegister()`.
 */
-contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNSSubRegistrar {
+contract ZNSSubRegistrar is
+    UUPSUpgradeable,
+    AAccessControlled,
+    ARegistryWired,
+    ARegistrationPause,
+    IZNSSubRegistrar {
     using StringUtils for string;
 
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
     */
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrar public override rootRegistrar;
 
     /**
      * @notice Mapping of domainHash to distribution config set by the domain owner/operator.
@@ -95,7 +101,9 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      *  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,
      *  but all the parameters inside are required.
      */
-    function registerSubdomain(SubdomainRegisterArgs memory args) public override returns (bytes32) {
+    function registerSubdomain(
+        SubdomainRegisterArgs memory args
+    ) public override whenRegNotPaused(accessController) returns (bytes32) {
         address domainRecordOwner = msg.sender;
         address parentOwner = registry.getDomainOwner(args.parentHash);
         bool isOwner = msg.sender == parentOwner;
@@ -192,7 +200,7 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
      */
     function registerSubdomainBulk(
         SubdomainRegisterArgs[] memory args
-    ) external override returns (bytes32[] memory) {
+    ) external override whenRegNotPaused(accessController) returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](args.length);
 
         for (uint256 i = 0; i < args.length;) {
@@ -399,6 +407,25 @@ contract ZNSSubRegistrar is AAccessControlled, ARegistryWired, UUPSUpgradeable, 
         rootRegistrar = IZNSRootRegistrar(registrar_);
 
         emit RootRegistrarSet(registrar_);
+    }
+
+    /**
+     * @notice Pauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     * @dev When registration is paused, only ADMINs can register new domains.
+     */
+    function pauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(true);
+    }
+
+    /**
+     * @notice Unpauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     */
+    function unpauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(false);
     }
 
     /**

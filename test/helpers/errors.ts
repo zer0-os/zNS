@@ -53,6 +53,9 @@ export const NO_BENEFICIARY_ERR = "NoBeneficiarySetForParent";
 export const NONEXISTENT_TOKEN_ERC_ERR = "ERC721NonexistentToken";
 export const INITIALIZED_ERR = "InvalidInitialization";
 
+export const PAUSE_SAME_VALUE_ERR = "ResettingToSameValue";
+export const REGISTRATION_PAUSED_ERR = "PublicRegistrationPaused";
+
 // Environment validation
 export const INVALID_ENV_ERR = "Invalid environment value. Must set env to one of `dev`, `test`, or `prod`";
 export const NO_MOCK_PROD_ERR = "Cannot mock MEOW token in production";

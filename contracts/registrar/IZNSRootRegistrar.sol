@@ -3,6 +3,10 @@ pragma solidity 0.8.26;
 
 import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -12,15 +16,15 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    string label;
+    bool isStakePayment;
     address domainOwner;
     address tokenOwner;
+    address domainAddress;
     uint256 price;
     uint256 stakeFee;
-    address domainAddress;
-    string tokenURI;
-    bool isStakePayment;
     PaymentConfig paymentConfig;
+    string label;
+    string tokenURI;
 }
 
 /**
@@ -187,4 +191,18 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
+
+    function pauseRegistration() external;
+
+    function unpauseRegistration() external;
+
+    function rootPricer() external returns (IZNSPricer);
+
+    function rootPriceConfig() external returns (bytes memory);
+
+    function treasury() external returns (IZNSTreasury);
+
+    function domainToken() external returns (IZNSDomainToken);
+
+    function subRegistrar() external returns (IZNSSubRegistrar);
 }

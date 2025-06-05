@@ -32,9 +32,10 @@ import {
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
   DIVISION_BY_ZERO_ERR,
   INVALID_CONFIG_LENGTH_ERR,
+  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR,
 } from "./helpers";
 import * as ethers from "ethers";
-import { defaultRootRegistration, defaultSubdomainRegistration } from "./helpers/register-setup";
+import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
@@ -64,8 +65,6 @@ import { IZNSContracts } from "../src/deploy/campaign/types";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-// This is the only test converted to use the new Campaign, other
-// contract specific tests are using `deployZNS()` helper
 describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
@@ -117,129 +116,6 @@ describe("ZNSRootRegistrar", () => {
 
   afterEach(async () => {
     await mongoAdapter.dropDB();
-  });
-
-  it("Should register an array of domains", async () => {
-    const registrations : Array<IRootDomainConfig> = [];
-
-    for (let i = 0; i < 5; i++) {
-      const isOdd = i % 2 !== 0;
-
-      const domainObj : IRootDomainConfig = {
-        name: `domain${i + 1}`,
-        domainAddress: user.address,
-        tokenOwner: hre.ethers.ZeroAddress,
-        tokenURI: `0://domainURI_${i + 1}`,
-        distrConfig: {
-          pricerContract: await zns.curvePricer.getAddress(),
-          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-          paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
-          accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
-        },
-        paymentConfig: {
-          token: await zns.meowToken.getAddress(),
-          beneficiary: isOdd ? user.address : operator.address,
-        },
-      };
-
-      registrations.push(domainObj);
-    }
-
-    await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
-
-    for (const domain of registrations) {
-      // get by `domainHash`
-      const logs = await getDomainRegisteredEvents({
-        zns,
-        domainHash: hashDomainLabel(domain.name),
-      });
-
-      // "DomainRegistered" event log
-      const { parentHash, domainHash, tokenOwner, label, tokenURI, domainOwner, domainAddress } = logs[0].args;
-
-      expect(parentHash).to.eq(ethers.ZeroHash);
-      expect(domainHash).to.eq(hashDomainLabel(domain.name));
-      expect(label).to.eq(domain.name);
-      expect(tokenOwner).to.eq(domainOwner);
-      expect(tokenURI).to.eq(domain.tokenURI);
-      expect(domainOwner).to.eq(user.address);
-      expect(domainAddress).to.eq(domain.domainAddress);
-    }
-  });
-
-  it("Should revert when register the same domain twice using #registerRootDomainBulk", async () => {
-    const domainObj : IRootDomainConfig = {
-      name: "root",
-      domainAddress: user.address,
-      tokenOwner: ethers.ZeroAddress,
-      tokenURI: "0://tokenURI",
-      distrConfig: {
-        pricerContract: await zns.curvePricer.getAddress(),
-        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-        paymentType: PaymentType.STAKE,
-        accessType: AccessType.LOCKED,
-      },
-      paymentConfig: {
-        token: await zns.meowToken.getAddress(),
-        beneficiary: admin.address,
-      },
-    };
-
-    // Attempt to register the same domain again
-    await expect(
-      zns.rootRegistrar.connect(user).registerRootDomainBulk([domainObj, domainObj])
-    ).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
-  });
-
-  it("Sets the payment config when provided with the domain registration", async () => {
-    const tokenURI = "https://example.com/817c64af";
-    const distrConfig : IDistributionConfig = {
-      pricerContract: await zns.curvePricer.getAddress(),
-      paymentType: PaymentType.STAKE,
-      accessType: AccessType.OPEN,
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-    };
-
-    await defaultRootRegistration({
-      user,
-      zns,
-      domainName: defaultDomain,
-      tokenURI,
-      distrConfig,
-      paymentConfig: {
-        token: await zns.meowToken.getAddress(),
-        beneficiary: user.address,
-      },
-    });
-
-    const domainHash = hashDomainLabel(defaultDomain);
-    const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(await zns.meowToken.getAddress());
-    expect(config.beneficiary).to.eq(user.address);
-  });
-
-  it("Does not set the payment config when the beneficiary is the zero address", async () => {
-    const tokenURI = "https://example.com/817c64af";
-    const distrConfig : IDistributionConfig = {
-      pricerContract: await zns.curvePricer.getAddress(),
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      paymentType: PaymentType.STAKE,
-      accessType: AccessType.OPEN,
-    };
-
-    await defaultRootRegistration({
-      user,
-      zns,
-      domainName: defaultDomain,
-      tokenOwner: ethers.ZeroAddress,
-      tokenURI,
-      distrConfig,
-    });
-
-    const domainHash = hashDomainLabel(defaultDomain);
-    const config = await zns.treasury.paymentConfigs(domainHash);
-    expect(config.token).to.eq(ethers.ZeroAddress);
-    expect(config.beneficiary).to.eq(ethers.ZeroAddress);
   });
 
   it("Gas tests", async () => {
@@ -472,6 +348,56 @@ describe("ZNSRootRegistrar", () => {
         ZERO_ADDRESS_ERR
       );
     });
+
+    it("#pauseRegistration() should revert if called by address without ADMIN_ROLE", async () => {
+      const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
+      expect(isAdmin).to.be.false;
+
+      await expect(zns.rootRegistrar.connect(randomUser).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, ADMIN_ROLE);
+    });
+
+    it("#pauseRegistration() should pause the registration and emit #RegistrationPauseSet event", async () => {
+      await expect(zns.rootRegistrar.connect(admin).pauseRegistration())
+        .to.emit(zns.rootRegistrar, "RegistrationPauseSet")
+        .withArgs(true);
+
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+    });
+
+    it("#pauseRegistration() should NOT pause the registration if already paused", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      await expect(zns.rootRegistrar.connect(admin).pauseRegistration())
+        .to.be.revertedWithCustomError(zns.rootRegistrar, PAUSE_SAME_VALUE_ERR);
+    });
+
+    it("#unpauseRegistration() should revert if called by address without ADMIN_ROLE", async () => {
+      const isAdmin = await zns.accessController.hasRole(ADMIN_ROLE, randomUser.address);
+      expect(isAdmin).to.be.false;
+
+      await expect(zns.rootRegistrar.connect(randomUser).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
+        .withArgs(randomUser.address, ADMIN_ROLE);
+    });
+
+    it("#unpauseRegistration() should unpause the registration and emit #RegistrationPauseSet", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      await expect(zns.rootRegistrar.connect(admin).unpauseRegistration())
+        .to.emit(zns.rootRegistrar, "RegistrationPauseSet")
+        .withArgs(false);
+
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.false;
+    });
+
+    it("#unpauseRegistration() should NOT unpause the registration if already unpaused", async () => {
+      await expect(zns.rootRegistrar.connect(admin).unpauseRegistration())
+        .to.be.revertedWithCustomError(zns.rootRegistrar, PAUSE_SAME_VALUE_ERR);
+    });
   });
 
   describe("Registers a root domain", () => {
@@ -607,6 +533,43 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
     });
 
+    it("Fails when registering during a registration pause when called publicly", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      const tx = defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+      });
+
+      await expect(tx).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
+
+      await zns.rootRegistrar.connect(admin).unpauseRegistration();
+    });
+
+    it("Successfully registers as ADMIN_ROLE during a registration pause", async () => {
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
+
+      await registrationWithSetup({
+        user: admin,
+        zns,
+        domainLabel: defaultDomain,
+        setConfigs: false,
+      });
+
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: admin,
+      });
+
+      const owner = await zns.registry.getDomainOwner(domainHash);
+      expect(owner).to.eq(admin.address);
+
+      await zns.rootRegistrar.connect(admin).unpauseRegistration();
+    });
+
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
       const tokenURI = "https://example.com/817c64af";
@@ -620,7 +583,7 @@ describe("ZNSRootRegistrar", () => {
           token: ethers.ZeroAddress,
           beneficiary: ethers.ZeroAddress,
         },
-      } as IRootDomainConfig);
+      });
 
       const hashFromTS = hashDomainLabel(defaultDomain);
 
@@ -817,7 +780,7 @@ describe("ZNSRootRegistrar", () => {
           token: ethers.ZeroAddress,
           beneficiary: ethers.ZeroAddress,
         },
-      } as IRootDomainConfig);
+      });
 
       await expect(tx).to.not.be.reverted;
     });
@@ -896,7 +859,7 @@ describe("ZNSRootRegistrar", () => {
           token: ethers.ZeroAddress,
           beneficiary: ethers.ZeroAddress,
         },
-      } as IRootDomainConfig);
+      });
 
       const userBalanceAfter = await zns.meowToken.balanceOf(user.address);
       const vaultBalanceAfter = await zns.meowToken.balanceOf(zeroVault.address);
@@ -915,6 +878,57 @@ describe("ZNSRootRegistrar", () => {
       );
       const events = await zns.meowToken.queryFilter(transferEventFilter);
       expect(events.length).to.eq(0);
+    });
+
+    it("Sets the payment config when provided with the domain registration", async () => {
+      const tokenURI = "https://example.com/817c64af";
+      const distrConfig : IDistributionConfig = {
+        pricerContract: await zns.curvePricer.getAddress(),
+        paymentType: PaymentType.STAKE,
+        accessType: AccessType.OPEN,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      };
+
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+        tokenURI,
+        distrConfig,
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: user.address,
+        },
+      });
+
+      const domainHash = hashDomainLabel(defaultDomain);
+      const config = await zns.treasury.paymentConfigs(domainHash);
+      expect(config.token).to.eq(await zns.meowToken.getAddress());
+      expect(config.beneficiary).to.eq(user.address);
+    });
+
+    it("Does not set the payment config when the beneficiary is the zero address", async () => {
+      const tokenURI = "https://example.com/817c64af";
+      const distrConfig : IDistributionConfig = {
+        pricerContract: await zns.curvePricer.getAddress(),
+        paymentType: PaymentType.STAKE,
+        accessType: AccessType.OPEN,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      };
+
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: defaultDomain,
+        tokenOwner: ethers.ZeroAddress,
+        tokenURI,
+        distrConfig,
+      });
+
+      const domainHash = hashDomainLabel(defaultDomain);
+      const config = await zns.treasury.paymentConfigs(domainHash);
+      expect(config.token).to.eq(ethers.ZeroAddress);
+      expect(config.beneficiary).to.eq(ethers.ZeroAddress);
     });
   });
 
@@ -1100,7 +1114,7 @@ describe("ZNSRootRegistrar", () => {
           paymentType: PaymentType.STAKE,
           accessType: AccessType.OPEN,
         },
-      } as DefaultRootRegistrationArgs);
+      });
 
       const domainHash = await getDomainHashFromEvent({
         zns,
@@ -1341,6 +1355,110 @@ describe("ZNSRootRegistrar", () => {
           zeroVault.address
         );
       await expect(tx4).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
+    });
+  });
+
+  describe("Bulk Root Domain Registration", () => {
+    it("Should register an array of domains using #registerRootDomainBulk", async () => {
+      const registrations : Array<IRootDomainConfig> = [];
+
+      for (let i = 0; i < 5; i++) {
+        const isOdd = i % 2 !== 0;
+
+        const domainObj : IRootDomainConfig = {
+          name: `domain${i + 1}`,
+          domainAddress: user.address,
+          tokenOwner: hre.ethers.ZeroAddress,
+          tokenURI: `0://domainURI_${i + 1}`,
+          distrConfig: {
+            pricerContract: await zns.curvePricer.getAddress(),
+            paymentType: isOdd ? PaymentType.STAKE : PaymentType.DIRECT,
+            accessType: isOdd ? AccessType.LOCKED : AccessType.OPEN,
+            priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: isOdd ? user.address : operator.address,
+          },
+        };
+
+        registrations.push(domainObj);
+      }
+
+      await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
+
+      for (const domain of registrations) {
+        // get by `domainHash`
+        const logs = await getDomainRegisteredEvents({
+          zns,
+          domainHash: hashDomainLabel(domain.name),
+        });
+
+        // "DomainRegistered" event log
+        const { parentHash, domainHash, tokenOwner, label, tokenURI, domainOwner, domainAddress } = logs[0].args;
+
+        expect(parentHash).to.eq(ethers.ZeroHash);
+        expect(domainHash).to.eq(hashDomainLabel(domain.name));
+        expect(label).to.eq(domain.name);
+        expect(tokenOwner).to.eq(domainOwner);
+        expect(tokenURI).to.eq(domain.tokenURI);
+        expect(domainOwner).to.eq(user.address);
+        expect(domainAddress).to.eq(domain.domainAddress);
+      }
+    });
+
+    it("Should revert when register the same domain twice using #registerRootDomainBulk", async () => {
+      const domainObj = {
+        name: "root",
+        domainAddress: user.address,
+        tokenOwner: ethers.ZeroAddress,
+        tokenURI: "0://tokenURI",
+        distrConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Attempt to register the same domain again
+      await expect(
+        zns.rootRegistrar.connect(user).registerRootDomainBulk([domainObj, domainObj])
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
+    });
+
+    it("Should revert when registering during a registration pause using #registerRootDomainBulk", async () => {
+      const domainObj = {
+        name: "pausedDomain",
+        domainAddress: user.address,
+        tokenOwner: ethers.ZeroAddress,
+        tokenURI: "0://tokenURI",
+        distrConfig: {
+          pricerContract: await zns.curvePricer.getAddress(),
+          paymentType: PaymentType.STAKE,
+          accessType: AccessType.LOCKED,
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+        },
+        paymentConfig: {
+          token: await zns.meowToken.getAddress(),
+          beneficiary: admin.address,
+        },
+      };
+
+      // Pause the registration
+      await zns.rootRegistrar.connect(admin).pauseRegistration();
+
+      // Attempt to register a domain while paused
+      await expect(
+        zns.rootRegistrar.connect(user).registerRootDomainBulk([domainObj])
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
+
+      // unpause the registration
+      await zns.rootRegistrar.connect(admin).unpauseRegistration();
     });
   });
 
