@@ -32,7 +32,7 @@ contract ZNSSubRegistrar is
     /**
      * @notice State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
     */
-    IZNSRootRegistrar public rootRegistrar;
+    IZNSRootRegistrar public override rootRegistrar;
 
     /**
      * @notice Mapping of domainHash to distribution config set by the domain owner/operator.

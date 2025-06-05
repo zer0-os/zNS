@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 import { IZNSPricer } from "../price/IZNSPricer.sol";
+import { IZNSRootRegistrar } from "./IZNSRootRegistrar.sol";
 
 
 /**
@@ -138,4 +139,6 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function pauseRegistration() external;
 
     function unpauseRegistration() external;
+
+    function rootRegistrar() external returns (IZNSRootRegistrar);
 }

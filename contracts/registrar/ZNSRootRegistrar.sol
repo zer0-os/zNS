@@ -42,11 +42,11 @@ contract ZNSRootRegistrar is
     IZNSRootRegistrar {
     using StringUtils for string;
 
-    IZNSPricer public rootPricer;
-    bytes public rootPriceConfig;
-    IZNSTreasury public treasury;
-    IZNSDomainToken public domainToken;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSPricer public override rootPricer;
+    bytes public override rootPriceConfig;
+    IZNSTreasury public override treasury;
+    IZNSDomainToken public override domainToken;
+    IZNSSubRegistrar public override subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -367,7 +367,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter function for the `ZNSRegistry` address in state.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * 
+     *
      * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
@@ -377,7 +377,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * 
+     *
      * @param pricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
      * @param priceConfig_ The price config, encoded as bytes, for the given IZNSPricer contract
     */
@@ -400,7 +400,7 @@ contract ZNSRootRegistrar is
      * @notice Set the price configuration for root domains
      * @dev Note this function takes in a pricer contract address as a param
      * but does not modify this address in state.
-     * 
+     *
      * @param priceConfig_ The price configuration for root domains, encoded as bytes
      */
     function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
