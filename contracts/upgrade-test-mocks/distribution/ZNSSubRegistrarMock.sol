@@ -29,9 +29,9 @@ enum PaymentType {
 
 struct DistributionConfig {
     IZNSPricer pricerContract;
-    bytes priceConfig;
     PaymentType paymentType;
     AccessType accessType;
+    bytes priceConfig;
     address newAddress;
     uint256 newUint;
 }
