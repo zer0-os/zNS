@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-
+// solhint-disable comprehensive-interface
 contract ERC721ReceiverIncorrect {
     /**
      * @notice This function is intentionally incorrect to test the ERC721Receiver interface.
