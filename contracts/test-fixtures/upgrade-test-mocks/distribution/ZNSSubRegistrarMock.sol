@@ -3,17 +3,17 @@
 pragma solidity 0.8.26;
 
 // solhint-disable
-import { ZNSSubRegistrar } from "../../registrar/ZNSSubRegistrar.sol";
-import { IZNSSubRegistrar } from "../../registrar/IZNSSubRegistrar.sol";
+import { ZNSSubRegistrar } from "../../../registrar/ZNSSubRegistrar.sol";
+import { IZNSSubRegistrar } from "../../../registrar/IZNSSubRegistrar.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
-import { IZNSPricer } from "../../types/IZNSPricer.sol";
-import { IZNSRootRegistrar, CoreRegisterArgs } from "../../registrar/IZNSRootRegistrar.sol";
-import { AAccessControlled } from "../../access/AAccessControlled.sol";
-import { ARegistryWired } from "../../registry/ARegistryWired.sol";
+import { IZNSPricer } from "../../../price/IZNSPricer.sol";
+import { IZNSRootRegistrar, CoreRegisterArgs } from "../../../registrar/IZNSRootRegistrar.sol";
+import { AAccessControlled } from "../../../access/AAccessControlled.sol";
+import { ARegistryWired } from "../../../registry/ARegistryWired.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { StringUtils } from "../../utils/StringUtils.sol";
-import { PaymentConfig } from "../../treasury/IZNSTreasury.sol";
-import { NotAuthorizedForDomain, ZeroAddressPassed, DomainAlreadyExists } from "../../utils/CommonErrors.sol";
+import { StringUtils } from "../../../utils/StringUtils.sol";
+import { PaymentConfig } from "../../../treasury/IZNSTreasury.sol";
+import { NotAuthorizedForDomain, ZeroAddressPassed, DomainAlreadyExists } from "../../../utils/CommonErrors.sol";
 
 
 enum AccessType {
@@ -31,6 +31,7 @@ struct DistributionConfig {
     IZNSPricer pricerContract;
     PaymentType paymentType;
     AccessType accessType;
+    bytes priceConfig;
     address newAddress;
     uint256 newUint;
 }
@@ -137,14 +138,14 @@ contract ZNSSubRegistrarUpgradeMock is
             if (coreRegisterArgs.isStakePayment) {
                 (coreRegisterArgs.price, coreRegisterArgs.stakeFee) = IZNSPricer(address(parentConfig.pricerContract))
                 .getPriceAndFee(
-                    regArgs.parentHash,
+                    parentConfig.priceConfig,
                     regArgs.label,
                     true
                 );
             } else {
                 coreRegisterArgs.price = IZNSPricer(address(parentConfig.pricerContract))
                     .getPrice(
-                    regArgs.parentHash,
+                    parentConfig.priceConfig,
                     regArgs.label,
                     true
                 );
@@ -184,8 +185,9 @@ contract ZNSSubRegistrarUpgradeMock is
         distrConfigs[domainHash] = config;
     }
 
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory config,
         IZNSPricer pricerContract
     ) public {
         if (!registry.isOwnerOrOperator(domainHash, msg.sender))
@@ -194,7 +196,10 @@ contract ZNSSubRegistrarUpgradeMock is
         if (address(pricerContract) == address(0))
             revert ZeroAddressPassed();
 
+        IZNSPricer(pricerContract).validatePriceConfig(config);
+
         distrConfigs[domainHash].pricerContract = pricerContract;
+        distrConfigs[domainHash].priceConfig = config;
     }
 
     function setPaymentTypeForDomain(

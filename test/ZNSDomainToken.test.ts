@@ -53,6 +53,7 @@ describe("ZNSDomainToken", () => {
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
     };
+
     zns = await deployZNS(
       deployParams
     );
@@ -487,6 +488,21 @@ describe("ZNSDomainToken", () => {
 
       await expect(
         zns.domainToken.connect(mockRegistrar).transferOverride(zns.registry.target, tokenId)
+      ).to.be.revertedWithCustomError(zns.domainToken, ERC721_INVALID_RECEIVER_ERR);
+    });
+
+    // eslint-disable-next-line max-len
+    it("#transferOverride() should revert when transferring to an address that returns incorrect selector from #onERC721Received", async () => {
+      // Deploy a mock contract that implements the ERC721Receiver interface but returns an incorrect selector
+      const MockERC721Receiver = await hre.ethers.getContractFactory("ERC721ReceiverIncorrect", deployer);
+      const mockReceiver = await MockERC721Receiver.deploy();
+      await mockReceiver.waitForDeployment();
+
+      await zns.domainToken.connect(mockRegistrar).register(caller.address, tokenId, "");
+      await zns.registry.connect(mockRegistrar).createDomainRecord(domainHash, caller.address, "0x0");
+
+      await expect(
+        zns.domainToken.connect(mockRegistrar).transferOverride(mockReceiver.target, tokenId)
       ).to.be.revertedWithCustomError(zns.domainToken, ERC721_INVALID_RECEIVER_ERR);
     });
   });

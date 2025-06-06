@@ -23,6 +23,7 @@ import {
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
 
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
 
@@ -49,6 +50,7 @@ describe("ZNSAddressResolver", () => {
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
     };
+
     zns = await deployZNS(params);
 
     // Have to get this value for every test, but can be fixed

@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -12,15 +16,15 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    string label;
+    bool isStakePayment;
     address domainOwner;
     address tokenOwner;
+    address domainAddress;
     uint256 price;
     uint256 stakeFee;
-    address domainAddress;
-    string tokenURI;
-    bool isStakePayment;
     PaymentConfig paymentConfig;
+    string label;
+    string tokenURI;
 }
 
 /**
@@ -110,10 +114,23 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when the `rootPricer` address is set in state.
+     * @notice Emitted when the `rootPricer` address and the `rootPriceConfig`
+     * values are set in state.
      * @param rootPricer The new address of any IZNSPricer type contract
+     * @param priceConfig The encoded bytes for the price config
      */
-    event RootPricerSet(address rootPricer);
+    event RootPricerSet(
+        address rootPricer,
+        bytes priceConfig
+    );
+
+    /**
+     * @notice Emitted when the `rootPriceConfig` value is set in state.
+     * @param priceConfig The encoded bytes for the price config
+     */
+    event RootPriceConfigSet(
+        bytes indexed priceConfig
+    );
 
     /**
      * @notice Emitted when the `treasury` address is set in state.
@@ -137,6 +154,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes memory priceConfig_,
         address treasury_,
         address domainToken_
     ) external;
@@ -159,11 +177,32 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function setRegistry(address registry_) external;
 
-    function setRootPricer(address rootPricer_) external;
+    function setRootPricerAndConfig(
+        address rootPricer_,
+        bytes memory priceConfig_
+    ) external;
+
+    function setRootPriceConfig(
+        bytes memory priceConfig_
+    ) external;
 
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
+
+    function pauseRegistration() external;
+
+    function unpauseRegistration() external;
+
+    function rootPricer() external returns (IZNSPricer);
+
+    function rootPriceConfig() external returns (bytes memory);
+
+    function treasury() external returns (IZNSTreasury);
+
+    function domainToken() external returns (IZNSDomainToken);
+
+    function subRegistrar() external returns (IZNSSubRegistrar);
 }

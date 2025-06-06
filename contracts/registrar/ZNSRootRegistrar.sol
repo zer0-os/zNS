@@ -8,14 +8,17 @@ import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
 import { IZNSAddressResolver } from "../resolver/IZNSAddressResolver.sol";
 import { IZNSSubRegistrar } from "../registrar/IZNSSubRegistrar.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { StringUtils } from "../utils/StringUtils.sol";
 import {
     ZeroAddressPassed,
+    ZeroValuePassed,
+    AddressIsNotAContract,
     DomainAlreadyExists,
     NotAuthorizedForDomain
 } from "../utils/CommonErrors.sol";
+import { ARegistrationPause } from "./ARegistrationPause.sol";
 
 
 /**
@@ -35,13 +38,15 @@ contract ZNSRootRegistrar is
     UUPSUpgradeable,
     AAccessControlled,
     ARegistryWired,
+    ARegistrationPause,
     IZNSRootRegistrar {
     using StringUtils for string;
 
-    IZNSPricer public rootPricer;
-    IZNSTreasury public treasury;
-    IZNSDomainToken public domainToken;
-    IZNSSubRegistrar public subRegistrar;
+    IZNSPricer public override rootPricer;
+    bytes public override rootPriceConfig;
+    IZNSTreasury public override treasury;
+    IZNSDomainToken public override domainToken;
+    IZNSSubRegistrar public override subRegistrar;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -56,6 +61,7 @@ contract ZNSRootRegistrar is
      * @param accessController_ Address of the ZNSAccessController contract
      * @param registry_ Address of the ZNSRegistry contract
      * @param rootPricer_ Address of the IZNSPricer type contract that Zero chose to use for the root domains
+     * @param priceConfig_  IZNSPricer pricer config data encoded as bytes for the root domain
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
      */
@@ -63,12 +69,14 @@ contract ZNSRootRegistrar is
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes calldata priceConfig_,
         address treasury_,
         address domainToken_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
-        setRootPricer(rootPricer_);
+
+        setRootPricerAndConfig(rootPricer_, priceConfig_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
     }
@@ -96,13 +104,12 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomain(
         RootDomainRegistrationArgs calldata args
-    ) public override returns (bytes32) {
+    ) public override whenRegNotPaused(accessController) returns (bytes32) {
         // Create hash for given domain name
         bytes32 domainHash = keccak256(bytes(args.name));
 
         // Get price for the domain
-        uint256 domainPrice = rootPricer.getPrice(0x0, args.name, true);
-
+        uint256 domainPrice = rootPricer.getPrice(rootPriceConfig, args.name, true);
         _coreRegister(
             CoreRegisterArgs({
                 parentHash: bytes32(0),
@@ -143,7 +150,7 @@ contract ZNSRootRegistrar is
      */
     function registerRootDomainBulk(
         RootDomainRegistrationArgs[] calldata args
-    ) external override returns (bytes32[] memory) {
+    ) external override whenRegNotPaused(accessController) returns (bytes32[] memory) {
         bytes32[] memory domainHashes = new bytes32[](args.length);
 
         for (uint256 i = 0; i < args.length;) {
@@ -218,7 +225,9 @@ contract ZNSRootRegistrar is
 
             IZNSAddressResolver(registry.getDomainResolver(args.domainHash))
                 .setAddress(args.domainHash, args.domainAddress);
+
         } else {
+
             // By passing an empty string we tell the registry to not add a resolver
             registry.createDomainRecord(args.domainHash, args.domainOwner, "");
         }
@@ -247,7 +256,7 @@ contract ZNSRootRegistrar is
     */
     function _processPayment(CoreRegisterArgs memory args) internal {
         // args.stakeFee can be 0
-        uint256 protocolFee = rootPricer.getFeeForPrice(0x0, args.price + args.stakeFee);
+        uint256 protocolFee = rootPricer.getFeeForPrice(rootPriceConfig, args.price + args.stakeFee);
 
         if (args.isStakePayment) { // for all root domains or subdomains with stake payment
             treasury.stakeForDomain(
@@ -315,7 +324,7 @@ contract ZNSRootRegistrar is
         bool stakeRefunded = false;
         // send the stake back if it exists
         if (stakedAmount > 0) {
-            uint256 protocolFee = rootPricer.getFeeForPrice(0x0, stakedAmount);
+            uint256 protocolFee = rootPricer.getFeeForPrice(rootPriceConfig, stakedAmount);
 
             treasury.unstakeForDomain(domainHash, owner, protocolFee);
             stakeRefunded = true;
@@ -358,6 +367,7 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter function for the `ZNSRegistry` address in state.
      * Only ADMIN in `ZNSAccessController` can call this function.
+     *
      * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSRootRegistrar) onlyAdmin {
@@ -367,15 +377,34 @@ contract ZNSRootRegistrar is
     /**
      * @notice Setter for the IZNSPricer type contract that Zero chooses to handle Root Domains.
      * Only ADMIN in `ZNSAccessController` can call this function.
-     * @param rootPricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
+     *
+     * @param pricer_ Address of the IZNSPricer type contract to set as pricer of Root Domains
+     * @param priceConfig_ The price config, encoded as bytes, for the given IZNSPricer contract
     */
-    function setRootPricer(address rootPricer_) public override onlyAdmin {
-        if (rootPricer_ == address(0))
+    function setRootPricerAndConfig(
+        address pricer_,
+        bytes memory priceConfig_
+    ) public override onlyAdmin {
+        if (pricer_ == address(0))
             revert ZeroAddressPassed();
 
-        rootPricer = IZNSPricer(rootPricer_);
+        if (pricer_.code.length == 0) revert AddressIsNotAContract();
 
-        emit RootPricerSet(rootPricer_);
+        _setRootPriceConfig(IZNSPricer(pricer_), priceConfig_);
+        rootPricer = IZNSPricer(pricer_);
+
+        emit RootPricerSet(pricer_, priceConfig_);
+    }
+
+    /**
+     * @notice Set the price configuration for root domains
+     * @dev Note this function takes in a pricer contract address as a param
+     * but does not modify this address in state.
+     *
+     * @param priceConfig_ The price configuration for root domains, encoded as bytes
+     */
+    function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
+        _setRootPriceConfig(rootPricer, priceConfig_);
     }
 
     /**
@@ -419,11 +448,40 @@ contract ZNSRootRegistrar is
     }
 
     /**
+     * @notice Pauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     * @dev When registration is paused, only ADMINs can register new domains.
+     */
+    function pauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(true);
+    }
+
+    /**
+     * @notice Unpauses the registration of new domains.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     * Fires `RegistrationPauseSet` event.
+     */
+    function unpauseRegistration() external override onlyAdmin {
+        _setRegistrationPause(false);
+    }
+
+    /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line
     function _authorizeUpgrade(address newImplementation) internal view override {
         accessController.checkGovernor(msg.sender);
+    }
+
+    function _setRootPriceConfig(IZNSPricer pricer_, bytes memory priceConfig_) internal {
+        if (priceConfig_.length == 0) revert ZeroValuePassed();
+
+        pricer_.validatePriceConfig(priceConfig_);
+
+        rootPriceConfig = priceConfig_;
+
+        emit RootPriceConfigSet(priceConfig_);
     }
 }
