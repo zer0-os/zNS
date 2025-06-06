@@ -48,7 +48,8 @@ interface FixedPriceConfig {
 interface Treasury {
   id : string;
   beneficiaryAddress : string;
-  domain : Domain; // cyclic?
+  paymentToken : string;
+  domain : Domain;
 }
 
 interface DomainToken {
@@ -116,7 +117,7 @@ export interface SafeTx {
   value: string;
   data: string | null;
   contractMethod: SafeTxContractMethod;
-  contractInputValues: { 
+  contractInputsValues: { 
     // The names and values of the input params
     // e.g. for call to approve, "spender" : "0x...", "value" : "100000..."
     [key: string]: any;

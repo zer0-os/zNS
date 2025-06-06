@@ -1,31 +1,20 @@
 import * as hre from "hardhat";
-import { deployZNS, DeployZNSParams, IZNSContracts, IZNSContractsLocal } from "../../../test/helpers";
+import { deployZNS, DeployZNSParams, IZNSContracts, IZNSContractsLocal, paymentConfigEmpty } from "../../../test/helpers";
 import { getZNS } from "./zns-contract-data";
 import { getDBAdapter } from "./database";
-import { ROOT_COLL_NAME } from "./constants";
+import { REGISTER_ROOT_BULK_ABI, REGISTER_SUBS_BULK_ABI, ROOT_COLL_NAME, SAFE_TRANSFER_FROM_ABI, SUB_COLL_NAME } from "./constants";
 
 import SafeApiKit from "@safe-global/api-kit";
-import { SafeBatch, SafeTx } from "./types";
-import { Addressable, ZeroAddress } from "ethers";
+import { Domain, SafeBatch, SafeTx } from "./types";
+import { Addressable, ZeroAddress, ZeroHash } from "ethers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSRootRegistrar, IZNSSubRegistrar } from "../../../typechain";
 
 import * as fs from "fs";
 
-// We will need to adjust this file in the future no matter what after merging happens
-// ignore this file for now
-/* eslint-disable */
-/* @typescript-eslint-disable */
-
-
 // Script #2 to be run AFTER validation of the domains with subgraph
 const main = async () => {
   const [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
-
-  // const env = process.env.ENV_LEVEL;
-  // if (!env) throw Error("No ENV_LEVEL set in .env file");
-  // TODO when deployed read/write zns on zchain
-  // zns = await getZNS(migrationAdmin, env);
 
   const uri = process.env.MONGO_DB_URI;
   if (!uri) throw Error("No connection string given");
@@ -36,10 +25,18 @@ const main = async () => {
   const client = (await getDBAdapter(uri)).db(dbName);
 
   // Get all root domain documents from collection
-  const domains = await client.collection(ROOT_COLL_NAME).find().toArray();
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
 
-  // // 1146, matches db
-  // console.log(domains.length);
+  const outputDir = "output/registration";
+  // if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  // }
+
+  // First, create batches for all root domains
+  const rootsFolderName = "roots"
+  // if (!fs.existsSync(`${outputDir}/${rootsFolderName}`)) {
+    fs.mkdirSync(`${outputDir}/${rootsFolderName}`);
+  // }
 
   const params : DeployZNSParams = {
     deployer: migrationAdmin,
@@ -47,247 +44,172 @@ const main = async () => {
     adminAddresses: [migrationAdmin.address],
   };
 
-  // Get the `registerRootDomainBulk` function selector
-  const zns = await deployZNS(params);
-  const selector = zns.rootRegistrar.interface.getFunction("registerRootDomainBulk").selector;
-  const toAddr = zns.rootRegistrar.target;
+  const zns = await deployZNS(params); // TODO Replace with get from DB when deployed to zchain
 
-  // for single call to registerRootDomain, not bulk, just to test
-  const batchTx = createBatch(toAddr, true);
+  // Create batch JSON files for root domains
+  createBatches(
+    rootDomains,
+    zns,
+    `${outputDir}/${rootsFolderName}`,
+    true
+  );
 
-  // just for a single domain
-  for (let domain of domains.slice(0,50)) {
-    const inputValues = [
-      `${domain.label}`, // name
-      `${domain.address}`, // domainAddress
-      `${domain.minter.id}`, // tokenOwner
-      `${domain.tokenURI}`, // tokenURI
-      `[\"${domain.pricerContract}\",${domain.paymentType},${domain.accessType}]`, // distrConfig(pricerContract, paymentType, accessType)
-      `[\"${domain.treasury.paymentToken}\",\"${domain.treasury.beneficiaryAddress}\"]`// paymentConfig(token, beneficiary)
-    ];
+  const subsFolderName = "subs";
+  if (!fs.existsSync(`${outputDir}/${subsFolderName}`)) {
+    fs.mkdirSync(`${outputDir}/${subsFolderName}`);
+  }
 
-    batchTx.transactions[0].contractInputValues.args.push(inputValues);
-  } // TODO confirm if output is right format for array of structs
+  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
+  createBatches(
+    subdomains,
+    zns,
+    `${outputDir}/${subsFolderName}`
+  ); 
 
-  fs.writeFileSync("batch.json", JSON.stringify(batchTx, null, 2));
+  // There are no subdomains with depth 4 or higher, stop registration here
+  // Now setup transfer calls
+  const allDomains = [...rootDomains, ...subdomains,]
+
+  const sliceSize = 500;
+  let batchIndex = 0
+  let batch = allDomains.slice(batchIndex, batchIndex + sliceSize);
+
+  while (batch.length > 0) {
+    let batchTx = createBatchTemplate("Batch Transfer");
+
+    for (let i = 0; i < batch.length; i++) {
+      const domain = batch[i];
+
+      batchTx.transactions.push(
+        createTx(
+          zns.domainToken.target,
+          "safeTransferFrom",
+          SAFE_TRANSFER_FROM_ABI
+        )
+      );
+
+      batchTx.transactions[i].contractInputsValues = {
+        from: `${zns.domainToken.target}`, // TODO is this correct?
+        to: `${domain.address}`,
+        tokenId: `${domain.tokenId}`,
+        data: "" // TODO empty? 0x? zerohash?
+      };
+    }
+    const fileNumber = batchIndex > 9 ? batchIndex : `0${batchIndex}`;
+    fs.mkdirSync(`output/transfer`, { recursive: true });
+    fs.writeFileSync(`output/transfer/batch_${fileNumber}.json`, JSON.stringify(batchTx, null, 2));
+
+    batchIndex++;
+    batch = allDomains.slice(batchIndex * sliceSize, batchIndex * sliceSize + sliceSize);
+  }
 
   process.exit(0);
 };
 
-const createBatch = (
-  contract : string | Addressable,
-  bulk : boolean
+const createBatches = (
+  domains : Domain[],
+  zns : IZNSContracts | IZNSContractsLocal,
+  outputFile : string,
+  forRootDomains : boolean = false,
+  sliceSize : number = 50
+) => {
+  let index = 0;
+
+  let domainsBatch = domains.slice(index, index + sliceSize);
+
+  while (domainsBatch.length > 0) { // TODO TEMP remove index check after test
+    // for single call to registerRootDomain, not bulk, just to test
+    const batchTx = createBatchTemplate("Batch Registration");
+
+    let contractAddress;
+    let funcName;
+    let funcAbi;
+
+    if (forRootDomains) {
+      contractAddress = zns.rootRegistrar.target
+      funcName = "registerRootDomainBulk";
+      funcAbi = REGISTER_ROOT_BULK_ABI;
+    } else {
+      contractAddress = zns.subRegistrar.target
+      funcName = "registerSubDomainBulk";
+      funcAbi = REGISTER_SUBS_BULK_ABI;
+    }
+
+    batchTx.transactions.push(
+      createTx(
+        contractAddress,
+        funcName,
+        funcAbi
+      )
+    );
+
+    batchTx.transactions[0].contractInputsValues.args = [];
+
+    // TODO rerun validation to get paymentToken, also to refresh data
+    for (let domain of domainsBatch) {
+      const valuesArr = [
+        domain.label,
+        domain.address,
+        domain.owner.id,
+        domain.tokenURI,
+        `[\"${domain.pricerContract ?? ZeroAddress}\", ${domain.paymentType ?? 0}, ${domain.accessType ?? 0}]`,
+        `[\"${domain.treasury.paymentToken ?? ZeroAddress}\",\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\"]`,
+      ]
+
+      if (domain.parentHash !== ZeroHash) {
+        batchTx.transactions[0].contractInputsValues.args.push([domain.parentHash, ...valuesArr]);
+      } else {
+        batchTx.transactions[0].contractInputsValues.args.push(valuesArr);
+      }
+    }
+
+    const fileNumber = index > 9 ? index.toString() : `0${index}`;
+    fs.writeFileSync(`${outputFile}/batch_${fileNumber}.json`, JSON.stringify(batchTx, null, 2));
+
+    // Increment, get more domains
+    index++;
+    domainsBatch = domains.slice(index * sliceSize, index * sliceSize + sliceSize);
+  }
+}
+
+const createBatchTemplate = (
+  name : string = "Batch Transaction"
 ) : SafeBatch => {
   return {
     version: "1.0",
     chainId: process.env.CHAIN_ID ?? "1", 
     createdAt: Date.now(),
     meta: {
-      name: "Register Root Domains Batch",
+      name,
       description: "",
-      txBuilderVersion: "1.18.0", // TODO confirm this is correct for zchain
+      txBuilderVersion: "1.18.0", // TODO confirm this is correct for zchain, or needs to be correct at all
       createdFromSafeAddress: process.env.SAFE_ADDRESS ?? "",
       createdFromOwnerAddress: "", // TODO set this
       checksum: "" // TODO calc this for each batch
     },
-    transactions: [ createTxJSON(contract, bulk) ]
+    transactions: [ ]
   }
 }
 
-
-const createTxJSON = (
+const createTx = (
   to: string | Addressable,
-  bulk : boolean
+  funcName : string,
+  funcAbi : any, // TODO type?
 ) : SafeTx => {
-  let tx : SafeTx = {
+  return {
     to: to,
     value: "0",
     data: null,
     contractMethod: {
-      inputs: [],
-      name: "registerRootDomain" + (bulk ? "Bulk" : ""), // TODO abstract for both root or sub registrar
+      inputs: [ funcAbi ],
+      name:  funcName,
       payable: false,
     },
-    contractInputValues: {
-      args: []
-    }
-  }
-
-  if (bulk) {
-    tx.contractMethod.inputs.push(getRegistertBulkAbi());
-  } else {
-    tx.contractMethod.inputs.push(getRegisterAbi());
-  }
-
-  return tx;
-}
-
-const getRegisterAbi = () => {
-  return {
-    components: [
-      {
-        internalType: "string",
-        name: "name",
-        type: "string"
-      },
-      {
-        internalType: "address",
-        name: "domainAddress",
-        type: "address"
-      },
-      {
-        internalType: "address",
-        name: "tokenOwner",
-        type: "address"
-      },
-      {
-        internalType: "string",
-        name: "tokenURI",
-        type: "string"
-      },
-      {
-        components: [
-          {
-            internalType: "contract IZNSPricer",
-            name: "pricerContract",
-            type: "address"
-          },
-          {
-            internalType: "enum IDistributionConfig.PaymentType",
-            name: "paymentType",
-            type: "uint8"
-          },
-          {
-            internalType: "enum IDistributionConfig.AccessType",
-            name: "accessType",
-            type: "uint8"
-          }
-        ],
-        internalType: "struct IDistributionConfig.DistributionConfig",
-        name: "distrConfig",
-        type: "tuple"
-      },
-      {
-        components: [
-          {
-            internalType: "contract IERC20",
-            name: "token",
-            type: "address"
-          },
-          {
-            internalType: "address",
-            name: "beneficiary",
-            type: "address"
-          }
-        ],
-        internalType: "struct PaymentConfig",
-        name: "paymentConfig",
-        type: "tuple"
-      }
-    ],
-    internalType: "struct IZNSRootRegistrar.RootDomainRegistrationArgs",
-    name: "args",
-    type: "tuple"
+    contractInputsValues: {}
   }
 }
-
-const getRegistertBulkAbi = () => {
-  return { 
-    // struct RootDomainRegistrationArgs[]
-    components: [
-      {
-        internalType: "string",
-        name: "name",
-        type: "string"
-      },
-      {
-        internalType: "address",
-        name: "domainAddress",
-        type: "address"
-      },
-      {
-        internalType: "address",
-        name: "tokenOwner",
-        type: "address"
-      },
-      {
-        internalType: "string",
-        name: "tokenURI",
-        type: "string"
-      },
-      { // struct DistributionConfig
-        components: [
-          {
-            internalType: "contract IZNSPricer",
-            name: "pricerContract",
-            type: "address"
-          },
-          {
-            internalType: "enum IDistributionConfig.PaymentType",
-            name: "paymentType",
-            type: "uint8"
-          },
-          {
-            internalType: "enum IDistributionConfig.AccessType",
-            name: "accessType",
-            type: "uint8"
-          }
-        ],
-        internalType: "struct IDistributionConfig.DistributionConfig",
-        name: "distrConfig",
-        type: "tuple"
-      },
-      { // struct PaymentConfig
-        components: [
-          {
-            internalType: "contract IERC20",
-            name: "token",
-            type: "address"
-          },
-          {
-            internalType: "address",
-            name: "beneficiary",
-            type: "address"
-          }
-        ],
-        internalType: "struct PaymentConfig",
-        name: "paymentConfig",
-        type: "tuple"
-      }
-    ],
-    internalType: "struct IRootRegistrar.RootDomainRegistrationArgs[]",
-    name: "args",
-    type: "tuple[]"
-  }
-}
-
 
 main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
-
-
-  /// TODO try just making raw json, instead of using API kit for now
-  // const apiKit = new SafeApiKit({
-  //   chainId: 9369n, // zchain, env? no tx service, need custom
-  // });
-
-  // // sample get request to show connection works
-  // const safeAddress = process.env.SAFE_ADDRESS;
-
-  // if (!safeAddress) throw Error("No Safe address set in .env file");
-
-  // const safeTx = {
-  //   to: safeAddress,
-  //   value: "0",
-  //   data: "0x",
-  //   operation: 0, // 0 for CALL, 1 for DELEGATE_CALL
-  // }
-
-  // const estimateTx = await apiKit.estimateSafeTransaction(
-  //   safeAddress,
-  //   safeTx
-  // )
-
-  // console.log(estimateTx);
