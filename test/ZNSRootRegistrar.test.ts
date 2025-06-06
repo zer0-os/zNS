@@ -32,7 +32,7 @@ import {
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
   DIVISION_BY_ZERO_ERR,
   INVALID_CONFIG_LENGTH_ERR,
-  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR,
+  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
