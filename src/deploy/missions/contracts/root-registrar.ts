@@ -7,6 +7,7 @@ import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
+import { encodePriceConfig } from "../../../../test/helpers";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
@@ -30,6 +31,7 @@ IZNSContracts
       curvePricer,
       treasury,
       domainToken,
+      config,
     } = this.campaign;
 
     return [
@@ -37,6 +39,7 @@ IZNSContracts
       await registry.getAddress(),
       // we use CurvePricer as the IZNSPricer for root domains
       await curvePricer.getAddress(),
+      encodePriceConfig(config.rootPriceConfig),
       await treasury.getAddress(),
       await domainToken.getAddress(),
     ];

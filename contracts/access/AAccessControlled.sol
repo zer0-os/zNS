@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+
 import { IZNSAccessController } from "./IZNSAccessController.sol";
-import { ZeroAddressPassed } from "../utils/CommonErrors.sol";
+import { WrongAccessControllerAddress } from "../utils/CommonErrors.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 
 /**
@@ -57,7 +59,7 @@ abstract contract AAccessControlled {
      */
     function setAccessController(address accessController_)
     external
-    onlyAdmin {
+    {
         _setAccessController(accessController_);
     }
 
@@ -66,7 +68,26 @@ abstract contract AAccessControlled {
      * @param _accessController Address of the ZNSAccessController contract.
      */
     function _setAccessController(address _accessController) internal {
-        if (_accessController == address(0)) revert ZeroAddressPassed();
+        // Validate if `msg.sender` has the admin role in the *current* contract
+        if (address(accessController) != address(0)) {
+            if (!IAccessControl(accessController).hasRole(accessController.ADMIN_ROLE(), msg.sender)) {
+                revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, accessController.ADMIN_ROLE());
+            }
+        }
+
+        // Similarly, validate admin alignment in the *new* contract
+        if (_accessController.code.length != 0) {
+            try IZNSAccessController(_accessController).ADMIN_ROLE() returns (bytes32 adminRole) {
+                if (!IAccessControl(_accessController).hasRole(adminRole, msg.sender)) {
+                    revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, adminRole);
+                }
+            } catch {
+                revert WrongAccessControllerAddress(_accessController);
+            }
+        } else {
+            revert WrongAccessControllerAddress(_accessController);
+        }
+
         accessController = IZNSAccessController(_accessController);
         emit AccessControllerSet(_accessController);
     }

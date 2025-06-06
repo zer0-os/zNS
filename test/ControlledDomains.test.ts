@@ -7,7 +7,7 @@ import { IZNSContracts } from "../src/deploy/campaign/types";
 import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
 import {
-  AccessType, distrConfigEmpty, DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
+  AccessType, DEFAULT_CURVE_PRICE_CONFIG_BYTES, distrConfigEmpty, DISTRIBUTION_LOCKED_NOT_EXIST_ERR,
   NONEXISTENT_TOKEN_ERC_ERR,
   NOT_AUTHORIZED_ERR, NOT_FULL_OWNER_ERR, paymentConfigEmpty,
 } from "./helpers";
@@ -29,7 +29,7 @@ const makeSetupFixture = async () => {
     config,
   });
 
-  const zns = campaign.state.contracts;
+  const zns = campaign.state.contracts ;
   const mongoAdapter = campaign.dbAdapter;
 
   // Give funds and approve
@@ -48,6 +48,7 @@ const makeSetupFixture = async () => {
   // Register the root domain for the Registrar
   const baseRootDomainHash = await registrationWithSetup({
     zns,
+    tokenOwner: parentOwner.address,
     user: parentOwner,
     domainLabel: "controlling-root",
   });
@@ -266,9 +267,10 @@ describe("Controlled Domains Test", () => {
 
       it(`should NOT let ${name} token owner access domain management functions`, async () => {
         await expect(
-          zns.subRegistrar.connect(tokenOwner).setPricerContractForDomain(
+          zns.subRegistrar.connect(tokenOwner).setPricerDataForDomain(
             controlledSubHash,
-            zns.fixedPricer.target,
+            DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+            await zns.fixedPricer.getAddress(),
           )
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,

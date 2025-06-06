@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
-import { IZNSPricer } from "../types/IZNSPricer.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
+import { IZNSRootRegistrar } from "./IZNSRootRegistrar.sol";
 
 
 /**
@@ -40,29 +41,10 @@ interface IZNSSubRegistrar is IDistributionConfig {
     /**
      * @notice Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
      */
-    event PricerContractSet(
+    event PricerDataSet(
         bytes32 indexed domainHash,
+        bytes indexed priceConfig,
         address indexed pricerContract
-    );
-
-    /**
-     * @notice Emitted when a new `DistributionConfig.paymentType` is set for a domain.
-     */
-    event PaymentTypeSet(bytes32 indexed domainHash, PaymentType paymentType);
-
-    /**
-     * @notice Emitted when a new `DistributionConfig.accessType` is set for a domain.
-     */
-    event AccessTypeSet(bytes32 indexed domainHash, AccessType accessType);
-
-    /**
-     * @notice Emitted when a new full `DistributionConfig` is set for a domain at once.
-     */
-    event DistributionConfigSet(
-        bytes32 indexed domainHash,
-        IZNSPricer pricerContract,
-        PaymentType paymentType,
-        AccessType accessType
     );
 
     /**
@@ -86,46 +68,37 @@ interface IZNSSubRegistrar is IDistributionConfig {
      */
     event RootRegistrarSet(address registrar);
 
-    function distrConfigs(
-        bytes32 domainHash
-    ) external view returns (
-        IZNSPricer pricerContract,
-        PaymentType paymentType,
-        AccessType accessType
-    );
-
-    function isMintlistedForDomain(
-        bytes32 domainHash,
-        address candidate
-    ) external view returns (bool);
-
     function initialize(
         address _accessController,
         address _registry,
         address _rootRegistrar
     ) external;
 
-    function registerSubdomain(SubdomainRegisterArgs calldata regArgs) external returns (bytes32);
+    function distrConfigs(
+        bytes32 domainHash
+    ) external view returns (
+        IZNSPricer pricerContract,
+        PaymentType paymentType,
+        AccessType accessType,
+        bytes memory priceConfig
+    );
+
+    function registerSubdomain(
+        SubdomainRegisterArgs calldata registration
+    ) external returns (bytes32);
 
     function registerSubdomainBulk(
         SubdomainRegisterArgs[] calldata args
     ) external returns (bytes32[] memory);
-
-    /**
-     * @notice Helper function to hash a child label with a parent domain hash.
-     */
-    function hashWithParent(
-        bytes32 parentHash,
-        string memory label
-    ) external pure returns (bytes32);
 
     function setDistributionConfigForDomain(
         bytes32 parentHash,
         DistributionConfig calldata config
     ) external;
 
-    function setPricerContractForDomain(
+    function setPricerDataForDomain(
         bytes32 domainHash,
+        bytes memory priceConfig,
         IZNSPricer pricerContract
     ) external;
 
@@ -152,4 +125,20 @@ interface IZNSSubRegistrar is IDistributionConfig {
     function setRegistry(address registry_) external;
 
     function setRootRegistrar(address registrar_) external;
+
+    function isMintlistedForDomain(
+        bytes32 domainHash,
+        address candidate
+    ) external view returns (bool);
+
+    function hashWithParent(
+        bytes32 parentHash,
+        string calldata label
+    ) external pure returns (bytes32);
+
+    function pauseRegistration() external;
+
+    function unpauseRegistration() external;
+
+    function rootRegistrar() external returns (IZNSRootRegistrar);
 }

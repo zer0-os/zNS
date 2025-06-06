@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-import { ZNSFixedPricer } from "../../price/ZNSFixedPricer.sol";
+import { ZNSFixedPricer } from "../../../price/ZNSFixedPricer.sol";
 import { UpgradeMock } from "../UpgradeMock.sol";
 
 

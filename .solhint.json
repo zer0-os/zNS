@@ -3,7 +3,7 @@
   "rules": {
     "compiler-version": [
       "error",
-      "^0.8.18"
+      "0.8.26"
     ],
     "not-rely-on-time": "off",
     "no-inline-assembly": "off",
@@ -22,6 +22,10 @@
     "named-parameters-mapping": "error",
     "comprehensive-interface": "error",
     "max-line-length": ["error", 120],
-    "custom-errors": "off"
+    "custom-errors": "warn",
+    "no-console": "error",
+    "no-global-import": "error",
+    "no-unused-import": "error",
+    "interface-starts-with-i": "error"
   }
 }

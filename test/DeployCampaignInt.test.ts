@@ -15,7 +15,7 @@ import {
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INVALID_ENV_ERR,
@@ -84,7 +84,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
@@ -368,7 +368,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
@@ -670,7 +670,7 @@ describe("Deploy Campaign Test", () => {
       expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
       expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(zeroVault.address);
       expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
-      expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
+      expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_CURVE_PRICE_CONFIG);
     });
 
     it("Confirms encoding functionality works for env variables", async () => {
@@ -860,7 +860,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
@@ -1051,7 +1051,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
         stakingTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,

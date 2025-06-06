@@ -4,7 +4,10 @@ pragma solidity 0.8.26;
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
 
 
 /**
@@ -174,7 +177,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
      * @param resolverType The resolver type as a string, e.g. "address"
      */
-    function getResolverType(string calldata resolverType) public view override returns(address) {
+    function getResolverType(string calldata resolverType) public view override returns (address) {
         return resolvers[resolverType];
     }
 

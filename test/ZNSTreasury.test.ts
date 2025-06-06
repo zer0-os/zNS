@@ -7,13 +7,15 @@ import {
   getPriceObject,
   NO_BENEFICIARY_ERR,
   INITIALIZED_ERR,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   validateUpgrade,
   NOT_AUTHORIZED_ERR,
   getStakingOrProtocolFee, AC_UNAUTHORIZED_ERR, ZERO_ADDRESS_ERR,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
@@ -156,11 +158,13 @@ describe("ZNSTreasury", () => {
       const zeroVaultBalanceBeforeStake = await zns.meowToken.balanceOf(zeroVault.address);
 
       const expectedStake = await zns.curvePricer.getPrice(
-        ethers.ZeroHash,
+        DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         domainName,
         false
       );
-      const fee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, expectedStake);
+
+      const rootConfig = await zns.rootRegistrar.rootPriceConfig();
+      const fee = await zns.curvePricer.getFeeForPrice(rootConfig, expectedStake);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,
@@ -204,7 +208,7 @@ describe("ZNSTreasury", () => {
         stakeFee: protocolFee,
       } = getPriceObject(
         domainName,
-        DEFAULT_PRICE_CONFIG
+        DEFAULT_CURVE_PRICE_CONFIG
       );
 
       const tx = zns.treasury.connect(mockRegistrar).stakeForDomain(
@@ -532,28 +536,81 @@ describe("ZNSTreasury", () => {
     });
   });
 
-  describe("#setAccessController() and AccessControllerSet event", () => {
-    it("Should set the correct address of Access Controller", async () => {
+  describe("#setAccessController", () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.treasury.connect(deployer).setAccessController(zns.accessController.target);
+
       const currentAccessController = await zns.treasury.getAccessController();
-      expect(currentAccessController).to.not.eq(randomAcc.address);
 
-      const tx = await zns.treasury.setAccessController(randomAcc.address);
-
-      const newAccessController = await zns.treasury.getAccessController();
-      expect(newAccessController).to.eq(randomAcc.address);
-
-      await expect(tx).to.emit(zns.treasury, "AccessControllerSet").withArgs(randomAcc.address);
+      expect(currentAccessController).to.equal(zns.accessController.target);
     });
 
-    it("Should revert when called from any address without ADMIN_ROLE", async () => {
-      const tx = zns.treasury.connect(user).setAccessController(randomAcc.address);
-      await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(user.address,ADMIN_ROLE);
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.treasury.getAccessController()
+      ).to.equal(
+        zns.accessController.target
+      );
+
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
+
+      // then change the AccessController
+      await zns.treasury.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.treasury.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
     });
 
-    it("Should revert when accessController is address 0", async () => {
-      const tx = zns.treasury.setAccessController(ethers.ZeroAddress);
-      await expect(tx).to.be.revertedWithCustomError(zns.treasury, ZERO_ADDRESS_ERR);
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.treasury.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.treasury,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.treasury.connect(user).setAccessController(zns.accessController.target)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(user.address, ADMIN_ROLE);
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.treasury.connect(deployer).setAccessController(user.address)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(user.address);
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.treasury.connect(deployer).setAccessController(zns.treasury.target)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(zns.treasury.target);
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.treasury.connect(admin).setAccessController(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        zns.treasury,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(ethers.ZeroAddress);
     });
   });
 
@@ -626,7 +683,7 @@ describe("ZNSTreasury", () => {
 
       const newLabel = "world";
       const newHash = hashSubdomainName(newLabel);
-      const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_PRICE_CONFIG);
+      const { expectedPrice, stakeFee } = getPriceObject(newLabel, DEFAULT_CURVE_PRICE_CONFIG);
 
       await zns.treasury.connect(mockRegistrar).stakeForDomain(
         ethers.ZeroHash,
