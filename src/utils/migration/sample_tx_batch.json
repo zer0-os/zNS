@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "chainId": "9369",
+  "createdAt": 1749156524307,
+  "meta": {
+    "name": "Transactions Batch",
+    "description": "",
+    "txBuilderVersion": "1.18.0",
+    "createdFromSafeAddress": "0xb98cF65094073AA64D9aCB8A39Cb05BEb422e1D3",
+    "createdFromOwnerAddress": "",
+    "checksum": "0xbea93e482a96d4bdcfdd9d628ac98bbf8841703505cb30932e8784c8476f3b25"
+  },
+  "transactions": [
+    {
+      "to": "0x6ce4a22AA99F9ae41D27E1eC3f40c32b8D0C3113",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [],
+        "name": "mint",
+        "payable": false
+      },
+      "contractInputsValues": null
+    }
+  ]
+}

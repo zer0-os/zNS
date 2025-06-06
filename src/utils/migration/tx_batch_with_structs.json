@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "chainId": "1",
+  "createdAt": 1749160687454,
+  "meta": {
+    "name": "Transactions Batch",
+    "description": "",
+    "txBuilderVersion": "1.18.0",
+    "createdFromSafeAddress": "0xe69906C2d33D8f21d79d38aE19fA3e37C19d7c74",
+    "createdFromOwnerAddress": "",
+    "checksum": "0xde76ea7b06f5a2d0884e7283b99aaca432bd8bf2e344137f04843a684870e2a3"
+  },
+  "transactions": [
+    {
+      "to": "0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "domainAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenURI",
+            "type": "string"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IZNSPricer",
+                "name": "pricerContract",
+                "type": "address"
+              },
+              {
+                "internalType": "enum IDistributionConfig.PaymentType",
+                "name": "paymentType",
+                "type": "uint8"
+              },
+              {
+                "internalType": "enum IDistributionConfig.AccessType",
+                "name": "accessType",
+                "type": "uint8"
+              }
+            ],
+            "internalType": "struct IDistributionConfig.DistributionConfig",
+            "name": "distributionConfig",
+            "type": "tuple"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract IERC20",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "beneficiary",
+                "type": "address"
+              }
+            ],
+            "internalType": "struct PaymentConfig",
+            "name": "paymentConfig",
+            "type": "tuple"
+          }
+        ],
+        "name": "registerRootDomain",
+        "payable": false
+      },
+      "contractInputsValues": {
+        "name": "boool",
+        "domainAddress": "0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05",
+        "tokenURI": "blahblah",
+        "distributionConfig": "[\"0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05\",0,0]",
+        "paymentConfig": "[\"0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05\",\"0x67611d0445f26a635a7D1cb87a3A687B95Ce4a05\"]"
+      }
+    }
+  ]
+}

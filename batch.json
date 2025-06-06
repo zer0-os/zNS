@@ -1,0 +1,496 @@
+{
+  "version": "1.0",
+  "chainId": "1",
+  "createdAt": 1749169487613,
+  "meta": {
+    "name": "Register Root Domains Batch",
+    "description": "",
+    "txBuilderVersion": "1.18.0",
+    "createdFromSafeAddress": "0xb98cF65094073AA64D9aCB8A39Cb05BEb422e1D3",
+    "createdFromOwnerAddress": "",
+    "checksum": ""
+  },
+  "transactions": [
+    {
+      "to": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+      "value": "0",
+      "data": null,
+      "contractMethod": {
+        "inputs": [
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "address",
+                "name": "domainAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "address",
+                "name": "tokenOwner",
+                "type": "address"
+              },
+              {
+                "internalType": "string",
+                "name": "tokenURI",
+                "type": "string"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "contract IZNSPricer",
+                    "name": "pricerContract",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "enum IDistributionConfig.PaymentType",
+                    "name": "paymentType",
+                    "type": "uint8"
+                  },
+                  {
+                    "internalType": "enum IDistributionConfig.AccessType",
+                    "name": "accessType",
+                    "type": "uint8"
+                  }
+                ],
+                "internalType": "struct IDistributionConfig.DistributionConfig",
+                "name": "distrConfig",
+                "type": "tuple"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "contract IERC20",
+                    "name": "token",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "beneficiary",
+                    "type": "address"
+                  }
+                ],
+                "internalType": "struct PaymentConfig",
+                "name": "paymentConfig",
+                "type": "tuple"
+              }
+            ],
+            "internalType": "struct IRootRegistrar.RootDomainRegistrationArgs[]",
+            "name": "args",
+            "type": "tuple[]"
+          }
+        ],
+        "name": "registerRootDomainBulk",
+        "payable": false
+      },
+      "contractInputValues": {
+        "args": [
+          [
+            "cfdusforathlets",
+            "0x706fb637e0c34157c700ea6b3edc0dea77d778af",
+            "0x706fb637e0c34157c700ea6b3edc0dea77d778af",
+            "ar://HsdivbVLLSdfeuA3JBGi219aFeeNszMhsi_x7XoW_18",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x706fb637e0c34157c700ea6b3edc0dea77d778af\"]"
+          ],
+          [
+            "ethfish",
+            "0x235af0759ff046a231a60ec4d5df19ea97815282",
+            "0x235af0759ff046a231a60ec4d5df19ea97815282",
+            "ar://5TqX0Yjulf8ho_ZMwL2zKGdD2mdQWYQ45Kw9SduT1UQ",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "mohammad-atashzar1376513-chemical-engineering",
+            "0x87e21cec3140efb13d306b287a25dc8992c047fa",
+            "0x87e21cec3140efb13d306b287a25dc8992c047fa",
+            "ar://hTGifYy5ErD1aGxRUKWWoF3iuyRiKQEhLdgtk04M9X0",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x87e21cec3140efb13d306b287a25dc8992c047fa\"]"
+          ],
+          [
+            "aporo",
+            "0xd5e01a785b6823da84a755496d8287ec5de99028",
+            "0xd5e01a785b6823da84a755496d8287ec5de99028",
+            "ar://G9NwKIFzrqabaBjEO9xC3EA8c4sAyRnM9H3PYbe1zqQ",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "wilderhoods",
+            "0x492839c08bbd1d5325dbd5452bab01423dfdff09",
+            "0x492839c08bbd1d5325dbd5452bab01423dfdff09",
+            "ar://46Ko-ET_kQmTssoc6hgDgA-c__1o9KOpVMQXJyb1HPQ",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,0]",
+            "[\"undefined\",\"0x492839c08bbd1d5325dbd5452bab01423dfdff09\"]"
+          ],
+          [
+            "trinityhodler",
+            "0x8e1f65356ec75fd5f09ef5fd13c2de5637d054dc",
+            "0x8e1f65356ec75fd5f09ef5fd13c2de5637d054dc",
+            "ar://Y3weq52xahObubRWSPNZiSfC531ipoGuzVJQMlrXH2E",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x8e1f65356ec75fd5f09ef5fd13c2de5637d054dc\"]"
+          ],
+          [
+            "cinema",
+            "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f",
+            "0xcb0e19de834bb92a2c48d22782b0fe594aefc31f",
+            "ar://RN1B_lNJ3_d6ngDhjfPi6Q99w6eGdlxcdVBr7U-6n2Q",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0xcb0e19de834bb92a2c48d22782b0fe594aefc31f\"]"
+          ],
+          [
+            "w",
+            "0xa07192696c60821c1843cd95201a710ce591244b",
+            "0xa07192696c60821c1843cd95201a710ce591244b",
+            "ar://3iS3b0GIeejkJJ8gwO5X9lQXEvkVa5t8aju7rA1QbMc",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "wilderweapons",
+            "0x5e0effcd942fbab80567a623c25d3e8b795c0f38",
+            "0x5e0effcd942fbab80567a623c25d3e8b795c0f38",
+            "ar://XgyblYomNne294hpciybqmztiAP7Nhp3CBOKrwUmqrE",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "303parinazzsoliuandroniyaa303231w",
+            "0xa1cd96cf8288a01957750efc37eb5331caa56ba5",
+            "0xa1cd96cf8288a01957750efc37eb5331caa56ba5",
+            "ar://KgyMj9nmmqYOU4g3dvuBmbpcjtu_KOiZRK9Cr83A154",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0xa1cd96cf8288a01957750efc37eb5331caa56ba5\"]"
+          ],
+          [
+            "me-",
+            "0x9695c7cee3130afc1cf39be5403a2e2b8baa2949",
+            "0x9695c7cee3130afc1cf39be5403a2e2b8baa2949",
+            "ar://8sjI__FJeNlFHFD1lI25aqHT4GwNZBWTjv7ym-WCL-Q",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x9695c7cee3130afc1cf39be5403a2e2b8baa2949\"]"
+          ],
+          [
+            "cryptodude",
+            "0xf4fca0efc12dd4e6b00b4c0c9e155bc3f4db10ac",
+            "0xf4fca0efc12dd4e6b00b4c0c9e155bc3f4db10ac",
+            "ar://qoXZ3OMOY9NngMGE7_KJ4pXtTFfHWo4gdlIux06TgGw",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0xf4fca0efc12dd4e6b00b4c0c9e155bc3f4db10ac\"]"
+          ],
+          [
+            "blvrd",
+            "0x8a2f21c89accf337944cae0ba11631ca33a43148",
+            "0x8a2f21c89accf337944cae0ba11631ca33a43148",
+            "ar://WRhPochAkSN3CjjlE0rqr-_n9PE_qoFIi6cRG1MFVs8",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "spooky",
+            "0x9079726b3c89c89ab9c3c7948a58a9a9ce3f80e0",
+            "0x9079726b3c89c89ab9c3c7948a58a9a9ce3f80e0",
+            "ar://Je2Z4IUxgTb6a0zCOBW0FskmebLWhksYF8hvtjc1cmA",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x9079726b3c89c89ab9c3c7948a58a9a9ce3f80e0\"]"
+          ],
+          [
+            "metaversex",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "ar://Je_JeHqgI3xhTf6QxgZB1SmD2zBHnhkR4oHGW1UIpqU",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844\"]"
+          ],
+          [
+            "premierleague",
+            "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49",
+            "0xe8eb59065aeabf68ad20f1b10e68c89c69575a49",
+            "ar://6dqrEuBT_Hxm05OmQOSk52OFLDUU1ZMWnMIA3Girb5g",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",1,1]",
+            "[\"undefined\",\"0xe8eb59065aeabf68ad20f1b10e68c89c69575a49\"]"
+          ],
+          [
+            "west",
+            "0x79cb6b266c24647acd1084a66fdfb07d3fda7fc2",
+            "0x79cb6b266c24647acd1084a66fdfb07d3fda7fc2",
+            "ar://09_pRL4-hZJULMBe6wbNMONsp-8KC0KG1FqMAZ2VXVQ",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "juiceworld",
+            "0x9c89508f76931b37cc1a7ba085ea25ea125b1785",
+            "0x9c89508f76931b37cc1a7ba085ea25ea125b1785",
+            "ar://GjHvoFQ5URv8uRUX14zWNsxbKdIV_sx_7ihDBLNzkvw",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x9c89508f76931b37cc1a7ba085ea25ea125b1785\"]"
+          ],
+          [
+            "gamertag",
+            "0x7b7e48d474b97fce99bf5c268707b0e4d30af92c",
+            "0x7b7e48d474b97fce99bf5c268707b0e4d30af92c",
+            "ar://OE8KxIXanjMZlOd3Mk7CpFfp51pr_vSqgSAXy0KJz3w",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x7b7e48d474b97fce99bf5c268707b0e4d30af92c\"]"
+          ],
+          [
+            "0",
+            "0xac9a7b808a7cc1e7177df381b11ca57f0898f777",
+            "0xac9a7b808a7cc1e7177df381b11ca57f0898f777",
+            "ar://CWEXARRTKgrpjR3arQ34sRAR3Rsth4xu6AhdyM_ZMo0",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "joestimemachines",
+            "0x2f227be21feac761eb8a1c128e5ba22c93a94f6e",
+            "0x2f227be21feac761eb8a1c128e5ba22c93a94f6e",
+            "ar://lmR0bo9KmkpHg24dPXp8RAaZKfhGYxMubvvcpI3RAu4",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "spacemind",
+            "0x492839c08bbd1d5325dbd5452bab01423dfdff09",
+            "0x492839c08bbd1d5325dbd5452bab01423dfdff09",
+            "ar://m7b-3fSbFqW8J7Ul2fBZ76owMKHg00bVNP5hMJhih8E",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x492839c08bbd1d5325dbd5452bab01423dfdff09\"]"
+          ],
+          [
+            "deepseek",
+            "0xb1619e9a1f687b21d8a10c9b29e57a87cce2ff31",
+            "0xb1619e9a1f687b21d8a10c9b29e57a87cce2ff31",
+            "ar://cYHF8Cw1VH9zbFASkkKRlHdCItCI-jutKEHW8YF50Qk",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0xb1619e9a1f687b21d8a10c9b29e57a87cce2ff31\"]"
+          ],
+          [
+            "marmarrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+            "0x6cfcdab614ff2acf74fae4318de5c19fef0e0166",
+            "0x6cfcdab614ff2acf74fae4318de5c19fef0e0166",
+            "ar://rg8VvE4oH-yb6PudgWxluyfNJF2Nw9Jyy7Bxrut-_FU",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x6cfcdab614ff2acf74fae4318de5c19fef0e0166\"]"
+          ],
+          [
+            "epic",
+            "0xb7f70ebca3107c2f44fb14613d01f58519a1733a",
+            "0xb7f70ebca3107c2f44fb14613d01f58519a1733a",
+            "ar://nZOLoz0FsHkpORJ4fy3kEVWqusXMWqZPBCszVKW5GQs",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "thehappyjukebox",
+            "0x69d76714272e859950b18f526bf670562bd2ec08",
+            "0x69d76714272e859950b18f526bf670562bd2ec08",
+            "ar://CPcGdsXY88tp1-c9U3Kq9CS81OaAhuwDT79ebH_vunU",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x69d76714272e859950b18f526bf670562bd2ec08\"]"
+          ],
+          [
+            "wilderness",
+            "0x20b3eecd02359ffcdbef23d0cf58cf52a5a5f7f5",
+            "0x20b3eecd02359ffcdbef23d0cf58cf52a5a5f7f5",
+            "ar://56sGa-_BoVwFVt-w3vwuyjtFetOyBFsYvSt-pYCuK_s",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",1,1]",
+            "[\"undefined\",\"0x20b3eecd02359ffcdbef23d0cf58cf52a5a5f7f5\"]"
+          ],
+          [
+            "weapons",
+            "0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c",
+            "0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c",
+            "ar://iiyB4QeW1B9VFk6InEEq-pFc0hpV5r9bqHmmMWTV6BA",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,0]",
+            "[\"undefined\",\"0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c\"]"
+          ],
+          [
+            "sjo",
+            "0xf5b4c4a7398662e0f5564f480b1166defa7f500e",
+            "0xf5b4c4a7398662e0f5564f480b1166defa7f500e",
+            "ar://PrVhexA-44aMs24uqgf8RHjsE1po49Iqg003O63VRKU",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "steve",
+            "0x8c99c497f19a533998d1b34db4d1bc55f3802fac",
+            "0x8c99c497f19a533998d1b34db4d1bc55f3802fac",
+            "ar://er5apOZ1SuhEKqWBMoKG2Mnz5BVkpHRhpg-QDTGxi_I",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x8c99c497f19a533998d1b34db4d1bc55f3802fac\"]"
+          ],
+          [
+            "digiknowassets",
+            "0x2388c724e350759ca282b2133e4c2f56ded60cd7",
+            "0x2388c724e350759ca282b2133e4c2f56ded60cd7",
+            "ar://I-juKk3pJJiXhT5sXAFEHOnHRnFlsktnb80HCteIl00",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x2388c724e350759ca282b2133e4c2f56ded60cd7\"]"
+          ],
+          [
+            "southbeach",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "ar://JW2MoxEZ5Ruf205M_Ni2Rx_N_EymZDXu7j12-GETKJA",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844\"]"
+          ],
+          [
+            "belshebits",
+            "0x5879237b6ff4c28e95f0eaaac79d760d120f70f0",
+            "0x5879237b6ff4c28e95f0eaaac79d760d120f70f0",
+            "ar://JsQrSXz8pEIIM8ohc9ojk2Cdk0q0qqzbXIBnAqFN2j8",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x5879237b6ff4c28e95f0eaaac79d760d120f70f0\"]"
+          ],
+          [
+            "pimmsy",
+            "0xb6c04e9f255f80d9985a89cdcc3cafacb7fa5623",
+            "0xb6c04e9f255f80d9985a89cdcc3cafacb7fa5623",
+            "ar://n5W9v5a64lb_sZ4pxfndoQY_bs39uOzSWZCSxK9zydU",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "chriswilder",
+            "0xa9151da22b587654652a89ab61a5473dc218deda",
+            "0xa9151da22b587654652a89ab61a5473dc218deda",
+            "ar://JKmHxPDXoDbgxItuDSYYbnfCScT3McFU-n3mCEXHnQk",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "five9ines",
+            "0xab8558465ea2167a9a15d907af02025c5f55ac33",
+            "0xab8558465ea2167a9a15d907af02025c5f55ac33",
+            "ar://bi2yxyrLn37mkFWYGhrwg5o59DBeiXj_2SyhnhjPZZE",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0xab8558465ea2167a9a15d907af02025c5f55ac33\"]"
+          ],
+          [
+            "sexy",
+            "0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c",
+            "0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c",
+            "ar://_OF3evTBjsNsWEhqD85WsGM9TxNovQu1ctQDfhUYJq4",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,0]",
+            "[\"undefined\",\"0x7295e4d3c2bff819219b07d6aa1d95710cc79c6c\"]"
+          ],
+          [
+            "citizenights",
+            "0xf52231e276c9273210828deeceff8f3908a204db",
+            "0xf52231e276c9273210828deeceff8f3908a204db",
+            "ar://tlaVhC7N51Y3SrD4B9Ds4PUYI4G1j28mFqyh0-Ck_Nw",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0xf52231e276c9273210828deeceff8f3908a204db\"]"
+          ],
+          [
+            "wildersports",
+            "0x919fbcac1fd31e8a429014f5e4a57aa5516a1cc3",
+            "0x919fbcac1fd31e8a429014f5e4a57aa5516a1cc3",
+            "ar://34miq64DljOFALc3xoeqHZQ2zAKSOjsCU84HnzclmsY",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x919fbcac1fd31e8a429014f5e4a57aa5516a1cc3\"]"
+          ],
+          [
+            "trinityzer",
+            "0xa8678003ec78736aab8b45206b15504e9ac29c8b",
+            "0xa8678003ec78736aab8b45206b15504e9ac29c8b",
+            "ar://Cfpo1PPw7nIsnIA-164FFxsJz79LaOHmywtkGbwiR4I",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x6d262663609aac5eecb652619b1c6c1470be1402\"]"
+          ],
+          [
+            "dreamscape",
+            "0x3c1518878ca0b7cbf0f56688c1f80c4f0107aa26",
+            "0x3c1518878ca0b7cbf0f56688c1f80c4f0107aa26",
+            "ar://pcoi37EGuoAFYnb7-k7ZTiDwyoiR3CY02y0Knj94-Ok",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x3c1518878ca0b7cbf0f56688c1f80c4f0107aa26\"]"
+          ],
+          [
+            "israel",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "ar://ymuZ0HAD8pGCn9pUXJmXikagMX5FXdrkyuAwK20T9yM",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,0]",
+            "[\"undefined\",\"0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844\"]"
+          ],
+          [
+            "binance",
+            "0xd747bcaee0f1959c9079b56e37efdb2ddeae2ccc",
+            "0xd747bcaee0f1959c9079b56e37efdb2ddeae2ccc",
+            "ar://9PnuaiO8pXMuRfFnDddoYfZyg_2eIK3ogGceJfKiiy4",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0xd747bcaee0f1959c9079b56e37efdb2ddeae2ccc\"]"
+          ],
+          [
+            "hospital",
+            "0x9695c7cee3130afc1cf39be5403a2e2b8baa2949",
+            "0x9695c7cee3130afc1cf39be5403a2e2b8baa2949",
+            "ar://CaRGqj6rfK-qN_Z6sDhucQ0lDciluF3N8taehJ6zf_A",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "easy",
+            "0x5524109b837701ee6ffb20a348b9df6a2956af8a",
+            "0x5524109b837701ee6ffb20a348b9df6a2956af8a",
+            "ar://ZZdvK7SIOEQxfjdRQ29-e0fvDezD77I4kjN1Oc0cDhs",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0x5524109b837701ee6ffb20a348b9df6a2956af8a\"]"
+          ],
+          [
+            "hawk-tuah",
+            "0xfc2278fc8c2a538fd7fcc6b7a3a1598b7210e1da",
+            "0xfc2278fc8c2a538fd7fcc6b7a3a1598b7210e1da",
+            "ar://n9AWynzx1qdj5YKyJDEe0jDH0Of3L11wTwImJMxx9xE",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",1,1]",
+            "[\"undefined\",\"0xfc2278fc8c2a538fd7fcc6b7a3a1598b7210e1da\"]"
+          ],
+          [
+            "exchange",
+            "0x3676cfd3e0646c28f79222fb2414b63139ff2bd1",
+            "0x3676cfd3e0646c28f79222fb2414b63139ff2bd1",
+            "ar://hFTuk0kVxgtTVOoogH_otwhlNiNVg6Di584boF1nzUM",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "hoops",
+            "0xab8558465ea2167a9a15d907af02025c5f55ac33",
+            "0xab8558465ea2167a9a15d907af02025c5f55ac33",
+            "ar://A58Qymhw4wyywt8b5rGyVJp8ICx-deOe1j7yMWCamP8",
+            "[\"0x6c14b2ea18809bdfe2315c289faa1ceac172811f\",0,1]",
+            "[\"undefined\",\"0xab8558465ea2167a9a15d907af02025c5f55ac33\"]"
+          ],
+          [
+            "c",
+            "0xb7f70ebca3107c2f44fb14613d01f58519a1733a",
+            "0xb7f70ebca3107c2f44fb14613d01f58519a1733a",
+            "ar://lDoKg8A6hwVD991orGRDtbYv94B5AFAF0IB6Hr8KwRQ",
+            "[\"null\",null,0]",
+            "[\"undefined\",\"null\"]"
+          ],
+          [
+            "openworld",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844",
+            "ar://VCCMxT8uSA56iP5IEjNiMtCSD0egtT70UtmLMB4YWWQ",
+            "[\"0xa5e9a65bbc880bfb227561cbd644925918ef83a9\",0,1]",
+            "[\"undefined\",\"0x601ec21fc84fe7e193740c4c7ee6801ae9ac0844\"]"
+          ]
+        ]
+      }
+    }
+  ]
+}
