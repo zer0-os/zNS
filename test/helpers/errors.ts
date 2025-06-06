@@ -11,6 +11,7 @@ export const HARDHAT_INFER_ERR = "Transaction reverted and Hardhat couldn't infe
 
 // AccessControl
 export const AC_UNAUTHORIZED_ERR = "AccessControlUnauthorizedAccount";
+export const AC_WRONGADDRESS_ERR = "WrongAccessControllerAddress";
 
 // ERC20
 export const INSUFFICIENT_BALANCE_ERC_ERR = "ERC20InsufficientBalance";

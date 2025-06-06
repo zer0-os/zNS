@@ -12,6 +12,8 @@ error DomainAlreadyExists(bytes32 domainHash);
 
 error NotAuthorizedForDomain(address caller, bytes32 domainHash);
 
+error WrongAccessControllerAddress(address accessController);
+
 error NotFullDomainOwner(address caller, bytes32 domainHash);
 
 error AlreadyFullOwner(address owner, bytes32 domainHash);

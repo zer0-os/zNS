@@ -115,7 +115,7 @@ const createConfig = async (
 
   const createdConfig : IDomainConfigForTest = {
     user: args.user,
-    domainLabel: args.domainLabel!, // we know it is set at this point
+    domainLabel: args.domainLabel as string, // we know it is set at this point
     tokenOwner: args.user.address,
     parentHash: args.parentHash ?? ethers.ZeroHash,
     fullConfig: {

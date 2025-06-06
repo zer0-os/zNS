@@ -5,7 +5,7 @@ import {
 } from "../typechain";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ethers } from "ethers";
+import { ethers } from "hardhat";
 import {
   ADMIN_ROLE,
   REGISTRAR_ROLE,
@@ -29,6 +29,7 @@ import {
   CANNOT_BURN_TOKEN_ERR,
   ERC721_INVALID_RECEIVER_ERR,
   hashDomainLabel,
+  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 
@@ -123,6 +124,84 @@ describe("ZNSDomainToken", () => {
         zns.rootRegistrar,
         ZERO_ADDRESS_ERR
       );
+    });
+  });
+
+  describe("#setAccessController", () => {
+    it("should allow ADMIN to set a valid AccessController", async () => {
+      await zns.domainToken.connect(deployer).setAccessController(zns.accessController.target);
+
+      const currentAccessController = await zns.domainToken.getAccessController();
+
+      expect(currentAccessController).to.equal(zns.accessController.target);
+    });
+
+    it("should allow re-setting the AccessController to another valid contract", async () => {
+      expect(
+        await zns.domainToken.getAccessController()
+      ).to.equal(
+        zns.accessController.target
+      );
+
+      const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+      const newAccessController = await ZNSAccessControllerFactory.deploy(
+        [deployer.address],
+        [deployer.address]
+      );
+
+      // then change the AccessController
+      await zns.domainToken.connect(deployer).setAccessController(newAccessController.target);
+
+      expect(
+        await zns.domainToken.getAccessController()
+      ).to.equal(
+        newAccessController.target
+      );
+    });
+
+    it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(zns.accessController.target)
+      ).to.emit(
+        zns.domainToken,
+        "AccessControllerSet"
+      ).withArgs(zns.accessController.target);
+    });
+
+    it("should revert when a non-ADMIN tries to set AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(caller).setAccessController(zns.accessController.target)
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_UNAUTHORIZED_ERR
+      ).withArgs(caller.address, ADMIN_ROLE);
+    });
+
+    it("should revert when setting an AccessController as EOA address", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(caller.address)
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(caller.address);
+    });
+
+    it("should revert when setting an AccessController as another non-AC contract address", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(zns.domainToken.target)
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(zns.domainToken.target);
+    });
+
+    it("should revert when setting a zero address as AccessController", async () => {
+      await expect(
+        zns.domainToken.connect(deployer).setAccessController(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(
+        zns.domainToken,
+        AC_WRONGADDRESS_ERR
+      ).withArgs(ethers.ZeroAddress);
     });
   });
 
@@ -462,15 +541,10 @@ describe("ZNSDomainToken", () => {
       expect(await zns.domainToken.ownerOf(tokenId)).to.equal(caller.address);
     });
 
-    it("Should set access controller if caller has ADMIN_ROLE", async () => {
-      await zns.domainToken.connect(deployer).setAccessController(caller.address);
-      expect(await zns.domainToken.getAccessController()).to.equal(caller.address);
-    });
-
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
       await expect(zns.domainToken.connect(caller).setAccessController(caller.address))
-        .to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-        .withArgs(caller.address,ADMIN_ROLE);
+        .to.be.revertedWithCustomError(zns.domainToken, AC_UNAUTHORIZED_ERR)
+        .withArgs(caller.address, ADMIN_ROLE);
     });
   });
 

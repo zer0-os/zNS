@@ -7,7 +7,6 @@ import {
   IFullDistributionConfig,
   encodePriceConfig,
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-  IRegisterWithSetupArgs,
 } from "../../../test/helpers";
 import { registrationWithSetup } from "../../../test/helpers/register-setup";
 
