@@ -14,7 +14,6 @@ import {
   encodePriceConfig,
   decodePriceConfig,
   INVALID_CONFIG_LENGTH_ERR,
-  AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import {
   DEFAULT_CURVE_PRICE_CONFIG,

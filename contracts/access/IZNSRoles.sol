@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
-
+// solhint-disable func-name-mixedcase
 interface IZNSRoles {
     function ADMIN_ROLE() external view returns (bytes32);
 
