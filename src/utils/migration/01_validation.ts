@@ -31,6 +31,12 @@ const main = async () => {
   const roots = rootDomainObjects.map(d => d as Domain);
   const subs = subdomainObjects.map(d => d as Domain);
 
+  const dbName = process.env.MONGO_DB_NAME_WRITE;
+  if (!dbName) throw Error("No DB name given");
+
+  const uri = process.env.MONGO_DB_URI_WRITE;
+  if (!uri) throw Error("No connection string given");
+
   // Can iterate all at once for simplicity
   let index = 0;
   for(const domain of [...roots, ...subs]) {
@@ -51,12 +57,6 @@ const main = async () => {
   }
 
   // Connect to database collection and write user domain data to DB
-  const dbName = process.env.MONGO_DB_NAME_WRITE;
-  if (!dbName) throw Error("No DB name given");
-
-  const uri = process.env.MONGO_DB_URI_WRITE;
-  if (!uri) throw Error("No connection string given");
-
   const client = (await getDBAdapter(uri)).db(dbName);
 
   // To avoid duplicate data, we clear the DB before any inserts
