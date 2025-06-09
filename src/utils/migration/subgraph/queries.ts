@@ -98,6 +98,7 @@ export const getDomains = gql`
         id
         beneficiaryAddress
         paymentToken {
+          id
           name
           symbol
         }
