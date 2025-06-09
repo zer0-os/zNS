@@ -20,6 +20,7 @@ interface IZNSDomainToken is IERC2981, IERC721 {
     event BaseURISet(string indexed baseURI);
     /**
      * @notice Emitted when a Token URI is set for individual tokens per tokenID.
+     *
      * @dev Note that this event is fired ONLY when the tokenURI is set externally
      * through an external setter and NOT during the registration.
     */
