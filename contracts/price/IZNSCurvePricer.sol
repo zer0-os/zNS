@@ -12,10 +12,10 @@ interface IZNSCurvePricer is IZNSPricer {
     struct CurvePriceConfig {
         /**
          * @notice Maximum price for a domain returned at <= `baseLength`
-        */
+         */
         uint256 maxPrice;
         /**
-         * @notice Multiplier which we use to bend a curve of price on interval from `baseLength` to `maxLength`.
+         * @notice Multiplier which we use to bend the price curve in interval from `baseLength` to `maxLength`.
          */
         uint256 curveMultiplier;
         /**

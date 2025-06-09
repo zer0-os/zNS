@@ -28,6 +28,11 @@ contract ZNSFixedPricer is IZNSFixedPricer {
         );
     }
 
+    /**
+     * @notice Decodes the price config from bytes to FixedPriceConfig struct
+     *
+     * @param priceConfig The bytes to decode
+     */
     function decodePriceConfig(
         bytes memory priceConfig
     ) public pure override returns (FixedPriceConfig memory) {
@@ -48,6 +53,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
 
     /**
      * @notice Gets the price for a subdomain candidate label under the parent domain.
+     *
      * @dev `skipValidityCheck` param is added to provide proper revert when the user is
      * calling this to find out the price of a domain that is not valid. But in Registrar contracts
      * we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
@@ -55,6 +61,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * Note that if calling this function directly to find out the price, a user should always pass "false"
      * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
      * possible to register.
+     *
      * @param parentPriceConfig The hash of the parent domain to check the price under
      * @param label The label of the subdomain candidate to check the price for
      * @param skipValidityCheck If true, skips the validity check for the label
@@ -75,6 +82,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
 
     /**
      * @notice Verify that the given price config is valid for this pricer
+     *
      * @param priceConfig The price config to validate
      */
     function validatePriceConfig(bytes memory priceConfig) external override pure {
@@ -93,7 +101,8 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. It returns fee for a given price
      * based on the value set by the owner of the parent domain.
-     * @param parentPriceConfig The hash of the parent domain under which fee is determined
+     *
+     * @param parentPriceConfig The price config in bytes of the parent domain under which fee is determined
      * @param price The price for a domain
     */
     function getFeeForPrice(
@@ -110,12 +119,15 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. Returns both price and fee for a given label
      * under the given parent.
+     *
      * @param parentPriceConfig The price config of the parent domain under which price and fee are determined
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
     */
     function getPriceAndFee(
         bytes memory parentPriceConfig,
+    // TODO 15: figure this out! do we need both of these vars at all in both pricers ?!?!
+    // TODO 15: also why does solhint not catch this in CI ?!?! It catches errors but doesn't fail the job !
         string calldata label,
         bool skipValidityCheck
     ) external pure override returns (uint256 price, uint256 fee) {
