@@ -11,6 +11,8 @@ import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 /**
  * @title The specific Resolver for ZNS that maps domain hashes to strings.
+ *
+ * @notice This Resolver supports ONLY the string type.
  */
 contract ZNSStringResolver is
     UUPSUpgradeable,
@@ -18,7 +20,10 @@ contract ZNSStringResolver is
     ARegistryWired,
     ERC165,
     IZNSStringResolver {
-
+    /**
+     * @notice Mapping of domain hash to string used to bind domains
+     * to any kinds of text.
+     */
     mapping(bytes32 domainHash => string resolvedString) internal resolvedStrings;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -30,6 +35,7 @@ contract ZNSStringResolver is
      * @notice Initializer for the `ZNSStringResolver` proxy.
      * Note that setter functions are used instead of direct state variable assignments
      * to use access control at deploy time. Only ADMIN can call this function.
+     *
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param registry_ The address of the `ZNSRegistry` contract
      */
@@ -40,6 +46,7 @@ contract ZNSStringResolver is
 
     /**
      * @dev Returns string associated with a given domain name hash.
+     *
      * @param domainHash The identifying hash of a domain's name
      */
     function resolveDomainString(
@@ -50,6 +57,7 @@ contract ZNSStringResolver is
 
     /**
      * @dev Sets the string for a domain name hash.
+     *
      * @param domainHash The identifying hash of a domain's name
      * @param newString The new string to map the domain to
      */
@@ -58,7 +66,6 @@ contract ZNSStringResolver is
         string calldata newString
     ) external override {
         // only owner or operator of the current domain can set the string
-
         if (!registry.isOwnerOrOperator(domainHash, msg.sender)) {
             revert NotAuthorizedForDomain(msg.sender, domainHash);
         }
@@ -70,7 +77,8 @@ contract ZNSStringResolver is
 
     /**
      * @dev ERC-165 check for implementation identifier
-     * @dev Supports interfaces IZNSStringResolver and IERC165
+     * Supports interfaces `IZNSStringResolver` and `IERC165`
+     *
      * @param interfaceId ID to check, XOR of the first 4 bytes of each function signature
      */
     function supportsInterface(
@@ -91,6 +99,7 @@ contract ZNSStringResolver is
     /**
      * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system. This function can only be called by the ADMIN.
+     *
      * @param _registry The address of the `ZNSRegistry` contract
      */
     function setRegistry(address _registry) public override(ARegistryWired, IZNSStringResolver) onlyAdmin {
@@ -99,6 +108,7 @@ contract ZNSStringResolver is
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     *
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line no-unused-vars

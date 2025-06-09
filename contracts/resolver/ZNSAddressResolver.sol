@@ -11,6 +11,7 @@ import { NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
 
 /**
  * @title The specific Resolver for ZNS that maps domain hashes to Ethereum addresses these domains were made for.
+ *
  * @notice This Resolver supports ONLY the address type. Every domain in ZNS made for a contract or wallet address
  * will have a corresponding record in this Resolver.
  */
@@ -22,7 +23,7 @@ contract ZNSAddressResolver is
     IZNSAddressResolver {
     /**
      * @notice Mapping of domain hash to address used to bind domains
-     * to Ethereum wallets or contracts registered in ZNS.
+     * to wallet, contract or any other addresses.
      */
     mapping(bytes32 domainHash => address resolvedAddress)
         internal domainAddresses;
@@ -36,6 +37,7 @@ contract ZNSAddressResolver is
      * @notice Initializer for the `ZNSAddressResolver` proxy.
      * Note that setter functions are used instead of direct state variable assignments
      * to use access control at deploy time. Only ADMIN can call this function.
+     *
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param registry_ The address of the `ZNSRegistry` contract
      */
@@ -46,6 +48,7 @@ contract ZNSAddressResolver is
 
     /**
      * @dev Returns address associated with a given domain name hash.
+     *
      * @param domainHash The identifying hash of a domain's name
      */
     function resolveDomainAddress(
@@ -59,6 +62,7 @@ contract ZNSAddressResolver is
      * be called by the owner, operator of the domain OR by the `ZNSRootRegistrar.sol`
      * as a part of the Register flow.
      * Emits an `AddressSet` event.
+     *
      * @param domainHash The identifying hash of a domain's name
      * @param newAddress The new address to map the domain to
      */
@@ -67,7 +71,7 @@ contract ZNSAddressResolver is
         address newAddress
     ) external override {
         // only owner or operator of the current domain can set the address
-        // also, ZNSRootRegistrar.sol can set the address as part of the registration process
+        // also, `ZNSRootRegistrar` can set the address as part of the registration process
         if (
             !registry.isOwnerOrOperator(domainHash, msg.sender) &&
             !accessController.isRegistrar(msg.sender)
@@ -80,7 +84,8 @@ contract ZNSAddressResolver is
 
     /**
      * @dev ERC-165 check for implementation identifier
-     * @dev Supports interfaces IZNSAddressResolver and IERC165
+     * Supports interfaces `IZNSAddressResolver` and `IERC165`
+     *
      * @param interfaceId ID to check, XOR of the first 4 bytes of each function signature
      */
     function supportsInterface(
@@ -102,6 +107,7 @@ contract ZNSAddressResolver is
      * @dev Sets the address of the `ZNSRegistry` contract that holds all crucial data
      * for every domain in the system. This function can only be called by the ADMIN.
      * Emits a `RegistrySet` event.
+     *
      * @param _registry The address of the `ZNSRegistry` contract
      */
     function setRegistry(address _registry) public override(ARegistryWired, IZNSAddressResolver) onlyAdmin {
@@ -110,6 +116,7 @@ contract ZNSAddressResolver is
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
+     *
      * @param newImplementation The implementation contract to upgrade to
      */
     // solhint-disable-next-line no-unused-vars
