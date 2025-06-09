@@ -103,7 +103,7 @@ const config : HardhatUserConfig = {
       url: `${process.env.MAINNET_RPC_URL}`,
       accounts: [
         // Read only
-        `${process.env.TESTNET_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
+        // `${process.env.TESTNET_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
       ],
       gasPrice: 80000000000,
     },
