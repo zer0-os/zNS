@@ -9,7 +9,6 @@ import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   ADMIN_ROLE,
-  DEFAULT_RESOLVER_TYPE,
   GOVERNOR_ROLE,
   REGISTRAR_ROLE,
   deployZNS,
@@ -30,7 +29,7 @@ import Domain from "./helpers/domain/domain";
 const { expect } = require("chai");
 
 
-describe.only("ZNSAddressResolver", () => {
+describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let user : SignerWithAddress;
@@ -38,7 +37,7 @@ describe.only("ZNSAddressResolver", () => {
 
   let zns : IZNSContractsLocal;
 
-  let domain;
+  let domain : Domain;
 
   beforeEach(async () => {
     [
