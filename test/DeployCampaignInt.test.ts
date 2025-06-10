@@ -370,7 +370,6 @@ describe("Deploy Campaign Test", () => {
         },
         rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         zeroVaultAddress: zeroVault.address,
-        // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
         stakingTokenAddress: "",
         mockMeowToken: true, // 1700083028872
         postDeploy: {
