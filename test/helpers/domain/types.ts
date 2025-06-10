@@ -11,6 +11,6 @@ export interface IFullDomainConfig {
   distrConfig ?: IDistributionConfig;
   priceConfig ?: CurvePriceConfig | FixedPriceConfig;
   paymentConfig ?: IPaymentConfig;
-  domainContent ?: string;
+  domainAddress ?: string;
   tokenURI ?: string;
 }

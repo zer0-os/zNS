@@ -8,6 +8,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
 import { ContractTransactionResponse } from "ethers";
+import { hashDomainLabel } from "../hashing";
 
 
 export default class Domain {
@@ -24,7 +25,7 @@ export default class Domain {
   distrConfig : IDistributionConfig;
   priceConfig : CurvePriceConfig | FixedPriceConfig;
   paymentConfig : IPaymentConfig;
-  domainContent : string;
+  domainAddress : string;
   tokenURI : string;
 
   constructor ({
@@ -60,19 +61,10 @@ export default class Domain {
     }
 
     this.paymentConfig = domainConfig.paymentConfig || paymentConfigEmpty;
-    this.domainContent = domainConfig.domainContent || this.owner.address;
+    this.domainAddress = domainConfig.domainAddress || this.owner.address;
     this.tokenURI = domainConfig.tokenURI || "https://example.com/token-uri";
 
     this.hash = "";
-  }
-
-  // to prevent writing the same if everywhere
-  // TODO dom: needs to be checked
-  private async validateHashBeforeCall<T> (call : (hash : string) => Promise<T>) : Promise<T> {
-    if (this.hash === "") {
-      throw new Error("Domain hash is not set. Please register the domain first.");
-    }
-    return call(this.hash);
   }
 
   async getDomainHashFromEvent () : Promise<string> {
@@ -114,7 +106,7 @@ export default class Domain {
       paymentConfig,
       tokenURI,
       tokenOwner,
-      domainContent,
+      domainAddress,
     } = this;
 
     // mint and approve strict amount of tokens for domain registration
@@ -123,7 +115,7 @@ export default class Domain {
     if (this.isRoot) {
       await zns.rootRegistrar.connect(executor ? executor : owner).registerRootDomain({
         name: label,
-        domainAddress: hre.ethers.isAddress(domainContent) ? domainContent : owner.address,
+        domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
         tokenOwner,
         tokenURI,
         distrConfig,
@@ -134,7 +126,7 @@ export default class Domain {
       await zns.subRegistrar.connect(executor ? executor : owner).registerSubdomain({
         parentHash,
         label,
-        domainAddress: hre.ethers.isAddress(domainContent) ? domainContent : owner.address,
+        domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
         tokenOwner,
         tokenURI,
         distrConfig,
@@ -174,25 +166,21 @@ export default class Domain {
     resolverType : string,
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    await this.validateHashBeforeCall(async hash => {
-      await this.zns.registry.connect(executor ? executor : this.owner).updateDomainRecord(
-        this.hash,
-        this.owner,
-        resolverType,
-      );
-    });
+    await this.zns.registry.connect(executor ? executor : this.owner).updateDomainRecord(
+      this.hash,
+      this.owner,
+      resolverType,
+    );
   }
 
   async setDistributionConfigForDomain (
     distrConfig : IDistributionConfig,
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    await this.validateHashBeforeCall(async hash => {
-      await this.zns.subRegistrar.connect(executor ? executor : this.owner).setDistributionConfigForDomain(
-        this.hash,
-        distrConfig,
-      );
-    });
+    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setDistributionConfigForDomain(
+      this.hash,
+      distrConfig,
+    );
   }
 
   async setPricerDataForDomain (
@@ -200,41 +188,50 @@ export default class Domain {
     pricerContract : string,
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    await this.validateHashBeforeCall(async hash => {
-      await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
-        this.hash,
-        priceConfig,
-        pricerContract
-      );
-    });
+    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
+      this.hash,
+      priceConfig,
+      pricerContract
+    );
   }
 
   async setPaymentTypeForDomain (
     paymentType : bigint,
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    await this.validateHashBeforeCall(async hash => {
-      await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPaymentTypeForDomain(
-        this.hash,
-        paymentType,
-      );
-    });
+    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPaymentTypeForDomain(
+      this.hash,
+      paymentType,
+    );
   }
 
   async setAccessTypeForDomain (
     accessType : bigint,
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    await this.validateHashBeforeCall(async hash => {
-      await this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
-        this.hash,
-        accessType,
-      );
-    });
+    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
+      this.hash,
+      accessType,
+    );
+  }
+
+  async setOwnersOperator (
+    operator : string,
+    allowed : boolean,
+    executor ?: SignerWithAddress
+  ) : Promise<void> {
+    await this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(
+      operator,
+      allowed
+    );
+  }
+
+  async getResolverAddressByLabel (label : string) : Promise<string> {
+    const hash = hashDomainLabel(label);
+    return this.zns.registry.getDomainResolver(hash);
   }
 
   async validateDomainExistence (ac) : Promise<void> {
-
     // TODO dom: 1. owner assinged, 2. token minted to correct owner
   }
 }

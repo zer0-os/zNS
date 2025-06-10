@@ -7,7 +7,6 @@ import {
 } from "../typechain";
 import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import {
   ADMIN_ROLE,
   DEFAULT_RESOLVER_TYPE,
@@ -19,23 +18,27 @@ import {
   AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   AC_WRONGADDRESS_ERR,
+  distrConfigEmpty,
+  paymentConfigEmpty,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
+import Domain from "./helpers/domain/domain";
 
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
 
 
-describe("ZNSAddressResolver", () => {
+describe.only("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let user : SignerWithAddress;
   let operator : SignerWithAddress;
-  let wilderDomainHash : string;
 
   let zns : IZNSContractsLocal;
+
+  let domain;
 
   beforeEach(async () => {
     [
@@ -53,19 +56,23 @@ describe("ZNSAddressResolver", () => {
 
     zns = await deployZNS(params);
 
-    // Have to get this value for every test, but can be fixed
-    wilderDomainHash = hashSubdomainName("wilder");
-
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
 
-    await zns.registry.connect(deployer).addResolverType(DEFAULT_RESOLVER_TYPE, await zns.addressResolver.getAddress());
+    domain = new Domain({
+      zns,
+      domainConfig: {
+        label: "wilder",
+        owner: deployer,
+        parentHash: ethers.ZeroHash,
+        tokenOwner: deployer.address,
+        distrConfig: distrConfigEmpty,
+        priceConfig: {},
+        paymentConfig: paymentConfigEmpty,
+        tokenURI: "wilder",
+      },
+    });
 
-    await zns.registry.connect(mockRegistrar)
-      .createDomainRecord(
-        wilderDomainHash,
-        deployer.address,
-        DEFAULT_RESOLVER_TYPE
-      );
+    await domain.register(deployer);
   });
 
   it("Should NOT let initialize the implementation contract", async () => {
@@ -83,14 +90,13 @@ describe("ZNSAddressResolver", () => {
 
   it("Should get the AddressResolver", async () => { // Copy of registry tests
     // The domain exists
-    const existResolver = await zns.registry.getDomainResolver(wilderDomainHash);
+    const existResolver = await domain.getResolverAddressByLabel(domain.label);
     expect(existResolver).to.eq(await zns.addressResolver.getAddress());
   });
 
   it("Returns 0 when the domain doesnt exist", async () => {
     // The domain does not exist
-    const someDomainHash = hashDomainLabel("random-record");
-    const notExistResolver = await zns.registry.getDomainResolver(someDomainHash);
+    const notExistResolver = await domain.getResolverAddressByLabel("random-record");
     expect(notExistResolver).to.eq(hre.ethers.ZeroAddress);
   });
 
@@ -124,31 +130,31 @@ describe("ZNSAddressResolver", () => {
 
   it("Should not allow non-owner address to setAddress", async () => {
     await expect(
-      zns.addressResolver.connect(user).setAddress(wilderDomainHash, user.address)
+      zns.addressResolver.connect(user).setAddress(domain.hash, user.address)
     ).to.be.revertedWithCustomError(zns.addressResolver, NOT_AUTHORIZED_ERR);
   });
 
   it("Should allow owner to setAddress and emit event", async () => {
     await expect(
       zns.addressResolver.connect(deployer)
-        .setAddress(wilderDomainHash, user.address)
+        .setAddress(domain.hash, user.address)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, user.address);
+      .withArgs(domain.hash, user.address);
 
-    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domain.hash);
     expect(resolvedAddress).to.equal(user.address);
   });
 
   it("Should allow operator to setAddress and emit event", async () => {
-    await zns.registry.connect(deployer).setOwnersOperator(operator.address, true);
+    await domain.setOwnersOperator(operator.address, true);
 
     await expect(
       zns.addressResolver.connect(operator)
-        .setAddress(wilderDomainHash, user.address)
+        .setAddress(domain.hash, user.address)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, user.address);
+      .withArgs(domain.hash, user.address);
   });
 
   it("Should allow REGISTRAR_ROLE to setAddress and emit event", async () => {
@@ -156,20 +162,19 @@ describe("ZNSAddressResolver", () => {
 
     await expect(
       zns.addressResolver.connect(mockRegistrar)
-        .setAddress(wilderDomainHash, hre.ethers.ZeroAddress)
+        .setAddress(domain.hash, hre.ethers.ZeroAddress)
     )
       .to.emit(zns.addressResolver, "AddressSet")
-      .withArgs(wilderDomainHash, hre.ethers.ZeroAddress);
+      .withArgs(domain.hash, hre.ethers.ZeroAddress);
 
-    const address = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
+    const address = await zns.addressResolver.resolveDomainAddress(domain.hash);
     expect(address).to.eq(hre.ethers.ZeroAddress);
-
   });
 
   it("Should resolve address correctly", async () => {
-    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
+    await zns.addressResolver.connect(deployer).setAddress(domain.hash, user.address);
 
-    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domain.hash);
     expect(resolvedAddress).to.equal(user.address);
   });
 
@@ -194,12 +199,12 @@ describe("ZNSAddressResolver", () => {
   });
 
   it("Should support full discovery flow from zns.registry", async () => {
-    await zns.addressResolver.connect(deployer).setAddress(wilderDomainHash, user.address);
+    await zns.addressResolver.connect(deployer).setAddress(domain.hash, user.address);
 
-    const resolverAddress = await zns.registry.getDomainResolver(wilderDomainHash);
+    const resolverAddress = await domain.getResolverAddressByLabel(domain.label);
     expect(resolverAddress).to.eq(await zns.addressResolver.getAddress());
 
-    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(wilderDomainHash);
+    const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domain.hash);
     expect(resolvedAddress).to.eq(user.address);
   });
 
@@ -318,11 +323,11 @@ describe("ZNSAddressResolver", () => {
       const newResolver = await factory.deploy();
       await newResolver.waitForDeployment();
 
-      await zns.addressResolver.connect(mockRegistrar).setAddress(wilderDomainHash, user.address);
+      await zns.addressResolver.connect(mockRegistrar).setAddress(domain.hash, user.address);
 
       const contractCalls = [
         zns.addressResolver.registry(),
-        zns.addressResolver.resolveDomainAddress(wilderDomainHash),
+        zns.addressResolver.resolveDomainAddress(domain.hash),
       ];
 
       await validateUpgrade(deployer, zns.addressResolver, newResolver, factory, contractCalls);

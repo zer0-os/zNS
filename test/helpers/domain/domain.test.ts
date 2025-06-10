@@ -5,18 +5,15 @@ import Domain from "./domain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { DeployZNSParams } from "../types";
 import { deployZNS } from "../deploy/deploy-zns";
-import { hashSubdomainName } from "../hashing";
-import { DEFAULT_RESOLVER_TYPE } from "../constants";
 import { REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { IZNSContracts } from "../../../src/deploy/campaign/types";
 
 
-describe.only("Sample Test", () => {
+describe("Domain class Test", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let user : SignerWithAddress;
   let operator : SignerWithAddress;
-  let wilderDomainHash : string;
 
   let zns : IZNSContracts;
 
@@ -36,21 +33,7 @@ describe.only("Sample Test", () => {
 
     zns = await deployZNS(params);
 
-    // Have to get this value for every test, but can be fixed
-    wilderDomainHash = hashSubdomainName("wilder");
-
     await zns.accessController.connect(deployer).grantRole(REGISTRAR_ROLE, mockRegistrar.address);
-
-    await zns.registry.connect(deployer).addResolverType(
-      DEFAULT_RESOLVER_TYPE, await zns.addressResolver.getAddress()
-    );
-
-    await zns.registry.connect(mockRegistrar)
-      .createDomainRecord(
-        wilderDomainHash,
-        deployer.address,
-        DEFAULT_RESOLVER_TYPE
-      );
   });
 
   it("should register and revoke a domain", async () => {
