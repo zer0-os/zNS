@@ -192,7 +192,7 @@ contract ZNSSubRegistrar is
      * transaction.
      * > For example:
      * > - The first subdomain must have a valid `parentHash`.
-     * > - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
+     * > - The second subdomain can have `parentHash = 0x0...`, which means it will be nested under the first subdomain.
      * > - This pattern can continue for deeper levels of nesting.
      *
      * @param args An array of `SubdomainRegistrationArgs` structs, each containing:

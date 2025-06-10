@@ -124,7 +124,7 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
     */
-    // esling-disable no-unused-vars
+    // solhint-disable no-unused-vars
     function getPriceAndFee(
         bytes memory parentPriceConfig,
         string calldata label,
