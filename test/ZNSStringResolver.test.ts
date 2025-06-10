@@ -13,7 +13,7 @@ import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types"
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
+import { registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
   ERC20Mock, ZNSAccessController, ZNSDomainToken, ZNSRegistry,
@@ -25,9 +25,12 @@ import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { IZNSContractsLocal } from "./helpers/types";
+import Domain from "./helpers/domain/domain";
 
 
 describe("ZNSStringResolver", () => {
+  let domain : Domain;
+
   describe("Single state tests", () => {
     let zeroVault : SignerWithAddress;
     let user : SignerWithAddress;
@@ -45,13 +48,13 @@ describe("ZNSStringResolver", () => {
     IZNSCampaignConfig,
     IZNSContracts
     >;
+    let zns : IZNSContracts | IZNSContractsLocal;
     let accessController : ZNSAccessController;
 
     let userBalance : bigint;
 
     const uri = "https://example.com/817c64af";
     const domainName = "domain";
-    const domainNameHash = hashDomainLabel(domainName);
 
     let mongoAdapter : MongoDBAdapter;
 
@@ -75,6 +78,7 @@ describe("ZNSStringResolver", () => {
       campaign = await runZnsCampaign({
         config: campaignConfig,
       });
+      zns = campaign.state.contracts;
 
       let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
@@ -91,6 +95,18 @@ describe("ZNSStringResolver", () => {
       userBalance = ethers.parseEther("1000000000000000000");
       await meowToken.mint(user.address, userBalance);
       await meowToken.connect(user).approve(await treasury.getAddress(), ethers.MaxUint256);
+
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          label: domainName,
+          parentHash: ethers.ZeroHash,
+          owner: user,
+          tokenURI: uri,
+          tokenOwner: user.address,
+          domainAddress: hre.ethers.ZeroAddress,
+        },
+      });
     });
 
     after(async () => {
@@ -100,7 +116,7 @@ describe("ZNSStringResolver", () => {
     it("Should not let initialize the contract twice", async () => {
       await expect(
         stringResolver.initialize(
-          await campaign.state.contracts.accessController.getAddress(),
+          await zns.accessController.getAddress(),
           await registry.getAddress(),
         )
       ).to.be.revertedWithCustomError(
@@ -113,18 +129,12 @@ describe("ZNSStringResolver", () => {
 
       const newString = "hippopotamus";
 
-      await defaultRootRegistration({
-        user,
-        zns: campaign.state.contracts,
-        domainName,
-        tokenURI: uri,
-        domainContent: ethers.ZeroAddress,
-      });
+      await domain.register();
 
-      await stringResolver.connect(user).setString(domainNameHash, newString);
+      await stringResolver.connect(user).setString(domain.hash, newString);
 
       expect(
-        await stringResolver.resolveDomainString(domainNameHash)
+        await stringResolver.resolveDomainString(domain.hash)
       ).to.eq(
         newString
       );
@@ -133,9 +143,10 @@ describe("ZNSStringResolver", () => {
     it("Should setRegistry() using ADMIN_ROLE and emit an event", async () => {
       await expect(
         stringResolver.connect(admin).setRegistry(admin.address)
-      )
-        .to.emit(stringResolver, "RegistrySet")
-        .withArgs(admin.address);
+      ).to.emit(
+        stringResolver,
+        "RegistrySet"
+      ).withArgs(admin.address);
 
       expect(await stringResolver.registry()).to.equal(admin.address);
 
@@ -220,7 +231,7 @@ describe("ZNSStringResolver", () => {
       let meowToken : ERC20Mock;
       let treasury : ZNSTreasury;
 
-      zns = campaign.state.contracts as unknown as IZNSContractsLocal;
+      zns = campaign.state.contracts;
 
       // eslint-disable-next-line max-len
       ({ stringResolver, registry, meowToken, treasury, accessController, domainToken, dbAdapter: mongoAdapter } = campaign);
@@ -245,16 +256,19 @@ describe("ZNSStringResolver", () => {
     it("Should not allow non-owner address to setString (similar domain and string)", async () => {
       const curStringDomain = "shouldbrake";
 
-      await registrationWithSetup({
+      domain = new Domain({
         zns,
-        tokenOwner: operator.address,
-        user: operator,
-        domainLabel: curStringDomain,
-        domainContent: ethers.ZeroAddress,
+        domainConfig: {
+          label: curStringDomain,
+          parentHash: ethers.ZeroHash,
+          owner: operator,
+          domainAddress: ethers.ZeroAddress,
+        },
       });
+      await domain.register();
 
       await expect(
-        stringResolver.connect(user).setString(hashDomainLabel(curStringDomain), curStringDomain)
+        stringResolver.connect(user).setString(domain.hash, curStringDomain)
       ).to.be.revertedWithCustomError(
         stringResolver,
         NOT_AUTHORIZED_ERR
@@ -262,61 +276,63 @@ describe("ZNSStringResolver", () => {
     });
 
     it("Should allow OWNER to setString and emit event (similar domain and string)", async () => {
-
       const curString = "wolf";
-      const hash = hashDomainLabel(curString);
 
-      await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user,
-        tokenOwner: user.address,
-        domainLabel: curString,
-        domainContent: ethers.ZeroAddress,
+        domainConfig: {
+          label: curString,
+          parentHash: ethers.ZeroHash,
+          owner: user,
+          domainAddress: ethers.ZeroAddress,
+        },
       });
+      await domain.register();
 
       await expect(
-        stringResolver.connect(user).setString(hash, curString)
+        stringResolver.connect(user).setString(domain.hash, curString)
       ).to.emit(
         stringResolver,
         "StringSet"
       ).withArgs(
-        hash,
+        domain.hash,
         curString
       );
 
       expect(
-        await stringResolver.resolveDomainString(hash)
+        await stringResolver.resolveDomainString(domain.hash)
       ).to.equal(curString);
     });
 
-    it("Should allow OPERATOR to setString and emit event  (different domain and string)", async () => {
-
+    it("Should allow OPERATOR to setString and emit event (different domain and string)", async () => {
       const curDomain = "wild";
       const curString = "wildlife";
-      const hash = hashDomainLabel(curDomain);
 
-      await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user: deployer,
-        tokenOwner: deployer.address,
-        domainLabel: curDomain,
-        domainContent: ethers.ZeroAddress,
+        domainConfig: {
+          label: curDomain,
+          parentHash: ethers.ZeroHash,
+          owner: deployer,
+          domainAddress: ethers.ZeroAddress,
+        },
       });
+      await domain.register();
 
       await registry.connect(deployer).setOwnersOperator(operator, true);
 
       await expect(
-        stringResolver.connect(operator).setString(hash, curString)
+        stringResolver.connect(operator).setString(domain.hash, curString)
       ).to.emit(
         stringResolver,
         "StringSet"
       ).withArgs(
-        hash,
+        domain.hash,
         curString
       );
 
       expect(
-        await stringResolver.resolveDomainString(hash)
+        await stringResolver.resolveDomainString(domain.hash)
       ).to.equal(curString);
     });
 
