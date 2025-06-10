@@ -226,7 +226,8 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Override the standard `transferFrom` function to always update the owner for both the domain (hash) and the token
+     * @notice Override the standard `transferFrom` function to always update the owner for both the domain (hash)
+     *  and the token.
      *
      * @dev Only the owner of both: hash and token can transfer the token! Same goes for transfers under approvals.
      * An address that owns just the token can NOT transfer, owner in Registry and this contract must be the same.

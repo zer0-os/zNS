@@ -32,7 +32,8 @@ interface IZNSPricer {
      *  This stored somewhere else (e.g. SubRegistrar) and passed here, since Pricer contracts are stateless.
      * @param label The label of the subdomain candidate to get the price for. Only used in pricers
      *  where price depends on the label length.
-     * @param skipValidityCheck If "true", skips the validity check for the label, if "false" will fail for invalid labels.
+     * @param skipValidityCheck If "true", skips the validity check for the label, if "false" will fail
+     *  for invalid labels.
      */
     function getPrice(
         bytes memory parentPriceConfig,

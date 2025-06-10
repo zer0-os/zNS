@@ -9,45 +9,39 @@ that doesn't depend on the length of the label.
 uint256 PERCENTAGE_BASIS
 ```
 
-### priceConfigs
+### encodeConfig
 
 ```solidity
-mapping(bytes32 => struct IZNSFixedPricer.PriceConfig) priceConfigs
+function encodeConfig(struct IZNSFixedPricer.FixedPriceConfig config) external pure returns (bytes)
 ```
 
-Mapping of domainHash to price config set by the domain owner/operator
-
-### constructor
-
-```solidity
-constructor() public
-```
-
-### initialize
-
-```solidity
-function initialize(address _accessController, address _registry) external
-```
-
-### setPrice
-
-```solidity
-function setPrice(bytes32 domainHash, uint256 _price) public
-```
-
-Sets the price for a domain. Only callable by domain owner/operator. Emits a `PriceSet` event.
+Real encoding happens off chain, but we keep this here as a
+helper function for users to ensure that their data is correct
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain who sets the price for subdomains |
-| _price | uint256 | The new price value set |
+| config | struct IZNSFixedPricer.FixedPriceConfig | The price to encode |
+
+### decodePriceConfig
+
+```solidity
+function decodePriceConfig(bytes priceConfig) public pure returns (struct IZNSFixedPricer.FixedPriceConfig)
+```
+
+Decodes the price config from bytes to FixedPriceConfig struct
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| priceConfig | bytes | The bytes to decode |
 
 ### getPrice
 
 ```solidity
-function getPrice(bytes32 parentHash, string label, bool skipValidityCheck) public view returns (uint256)
+function getPrice(bytes parentPriceConfig, string label, bool skipValidityCheck) public pure returns (uint256)
 ```
 
 Gets the price for a subdomain candidate label under the parent domain.
@@ -64,52 +58,28 @@ possible to register.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| parentHash | bytes32 | The hash of the parent domain to check the price under |
+| parentPriceConfig | bytes | The hash of the parent domain to check the price under |
 | label | string | The label of the subdomain candidate to check the price for |
 | skipValidityCheck | bool | If true, skips the validity check for the label |
 
-### setFeePercentage
+### validatePriceConfig
 
 ```solidity
-function setFeePercentage(bytes32 domainHash, uint256 feePercentage) public
+function validatePriceConfig(bytes priceConfig) external pure
 ```
 
-Sets the feePercentage for a domain. Only callable by domain owner/operator.
-Emits a `FeePercentageSet` event.
-
-`feePercentage` is set as a part of the `PERCENTAGE_BASIS` of 10,000 where 1% = 100
+Verify that the given price config is valid for this pricer
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain who sets the feePercentage for subdomains |
-| feePercentage | uint256 | The new feePercentage value set |
-
-### setPriceConfig
-
-```solidity
-function setPriceConfig(bytes32 domainHash, struct IZNSFixedPricer.PriceConfig priceConfig) external
-```
-
-Setter for `priceConfigs[domainHash]`. Only domain owner/operator can call this function.
-
-Sets both `PriceConfig.price` and `PriceConfig.feePercentage` in one call, fires `PriceSet`
-and `FeePercentageSet` events.
-> This function should ALWAYS be used to set the config, since it's the only place where `isSet` is set to true.
-> Use the other individual setters to modify only, since they do not set this variable!
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The domain hash to set the price config for |
-| priceConfig | struct IZNSFixedPricer.PriceConfig | The new price config to set |
+| priceConfig | bytes | The price config to validate |
 
 ### getFeeForPrice
 
 ```solidity
-function getFeeForPrice(bytes32 parentHash, uint256 price) public view returns (uint256)
+function getFeeForPrice(bytes parentPriceConfig, uint256 price) public pure returns (uint256)
 ```
 
 Part of the IZNSPricer interface - one of the functions required
@@ -120,13 +90,13 @@ based on the value set by the owner of the parent domain.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| parentHash | bytes32 | The hash of the parent domain under which fee is determined |
-| price | uint256 | The price to get the fee for |
+| parentPriceConfig | bytes | The price config in bytes of the parent domain under which fee is determined |
+| price | uint256 | The price for a domain |
 
 ### getPriceAndFee
 
 ```solidity
-function getPriceAndFee(bytes32 parentHash, string label, bool skipValidityCheck) external view returns (uint256 price, uint256 fee)
+function getPriceAndFee(bytes parentPriceConfig, string label, bool skipValidityCheck) external pure returns (uint256 price, uint256 fee)
 ```
 
 Part of the IZNSPricer interface - one of the functions required
@@ -137,61 +107,19 @@ under the given parent.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| parentHash | bytes32 | The hash of the parent domain under which price and fee are determined |
+| parentPriceConfig | bytes | The price config of the parent domain under which price and fee are determined |
 | label | string | The label of the subdomain candidate to get the price and fee for before/during registration |
 | skipValidityCheck | bool | If true, skips the validity check for the label |
 
-### setRegistry
+### _checkLength
 
 ```solidity
-function setRegistry(address registry_) public
+function _checkLength(bytes priceConfig) internal pure
 ```
 
-Sets the registry address in state.
-
-This function is required for all contracts inheriting `ARegistryWired`.
-
-### _setPrice
+### _getFeeForPrice
 
 ```solidity
-function _setPrice(bytes32 domainHash, uint256 price) internal
+function _getFeeForPrice(uint256 feePercentage, uint256 price) internal pure returns (uint256)
 ```
-
-Internal function for set price
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain |
-| price | uint256 | The new price |
-
-### _setFeePercentage
-
-```solidity
-function _setFeePercentage(bytes32 domainHash, uint256 feePercentage) internal
-```
-
-Internal function for setFeePercentage
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| domainHash | bytes32 | The hash of the domain |
-| feePercentage | uint256 | The new feePercentage |
-
-### _authorizeUpgrade
-
-```solidity
-function _authorizeUpgrade(address newImplementation) internal view
-```
-
-To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| newImplementation | address | The new implementation contract to upgrade to. |
 

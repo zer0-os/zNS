@@ -124,10 +124,9 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
     */
+    // esling-disable no-unused-vars
     function getPriceAndFee(
         bytes memory parentPriceConfig,
-    // TODO 15: figure this out! do we need both of these vars at all in both pricers ?!?!
-    // TODO 15: also why does solhint not catch this in CI ?!?! It catches errors but doesn't fail the job !
         string calldata label,
         bool skipValidityCheck
     ) external pure override returns (uint256 price, uint256 fee) {

@@ -12,7 +12,8 @@ import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors
 
 
 /**
- * @title ZNSTreasury - Contract responsible for all payments in ZNS and for storing configs, data and tokens for stakes.
+ * @title ZNSTreasury - Contract responsible for all payments in ZNS and for storing configs,
+ *  data and tokens for stakes.
  *
  * @dev This contract is not also the performer of all transfers, but it also stores staked funds for ALL domains
  * that use PaymentType.STAKE. This is to ensure that the funds are not locked in the domain owner's wallet,

@@ -1,6 +1,7 @@
 ## ZNSTreasury
 
-**IZNSTreasury.sol - Interface for the ZNSTreasury contract responsible for managing payments and staking.**
+**ZNSTreasury - Contract responsible for all payments in ZNS and for storing configs,
+ data and tokens for stakes.**
 
 This contract is not also the performer of all transfers, but it also stores staked funds for ALL domains
 that use PaymentType.STAKE. This is to ensure that the funds are not locked in the domain owner's wallet,
@@ -15,7 +16,7 @@ mapping(bytes32 => struct PaymentConfig) paymentConfigs
 ```
 
 The mapping that stores the payment configurations for each domain.
-Zero's own configs for root domains is stored under 0x0 hash.
+Zero's own config for root domains is stored under 0x0 hash.
 
 ### stakedForDomain
 
@@ -26,7 +27,7 @@ mapping(bytes32 => struct IZNSTreasury.Stake) stakedForDomain
 The mapping that stores `Stake` struct mapped by domainHash. It stores the staking data for
 each domain in zNS. Note that there is no owner address to which the stake is tied to. Instead, the
 owner data from `ZNSRegistry` is used to identify a user who owns the stake. So the staking data is
-tied to the owner of the Name. This should be taken into account, since any transfer of the Token to
+tied to the owner of the Name/Hash. This should be taken into account, since any transfer of the Token to
 another address, and the system, allowing them to Reclaim the Name, will also allow them to withdraw the stake.
 > Stake is owned by the owner of the Name in `ZNSRegistry` which the owner of the Token can reclaim!
 
@@ -88,7 +89,7 @@ and fires a `StakeDeposited` event.
 ### unstakeForDomain
 
 ```solidity
-function unstakeForDomain(bytes32 domainHash, address owner) external
+function unstakeForDomain(bytes32 domainHash, address owner, uint256 protocolFee) external
 ```
 
 Withdraws the stake for a domain. This function is called by `ZNSRootRegistrar.sol`
@@ -103,6 +104,7 @@ Since we are clearing storage, gas refund from this operation makes Revoke trans
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The hash of the domain for which the stake is being withdrawn. |
 | owner | address | The address of the user who is withdrawing the stake. |
+| protocolFee | uint256 | The protocol fee paid by the user to Zero. |
 
 ### processDirectPayment
 
@@ -110,10 +112,10 @@ Since we are clearing storage, gas refund from this operation makes Revoke trans
 function processDirectPayment(bytes32 parentHash, bytes32 domainHash, address payer, uint256 paymentAmount, uint256 protocolFee) external
 ```
 
-An alternative to `stakeForDomain()` for cases when a parent domain is using PaymentType.DIRECT.
+An alternative to `stakeForDomain()` for cases when a parent domain is using `PaymentType.DIRECT`.
 
 Note that `stakeFee` transfers are NOT present here, since a fee on top of the price is ONLY supported
-for STAKE payment type. This function is called by `ZNSRootRegistrar.sol` when a user wants to register a domain.
+for STAKE payment type. This function is called by `ZNSRootRegistrar` when a user wants to register a domain.
 This function uses a different approach than `stakeForDomain()` as it performs 2 transfers from the user's
 wallet. Is uses `paymentConfigs[parentHash]` to get the token and beneficiary for the parent domain.
 Can be called ONLY by the REGISTRAR_ROLE. Fires a `DirectPaymentProcessed` event.
@@ -134,8 +136,9 @@ Can be called ONLY by the REGISTRAR_ROLE. Fires a `DirectPaymentProcessed` event
 function setPaymentConfig(bytes32 domainHash, struct PaymentConfig paymentConfig) external
 ```
 
-Setter function for the `paymentConfig` chosen by domain owner.
-Only domain owner/operator can call this.
+Setter function for the `paymentConfig` chosen by the domain owner.
+Only domain owner/operator can call this or `ZNSRootRegistrar` contract as part of the registration flow
+when registrant wants to set payment config at the time of registration.
 
 #### Parameters
 

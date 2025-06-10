@@ -22,7 +22,8 @@ import { ARegistrationPause } from "./ARegistrationPause.sol";
 
 
 /**
- * @title Main entry point for the three main flows of ZNS - Register Root Domain, Assign Domain Token and Revoke any domain.
+ * @title Main entry point for the three main flows of ZNS - Register Root Domain, Assign Domain Token
+ *  and Revoke any domain.
  *
  * @notice This contract serves as the "umbrella" for many ZNS operations, it is given `REGISTRAR_ROLE`
  * to combine multiple calls/operations between different modules to achieve atomic state changes
@@ -163,7 +164,8 @@ contract ZNSRootRegistrar is
      * by calling the `registerRootDomain` function for each entry.
      *
      * @dev This function reduces the number of transactions required to register multiple domains,
-     * saving gas and improving efficiency. Each domain registration is processed sequentially, so order of arguments matters.
+     * saving gas and improving efficiency. Each domain registration is processed sequentially,
+     * so order of arguments matters.
      *
      * @param args An array of `SubdomainRegistrationArgs` structs, each containing:
      *      + `name`: The name (label) of the domain to register.
@@ -426,8 +428,8 @@ contract ZNSRootRegistrar is
     /**
      * @notice Set the price configuration for root domains
      *
-     * @param priceConfig_ The price configuration for root domains, encoded as bytes, has to match the required data type
-     *  for the currently set `rootPricer` contract in state!
+     * @param priceConfig_ The price configuration for root domains, encoded as bytes,
+     *  has to match the required data type for the currently set `rootPricer` contract in state!
      */
     function setRootPriceConfig(bytes memory priceConfig_) public override onlyAdmin {
         _setRootPriceConfig(rootPricer, priceConfig_);
@@ -464,7 +466,7 @@ contract ZNSRootRegistrar is
     }
 
     /**
-     * @notice Setter for `ZNSSubRegistrar` contract in state. Only ADMIN in `ZNSAccessController` can call this function.
+     * @notice Setter for `ZNSSubRegistrar` contract in state. Only ADMIN can call this function.
      *
      * @param subRegistrar_ Address of the `ZNSSubRegistrar` contract
     */

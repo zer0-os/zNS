@@ -3,7 +3,7 @@
 **ZNSSubRegistrar.sol - The contract for registering and revoking subdomains of zNS.**
 
 This contract has the entry point for registering subdomains, but calls
-the ZNSRootRegistrar back to finalize registration. Common logic for domains
+the `ZNSRootRegistrar` back to finalize registration canonically. Common logic for domains
 of any level is in the `ZNSRootRegistrar.coreRegister()`.
 
 ### rootRegistrar
@@ -12,7 +12,7 @@ of any level is in the `ZNSRootRegistrar.coreRegister()`.
 contract IZNSRootRegistrar rootRegistrar
 ```
 
-State var for the ZNSRootRegistrar contract that finalizes registration of subdomains.
+State var for the `ZNSRootRegistrar` contract that finalizes registration of subdomains.
 
 ### distrConfigs
 
@@ -42,7 +42,7 @@ mapping(bytes32 => struct ZNSSubRegistrar.Mintlist) mintlist
 
 Mapping of domainHash to mintlist set by the domain owner/operator.
 These configs are used to determine who can register subdomains for every parent
-in the case where parent's DistributionConfig.AccessType is set to AccessType.MINTLIST.
+in the case where parent's `DistributionConfig.AccessType` is set to `AccessType.MINTLIST`.
 
 ### onlyOwnerOperatorOrRegistrar
 
@@ -65,7 +65,7 @@ function initialize(address _accessController, address _registry, address _rootR
 ### registerSubdomain
 
 ```solidity
-function registerSubdomain(bytes32 parentHash, string label, address domainAddress, string tokenURI, struct IDistributionConfig.DistributionConfig distrConfig, struct PaymentConfig paymentConfig) external returns (bytes32)
+function registerSubdomain(struct IZNSSubRegistrar.SubdomainRegisterArgs args) public returns (bytes32)
 ```
 
 Entry point to register a subdomain under a parent domain specified.
@@ -74,17 +74,57 @@ Reads the `DistributionConfig` for the parent domain to determine how to distrib
 checks if the sender is allowed to register, check if subdomain is available,
 acquires the price and other data needed to finalize the registration
 and calls the `ZNSRootRegistrar.coreRegister()` to finalize.
+If operator is calling the function, the domain owner is set to the owner of the parent domain,
+NOT the operator or caller address!
+A non-zero optional `tokenOwner` address can be passed to assign the domain token to another address
+which would mint the token to that address and let that address use the domain without ownership or the ability
+to revoke it or manage its data in the system. This can let parent domain owner to mint subdomains
+in the controlled fashion when the parent domain is LOCKED and give these domains to other users while preventing
+them from transferring the ownership of the domain token or domain itself to another address or sell their own
+subdomains.
+Owner or operator of the parent domain circumvent the price, fee and payments and are able to register
+subdomains for free, but owner will be set to the owner of the parent domain.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| parentHash | bytes32 | The hash of the parent domain to register the subdomain under |
-| label | string | The label of the subdomain to register (e.g. in 0://zero.child the label would be "child"). |
-| domainAddress | address | (optional) The address to which the subdomain will be resolved to |
-| tokenURI | string | (required) The tokenURI for the subdomain to be registered |
-| distrConfig | struct IDistributionConfig.DistributionConfig | (optional) The distribution config to be set for the subdomain to set rules for children |
-| paymentConfig | struct PaymentConfig | (optional) Payment config for the domain to set on ZNSTreasury in the same tx  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,  but all the parameters inside are required. |
+| args | struct IZNSSubRegistrar.SubdomainRegisterArgs | SubdomainRegisterArgs type struct with props: - `parentHash` The hash of the parent domain to register the subdomain under - `domainAddress` (optional) The address to which the subdomain will be resolved to - `tokenOwner` (optional) The address the token will be assigned to, to offer domain usage without ownership - `tokenURI` (required) The tokenURI for the subdomain to be registered - `distrConfig` (optional) The distribution config to be set for the subdomain to set rules for children - `paymentConfig` (optional) Payment config for the domain to set on ZNSTreasury in the same tx  > `paymentConfig` has to be fully filled or all zeros. It is optional as a whole,  but all the parameters inside are required. - `label` The label of the subdomain to register (e.g. in 0://zero.child the label would be "child"). |
+
+### registerSubdomainBulk
+
+```solidity
+function registerSubdomainBulk(struct IZNSSubRegistrar.SubdomainRegisterArgs[] args) external returns (bytes32[])
+```
+
+Allows registering multiple subdomains in a single transaction.
+This function iterates through an array of `SubdomainRegistrationArgs` objects and registers each subdomain
+by calling the `registerSubdomain` function for each entry.
+
+This function reduces the number of transactions required to register multiple subdomains,
+saving gas and improving efficiency. Each subdomain registration is processed sequentially.
+
+> IMPORTANT: If a subdomain in the `subRegistrations` array has `parentHash = 0x000...` (zero/null hash),
+it will be treated as a nested domain under the previously registered domain in the argument array.
+In this case, the parent of the subdomain will be set to the domain hash of the
+previously registered subdomain in the array. This allows creating multi-level nested domains in a single
+transaction.
+> For example:
+> - The first subdomain must have a valid `parentHash`.
+> - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
+> - This pattern can continue for deeper levels of nesting.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| args | struct IZNSSubRegistrar.SubdomainRegisterArgs[] | An array of `SubdomainRegistrationArgs` structs, each containing:      + `parentHash`: The hash of the parent domain under which the subdomain is being registered.                     If set to `0x000...`, the parent will be the previously registered subdomain.      + `label`: The label of the subdomain to register (e.g., in `0://parent.child`, the label is `child`).      + `domainAddress`: The address to associate with the subdomain in the resolver.      + `tokenOwner`: the address token will be assigned to (optionally different than msg.sender if not 0x0)      + `tokenURI`: The URI to assign to the subdomain token.      + `distrConfig`: The distribution configuration for the subdomain.      + `paymentConfig`: The payment configuration for the subdomain. |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bytes32[] | domainHashes An array of `bytes32` hashes representing the registered subdomains. |
 
 ### hashWithParent
 
@@ -101,9 +141,9 @@ function setDistributionConfigForDomain(bytes32 domainHash, struct IDistribution
 ```
 
 Setter for `distrConfigs[domainHash]`.
-Only domain owner/operator or ZNSRootRegistrar can call this function.
+Only domain owner/operator or `ZNSRootRegistrar` can call this function.
 
-This config can be changed by the domain owner/operator at any time or be set
+This config can be changed by the domain hash owner/operator at any time or be set
 after registration if the config was not provided during the registration.
 Fires `DistributionConfigSet` event.
 
@@ -114,14 +154,14 @@ Fires `DistributionConfigSet` event.
 | domainHash | bytes32 | The domain hash to set the distribution config for |
 | config | struct IDistributionConfig.DistributionConfig | The new distribution config to set (for config fields see `IDistributionConfig.sol`) |
 
-### setPricerContractForDomain
+### setPricerDataForDomain
 
 ```solidity
-function setPricerContractForDomain(bytes32 domainHash, contract IZNSPricer pricerContract) public
+function setPricerDataForDomain(bytes32 domainHash, bytes config, contract IZNSPricer pricerContract) public
 ```
 
-One of the individual setters for `distrConfigs[domainHash]`. Sets `pricerContract` field of the struct.
-Made to be able to set the pricer contract for a domain without setting the whole config.
+One of the individual setters for `distrConfigs[domainHash]`. Sets `pricerContract` and `priceConfig`
+fields of the struct.
 Only domain owner/operator can call this function.
 Fires `PricerContractSet` event.
 
@@ -130,6 +170,7 @@ Fires `PricerContractSet` event.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The domain hash to set the pricer contract for |
+| config | bytes | The price config data for the given pricer |
 | pricerContract | contract IZNSPricer | The new pricer contract to set |
 
 ### setPaymentTypeForDomain
@@ -194,6 +235,21 @@ Fires `MintlistUpdated` event.
 function isMintlistedForDomain(bytes32 domainHash, address candidate) external view returns (bool)
 ```
 
+Checks if a candidate is mintlisted for a given domain.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | The domain hash to check the mintlist for |
+| candidate | address | The address to check if it is mintlisted |
+
+#### Return Values
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | bool indicating whether the candidate is mintlisted for the domain |
+
 ### clearMintlistForDomain
 
 ```solidity
@@ -205,6 +261,18 @@ function clearMintlistForDomain(bytes32 domainHash) public
 ```solidity
 function clearMintlistAndLock(bytes32 domainHash) external
 ```
+
+Function to clear the mintlist and set the domain to `AccessType.LOCKED`.
+Can only be called by the owner/operator of the domain or by `ZNSRootRegistrar` as a part of the
+`revokeDomain()` flow.
+This function is used to lock the domain and prevent any further registrations under it.
+Emits `MintlistCleared` and `AccessTypeSet` events.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | The domain hash to clear the mintlist and lock |
 
 ### setRegistry
 
@@ -230,6 +298,28 @@ Fires `RootRegistrarSet` event.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | registrar_ | address | The new address of the ZNSRootRegistrar contract |
+
+### pauseRegistration
+
+```solidity
+function pauseRegistration() external
+```
+
+Pauses the registration of new domains.
+Only ADMIN in `ZNSAccessController` can call this function.
+Fires `RegistrationPauseSet` event.
+
+When registration is paused, only ADMINs can register new domains.
+
+### unpauseRegistration
+
+```solidity
+function unpauseRegistration() external
+```
+
+Unpauses the registration of new domains.
+Only ADMIN in `ZNSAccessController` can call this function.
+Fires `RegistrationPauseSet` event.
 
 ### _authorizeUpgrade
 

@@ -1,19 +1,19 @@
-## IZNSAddressResolver
+## IZNSStringResolver
 
-### AddressSet
+### StringSet
 
 ```solidity
-event AddressSet(bytes32 domainHash, address newAddress)
+event StringSet(bytes32 domainHash, string newString)
 ```
 
-Emitted when address resolution value is set for a domain.
+Emitted when string resolution value is set for a domain.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The identifying hash of a domain's name |
-| newAddress | address | The new domain owner |
+| newString | string | - content of string type set by the owner/operator to which a domain will resolve to |
 
 ### supportsInterface
 
@@ -21,16 +21,16 @@ Emitted when address resolution value is set for a domain.
 function supportsInterface(bytes4 interfaceId) external view returns (bool)
 ```
 
-### resolveDomainAddress
+### resolveDomainString
 
 ```solidity
-function resolveDomainAddress(bytes32 domainHash) external view returns (address)
+function resolveDomainString(bytes32 domainHash) external view returns (string)
 ```
 
-### setAddress
+### setString
 
 ```solidity
-function setAddress(bytes32 domainHash, address newAddress) external
+function setString(bytes32 domainHash, string newString) external
 ```
 
 ### getInterfaceId
