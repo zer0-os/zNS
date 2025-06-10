@@ -207,8 +207,7 @@ contract ZNSDomainToken is
     virtual
     override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
-        // TODO 15: is this correct? shouldn't we add current interfaceID here?
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(IZNSDomainToken).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
