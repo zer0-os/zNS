@@ -172,7 +172,7 @@ export const validateEnv = (
   requires(!!process.env.ZERO_VAULT_ADDRESS, NO_ZERO_VAULT_ERR);
 
   // Mainnet
-  if (envLevel === EnvironmentLevels.test) {
+  if (envLevel === EnvironmentLevels.prod) {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
     requires(process.env.STAKING_TOKEN_ADDRESS === MEOWzChainData.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
