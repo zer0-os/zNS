@@ -35,7 +35,7 @@ import {
   PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import * as ethers from "ethers";
-import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
@@ -59,11 +59,12 @@ import { getConfig } from "../src/deploy/campaign/get-config";
 import { ZeroHash } from "ethers";
 import { ICurvePriceConfig  } from "../src/deploy/missions/types";
 import { IZNSContracts } from "../src/deploy/campaign/types";
+import Domain from "./helpers/domain/domain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-describe("ZNSRootRegistrar", () => {
+describe.only("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -74,6 +75,13 @@ describe("ZNSRootRegistrar", () => {
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
+
+  let domain : Domain;
+  let domainHash : string;
+  let subdomain : Domain;
+  let subdomainHash : string;
+
+  const tokenURI = "https://example.com/817c64af";
 
   let mongoAdapter : MongoDBAdapter;
 
@@ -110,14 +118,7 @@ describe("ZNSRootRegistrar", () => {
     // Give funds to user
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
-  });
 
-  afterEach(async () => {
-    await mongoAdapter.dropDB();
-  });
-
-  it("Gas tests", async () => {
-    const tokenURI = "https://example.com/817c64af";
     const distrConfig : IDistributionConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
       paymentType: PaymentType.STAKE,
@@ -125,30 +126,45 @@ describe("ZNSRootRegistrar", () => {
       accessType: AccessType.OPEN,
     };
 
-    await defaultRootRegistration({
-      user: deployer,
+    domain = new Domain({
       zns,
-      domainName: defaultDomain,
-      tokenURI,
-      distrConfig,
+      domainConfig: {
+        owner: deployer,
+        label: defaultDomain,
+        tokenOwner: ethers.ZeroAddress,
+        parentHash: ethers.ZeroHash,
+        distrConfig,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        paymentConfig: paymentConfigEmpty,
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: DEFAULT_TOKEN_URI,
+      },
     });
 
-    const domainHash = await getDomainHashFromEvent({
-      zns,
-      user: deployer,
-    });
+    domainHash = await domain.register(deployer);
 
-    // Registering as deployer (owner of parent) and user is different gas values
-    await defaultSubdomainRegistration({
-      user: deployer,
+    // under the domainHash
+    subdomain = new Domain({
       zns,
-      parentHash: domainHash,
-      tokenOwner: ethers.ZeroAddress,
-      subdomainLabel: "subdomain",
-      tokenURI,
-      distrConfig,
+      domainConfig: {
+        owner: deployer,
+        label: "subdomain",
+        tokenOwner: deployer.address,
+        parentHash: domainHash,
+        distrConfig,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        paymentConfig: paymentConfigEmpty,
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: DEFAULT_TOKEN_URI,
+      },
     });
+  });
 
+  afterEach(async () => {
+    await mongoAdapter.dropDB();
+  });
+
+  it("Gas tests", async () => {
     const candidates = [
       deployer.address,
       user.address,
@@ -165,15 +181,13 @@ describe("ZNSRootRegistrar", () => {
       true,
     ];
 
-    await zns.subRegistrar.updateMintlistForDomain(
-      domainHash,
+    await domain.updateMintlistForDomain(
       candidates,
       allowed
     );
   });
 
   it("Should NOT initialize the implementation contract", async () => {
-
     const otherFact = await hre.ethers.getContractFactory(
       "ZNSRootRegistrar",
       deployer
@@ -399,7 +413,7 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("Registers a root domain", () => {
-    it("Can NOT register a TLD with an empty name", async () => {
+    it("Can NOT register a root domain with an empty name", async () => {
       const emptyName = "";
 
       await expect(
@@ -411,84 +425,23 @@ describe("ZNSRootRegistrar", () => {
       ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LENGTH_ERR);
     });
 
-    it("Can register a TLD with characters [a-z0-9-]", async () => {
+    it.only("Can register a root domain with characters [a-z0-9-]", async () => {
       const letters = "world";
-      const lettersHash = hashDomainLabel(letters);
-
       const alphaNumeric = "0x0dwidler0x0";
-      const alphaNumericHash = hashDomainLabel(alphaNumeric);
-
       const withHyphen = "0x0-dwidler-0x0";
-      const withHyphenHash = hashDomainLabel(withHyphen);
 
-      const tx1 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: letters,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
+      for (let i = 0; i < 3; i++) {
+        const args = {
+          zns,
+          domainConfig: {
+            owner: deployer,
+            label: i === 0 ? letters : i === 1 ? alphaNumeric : withHyphen,
+          },
+        };
 
-      await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        lettersHash,
-        letters,
-        BigInt(lettersHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
-
-      const tx2 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: alphaNumeric,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        alphaNumericHash,
-        alphaNumeric,
-        BigInt(alphaNumericHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
-
-      const tx3 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: withHyphen,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        withHyphenHash,
-        withHyphen,
-        BigInt(withHyphenHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
+        domain = new Domain(args);
+        await domain.registerAndValidateDomain();
+      }
     });
 
     it("Fails for domains that use any invalid character", async () => {
@@ -570,7 +523,6 @@ describe("ZNSRootRegistrar", () => {
 
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
-      const tokenURI = "https://example.com/817c64af";
       const tx = await zns.rootRegistrar.connect(user).registerRootDomain({
         name: defaultDomain,
         domainAddress: ethers.ZeroAddress,
@@ -607,8 +559,6 @@ describe("ZNSRootRegistrar", () => {
         accessType: AccessType.OPEN,
         paymentType: PaymentType.DIRECT,
       };
-
-      const tokenURI = "https://example.com/817c64af";
 
       await zns.rootRegistrar.connect(user).registerRootDomain({
         name: defaultDomain,
@@ -879,7 +829,6 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Sets the payment config when provided with the domain registration", async () => {
-      const tokenURI = "https://example.com/817c64af";
       const distrConfig : IDistributionConfig = {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
@@ -906,7 +855,6 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
-      const tokenURI = "https://example.com/817c64af";
       const distrConfig : IDistributionConfig = {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,

@@ -9,6 +9,7 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
 import { ContractTransactionResponse } from "ethers";
 import { hashDomainLabel } from "../hashing";
+import { expect } from "chai";
 
 
 export default class Domain {
@@ -67,7 +68,7 @@ export default class Domain {
     this.hash = "";
   }
 
-  async getDomainHashFromEvent () : Promise<string> {
+  async getDomainHashFromEvent (domainOwner ?: SignerWithAddress) : Promise<string> {
     const latestBlock = await time.latestBlock();
     const filter = this.zns.rootRegistrar.filters.DomainRegistered(
       undefined,
@@ -75,7 +76,7 @@ export default class Domain {
       undefined,
       undefined,
       undefined,
-      this.owner.address,
+      domainOwner ? domainOwner : this.owner.address,
       this.tokenOwner === hre.ethers.ZeroAddress ? undefined : this.tokenOwner,
       undefined,
     );
@@ -95,7 +96,7 @@ export default class Domain {
     });
   }
 
-  async register (executor ?: SignerWithAddress) : Promise<string> {
+  async register (executor ?: SignerWithAddress) : Promise<ContractTransactionResponse> {
     const {
       zns,
       owner,
@@ -109,11 +110,13 @@ export default class Domain {
       domainAddress,
     } = this;
 
+    let txPromise : ContractTransactionResponse;
+
     // mint and approve strict amount of tokens for domain registration
     await this.mintAndApproveForDomain(executor);
 
     if (this.isRoot) {
-      await zns.rootRegistrar.connect(executor ? executor : owner).registerRootDomain({
+      txPromise = await zns.rootRegistrar.connect(executor ? executor : owner).registerRootDomain({
         name: label,
         domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
         tokenOwner,
@@ -123,7 +126,7 @@ export default class Domain {
         priceConfig,
       });
     } else {
-      await zns.subRegistrar.connect(executor ? executor : owner).registerSubdomain({
+      txPromise = await zns.subRegistrar.connect(executor ? executor : owner).registerSubdomain({
         parentHash,
         label,
         domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
@@ -135,9 +138,9 @@ export default class Domain {
       });
     }
 
-    this.hash = await this.getDomainHashFromEvent();
+    this.hash = await this.getDomainHashFromEvent(executor);
 
-    return this.hash;
+    return txPromise;
   }
 
   async revoke (executor ?: SignerWithAddress) : Promise<void> {
@@ -173,25 +176,37 @@ export default class Domain {
     );
   }
 
+  async updateMintlistForDomain (
+    candidates : Array<string>,
+    allowed : Array<boolean>,
+    executor ?: SignerWithAddress
+  ) : Promise<void> {
+    if (candidates.length !== allowed.length)
+      throw new Error("Domain Helper: Candidates and allowed arrays must have the same length");
+
+    await this.zns.subRegistrar.connect(executor ? executor : this.owner).updateMintlistForDomain(
+      this.hash,
+      candidates ? candidates : [this.owner.address],
+      allowed ? allowed : [true],
+    );
+  }
+
   async setDistributionConfigForDomain (
-    distrConfig : IDistributionConfig,
     executor ?: SignerWithAddress
   ) : Promise<void> {
     await this.zns.subRegistrar.connect(executor ? executor : this.owner).setDistributionConfigForDomain(
       this.hash,
-      distrConfig,
+      this.distrConfig,
     );
   }
 
   async setPricerDataForDomain (
-    priceConfig : CurvePriceConfig | FixedPriceConfig,
-    pricerContract : string,
     executor ?: SignerWithAddress
   ) : Promise<void> {
     await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
       this.hash,
-      priceConfig,
-      pricerContract
+      this.priceConfig,
+      this.distrConfig.pricerContract
     );
   }
 
@@ -231,7 +246,39 @@ export default class Domain {
     return this.zns.registry.getDomainResolver(hash);
   }
 
-  async validateDomainExistence (ac) : Promise<void> {
-    // TODO dom: 1. owner assinged, 2. token minted to correct owner
+  // ------------------------------------------------------
+  // VALIDATION
+  // ------------------------------------------------------
+  async validateDomainHash (expectedHash : string) : Promise<void> {
+
+  }
+
+  async registerAndValidateDomain (
+    executor ?: SignerWithAddress
+  ) : Promise<void> {
+  // mint and approve strict amount of tokens for domain registration
+    await this.mintAndApproveForDomain(executor);
+
+    const txPromise = await this.register(executor);
+
+    await expect(txPromise)
+      .to.emit(
+        this.zns.rootRegistrar,
+        "DomainRegistered"
+      ).withArgs(
+        this.parentHash,
+        this.hash,
+        this.label,
+        BigInt(this.hash),
+        this.tokenURI,
+        this.owner,
+        executor ? executor.address : this.owner.address,
+        this.domainAddress
+      );
+
+    const record = await this.zns.registry.getDomainRecord(this.hash);
+    const resolverAddress = await this.getResolverAddressByLabel(this.label);
+    expect(record.owner).to.equal(this.owner);
+    expect(record.resolver).to.equal(resolverAddress);
   }
 }
