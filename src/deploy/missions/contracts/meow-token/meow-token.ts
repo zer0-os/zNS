@@ -95,13 +95,16 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await meowToken.connect(deployAdmin).mint(
+    const tx = await meowToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

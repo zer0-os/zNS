@@ -73,11 +73,14 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
-    await accessController
+    const tx = await accessController
       .connect(deployAdmin)
       .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
