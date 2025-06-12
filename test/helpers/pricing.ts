@@ -1,4 +1,3 @@
-import { DEFAULT_PERCENTAGE_BASIS, DEFAULT_PRICE_CONFIG } from "./constants";
 import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 import {
   DEFAULT_PERCENTAGE_BASIS,
@@ -6,9 +5,6 @@ import {
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
   DEFAULT_FIXED_PRICE_CONFIG,
 } from "./constants";
-import { IFixedPriceConfig } from "./types";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-
 import { ethers } from "ethers";
 
 /**

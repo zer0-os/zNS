@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
-import { IDistributionConfig, IFixedPriceConfig, IFullDistributionConfig, IPaymentConfig } from "./types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
+import { IDistributionConfig, IFullDistributionConfig, IPaymentConfig } from "./types";
 import { encodePriceConfig } from "./pricing";
 import { ZeroHash } from "ethers";
 

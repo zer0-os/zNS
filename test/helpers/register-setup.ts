@@ -3,7 +3,6 @@ import {
   IDistributionConfig,
   IRegisterWithSetupArgs,
   IPaymentConfig,
-  IZNSContractsLocal,
   DefaultRootRegistrationArgs,
 } from "./types";
 import { ContractTransactionReceipt, ethers } from "ethers";
@@ -49,7 +48,7 @@ export const fundApprove = async ({
   user,
   domainLabel,
 } : {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   parentHash ?: string;
   user : SignerWithAddress;
   domainLabel : string;
@@ -109,7 +108,7 @@ export const defaultSubdomainRegistration = async ({
   paymentConfig = paymentConfigEmpty,
 } : {
   user : SignerWithAddress;
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   parentHash : string;
   subdomainLabel : string;
   tokenOwner ?: string;

@@ -24,7 +24,6 @@ import {
 import { DeployCampaign, MongoDBAdapter } from "@zero-tech/zdc";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getConfig } from "../src/deploy/campaign/get-config";
-import { IZNSContractsLocal } from "./helpers/types";
 import Domain from "./helpers/domain/domain";
 
 
@@ -48,7 +47,7 @@ describe("ZNSStringResolver", () => {
     IZNSCampaignConfig,
     IZNSContracts
     >;
-    let zns : IZNSContracts | IZNSContractsLocal;
+    let zns : IZNSContracts;
     let accessController : ZNSAccessController;
 
     let userBalance : bigint;
@@ -201,7 +200,7 @@ describe("ZNSStringResolver", () => {
     let userBalance : bigint;
     let deployerBalance : bigint;
 
-    let zns : IZNSContractsLocal;
+    let zns : IZNSContracts;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let mongoAdapter : MongoDBAdapter;

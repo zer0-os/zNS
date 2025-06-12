@@ -19,6 +19,7 @@ import {
   ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
   ZNSRootRegistrarUpgradeMock__factory,
+  ZNSStringResolver,
   ZNSStringResolverUpgradeMock,
   ZNSStringResolverUpgradeMock__factory,
   ZNSSubRegistrar,
@@ -29,7 +30,7 @@ import {
   ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
@@ -86,6 +87,7 @@ export interface IZNSContractsLocal {
   domainToken : ZNSDomainToken;
   meowToken : ERC20Mock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;
@@ -143,14 +145,14 @@ export interface IDomainConfigForTest extends ConfigArgsBase {
 }
 
 export interface IRegisterWithSetupArgs extends ConfigArgsBase {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   fullConfig ?: IFullDistributionConfig;
   setConfigs ?: boolean;
 }
 
 export interface DefaultRootRegistrationArgs {
   user : SignerWithAddress;
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   domainName : string;
   tokenOwner ?: string;
   domainContent ?: string;

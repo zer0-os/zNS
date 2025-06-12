@@ -1,5 +1,5 @@
 /* eslint-disable no-shadow, @typescript-eslint/no-shadow */
-import { IDomainConfigForTest, IPathRegResult, IZNSContractsLocal } from "../types";
+import { IDomainConfigForTest, IPathRegResult } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { ethers } from "ethers";
 import { decodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "../pricing";
@@ -8,6 +8,7 @@ import { getDomainRegisteredEvents } from "../events";
 import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
 import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
+import { IZNSContracts } from "../../../src/deploy/campaign/types";
 
 interface DomainObj {
   domainHash : string;
@@ -24,9 +25,11 @@ interface DomainObj {
 export const registerDomainPath = async ({
   zns,
   domainConfigs,
+  zeroVaultAddress,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
+  zeroVaultAddress : string;
 }) : Promise<Array<IPathRegResult>> => domainConfigs.reduce(
   async (
     acc : Promise<Array<IPathRegResult>>,
@@ -70,7 +73,7 @@ export const registerDomainPath = async ({
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceBefore = await paymentTokenContract.balanceOf(config.user.address);
     const treasuryBalanceBefore = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
-    const zeroVaultBalanceBefore = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
+    const zeroVaultBalanceBefore = await paymentTokenContract.balanceOf(zeroVaultAddress);
 
     const domainHash = await registrationWithSetup({
       zns,
@@ -83,7 +86,7 @@ export const registerDomainPath = async ({
       : await paymentTokenContract.balanceOf(beneficiary);
     const userBalanceAfter = await paymentTokenContract.balanceOf(config.user.address);
     const treasuryBalanceAfter = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
-    const zeroVaultBalanceAfter = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
+    const zeroVaultBalanceAfter = await paymentTokenContract.balanceOf(zeroVaultAddress);
 
     const domainObj : DomainObj = {
       domainHash,
@@ -106,7 +109,7 @@ export const validatePathRegistration = async ({
   domainConfigs,
   regResults,
 } : {
-  zns : IZNSContractsLocal;
+  zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
   regResults : Array<IPathRegResult>;
 }) => domainConfigs.reduce(

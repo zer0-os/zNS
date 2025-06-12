@@ -6,12 +6,12 @@ import {
   deployAccessController,
   deployZNS,
   DeployZNSParams,
-  IZNSContractsLocal,
   ZERO_ADDRESS_ERR,
 } from "./helpers";
 import { expect } from "chai";
 import { ADMIN_ROLE, DOMAIN_TOKEN_ROLE, EXECUTOR_ROLE, GOVERNOR_ROLE, REGISTRAR_ROLE } from "../src/deploy/constants";
 import { ethers } from "hardhat";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 describe("ZNSAccessController", () => {
   let deployer : SignerWithAddress;
@@ -19,7 +19,7 @@ describe("ZNSAccessController", () => {
   let governorAccs : Array<SignerWithAddress>;
   let adminAccs : Array<SignerWithAddress>;
   let randomAccs : Array<SignerWithAddress>;
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
 
   beforeEach(async () => {
     const accounts = await hre.ethers.getSigners();

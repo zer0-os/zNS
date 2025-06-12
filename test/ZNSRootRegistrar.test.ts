@@ -41,9 +41,7 @@ import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProto
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 import {
   IDistributionConfig,
-  IFixedPriceConfig,
   IRootDomainConfig,
-  IZNSContractsLocal,
 } from "./helpers/types";
 import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import {
@@ -57,7 +55,7 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { ZeroHash } from "ethers";
-import { ICurvePriceConfig  } from "../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig  } from "../src/deploy/missions/types";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import Domain from "./helpers/domain/domain";
 
@@ -71,7 +69,7 @@ describe.only("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IZNSContractsLocal | IZNSContracts;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
@@ -141,7 +139,7 @@ describe.only("ZNSRootRegistrar", () => {
       },
     });
 
-    domainHash = await domain.register(deployer);
+    domainHash = await domain.getDomainHashFromEvent();
 
     // under the domainHash
     subdomain = new Domain({

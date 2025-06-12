@@ -5,7 +5,7 @@ import {
   ZNSAddressResolver__factory,
   ZNSAddressResolverUpgradeMock__factory,
 } from "../typechain";
-import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
+import { DeployZNSParams } from "./helpers/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   ADMIN_ROLE,
@@ -23,6 +23,7 @@ import {
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
 import Domain from "./helpers/domain/domain";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -35,7 +36,7 @@ describe("ZNSAddressResolver", () => {
   let user : SignerWithAddress;
   let operator : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
 
   let domain : Domain;
 
