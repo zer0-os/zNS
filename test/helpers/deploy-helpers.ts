@@ -7,8 +7,8 @@ import { ethers } from "ethers";
 import { IDistributionConfig, IZNSContractsLocal } from "./types";
 import { expect } from "chai";
 import { DEFAULT_CURVE_PRICE_CONFIG_BYTES, hashDomainLabel, paymentConfigEmpty } from ".";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { TLogger } from "@zero-tech/zdc";
+
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
@@ -91,7 +91,6 @@ export const registerRootDomainBulk = async (
   config : IZNSCampaignConfig,
   tokenUri : string,
   distrConfig : IDistributionConfig,
-  priceConfig : ICurvePriceConfig,
   zns : IZNSContractsLocal | IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {

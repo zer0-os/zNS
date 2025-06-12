@@ -146,9 +146,8 @@ describe("zNS + zDC Single Integration Test", () => {
       config, // domainAddress
       "https://zns.domains/", // tokenUri
       distConfig,
-      config.rootPriceConfig,
       zns,
-      logger
+      logger,
     );
 
     logger.info(`Domain ${shortHash} registered for user ${userA.address}`);

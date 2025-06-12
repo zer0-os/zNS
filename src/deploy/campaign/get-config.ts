@@ -1,24 +1,20 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig } from "./types";
 import {
-  DEFAULT_PROTOCOL_FEE_PERCENT,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
-  DEFAULT_DECIMALS,
-  DEFAULT_PRECISION,
-  DEFAULT_CURVE_PRICE_CONFIG,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
-  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR,
+  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR, encodePriceConfig, IFixedPriceConfig,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
 import { MEOWzChainData } from "../missions/contracts/meow-token/mainnet-data";
 import { EnvironmentLevels, TEnvironment } from "@zero-tech/zdc";
 import { findMissingEnvVars } from "../../environment/validate";
-import { SupportedChains } from "../constants";
+import { PricerTypes, SupportedChains } from "../constants";
 
 
 const getCustomAddresses = (
@@ -114,6 +110,7 @@ export const getConfig = async ({
       defaultRoyaltyReceiver: royaltyReceiver as string,
       defaultRoyaltyFraction: royaltyFraction,
     },
+    rootPricerType: process.env.ROOT_PRICER_TYPE,
     rootPriceConfig: priceConfig,
     zeroVaultAddress: zeroVaultAddressConf as string,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
@@ -131,7 +128,7 @@ export const getConfig = async ({
 // For testing the behaviour when we manipulate, we have an optional "env" string param
 export const validateEnv = (
   env ?: TEnvironment, // this is ONLY used for tests!
-) : ICurvePriceConfig => {
+) : string => {
   // Prioritize reading from the env variable first, and only then fallback to the param
   let envLevel = process.env.ENV_LEVEL ;
 
@@ -195,62 +192,50 @@ export const validateEnv = (
 };
 
 const getValidateRootPriceConfig = () => {
+  let priceConfig : ICurvePriceConfig | IFixedPriceConfig;
 
-  if (process.env.ENV_LEVEL === EnvironmentLevels.test) {
+  if (process.env.ROOT_PRICER_TYPE === PricerTypes.curve) {
     requires(
-      !!process.env.MAX_PRICE
+      !!process.env.CURVE_MAX_PRICE
       && !!process.env.CURVE_MULTIPLIER
-      && !!process.env.MAX_LENGTH
-      && !!process.env.BASE_LENGTH
-      && !!process.env.DECIMALS
-      && !!process.env.PRECISION
-      && !!process.env.PROTOCOL_FEE_PERC,
-      "Must provide all price config variables for prod environment!"
+      && !!process.env.CURVE_MAX_LENGTH
+      && !!process.env.CURVE_BASE_LENGTH
+      && !!process.env.CURVE_DECIMALS
+      && !!process.env.CURVE_PRECISION
+      && !!process.env.CURVE_PROTOCOL_FEE_PERC,
+      `Must provide all price config env variables for ${PricerTypes.curve} pricer!`
+    );
+
+    const decimals = BigInt(process.env.CURVE_DECIMALS as string);
+    const precision = BigInt(process.env.CURVE_PRECISION as string);
+
+    priceConfig = {
+      maxPrice: ethers.parseEther(process.env.CURVE_MAX_PRICE as string),
+      curveMultiplier: BigInt(process.env.CURVE_MULTIPLIER as string),
+      maxLength: BigInt(process.env.CURVE_MAX_LENGTH as string),
+      baseLength: BigInt(process.env.CURVE_BASE_LENGTH as string),
+      feePercentage: BigInt(process.env.CURVE_PROTOCOL_FEE_PERC as string),
+      precisionMultiplier: BigInt(10) ** (decimals - precision),
+    } as ICurvePriceConfig;
+
+    validateConfig(priceConfig);
+  } else if (process.env.ROOT_PRICER_TYPE === PricerTypes.fixed) {
+    requires(
+      !!process.env.FIXED_PRICE && !!process.env.FIXED_FEE_PERC,
+      `Must provide all price config env variables for ${PricerTypes.fixed} pricer!`
+    );
+
+    priceConfig = {
+      price: ethers.parseEther(process.env.FIXED_PRICE as string),
+      feePercentage: BigInt(process.env.FIXED_FEE_PERC as string),
+    } as IFixedPriceConfig;
+  } else {
+    throw new Error(
+      `Must provide a valid ROOT_PRICER_TYPE env variable, got: ${process.env.ROOT_PRICER_TYPE}`
     );
   }
 
-  // Price config variables
-  const maxPrice =
-    process.env.MAX_PRICE
-      ? ethers.parseEther(process.env.MAX_PRICE)
-      : DEFAULT_CURVE_PRICE_CONFIG.maxPrice;
-
-  const curveMultiplier =
-    process.env.CURVE_MULTIPLIER
-      ? BigInt(process.env.CURVE_MULTIPLIER)
-      : DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier;
-
-  const maxLength =
-    process.env.MAX_LENGTH
-      ? BigInt(process.env.MAX_LENGTH)
-      : DEFAULT_CURVE_PRICE_CONFIG.maxLength;
-
-  const baseLength =
-    process.env.BASE_LENGTH
-      ? BigInt(process.env.BASE_LENGTH)
-      : DEFAULT_CURVE_PRICE_CONFIG.baseLength;
-
-  const decimals = process.env.DECIMALS ? BigInt(process.env.DECIMALS) : DEFAULT_DECIMALS;
-  const precision = process.env.PRECISION ? BigInt(process.env.PRECISION) : DEFAULT_PRECISION;
-  const precisionMultiplier = BigInt(10) ** (decimals - precision);
-
-  const feePercentage =
-    process.env.PROTOCOL_FEE_PERC
-      ? BigInt(process.env.PROTOCOL_FEE_PERC)
-      : DEFAULT_PROTOCOL_FEE_PERCENT;
-
-  const priceConfig : ICurvePriceConfig = {
-    maxPrice,
-    curveMultiplier,
-    maxLength,
-    baseLength,
-    precisionMultiplier,
-    feePercentage,
-  };
-
-  validateConfig(priceConfig);
-
-  return priceConfig;
+  return encodePriceConfig(priceConfig);
 };
 
 const requires = (condition : boolean, message : string) => {

@@ -121,14 +121,12 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      * under the given parent.
      *
      * @param parentPriceConfig The price config of the parent domain under which price and fee are determined
-     * @param label The label of the subdomain candidate to get the price and fee for before/during registration
-     * @param skipValidityCheck If true, skips the validity check for the label
     */
     // solhint-disable no-unused-vars
     function getPriceAndFee(
         bytes memory parentPriceConfig,
-        string calldata label,
-        bool skipValidityCheck
+        string calldata,
+        bool
     ) external pure override returns (uint256 price, uint256 fee) {
         // To match the IZNSPricer interface, we have unused params here
         FixedPriceConfig memory config = decodePriceConfig(parentPriceConfig);
