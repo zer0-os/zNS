@@ -67,5 +67,4 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
-  zeroVaultAddress ?: string;
 }

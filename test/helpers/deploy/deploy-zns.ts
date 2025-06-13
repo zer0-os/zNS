@@ -245,6 +245,52 @@ export const deployAddressResolver = async (
   return resolver as unknown as ZNSAddressResolver;
 };
 
+export const deployStringResolver = async (
+  deployer : SignerWithAddress,
+  accessControllerAddress : string,
+  registryAddress : string,
+  isTenderlyRun : boolean
+) : Promise<ZNSAddressResolver> => {
+  const stringResolverFactory = new ZNSAddressResolver__factory(deployer);
+
+  const resolver = await upgrades.deployProxy(
+    stringResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await resolver.waitForDeployment();
+
+  const proxyAddress = await resolver.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: addressResolverName,
+      address: impl,
+    });
+
+    console.log(
+      `ZNSStringResolver deployed at:
+      proxy: ${proxyAddress}
+      implementation: ${impl}`
+    );
+  }
+
+  return resolver as unknown as ZNSAddressResolver;
+};
+
 export const deployCurvePricer = async ({
   deployer,
   isTenderlyRun,
@@ -512,6 +558,13 @@ export const deployZNS = async ({
   const meowTokenMock = await deployMeowToken(deployer, isTenderlyRun);
 
   const addressResolver = await deployAddressResolver(
+    deployer,
+    await accessController.getAddress(),
+    await registry.getAddress(),
+    isTenderlyRun
+  );
+
+  const stringResolver = await deployStringResolver(
     deployer,
     await accessController.getAddress(),
     await registry.getAddress(),
