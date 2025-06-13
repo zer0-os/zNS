@@ -43,7 +43,7 @@ import {
   IDistributionConfig,
   IRootDomainConfig,
 } from "./helpers/types";
-import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
+import { getDomainRegisteredEvents } from "./helpers/events";
 import {
   IERC20,
   ZNSRootRegistrar,
@@ -74,15 +74,11 @@ describe.only("ZNSRootRegistrar", () => {
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
 
-  let domain : Domain;
-  let domainHash : string;
-  let subdomain : Domain;
-  let subdomainHash : string;
-
-  const tokenURI = "https://example.com/817c64af";
-
   let mongoAdapter : MongoDBAdapter;
 
+  let domain : Domain;
+
+  const tokenURI = "https://example.com/817c64af";
   const defaultDomain = normalizeName("wilder");
 
   beforeEach(async () => {
@@ -116,46 +112,6 @@ describe.only("ZNSRootRegistrar", () => {
     // Give funds to user
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
     await zns.meowToken.mint(user.address, userBalanceInitial);
-
-    const distrConfig : IDistributionConfig = {
-      pricerContract: await zns.curvePricer.getAddress(),
-      paymentType: PaymentType.STAKE,
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      accessType: AccessType.OPEN,
-    };
-
-    domain = new Domain({
-      zns,
-      domainConfig: {
-        owner: deployer,
-        label: defaultDomain,
-        tokenOwner: ethers.ZeroAddress,
-        parentHash: ethers.ZeroHash,
-        distrConfig,
-        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
-        paymentConfig: paymentConfigEmpty,
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-      },
-    });
-
-    domainHash = await domain.getDomainHashFromEvent();
-
-    // under the domainHash
-    subdomain = new Domain({
-      zns,
-      domainConfig: {
-        owner: deployer,
-        label: "subdomain",
-        tokenOwner: deployer.address,
-        parentHash: domainHash,
-        distrConfig,
-        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
-        paymentConfig: paymentConfigEmpty,
-        domainAddress: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-      },
-    });
   });
 
   afterEach(async () => {
@@ -178,6 +134,28 @@ describe.only("ZNSRootRegistrar", () => {
       true,
       true,
     ];
+
+    const distrConfig : IDistributionConfig = {
+      pricerContract: await zns.curvePricer.getAddress(),
+      paymentType: PaymentType.STAKE,
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      accessType: AccessType.OPEN,
+    };
+
+    domain = new Domain({
+      zns,
+      domainConfig: {
+        owner: deployer,
+        label: defaultDomain,
+        tokenOwner: ethers.ZeroAddress,
+        parentHash: ethers.ZeroHash,
+        distrConfig,
+        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        paymentConfig: paymentConfigEmpty,
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: DEFAULT_TOKEN_URI,
+      },
+    });
 
     await domain.updateMintlistForDomain(
       candidates,
@@ -410,30 +388,32 @@ describe.only("ZNSRootRegistrar", () => {
     });
   });
 
-  describe("Registers a root domain", () => {
+  describe.only("Registers a root domain", () => {
     it("Can NOT register a root domain with an empty name", async () => {
       const emptyName = "";
 
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: deployer,
+          label: emptyName,
+        },
+      });
+
       await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: emptyName,
-        })
+        domain.register()
       ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LENGTH_ERR);
     });
 
-    it.only("Can register a root domain with characters [a-z0-9-]", async () => {
-      const letters = "world";
-      const alphaNumeric = "0x0dwidler0x0";
-      const withHyphen = "0x0-dwidler-0x0";
+    it("Can register a root domain with characters [a-z0-9-]", async () => {
+      const labels = ["world", "0x0dwidler0x0", "0x0-dwidler-0x0"];
 
-      for (let i = 0; i < 3; i++) {
+      for (const label of labels) {
         const args = {
           zns,
           domainConfig: {
             owner: deployer,
-            label: i === 0 ? letters : i === 1 ? alphaNumeric : withHyphen,
+            label,
           },
         };
 
@@ -444,55 +424,40 @@ describe.only("ZNSRootRegistrar", () => {
 
     it("Fails for domains that use any invalid character", async () => {
       // Valid names must match the pattern [a-z0-9]
-      const nameA = "WILDER";
-      const nameB = "!?w1Id3r!?";
-      const nameC = "!%$#^*?!#👍3^29";
-      const nameD = "wo.rld";
+      const labels = ["WILDER", "!?w1Id3r!", "?", "!%$#^*?!#👍3^29", "wo.rld"];
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
+      for (const label of labels) {
+        const args = {
           zns,
-          domainName: nameA,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+          domainConfig: {
+            owner: deployer,
+            label,
+          },
+        };
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameB,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+        domain = new Domain(args);
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameC,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameD,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+        await expect(
+          domain.register()
+        ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+      }
     });
 
     it("Fails when registering during a registration pause when called publicly", async () => {
       await zns.rootRegistrar.connect(admin).pauseRegistration();
       expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
 
-      const tx = defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+        },
       });
 
-      await expect(tx).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
+      await expect(
+        domain.register()
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
 
       await zns.rootRegistrar.connect(admin).unpauseRegistration();
     });
@@ -501,20 +466,14 @@ describe.only("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(admin).pauseRegistration();
       expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
 
-      await registrationWithSetup({
-        user: admin,
+      domain = new Domain({
         zns,
-        domainLabel: defaultDomain,
-        setConfigs: false,
+        domainConfig: {
+          owner: admin,
+          label: defaultDomain,
+        },
       });
-
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user: admin,
-      });
-
-      const owner = await zns.registry.getDomainOwner(domainHash);
-      expect(owner).to.eq(admin.address);
+      await domain.registerAndValidateDomain();
 
       await zns.rootRegistrar.connect(admin).unpauseRegistration();
     });

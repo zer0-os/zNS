@@ -261,6 +261,7 @@ export default class Domain {
 
     const txPromise = await this.register(executor);
 
+    // check domain existence with event
     await expect(txPromise)
       .to.emit(
         this.zns.rootRegistrar,
@@ -271,14 +272,19 @@ export default class Domain {
         this.label,
         BigInt(this.hash),
         this.tokenURI,
-        this.owner,
+        executor ? executor.address : this.owner.address,
         executor ? executor.address : this.owner.address,
         this.domainAddress
       );
 
+    // check domain existence with registry
     const record = await this.zns.registry.getDomainRecord(this.hash);
     const resolverAddress = await this.getResolverAddressByLabel(this.label);
-    expect(record.owner).to.equal(this.owner);
+
+    expect(
+      await this.zns.registry.getDomainOwner(this.hash)
+    ).to.equal(executor ? executor.address : this.owner.address);
+    expect(record.owner).to.equal(executor ? executor.address : this.owner.address);
     expect(record.resolver).to.equal(resolverAddress);
   }
 }
