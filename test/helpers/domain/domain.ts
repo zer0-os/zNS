@@ -157,14 +157,6 @@ export default class Domain {
     );
   }
 
-  async setOperator (
-    operator : string,
-    allowed : boolean,
-    executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(operator, allowed);
-  }
-
   async updateDomainRecord (
     resolverType : string,
     executor ?: SignerWithAddress
@@ -189,6 +181,17 @@ export default class Domain {
       candidates ? candidates : [this.owner.address],
       allowed ? allowed : [true],
     );
+  }
+
+  // ------------------------------------------------------
+  // SETTERS
+  // ------------------------------------------------------
+  async setOperator (
+    operator : string,
+    allowed : boolean,
+    executor ?: SignerWithAddress
+  ) : Promise<void> {
+    await this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(operator, allowed);
   }
 
   async setDistributionConfigForDomain (
@@ -256,9 +259,6 @@ export default class Domain {
   async registerAndValidateDomain (
     executor ?: SignerWithAddress
   ) : Promise<void> {
-  // mint and approve strict amount of tokens for domain registration
-    await this.mintAndApproveForDomain(executor);
-
     const txPromise = await this.register(executor);
 
     // check domain existence with event
@@ -286,5 +286,9 @@ export default class Domain {
     ).to.equal(executor ? executor.address : this.owner.address);
     expect(record.owner).to.equal(executor ? executor.address : this.owner.address);
     expect(record.resolver).to.equal(resolverAddress);
+
+    expect(
+      await this.zns.domainToken.tokenURI(this.hash)
+    ).to.equal(this.tokenURI);
   }
 }
