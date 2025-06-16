@@ -26,17 +26,6 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
     return testFailures;
   });
 
-// This call is needed to initialize Tenderly with Hardhat,
-// the automatic verifications, though, don't seem to work,
-// needing us to verify explicitly in code, however,
-// for Tenderly to work properly with Hardhat this method
-// needs to be called. The call below is commented out
-// because if we leave it here, solidity-coverage
-// does not work properly locally or in CI, so we
-// keep it commented out and uncomment when using DevNet
-// locally.
-// !!! Uncomment this when using Tenderly !!!
-tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -123,9 +112,9 @@ const config : HardhatUserConfig = {
       url: `${process.env.DEVNET_RPC_URL}`,
       chainId: 1,
     },
-    zchaintest: {
+    zephyr: {
       url: `${process.env.ZCHAIN_TEST_RPC_URL}`,
-      chainId: 2012605151,
+      chainId: 1417429182,
       accounts: [
         `${process.env.TESTNET_PRIVATE_KEY_A}`,
         // `${process.env.TESTNET_PRIVATE_KEY_B}`,
@@ -137,11 +126,11 @@ const config : HardhatUserConfig = {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
     customChains: [
       {
-        network: "zchaintest",
-        chainId: 2012605151,
+        network: "zephyr",
+        chainId: 1417429182,
         urls: {
-          apiURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/api/",
-          browserURL: "https://wilderworld-dev-erigon1-blockscout.eu-north-2.gateway.fm/",
+          apiURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/",
         },
       },
     ],
