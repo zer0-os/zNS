@@ -14,13 +14,27 @@ event AccessControllerSet(address accessController)
 
 Emitted when the access controller contract address is set.
 
+### WrongAccessControllerAddress
+
+```solidity
+error WrongAccessControllerAddress(address accessController)
+```
+
+Reverts when the access controller is set to an incorrect address.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| accessController | address | The address that was attempted to be set as the access controller. |
+
 ### accessController
 
 ```solidity
 contract IZNSAccessController accessController
 ```
 
-Address of the ZNSAccessController contract.
+Address of the `ZNSAccessController` contract.
 
 ### onlyAdmin
 
@@ -73,6 +87,10 @@ function _setAccessController(address _accessController) internal
 ```
 
 Internal function to set the access controller address.
+
+This function checks if the caller has the admin role in the current
+in-state contract and checks if the new access controller address passed is in fact a `ZNSAccessController`
+contract that is already set up with the same caller as an admin. This prevents from setting the wrong address.
 
 #### Parameters
 

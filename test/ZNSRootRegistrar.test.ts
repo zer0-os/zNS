@@ -930,7 +930,7 @@ describe("ZNSRootRegistrar", () => {
     });
   });
 
-  describe("Assigning Domain Token Owners", () => {
+  describe("Assigning Domain Token Owners - #assignDomainToken()", () => {
     it("Can assign token to another address and reclaim token if domain hash is owned", async () => {
       // Register Top level
       await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
@@ -1057,6 +1057,21 @@ describe("ZNSRootRegistrar", () => {
       expect(token).to.equal(tokenAfterReclaim);
     });
 
+    it("Should revert if assigning to existing owner", async () => {
+      // Register Top level
+      await defaultRootRegistration({ user: deployer, zns, domainName: "tokennn" });
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user: deployer,
+      });
+
+      // Assign the Domain token
+      const tx = zns.rootRegistrar.connect(deployer).assignDomainToken(domainHash, deployer.address);
+      await expect(tx).to.be.revertedWithCustomError(
+        zns.rootRegistrar,
+        "AlreadyTokenOwner",
+      ).withArgs(domainHash, deployer.address);
+    });
   });
 
   describe("Revoking Domains", () => {

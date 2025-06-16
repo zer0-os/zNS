@@ -16,9 +16,12 @@ import { NotFullDomainOwner, AlreadyFullOwner } from "../utils/CommonErrors.sol"
 
 /**
  * @title A contract for tokenizing domains under ZNS. Every domain in ZNS has a corresponding token
- * minted at register time. This token is also an NFT that is fully ERC-721 compliant.
+ * minted at register time. This token is an NFT that is fully ERC-721 compliant.
+ *
  * @dev Note that all ZNS related functions on this contract can ONLY be called by either
- * the `ZNSRootRegistrar.sol` contract or any address holding a REGISTRAR_ROLE.
+ * the `ZNSRootRegistrar` contract or any address holding a REGISTRAR_ROLE.
+ * > Each indifivual domain token can ONLY be transferred by the owner of both the domain hash and the token ID,
+ * and it will transfer both of these owners on token transfer.
  */
 contract ZNSDomainToken is
     AAccessControlled,
@@ -46,6 +49,7 @@ contract ZNSDomainToken is
     /**
      * @notice Initializer for the `ZNSDomainToken` proxy.
      * Note that this function does NOT have role protection enforced!
+     *
      * @param accessController_ The address of the `ZNSAccessController` contract
      * @param name_ The name of the token
      * @param symbol_ The symbol of the token
@@ -75,9 +79,10 @@ contract ZNSDomainToken is
 
     /**
      * @notice Mints a token with a specified tokenId, using _safeMint, and sends it to the given address.
-     * Used ONLY as a part of the Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`
+     * Used ONLY as a part of the canonical Register flow that starts from `ZNSRootRegistrar.registerRootDomain()`
      * or `ZNSSubRegistrar.registerSubdomain()` and sets the individual tokenURI for the token minted.
      * > TokenId is created as a hash of the domain name casted to uint256.
+     *
      * @param to The address that will recieve the newly minted domain token (new domain owner)
      * @param tokenId The TokenId that the caller wishes to mint/register.
      * @param _tokenURI The tokenURI to be set for the token minted.
@@ -95,6 +100,7 @@ contract ZNSDomainToken is
     /**
      * @notice Burns the token with the specified tokenId and removes the royalty information for this tokenID.
      * Used ONLY as a part of the Revoke flow that starts from `ZNSRootRegistrar.revokeDomain()`.
+     *
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to burn/revoke
      */
     function revoke(uint256 tokenId) external override onlyRegistrar {
@@ -120,6 +126,7 @@ contract ZNSDomainToken is
      * be called by the ADMIN_ROLE of zNS. This functions is not a part of any flows and is here
      * only to change faulty or outdated token URIs in case of corrupted metadata or other problems.
      * Fires the `TokenURISet` event, which is NOT fired when tokenURI is set during the registration process.
+     *
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to set the tokenURI for
      * @param _tokenURI The tokenURI to be set for the token with the given tokenId
     */
@@ -131,9 +138,11 @@ contract ZNSDomainToken is
     /**
      * @notice Sets the baseURI for ALL tokens. Can only be called by the ADMIN_ROLE of zNS.
      * Fires the `BaseURISet` event.
+     *
      * @dev This contract supports both, baseURI and individual tokenURI that can be used
      * interchangeably.
      * > Note that if `baseURI` and `tokenURI` are set, the `tokenURI` will be appended to the `baseURI`!
+     *
      * @param baseURI_ The baseURI to be set for all tokens
     */
     function setBaseURI(string memory baseURI_) external override onlyAdmin {
@@ -144,7 +153,9 @@ contract ZNSDomainToken is
     /**
      * @notice Sets the default royalty for ALL tokens. Can only be called by the ADMIN_ROLE of zNS.
      * Fires the `DefaultRoyaltySet` event.
+     *
      * @dev This contract supports both, default royalties and individual token royalties per tokenID.
+     *
      * @param receiver The address that will receive default royalties
      * @param royaltyFraction The default royalty fraction (as a base of 10,000)
     */
@@ -157,7 +168,9 @@ contract ZNSDomainToken is
     /**
      * @notice Sets the royalty for the given tokenId. Can only be called by the ADMIN_ROLE of zNS.
      * Fires the `TokenRoyaltySet` event.
+     *
      * @dev This contract supports both, default royalties and individual token royalties per tokenID.
+     *
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to set the royalty for
      * @param receiver The address that will receive royalties for the given tokenId
      * @param royaltyFraction The royalty fraction (as a base of 10,000) for the given tokenId
@@ -175,6 +188,7 @@ contract ZNSDomainToken is
     /**
      * @notice Setter function for the `ZNSRegistry` address in state.
      * Only ADMIN in `ZNSAccessController` can call this function.
+     *
      * @param registry_ Address of the `ZNSRegistry` contract
      */
     function setRegistry(address registry_) public override(ARegistryWired, IZNSDomainToken) onlyAdmin {
@@ -184,6 +198,7 @@ contract ZNSDomainToken is
     /**
      * @notice To allow for user extension of the protocol we have to
      * enable checking acceptance of new interfaces to ensure they are supported
+     *
      * @param interfaceId The interface ID
      */
     function supportsInterface(bytes4 interfaceId)
@@ -192,14 +207,16 @@ contract ZNSDomainToken is
     virtual
     override(ERC721URIStorageUpgradeable, ERC2981Upgradeable, IZNSDomainToken)
     returns (bool) {
-        return super.supportsInterface(interfaceId);
+        return interfaceId == type(IZNSDomainToken).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /**
      * @notice Check if the domain (hash) is a controlled domain (has split ownership between hash and token).
+     *
      * @dev Added to be used for quick verification in 3rd party apps to see if domain token can be transferred
      * or if domain token owner has full rights. If owners are split token can NOT be transferred in the regular way.
      * Only through `RootRegistrar.assignDomainToken()`.
+     *
      * @param domainHash The hash of the domain to check
      * @return true if the domain owners are split
      */
@@ -208,10 +225,13 @@ contract ZNSDomainToken is
     }
 
     /**
-     * @notice Override the standard transferFrom function to update the owner for both the domain (hash) and the token
+     * @notice Override the standard `transferFrom` function to always update the owner for both the domain (hash)
+     *  and the token.
+     *
      * @dev Only the owner of both: hash and token can transfer the token! Same goes for transfers under approvals.
      * An address that owns just the token can NOT transfer, owner in Registry and this contract must be the same.
      * This should cover safe transfers as well since `safeTransferFrom` would call this overriden function internally.
+     *
      * @param from The address that is transferring the token and the domain hash
      * @param to The address that will receive the token and the domain
      * @param tokenId The tokenId (as `uint256(domainHash)`) that the caller wishes to transfer
@@ -227,22 +247,23 @@ contract ZNSDomainToken is
         if (registry.getDomainOwner(domainHash) != from)
             revert NotFullDomainOwner(msg.sender, domainHash);
 
-        // Transfer the token
         super.transferFrom(from, to, tokenId);
 
-        // Update the registry
         // because `_transfer` already checks for `to == address(0)` we don't need to check it here
         registry.updateDomainOwner(domainHash, to);
     }
 
     /**
      * @notice A special function to allow the true domain (hash) owner in Registry to transfer the token separately
-     * from transferring the Registry owner itself.
+     * from transferring the Registry owner.
+     *
      * @dev Can only be called through the entry point in `RootRegistrar.assignDomainToken()`.
      * This does NOT work with approvals and overrides them, since it's a system-specific function
      * separate from the standard transfers!
      * This function does NOT use `msg.sender`! It uses the owner of the domain (hash) the ultimate power to transfer
      * even if that owner has a different address.
+     * Has baked-in safe transfer logic to support contracts that implement `IERC721Receiver`.
+     *
      * @param to The address that will receive the token
      * @param tokenId The tokenId (as `uint256(domainHash)`) to transfer
      */
@@ -281,10 +302,8 @@ contract ZNSDomainToken is
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-     * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal view override {
+    function _authorizeUpgrade(address) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

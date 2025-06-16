@@ -41,11 +41,9 @@ IZNSContracts
       accessController,
       subRegistrar,
       rootRegistrar,
-      config: { deployAdmin },
     } = this.campaign;
 
     this.hasRegistrarRole = await accessController
-      .connect(deployAdmin)
       .isRegistrar(await subRegistrar.getAddress());
 
     const currentSubRegistrarOnRoot = await rootRegistrar.subRegistrar();
@@ -74,16 +72,21 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      const tx = await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
     }
 
     if (!this.hasRegistrarRole) {
-      await accessController
+      const tx = await accessController
         .connect(deployAdmin)
         .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
     }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

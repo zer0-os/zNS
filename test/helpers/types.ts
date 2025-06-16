@@ -32,8 +32,6 @@ import { Addressable } from "ethers";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 
-export type Maybe<T> = T | undefined;
-
 export type GeneralContractGetter = Promise<
 string
 | boolean
@@ -184,7 +182,6 @@ export interface IRootDomainConfig {
   paymentConfig : IPaymentConfig;
 }
 
-// TODO 15: remove these interfaces, since we already have Struct interfaces created by typechain
 export interface ISubRegistrarConfig {
   parentHash : string;
   label : string;

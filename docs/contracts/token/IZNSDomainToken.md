@@ -35,10 +35,38 @@ Emitted when a Token URI is set for individual tokens per tokenID.
 Note that this event is fired ONLY when the tokenURI is set externally
 through an external setter and NOT during the registration.
 
+### OverrideTransfer
+
+```solidity
+event OverrideTransfer(address from, address to, uint256 tokenId)
+```
+
+Emitted when doing an override transfer of the token separately from the domain hash.
+
+### CannotBurnToken
+
+```solidity
+error CannotBurnToken()
+```
+
+Revert when trying to burn the token separately from domain revocation.
+
 ### initialize
 
 ```solidity
-function initialize(address accessController, string tokenName, string tokenSymbol, address defaultRoyaltyReceiver, uint96 defaultRoyaltyFraction) external
+function initialize(address accessController, string tokenName, string tokenSymbol, address defaultRoyaltyReceiver, uint96 defaultRoyaltyFraction, address registry) external
+```
+
+### totalSupply
+
+```solidity
+function totalSupply() external view returns (uint256)
+```
+
+### isControlled
+
+```solidity
+function isControlled(bytes32 domainHash) external view returns (bool)
 ```
 
 ### register
@@ -51,6 +79,12 @@ function register(address to, uint256 tokenId, string _tokenURI) external
 
 ```solidity
 function revoke(uint256 tokenId) external
+```
+
+### transferOverride
+
+```solidity
+function transferOverride(address to, uint256 tokenId) external
 ```
 
 ### tokenURI
@@ -83,6 +117,12 @@ function setDefaultRoyalty(address receiver, uint96 royaltyFraction) external
 function setTokenRoyalty(uint256 tokenId, address receiver, uint96 royaltyFraction) external
 ```
 
+### setRegistry
+
+```solidity
+function setRegistry(address registry_) external
+```
+
 ### supportsInterface
 
 ```solidity
@@ -91,7 +131,7 @@ function supportsInterface(bytes4 interfaceId) external view returns (bool)
 
 Returns true if this contract implements the interface defined by
 `interfaceId`. See the corresponding
-https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[EIP section]
+https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section]
 to learn more about how these ids are created.
 
 This function call must use less than 30 000 gas.

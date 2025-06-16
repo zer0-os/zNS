@@ -7,8 +7,8 @@ import { ethers } from "ethers";
 import { IDistributionConfig, IZNSContractsLocal } from "./types";
 import { expect } from "chai";
 import { DEFAULT_CURVE_PRICE_CONFIG_BYTES, hashDomainLabel, paymentConfigEmpty } from ".";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { TLogger } from "@zero-tech/zdc";
+
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
@@ -25,7 +25,7 @@ export const approveBulk = async (
         ethers.MaxUint256,
       );
 
-      await tx.wait();
+      await tx.wait(Number(process.env.CONFIRMATION_N));
     }
   }
 };
@@ -36,10 +36,11 @@ export const mintBulk = async (
   zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
-    await zns.meowToken.connect(signer).mint(
+    const tx = await zns.meowToken.connect(signer).mint(
       signer.address,
       amount
     );
+    await tx.wait(Number(process.env.CONFIRMATION_N));
   }
 };
 
@@ -71,7 +72,9 @@ export const getPriceBulk = async (
 
     } else {
       // subs
-      config = await (await zns.subRegistrar.distrConfigs(parent)).priceConfig;
+      ({
+        priceConfig: config,
+      } = await zns.subRegistrar.distrConfigs(parent));
       const price = await zns.curvePricer.getPrice(config, domain, true);
 
       const stakeFee = await zns.curvePricer.getFeeForPrice(config, price);
@@ -91,7 +94,6 @@ export const registerRootDomainBulk = async (
   config : IZNSCampaignConfig,
   tokenUri : string,
   distrConfig : IDistributionConfig,
-  priceConfig : ICurvePriceConfig,
   zns : IZNSContractsLocal | IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {
@@ -113,7 +115,7 @@ export const registerRootDomainBulk = async (
 
     logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
-      await tx.wait(3);
+      await tx.wait(Number(process.env.CONFIRMATION_N));
       logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
@@ -162,7 +164,7 @@ export const registerSubdomainBulk = async (
     logger.info("Deploy transaction submitted, waiting...");
 
     if (hre.network.name !== "hardhat") {
-      await tx.wait(3);
+      await tx.wait(Number(process.env.CONFIRMATION_N));
       logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
@@ -172,7 +174,7 @@ export const registerSubdomainBulk = async (
     if (signers[index].address === owner) {
       expect(balanceAfter).to.be.eq(balanceBefore);
     } else {
-      const parentConfig = (await zns.subRegistrar.distrConfigs(parents[index])).priceConfig;
+      const { priceConfig: parentConfig } = await zns.subRegistrar.distrConfigs(parents[index]);
 
       const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parentConfig, subdomain, true);
       const protocolFee = await zns.curvePricer.getFeeForPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, price + stakeFee);

@@ -54,12 +54,15 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
-    await registry.connect(deployAdmin).addResolverType(
+    const tx = await registry.connect(deployAdmin).addResolverType(
       ResolverTypes.address,
       await addressResolver.getAddress(),
     );
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

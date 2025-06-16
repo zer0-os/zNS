@@ -2,12 +2,11 @@ import {
   BaseDeployMission,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
+import { PricerTypes, ProxyKinds, REGISTRAR_ROLE } from "../../constants";
 import { znsNames } from "./names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
-import { encodePriceConfig } from "../../../../test/helpers";
 
 
 export class ZNSRootRegistrarDM extends BaseDeployMission<
@@ -29,17 +28,21 @@ IZNSContracts
       accessController,
       registry,
       curvePricer,
+      fixedPricer,
       treasury,
       domainToken,
       config,
     } = this.campaign;
 
+    const rootPricerAddress = config.rootPricerType === PricerTypes.curve
+      ? await curvePricer.getAddress()
+      : await fixedPricer.getAddress();
+
     return [
       await accessController.getAddress(),
       await registry.getAddress(),
-      // we use CurvePricer as the IZNSPricer for root domains
-      await curvePricer.getAddress(),
-      encodePriceConfig(config.rootPriceConfig),
+      rootPricerAddress,
+      config.rootPriceConfig,
       await treasury.getAddress(),
       await domainToken.getAddress(),
     ];
@@ -70,11 +73,14 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
-    await accessController
+    const tx = await accessController
       .connect(deployAdmin)
       .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

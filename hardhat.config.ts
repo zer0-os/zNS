@@ -62,6 +62,22 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
+    zephyr: {
+      url: `${process.env.ZEPHYR_RPC_URL}`,
+      chainId: 1417429182,
+      // accounts: [
+      //   `${process.env.ZNS_DEPLOYER}`,
+      //   `${process.env.ZERO_VAULT_KEY}`,
+      //   `${process.env.TEST_USER_A_KEY}`,
+      //   `${process.env.TEST_USER_B_KEY}`,
+      //   `${process.env.TEST_USER_C_KEY}`,
+      //   `${process.env.TEST_USER_D_KEY}`,
+      //   `${process.env.TEST_USER_E_KEY}`,
+      //   `${process.env.TEST_USER_F_KEY}`,
+      // ],
+      timeout: 10000000,
+      loggingEnabled: true,
+    },
     // mainnet: {
     //   url: `${process.env.MAINNET_RPC_URL}`,
     //   gasPrice: 80000000000,
@@ -86,13 +102,19 @@ const config : HardhatUserConfig = {
     //   chainId: 1,
     // },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  //   customChains: [
-  //     {
-  //     },
-  //   ],
-  // },
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [
+      {
+        network: "zephyr",
+        chainId: 1417429182,
+        urls: {
+          apiURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
     enabled: false,

@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 interface IZNSStringResolver {
     /**
+     * @dev Emitted when string resolution value is set for a domain.
+     *
      * @param domainHash The identifying hash of a domain's name
      * @param newString - content of string type set by the owner/operator to which a domain will resolve to
      */
