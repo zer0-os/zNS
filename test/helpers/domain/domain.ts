@@ -1,15 +1,17 @@
 import * as hre from "hardhat";
-import { IZNSContracts } from "../../../src/deploy/campaign/types";
+import { IZNSContracts, ZNSContract } from "../../../src/deploy/campaign/types";
 import { IFullDomainConfig } from "./types";
 import { IDistributionConfig, IPaymentConfig } from "../types";
 import { CurvePriceConfig, FixedPriceConfig } from "../../../src/deploy/missions/types";
 import { curvePriceConfigEmpty, distrConfigEmpty, fixedPriceConfigEmpty, paymentConfigEmpty } from "../constants";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
-import { ContractTransactionResponse } from "ethers";
+import { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 import { hashDomainLabel } from "../hashing";
 import { expect } from "chai";
+import { ZNSDomainToken, ZNSRegistry } from "../../../typechain";
+import { ZNSRegistryDM } from "../../../src/deploy/missions/contracts";
 
 
 export default class Domain {
@@ -66,6 +68,18 @@ export default class Domain {
     this.tokenURI = domainConfig.tokenURI || "https://example.com/token-uri";
 
     this.hash = "";
+  }
+
+  get tokenId () : bigint {
+    return BigInt(this.hash);
+  }
+
+  async ownerOfHash () : Promise<string> {
+    return this.zns.registry.getDomainOwner(this.hash);
+  }
+
+  async ownerOfToken () : Promise<string> {
+    return this.zns.domainToken.ownerOf(this.tokenId);
   }
 
   async getDomainHashFromEvent (domainOwner ?: SignerWithAddress) : Promise<string> {
@@ -150,11 +164,12 @@ export default class Domain {
   async assignDomainToken (
     to : string,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.rootRegistrar.connect(executor ? executor : this.owner).assignDomainToken(
+  ) : Promise<ContractTransactionReceipt | null> {
+    const tx = await this.zns.rootRegistrar.connect(executor ? executor : this.owner).assignDomainToken(
       this.hash,
       to
     );
+    return tx.wait();
   }
 
   async updateDomainRecord (
@@ -244,6 +259,7 @@ export default class Domain {
     );
   }
 
+  // TODO: delete this
   async getResolverAddressByLabel (label : string) : Promise<string> {
     const hash = hashDomainLabel(label);
     return this.zns.registry.getDomainResolver(hash);
