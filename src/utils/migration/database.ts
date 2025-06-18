@@ -1,7 +1,5 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
-export let dbVersion : string;
-
 export const getDBAdapter = async (
   connectionString : string
 ) : Promise<MongoClient> => {

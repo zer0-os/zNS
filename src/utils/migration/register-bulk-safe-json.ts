@@ -1,50 +1,43 @@
 import * as hre from "hardhat";
 import { deployZNS, DeployZNSParams, IZNSContracts, IZNSContractsLocal, paymentConfigEmpty } from "../../../test/helpers";
-import { getZNS } from "./zns-contract-data";
 import { getDBAdapter } from "./database";
 import { REGISTER_ROOT_BULK_ABI, REGISTER_SUBS_BULK_ABI, ROOT_COLL_NAME, SAFE_TRANSFER_FROM_ABI, SUB_COLL_NAME } from "./constants";
 
-import SafeApiKit from "@safe-global/api-kit";
 import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { IZNSRootRegistrar, IZNSSubRegistrar } from "../../../typechain";
 
 import * as fs from "fs";
+import { connectToDb } from "./helpers";
 
-// Script #2 to be run AFTER validation of the domains with subgraph
+
+/**
+ * Generates JSON files for bulk registration of root and subdomains
+ * and transfers of all domains to their respective owners.
+ */
 const main = async () => {
-  const [ migrationAdmin, governor, admin ] = await hre.ethers.getSigners();
+  const [ migrationAdmin ] = await hre.ethers.getSigners();
 
-  const uri = process.env.MONGO_DB_URI;
-  if (!uri) throw Error("No connection string given");
-
-  const dbName = process.env.MONGO_DB_NAME;
-  if (!dbName) throw Error("No DB name given");
-
-  const client = (await getDBAdapter(uri)).db(dbName);
-
-  // Get all root domain documents from collection
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
-
-  const outputDir = "output/registration";
-  // if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  // }
+  const outputDir = "output";
+  fs.mkdirSync(outputDir, { recursive: true });
 
   // First, create batches for all root domains
-  const rootsFolderName = "roots"
-  // if (!fs.existsSync(`${outputDir}/${rootsFolderName}`)) {
-    fs.mkdirSync(`${outputDir}/${rootsFolderName}`);
-  // }
+  const rootsFolderName = "registration/roots"
+  fs.mkdirSync(`${outputDir}/${rootsFolderName}`, { recursive: true });
 
+  // TODO Replace with get from DB when deployed to zchain
   const params : DeployZNSParams = {
     deployer: migrationAdmin,
     governorAddresses: [migrationAdmin.address],
     adminAddresses: [migrationAdmin.address],
   };
 
-  const zns = await deployZNS(params); // TODO Replace with get from DB when deployed to zchain
+  const zns = await deployZNS(params);
+
+  // Get MongoDB client
+  const client = await connectToDb();
+
+  // Get all root domain documents from collection
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
 
   // Create batch JSON files for root domains
   createBatches(
@@ -54,11 +47,10 @@ const main = async () => {
     true
   );
 
-  const subsFolderName = "subs";
-  if (!fs.existsSync(`${outputDir}/${subsFolderName}`)) {
-    fs.mkdirSync(`${outputDir}/${subsFolderName}`);
-  }
+  const subsFolderName = "registration/subs";
+  fs.mkdirSync(`${outputDir}/${subsFolderName}`, { recursive: true });
 
+  // Get all subdomain documents from collection, sorted by depth
   const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
   createBatches(
     subdomains,
@@ -66,11 +58,11 @@ const main = async () => {
     `${outputDir}/${subsFolderName}`
   ); 
 
-  // There are no subdomains with depth 4 or higher, stop registration here
   // Now setup transfer calls
   const allDomains = [...rootDomains, ...subdomains,]
 
-  const sliceSize = 500;
+  const sliceSize = Number(process.env.TRANSFER_SLICE) ?? 500;
+
   let batchIndex = 0
   let batch = allDomains.slice(batchIndex, batchIndex + sliceSize);
 
@@ -88,16 +80,19 @@ const main = async () => {
         )
       );
 
+      // safeTransferFrom(from, to, tokenId, data)
       batchTx.transactions[i].contractInputsValues = {
-        from: `${zns.domainToken.target}`, // TODO is this correct?
+        from: `${zns.domainToken.target}`,
         to: `${domain.address}`,
         tokenId: `${domain.tokenId}`,
-        data: "" // TODO empty? 0x? zerohash?
+        data: ZeroHash
       };
     }
+
+    // Write batch to file
     const fileNumber = batchIndex > 9 ? batchIndex : `0${batchIndex}`;
-    fs.mkdirSync(`output/transfer`, { recursive: true });
-    fs.writeFileSync(`output/transfer/batch_${fileNumber}.json`, JSON.stringify(batchTx, null, 2));
+    fs.mkdirSync(`${outputDir}/transfer`, { recursive: true });
+    fs.writeFileSync(`${outputDir}/transfer/batch_${fileNumber}.json`, JSON.stringify(batchTx, null, 2));
 
     batchIndex++;
     batch = allDomains.slice(batchIndex * sliceSize, batchIndex * sliceSize + sliceSize);
@@ -111,7 +106,7 @@ const createBatches = (
   zns : IZNSContracts | IZNSContractsLocal,
   outputFile : string,
   forRootDomains : boolean = false,
-  sliceSize : number = 50
+  sliceSize : number = Number(process.env.DOMAIN_SLICE) ?? 50
 ) => {
   let index = 0;
 
@@ -153,7 +148,7 @@ const createBatches = (
         domain.owner.id,
         domain.tokenURI,
         `[\"${domain.pricerContract ?? ZeroAddress}\", ${domain.paymentType ?? 0}, ${domain.accessType ?? 0}]`,
-        `[\"${domain.treasury.paymentToken ?? ZeroAddress}\",\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\"]`,
+        `[\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\",\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\"]`,
       ]
 
       if (domain.parentHash !== ZeroHash) {

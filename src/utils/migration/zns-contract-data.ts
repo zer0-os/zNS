@@ -15,7 +15,7 @@ import {
   ZNSTreasury__factory,
 } from "../../../typechain/index";
 
-let znsCache : IZNSContracts | null = null;
+let znsCache : IZNSContracts | IZNSContractsLocal | null = null;
 
 export const getZNS = async (
   signer : SignerWithAddress,
@@ -26,9 +26,11 @@ export const getZNS = async (
 
     const meowTokenAddress = zns.find(contract => {
       if (env === "prod") {
+        // ZToken
         return contract.name === znsNames.meowToken.contract;
       } else {
-        contract.name === znsNames.meowToken.contractMock;
+        // TODO fix, ERC20Mock in znsNames
+        return contract.name === "MeowTokenMock";
       }
     });
 
@@ -44,6 +46,7 @@ export const getZNS = async (
     const fixedPricerAddress = zns.find(contract => contract.name === znsNames.fixedPricer.contract);
     const subRegistrarAddress = zns.find(contract => contract.name === znsNames.subRegistrar.contract);
 
+    // TODO fix so meowtoken isnt always using meow token mock factory
     znsCache = {
       accessController: ZNSAccessController__factory.connect(acAddress?.address, signer),
       registry: ZNSRegistry__factory.connect(regAddress?.address, signer),

@@ -1,8 +1,5 @@
 import { Addressable } from "ethers";
-import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
-
-
-// TODO do we need all these types?
+import { IDistributionConfig, IPaymentConfig, IZNSContracts, IZNSContractsLocal } from "../../../test/helpers/types";
 
 export interface Domain {
   id : string;
@@ -95,10 +92,10 @@ export interface ValidatedUser {
 
 // Singular variables
 export interface SafeTxArgType {
-      internalType ?: string;
-      name ?: string;
-      type ?: string;
-      components ?: Array<SafeTxArgType>;
+  internalType ?: string;
+  name ?: string;
+  type ?: string;
+  components ?: Array<SafeTxArgType>;
 }
 
 // Structs or arrays
@@ -136,5 +133,28 @@ export interface SafeBatch {
     createdFromOwnerAddress: string; // 0x
     checksum: string;
   }
-  transactions : SafeTx[];
+  transactions: SafeTx[];
+}
+
+export interface IRootDomainRegistrationArgs {
+  name: string;
+  domainAddress: string;
+  tokenOwner: string;
+  tokenURI: string;
+  distrConfig: IDistributionConfig;
+  paymentConfig: IPaymentConfig;
+}
+
+export interface ISubdomainRegisterArgs extends Omit<IRootDomainRegistrationArgs, "name"> {
+  parentHash: string;
+  label: string
+}
+
+export interface SafeKitConfig {
+  network : string,
+  chainId : bigint;
+  rpcUrl : string;
+  safeAddress : string;
+  safeOwnerAddress : string;
+  txServiceUrl ?: string; // Optional when using a supported network
 }

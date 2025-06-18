@@ -22,6 +22,7 @@ import {
   NOT_AUTHORIZED_ERR,
   INVALID_LABEL_ERR,
   paymentConfigEmpty, AC_UNAUTHORIZED_ERR, INSUFFICIENT_BALANCE_ERC_ERR, ZERO_ADDRESS_ERR, DOMAIN_EXISTS_ERR,
+  deployZNS,
 } from "./helpers";
 import { IDistributionConfig, IRootdomainConfig, IZNSContractsLocal } from "./helpers/types";
 import * as ethers from "ethers";
@@ -76,15 +77,22 @@ describe("ZNSRootRegistrar", () => {
       admins: [deployer.address, admin.address],
     });
 
-    const campaign = await runZnsCampaign({
-      config,
+    // const campaign = await runZnsCampaign({
+    //   config,
+    // });
+
+    zns = await deployZNS({
+      deployer,
+      governorAddresses: [governor.address],
+      adminAddresses: [admin.address],
+      zeroVaultAddress: zeroVault.address,
     });
 
-    zns = campaign.state.contracts;
+    // zns = campaign.state.contracts;
 
     // await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
 
-    mongoAdapter = campaign.dbAdapter;
+    // mongoAdapter = campaign.dbAdapter;
 
     await zns.meowToken.connect(deployer).approve(
       await zns.treasury.getAddress(),
@@ -97,14 +105,24 @@ describe("ZNSRootRegistrar", () => {
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
-  afterEach(async () => {
-    await mongoAdapter.dropDB();
-  });
+  // afterEach(async () => {
+  //   await mongoAdapter.dropDB();
+  // });
 
-  it("Should register an array of domains", async () => {
+  it.only("Should register an array of domains", async () => {
     const registrations : Array<IRootdomainConfig> = [];
 
-    for (let i = 0; i < 5; i++) {
+    const coder = hre.ethers.AbiCoder.defaultAbiCoder();
+
+    const encoded = coder.encode(
+      ["string", "address", "address", "string"], ["domain1",`${user.address}`, `${operator.address}`, "0://domainURI_1"]
+    );
+
+    // const encoded2 = coder.encode(
+    //   ["string"], ["0://domainURI_1"]
+    // );
+
+    for (let i = 0; i < 1; i++) {
       const isOdd = i % 2 !== 0;
 
       const domainObj : IRootdomainConfig = {
@@ -126,7 +144,9 @@ describe("ZNSRootRegistrar", () => {
       registrations.push(domainObj);
     }
 
-    await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
+    const tx = await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
+
+    console.log(tx.data);
 
     for (const domain of registrations) {
       // get by `domainHash`

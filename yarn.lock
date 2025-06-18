@@ -1932,6 +1932,21 @@
     "@noble/curves" "^1.6.0"
     "@peculiar/asn1-schema" "^2.3.13"
 
+"@safe-global/protocol-kit@^6.0.5":
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/@safe-global/protocol-kit/-/protocol-kit-6.0.5.tgz#d8a9c42536ff2a95d0252025d69ebfd66fc894d4"
+  integrity sha512-CX6JrftdA51ZaN5qxyB43NogWHBwYOkFTGAJFTxtuiFipaEstvTpUrYLdyGF7+me5FQNefUbUVN6izqI9O+W0A==
+  dependencies:
+    "@safe-global/safe-deployments" "^1.37.34"
+    "@safe-global/safe-modules-deployments" "^2.2.9"
+    "@safe-global/types-kit" "^2.0.1"
+    abitype "^1.0.2"
+    semver "^7.7.1"
+    viem "^2.21.8"
+  optionalDependencies:
+    "@noble/curves" "^1.6.0"
+    "@peculiar/asn1-schema" "^2.3.13"
+
 "@safe-global/safe-deployments@^1.37.32":
   version "1.37.32"
   resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.32.tgz#7a1dcd6358aa0f4917004426d7e2428e7eef0391"
@@ -1939,10 +1954,22 @@
   dependencies:
     semver "^7.6.2"
 
+"@safe-global/safe-deployments@^1.37.34":
+  version "1.37.34"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-deployments/-/safe-deployments-1.37.34.tgz#e3061327c12d73869a48acddb4742b2c2cf7c2b0"
+  integrity sha512-ynBFymugc3sZJ63NZuUuRYjjp5LIVPJqt/kJV/lnB0nh0JeUjX+W7NPNTjO6dxxdIi5p547pEaLKYKnaS4pTCQ==
+  dependencies:
+    semver "^7.6.2"
+
 "@safe-global/safe-modules-deployments@^2.2.8":
   version "2.2.8"
   resolved "https://registry.yarnpkg.com/@safe-global/safe-modules-deployments/-/safe-modules-deployments-2.2.8.tgz#444bd078d8d04f2cac6427ed82608e8e9db314eb"
   integrity sha512-XqRhEUzO8PNs5kCXztlPmQJBZO+YTDCRbiumCr5JBuS8RhU0pRSkG5Gs8qjKlZicxZvy3IdXZ14APVwb6+dj/Q==
+
+"@safe-global/safe-modules-deployments@^2.2.9":
+  version "2.2.9"
+  resolved "https://registry.yarnpkg.com/@safe-global/safe-modules-deployments/-/safe-modules-deployments-2.2.9.tgz#f1575863b5e62fcb3c6df4d1e480c3c9b249ba15"
+  integrity sha512-3brLLX4RkLlH2vB+1CgGo1iA73kckmPpgroTLaweZnysr1lKHqpqY0VAA3gmjHq1Qiq1Cx0fccDHk3c2rqRfsw==
 
 "@safe-global/types-kit@^2.0.0", "@safe-global/types-kit@^2.0.1":
   version "2.0.1"
@@ -10952,6 +10979,7 @@ workerpool@^6.5.1:
   integrity sha512-Fs4dNYcsdpYSAfVxhnl1L5zTksjvOJxtC5hzMNl+1t9B8hTJTdKDyZ5ju7ztgPy+ft9tBFXoOlDNiOT9WUXZlA==
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==

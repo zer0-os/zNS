@@ -2,7 +2,7 @@
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 import { setDefaultEnvironment } from "./src/environment/set-env";
 
-import * as tenderly from "@tenderly/hardhat-tenderly";
+// import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
@@ -46,6 +46,15 @@ const config : HardhatUserConfig = {
       },
       {
         version: "0.8.3",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 20000,
+          },
+        },
+      },
+      {
+        version: "0.8.20", // todo remove debug
         settings: {
           optimizer: {
             enabled: true,
@@ -98,37 +107,61 @@ const config : HardhatUserConfig = {
     // sepolia: {
     //   url: `${process.env.SEPOLIA_RPC_URL}`,
     //   timeout: 10000000,
-    //   // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
+    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+    //     `${process.env.TEST_SAFE_OWNER}`,
     //   //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
     //   //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
     //   //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
     //   //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
     //   //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-    //   // ],
+    //   ],
     //   // // Must have to avoid instead failing as `invalid length for result data` error
     //   // throwOnCallFailures: false, // not sure if this even works
     // },
+    hardhat: {
+      accounts: [
+        {
+          privateKey: process.env.TEST_SAFE_OWNER!,
+          balance: "10000000000000000000000", // 10k ETH
+        },
+      ],
+    },
+    zchain: {
+      url: process.env.ZCHAIN_RPC_URL,
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.TEST_SAFE_OWNER}`,
+      ],
+      chainId: Number(process.env.ZCHAIN_ID!),
+    },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL,
+      timeout: 10000000,
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.TEST_SAFE_OWNER}`,
+      ],
+    }
     // devnet: {
     //   // Add current URL that you spawned if not using automated spawning
     //   url: `${process.env.DEVNET_RPC_URL}`,
     //   chainId: 1,
     // },
   },
-  // etherscan: {
-  //   apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  //   customChains: [
-  //     {
-  //     },
-  //   ],
-  // },
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    // customChains: [
+    //   {
+    //     chainId: 11155111, // Sepolia chain ID
+    //     network: "sepolia",
+    //     urls: {
+    //       apiURL: "https://api-sepolia.etherscan.io/api",
+    //       browserURL: "https://sepolia.etherscan.io",
+    //     },
+    //   }
+    // ],
+  },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
-    enabled: false,
-  },
-  tenderly: {
-    project: `${process.env.TENDERLY_PROJECT_SLUG}`,
-    username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+    enabled: true,
   },
   docgen: {
     pages: "files",

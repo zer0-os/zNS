@@ -30,6 +30,8 @@ import {
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 
+import { MeowToken } from "../../typechain/@zero-tech/ztoken/contracts";
+
 
 export type Maybe<T> = T | undefined;
 
@@ -90,14 +92,15 @@ interface IZNSContractsBase {
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
+  zeroVaultAddress : string;
 }
 
 export interface IZNSContractsLocal extends IZNSContractsBase {
-  meowToken : ERC20Mock;
+  meowToken : MeowTokenMock | ERC20Mock;
 }
 
 export interface IZNSContracts extends IZNSContractsBase {
-  meowToken : MeowTokenMock;
+  meowToken : MeowToken;
 }
 
 export interface DeployZNSParams {
