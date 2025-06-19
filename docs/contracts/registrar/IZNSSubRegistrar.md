@@ -2,37 +2,53 @@
 
 **IZNSSubRegistrar.sol - Interface for the ZNSSubRegistrar contract responsible for registering subdomains.**
 
-### PricerContractSet
+### SubdomainRegisterArgs
 
 ```solidity
-event PricerContractSet(bytes32 domainHash, address pricerContract)
+struct SubdomainRegisterArgs {
+  bytes32 parentHash;
+  address domainAddress;
+  address tokenOwner;
+  string tokenURI;
+  struct IDistributionConfig.DistributionConfig distrConfig;
+  struct PaymentConfig paymentConfig;
+  string label;
+}
+```
+
+### ParentLockedOrDoesntExist
+
+```solidity
+error ParentLockedOrDoesntExist(bytes32 parentHash)
+```
+
+Reverted when someone other than parent owner is trying to buy
+a subdomain under the parent that is locked
+or when the parent provided does not exist.
+
+### SenderNotApprovedForPurchase
+
+```solidity
+error SenderNotApprovedForPurchase(bytes32 parentHash, address sender)
+```
+
+Reverted when the buyer of subdomain is not approved by the parent in it's mintlist.
+
+### ZeroParentHash
+
+```solidity
+error ZeroParentHash(string label)
+```
+
+Reverted when the subdomain is nested and doesn't have `parentHash`. Attaches a domain label.
+
+### PricerDataSet
+
+```solidity
+event PricerDataSet(bytes32 domainHash, bytes priceConfig, address pricerContract)
 ```
 
 Emitted when a new `DistributionConfig.pricerContract` is set for a domain.
-
-### PaymentTypeSet
-
-```solidity
-event PaymentTypeSet(bytes32 domainHash, enum IDistributionConfig.PaymentType paymentType)
-```
-
-Emitted when a new `DistributionConfig.paymentType` is set for a domain.
-
-### AccessTypeSet
-
-```solidity
-event AccessTypeSet(bytes32 domainHash, enum IDistributionConfig.AccessType accessType)
-```
-
-Emitted when a new `DistributionConfig.accessType` is set for a domain.
-
-### DistributionConfigSet
-
-```solidity
-event DistributionConfigSet(bytes32 domainHash, contract IZNSPricer pricerContract, enum IDistributionConfig.PaymentType paymentType, enum IDistributionConfig.AccessType accessType)
-```
-
-Emitted when a new full `DistributionConfig` is set for a domain at once.
 
 ### MintlistUpdated
 
@@ -54,19 +70,7 @@ event MintlistCleared(bytes32 domainHash)
 event RootRegistrarSet(address registrar)
 ```
 
-Emitted when the ZNSRootRegistrar address is set in state.
-
-### distrConfigs
-
-```solidity
-function distrConfigs(bytes32 domainHash) external view returns (contract IZNSPricer pricerContract, enum IDistributionConfig.PaymentType paymentType, enum IDistributionConfig.AccessType accessType)
-```
-
-### isMintlistedForDomain
-
-```solidity
-function isMintlistedForDomain(bytes32 domainHash, address candidate) external view returns (bool)
-```
+Emitted when the `ZNSRootRegistrar` address is set in state.
 
 ### initialize
 
@@ -74,16 +78,22 @@ function isMintlistedForDomain(bytes32 domainHash, address candidate) external v
 function initialize(address _accessController, address _registry, address _rootRegistrar) external
 ```
 
+### distrConfigs
+
+```solidity
+function distrConfigs(bytes32 domainHash) external view returns (contract IZNSPricer pricerContract, enum IDistributionConfig.PaymentType paymentType, enum IDistributionConfig.AccessType accessType, bytes priceConfig)
+```
+
 ### registerSubdomain
 
 ```solidity
-function registerSubdomain(bytes32 parentHash, string label, address domainAddress, string tokenURI, struct IDistributionConfig.DistributionConfig configForSubdomains, struct PaymentConfig paymentConfig) external returns (bytes32)
+function registerSubdomain(struct IZNSSubRegistrar.SubdomainRegisterArgs registration) external returns (bytes32)
 ```
 
-### hashWithParent
+### registerSubdomainBulk
 
 ```solidity
-function hashWithParent(bytes32 parentHash, string label) external pure returns (bytes32)
+function registerSubdomainBulk(struct IZNSSubRegistrar.SubdomainRegisterArgs[] args) external returns (bytes32[])
 ```
 
 ### setDistributionConfigForDomain
@@ -92,10 +102,10 @@ function hashWithParent(bytes32 parentHash, string label) external pure returns 
 function setDistributionConfigForDomain(bytes32 parentHash, struct IDistributionConfig.DistributionConfig config) external
 ```
 
-### setPricerContractForDomain
+### setPricerDataForDomain
 
 ```solidity
-function setPricerContractForDomain(bytes32 domainHash, contract IZNSPricer pricerContract) external
+function setPricerDataForDomain(bytes32 domainHash, bytes priceConfig, contract IZNSPricer pricerContract) external
 ```
 
 ### setPaymentTypeForDomain
@@ -138,5 +148,35 @@ function setRegistry(address registry_) external
 
 ```solidity
 function setRootRegistrar(address registrar_) external
+```
+
+### isMintlistedForDomain
+
+```solidity
+function isMintlistedForDomain(bytes32 domainHash, address candidate) external view returns (bool)
+```
+
+### hashWithParent
+
+```solidity
+function hashWithParent(bytes32 parentHash, string label) external pure returns (bytes32)
+```
+
+### pauseRegistration
+
+```solidity
+function pauseRegistration() external
+```
+
+### unpauseRegistration
+
+```solidity
+function unpauseRegistration() external
+```
+
+### rootRegistrar
+
+```solidity
+function rootRegistrar() external returns (contract IZNSRootRegistrar)
 ```
 

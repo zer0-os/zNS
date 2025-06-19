@@ -4,12 +4,15 @@ pragma solidity 0.8.26;
 import { IZNSRegistry } from "./IZNSRegistry.sol";
 import { AAccessControlled } from "../access/AAccessControlled.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { ZeroAddressPassed, NotAuthorizedForDomain } from "../utils/CommonErrors.sol";
+import {
+    ZeroAddressPassed,
+    NotAuthorizedForDomain
+} from "../utils/CommonErrors.sol";
 
 
 /**
  * @title The main reference data contract in ZNS. Also, often, the last contract
- * in the call chain of many operations where the most crucial Name owner data settles.
+ * in the call chain of many operations where the most crucial Name/Hash/True owner data settles.
  * Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.
  */
 contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
@@ -34,6 +37,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Revert if `msg.sender` is not the owner or an operator allowed by the owner
+     *
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwnerOrOperator(bytes32 domainHash) {
@@ -44,6 +48,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Revert if `msg.sender` is not the owner. Used for owner restricted functions.
+     *
      * @param domainHash the hash of a domain's name
      */
     modifier onlyOwner(bytes32 domainHash) {
@@ -59,9 +64,11 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Initializer for the `ZNSRegistry` proxy.
-     * @param accessController_ The address of the `ZNSAccessController` contract
+     *
      * @dev ! The owner of the 0x0 hash should be a multisig ideally, but EOA can be used to deploy !
      * > Admin account deploying the contract will be the owner of the 0x0 hash !
+     *
+     * @param accessController_ The address of the `ZNSAccessController` contract
      */
     function initialize(address accessController_) external override initializer {
         records[0x0].owner = msg.sender;
@@ -70,6 +77,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Checks if a given domain exists
+     *
      * @param domainHash The hash of a domain's name
      */
     function exists(bytes32 domainHash) external view override returns (bool) {
@@ -78,6 +86,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Checks if provided address is an owner or an operator of the provided domain
+     *
      * @param domainHash The hash of a domain's name
      * @param candidate The address for which we are checking access
      */
@@ -91,6 +100,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice External function that checks if provided address is an operator for the provided owner.
+     *
      * @param operator The address for which we are checking access
      * @param owner The owner of the domain(-s) in question
     */
@@ -105,6 +115,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Set an `operator` as `allowed` to give or remove permissions for ALL
      * domains owned by the owner `msg.sender`.
      * Emits an `OperatorPermissionSet` event.
+     *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
@@ -118,6 +129,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Gets a record for a domain (owner, resolver) from the internal mapping
      * `records`. `records` maps a domain hash to a
      * [DomainRecord](./IZNSRegistry.md#iznsregistry) struct.
+     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainRecord(
@@ -128,6 +140,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Gets the owner of the given domain
+     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainOwner(
@@ -138,6 +151,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Gets the resolver set for the given domain.
+     *
      * @param domainHash the hash of a domain's name
      */
     function getDomainResolver(
@@ -153,6 +167,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * the owner and resolver of the domain separately.
      * Can be called with `resolver` param as 0, which will exclude the call to set resolver.
      * Emits `DomainOwnerSet` and possibly `DomainResolverSet` events.
+     *
      * @param domainHash The hash of the domain name
      * @param owner The owner of the new domain
      * @param resolverType The string identifier of the resolver for the new domain, e.g. "address"
@@ -172,9 +187,10 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Given a resolver type, returns the address of the resolver contract for that type or 0x0 if not found
+     *
      * @param resolverType The resolver type as a string, e.g. "address"
      */
-    function getResolverType(string calldata resolverType) public view override returns(address) {
+    function getResolverType(string calldata resolverType) public view override returns (address) {
         return resolvers[resolverType];
     }
 
@@ -182,6 +198,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
      * @notice Add a new resolver type option to the mapping of types
      * This function can also be used to update the resolver mapping for an existing resolver
      * simple by using an existing key like "address" with a new address
+     *
      * @param resolverType The type of the resolver to add
      * @param resolver The address of the new resolver contract
      */
@@ -192,6 +209,7 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Delete a resolver type from the mapping of types
+     *
      * @param resolverType The type to be removed
      */
     function deleteResolverType(string calldata resolverType) public override onlyAdmin {
@@ -202,10 +220,11 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     /**
      * @notice Updates an existing domain record's owner and resolver.
      * Note that this function can ONLY be called by the Name owner of the domain.
-     * This is NOT used by the `ZNSRootRegistrar.sol` contract and serves as a user facing function
+     * This is NOT used by the `ZNSRootRegistrar` contract and serves as a user facing function
      * for the owners of existing domains to change their data on this contract. A domain
      * `operator` can NOT call this, since he is not allowed to change the owner.
      * Emits `DomainOwnerSet` and `DomainResolverSet` events.
+     *
      * @param domainHash The hash of the domain
      * @param owner The owner or an allowed operator of that domain
      * @param resolverType The resolver for the domain
@@ -222,8 +241,11 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice Updates the owner of an existing domain. Can be called by either the Name owner
-     * on this contract OR the `ZNSRootRegistrar.sol` contract as part of the Reclaim flow
-     * that starts at `ZNSRootRegistrar.sol.reclaim()`. Emits an `DomainOwnerSet` event.
+     * on this contract OR the `DomainToken` contract as part of the transfer flow
+     * that starts at `DomainToken.transferFrom()`
+     * (Domain Token can NOT be transferred without transferring the domain hash owner)!
+     * Emits an `DomainOwnerSet` event.
+     *
      * @param domainHash the hash of a domain's name
      * @param owner The account to transfer ownership to
      */
@@ -233,7 +255,6 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
     ) external override {
         if (
             msg.sender != records[domainHash].owner &&
-            !accessController.isRegistrar(msg.sender) && 
             !accessController.isDomainToken(msg.sender)
         ) revert NotAuthorizedForDomain(msg.sender, domainHash);
 
@@ -306,10 +327,8 @@ contract ZNSRegistry is AAccessControlled, UUPSUpgradeable, IZNSRegistry {
 
     /**
      * @notice To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-     * @param newImplementation The implementation contract to upgrade to
      */
-    // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal view override {
+    function _authorizeUpgrade(address) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

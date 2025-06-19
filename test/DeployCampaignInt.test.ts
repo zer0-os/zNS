@@ -15,13 +15,13 @@ import {
 } from "@zero-tech/zdc";
 import {
   DEFAULT_ROYALTY_FRACTION,
-  DEFAULT_PRICE_CONFIG,
+  DEFAULT_CURVE_PRICE_CONFIG,
   ZNS_DOMAIN_TOKEN_NAME,
   ZNS_DOMAIN_TOKEN_SYMBOL,
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  MONGO_URI_ERR,
+  MONGO_URI_ERR, encodePriceConfig,
 } from "./helpers";
 import {
   MeowTokenDM,
@@ -37,7 +37,7 @@ import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-res
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MEOWzChainData } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
-import { ResolverTypes, SupportedChains } from "../src/deploy/constants";
+import { PricerTypes, ResolverTypes, SupportedChains } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { ethers } from "ethers";
 import { promisify } from "util";
@@ -84,9 +84,10 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -127,7 +128,7 @@ describe("Deploy Campaign Test", () => {
 
       await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = await meow.getAddress();
+      campaignConfig.rootPaymentTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -368,10 +369,10 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
-        stakingTokenAddress: "",
+        rootPaymentTokenAddress: "",
         mockMeowToken: true, // 1700083028872
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -412,9 +413,9 @@ describe("Deploy Campaign Test", () => {
       const undeployedNames = [
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -428,9 +429,9 @@ describe("Deploy Campaign Test", () => {
           FailingZNSAddressResolverDM, // failing DM
           ZNSStringResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "deploy",
@@ -461,9 +462,9 @@ describe("Deploy Campaign Test", () => {
 
       const undeployedNames = [
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -493,9 +494,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           FailingZNSAddressResolverDM, // failing DM
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "postDeploy",
@@ -531,12 +532,12 @@ describe("Deploy Campaign Test", () => {
         },
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
       ];
 
       const undeployedNames = [
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -549,9 +550,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           ZNSAddressResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           FailingZNSRootRegistrarDM, // failing DM
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "deploy",
@@ -579,12 +580,12 @@ describe("Deploy Campaign Test", () => {
         },
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
       ];
 
       const undeployedNames = [
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -616,9 +617,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           ZNSAddressResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           FailingZNSRootRegistrarDM, // failing DM
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "postDeploy",
@@ -670,7 +671,7 @@ describe("Deploy Campaign Test", () => {
       expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
       expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(zeroVault.address);
       expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
-      expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_PRICE_CONFIG);
+      expect(localConfig.rootPriceConfig).to.eq(encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG));
     });
 
     it("Confirms encoding functionality works for env variables", async () => {
@@ -780,7 +781,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = "0x123";
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = "0x123";
 
       try {
         await getConfig({
@@ -797,7 +798,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -817,7 +818,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -860,9 +861,10 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1051,9 +1053,10 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_PRICE_CONFIG,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",

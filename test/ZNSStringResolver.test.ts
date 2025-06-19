@@ -2,6 +2,8 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as hre from "hardhat";
 import {
   AC_UNAUTHORIZED_ERR,
+  AC_WRONGADDRESS_ERR,
+  ADMIN_ROLE,
   GOVERNOR_ROLE,
   hashDomainLabel,
   INITIALIZED_ERR, NOT_AUTHORIZED_ERR,
@@ -10,7 +12,7 @@ import {
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { expect } from "chai";
-import * as ethers from "ethers";
+import { ethers } from "hardhat";
 import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
 import {
   ERC165__factory,
@@ -158,23 +160,9 @@ describe("ZNSStringResolver", () => {
       await expect(
         stringResolver.connect(user).setAccessController(user.address)
       ).to.be.revertedWithCustomError(
-        accessController,
+        stringResolver,
         AC_UNAUTHORIZED_ERR
       );
-    });
-
-    it("Should setAccessController() correctly with ADMIN_ROLE " +
-      "(It cannot rewrite AC address after an incorrect address has been submitted to it)", async () => {
-
-      await expect(
-        stringResolver.connect(admin).setAccessController(admin.address)
-      ).to.emit(
-        stringResolver, "AccessControllerSet"
-      ).withArgs(admin.address);
-
-      expect(
-        await stringResolver.getAccessController()
-      ).to.equal(admin.address);
     });
   });
 
@@ -259,6 +247,7 @@ describe("ZNSStringResolver", () => {
 
       await registrationWithSetup({
         zns,
+        tokenOwner: operator.address,
         user: operator,
         domainLabel: curStringDomain,
         domainContent: ethers.ZeroAddress,
@@ -280,6 +269,7 @@ describe("ZNSStringResolver", () => {
       await registrationWithSetup({
         zns,
         user,
+        tokenOwner: user.address,
         domainLabel: curString,
         domainContent: ethers.ZeroAddress,
       });
@@ -308,6 +298,7 @@ describe("ZNSStringResolver", () => {
       await registrationWithSetup({
         zns,
         user: deployer,
+        tokenOwner: deployer.address,
         domainLabel: curDomain,
         domainContent: ethers.ZeroAddress,
       });
@@ -327,27 +318,6 @@ describe("ZNSStringResolver", () => {
       expect(
         await stringResolver.resolveDomainString(hash)
       ).to.equal(curString);
-    });
-
-    it("Should setAccessController() correctly with ADMIN_ROLE", async () => {
-      await expect(
-        stringResolver.connect(admin).setAccessController(admin.address)
-      ).to.emit(
-        stringResolver, "AccessControllerSet"
-      ).withArgs(admin.address);
-
-      expect(
-        await stringResolver.getAccessController()
-      ).to.equal(admin.address);
-    });
-
-    it("Should revert when setAccessController() without ADMIN_ROLE", async () => {
-      await expect(
-        stringResolver.connect(user).setAccessController(user.address)
-      ).to.be.revertedWithCustomError(
-        accessController,
-        AC_UNAUTHORIZED_ERR
-      );
     });
 
     it("Should support the IZNSAddressResolver interface ID", async () => {
@@ -371,6 +341,83 @@ describe("ZNSStringResolver", () => {
       ).to.be.false;
     });
 
+    describe("#setAccessController", () => {
+      it("should allow ADMIN to set a valid AccessController", async () => {
+        await stringResolver.connect(deployer).setAccessController(accessController.target);
+
+        const currentAccessController = await stringResolver.getAccessController();
+
+        expect(currentAccessController).to.equal(accessController.target);
+      });
+
+      it("should allow re-setting the AccessController to another valid contract", async () => {
+        expect(
+          await stringResolver.getAccessController()
+        ).to.equal(
+          accessController.target
+        );
+
+        const ZNSAccessControllerFactory = await ethers.getContractFactory("ZNSAccessController", deployer);
+        const newAccessController = await ZNSAccessControllerFactory.deploy(
+          [deployer.address],
+          [deployer.address]
+        );
+
+        // then change the AccessController
+        await stringResolver.connect(deployer).setAccessController(newAccessController.target);
+
+        expect(
+          await stringResolver.getAccessController()
+        ).to.equal(
+          newAccessController.target
+        );
+      });
+
+      it("should emit AccessControllerSet event when setting a valid AccessController", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(accessController.target)
+        ).to.emit(
+          stringResolver,
+          "AccessControllerSet"
+        ).withArgs(accessController.target);
+      });
+
+      it("should revert when a non-ADMIN tries to set AccessController", async () => {
+        await expect(
+          stringResolver.connect(user).setAccessController(accessController.target)
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_UNAUTHORIZED_ERR
+        ).withArgs(user.address, ADMIN_ROLE);
+      });
+
+      it("should revert when setting an AccessController as EOA address", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(user.address)
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(user.address);
+      });
+
+      it("should revert when setting an AccessController as another non-AC contract address", async () => {
+        await expect(
+          stringResolver.connect(deployer).setAccessController(stringResolver.target)
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(stringResolver.target);
+      });
+
+      it("should revert when setting a zero address as AccessController", async () => {
+        await expect(
+          stringResolver.connect(admin).setAccessController(ethers.ZeroAddress)
+        ).to.be.revertedWithCustomError(
+          stringResolver,
+          AC_WRONGADDRESS_ERR
+        ).withArgs(ethers.ZeroAddress);
+      });
+    });
 
     describe("UUPS", () => {
 
@@ -413,12 +460,12 @@ describe("ZNSStringResolver", () => {
         );
       });
 
-      // TODO: Falls on the role. I think, cannot give a REGISTRAR_ROLE to mock "deployAdmin".
       it("Verifies that variable values are not changed in the upgrade process", async () => {
         const curString = "variableschange";
 
         await registrationWithSetup({
           zns,
+          tokenOwner: deployer.address,
           user: deployer,
           domainLabel: curString,
           domainContent: ethers.ZeroAddress,

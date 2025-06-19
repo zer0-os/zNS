@@ -42,3 +42,8 @@ export const SupportedChains : ISupportedChains = {
   eth: "ethereum",
   // sep: "sepolia",
 };
+
+export const PricerTypes = {
+  curve: "curve",
+  fixed: "fixed",
+};

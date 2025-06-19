@@ -1,7 +1,7 @@
 ## ZNSRegistry
 
 **The main reference data contract in ZNS. Also, often, the last contract
-in the call chain of many operations where the most crucial Name owner data settles.
+in the call chain of many operations where the most crucial Name/Hash/True owner data settles.
 Owner of a domain in this contract also serves as the owner of the stake in `ZNSTreasury`.**
 
 ### resolvers
@@ -228,7 +228,7 @@ function addResolverType(string resolverType, address resolver) public
 ```
 
 Add a new resolver type option to the mapping of types
-This function can also be used to update the resolver mapping for an existing resolver 
+This function can also be used to update the resolver mapping for an existing resolver
 simple by using an existing key like "address" with a new address
 
 #### Parameters
@@ -260,7 +260,7 @@ function updateDomainRecord(bytes32 domainHash, address owner, string resolverTy
 
 Updates an existing domain record's owner and resolver.
 Note that this function can ONLY be called by the Name owner of the domain.
-This is NOT used by the `ZNSRootRegistrar.sol` contract and serves as a user facing function
+This is NOT used by the `ZNSRootRegistrar` contract and serves as a user facing function
 for the owners of existing domains to change their data on this contract. A domain
 `operator` can NOT call this, since he is not allowed to change the owner.
 Emits `DomainOwnerSet` and `DomainResolverSet` events.
@@ -280,8 +280,10 @@ function updateDomainOwner(bytes32 domainHash, address owner) external
 ```
 
 Updates the owner of an existing domain. Can be called by either the Name owner
-on this contract OR the `ZNSRootRegistrar.sol` contract as part of the Reclaim flow
-that starts at `ZNSRootRegistrar.sol.reclaim()`. Emits an `DomainOwnerSet` event.
+on this contract OR the `DomainToken` contract as part of the transfer flow
+that starts at `DomainToken.transferFrom()`
+(Domain Token can NOT be transferred without transferring the domain hash owner)!
+Emits an `DomainOwnerSet` event.
 
 #### Parameters
 
@@ -373,14 +375,8 @@ Resolver can be set to 0, since we allow partial domain data. Emits a `DomainRes
 ### _authorizeUpgrade
 
 ```solidity
-function _authorizeUpgrade(address newImplementation) internal view
+function _authorizeUpgrade(address) internal view
 ```
 
 To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| newImplementation | address | The implementation contract to upgrade to |
 

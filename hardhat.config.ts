@@ -44,45 +44,7 @@ const config : HardhatUserConfig = {
           },
         },
       },
-      {
-        version: "0.8.3",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
-      {
-        version: "0.8.20", // todo remove debug
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
     ],
-    overrides: {
-      "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
-        version: "0.8.22",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
-      "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
-        version: "0.8.22",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 20000,
-          },
-        },
-      },
-    },
   },
   paths: {
     sources: "./contracts",
@@ -100,6 +62,22 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
+    zephyr: {
+      url: `${process.env.ZEPHYR_RPC_URL}`,
+      chainId: 1417429182,
+      // accounts: [
+      //   `${process.env.ZNS_DEPLOYER}`,
+      //   `${process.env.ZERO_VAULT_KEY}`,
+      //   `${process.env.TEST_USER_A_KEY}`,
+      //   `${process.env.TEST_USER_B_KEY}`,
+      //   `${process.env.TEST_USER_C_KEY}`,
+      //   `${process.env.TEST_USER_D_KEY}`,
+      //   `${process.env.TEST_USER_E_KEY}`,
+      //   `${process.env.TEST_USER_F_KEY}`,
+      // ],
+      timeout: 10000000,
+      loggingEnabled: true,
+    },
     // mainnet: {
     //   url: `${process.env.MAINNET_RPC_URL}`,
     //   gasPrice: 80000000000,
@@ -148,16 +126,16 @@ const config : HardhatUserConfig = {
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-    // customChains: [
-    //   {
-    //     chainId: 11155111, // Sepolia chain ID
-    //     network: "sepolia",
-    //     urls: {
-    //       apiURL: "https://api-sepolia.etherscan.io/api",
-    //       browserURL: "https://sepolia.etherscan.io",
-    //     },
-    //   }
-    // ],
+    customChains: [
+      {
+        network: "zephyr",
+        chainId: 1417429182,
+        urls: {
+          apiURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
   },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment

@@ -6,9 +6,9 @@ import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/typ
 import { ethers } from "ethers";
 import { IDistributionConfig, IZNSContractsLocal } from "./types";
 import { expect } from "chai";
-import { hashDomainLabel, paymentConfigEmpty } from ".";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { DEFAULT_CURVE_PRICE_CONFIG_BYTES, hashDomainLabel, paymentConfigEmpty } from ".";
 import { TLogger } from "@zero-tech/zdc";
+
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
@@ -25,7 +25,7 @@ export const approveBulk = async (
         ethers.MaxUint256,
       );
 
-      await tx.wait();
+      await tx.wait(Number(process.env.CONFIRMATION_N));
     }
   }
 };
@@ -36,10 +36,11 @@ export const mintBulk = async (
   zns : IZNSContractsLocal | IZNSContracts,
 ) => {
   for (const signer of signers) {
-    await zns.meowToken.connect(signer).mint(
+    const tx = await zns.meowToken.connect(signer).mint(
       signer.address,
       amount
     );
+    await tx.wait(Number(process.env.CONFIRMATION_N));
   }
 };
 
@@ -59,21 +60,27 @@ export const getPriceBulk = async (
       parent = ethers.ZeroHash;
     }
 
-    // temp, can do one call `getPRiceAndFee` but debugging where failure occurs
-    const price = await zns.curvePricer.getPrice(parent, domain, true);
-    const stakeFee = await zns.curvePricer.getFeeForPrice(parent, price);
+    let config : string;
 
-    // TODO fix this to be one if statement
-    if (parentHashes) {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
+    if (parent === ethers.ZeroHash) {
+      // roots
+      config = await zns.rootRegistrar.rootPriceConfig();
+      const price = await zns.curvePricer.getPrice(config, domain, true);
 
-      prices.push(price + stakeFee + protocolFee);
-    } else {
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price);
-
+      const protocolFee = await zns.curvePricer.getFeeForPrice(config, price);
       prices.push(price + protocolFee);
-    }
 
+    } else {
+      // subs
+      ({
+        priceConfig: config,
+      } = await zns.subRegistrar.distrConfigs(parent));
+      const price = await zns.curvePricer.getPrice(config, domain, true);
+
+      const stakeFee = await zns.curvePricer.getFeeForPrice(config, price);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(config, price + stakeFee);
+      prices.push(price + stakeFee + protocolFee);
+    }
 
     index++;
   }
@@ -86,8 +93,7 @@ export const registerRootDomainBulk = async (
   domains : Array<string>,
   config : IZNSCampaignConfig,
   tokenUri : string,
-  distConfig : IDistributionConfig,
-  priceConfig : ICurvePriceConfig,
+  distrConfig : IDistributionConfig,
   zns : IZNSContractsLocal | IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {
@@ -99,29 +105,32 @@ export const registerRootDomainBulk = async (
       name: domain,
       domainAddress: config.zeroVaultAddress,
       tokenURI: `${tokenUri}${index}`,
-      tokenOwner: hre.ethers.ZeroAddress,
-      distrConfig: distConfig,
+      tokenOwner: signers[index],
+      distrConfig,
       paymentConfig: {
         token: await zns.meowToken.getAddress(),
         beneficiary: config.zeroVaultAddress,
       },
     });
+
     logger.info("Deploy transaction submitted, waiting...");
     if (hre.network.name !== "hardhat") {
-      await tx.wait(3);
+      await tx.wait(Number(process.env.CONFIRMATION_N));
       logger.info(`Registered '${domain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
     const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
-    const [price, protocolFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
+    const [price, protocolFee] = await zns.curvePricer.getPriceAndFee(distrConfig.priceConfig, domain, true);
     expect(balanceAfter).to.be.eq(balanceBefore - price - protocolFee);
 
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
 
-    // TODO figure out if we want to do this on prod?
-    // To mint subdomains from this domain we must first set the price config and the payment config
-    await zns.curvePricer.connect(signers[index]).setPriceConfig(domainHash, priceConfig);
+    await zns.subRegistrar.connect(signers[index]).setPricerDataForDomain(
+      domainHash,
+      DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      zns.curvePricer.target
+    );
 
     index++;
   }
@@ -155,7 +164,7 @@ export const registerSubdomainBulk = async (
     logger.info("Deploy transaction submitted, waiting...");
 
     if (hre.network.name !== "hardhat") {
-      await tx.wait(3);
+      await tx.wait(Number(process.env.CONFIRMATION_N));
       logger.info(`registered '${subdomain}' for ${signers[index].address} at tx: ${tx.hash}`);
     }
 
@@ -165,8 +174,10 @@ export const registerSubdomainBulk = async (
     if (signers[index].address === owner) {
       expect(balanceAfter).to.be.eq(balanceBefore);
     } else {
-      const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
-      const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
+      const { priceConfig: parentConfig } = await zns.subRegistrar.distrConfigs(parents[index]);
+
+      const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parentConfig, subdomain, true);
+      const protocolFee = await zns.curvePricer.getFeeForPrice(DEFAULT_CURVE_PRICE_CONFIG_BYTES, price + stakeFee);
 
       expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
     }
