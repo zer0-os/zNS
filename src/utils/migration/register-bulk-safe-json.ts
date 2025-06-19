@@ -24,7 +24,7 @@ const main = async () => {
   const rootsFolderName = "registration/roots"
   fs.mkdirSync(`${outputDir}/${rootsFolderName}`, { recursive: true });
 
-  // TODO Replace with get from DB when deployed to zchain
+  // // TODO Replace with get from DB when deployed to zchain
   const params : DeployZNSParams = {
     deployer: migrationAdmin,
     governorAddresses: [migrationAdmin.address],
@@ -106,7 +106,7 @@ const createBatches = (
   zns : IZNSContracts | IZNSContractsLocal,
   outputFile : string,
   forRootDomains : boolean = false,
-  sliceSize : number = Number(process.env.DOMAIN_SLICE) ?? 50
+  sliceSize : number = Number(process.env.DOMAIN_SLICE) || 50
 ) => {
   let index = 0;
 
@@ -121,11 +121,11 @@ const createBatches = (
     let funcAbi;
 
     if (forRootDomains) {
-      contractAddress = zns.rootRegistrar.target
+      contractAddress = "0xbe15446794E0cEBEC370d00d301A72cb75068838"; // zns.rootRegistrar.target
       funcName = "registerRootDomainBulk";
       funcAbi = REGISTER_ROOT_BULK_ABI;
     } else {
-      contractAddress = zns.subRegistrar.target
+      contractAddress = "0x6Eb2344b7a1d90B1b23706CC109b55a95d0c5dad"; // zns.subRegistrar.target
       funcName = "registerSubDomainBulk";
       funcAbi = REGISTER_SUBS_BULK_ABI;
     }
@@ -172,7 +172,7 @@ const createBatchTemplate = (
 ) : SafeBatch => {
   return {
     version: "1.0",
-    chainId: process.env.CHAIN_ID ?? "1", 
+    chainId: process.env.SEPOLIA_CHAIN_ID ?? "1", 
     createdAt: Date.now(),
     meta: {
       name,

@@ -6,6 +6,7 @@ import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./t
 import { ZeroAddress, ZeroHash } from "ethers";
 
 import { connectToDb, createBatches } from "./helpers";
+import { ZNSRootRegistrar, ZNSRootRegistrar__factory } from "../../../typechain";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
@@ -16,13 +17,13 @@ const main = async () => {
   const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
   
   // TODO for testing, get from DB when zns is deployed on zchain
-  const params : DeployZNSParams = {
-    deployer: migrationAdmin,
-    governorAddresses: [migrationAdmin.address],
-    adminAddresses: [migrationAdmin.address],
-  };
+  // const params : DeployZNSParams = {
+  //   deployer: migrationAdmin,
+  //   governorAddresses: [migrationAdmin.address],
+  //   adminAddresses: [migrationAdmin.address],
+  // };
 
-  const zns = await deployZNS(params);
+  // const zns = await deployZNS(params);
 
   const rootTxs = createBatches(rootDomains, ROOT_DOMAIN_BULK_SELECTOR) as IRootDomainRegistrationArgs[][];
   const subTxs = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as ISubdomainRegisterArgs[][];
@@ -30,8 +31,36 @@ const main = async () => {
   let count = 0;
   // Send each batch
   console.log("Sending root domain registrations...");
+  
+  const rootFactory = new ZNSRootRegistrar__factory(migrationAdmin);
+  const rootReg = rootFactory.attach("0xbe15446794E0cEBEC370d00d301A72cb75068838") as ZNSRootRegistrar;
+
+  const d = rootDomains[0];
+
+  const registerTx =  rootReg.connect(migrationAdmin).registerRootDomainBulk(
+    [
+      {
+        name: d.label,
+        domainAddress: d.address,
+        tokenOwner: d.owner.id,
+        tokenURI: d.tokenURI,
+        distrConfig: {
+          pricerContract: ZeroAddress,
+          paymentType: 0n,
+          accessType: 0n,
+        },
+        paymentConfig: {
+          token: ZeroAddress,
+          beneficiary: ZeroAddress,
+        },
+      }
+    ]
+  );
+
+  // await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);
+  process.exit(0);
   for(let tx of rootTxs) {
-    const registerTx = await zns.rootRegistrar.connect(migrationAdmin).registerRootDomainBulk(tx);
+    
 
     // Wait for network confirmations
     await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);

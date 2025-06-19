@@ -13,7 +13,7 @@ const main = async () => {
     adminAddresses: [migrationAdmin.address],
   };
 
-  const zns = await deployZNS(params);
+  await deployZNS(params);
   console.log("DONE");
 
 

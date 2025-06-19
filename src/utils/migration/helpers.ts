@@ -5,7 +5,7 @@ import { ZeroAddress, ZeroHash } from "ethers";
 import { IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 
 import * as hre from "hardhat";
-import { ROOT_DOMAIN_ENCODING, SUBDOMAIN_BULK_SELECTOR, SUBDOMAIN_ENCODING, TRANSFER_FROM_ENCODING, TRANSFER_FROM_SELECTOR } from "./constants";
+import { ROOT_DOMAIN_ENCODING, SUBDOMAIN_BULK_SELECTOR, SUBDOMAIN_ENCODING, SAFE_TRANSFER_FROM_ENCODING, SAFE_TRANSFER_FROM_SELECTOR } from "./constants";
 
 export const connectToDb = async (
   mongoUri?: string,
@@ -93,7 +93,7 @@ const createBatchesSafe = (
 
   let count = 0;
   let batchRegister = functionSelector;
-  let batchTransfer = TRANSFER_FROM_SELECTOR;
+  let batchTransfer = SAFE_TRANSFER_FROM_SELECTOR;
 
   // Get safe address being used
   const safeAddress = process.env.TEST_SAFE_ADDRESS;
@@ -137,7 +137,7 @@ const createBatchesSafe = (
     );
 
     const transferEncoding = encoder.encode(
-      TRANSFER_FROM_ENCODING,
+      SAFE_TRANSFER_FROM_ENCODING,
       [ safeAddress, domain.owner.id, domain.tokenId ]
     );
 
@@ -153,7 +153,7 @@ const createBatchesSafe = (
 
     if (count % transferSliceSize === 0 || domains.length - count === 0) {
       batchTransferTxs.push(batchTransfer);
-      batchTransfer = TRANSFER_FROM_SELECTOR; // reset transfer data
+      batchTransfer = SAFE_TRANSFER_FROM_SELECTOR; // reset transfer data
     }
   }
 

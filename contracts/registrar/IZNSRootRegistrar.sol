@@ -46,8 +46,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address domainAddress;
         address tokenOwner;
         string tokenURI; // todo should be packed, move params?
-        DistributionConfig distrConfig;
-        PaymentConfig paymentConfig;
+        DistributionConfig distrConfig; // pricecontract, access, payment
+        PaymentConfig paymentConfig; // token, beneficiary
     }
 
     /**

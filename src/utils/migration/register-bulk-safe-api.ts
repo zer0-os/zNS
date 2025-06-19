@@ -1,6 +1,4 @@
 import * as hre from "hardhat";
-import { AccessType, DeployZNSParams, IZNSContractsLocal, IZNSContracts, PaymentType, deployZNS } from "../../../test/helpers";
-
 import { SafeKit } from "./safeKit"
 
 // Gnosis Safe Modules
@@ -8,7 +6,7 @@ import SafeApiKit, { ProposeTransactionProps } from '@safe-global/api-kit'
 import Safe from '@safe-global/protocol-kit'
 import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
 import { getDBAdapter, getZNSFromDB } from "./database";
-import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR, TRANSFER_FROM_SELECTOR } from "./constants";
+import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR, SAFE_TRANSFER_FROM_SELECTOR } from "./constants";
 import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs, SafeKitConfig } from "./types";
 import { connectToDb, createBatches } from "./helpers";
 import { ZeroAddress } from "ethers";
@@ -62,8 +60,12 @@ const main = async () => {
   //   zns = await getZNS(migrationAdmin, hre.network.name !== "zchain" ? "test" : "prod");
   // }
 
+  // accepted tx on etherscan format
+  // [["asdasd","0x635AbDF6E4378f50c3A8D787d7f59340E706ab52","0x635AbDF6E4378f50c3A8D787d7f59340E706ab52","http.123.io",["0x0000000000000000000000000000000000000000",0,0],["0x0000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000"]]]
 
-  // Temp testing, hardcode for now
+
+  // Temp debug testing, hardcode for now
+  // TODO fix zdc, use that
   const rootRegistrar = "0xbe15446794E0cEBEC370d00d301A72cb75068838";
   const subRegistrar = "0x6Eb2344b7a1d90B1b23706CC109b55a95d0c5dad";
   const domainToken = "0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c";
@@ -73,23 +75,33 @@ const main = async () => {
   const factory = new ERC20Mock__factory(migrationAdmin);
   const meowToken = factory.attach(meow) as ERC20Mock;
 
+  // TODO we have to recreate the dist and payment configs
+  // for creating subdomains, how will that work if new chain?
+
   // Give funds to safe
-  const mintTx = await meowToken.mint(config.safeAddress, hre.ethers.parseEther("1000000000"));
-  await mintTx.wait(hre.network.name !== "hardhat" ? 3 : 0);
+  // TODO checks first
+  // on zchain, each tx is 0.1 - 0.25 gas
+  // will need 75 (round up) * 0.25 gas
+  // const mintTx = await meowToken.mint(config.safeAddress, hre.ethers.parseEther("1000000000"));
+  // await mintTx.wait(hre.network.name !== "hardhat" ? 3 : 0);
 
   // Approve the treasury to spend the Safe's MEOW tokens
-  const approveTx = await meowToken.approve(treasury, hre.ethers.parseEther("1000000000"));
-  await approveTx.wait(hre.network.name !== "hardhat" ? 3 : 0);
+  // const approveTx = await meowToken.approve(treasury, hre.ethers.parseEther("1000000000"));
+  // await approveTx.wait(hre.network.name !== "hardhat" ? 3 : 0);
 
   const client = await connectToDb();
 
-  console.log("getting from db...");
+  console.log("Getting root domains from db...");
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
-  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
+  
+  // console.log("Getting subdomains from db...");
+  // const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
 
-  console.log("creating batches...");
-  const [ rootBatches, rootTransfers ] = createBatches(rootDomains, ROOT_DOMAIN_BULK_SELECTOR) as [ string[], string [] ];
-  const [ subBatches, subTransfers ] = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as [ string[], string[] ];
+  console.log("Creating root domain register and transfer batches...");
+  const [ rootBatches, rootTransfers ] = createBatches([rootDomains[0]], ROOT_DOMAIN_BULK_SELECTOR) as [ string[], string [] ];
+  
+  console.log("Creating subdomain register and transfer batches...");
+  // const [ subBatches, subTransfers ] = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as [ string[], string[] ];
 
   // The value of what the next nonce should be
   const currentNonce = await safeKit.protocolKit.getNonce();
@@ -102,32 +114,32 @@ const main = async () => {
   // 
 
   // Form tx, sign, and propose each batch to Safe
-  console.log("Proposing batches to Safe...");
-  for (const [index, txData] of [ ...rootBatches, ...subBatches, ...rootTransfers, ...subTransfers].entries()) {
+  console.log("Proposing all batches to Safe...");
+  for (const [index, txData] of [ ...rootBatches ].entries()) { //  ...subBatches, ...rootTransfers, ...subTransfers]
     let proposalData : ProposeTransactionProps;
 
     if (txData.slice(0,10) === ROOT_DOMAIN_BULK_SELECTOR) {
       proposalData = await safeKit.createSignedTx(
         // zns.rootRegistrar.target.toString(),
-        rootRegistrar,
+        rootRegistrar, // to should be... ? safe? registrar?
         txData,
-        currentNonce + index,
+        // currentNonce + index,
       );
-    } else if (txData.slice(0,10) === SUBDOMAIN_BULK_SELECTOR) {
-      proposalData = await safeKit.createSignedTx(
-        // zns.subRegistrar.target.toString(),
-        subRegistrar,
-        txData,
-        currentNonce + index,
+    // } else if (txData.slice(0,10) === SUBDOMAIN_BULK_SELECTOR) {
+    //   proposalData = await safeKit.createSignedTx(
+    //     // zns.subRegistrar.target.toString(),
+    //     subRegistrar,
+    //     txData,
+    //     currentNonce + index,
 
-      );
-    } else if (txData.slice(0,10) === TRANSFER_FROM_SELECTOR) {
-      proposalData = await safeKit.createSignedTx(
-        // zns.domainToken.target.toString(),
-        domainToken,
-        txData,
-        currentNonce + index,
-      );
+    //   );
+    // } else if (txData.slice(0,10) === TRANSFER_FROM_SELECTOR) {
+    //   proposalData = await safeKit.createSignedTx(
+    //     // zns.domainToken.target.toString(),
+    //     domainToken,
+    //     txData,
+    //     currentNonce + index,
+    //   );
     } else {
       throw new Error(`Unknown transaction data selector: ${txData.slice(0,10)}`);
     }

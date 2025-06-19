@@ -56,10 +56,12 @@ const logDeploy = (name : string, address : string, args : any[], implAddress ?:
 }
 
 const verifyContract = async (contractAddress : string, args ?: any[]) => {
-  await hre.run("verify:verify", {
-      address: contractAddress,
-      constructorArguments: args,
-  });
+  if (hre.network.name !== "hardhat") {
+    await hre.run("verify:verify", {
+        address: contractAddress,
+        constructorArguments: args,
+    });
+  }
 }
 
 export const deployAccessController = async ({

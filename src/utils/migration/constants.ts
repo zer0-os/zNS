@@ -9,8 +9,8 @@ export const SUBDOMAIN_ENCODING = "tuple(bytes32,string,address,address,string,t
 
 // safeTransferFrom(from,to,tokenId) (0x42842e0e) 
 // safeTransferFrom(from,to,tokenId,data) (0xb88d4fde)
-export const TRANSFER_FROM_SELECTOR="0x42842e0e";
-export const TRANSFER_FROM_ENCODING = [ "address", "address", "uint256" ];
+export const SAFE_TRANSFER_FROM_SELECTOR="0x42842e0e";
+export const SAFE_TRANSFER_FROM_ENCODING = [ "address", "address", "uint256" ];
 
 // Safe supported networks, based on the networks we care about specifically
 export const SAFE_SUPPORTED_NETWORKS = [
