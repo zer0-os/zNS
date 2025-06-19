@@ -20,12 +20,12 @@ const meowToken = "0xe8B51C9dF670361B12F388A9147C952Afc9eA071";
 
 const main = async () => {
   const [ safeOwnerAdmin ] = await hre.ethers.getSigners();
-
+   const safeAddress = process.env.TEST_SAFE_ADDRESS!;
   const config : SafeKitConfig = {
     network : hre.network.name,
     chainId: BigInt(process.env.SEPOLIA_CHAIN_ID!),
     rpcUrl: process.env.SEPOLIA_RPC_URL!,
-    safeAddress: process.env.TEST_SAFE_ADDRESS!,
+    safeAddress,
     safeOwnerAddress: safeOwnerAdmin.address,
     // txServiceUrl: process.env.ZCHAIN_TX_SERVICE_URL!,
   }
@@ -50,32 +50,39 @@ const main = async () => {
 
   console.log("Getting root domains from db...");
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
-  const domainA = rootDomains[0]; // For now, just take the first one
+  const domainA = rootDomains[55]; // manually minted 0 domain // For now, just take the first one
   // const domainB = rootDomains[1]; // For now, just take the first one
 
+  // actual data 
+  const args = {
+    name: domainA.label,
+    domainAddress: domainA.owner.id,
+    tokenOwner: safeOwnerAdmin.address,
+    tokenURI: domainA.tokenURI,
+    distrConfig: {
+      pricerContract: ZeroAddress,
+      paymentType: 0n,
+      accessType: 0n
+    },
+    paymentConfig: {
+      token: ZeroAddress,
+      beneficiary: ZeroAddress,
+    }
+  }
   // TODO because it can accept an ARRAY of transactions as well as a singular transaction itself
   // maybe that is whats causing the issue? that the batch is an array already, and then we wrap it in an array
   // then submit that?
-  const txData = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+  const txDataBulk = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
     "registerRootDomainBulk",
     [
-      [
-        [
-          domainA.label,
-          domainA.owner.id,
-          safeOwnerAdmin.address,
-          domainA.tokenURI,
-          [
-            ZeroAddress,
-            0,
-            0
-          ],
-          [
-            ZeroAddress,
-            ZeroAddress,
-          ]
-        ]
-      ]
+      [ args ]
+    ]
+  );
+
+  const txDatasingle = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+    "registerRootDomain",
+    [
+      args
     ]
   );
 
@@ -89,7 +96,7 @@ const main = async () => {
 
   const tx = {
     to: rootRegistrar,
-    data: txData,
+    data: txDataBulk,
     value: '0'
   }
 
@@ -109,13 +116,30 @@ const main = async () => {
     safeAddress: config.safeAddress
   });
 
-  const safeTransaction = await protocolKit.createTransaction({
+  const safeTx = await protocolKit.createTransaction({
     transactions,
     // onlyCalls: true, // Optional
     // options // Optional
   });
 
-  const response = await protocolKit.executeTransaction(safeTransaction);
+  const safeTxHash = await protocolKit.getTransactionHash(safeTx);
+  const signature = await protocolKit.signHash(safeTxHash);
+
+  // const estimatedGas = await hre.ethers.provider.estimateGas({
+  //   from: safeAddress,
+  //   to: rootRegistrar,
+  //   data: txDataBulk,
+  // });
+
+    await safeKit.apiKit.proposeTransaction({
+      safeAddress: process.env.TEST_SAFE_ADDRESS!,
+      safeTransactionData: safeTx.data,
+      safeTxHash,
+      senderAddress: config.safeOwnerAddress,
+      senderSignature: signature.data
+    });
+
+  // const response = await protocolKit.executeTransaction(safeTransaction);
 
     // await apiKit.proposeTransaction(txProposeData);
 

@@ -161,7 +161,7 @@ const config : HardhatUserConfig = {
   },
   sourcify: {
     // If set to "true", will try to verify the contracts after deployment
-    enabled: true,
+    enabled: false,
   },
   docgen: {
     pages: "files",

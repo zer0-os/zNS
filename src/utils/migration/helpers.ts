@@ -6,6 +6,7 @@ import { IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 
 import * as hre from "hardhat";
 import { ROOT_DOMAIN_ENCODING, SUBDOMAIN_BULK_SELECTOR, SUBDOMAIN_ENCODING, SAFE_TRANSFER_FROM_ENCODING, SAFE_TRANSFER_FROM_SELECTOR } from "./constants";
+import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 
 export const connectToDb = async (
   mongoUri?: string,
@@ -89,11 +90,9 @@ const createBatchesSafe = (
   let batchRegisterTxs : Array<string> = [];
   let batchTransferTxs : Array<string> = [];
 
-  const encoder = hre.ethers.AbiCoder.defaultAbiCoder();
-
   let count = 0;
-  let batchRegister = functionSelector;
-  let batchTransfer = SAFE_TRANSFER_FROM_SELECTOR;
+  let batchRegisterData = functionSelector;
+  let batchTransferData = SAFE_TRANSFER_FROM_SELECTOR;
 
   // Get safe address being used
   const safeAddress = process.env.TEST_SAFE_ADDRESS;
@@ -102,58 +101,60 @@ const createBatchesSafe = (
   }
 
   for (const domain of domains) {
-    if (functionSelector === SUBDOMAIN_BULK_SELECTOR && domain.parentHash === ZeroHash) {
-      throw Error("Subdomain registration requires parent hash to be set");
+    let args = {
+      name: domain.label,
+      domainAddress: domain.owner.id,
+      tokenOwner: process.env.TEST_SAFE_ADDRESS!,
+      tokenURI: domain.tokenURI,
+      distrConfig: {
+        pricerContract: ZeroAddress,
+        paymentType: 0n,
+        accessType: 0n
+      },
+      paymentConfig: {
+        token: ZeroAddress,
+        beneficiary: ZeroAddress,
+      }
     }
 
-    let dataEncoding;
-
-    let registerData = [
-      domain.label,
-      domain.address,
-      safeAddress, // TODO could just be ownerId to avoid transfer later?
-      domain.tokenURI,
-      [ // distrConfig
-        ZeroAddress,
-        0n,
-        0n,
-      ],
-      [ // paymentConfig
-        ZeroAddress,
-        ZeroAddress
-      ]
-    ];
+    let registerEncoding : string;
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
-      dataEncoding = SUBDOMAIN_ENCODING;
-      registerData = [ domain.parentHash, ...registerData ];
+      if (domain.parentHash === ZeroHash) {
+        throw Error("Subdomain registration requires parent hash to be set");
+      }
+
+      // remove `name` from args, leave rest of args in `rest`
+      const { name, ...rest } = args;
+      registerEncoding = ZNSSubRegistrar__factory.createInterface().encodeFunctionData(
+        "registerSubdomainBulk",
+        [[ { parentHash: domain.parentHash, label: args.name, ...rest } ]]
+      );
     } else {
-      dataEncoding = ROOT_DOMAIN_ENCODING;
+      registerEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+        "registerRootDomainBulk",
+        [[ args ]]
+      );
     }
 
-    const registerEncoding = encoder.encode(
-      [ dataEncoding ],
-      [ registerData ]
-    );
-
-    const transferEncoding = encoder.encode(
-      SAFE_TRANSFER_FROM_ENCODING,
+    const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
+      "safeTransferFrom(address,address,uint256)",
       [ safeAddress, domain.owner.id, domain.tokenId ]
     );
 
-    batchRegister = batchRegister + registerEncoding.slice(2) // remove 0x prefix
-    batchTransfer = batchTransfer + transferEncoding.slice(2);
+    batchRegisterData += registerEncoding.slice(10); // remove '0x' prefix
+    batchTransferData += transferEncoding.slice(10);
     count++;
 
     // If at slice size # of transactions or at the end of the array, finish batch
     if (count % registerSliceSize === 0 || domains.length - count === 0) {
-      batchRegisterTxs.push(batchRegister);
-      batchRegister = functionSelector; // reset batch data
+      batchRegisterTxs.push(batchRegisterData);
+      batchRegisterData = functionSelector; // reset batch register data
     }
 
     if (count % transferSliceSize === 0 || domains.length - count === 0) {
-      batchTransferTxs.push(batchTransfer);
-      batchTransfer = SAFE_TRANSFER_FROM_SELECTOR; // reset transfer data
+      batchTransferTxs.push(batchTransferData);
+      batchTransferData = SAFE_TRANSFER_FROM_SELECTOR; // reset batch transfer data
     }
   }
 

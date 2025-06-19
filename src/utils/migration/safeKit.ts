@@ -118,7 +118,7 @@ export class SafeKit {
       to: to,
       value: '0',
       data: txData,
-      operation: OperationType.DelegateCall
+      // operation: OperationType.DelegateCall
     }
 
     // const safeTransaction: SafeMultisigTransactionEstimate = {

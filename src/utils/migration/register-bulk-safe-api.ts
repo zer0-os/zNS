@@ -41,7 +41,7 @@ const main = async () => {
   // console.log(await safeKit.apiKit.getServiceInfo());
 
   // If admin given is not a Safe owner, fail early to avoid unnecessary work
-  if (hre.network.name !== "hardhat" && !await safeKit.isOwner(migrationAdmin.address)) { // TODO when network != hardhat 
+  if (hre.network.name !== "hardhat" && !await safeKit.isOwner(migrationAdmin.address)) {
     throw new Error("Migration admin is not a Safe owner");
   }
 
@@ -98,20 +98,13 @@ const main = async () => {
   // const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
 
   console.log("Creating root domain register and transfer batches...");
-  const [ rootBatches, rootTransfers ] = createBatches([rootDomains[0]], ROOT_DOMAIN_BULK_SELECTOR) as [ string[], string [] ];
+  const [ rootBatches, rootTransfers ] = createBatches(rootDomains.slice(100,120), ROOT_DOMAIN_BULK_SELECTOR) as [ string[], string [] ];
   
-  console.log("Creating subdomain register and transfer batches...");
+  // console.log("Creating subdomain register and transfer batches...");
   // const [ subBatches, subTransfers ] = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as [ string[], string[] ];
 
   // The value of what the next nonce should be
   const currentNonce = await safeKit.protocolKit.getNonce();
-
-  // TODO DEBUG
-  // [x] approve treasury before send
-  // [x] give MEOW to safe for execution and payment
-  // [x] safe has gas for tx execution
-  // [x] root paymentConfig uses MEOW as token
-  // 
 
   // Form tx, sign, and propose each batch to Safe
   console.log("Proposing all batches to Safe...");
@@ -123,7 +116,7 @@ const main = async () => {
         // zns.rootRegistrar.target.toString(),
         rootRegistrar, // to should be... ? safe? registrar?
         txData,
-        // currentNonce + index,
+        currentNonce + index,
       );
     // } else if (txData.slice(0,10) === SUBDOMAIN_BULK_SELECTOR) {
     //   proposalData = await safeKit.createSignedTx(
