@@ -341,16 +341,10 @@ Fires `RegistrationPauseSet` event.
 ### _authorizeUpgrade
 
 ```solidity
-function _authorizeUpgrade(address newImplementation) internal view
+function _authorizeUpgrade(address) internal view
 ```
 
 To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| newImplementation | address | The implementation contract to upgrade to |
 
 ### _setRootPriceConfig
 

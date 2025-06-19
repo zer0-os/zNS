@@ -3,7 +3,7 @@
 ### onERC721Received
 
 ```solidity
-function onERC721Received(address, address, uint256, bytes) external returns (bytes4)
+function onERC721Received(address, address, uint256, bytes) external pure returns (bytes4)
 ```
 
 This function is intentionally incorrect to test the ERC721Receiver interface.

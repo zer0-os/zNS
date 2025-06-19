@@ -186,15 +186,6 @@ function setRootRegistrar(address registrar_) public
 ### _authorizeUpgrade
 
 ```solidity
-function _authorizeUpgrade(address newImplementation) internal view
-```
-
-Function that should revert when `msg.sender` is not authorized to upgrade the contract. Called by
-{upgradeToAndCall}.
-
-Normally, this function will use an xref:access.adoc[access control] modifier such as {Ownable-onlyOwner}.
-
-```solidity
-function _authorizeUpgrade(address) internal onlyOwner {}
+function _authorizeUpgrade(address) internal view
 ```
 

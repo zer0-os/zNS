@@ -96,7 +96,7 @@ based on the value set by the owner of the parent domain.
 ### getPriceAndFee
 
 ```solidity
-function getPriceAndFee(bytes parentPriceConfig, string label, bool skipValidityCheck) external pure returns (uint256 price, uint256 fee)
+function getPriceAndFee(bytes parentPriceConfig, string, bool) external pure returns (uint256 price, uint256 fee)
 ```
 
 Part of the IZNSPricer interface - one of the functions required
@@ -108,8 +108,8 @@ under the given parent.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | parentPriceConfig | bytes | The price config of the parent domain under which price and fee are determined |
-| label | string | The label of the subdomain candidate to get the price and fee for before/during registration |
-| skipValidityCheck | bool | If true, skips the validity check for the label |
+|  | string |  |
+|  | bool |  |
 
 ### _checkLength
 

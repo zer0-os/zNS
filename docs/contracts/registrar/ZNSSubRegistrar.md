@@ -111,7 +111,7 @@ previously registered subdomain in the array. This allows creating multi-level n
 transaction.
 > For example:
 > - The first subdomain must have a valid `parentHash`.
-> - The second subdomain can have `parentHash = 0x000...`, which means it will be nested under the first subdomain.
+> - The second subdomain can have `parentHash = 0x0...`, which means it will be nested under the first subdomain.
 > - This pattern can continue for deeper levels of nesting.
 
 #### Parameters
@@ -324,14 +324,8 @@ Fires `RegistrationPauseSet` event.
 ### _authorizeUpgrade
 
 ```solidity
-function _authorizeUpgrade(address newImplementation) internal view
+function _authorizeUpgrade(address) internal view
 ```
 
 To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| newImplementation | address | The implementation contract to upgrade to |
 
