@@ -1631,7 +1631,7 @@ describe("ZNSRootRegistrar", () => {
           (await zns.rootRegistrar.rootPricer())
         ).to.eq(zns.curvePricer.target);
 
-        const newMaxPrice = 1n;
+        const newMaxPrice = hre.ethers.parseEther("13232");
 
         const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
         localConfig.maxPrice = newMaxPrice;

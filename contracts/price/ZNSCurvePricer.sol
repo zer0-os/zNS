@@ -208,6 +208,12 @@ contract ZNSCurvePricer is IZNSCurvePricer {
                 config.feePercentage,
                 PERCENTAGE_BASIS
             );
+
+        if (
+            config.maxPrice != 0
+            && config.baseLength != 0
+            && _getPrice(config, config.maxLength) < config.precisionMultiplier
+        ) revert PrecisionMultiplierTooLarge(config.precisionMultiplier);
     }
 
     /**
@@ -233,7 +239,10 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
      *
-     * @param config The parent price config
+     * If the `rawPrice` calculated before truncation is less than the `precisionMultiplier` set,
+     * we return the `precisionMultiplier` as the price to avoid returning 0.
+     *
+     * @param config The curve price config of the parent domain under which price is determined
      * @param length The length of the domain name
      */
     function _getPrice(
@@ -252,13 +261,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
         if (length > config.maxLength) length = config.maxLength;
 
-        uint256 rawPrice = (config.baseLength * config.maxPrice * FACTOR_SCALE) /
-            (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength));
-
-        rawPrice = rawPrice < config.precisionMultiplier
-            ? config.precisionMultiplier
-            : rawPrice;
-
-        return rawPrice / config.precisionMultiplier * config.precisionMultiplier;
+        return (config.baseLength * config.maxPrice * FACTOR_SCALE) /
+            (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))
+            / config.precisionMultiplier * config.precisionMultiplier;
     }
 }

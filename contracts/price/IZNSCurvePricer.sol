@@ -59,6 +59,12 @@ interface IZNSCurvePricer is IZNSPricer {
      */
     error DivisionByZero();
 
+    /**
+     * @notice Reverted when setting the incorrect config where the minimum possible price
+     * is less then the precision multiplier passed that will result in returning low prices as 0.
+     */
+    error PrecisionMultiplierTooLarge(uint256 precisionMultiplier);
+
     function encodeConfig(
         CurvePriceConfig calldata config
     ) external pure returns (bytes memory);
