@@ -114,7 +114,7 @@ export const getConfig = async ({
     rootPriceConfig: priceConfig,
     zeroVaultAddress: zeroVaultAddressConf as string,
     mockMeowToken: process.env.MOCK_MEOW_TOKEN === "true",
-    stakingTokenAddress: process.env.STAKING_TOKEN_ADDRESS,
+    rootPaymentTokenAddress: process.env.ROOT_PAYMENT_TOKEN_ADDRESS,
     postDeploy: {
       tenderlyProjectSlug: process.env.TENDERLY_PROJECT_SLUG || "",
       monitorContracts: process.env.MONITOR_CONTRACTS === "true",
@@ -147,7 +147,7 @@ export const validateEnv = (
   if (envLevel === EnvironmentLevels.dev) return priceConfig;
 
   if (envLevel === EnvironmentLevels.test || envLevel === EnvironmentLevels.dev) {
-    if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.STAKING_TOKEN_ADDRESS) {
+    if (process.env.MOCK_MEOW_TOKEN === "false" && !process.env.ROOT_PAYMENT_TOKEN_ADDRESS) {
       throw new Error("Must provide a staking token address if not mocking MEOW token in `dev` environment");
     }
   }
@@ -174,7 +174,7 @@ export const validateEnv = (
   // Mainnet
   if (envLevel === EnvironmentLevels.prod) {
     requires(process.env.MOCK_MEOW_TOKEN === "false", NO_MOCK_PROD_ERR);
-    requires(process.env.STAKING_TOKEN_ADDRESS === MEOWzChainData.address, STAKING_TOKEN_ERR);
+    requires(process.env.ROOT_PAYMENT_TOKEN_ADDRESS === MEOWzChainData.address, STAKING_TOKEN_ERR);
     requires(!process.env.MONGO_DB_URI.includes("localhost"), MONGO_URI_ERR);
   }
 

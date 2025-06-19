@@ -87,7 +87,7 @@ describe("Deploy Campaign Test", () => {
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -128,7 +128,7 @@ describe("Deploy Campaign Test", () => {
 
       await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = await meow.getAddress();
+      campaignConfig.rootPaymentTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -372,7 +372,7 @@ describe("Deploy Campaign Test", () => {
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: "",
+        rootPaymentTokenAddress: "",
         mockMeowToken: true, // 1700083028872
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -781,7 +781,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = "0x123";
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = "0x123";
 
       try {
         await getConfig({
@@ -798,7 +798,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -818,7 +818,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -864,7 +864,7 @@ describe("Deploy Campaign Test", () => {
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1056,7 +1056,7 @@ describe("Deploy Campaign Test", () => {
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",

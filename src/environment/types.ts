@@ -31,7 +31,7 @@ export interface IZNSEnvironment {
   GOVERNOR_ADDRESSES ?: string;
   ADMIN_ADDRESSES ?: string;
   MOCK_MEOW_TOKEN : string;
-  STAKING_TOKEN_ADDRESS ?: string;
+  ROOT_PAYMENT_TOKEN_ADDRESS ?: string;
   ROOT_PRICER_TYPE : string;
   FIXED_PRICE ?: string;
   FIXED_FEE_PERC ?: string;

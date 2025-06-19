@@ -48,7 +48,7 @@ IZNSContracts
       this.logger.info("Using MEOW token from Mainnet");
 
       // TODO dep: add proper bytecode comparison here and throw if different!
-      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.stakingTokenAddress);
+      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.rootPaymentTokenAddress);
 
       // const {
       //   bytecode,
@@ -64,7 +64,7 @@ IZNSContracts
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
       const factory = new ZToken__factory(this.config.deployAdmin);
-      const baseContract = factory.attach(this.config.stakingTokenAddress as string);
+      const baseContract = factory.attach(this.config.rootPaymentTokenAddress as string);
 
       await this.saveToDB(baseContract);
 

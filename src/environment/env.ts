@@ -48,7 +48,7 @@ export const environment : IZNSEnvironment = {
   ADMIN_ADDRESSES: "",
   // ZNS Payment Token (e.g. Z)
   MOCK_MEOW_TOKEN: "true",
-  STAKING_TOKEN_ADDRESS: "",
+  ROOT_PAYMENT_TOKEN_ADDRESS: "",
   // Pricer Data
   ROOT_PRICER_TYPE: PricerTypes.curve,
   // FixedPricer Config [without decimals!]

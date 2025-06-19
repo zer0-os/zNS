@@ -31,7 +31,7 @@ export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddr
   rootPriceConfig : string;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  stakingTokenAddress ?: string;
+  rootPaymentTokenAddress ?: string;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
