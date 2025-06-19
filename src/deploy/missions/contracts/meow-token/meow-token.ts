@@ -47,8 +47,9 @@ IZNSContracts
     if (!this.config.mockMeowToken) {
       this.logger.info("Using MEOW token from Mainnet");
 
-      // TODO dep: add proper bytecode comparison here and throw if different!
-      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.rootPaymentTokenAddress);
+      // TODO upg: add proper bytecode comparison here and throw if different!
+      // const bytecodeFromChain = await this.campaign.deployer
+      // .getBytecodeFromChain(this.config.rootPaymentTokenAddress);
 
       // const {
       //   bytecode,

@@ -14,7 +14,6 @@ import { StringUtils } from "../utils/StringUtils.sol";
  * All prices after `maxLength` are fixed and equal the price at `maxLength`.
  *
  * @dev This contract is stateless as all the other Pricer contracts.
-
  */
 contract ZNSCurvePricer is IZNSCurvePricer {
     using StringUtils for string;
