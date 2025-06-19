@@ -122,7 +122,6 @@ contract ZNSFixedPricer is IZNSFixedPricer {
      *
      * @param parentPriceConfig The price config of the parent domain under which price and fee are determined
     */
-    // solhint-disable no-unused-vars
     function getPriceAndFee(
         bytes memory parentPriceConfig,
         string calldata,
