@@ -242,7 +242,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
         uint256 length
     ) internal pure returns (uint256) {
         // We use `maxPrice` as 0 to indicate free domains
-        if (config.maxPrice == 0) return 0;
+        if (config.maxPrice == 0 || config.baseLength == 0) return 0;
 
         if (length == 0) return 0;
 
@@ -253,8 +253,13 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
         if (length > config.maxLength) length = config.maxLength;
 
-        return ((config.baseLength * config.maxPrice * FACTOR_SCALE) /
-        (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))) /
-        config.precisionMultiplier * config.precisionMultiplier;
+        uint256 rawPrice = (config.baseLength * config.maxPrice * FACTOR_SCALE) /
+            (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength));
+
+        rawPrice = rawPrice < config.precisionMultiplier
+            ? config.precisionMultiplier
+            : rawPrice;
+
+        return rawPrice / config.precisionMultiplier * config.precisionMultiplier;
     }
 }

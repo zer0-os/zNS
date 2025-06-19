@@ -32,7 +32,7 @@ interface IZNSCurvePricer is IZNSPricer {
          * @notice The precision multiplier of the price. This multiplier
          * should be picked based on the number of token decimals to calculate properly.
          * e.g. if we use a token with 18 decimals, and want precision of 2,
-         * our precision multiplier will be equal 10^18 - 10^2 = 10^16
+         * our precision multiplier will be equal 10^(18-2) = 10^16
          */
         uint256 precisionMultiplier;
         /**
