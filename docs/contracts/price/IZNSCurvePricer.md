@@ -40,6 +40,15 @@ error DivisionByZero()
 
 Reverted when `curveMultiplier` AND `baseLength` are 0.
 
+### PrecisionMultiplierTooLarge
+
+```solidity
+error PrecisionMultiplierTooLarge(uint256 precisionMultiplier)
+```
+
+Reverted when setting the incorrect config where the minimum possible price
+is less then the precision multiplier passed that will result in returning low prices as 0.
+
 ### encodeConfig
 
 ```solidity

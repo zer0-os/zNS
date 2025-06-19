@@ -178,10 +178,13 @@ what we care about, then multiplied by the same precision multiplier to get the 
 with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
 with precision `2` would give us `15.230000000000000000 * 10^18`
 
+If the `rawPrice` calculated before truncation is less than the `precisionMultiplier` set,
+we return the `precisionMultiplier` as the price to avoid returning 0.
+
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| config | struct IZNSCurvePricer.CurvePriceConfig | The parent price config |
+| config | struct IZNSCurvePricer.CurvePriceConfig | The curve price config of the parent domain under which price is determined |
 | length | uint256 | The length of the domain name |
 
