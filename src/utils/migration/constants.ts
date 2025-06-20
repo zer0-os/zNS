@@ -1,16 +1,11 @@
+import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
+
 export const ROOT_COLL_NAME = process.env.MONGO_DB_ROOT_COLL_NAME || "root-domains";
 export const SUB_COLL_NAME = process.env.MONGO_DB_SUB_COLL_NAME || "subdomains";
 
-export const ROOT_DOMAIN_BULK_SELECTOR = "0xdba1f6c3";
-export const ROOT_DOMAIN_ENCODING = "tuple(string,address,address,string,tuple(address,uint8,uint8),tuple(address,address))";
-
-export const SUBDOMAIN_BULK_SELECTOR = "0x7b8ed58b";
-export const SUBDOMAIN_ENCODING = "tuple(bytes32,string,address,address,string,tuple(address,uint8,uint8),tuple(address,address))";
-
-// safeTransferFrom(from,to,tokenId) (0x42842e0e) 
-// safeTransferFrom(from,to,tokenId,data) (0xb88d4fde)
-export const SAFE_TRANSFER_FROM_SELECTOR="0x42842e0e";
-export const SAFE_TRANSFER_FROM_ENCODING = [ "address", "address", "uint256" ];
+export const ROOT_DOMAIN_BULK_SELECTOR = ZNSRootRegistrar__factory.createInterface().getFunction("registerRootDomainBulk").selector;
+export const SUBDOMAIN_BULK_SELECTOR = ZNSSubRegistrar__factory.createInterface().getFunction("registerSubdomainBulk").selector;
+export const SAFE_TRANSFER_FROM_SELECTOR = ZNSDomainToken__factory.createInterface().getFunction("safeTransferFrom(address,address,uint256)").selector;
 
 // Safe supported networks, based on the networks we care about specifically
 export const SAFE_SUPPORTED_NETWORKS = [

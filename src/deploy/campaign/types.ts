@@ -13,6 +13,8 @@ import {
   ZNSTreasury,
   ZNSStringResolver,
   ZToken as MeowToken,
+  ZToken,
+  ERC20Mock,
 } from "../../../typechain";
 
 
@@ -58,6 +60,20 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
   meowToken : MeowTokenMock;
+  addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
+  curvePricer : ZNSCurvePricer;
+  treasury : ZNSTreasury;
+  rootRegistrar : ZNSRootRegistrar;
+  fixedPricer : ZNSFixedPricer;
+  subRegistrar : ZNSSubRegistrar;
+}
+
+export interface IZNSContractsCache {
+  meowToken : ERC20Mock;
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  domainToken : ZNSDomainToken;
   addressResolver : ZNSAddressResolver;
   stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;

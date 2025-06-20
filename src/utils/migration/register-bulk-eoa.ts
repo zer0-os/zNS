@@ -5,13 +5,13 @@ import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BUL
 import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 import { ZeroAddress, ZeroHash } from "ethers";
 
-import { connectToDb, createBatches } from "./helpers";
+import { connect, createBatches } from "./helpers";
 import { ZNSRootRegistrar, ZNSRootRegistrar__factory } from "../../../typechain";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
-  const client = await connectToDb();
+  const client = await connect();
   
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
   const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];

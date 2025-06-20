@@ -1,5 +1,5 @@
 import { Addressable } from "ethers";
-import { IDistributionConfig, IPaymentConfig, IZNSContracts, IZNSContractsLocal } from "../../../test/helpers/types";
+import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
 
 export interface Domain {
   id : string;

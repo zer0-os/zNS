@@ -1,19 +1,9 @@
 // Gnosis Safe Modules
 import SafeApiKit, { ProposeTransactionProps, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse } from '@safe-global/api-kit'
-import Safe from '@safe-global/protocol-kit'
+import Safe, { SafeTransactionOptionalProps } from '@safe-global/protocol-kit'
 import { MetaTransactionData, OperationType, SafeSignature, SafeTransaction } from "@safe-global/types-kit";
-import { ROOT_DOMAIN_BULK_SELECTOR, SAFE_SUPPORTED_NETWORKS } from './constants';
-import { IZNSContracts } from '../../deploy/campaign/types';
-import { deployZNS, DeployZNSParams, IZNSContractsLocal } from '../../../test/helpers';
-import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { SAFE_SUPPORTED_NETWORKS } from './constants';
 import { SafeKitConfig } from './types';
-
-// import { encodeMultiSendData } from '@safe-global/protocol-kit/dist/src/utils/transactions/utils/';
-
-import * as protoKit from '@safe-global/protocol-kit';
-
-import * as hre from "hardhat";
-
 
 /**
  * Wrapper around the API and Protocol kits that Safe provides
@@ -68,8 +58,6 @@ export class SafeKit {
       safeAddress: config.safeAddress
     });
 
-    
-
     return new SafeKit(apiKit, protocolKit, config);
   }
 
@@ -114,51 +102,37 @@ export class SafeKit {
     txData : string,
     nonce ?: number
   ) : Promise<[ SafeTransaction, string ]> {
-    const safeTransaction = { // MetaTransactionData
+    const safeTransaction : SafeMultisigTransactionEstimate = {
       to: to,
       value: '0',
       data: txData,
-      // operation: OperationType.DelegateCall
+      operation: OperationType.Call
     }
 
-    // const safeTransaction: SafeMultisigTransactionEstimate = {
-    //   to: '0x...',
-    //   value: '0',
-    //   data: '0x',
-    //   operation: 0 // Optional
-    // }
-
-    // SafeTransactionOptionalProps
-    let options = {};
-
-    if (nonce) {
-      options = { nonce };
-    }
 
     // TODO failing, so something is wrong likely
     // calc estimate, give that much gas, and rough gas price estimate
-    // const estimateTx : SafeMultisigTransactionEstimateResponse = await this.apiKit.estimateSafeTransaction(
-    //   this.config.safeAddress,
-    //   safeTransaction
-    // );
+    const estimateTx : SafeMultisigTransactionEstimateResponse = await this.apiKit.estimateSafeTransaction(
+      this.config.safeAddress,
+      safeTransaction
+    );
 
     // manually giving values to avoid estimation for now
+    // safeTxGas: hre.ethers.parseEther("0.5").toString(), // in wei, grabbed from network manually
+    // gasPrice: , // in wei, grabbed from network manually
+    // gasToken ?? dont think we have to specify on sep
 
-    // 58826408
-    // options = {
-    //   // safeTxGas: hre.ethers.parseEther("0.5").toString(), // in wei, grabbed from network manually
-    //   baseGas: "80000",
-    //   // gasPrice: , // in wei, grabbed from network manually
-    //   refundReceiver: this.config.safeAddress, // should be the Safe address
-    //   // gasToken ?? dont think we have to specify on sep
-    //   ...options
-    // };
+    const options : SafeTransactionOptionalProps = {
+      safeTxGas: (BigInt(estimateTx.safeTxGas) * 10n).toString(),
+      baseGas: "160000",
+      refundReceiver: this.config.safeAddress, // should be the Safe address
+      nonce
+    };
 
     // Get the current nonce for the Safe to create multiple transactions
     const safeTx = await this.protocolKit.createTransaction({
-      transactions: [safeTransaction],
-      onlyCalls: true, // forces the execution of the transaction array with MultiSendCallOnly contract for delegate calls
-      // options
+      transactions: [safeTransaction as MetaTransactionData],
+      options
     });
 
     const safeTxHash = await this.protocolKit.getTransactionHash(safeTx);

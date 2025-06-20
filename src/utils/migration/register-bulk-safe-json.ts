@@ -7,7 +7,7 @@ import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
 
 import * as fs from "fs";
-import { connectToDb } from "./helpers";
+import { connect } from "./helpers";
 
 
 /**
@@ -34,7 +34,7 @@ const main = async () => {
   const zns = await deployZNS(params);
 
   // Get MongoDB client
-  const client = await connectToDb();
+  const client = await connect();
 
   // Get all root domain documents from collection
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];

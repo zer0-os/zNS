@@ -1,37 +1,38 @@
 import { Db } from "mongodb";
-import { getDBAdapter } from "./database";
-import { Domain } from "./types";
 import { ZeroAddress, ZeroHash } from "ethers";
-import { IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
-
-import * as hre from "hardhat";
-import { ROOT_DOMAIN_ENCODING, SUBDOMAIN_BULK_SELECTOR, SUBDOMAIN_ENCODING, SAFE_TRANSFER_FROM_ENCODING, SAFE_TRANSFER_FROM_SELECTOR } from "./constants";
+import { getDBAdapter } from "./database";
+import { ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES } from "../../../test/helpers/constants";
+import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
+import { SAFE_TRANSFER_FROM_SELECTOR, SUBDOMAIN_BULK_SELECTOR } from "./constants";
 
-export const connectToDb = async (
+// Connect to the MongoDB database to read domain data for migration
+export const connect = async (
   mongoUri?: string,
   mongoDbName?: string
 ) : Promise<Db> => {
-    const uri = process.env.MONGO_DB_URI_WRITE ?? mongoUri;
+    const uri = process.env.MONGO_DB_URI_MIG ?? mongoUri;
     if (!uri) throw Error("No connection string given");
   
-    const dbName = process.env.MONGO_DB_NAME_WRITE ?? mongoDbName;
+    const dbName = process.env.MONGO_DB_NAME_MIG ?? mongoDbName;
     if (!dbName) throw Error("No DB name given");
   
     // Return socket connection
     return (await getDBAdapter(uri)).db(dbName);
 }
 
+// Create registration and transfer batches to use as txData
 export const createBatches = (
   domains : Array<Domain>,
   functionSelector ?: string,
   registerSliceSize : number = 50,
   transferSliceSize : number = 500
-) => { // TODO return type // : Array<Array<IRootDomainRegistrationArgs | ISubdomainRegisterArgs>> | Array<string> 
+) => {
   if (functionSelector) {
+    // TODO merge helpers more, return same types
     return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize);
   } else {
-    return createBatchesEOA(domains, registerSliceSize); // TODO add transfer slice size
+    return createBatchesEOA(domains, registerSliceSize);
   }
 }
 
@@ -46,11 +47,13 @@ const createBatchesEOA = (
   let count = 0;
   for (const domain of domains) {
     let domainArg : Partial<IRootDomainRegistrationArgs | ISubdomainRegisterArgs> = {
+      name : domain.label,
       domainAddress: domain.address,
       tokenOwner: domain.owner.id,
       tokenURI: domain.tokenURI,
       distrConfig: {
         pricerContract: ZeroAddress,
+        priceConfig: "0x",
         paymentType: 0n,
         accessType: 0n,
       },
@@ -66,7 +69,6 @@ const createBatchesEOA = (
       domainArg = { parentHash: domain.parentHash, label: domain.label, ...domainArg };
       txs.push(domainArg as ISubdomainRegisterArgs);
     } else {
-      domainArg = { name: domain.label, ...domainArg };
       txs.push(domainArg as IRootDomainRegistrationArgs);
     }
 
@@ -108,6 +110,7 @@ const createBatchesSafe = (
       tokenURI: domain.tokenURI,
       distrConfig: {
         pricerContract: ZeroAddress,
+        priceConfig: "0x",
         paymentType: 0n,
         accessType: 0n
       },
@@ -120,17 +123,20 @@ const createBatchesSafe = (
     let registerEncoding : string;
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
+      // Subdomain, check parentHash
       if (domain.parentHash === ZeroHash) {
         throw Error("Subdomain registration requires parent hash to be set");
       }
 
       // remove `name` from args, leave rest of args in `rest`
       const { name, ...rest } = args;
+      const subArgs = { parentHash: domain.parentHash, label: args.name, ...rest };
       registerEncoding = ZNSSubRegistrar__factory.createInterface().encodeFunctionData(
         "registerSubdomainBulk",
-        [[ { parentHash: domain.parentHash, label: args.name, ...rest } ]]
+        [[ subArgs ]]
       );
     } else {
+      // Root domain
       registerEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
         "registerRootDomainBulk",
         [[ args ]]

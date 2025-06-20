@@ -32,8 +32,6 @@ import { ICurvePriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
-import { MeowToken } from "../../typechain/@zero-tech/ztoken/contracts";
-
 
 export type GeneralContractGetter = Promise<
 string
@@ -84,10 +82,11 @@ export interface RegistrarConfig {
   domainTokenAddress : string;
 }
 
-interface IZNSContractsBase {
+export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
+  meowToken : ERC20Mock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
@@ -95,14 +94,6 @@ interface IZNSContractsBase {
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
   zeroVaultAddress : string;
-}
-
-export interface IZNSContractsLocal extends IZNSContractsBase {
-  meowToken : MeowTokenMock | ERC20Mock;
-}
-
-export interface IZNSContracts extends IZNSContractsBase {
-  meowToken : MeowToken;
 }
 
 export interface DeployZNSParams {
