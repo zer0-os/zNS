@@ -7,60 +7,29 @@ import { ZeroAddress, ZeroHash } from "ethers";
 
 import { connect, createBatches } from "./helpers";
 import { ZNSRootRegistrar, ZNSRootRegistrar__factory } from "../../../typechain";
+import { getZNS } from "./zns-contract-data";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
   const client = await connect();
-  
+
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
   const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
-  
-  // TODO for testing, get from DB when zns is deployed on zchain
-  // const params : DeployZNSParams = {
-  //   deployer: migrationAdmin,
-  //   governorAddresses: [migrationAdmin.address],
-  //   adminAddresses: [migrationAdmin.address],
-  // };
 
-  // const zns = await deployZNS(params);
+  const zns = await getZNS(migrationAdmin);
 
-  const rootTxs = createBatches(rootDomains, ROOT_DOMAIN_BULK_SELECTOR) as IRootDomainRegistrationArgs[][];
-  const subTxs = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as ISubdomainRegisterArgs[][];
+  const [ rootRegisterBatches, rootTransferBatches ] = createBatches(rootDomains, ROOT_DOMAIN_BULK_SELECTOR) as IRootDomainRegistrationArgs[][];
+  const [ subRegisterBatches, subTransfer ] = createBatches(subdomains, SUBDOMAIN_BULK_SELECTOR) as ISubdomainRegisterArgs[][];
 
   let count = 0;
   // Send each batch
   console.log("Sending root domain registrations...");
-  
-  const rootFactory = new ZNSRootRegistrar__factory(migrationAdmin);
-  const rootReg = rootFactory.attach("0xbe15446794E0cEBEC370d00d301A72cb75068838") as ZNSRootRegistrar;
 
-  const d = rootDomains[0];
-
-  const registerTx =  rootReg.connect(migrationAdmin).registerRootDomainBulk(
-    [
-      {
-        name: d.label,
-        domainAddress: d.address,
-        tokenOwner: d.owner.id,
-        tokenURI: d.tokenURI,
-        distrConfig: {
-          pricerContract: ZeroAddress,
-          paymentType: 0n,
-          accessType: 0n,
-        },
-        paymentConfig: {
-          token: ZeroAddress,
-          beneficiary: ZeroAddress,
-        },
-      }
-    ]
-  );
-
-  // await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);
-  process.exit(0);
-  for(let tx of rootTxs) {
-    
+  for(let batch of rootRegisterBatches) {
+    const registerTx = await zns.rootRegistrar.connect(migrationAdmin).registerRootDomainBulk(
+      [ batch ]
+    );
 
     // Wait for network confirmations
     await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);
@@ -73,12 +42,13 @@ const main = async () => {
 
   count = 0;
   console.log("Sending subdomain registrations...");
-  for(let tx of subTxs) {
+  for(let batch of subRegisterBatches) {
     const registerTx = await zns.subRegistrar.connect(migrationAdmin).registerSubdomainBulk(tx);
 
     // Wait for network confirmations
     await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);
     count++;
+
     if (count % 10 === 0) {
       console.log(`Processed ${count} subdomain batches...`);
     }

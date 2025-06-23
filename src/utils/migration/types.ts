@@ -1,5 +1,6 @@
 import { Addressable } from "ethers";
 import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
+import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
 
 export interface Domain {
   id : string;
@@ -165,3 +166,5 @@ export interface SafeKitConfig {
   safeOwnerAddress : string;
   txServiceUrl ?: string; // Optional when using a supported network
 }
+
+export type SafeTransactionExtendedOptions = SafeTransactionOptionalProps & { execute ?: boolean }

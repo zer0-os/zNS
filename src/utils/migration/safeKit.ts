@@ -3,10 +3,7 @@ import SafeApiKit, { PendingTransactionsOptions, ProposeTransactionProps, SafeMu
 import Safe, { SafeTransactionOptionalProps } from '@safe-global/protocol-kit'
 import { MetaTransactionData, OperationType, SafeSignature, SafeTransaction } from "@safe-global/types-kit";
 import { SAFE_SUPPORTED_NETWORKS } from './constants';
-import { SafeKitConfig } from './types';
-
-// TODO move to types
-export type SafeTransactionExtendedOptions = SafeTransactionOptionalProps & { execute ?: boolean }
+import { SafeKitConfig, SafeTransactionExtendedOptions } from './types';
 
 /**
  * Wrapper around the safeApiKit and protocolKit that Safe provides

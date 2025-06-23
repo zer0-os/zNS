@@ -8,6 +8,8 @@ export const SUBDOMAIN_BULK_SELECTOR = ZNSSubRegistrar__factory.createInterface(
 export const SAFE_TRANSFER_FROM_SELECTOR = ZNSDomainToken__factory.createInterface().getFunction("safeTransferFrom(address,address,uint256)").selector;
 
 // Safe supported networks, based on the networks we care about specifically
+// More can be found here:
+// https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 export const SAFE_SUPPORTED_NETWORKS = [
   "ethereum",
   "sepolia",
@@ -179,9 +181,4 @@ export const SAFE_TRANSFER_FROM_ABI = [
     name: "tokenId",
     type: "uint256"
   },
-  {
-    internalType: "bytes",
-    name: "data",
-    type: "bytes"
-  }
 ];

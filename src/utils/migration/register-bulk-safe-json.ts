@@ -1,13 +1,12 @@
 import * as hre from "hardhat";
-import { deployZNS, DeployZNSParams, IZNSContracts, IZNSContractsLocal, paymentConfigEmpty } from "../../../test/helpers";
-import { getDBAdapter } from "./database";
+import { DeployZNSParams, } from "../../../test/helpers";
 import { REGISTER_ROOT_BULK_ABI, REGISTER_SUBS_BULK_ABI, ROOT_COLL_NAME, SAFE_TRANSFER_FROM_ABI, SUB_COLL_NAME } from "./constants";
-
 import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
-
-import * as fs from "fs";
 import { connect } from "./helpers";
+import { IZNSContractsCache } from "../../deploy/campaign/types";
+import { getZNS } from "./zns-contract-data";
+import * as fs from "fs";
 
 
 /**
@@ -24,14 +23,7 @@ const main = async () => {
   const rootsFolderName = "registration/roots"
   fs.mkdirSync(`${outputDir}/${rootsFolderName}`, { recursive: true });
 
-  // // TODO Replace with get from DB when deployed to zchain
-  const params : DeployZNSParams = {
-    deployer: migrationAdmin,
-    governorAddresses: [migrationAdmin.address],
-    adminAddresses: [migrationAdmin.address],
-  };
-
-  const zns = await deployZNS(params);
+  const zns = await getZNS(migrationAdmin);
 
   // Get MongoDB client
   const client = await connect();
@@ -59,7 +51,7 @@ const main = async () => {
   ); 
 
   // Now setup transfer calls
-  const allDomains = [...rootDomains, ...subdomains,]
+  const allDomains = [ ...rootDomains, ...subdomains ]
 
   const sliceSize = Number(process.env.TRANSFER_SLICE) ?? 500;
 
@@ -80,12 +72,11 @@ const main = async () => {
         )
       );
 
-      // safeTransferFrom(from, to, tokenId, data)
+      // safeTransferFrom(from, to, tokenId
       batchTx.transactions[i].contractInputsValues = {
         from: `${zns.domainToken.target}`,
         to: `${domain.address}`,
         tokenId: `${domain.tokenId}`,
-        data: ZeroHash
       };
     }
 
@@ -101,31 +92,30 @@ const main = async () => {
   process.exit(0);
 };
 
-const createBatches = (
+const createBatches = async (
   domains : Domain[],
-  zns : IZNSContracts | IZNSContractsLocal,
+  zns : IZNSContractsCache,
   outputFile : string,
-  forRootDomains : boolean = false,
+  rootDomains : boolean = false,
   sliceSize : number = Number(process.env.DOMAIN_SLICE) || 50
 ) => {
   let index = 0;
 
   let domainsBatch = domains.slice(index, index + sliceSize);
 
-  while (domainsBatch.length > 0) { // TODO TEMP remove index check after test
-    // for single call to registerRootDomain, not bulk, just to test
+  while (domainsBatch.length > 0) {
     const batchTx = createBatchTemplate("Batch Registration");
 
-    let contractAddress;
-    let funcName;
-    let funcAbi;
+    let contractAddress : string;
+    let funcName : string;
+    let funcAbi : Object;
 
-    if (forRootDomains) {
-      contractAddress = "0xbe15446794E0cEBEC370d00d301A72cb75068838"; // zns.rootRegistrar.target
+    if (rootDomains) {
+      contractAddress = await zns.rootRegistrar.getAddress();
       funcName = "registerRootDomainBulk";
       funcAbi = REGISTER_ROOT_BULK_ABI;
     } else {
-      contractAddress = "0x6Eb2344b7a1d90B1b23706CC109b55a95d0c5dad"; // zns.subRegistrar.target
+      contractAddress = await zns.subRegistrar.getAddress();
       funcName = "registerSubDomainBulk";
       funcAbi = REGISTER_SUBS_BULK_ABI;
     }
@@ -140,15 +130,14 @@ const createBatches = (
 
     batchTx.transactions[0].contractInputsValues.args = [];
 
-    // TODO rerun validation to get paymentToken, also to refresh data
     for (let domain of domainsBatch) {
       const valuesArr = [
         domain.label,
         domain.address,
         domain.owner.id,
         domain.tokenURI,
-        `[\"${domain.pricerContract ?? ZeroAddress}\", ${domain.paymentType ?? 0}, ${domain.accessType ?? 0}]`,
-        `[\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\",\"${domain.treasury.beneficiaryAddress ?? ZeroAddress}\"]`,
+        `[\"${ZeroAddress}\",0,0,"0x"]`,
+        `[\"${ZeroAddress}\",\"${ZeroAddress}\"]`,
       ]
 
       if (domain.parentHash !== ZeroHash) {
@@ -163,7 +152,8 @@ const createBatches = (
 
     // Increment, get more domains
     index++;
-    domainsBatch = domains.slice(index * sliceSize, index * sliceSize + sliceSize);
+    const nextSlice = index * sliceSize;
+    domainsBatch = domains.slice(nextSlice, nextSlice + sliceSize);
   }
 }
 
@@ -172,15 +162,15 @@ const createBatchTemplate = (
 ) : SafeBatch => {
   return {
     version: "1.0",
-    chainId: process.env.SEPOLIA_CHAIN_ID ?? "1", 
+    chainId: process.env.CHAIN_ID ?? "1", 
     createdAt: Date.now(),
     meta: {
       name,
       description: "",
-      txBuilderVersion: "1.18.0", // TODO confirm this is correct for zchain, or needs to be correct at all
+      txBuilderVersion: "1.18.0",
       createdFromSafeAddress: process.env.SAFE_ADDRESS ?? "",
-      createdFromOwnerAddress: "", // TODO set this
-      checksum: "" // TODO calc this for each batch
+      createdFromOwnerAddress: process.env.SAFE_OWNER_ADDRESS ?? "",
+      checksum: ""
     },
     transactions: [ ]
   }
@@ -189,7 +179,7 @@ const createBatchTemplate = (
 const createTx = (
   to: string | Addressable,
   funcName : string,
-  funcAbi : any, // TODO type?
+  funcAbi : Object,
 ) : SafeTx => {
   return {
     to: to,
