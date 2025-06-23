@@ -97,6 +97,11 @@ export const getDomains = gql`
       treasury {
         id
         beneficiaryAddress
+        paymentToken {
+          id
+          name
+          symbol
+        }
       }
       creationBlock
       creationTimestamp
