@@ -1,10 +1,9 @@
 import { Db } from "mongodb";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { getDBAdapter } from "./database";
-import { ZERO_VALUE_CURVE_PRICE_CONFIG_BYTES } from "../../../test/helpers/constants";
 import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
-import { SAFE_TRANSFER_FROM_SELECTOR, SUBDOMAIN_BULK_SELECTOR } from "./constants";
+import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
 
 // Connect to the MongoDB database to read domain data for migration
 export const connect = async (
@@ -29,7 +28,6 @@ export const createBatches = (
   transferSliceSize : number = 500
 ) => {
   if (functionSelector) {
-    // TODO merge helpers more, return same types
     return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize);
   } else {
     return createBatchesEOA(domains, registerSliceSize);
@@ -88,39 +86,40 @@ const createBatchesSafe = (
   functionSelector : string,
   registerSliceSize : number,
   transferSliceSize : number
-) : [ Array<string>, Array<string> ] => {
+) : [ Array<string>, Array<Array<string>> ] => {
+  // For registration we already have bulk functions, so each push to this array is an encoded batch
   let batchRegisterTxs : Array<string> = [];
-  let batchTransferTxs : Array<string> = [];
 
-  let count = 0;
-  let batchRegisterData = functionSelector;
-  let batchTransferData = SAFE_TRANSFER_FROM_SELECTOR;
+  // For transfer we don't have bulk functions, so each push to this array is an array of encoded transfers
+  let batchTransferTxs : Array<Array<string>> = [];
 
   // Get safe address being used
-  const safeAddress = process.env.TEST_SAFE_ADDRESS;
+  const safeAddress = process.env.SAFE_ADDRESS;
   if (!safeAddress) {
     throw Error("No Safe address set in environment variables");
   }
 
-  for (const domain of domains) {
+  let registrationBatch : Array<any> = []; // TODO `any` for now, debug, remove later no explicit any
+  let transfersBatch : Array<any> = [];
+
+  // get domains we need to fit in gas block, then make tx of it and find estimation
+  for (const [index, domain] of domains.entries()) {
     let args = {
       name: domain.label,
       domainAddress: domain.owner.id,
-      tokenOwner: process.env.TEST_SAFE_ADDRESS!,
+      tokenOwner: process.env.SAFE_ADDRESS!,
       tokenURI: domain.tokenURI,
       distrConfig: {
         pricerContract: ZeroAddress,
-        priceConfig: "0x",
         paymentType: 0n,
-        accessType: 0n
+        accessType: 0n,
+        priceConfig: "0x",
       },
       paymentConfig: {
         token: ZeroAddress,
         beneficiary: ZeroAddress,
       }
     }
-
-    let registerEncoding : string;
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
       // Subdomain, check parentHash
@@ -130,17 +129,35 @@ const createBatchesSafe = (
 
       // remove `name` from args, leave rest of args in `rest`
       const { name, ...rest } = args;
-      const subArgs = { parentHash: domain.parentHash, label: args.name, ...rest };
-      registerEncoding = ZNSSubRegistrar__factory.createInterface().encodeFunctionData(
-        "registerSubdomainBulk",
-        [[ subArgs ]]
-      );
+      
+      // Make sure priceConfig is included in distrConfig
+      const subArgs = { 
+        parentHash: domain.parentHash, 
+        label: domain.label, 
+        ...rest,
+      };
+      
+      registrationBatch.push(subArgs);
+
+      if (registrationBatch.length === registerSliceSize || index + 1 === domains.length) {
+        const batchData = ZNSSubRegistrar__factory.createInterface().encodeFunctionData(
+          "registerSubdomainBulk",
+          [ registrationBatch ]
+        );
+        batchRegisterTxs.push(batchData);
+        registrationBatch = []; // reset batch
+      }      
     } else {
-      // Root domain
-      registerEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
-        "registerRootDomainBulk",
-        [[ args ]]
-      );
+      registrationBatch.push(args);
+
+      if (registrationBatch.length === registerSliceSize || index + 1 === domains.length) {
+        const batchData = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+          "registerRootDomainBulk",
+          [ registrationBatch ]
+        );
+        batchRegisterTxs.push(batchData);
+        registrationBatch = []; // reset batch
+      }
     }
 
     const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
@@ -148,19 +165,16 @@ const createBatchesSafe = (
       [ safeAddress, domain.owner.id, domain.tokenId ]
     );
 
-    batchRegisterData += registerEncoding.slice(10); // remove '0x' prefix
-    batchTransferData += transferEncoding.slice(10);
-    count++;
+    transfersBatch.push(transferEncoding);
 
-    // If at slice size # of transactions or at the end of the array, finish batch
-    if (count % registerSliceSize === 0 || domains.length - count === 0) {
-      batchRegisterTxs.push(batchRegisterData);
-      batchRegisterData = functionSelector; // reset batch register data
+    if (transfersBatch.length === transferSliceSize) {
+      batchTransferTxs.push(transfersBatch);
+      transfersBatch = []; // reset transfers
     }
 
-    if (count % transferSliceSize === 0 || domains.length - count === 0) {
-      batchTransferTxs.push(batchTransferData);
-      batchTransferData = SAFE_TRANSFER_FROM_SELECTOR; // reset batch transfer data
+    if (transfersBatch.length === transferSliceSize || index + 1 === domains.length) {
+      // At the last set, so regardless of how much we have we push
+      batchTransferTxs.push(transfersBatch);
     }
   }
 

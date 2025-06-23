@@ -12,17 +12,14 @@ import {
   ZNSSubRegistrar__factory,
   ZNSTreasury__factory,
   ERC20Mock__factory,
-  ZToken__factory,
-  MeowTokenMock__factory,
   ZNSStringResolver__factory,
 } from "../../../typechain/index";
-import { IZNSContracts, IZNSContractsCache } from "../../deploy/campaign/types";
+import { IZNSContractsCache } from "../../deploy/campaign/types";
 
 let znsCache : IZNSContractsCache | null = null;
 
 export const getZNS = async (
   signer : SignerWithAddress,
-  env : string
 ) : Promise<IZNSContractsCache> => {
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();

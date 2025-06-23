@@ -1,14 +1,17 @@
 // Gnosis Safe Modules
-import SafeApiKit, { ProposeTransactionProps, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse } from '@safe-global/api-kit'
+import SafeApiKit, { PendingTransactionsOptions, ProposeTransactionProps, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse } from '@safe-global/api-kit'
 import Safe, { SafeTransactionOptionalProps } from '@safe-global/protocol-kit'
 import { MetaTransactionData, OperationType, SafeSignature, SafeTransaction } from "@safe-global/types-kit";
 import { SAFE_SUPPORTED_NETWORKS } from './constants';
 import { SafeKitConfig } from './types';
 
+// TODO move to types
+export type SafeTransactionExtendedOptions = SafeTransactionOptionalProps & { execute ?: boolean }
+
 /**
- * Wrapper around the API and Protocol kits that Safe provides
+ * Wrapper around the safeApiKit and protocolKit that Safe provides
  * 
- * Intantiation is done through `init`
+ * Instantiation is done through `init`
  */
 export class SafeKit {
   apiKit : SafeApiKit;
@@ -54,7 +57,7 @@ export class SafeKit {
 
     const protocolKit = await Safe.init({
       provider: config.rpcUrl,
-      signer: process.env.TEST_SAFE_OWNER!, // TODO temp debug
+      signer: process.env.SAFE_OWNER!, // Must be private key, not address
       safeAddress: config.safeAddress
     });
 
@@ -63,6 +66,31 @@ export class SafeKit {
 
   async isOwner(address: string): Promise<boolean> {
     return this.protocolKit!.isOwner(address);
+  }
+
+  async createProposeSignedTxs (
+    to: string,
+    txData : string[],
+    options ?: SafeTransactionExtendedOptions
+  ) {
+    // Get the current nonce from the Safe to begin indexing
+    const currentNonce = await this.protocolKit.getNonce();
+
+    for (const [index, data] of txData.entries()) {
+      const proposalData = await this.createSignedTx(
+        to,
+        data,
+        {
+          nonce: currentNonce + index,
+          execute: false,
+          ...options
+        }
+      );
+      
+      // Because we always submit with `execute` as false, we know
+      // we will get proposal data back
+      await this.proposeTx(proposalData!);
+    }
   }
 
   /**
@@ -75,18 +103,24 @@ export class SafeKit {
   async createSignedTx (
     to : string,
     txData : string,
-    nonce ?: number
-  ) : Promise<ProposeTransactionProps> {
-    const [ safeTx, safeTxHash ] = await this.createTx(to, txData, nonce);
+    options ?: SafeTransactionExtendedOptions
+  ) : Promise<ProposeTransactionProps | void> {
+    const [ safeTx, safeTxHash ] = await this.createTx(to, txData, options);
     const signature = await this.signTx(safeTxHash);
 
-    return {
-      safeAddress: process.env.TEST_SAFE_ADDRESS!,
-      safeTransactionData: safeTx.data,
-      safeTxHash,
-      senderAddress: this.config.safeOwnerAddress,
-      senderSignature: signature.data
-    } as ProposeTransactionProps
+    if (options && options.execute) {
+      // Immediately execute the transaction instead of proposing it
+      const result = await this.protocolKit.executeTransaction(safeTx);
+      console.log("Transaction Hash: ", result.hash);
+    } else {
+      return {
+        safeAddress: this.config.safeAddress,
+        safeTransactionData: safeTx.data,
+        safeTxHash,
+        senderAddress: this.config.safeOwnerAddress,
+        senderSignature: signature.data
+      } as ProposeTransactionProps
+    }
   }
 
   /**
@@ -94,45 +128,41 @@ export class SafeKit {
    * 
    * @param to The address to send the transaction to
    * @param txData The data for the batch transaction
-   * @param nonce Optional nonce for the transaction, if not provided it will be fetched from the Safe
+   * @param options Optional
    * @returns The SafeTransaction and its hash
    */
   async createTx(
     to : string,
     txData : string,
-    nonce ?: number
+    options ?: SafeTransactionExtendedOptions,
   ) : Promise<[ SafeTransaction, string ]> {
     const safeTransaction : SafeMultisigTransactionEstimate = {
       to: to,
-      value: '0',
+      value: "0",
       data: txData,
       operation: OperationType.Call
     }
 
-
-    // TODO failing, so something is wrong likely
-    // calc estimate, give that much gas, and rough gas price estimate
-    const estimateTx : SafeMultisigTransactionEstimateResponse = await this.apiKit.estimateSafeTransaction(
+    // Estimate gas for transaction
+    // This throws an error if the inner transaction will revert
+    const estimateTx = await this.apiKit.estimateSafeTransaction( // TODO reimpl
       this.config.safeAddress,
       safeTransaction
     );
 
-    // manually giving values to avoid estimation for now
-    // safeTxGas: hre.ethers.parseEther("0.5").toString(), // in wei, grabbed from network manually
-    // gasPrice: , // in wei, grabbed from network manually
-    // gasToken ?? dont think we have to specify on sep
-
-    const options : SafeTransactionOptionalProps = {
-      safeTxGas: (BigInt(estimateTx.safeTxGas) * 10n).toString(),
+    // Provide gas manually instead of relying on defaults which can sometimes
+    // not be enough for complex transactions
+    const manualOptions : SafeTransactionOptionalProps = {
+      safeTxGas: (BigInt(estimateTx.safeTxGas) * 2n).toString(),
       baseGas: "160000",
-      refundReceiver: this.config.safeAddress, // should be the Safe address
-      nonce
+      refundReceiver: this.config.safeAddress,
+      ...options
     };
 
     // Get the current nonce for the Safe to create multiple transactions
     const safeTx = await this.protocolKit.createTransaction({
       transactions: [safeTransaction as MetaTransactionData],
-      options
+      options: manualOptions
     });
 
     const safeTxHash = await this.protocolKit.getTransactionHash(safeTx);
@@ -140,6 +170,11 @@ export class SafeKit {
     return [ safeTx, safeTxHash ] as [ SafeTransaction, string ];
   }
 
+  /**
+   * Sign the given transaction
+   * @param safeTxHash The transaction hash before signing
+   * @returns The signature created after signing
+   */
   async signTx(safeTxHash : string) : Promise<SafeSignature> {
     return await this.protocolKit.signHash(safeTxHash);
   }
@@ -149,20 +184,20 @@ export class SafeKit {
   ) : Promise<void> {
     await this.apiKit.proposeTransaction(txProposeData);
   }
+
+  // Execute all pending transactions in the Safe queue that have been confirmed
+  async executeAll(options ?: PendingTransactionsOptions) : Promise<void> { //TODO type for opts
+    const txs = await this.apiKit.getPendingTransactions(
+      this.config.safeAddress,
+      {
+        hasConfirmations: true,
+        ...options
+      }
+    );
+
+    for (let tx of txs.results) {
+      const result = await this.protocolKit.executeTransaction(tx);
+      console.log("Transaction Hash: ", result.hash);
+    }
+  }
 }
-
-
-
-
-/**
- * const apiKit = new SafeApiKit({
-    chainId: BigInt(process.env.ZCHAIN_ID!),
-    txServiceUrl: "https://prod.z-chain.keypersafe.xyz/api"
-  });
-
-  const protocolKit = await Safe.init({
-    provider: process.env.ZCHAIN_RPC_URL!,
-    signer: process.env.TEST_SAFE_OWNER!,
-    safeAddress: process.env.TEST_SAFE_ADDRESS!
-  });
- */

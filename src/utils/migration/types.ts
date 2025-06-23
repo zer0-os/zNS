@@ -7,7 +7,7 @@ export interface Domain {
   owner : User;
   domainToken : DomainToken;
   depth : number;
-  label : string;
+  label : string; // Subgraph uses `label`, contracts use both `name` and `label` for roots and subs, respectively
   isReclaimable : boolean;
   reclaimableAddress : string;
   isWorld : boolean;
@@ -25,6 +25,9 @@ export interface Domain {
   treasury : Treasury;
   creationBlock : number;
 }
+
+export type RootRegistrarArgs = Pick<Domain, "label" |  "owner" | "tokenURI" | "treasury">;
+export type SubRegistrarArgs = RootRegistrarArgs & Pick<Domain, "parentHash">;
 
 interface CurvePriceConfig {
   id : string;
@@ -68,13 +71,17 @@ export interface SubgraphError {
   error : string;
 }
 
-export interface DomainData {
-  parentHash : string;
-  label : string;
+export interface RootDomainData {
+  name : string;
   domainAddress : string;
   tokenUri : string;
   distrConfig : IDistributionConfig;
   paymentConfig : IPaymentConfig;
+}
+
+export interface SubdomainData extends Pick<RootDomainData, "domainAddress" | "tokenUri" | "distrConfig" | "paymentConfig"> {
+  parentHash : string;
+  label : string;
 }
 
 export interface RegisteredDomains {

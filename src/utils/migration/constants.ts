@@ -129,6 +129,11 @@ export const REGISTER_SUBS_BULK_ABI = {
           internalType: "enum IDistributionConfig.AccessType",
           name: "accessType",
           type: "uint8"
+        },
+        {
+          internalType: "bytes",
+          name: "priceConfig",
+          type: "bytes"
         }
       ],
       internalType: "struct IDistributionConfig.DistributionConfig",

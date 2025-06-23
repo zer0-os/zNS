@@ -82,24 +82,24 @@ const config : HardhatUserConfig = {
     //   url: `${process.env.MAINNET_RPC_URL}`,
     //   gasPrice: 80000000000,
     // },
-    // sepolia: {
-    //   url: `${process.env.SEPOLIA_RPC_URL}`,
-    //   timeout: 10000000,
-    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
-    //     `${process.env.TEST_SAFE_OWNER}`,
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-    //   //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-    //   ],
-    //   // // Must have to avoid instead failing as `invalid length for result data` error
-    //   // throwOnCallFailures: false, // not sure if this even works
-    // },
+    sepolia: {
+      url: `${process.env.SEPOLIA_RPC_URL}`,
+      timeout: 10000000,
+      accounts: [ // Comment out for CI, uncomment this when using Sepolia
+        `${process.env.SAFE_OWNER}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
+      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
+      ],
+      // // Must have to avoid instead failing as `invalid length for result data` error
+      // throwOnCallFailures: false, // not sure if this even works
+    },
     hardhat: {
       accounts: [
         {
-          privateKey: process.env.TEST_SAFE_OWNER!,
+          privateKey: process.env.TESTNET_PRIVATE_KEY!,
           balance: "10000000000000000000000", // 10k ETH
         },
       ],
@@ -107,17 +107,10 @@ const config : HardhatUserConfig = {
     zchain: {
       url: process.env.ZCHAIN_RPC_URL,
       accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.TEST_SAFE_OWNER}`,
+        `${process.env.TESTNET_PRIVATE_KEY}`,
       ],
       chainId: Number(process.env.ZCHAIN_ID!),
     },
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL,
-      timeout: 10000000,
-      accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.TEST_SAFE_OWNER}`,
-      ],
-    }
     // devnet: {
     //   // Add current URL that you spawned if not using automated spawning
     //   url: `${process.env.DEVNET_RPC_URL}`,
