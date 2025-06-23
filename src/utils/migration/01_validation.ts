@@ -32,7 +32,7 @@ const main = async () => {
   const subs = subdomainObjects.map(d => d as Domain);
 
   const dbName = process.env.MONGO_DB_NAME_WRITE;
-  if (!dbName) throw Error("No DB name given");
+  if (!dbName) throw Error("Missing MONGO_DB_NAME_WRITE environment variable");
 
   const uri = process.env.MONGO_DB_URI_WRITE;
   if (!uri) throw Error("No connection string given");
