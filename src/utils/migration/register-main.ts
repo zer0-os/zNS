@@ -3,7 +3,7 @@ import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
 import { connect } from "./helpers";
 import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
-import { proposeRegisterDomains } from "./proposeRegisterDomains";
+import { proposeRegistrations } from "./proposeRegisterDomains";
 import { getZNS } from "./zns-contract-data";
 
 /**
@@ -86,7 +86,7 @@ const main = async () => {
       console.log("Proposing root domain registrations...");
       const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
 
-      transfers = await proposeRegisterDomains(
+      transfers = await proposeRegistrations(
         await zns.rootRegistrar.getAddress(),
         safeKit,
         rootDomains,
@@ -99,15 +99,23 @@ const main = async () => {
       console.log("Proposing subdomain registrations...");
       const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
 
-      transfers = await proposeRegisterDomains(
-        await zns.subRegistrar.getAddress(),
-        safeKit,
-        subdomains.filter(d => d.depth === 1),
-        SUBDOMAIN_BULK_SELECTOR
-      );
+      let depth = 1;
+      let atDepth = subdomains.filter(d => d.depth === depth);
+      while (atDepth.length > 0) {
+        transfers = await proposeRegistrations(
+          await zns.subRegistrar.getAddress(),
+          safeKit,
+          subdomains.filter(d => d.depth === depth),
+          SUBDOMAIN_BULK_SELECTOR
+        );
 
-      // Store transfers for after execution of registrations
-      client.collection(`${SUB_COLL_NAME}-transfers`).insertMany(transfers);
+        // Store transfers for after execution of registrations
+        client.collection(`${SUB_COLL_NAME}-transfers`).insertMany(transfers);
+
+        depth++;
+        atDepth = subdomains.filter(d => d.depth === depth);
+      }
+
       break;
     case "transfer":
       // Grab stored transfer txs from earlier runs

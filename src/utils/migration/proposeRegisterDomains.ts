@@ -6,7 +6,7 @@ import { createBatches } from "./helpers";
 // break apart subs by depth, ensure proposals
 // for depth 2 or 3 are not sent until depth 1 is executed
 // track how many batches are 1,2,3
-export const proposeRegisterDomains = async (
+export const proposeRegistrations = async (
   to : string,
   safeKit : SafeKit,
   domains : Array<Domain>,
