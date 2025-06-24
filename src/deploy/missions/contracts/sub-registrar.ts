@@ -58,7 +58,7 @@ IZNSContracts
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return !needs;
+    return needs as boolean;
   }
 
   async postDeploy () {
