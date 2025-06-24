@@ -28,6 +28,7 @@ export interface IZNSEnvironment {
   TENDERLY_ACCESS_KEY ?: string;
   TENDERLY_DEVNET_TEMPLATE ?: string;
   DEVNET_RPC_URL ?: string;
+  PAUSE_REGISTRATION ?: string;
   GOVERNOR_ADDRESSES ?: string;
   ADMIN_ADDRESSES ?: string;
   MOCK_MEOW_TOKEN : string;

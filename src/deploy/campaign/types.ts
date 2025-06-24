@@ -19,6 +19,7 @@ import {
 export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {
   env : TEnvironment;
   deployAdmin : SignerWithAddress;
+  pauseRegistration ?: boolean;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {

@@ -23,8 +23,8 @@ IZNSContracts
   contractName = znsNames.rootRegistrar.contract;
   instanceName = znsNames.rootRegistrar.instance;
 
-  isRegistrar ?: boolean;
-  needsPause ?: boolean;
+  private isRegistrar ?: boolean;
+  private needsPause ?: boolean;
 
   async deployArgs () : Promise<TDeployArgs> {
     const {
@@ -73,7 +73,7 @@ IZNSContracts
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return needs;
+    return !needs;
   }
 
   async postDeploy () {

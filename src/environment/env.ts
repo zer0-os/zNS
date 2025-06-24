@@ -43,6 +43,7 @@ export const environment : IZNSEnvironment = {
   DEVNET_RPC_URL: "",
 
   // Contracts Config:
+  PAUSE_REGISTRATION: "false",
   // ! System Administration !
   GOVERNOR_ADDRESSES: "",
   ADMIN_ADDRESSES: "",

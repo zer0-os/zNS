@@ -21,7 +21,7 @@ import {
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  MONGO_URI_ERR, encodePriceConfig,
+  MONGO_URI_ERR, encodePriceConfig, REGISTRATION_PAUSED_ERR, distrConfigEmpty, paymentConfigEmpty,
 } from "./helpers";
 import {
   MeowTokenDM,
@@ -67,6 +67,52 @@ describe("Deploy Campaign Test", () => {
 
   before(async () => {
     [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
+  });
+
+  describe("Deploy", () => {
+    it("should pause registration on both Registrars if PAUSE_REGISTRATION env variable is set to true", async () => {
+      process.env.PAUSE_REGISTRATION = "true";
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar, subRegistrar } = campaign;
+
+      expect(await rootRegistrar.registrationPaused()).to.be.true;
+      expect(await subRegistrar.registrationPaused()).to.be.true;
+
+      // make sure functions fail when called with expects
+      await expect(
+        rootRegistrar.connect(userA).registerRootDomain({
+          name: "test",
+          domainAddress: zeroVault.address,
+          tokenURI: "https://example.com",
+          tokenOwner: deployAdmin,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        })
+      ).to.be.revertedWithCustomError(rootRegistrar, REGISTRATION_PAUSED_ERR);
+
+      await expect(
+        subRegistrar.connect(userA).registerSubdomain({
+          parentHash: ethers.ZeroHash,
+          label: "test",
+          domainAddress: ethers.ZeroAddress,
+          tokenURI: "https://example.com",
+          tokenOwner: deployAdmin,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        })
+      ).to.be.revertedWithCustomError(subRegistrar, REGISTRATION_PAUSED_ERR);
+
+      await campaign.dbAdapter.dropDB();
+      process.env.PAUSE_REGISTRATION = "false";
+    });
   });
 
   describe("MEOW Token Ops", () => {

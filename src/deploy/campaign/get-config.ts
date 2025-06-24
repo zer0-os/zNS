@@ -102,6 +102,7 @@ export const getConfig = async ({
     confirmationsN: Number(process.env.CONFIRMATION_N),
     srcChainName: SupportedChains.z,
     deployAdmin: deployer,
+    pauseRegistration: process.env.PAUSE_REGISTRATION === "true",
     governorAddresses,
     adminAddresses,
     domainToken: {
