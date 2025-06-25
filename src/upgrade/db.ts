@@ -43,7 +43,7 @@ export const updateDbAndVerifyAll = async (
       newDbVersion,
     });
 
-    if (hre.network.name !== "hardhat") {
+    if (hre.network.name !== "hardhat" && contractName !== znsNames.accessController.contract) {
       await hre.run("verify:verify", {
         address: implAddress,
       });
