@@ -15,7 +15,7 @@ import {
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
+
 
 describe("DeployCampaign - Integration", () => {
   // Minters
