@@ -28,7 +28,7 @@ export const getZNS = async (
       if (env === "prod") {
         return contract.name === znsNames.meowToken.contract;
       } else {
-        contract.name === znsNames.meowToken.contractMock;
+        return contract.name === znsNames.meowToken.contractMock;
       }
     });
 
