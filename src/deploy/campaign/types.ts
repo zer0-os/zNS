@@ -28,6 +28,7 @@ export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddr
     defaultRoyaltyReceiver : string;
     defaultRoyaltyFraction : bigint;
   };
+  rootPaymentType : bigint;
   rootPricerType : string;
   rootPriceConfig : string;
   zeroVaultAddress : string;
