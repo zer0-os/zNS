@@ -6,7 +6,18 @@ import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
 import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 
-
+/**
+ * Reqiuired .env vars
+ * - MAINNET_RPC_URL
+ * - MONGO_DB_URI - For read only access to mainnet contracts
+ * - MONGO_DB_NAME
+ * - MONGO_DB_VERSION
+ * - MONGO_DB_URI_WRITE - For writing valid collections to a separate database
+ * - MONGO_DB_NAME_WRITE
+ * 
+ * // env-level?
+ * 
+ */
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
@@ -41,8 +52,6 @@ const main = async () => {
   let index = 0;
   for(const domain of [...roots, ...subs]) {
     try {
-      await validateDomain(domain, zns);
-
       if (domain.isWorld) {
         validRoots.push({ ...domain } as Domain);
       } else {

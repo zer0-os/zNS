@@ -9,6 +9,29 @@ export const validateDomain = async (
   zns : IZNSContracts,
 ) => {
   // For speed in processing we group promises together
+  // need to know factually it was a revoked parent for certain subdomains
+  // check phash for existence, if domain was revoked, add to appropriate coll with 0x0 owner
+  // in transfer script check if owner is 0 then dont transfer
+  let resolvedParentHash;
+
+  if (domain.parent && domain.parent.id) {
+    resolvedParentHash = domain.parent.id;
+  } else if (domain.parentHash) {
+    resolvedParentHash = domain.parentHash;
+  }
+
+  assert.ok(
+    resolvedParentHash || domain.depth === 0,
+    `Subdomain with no parent information found
+    Label: ${domain.label},
+    DomainHash: ${domain.id},
+    TokenId: ${domain.tokenId},
+    Owner: ${domain.owner.id}`
+  )
+
+  // this check gives type safety downstream
+  if (!resolvedParentHash) throw Error("shouldnt ever hit this error")
+
   const promises = [
     zns.registry.getDomainOwner(domain.id),
     zns.domainToken.ownerOf(domain.tokenId),
@@ -69,7 +92,7 @@ export const validateDomain = async (
   // );
 
   if (domain.isWorld) {
-    assert.equal(domain.parentHash, ZeroHash, `Domain ${domain.id} 'isWorld' is true, but has parent hash`);
+    assert.equal(resolvedParentHash, ZeroHash, `Domain ${domain.id} 'isWorld' is true, but has parent hash ${resolvedParentHash}`);
     assert.ok(!(!!domain.parent), `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`);
     assert.ok(domain.depth === 0, `Domain ${domain.id} 'isWorld' is true, but 'depth' is not 0`);
   } else {
@@ -77,7 +100,7 @@ export const validateDomain = async (
     // even if `isRevoked` is true
     // Not important. Could be a bug in the subgraph
     // assert.ok(!!domain.parent, `Domain ${domain.id} 'isWorld' is false, but 'parent' is undefined`);
-    assert.notEqual(domain.parentHash, ZeroHash,`Domain ${domain.id} 'isWorld' is false, but 'parentHash' is 0x0`);
+    assert.notEqual(resolvedParentHash, ZeroHash,`Domain ${domain.id} 'isWorld' is false, but 'resolvedParentHash' is 0x0`);
     assert.ok(domain.depth > 0,`Domain ${domain.id} 'isWorld' is false, but 'depth' is 0`);
   }
 };

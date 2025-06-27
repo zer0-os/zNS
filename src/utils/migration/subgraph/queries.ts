@@ -80,6 +80,7 @@ export const getDomains = gql`
         label
         depth
         isWorld
+        parentHash
       }
       accessType
       pricerContract
