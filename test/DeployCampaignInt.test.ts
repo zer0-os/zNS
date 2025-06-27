@@ -21,7 +21,7 @@ import {
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  MONGO_URI_ERR, encodePriceConfig, REGISTRATION_PAUSED_ERR, distrConfigEmpty, paymentConfigEmpty,
+  MONGO_URI_ERR, encodePriceConfig, REGISTRATION_PAUSED_ERR, distrConfigEmpty, paymentConfigEmpty, PaymentType,
 } from "./helpers";
 import {
   MeowTokenDM,
@@ -70,6 +70,16 @@ describe("Deploy Campaign Test", () => {
   });
 
   describe("Deploy", () => {
+    let envInitial : string;
+
+    beforeEach(async () => {
+      envInitial = JSON.stringify(process.env);
+    });
+
+    afterEach(async () => {
+      process.env = JSON.parse(envInitial);
+    });
+
     it("should pause registration on both Registrars if PAUSE_REGISTRATION env variable is set to true", async () => {
       process.env.PAUSE_REGISTRATION = "true";
 
@@ -111,7 +121,46 @@ describe("Deploy Campaign Test", () => {
       ).to.be.revertedWithCustomError(subRegistrar, REGISTRATION_PAUSED_ERR);
 
       await campaign.dbAdapter.dropDB();
-      process.env.PAUSE_REGISTRATION = "false";
+    });
+
+    it("should set `rootPaymentType` correctly based on the ENV var", async () => {
+      // set the environment to get the appropriate variables
+      process.env.ROOT_PAYMENT_TYPE = PaymentType.DIRECT.toString();
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar } = campaign;
+
+      expect(await rootRegistrar.rootPaymentType()).to.equal(PaymentType.DIRECT);
+
+      await campaign.dbAdapter.dropDB();
+    });
+
+    it("should set `rootPricerType` correctly based on the ENV var", async () => {
+      // set the environment to get the appropriate variables
+      process.env.ROOT_PRICER_TYPE = PricerTypes.fixed;
+      process.env.FIXED_PRICE = "1000000000000000"; // 0.001 ETH
+      process.env.FIXED_FEE_PERC = "17"; // 10% in basis points
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar, fixedPricer } = campaign;
+
+      expect(await rootRegistrar.rootPricer()).to.equal(fixedPricer.target);
+
+      await campaign.dbAdapter.dropDB();
     });
   });
 
@@ -130,6 +179,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
+        rootPaymentType: PaymentType.STAKE,
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
@@ -415,6 +465,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
+        rootPaymentType: PaymentType.STAKE,
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
@@ -907,6 +958,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
+        rootPaymentType: PaymentType.STAKE,
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
@@ -1099,6 +1151,7 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
+        rootPaymentType: PaymentType.STAKE,
         rootPricerType: PricerTypes.curve,
         rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,

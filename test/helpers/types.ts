@@ -79,6 +79,7 @@ export interface RegistrarConfig {
   curvePriceConfig : string;
   treasuryAddress : string;
   domainTokenAddress : string;
+  rootPaymentType : bigint;
 }
 
 export interface IZNSContractsLocal {
@@ -102,6 +103,7 @@ export interface DeployZNSParams {
   registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
+  rootPaymentType ?: bigint;
 }
 
 export interface IDistributionConfig {

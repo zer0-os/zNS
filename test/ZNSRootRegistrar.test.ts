@@ -32,7 +32,7 @@ import {
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
   DIVISION_BY_ZERO_ERR,
   INVALID_CONFIG_LENGTH_ERR,
-  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR,
+  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR, createEncodeFixedPriceConfig,
 } from "./helpers";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
@@ -78,6 +78,8 @@ describe("ZNSRootRegistrar", () => {
   let mongoAdapter : MongoDBAdapter;
 
   const defaultDomain = normalizeName("wilder");
+
+  let directPaymentDomainHash : string;
 
   beforeEach(async () => {
     // zeroVault address is used to hold the fee charged to the user when registering
@@ -192,6 +194,7 @@ describe("ZNSRootRegistrar", () => {
         operator.address,
         operator.address,
         operator.address,
+        0n,
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
@@ -274,6 +277,7 @@ describe("ZNSRootRegistrar", () => {
         DEFAULT_CURVE_PRICE_CONFIG_BYTES,
         await zns.treasury.getAddress(),
         await zns.domainToken.getAddress(),
+        0n,
       ],
       {
         kind: "uups",
@@ -292,6 +296,7 @@ describe("ZNSRootRegistrar", () => {
       ZeroHash,
       randomUser.address,
       randomUser.address,
+      0n,
     );
 
     await expect(tx).to.be.revertedWithCustomError(
@@ -702,6 +707,131 @@ describe("ZNSRootRegistrar", () => {
 
       expect(staked).to.eq(expectedPrice);
       expect(token).to.eq(await zns.meowToken.getAddress());
+    });
+
+    it("Takes direct payment when `rootPaymentType` is set to DIRECT", async () => {
+      // change `rootPaymentType` to DIRECT
+      await zns.rootRegistrar.connect(deployer).setRootPaymentType(PaymentType.DIRECT);
+
+      const balanceBeforeUser = await zns.meowToken.balanceOf(user.address);
+      const balanceBeforeVault = await zns.meowToken.balanceOf(zeroVault.address);
+      const { beneficiary } = await zns.treasury.paymentConfigs(ethers.ZeroHash);
+      expect(beneficiary).to.eq(zeroVault.address);
+
+      const directPaymentDomainName = "direct-payment";
+
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: directPaymentDomainName,
+      });
+
+      directPaymentDomainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(directPaymentDomainHash);
+      expect(staked).to.eq(0n);
+      expect(token).to.eq(hre.ethers.ZeroAddress);
+
+      const {
+        expectedPrice,
+        stakeFee,
+        totalPrice,
+      } = getPriceObject(directPaymentDomainName, DEFAULT_CURVE_PRICE_CONFIG);
+
+      const priceConfig = await zns.rootRegistrar.rootPriceConfig();
+      const decodedPriceConfig = await zns.curvePricer.decodePriceConfig(priceConfig);
+      expect(decodedPriceConfig.baseLength).to.eq(DEFAULT_CURVE_PRICE_CONFIG.baseLength);
+      expect(decodedPriceConfig.maxLength).to.eq(DEFAULT_CURVE_PRICE_CONFIG.maxLength);
+      expect(decodedPriceConfig.maxPrice).to.eq(DEFAULT_CURVE_PRICE_CONFIG.maxPrice);
+      expect(decodedPriceConfig.curveMultiplier).to.eq(DEFAULT_CURVE_PRICE_CONFIG.curveMultiplier);
+      expect(decodedPriceConfig.precisionMultiplier).to.eq(DEFAULT_CURVE_PRICE_CONFIG.precisionMultiplier);
+      expect(decodedPriceConfig.feePercentage).to.eq(DEFAULT_CURVE_PRICE_CONFIG.feePercentage);
+      expect(priceConfig).to.eq(DEFAULT_CURVE_PRICE_CONFIG_BYTES);
+
+      const { price, stakeFee: stakeFeeFromPricer } = await zns.curvePricer.getPriceAndFee(
+        priceConfig,
+        directPaymentDomainName,
+        true
+      );
+      expect(price).to.eq(expectedPrice);
+      expect(stakeFeeFromPricer).to.eq(stakeFee);
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: balanceBeforeUser,
+        userAddress: user.address,
+        target: totalPrice,
+      });
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: balanceBeforeVault,
+        userAddress: zeroVault.address,
+        target: totalPrice,
+        shouldDecrease: false,
+      });
+
+      await zns.rootRegistrar.connect(deployer).setRootPaymentType(PaymentType.STAKE);
+    });
+
+    // eslint-disable-next-line max-len
+    it("Stakes the correct amount when `rootPricer` is set to Fixed Pricer and `rootPriceConfig` to fixed price config", async () => {
+      const newFixedPricerConfig : IFixedPriceConfig = {
+        price: 123n,
+        feePercentage: 19n,
+      };
+
+      await zns.rootRegistrar.connect(deployer).setRootPricerAndConfig(
+        await zns.fixedPricer.getAddress(),
+        createEncodeFixedPriceConfig(newFixedPricerConfig),
+      );
+
+      const balanceBeforeUser = await zns.meowToken.balanceOf(user.address);
+      const balanceBeforeVault = await zns.meowToken.balanceOf(zeroVault.address);
+      const balanceBeforeTreasury = await zns.meowToken.balanceOf(await zns.treasury.getAddress());
+
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: "fixed-price",
+      });
+
+      const domainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
+      expect(staked).to.eq(newFixedPricerConfig.price);
+      expect(token).to.eq(zns.meowToken.target);
+
+      const { totalPrice, stakeFee, expectedPrice } = getPriceObject(defaultDomain, newFixedPricerConfig);
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: balanceBeforeUser,
+        userAddress: user.address,
+        target: totalPrice,
+      });
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: balanceBeforeVault,
+        userAddress: zeroVault.address,
+        target: stakeFee,
+        shouldDecrease: false,
+      });
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: balanceBeforeTreasury,
+        userAddress: await zns.treasury.getAddress(),
+        target: expectedPrice,
+        shouldDecrease: false,
+      });
     });
 
     it("Sets the correct data in Registry", async () => {
@@ -1153,6 +1283,54 @@ describe("ZNSRootRegistrar", () => {
       const balanceAfter = await zns.meowToken.balanceOf(user.address);
 
       expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
+    });
+
+    it("Revokes without returning funds if domain was registered with DIRECT payment type", async () => {
+      // change `rootPaymentType` to DIRECT
+      await zns.rootRegistrar.connect(deployer).setRootPaymentType(PaymentType.DIRECT);
+
+      const directPaymentDomainName = "direct-payment";
+
+      await defaultRootRegistration({
+        user,
+        zns,
+        domainName: directPaymentDomainName,
+      });
+
+      directPaymentDomainHash = await getDomainHashFromEvent({
+        zns,
+        user,
+      });
+
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(directPaymentDomainHash);
+      expect(staked).to.eq(0n);
+      expect(token).to.eq(hre.ethers.ZeroAddress);
+
+      const userBalanceBefore = await zns.meowToken.balanceOf(user.address);
+      const treasuryBalanceBefore = await zns.meowToken.balanceOf(await zns.treasury.getAddress());
+
+      const owner = await zns.registry.getDomainOwner(directPaymentDomainHash);
+      expect(owner).to.equal(user.address);
+
+      // Revoke the domain and then verify
+      await zns.rootRegistrar.connect(user).revokeDomain(directPaymentDomainHash);
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: userBalanceBefore,
+        userAddress: user.address,
+        target: 0n, // no funds returned
+      });
+
+      await checkBalance({
+        token: zns.meowToken,
+        balanceBefore: treasuryBalanceBefore,
+        userAddress: await zns.treasury.getAddress(),
+        target: 0n, // no funds returned
+      });
+
+      // change `rootPaymentType` back to STAKE
+      await zns.rootRegistrar.connect(deployer).setRootPaymentType(PaymentType.STAKE);
     });
 
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
