@@ -1,12 +1,13 @@
 import { Db } from "mongodb";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { getDBAdapter } from "./database";
-import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
+import { CreateBatchesResponse, Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs, SafeTransactionOptionsExtended } from "./types";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
+import { getZnsLogger } from '../../deploy/get-logger';
 
 // Connect to the MongoDB database to read domain data for migration
-export const connect = async (
+export const connectToDb = async (
   mongoUri?: string,
   mongoDbName?: string
 ) : Promise<Db> => {
@@ -26,25 +27,25 @@ export const createBatches = (
   functionSelector ?: string,
   registerSliceSize : number = 50,
   transferSliceSize : number = 500
-) => {
+) : CreateBatchesResponse | Array<IRootDomainRegistrationArgs[]> | Array<ISubdomainRegisterArgs[]> => {
   if (functionSelector) {
-    return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize);
+    return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize) as CreateBatchesResponse;
   } else {
-    return createBatchesEOA(domains, registerSliceSize);
+    return createBatchesEOA(domains, registerSliceSize) as Array<IRootDomainRegistrationArgs[]> | Array<ISubdomainRegisterArgs[]>;
   }
 }
 
+// Create transaction batches used in the `register-bulk-eoa.ts` script
 const createBatchesEOA = (
   domains : Array<Domain>,
   sliceSize : number = 50
-) : Array<Array<IRootDomainRegistrationArgs | ISubdomainRegisterArgs>> => {
-  let txs : Array<IRootDomainRegistrationArgs | ISubdomainRegisterArgs> = [];
-  const batchTxs : Array<Array<IRootDomainRegistrationArgs | ISubdomainRegisterArgs>> = [];
+) => {
+  let txs : IRootDomainRegistrationArgs[] | ISubdomainRegisterArgs[] = [];
+  let batchTxs : Array<IRootDomainRegistrationArgs[] | ISubdomainRegisterArgs[]> = [];
 
-  // Create batch txs for root domains
-  let count = 0;
-  for (const domain of domains) {
-    let domainArg : Partial<IRootDomainRegistrationArgs | ISubdomainRegisterArgs> = {
+  // Create batch txs for domains
+  for (const [index, domain] of domains.entries()) {
+    let domainArg = {
       name : domain.label,
       domainAddress: domain.address,
       tokenOwner: domain.owner.id,
@@ -64,18 +65,17 @@ const createBatchesEOA = (
     // "label" is parameter name for subdomain registration, "name" for root domains
     // but "label" is used for both in the subgraph
     if (domain.parentHash !== ZeroHash) {
-      domainArg = { parentHash: domain.parentHash, label: domain.label, ...domainArg };
-      txs.push(domainArg as ISubdomainRegisterArgs);
+      const { name, ...rest } = domainArg;
+      const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest };
+      (txs as ISubdomainRegisterArgs[]).push(subArg as ISubdomainRegisterArgs);
     } else {
-      txs.push(domainArg as IRootDomainRegistrationArgs);
+      (txs as IRootDomainRegistrationArgs[]).push(domainArg as IRootDomainRegistrationArgs);
     }
 
-    if (txs.length % sliceSize === 0) {
+    if (batchTxs.length === sliceSize || index + 1 === domains.length) {
       batchTxs.push(txs);
-      txs = [];
+      batchTxs = [];
     }
-
-    count++;
   }
 
   return batchTxs;
@@ -86,12 +86,12 @@ const createBatchesSafe = (
   functionSelector : string,
   registerSliceSize : number,
   transferSliceSize : number
-) : [ Array<string>, Array<Array<string>> ] => {
+) : CreateBatchesResponse => {
   // For registration we already have bulk functions, so each push to this array is an encoded batch
   let batchRegisterTxs : Array<string> = [];
 
   // For transfer we don't have bulk functions, so each push to this array is an array of encoded transfers
-  let batchTransferTxs : Array<Array<string>> = [];
+  let batchTransferTxs : Array<string[]> = [];
 
   // Get safe address being used
   const safeAddress = process.env.SAFE_ADDRESS;
@@ -99,10 +99,9 @@ const createBatchesSafe = (
     throw Error("No Safe address set in environment variables");
   }
 
-  let registrationBatch : Array<any> = []; // TODO `any` for now, debug, remove later no explicit any
-  let transfersBatch : Array<any> = [];
+  let registrationBatch : Array<any> = [];
+  let transfersBatch : Array<string> = [];
 
-  // get domains we need to fit in gas block, then make tx of it and find estimation
   for (const [index, domain] of domains.entries()) {
     let args = {
       name: domain.label,
@@ -123,8 +122,14 @@ const createBatchesSafe = (
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
       // Subdomain, check parentHash
-      if (domain.parentHash === ZeroHash) {
-        throw Error("Subdomain registration requires parent hash to be set");
+      let parentHash;
+
+      if (domain.parentHash && domain.parentHash !== ZeroHash) {
+        parentHash = domain.parentHash;
+      } else if (domain.parent?.id && domain.parent?.id !== ZeroHash) {
+        parentHash = domain.parent?.id
+      } else {
+        throw Error("No parentHash for subdomain. Registration requires parent hash to be set");
       }
 
       // remove `name` from args, leave rest of args in `rest`
@@ -180,3 +185,29 @@ const createBatchesSafe = (
 
   return [ batchRegisterTxs, batchTransferTxs ]
 }
+
+
+// Get the logger instance for the decorator function below
+const logger = getZnsLogger();
+
+// Function decorator to log each execution
+export function LogExecution(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+
+  descriptor.value = function(...args: any[]) {
+    const argsCopy = { ...args };
+    for (let [i,arg] of args.entries()) {
+      if (typeof arg === "string" && arg.length > 42) {
+        // // We slice txData bytes to avoid unnecessarily long logs
+        argsCopy[i] = argsCopy[i].slice(0,10);
+        logger.info(`Executing method ${propertyKey} with args`, args);
+      }
+    }
+
+    const result = originalMethod.apply(this, args);
+    return result;
+  };
+
+  return descriptor;
+}
+

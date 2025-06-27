@@ -1,6 +1,9 @@
 import { Addressable } from "ethers";
 import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
 import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
+import { SafeTransaction } from "@safe-global/types-kit";
+import { ProposeTransactionProps } from "@safe-global/api-kit";
+import { Db } from "mongodb";
 
 export interface Domain {
   id : string;
@@ -158,13 +161,31 @@ export interface ISubdomainRegisterArgs extends Omit<IRootDomainRegistrationArgs
   label: string
 }
 
+/**
+ * The configuration to specify a SafeKit instance
+ */
 export interface SafeKitConfig {
   network : string,
   chainId : bigint;
   rpcUrl : string;
   safeAddress : string;
   safeOwnerAddress : string;
+  delay : number;
+  retryAttempts : number;
   txServiceUrl ?: string; // Optional when using a supported network
+  db ?: Db
 }
 
-export type SafeTransactionExtendedOptions = SafeTransactionOptionalProps & { execute ?: boolean }
+export interface SafeRetryOptions {
+  attempts: number;
+  delayMs: number;
+  exponential?: boolean;
+}
+
+export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & { execute ?: boolean, numPendingTxs ?: number }
+export type ProposeTransactionPropsExtended = ProposeTransactionProps & { safeTx: SafeTransaction }
+
+// Batch registerations are simply a string array,
+// but batch transfers aren't possible on the contract
+// so we group single transactions into a second array
+export type CreateBatchesResponse = [ string[], string[][] ];

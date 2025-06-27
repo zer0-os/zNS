@@ -1,0 +1,4 @@
+yarn run v1.22.19
+$ C:\Users\j_ear\Documents\Code\zNS\node_modules\.bin\hardhat run src/utils/migration/register-main.ts --network sepolia
+Executing tx #72 with hash 0xa1bddc0a83d15ad256cf279c9a01f0c9d909ff860e6e02a7874c4b8c7ab4bd90
+Done in 13.53s.

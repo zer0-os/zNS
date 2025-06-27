@@ -3,7 +3,7 @@ import { DeployZNSParams, } from "../../../test/helpers";
 import { REGISTER_ROOT_BULK_ABI, REGISTER_SUBS_BULK_ABI, ROOT_COLL_NAME, SAFE_TRANSFER_FROM_ABI, SUB_COLL_NAME } from "./constants";
 import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
-import { connect } from "./helpers";
+import { connectToDb } from "./helpers";
 import { IZNSContractsCache } from "../../deploy/campaign/types";
 import { getZNS } from "./zns-contract-data";
 import * as fs from "fs";
@@ -26,7 +26,7 @@ const main = async () => {
   const zns = await getZNS(migrationAdmin);
 
   // Get MongoDB client
-  const client = await connect();
+  const client = await connectToDb();
 
   // Get all root domain documents from collection
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
