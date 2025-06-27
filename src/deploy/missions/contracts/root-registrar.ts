@@ -48,6 +48,7 @@ IZNSContracts
       config.rootPriceConfig,
       await treasury.getAddress(),
       await domainToken.getAddress(),
+      config.rootPaymentType,
     ];
   }
 
