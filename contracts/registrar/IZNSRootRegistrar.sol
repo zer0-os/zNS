@@ -66,6 +66,13 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
+     * @notice Reverted when trying to set new `rootPaymentType` that is not supported.
+     *
+     * @param paymentType The payment type passed to the setter
+     */
+    error InvalidRootPaymentType(PaymentType paymentType);
+
+    /**
      * @notice Emitted when a NEW domain is registered.
      *
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.
@@ -160,13 +167,21 @@ interface IZNSRootRegistrar is IDistributionConfig {
      */
     event SubRegistrarSet(address subRegistrar);
 
+    /**
+     * @notice Emitted when the `rootPaymentType` is set in state.
+     *
+     * @param newRootPaymentType The new type of payment for root domains
+     */
+    event RootPaymentTypeSet(PaymentType newRootPaymentType);
+
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
         bytes memory priceConfig_,
         address treasury_,
-        address domainToken_
+        address domainToken_,
+        PaymentType rootPaymentType_
     ) external;
 
     function registerRootDomain(
@@ -196,6 +211,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         bytes memory priceConfig_
     ) external;
 
+    function setRootPaymentType(PaymentType rootPaymentType_) external;
+
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
@@ -209,6 +226,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
     function rootPricer() external returns (IZNSPricer);
 
     function rootPriceConfig() external returns (bytes memory);
+
+    function rootPaymentType() external returns (PaymentType);
 
     function treasury() external returns (IZNSTreasury);
 
