@@ -1,17 +1,21 @@
 ## CoreRegisterArgs
 
+Stake fee is 0x0 for anything other than subdomain under a parent with Stake Payment
+parent hash will be 0x0 for root domain
+
 ```solidity
 struct CoreRegisterArgs {
   bytes32 parentHash;
   bytes32 domainHash;
-  address registrant;
+  bool isStakePayment;
+  address domainOwner;
+  address tokenOwner;
   address domainAddress;
   uint256 price;
   uint256 stakeFee;
+  struct PaymentConfig paymentConfig;
   string label;
   string tokenURI;
-  bool isStakePayment;
-  struct PaymentConfig paymentConfig;
 }
 ```
 
@@ -20,36 +24,52 @@ struct CoreRegisterArgs {
 **IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.**
 
 Below are docs for the types in this file:
- - `OwnerOf`: Enum signifying ownership of ZNS entities
-     + NAME: The owner of the Name only
-     + TOKEN: The owner of the Token only
-     + BOTH: The owner of both the Name and the Token
  - `CoreRegisterArgs`: Struct containing all the arguments required to register a domain
  with ZNSRootRegistrar.coreRegister():
      + `parentHash`: The hash of the parent domain (0x0 for root domains)
      + `domainHash`: The hash of the domain to be registered
-     + `label`: The label of the domain to be registered
-     + `registrant`: The address of the user who is registering the domain
+     + `isStakePayment`: A flag for whether the payment is a stake payment or not
+     + `domainOwner`: The address that will be set as owner in Registry record
+     + `tokenOwner`: The address that will be set as owner in DomainToken contract
+     + `domainAddress`: The address to which the domain will be resolved to
      + `price`: The determined price for the domain to be registered based on parent rules
      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
-     + `domainAddress`: The address to which the domain will be resolved to
+     + `paymentConfig`: The payment config for the domain to be registered
+     + `label`: The label of the domain to be registered
      + `tokenURI`: The tokenURI for the domain to be registered
-     + `isStakePayment`: A flag for whether the payment is a stake payment or not
 
-### OwnerOf
+### RootDomainRegistrationArgs
 
 ```solidity
-enum OwnerOf {
-  NAME,
-  TOKEN,
-  BOTH
+struct RootDomainRegistrationArgs {
+  string name;
+  address domainAddress;
+  address tokenOwner;
+  string tokenURI;
+  struct IDistributionConfig.DistributionConfig distrConfig;
+  struct PaymentConfig paymentConfig;
 }
 ```
+
+### AlreadyTokenOwner
+
+```solidity
+error AlreadyTokenOwner(bytes32 domainHash, address currentOwner)
+```
+
+Reverted when trying to assign a token to address that is already an owner
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| domainHash | bytes32 | The hash of the domain |
+| currentOwner | address | The address that is already an owner of the token |
 
 ### DomainRegistered
 
 ```solidity
-event DomainRegistered(bytes32 parentHash, bytes32 domainHash, uint256 tokenId, string label, address registrant, address domainAddress)
+event DomainRegistered(bytes32 parentHash, bytes32 domainHash, string label, uint256 tokenId, string tokenURI, address domainOwner, address tokenOwner, address domainAddress)
 ```
 
 Emitted when a NEW domain is registered.
@@ -65,9 +85,11 @@ and can be set at a later time by the domain owner.
 | ---- | ---- | ----------- |
 | parentHash | bytes32 | The hash of the parent domain (0x0 for root domains) |
 | domainHash | bytes32 | The hash of the domain registered |
-| tokenId | uint256 | The tokenId of the domain registered |
 | label | string | The name as the last part of the full domain string (level) registered |
-| registrant | address | The address that called `ZNSRootRegistrar.registerRootDomain()` |
+| tokenId | uint256 | The tokenId of the domain registered |
+| tokenURI | string | The tokenURI of the domain registered |
+| domainOwner | address | The address became owner in Registry record |
+| tokenOwner | address | The optinal address the token will be assigned to, to offer domain usage without ownership |
 | domainAddress | address | The domain address of the domain registered |
 
 ### DomainRevoked
@@ -86,34 +108,51 @@ Emitted when a domain is revoked.
 | owner | address | The address that called `ZNSRootRegistrar.sol.revokeDomain()` and domain owner |
 | stakeRefunded | bool | A flag for whether the stake was refunded or not |
 
-### DomainReclaimed
+### DomainTokenReassigned
 
 ```solidity
-event DomainReclaimed(bytes32 domainHash, address registrant)
+event DomainTokenReassigned(bytes32 domainHash, address newOwner)
 ```
 
-Emitted when an ownership of the Name is reclaimed by the Token owner.
+Emitted when the hash (registry record) owner is sending a token to another address
+through the RootRegistrar.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | domainHash | bytes32 | The hash of the domain reclaimed |
-| registrant | address | The address that called `ZNSRootRegistrar.sol.reclaimDomain()` |
+| newOwner | address | The address that called `ZNSRootRegistrar.reclaimDomain()` |
 
 ### RootPricerSet
 
 ```solidity
-event RootPricerSet(address rootPricer)
+event RootPricerSet(address rootPricer, bytes priceConfig)
 ```
 
-Emitted when the `rootPricer` address is set in state.
+Emitted when the `rootPricer` address and the `rootPriceConfig`
+values are set in state.
 
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | rootPricer | address | The new address of any IZNSPricer type contract |
+| priceConfig | bytes | The encoded bytes for the price config |
+
+### RootPriceConfigSet
+
+```solidity
+event RootPriceConfigSet(bytes priceConfig)
+```
+
+Emitted when the `rootPriceConfig` value is set in state.
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| priceConfig | bytes | The encoded bytes for the price config |
 
 ### TreasurySet
 
@@ -160,13 +199,19 @@ Emitted when the `subRegistrar` address is set in state.
 ### initialize
 
 ```solidity
-function initialize(address accessController_, address registry_, address rootPricer_, address treasury_, address domainToken_) external
+function initialize(address accessController_, address registry_, address rootPricer_, bytes priceConfig_, address treasury_, address domainToken_) external
 ```
 
 ### registerRootDomain
 
 ```solidity
-function registerRootDomain(string name, address domainAddress, string tokenURI, struct IDistributionConfig.DistributionConfig distributionConfig, struct PaymentConfig paymentConfig) external returns (bytes32)
+function registerRootDomain(struct IZNSRootRegistrar.RootDomainRegistrationArgs args) external returns (bytes32)
+```
+
+### registerRootDomainBulk
+
+```solidity
+function registerRootDomainBulk(struct IZNSRootRegistrar.RootDomainRegistrationArgs[] args) external returns (bytes32[])
 ```
 
 ### coreRegister
@@ -181,16 +226,10 @@ function coreRegister(struct CoreRegisterArgs args) external
 function revokeDomain(bytes32 domainHash) external
 ```
 
-### reclaimDomain
+### assignDomainToken
 
 ```solidity
-function reclaimDomain(bytes32 domainHash) external
-```
-
-### isOwnerOf
-
-```solidity
-function isOwnerOf(bytes32 domainHash, address candidate, enum IZNSRootRegistrar.OwnerOf ownerOf) external view returns (bool)
+function assignDomainToken(bytes32 domainHash, address to) external
 ```
 
 ### setRegistry
@@ -199,10 +238,16 @@ function isOwnerOf(bytes32 domainHash, address candidate, enum IZNSRootRegistrar
 function setRegistry(address registry_) external
 ```
 
-### setRootPricer
+### setRootPricerAndConfig
 
 ```solidity
-function setRootPricer(address rootPricer_) external
+function setRootPricerAndConfig(address rootPricer_, bytes priceConfig_) external
+```
+
+### setRootPriceConfig
+
+```solidity
+function setRootPriceConfig(bytes priceConfig_) external
 ```
 
 ### setTreasury
@@ -221,5 +266,47 @@ function setDomainToken(address domainToken_) external
 
 ```solidity
 function setSubRegistrar(address subRegistrar_) external
+```
+
+### pauseRegistration
+
+```solidity
+function pauseRegistration() external
+```
+
+### unpauseRegistration
+
+```solidity
+function unpauseRegistration() external
+```
+
+### rootPricer
+
+```solidity
+function rootPricer() external returns (contract IZNSPricer)
+```
+
+### rootPriceConfig
+
+```solidity
+function rootPriceConfig() external returns (bytes)
+```
+
+### treasury
+
+```solidity
+function treasury() external returns (contract IZNSTreasury)
+```
+
+### domainToken
+
+```solidity
+function domainToken() external returns (contract IZNSDomainToken)
+```
+
+### subRegistrar
+
+```solidity
+function subRegistrar() external returns (contract IZNSSubRegistrar)
 ```
 

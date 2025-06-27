@@ -12,7 +12,7 @@ contract ERC721ReceiverIncorrect {
         address,
         uint256,
         bytes calldata
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         // Incorrect return value, should be 0x150b7a02 for ERC721Receiver
         return 0x12345678;
     }

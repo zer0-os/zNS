@@ -21,7 +21,7 @@ import {
   INVALID_ENV_ERR,
   NO_MOCK_PROD_ERR,
   STAKING_TOKEN_ERR,
-  MONGO_URI_ERR,
+  MONGO_URI_ERR, encodePriceConfig, REGISTRATION_PAUSED_ERR, distrConfigEmpty, paymentConfigEmpty, PaymentType,
 } from "./helpers";
 import {
   MeowTokenDM,
@@ -37,7 +37,7 @@ import { ZNSStringResolverDM } from "../src/deploy/missions/contracts/string-res
 import { znsNames } from "../src/deploy/missions/contracts/names";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { MEOWzChainData } from "../src/deploy/missions/contracts/meow-token/mainnet-data";
-import { ResolverTypes, SupportedChains } from "../src/deploy/constants";
+import { PricerTypes, ResolverTypes, SupportedChains } from "../src/deploy/constants";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { ethers } from "ethers";
 import { promisify } from "util";
@@ -69,6 +69,101 @@ describe("Deploy Campaign Test", () => {
     [deployAdmin, admin, governor, zeroVault, userA, userB] = await hre.ethers.getSigners();
   });
 
+  describe("Deploy", () => {
+    let envInitial : string;
+
+    beforeEach(async () => {
+      envInitial = JSON.stringify(process.env);
+    });
+
+    afterEach(async () => {
+      process.env = JSON.parse(envInitial);
+    });
+
+    it("should pause registration on both Registrars if PAUSE_REGISTRATION env variable is set to true", async () => {
+      process.env.PAUSE_REGISTRATION = "true";
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar, subRegistrar } = campaign;
+
+      expect(await rootRegistrar.registrationPaused()).to.be.true;
+      expect(await subRegistrar.registrationPaused()).to.be.true;
+
+      // make sure functions fail when called with expects
+      await expect(
+        rootRegistrar.connect(userA).registerRootDomain({
+          name: "test",
+          domainAddress: zeroVault.address,
+          tokenURI: "https://example.com",
+          tokenOwner: deployAdmin,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        })
+      ).to.be.revertedWithCustomError(rootRegistrar, REGISTRATION_PAUSED_ERR);
+
+      await expect(
+        subRegistrar.connect(userA).registerSubdomain({
+          parentHash: ethers.ZeroHash,
+          label: "test",
+          domainAddress: ethers.ZeroAddress,
+          tokenURI: "https://example.com",
+          tokenOwner: deployAdmin,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        })
+      ).to.be.revertedWithCustomError(subRegistrar, REGISTRATION_PAUSED_ERR);
+
+      await campaign.dbAdapter.dropDB();
+    });
+
+    it("should set `rootPaymentType` correctly based on the ENV var", async () => {
+      // set the environment to get the appropriate variables
+      process.env.ROOT_PAYMENT_TYPE = PaymentType.DIRECT.toString();
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar } = campaign;
+
+      expect(await rootRegistrar.rootPaymentType()).to.equal(PaymentType.DIRECT);
+
+      await campaign.dbAdapter.dropDB();
+    });
+
+    it("should set `rootPricerType` correctly based on the ENV var", async () => {
+      // set the environment to get the appropriate variables
+      process.env.ROOT_PRICER_TYPE = PricerTypes.fixed;
+      process.env.FIXED_PRICE = "1000000000000000"; // 0.001 ETH
+      process.env.FIXED_FEE_PERC = "17"; // 10% in basis points
+
+      const config = await getConfig({
+        deployer: deployAdmin,
+      });
+
+      const campaign = await runZnsCampaign({
+        config,
+      });
+
+      const { rootRegistrar, fixedPricer } = campaign;
+
+      expect(await rootRegistrar.rootPricer()).to.equal(fixedPricer.target);
+
+      await campaign.dbAdapter.dropDB();
+    });
+  });
+
   describe("MEOW Token Ops", () => {
     before(async () => {
       campaignConfig = {
@@ -84,9 +179,11 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        rootPaymentType: PaymentType.STAKE,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -127,7 +224,7 @@ describe("Deploy Campaign Test", () => {
 
       await meow.waitForDeployment();
 
-      campaignConfig.stakingTokenAddress = await meow.getAddress();
+      campaignConfig.rootPaymentTokenAddress = await meow.getAddress();
 
       const campaign = await runZnsCampaign({
         config: campaignConfig,
@@ -368,10 +465,11 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        rootPaymentType: PaymentType.STAKE,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        // TODO dep: what do we pass here for test flow? we don't have a deployed MeowToken contract
-        stakingTokenAddress: "",
+        rootPaymentTokenAddress: "",
         mockMeowToken: true, // 1700083028872
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -412,9 +510,9 @@ describe("Deploy Campaign Test", () => {
       const undeployedNames = [
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -428,9 +526,9 @@ describe("Deploy Campaign Test", () => {
           FailingZNSAddressResolverDM, // failing DM
           ZNSStringResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "deploy",
@@ -461,9 +559,9 @@ describe("Deploy Campaign Test", () => {
 
       const undeployedNames = [
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -493,9 +591,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           FailingZNSAddressResolverDM, // failing DM
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           ZNSRootRegistrarDM,
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "postDeploy",
@@ -531,12 +629,12 @@ describe("Deploy Campaign Test", () => {
         },
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
       ];
 
       const undeployedNames = [
         znsNames.rootRegistrar,
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -549,9 +647,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           ZNSAddressResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           FailingZNSRootRegistrarDM, // failing DM
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "deploy",
@@ -579,12 +677,12 @@ describe("Deploy Campaign Test", () => {
         },
         znsNames.addressResolver,
         znsNames.curvePricer,
+        znsNames.fixedPricer,
         znsNames.treasury,
         znsNames.rootRegistrar,
       ];
 
       const undeployedNames = [
-        znsNames.fixedPricer,
         znsNames.subRegistrar,
       ];
 
@@ -616,9 +714,9 @@ describe("Deploy Campaign Test", () => {
           MeowTokenDM,
           ZNSAddressResolverDM,
           ZNSCurvePricerDM,
+          ZNSFixedPricerDM,
           ZNSTreasuryDM,
           FailingZNSRootRegistrarDM, // failing DM
-          ZNSFixedPricerDM,
           ZNSSubRegistrarDM,
         ],
         placeOfFailure: "postDeploy",
@@ -670,7 +768,7 @@ describe("Deploy Campaign Test", () => {
       expect(localConfig.domainToken.symbol).to.eq(ZNS_DOMAIN_TOKEN_SYMBOL);
       expect(localConfig.domainToken.defaultRoyaltyReceiver).to.eq(zeroVault.address);
       expect(localConfig.domainToken.defaultRoyaltyFraction).to.eq(DEFAULT_ROYALTY_FRACTION);
-      expect(localConfig.rootPriceConfig).to.deep.eq(DEFAULT_CURVE_PRICE_CONFIG);
+      expect(localConfig.rootPriceConfig).to.eq(encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG));
     });
 
     it("Confirms encoding functionality works for env variables", async () => {
@@ -780,7 +878,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if not using the MEOW token on prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = "0x123";
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = "0x123";
 
       try {
         await getConfig({
@@ -797,7 +895,7 @@ describe("Deploy Campaign Test", () => {
 
     it("Fails to validate if no mongo uri or local URI in prod", async () => {
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       // Falls back onto the default URI which is for localhost and fails in prod
       process.env.MONGO_DB_URI = "";
       process.env.ROYALTY_RECEIVER = "0x123";
@@ -817,7 +915,7 @@ describe("Deploy Campaign Test", () => {
       }
 
       process.env.MOCK_MEOW_TOKEN = "false";
-      process.env.STAKING_TOKEN_ADDRESS = MEOWzChainData.address;
+      process.env.ROOT_PAYMENT_TOKEN_ADDRESS = MEOWzChainData.address;
       process.env.MONGO_DB_URI = "mongodb://localhost:27018";
       process.env.ZERO_VAULT_ADDRESS = "0x123";
 
@@ -860,9 +958,11 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        rootPaymentType: PaymentType.STAKE,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",
@@ -1051,9 +1151,11 @@ describe("Deploy Campaign Test", () => {
           defaultRoyaltyReceiver: deployAdmin.address,
           defaultRoyaltyFraction: DEFAULT_ROYALTY_FRACTION,
         },
-        rootPriceConfig: DEFAULT_CURVE_PRICE_CONFIG,
+        rootPaymentType: PaymentType.STAKE,
+        rootPricerType: PricerTypes.curve,
+        rootPriceConfig: encodePriceConfig(DEFAULT_CURVE_PRICE_CONFIG),
         zeroVaultAddress: zeroVault.address,
-        stakingTokenAddress: MEOWzChainData.address,
+        rootPaymentTokenAddress: MEOWzChainData.address,
         mockMeowToken: true,
         postDeploy: {
           tenderlyProjectSlug: "",

@@ -5,10 +5,11 @@ about a domain, such as its owner and resolver.
 - `owner` (address): The owner of the domain (also called the owner of the Name).
 - `resolver` (address): The address of the Resolver contract where this domain's source records are stored.
 
-In the future, there will be multiple Resolver contracts that support different types of sources.
-Currently, only the `ZNSAddressResolver` is implemented.
-
 ### DomainRecord
+
+Description of a domain record, pointing to the
+owner address of that record as well as the address of
+its resolver
 
 ```solidity
 struct DomainRecord {
@@ -23,7 +24,7 @@ struct DomainRecord {
 event DomainOwnerSet(bytes32 domainHash, address owner)
 ```
 
-Emits when ownership of a domain is modified in ``records``
+Emits when ownership of a domain is modified in `records`
 
 #### Parameters
 
@@ -38,7 +39,7 @@ Emits when ownership of a domain is modified in ``records``
 event DomainResolverSet(bytes32 domainHash, address resolver)
 ```
 
-Emit when a domain's resolver is modified in ``records``
+Emit when a domain's resolver is modified in `records`
 
 #### Parameters
 

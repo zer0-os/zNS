@@ -6,7 +6,7 @@
 event AddressSet(bytes32 domainHash, address newAddress)
 ```
 
-Emit when ownership of a domain is modified
+Emitted when address resolution value is set for a domain.
 
 #### Parameters
 

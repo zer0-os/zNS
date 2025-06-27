@@ -23,8 +23,9 @@ IZNSContracts
   contractName = znsNames.subRegistrar.contract;
   instanceName = znsNames.subRegistrar.instance;
 
-  private hasRegistrarRole : boolean | undefined;
-  private isSetOnRoot : boolean | undefined;
+  private hasRegistrarRole ?: boolean;
+  private isSetOnRoot ?: boolean;
+  private needsPause ?: boolean;
 
   async deployArgs () : Promise<TDeployArgs> {
     const {
@@ -41,22 +42,23 @@ IZNSContracts
       accessController,
       subRegistrar,
       rootRegistrar,
-      config: { deployAdmin },
+      config: { pauseRegistration },
     } = this.campaign;
 
     this.hasRegistrarRole = await accessController
-      .connect(deployAdmin)
       .isRegistrar(await subRegistrar.getAddress());
 
     const currentSubRegistrarOnRoot = await rootRegistrar.subRegistrar();
     this.isSetOnRoot = currentSubRegistrarOnRoot === await subRegistrar.getAddress();
 
-    const needs = !this.hasRegistrarRole || !this.isSetOnRoot;
+    this.needsPause = pauseRegistration && !await subRegistrar.registrationPaused();
+
+    const needs = !this.hasRegistrarRole || !this.isSetOnRoot || this.needsPause;
     const msg = needs ? "needs" : "doesn't need";
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return needs;
+    return needs as boolean;
   }
 
   async postDeploy () {
@@ -74,16 +76,29 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      const tx = await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
     }
 
     if (!this.hasRegistrarRole) {
-      await accessController
+      const tx = await accessController
         .connect(deployAdmin)
         .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
+    }
+
+    if (this.needsPause) {
+      const tx = await subRegistrar
+        .connect(deployAdmin)
+        .pauseRegistration();
+
+      await deployer.awaitConfirmation(tx);
     }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

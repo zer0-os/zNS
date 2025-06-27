@@ -1,6 +1,4 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { ICurvePriceConfig } from "../missions/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IContractState, IDeployCampaignConfig, TEnvironment } from "@zero-tech/zdc";
 import {
   ERC20Mock as MeowTokenMock,
@@ -17,11 +15,11 @@ import {
   ZToken as MeowToken,
 } from "../../../typechain";
 
-export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
 export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {
   env : TEnvironment;
   deployAdmin : SignerWithAddress;
+  pauseRegistration ?: boolean;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -30,10 +28,12 @@ export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddr
     defaultRoyaltyReceiver : string;
     defaultRoyaltyFraction : bigint;
   };
-  rootPriceConfig : ICurvePriceConfig;
+  rootPaymentType : bigint;
+  rootPricerType : string;
+  rootPriceConfig : string;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  stakingTokenAddress ?: string;
+  rootPaymentTokenAddress ?: string;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;

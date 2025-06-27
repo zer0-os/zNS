@@ -55,7 +55,7 @@ export const getStakingOrProtocolFee = (
  * Get the domain name price, the registration fee and the total
  * based on name length when given an already deployed contract
  *
- * @param name Length of the domain name
+ * @param name Domain name/label
  * @param priceConfig Object with all the pricing props
  * @returns The full expected price object for that domain
  */

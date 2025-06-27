@@ -12,10 +12,10 @@ interface IZNSCurvePricer is IZNSPricer {
     struct CurvePriceConfig {
         /**
          * @notice Maximum price for a domain returned at <= `baseLength`
-        */
+         */
         uint256 maxPrice;
         /**
-         * @notice Multiplier which we use to bend a curve of price on interval from `baseLength` to `maxLength`.
+         * @notice Multiplier which we use to bend the price curve in interval from `baseLength` to `maxLength`.
          */
         uint256 curveMultiplier;
         /**
@@ -32,7 +32,7 @@ interface IZNSCurvePricer is IZNSPricer {
          * @notice The precision multiplier of the price. This multiplier
          * should be picked based on the number of token decimals to calculate properly.
          * e.g. if we use a token with 18 decimals, and want precision of 2,
-         * our precision multiplier will be equal 10^18 - 10^2 = 10^16
+         * our precision multiplier will be equal 10^(18-2) = 10^16
          */
         uint256 precisionMultiplier;
         /**
@@ -58,6 +58,12 @@ interface IZNSCurvePricer is IZNSPricer {
      * @notice Reverted when `curveMultiplier` AND `baseLength` are 0.
      */
     error DivisionByZero();
+
+    /**
+     * @notice Reverted when setting the incorrect config where the minimum possible price
+     * is less then the precision multiplier passed that will result in returning low prices as 0.
+     */
+    error PrecisionMultiplierTooLarge(uint256 precisionMultiplier);
 
     function encodeConfig(
         CurvePriceConfig calldata config

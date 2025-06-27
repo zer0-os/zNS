@@ -30,6 +30,12 @@ function checkExecutor(address account) external view
 function checkRegistrar(address account) external view
 ```
 
+### checkDomainToken
+
+```solidity
+function checkDomainToken(address account) external view
+```
+
 ### isAdmin
 
 ```solidity
@@ -40,6 +46,12 @@ function isAdmin(address account) external view returns (bool)
 
 ```solidity
 function isRegistrar(address account) external view returns (bool)
+```
+
+### isDomainToken
+
+```solidity
+function isDomainToken(address account) external view returns (bool)
 ```
 
 ### isGovernor

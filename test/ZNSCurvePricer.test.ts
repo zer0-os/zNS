@@ -13,7 +13,7 @@ import {
   DIVISION_BY_ZERO_ERR,
   encodePriceConfig,
   decodePriceConfig,
-  INVALID_CONFIG_LENGTH_ERR,
+  INVALID_CONFIG_LENGTH_ERR, PRECISION_MULTIPLIER_TOO_LARGE_ERR,
 } from "./helpers";
 import {
   DEFAULT_CURVE_PRICE_CONFIG,
@@ -223,6 +223,18 @@ describe("ZNSCurvePricer", () => {
 
       const price = await zns.curvePricer.getPrice(asBytes, "test", true);
       expect(price).to.eq(0n);
+    });
+
+    it("Reverts when `precisionMultiplier` in the config is larger than some of the resulting prices", async () => {
+      const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
+      localConfig.maxPrice = ethers.parseEther("0.000025"); // Set low maxPrice to test the edge case
+
+      const asBytes = encodePriceConfig(localConfig);
+
+      await expect(
+        zns.curvePricer.validatePriceConfig(asBytes)
+      ).to.be.revertedWithCustomError(zns.curvePricer, PRECISION_MULTIPLIER_TOO_LARGE_ERR)
+        .withArgs(localConfig.precisionMultiplier);
     });
   });
 

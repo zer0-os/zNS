@@ -41,3 +41,8 @@ export const SupportedChains : ISupportedChains = {
   z: "zchain",
   eth: "ethereum",
 };
+
+export const PricerTypes = {
+  curve: "curve",
+  fixed: "fixed",
+};

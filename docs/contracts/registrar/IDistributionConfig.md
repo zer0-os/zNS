@@ -18,6 +18,9 @@ Below are docs for the types in this file:
  - `PaymentType`: Enum signifying the payment type for a parent domain:
      + `DIRECT`: The subdomains are paid for directly by the user to the beneficiary chosen by the owner
      + `STAKE`: The subdomains are paid for by staking an amount of token chosen by the owner to ZNSTreasury
+ - `priceConfig`: Bytes array representation of one config for one of the pricer contracts. Has to be encoded
+     from the struct according to the specific pricer rules. Used as a polymorphic type to allow a single
+     tx to fully register and setup a domain and to make pricer contracts stateless.
 
 ### AccessType
 
@@ -40,11 +43,43 @@ enum PaymentType {
 
 ### DistributionConfig
 
+Struct to define the entirety of the distribution of subdomains for a domain
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+
 ```solidity
 struct DistributionConfig {
   contract IZNSPricer pricerContract;
   enum IDistributionConfig.PaymentType paymentType;
   enum IDistributionConfig.AccessType accessType;
+  bytes priceConfig;
 }
 ```
+
+### PaymentTypeSet
+
+```solidity
+event PaymentTypeSet(bytes32 domainHash, enum IDistributionConfig.PaymentType paymentType)
+```
+
+Emitted when a new `DistributionConfig.paymentType` is set for a domain.
+
+### AccessTypeSet
+
+```solidity
+event AccessTypeSet(bytes32 domainHash, enum IDistributionConfig.AccessType accessType)
+```
+
+Emitted when a new `DistributionConfig.accessType` is set for a domain.
+
+### DistributionConfigSet
+
+```solidity
+event DistributionConfigSet(bytes32 domainHash, contract IZNSPricer pricerContract, bytes pricerConfig, enum IDistributionConfig.PaymentType paymentType, enum IDistributionConfig.AccessType accessType)
+```
+
+Emitted when a new full `DistributionConfig` is set for a domain at once.
 

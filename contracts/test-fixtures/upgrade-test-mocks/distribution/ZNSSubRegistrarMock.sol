@@ -265,8 +265,7 @@ contract ZNSSubRegistrarUpgradeMock is
         rootRegistrar = IZNSRootRegistrar(registrar_);
     }
 
-    // solhint-disable-next-line
-    function _authorizeUpgrade(address newImplementation) internal view override {
+    function _authorizeUpgrade(address) internal view override {
         accessController.checkGovernor(msg.sender);
     }
 }

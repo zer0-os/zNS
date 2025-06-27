@@ -40,7 +40,7 @@ import {
   ZNS_DOMAIN_TOKEN_SYMBOL,
   DEFAULT_ROYALTY_FRACTION,
   DEFAULT_RESOLVER_TYPE,
-  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES, PaymentType,
 } from "../constants";
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
@@ -386,6 +386,7 @@ export const deployRootRegistrar = async (
       config.curvePriceConfig,
       config.treasuryAddress,
       config.domainTokenAddress,
+      config.rootPaymentType || PaymentType.STAKE,
     ],
     {
       kind: "uups",
@@ -518,7 +519,8 @@ export const deployZNS = async ({
   adminAddresses,
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
-} : DeployZNSParams) : Promise<IZNSContracts> => {
+  rootPaymentType = PaymentType.STAKE,
+} : DeployZNSParams) : Promise<IZNSContractsLocal> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -591,6 +593,7 @@ export const deployZNS = async ({
     curvePriceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
     treasuryAddress: await treasury.getAddress(),
     domainTokenAddress: await domainToken.getAddress(),
+    rootPaymentType,
   };
 
   const rootRegistrar = await deployRootRegistrar(

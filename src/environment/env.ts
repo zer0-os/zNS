@@ -3,6 +3,7 @@
 // For detailed breakdown of vars, see env.sample file.
 // !!! --< DO NOT WRITE ANY MAINNET DATA HERE >-- !!!
 import { IZNSEnvironment } from "./types";
+import { PricerTypes } from "../deploy/constants";
 
 
 export const environment : IZNSEnvironment = {
@@ -42,20 +43,28 @@ export const environment : IZNSEnvironment = {
   DEVNET_RPC_URL: "",
 
   // Contracts Config:
+  PAUSE_REGISTRATION: "false",
   // ! System Administration !
   GOVERNOR_ADDRESSES: "",
   ADMIN_ADDRESSES: "",
   // ZNS Payment Token (e.g. Z)
   MOCK_MEOW_TOKEN: "true",
-  STAKING_TOKEN_ADDRESS: "",
+  ROOT_PAYMENT_TOKEN_ADDRESS: "",
+  // Root Payment Type
+  ROOT_PAYMENT_TYPE: "1", // "0" for DIRECT, "1" for STAKE
+  // Pricer Data
+  ROOT_PRICER_TYPE: PricerTypes.curve,
+  // FixedPricer Config [without decimals!]
+  FIXED_PRICE: "",
+  FIXED_FEE_PERC: "",
   // CurvePricer Config [without decimals!]
-  MAX_PRICE: "25000",
+  CURVE_MAX_PRICE: "25000",
   CURVE_MULTIPLIER: "1000",
-  MAX_LENGTH: "50",
-  BASE_LENGTH: "4",
-  PROTOCOL_FEE_PERC: "222",
-  DECIMALS: "18",
-  PRECISION: "2",
+  CURVE_MAX_LENGTH: "50",
+  CURVE_BASE_LENGTH: "4",
+  CURVE_PROTOCOL_FEE_PERC: "222",
+  CURVE_DECIMALS: "18",
+  CURVE_PRECISION: "2",
   // DomainToken Config
   DOMAIN_TOKEN_NAME: "ZERO ID",
   DOMAIN_TOKEN_SYMBOL: "ZID",

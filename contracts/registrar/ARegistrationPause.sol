@@ -7,6 +7,7 @@ import { IZNSAccessController } from "../access/IZNSAccessController.sol";
 abstract contract ARegistrationPause {
     /**
      * @notice Emitted when the public registration pause is set.
+     *
      * @param isPaused The new value of the registration pause flag.
      */
     event RegistrationPauseSet(bool isPaused);
@@ -23,6 +24,7 @@ abstract contract ARegistrationPause {
 
     /**
      * @notice Boolean flag to pause public registration of new domains.
+     *
      * @dev When this flag is active, only ZNS ADMINs can register new domains.
      */
     bool public registrationPaused;

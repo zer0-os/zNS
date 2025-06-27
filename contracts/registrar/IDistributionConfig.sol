@@ -7,6 +7,7 @@ import { IZNSPricer } from "../price/IZNSPricer.sol";
 /**
  * @title IDistributionConfig.sol - An interface containing all types required for
  * distribution configuration of a domain.
+ *
  * @dev Types outlined in this config are stored on the `ZNSSubRegistrar` contract and are used to determine
  * how subdomains are distributed for each parent domain.
  * Below are docs for the types in this file:
@@ -22,6 +23,9 @@ import { IZNSPricer } from "../price/IZNSPricer.sol";
  *  - `PaymentType`: Enum signifying the payment type for a parent domain:
  *      + `DIRECT`: The subdomains are paid for directly by the user to the beneficiary chosen by the owner
  *      + `STAKE`: The subdomains are paid for by staking an amount of token chosen by the owner to ZNSTreasury
+ *  - `priceConfig`: Bytes array representation of one config for one of the pricer contracts. Has to be encoded
+ *      from the struct according to the specific pricer rules. Used as a polymorphic type to allow a single
+ *      tx to fully register and setup a domain and to make pricer contracts stateless.
 */
 interface IDistributionConfig {
     enum AccessType {
@@ -41,6 +45,7 @@ interface IDistributionConfig {
      * @param pricerContract The address of the contract used for pricing subdomains
      * @param paymentType The type of payment system used for selling subdomains
      * @param accessType The type of access that users have
+     * @param priceConfig The bytes representation of the price config for the pricer contract
      */
     struct DistributionConfig {
         IZNSPricer pricerContract;
@@ -64,8 +69,8 @@ interface IDistributionConfig {
      */
     event DistributionConfigSet(
         bytes32 indexed domainHash,
-        IZNSPricer pricerContract,
-        bytes pricerConfig,
+        IZNSPricer indexed pricerContract,
+        bytes indexed pricerConfig,
         PaymentType paymentType,
         AccessType accessType
     );

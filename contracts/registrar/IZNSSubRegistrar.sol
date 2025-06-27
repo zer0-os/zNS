@@ -13,12 +13,12 @@ import { IZNSRootRegistrar } from "./IZNSRootRegistrar.sol";
 interface IZNSSubRegistrar is IDistributionConfig {
     struct SubdomainRegisterArgs {
         bytes32 parentHash;
-        string label;
         address domainAddress;
         address tokenOwner;
         string tokenURI;
         DistributionConfig distrConfig;
         PaymentConfig paymentConfig;
+        string label;
     }
 
     /**
@@ -64,7 +64,7 @@ interface IZNSSubRegistrar is IDistributionConfig {
     event MintlistCleared(bytes32 indexed domainHash);
 
     /**
-     * @notice Emitted when the ZNSRootRegistrar address is set in state.
+     * @notice Emitted when the `ZNSRootRegistrar` address is set in state.
      */
     event RootRegistrarSet(address registrar);
 

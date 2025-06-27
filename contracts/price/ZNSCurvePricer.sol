@@ -6,16 +6,16 @@ import { StringUtils } from "../utils/StringUtils.sol";
 
 
 /**
- * @title Implementation of the Curve Pricing, module that calculates the price of a domain
+ * @title Implementation of the Curve Pricing, a module that calculates the price of a domain
  * based on its length and the rules set by Zero ADMIN.
- * This module uses an hyperbolic curve that starts at (`baseLength`; `maxPrice`)
+ * This module uses a hyperbolic curve that starts at (`baseLength`; `maxPrice`)
  * for all domains <= `baseLength`.
  * Then the price is reduced using the price calculation function below.
- * The price after `maxLength` is fixed and equals the price on the hyperbola graph at the point `maxLength`
- * and is determined using the formula where `length` = `maxLength`.
+ * All prices after `maxLength` are fixed and equal the price at `maxLength`.
+ *
+ * @dev This contract is stateless as all the other Pricer contracts.
  */
 contract ZNSCurvePricer is IZNSCurvePricer {
-
     using StringUtils for string;
 
     /**
@@ -27,14 +27,15 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     /**
      * @notice Multiply the entire hyperbola formula by this number to be able to reduce the `curveMultiplier`
      * by 3 digits, which gives us more flexibility in defining the hyperbola function.
+     *
      * @dev > Canot be "0".
      */
     uint256 public constant FACTOR_SCALE = 1000;
 
     /**
-     * @notice Encode a given CurvePriceConfig into bytes
+     * @notice Encode a given `CurvePriceConfig` struct into bytes
      *
-     * @param config The CurvePriceConfig to encode into bytes
+     * @param config The `CurvePriceConfig` to encode into bytes
      */
     function encodeConfig(
         CurvePriceConfig calldata config
@@ -51,7 +52,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
     }
 
     /**
-     * @notice Decode bytes into a CurvePriceConfig
+     * @notice Decode bytes into a `CurvePriceConfig` struct
      *
      * @param priceConfig The bytes to decode
      */
@@ -104,6 +105,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
     /**
      * @notice Get the price of a given domain name
+     *
      * @dev `skipValidityCheck` param is added to provide proper revert when the user is
      * calling this to find out the price of a domain that is not valid. But in Registrar contracts
      * we want to do this explicitly and before we get the price to have lower tx cost for reverted tx.
@@ -111,6 +113,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * Note that if calling this function directly to find out the price, a user should always pass "false"
      * as `skipValidityCheck` param, otherwise, the price will be returned for an invalid label that is not
      * possible to register.
+     *
      * @param parentPriceConfig The hash of the parent domain under which price is determined
      * @param label The label of the subdomain candidate to get the price for before/during registration
      * @param skipValidityCheck If true, skips the validity check for the label
@@ -134,7 +137,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. It returns fee for a given price
      * based on the value set by the owner of the parent domain.
-     * @param parentPriceConfig The price config of the parent domain under which fee is determined
+     *
+     * @param parentPriceConfig The price config in bytes of the parent domain under which fee is determined
      * @param price The price to get the fee for
     */
     function getFeeForPrice(
@@ -151,7 +155,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * @notice Part of the IZNSPricer interface - one of the functions required
      * for any pricing contracts used with ZNS. Returns both price and fee for a given label
      * under the given parent.
-     * @param parentPriceConfig The hash of the parent domain under which price and fee are determined
+     *
+     * @param parentPriceConfig The price config in bytes of the parent domain under which fee is determined
      * @param label The label of the subdomain candidate to get the price and fee for before/during registration
     */
     function getPriceAndFee(
@@ -203,11 +208,18 @@ contract ZNSCurvePricer is IZNSCurvePricer {
                 config.feePercentage,
                 PERCENTAGE_BASIS
             );
+
+        if (
+            config.maxPrice != 0
+            && config.baseLength != 0
+            && _getPrice(config, config.maxLength) < config.precisionMultiplier
+        ) revert PrecisionMultiplierTooLarge(config.precisionMultiplier);
     }
 
     /**
      * @notice Internal function to calculate price based on the config set,
      * and the length of the domain label.
+     *
      * @dev Before we calculate the price, 6 different cases are possible:
      * 1. `maxPrice` is 0, which means all subdomains under this parent are free
      * 2. `baseLength` is 0, which means prices for all domains = 0 (free).
@@ -221,12 +233,16 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * The formula itself creates an hyperbolic curve that decreases in pricing based on domain name length,
      * base length, max price and curve multiplier.
      * `FACTOR_SCALE` allows to perceive `curveMultiplier` as fraction number in regular formula,
-     * which helps to bend a curve of price chart.
+     * which helps to bend a curve of the price chart.
      * The result is divided by the precision multiplier to remove numbers beyond
      * what we care about, then multiplied by the same precision multiplier to get the actual value
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
-     * @param config The parent price config
+     *
+     * If the `rawPrice` calculated before truncation is less than the `precisionMultiplier` set,
+     * we return the `precisionMultiplier` as the price to avoid returning 0.
+     *
+     * @param config The curve price config of the parent domain under which price is determined
      * @param length The length of the domain name
      */
     function _getPrice(
@@ -234,7 +250,7 @@ contract ZNSCurvePricer is IZNSCurvePricer {
         uint256 length
     ) internal pure returns (uint256) {
         // We use `maxPrice` as 0 to indicate free domains
-        if (config.maxPrice == 0) return 0;
+        if (config.maxPrice == 0 || config.baseLength == 0) return 0;
 
         if (length == 0) return 0;
 
@@ -245,8 +261,8 @@ contract ZNSCurvePricer is IZNSCurvePricer {
 
         if (length > config.maxLength) length = config.maxLength;
 
-        return ((config.baseLength * config.maxPrice * FACTOR_SCALE) /
-        (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))) /
-        config.precisionMultiplier * config.precisionMultiplier;
+        return (config.baseLength * config.maxPrice * FACTOR_SCALE) /
+            (config.baseLength * FACTOR_SCALE + config.curveMultiplier * (length - config.baseLength))
+            / config.precisionMultiplier * config.precisionMultiplier;
     }
 }

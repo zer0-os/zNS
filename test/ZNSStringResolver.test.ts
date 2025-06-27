@@ -475,7 +475,6 @@ describe("ZNSStringResolver", () => {
         );
       });
 
-      // TODO: Falls on the role. I think, cannot give a REGISTRAR_ROLE to mock "deployAdmin".
       it("Verifies that variable values are not changed in the upgrade process", async () => {
         const curString = "variableschange";
 

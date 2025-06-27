@@ -1,7 +1,7 @@
 ## ARegistryWired
 
-**ARegistryWired.sol - Abstract contract, intdroducing ZNSRegistry to the storage
-of children contracts. Inheriting this contract means that child is connected to ZNSRegistry
+**ARegistryWired.sol - Abstract contract, intdroducing `ZNSRegistry` to the storage
+of children contracts. Inheriting this contract means that child is connected to `ZNSRegistry`
 and is able to get AC and domain data from it or write to it.**
 
 ### RegistrySet
@@ -10,7 +10,7 @@ and is able to get AC and domain data from it or write to it.**
 event RegistrySet(address registry)
 ```
 
-Emitted when the ZNSRegistry address is set in state of the child contract.
+Emitted when the `ZNSRegistry` address is set in state of the child contract.
 
 ### registry
 
@@ -18,7 +18,7 @@ Emitted when the ZNSRegistry address is set in state of the child contract.
 contract IZNSRegistry registry
 ```
 
-ZNSRegistry address in the state of the child contract.
+`ZNSRegistry` address in the state of the child contract.
 
 ### onlyOwnerOrOperator
 

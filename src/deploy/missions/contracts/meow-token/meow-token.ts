@@ -47,8 +47,9 @@ IZNSContracts
     if (!this.config.mockMeowToken) {
       this.logger.info("Using MEOW token from Mainnet");
 
-      // TODO dep: add proper bytecode comparison here and throw if different!
-      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.stakingTokenAddress);
+      // TODO upg: add proper bytecode comparison here and throw if different!
+      // const bytecodeFromChain = await this.campaign.deployer
+      // .getBytecodeFromChain(this.config.rootPaymentTokenAddress);
 
       // const {
       //   bytecode,
@@ -64,7 +65,7 @@ IZNSContracts
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
       const factory = new ZToken__factory(this.config.deployAdmin);
-      const baseContract = factory.attach(this.config.stakingTokenAddress as string);
+      const baseContract = factory.attach(this.config.rootPaymentTokenAddress as string);
 
       await this.saveToDB(baseContract);
 
@@ -95,13 +96,16 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await meowToken.connect(deployAdmin).mint(
+    const tx = await meowToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
