@@ -12,7 +12,9 @@ import * as fs from "fs"; // TODO for debuggig, remove
 import { TLogger } from '@zero-tech/zdc';
 import { getZnsLogger } from '../../deploy/get-logger';
 
-
+// it would be good as a backup to always create batches for safe API
+// along with creating JSON for same batches AND JSON for each individual domain
+// to call singular `registerSubdomain` function as well
 
 import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse, SafeMultisigTransactionListResponse } from '@safe-global/api-kit'
 import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
@@ -111,13 +113,13 @@ const main = async () => {
   let action = "subs"; // <--- Set this variable before each run as "roots", "subs", or "transfer"
 
   const zns = await getZNS(migrationAdmin);
-  
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
 
   let transfers;
   switch (action) {
     case "roots":
       logger.info("Proposing root domain registrations...");
+
+      const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
 
       transfers = await proposeRegistrations(
         await zns.rootRegistrar.getAddress(),
@@ -153,14 +155,14 @@ const main = async () => {
 
 
       const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
-      const lvl1s = subdomains.filter(d => d.depth === 1);
+      // const lvl1s = subdomains.filter(d => d.depth === 1);
 
-      for (let [i,d] of [...rootDomains, ...lvl1s].entries()) {
-        const owner = await zns.registry.getDomainOwner(d.id);
-        if (owner === ZeroAddress) {
-          console.log("unminted lvl1:", i, d.label, d.id);
-        }
-      };
+      // for (let [i,d] of [...rootDomains, ...lvl1s].entries()) {
+      //   const owner = await zns.registry.getDomainOwner(d.id);
+      //   if (owner === ZeroAddress) {
+      //     console.log("unminted lvl1:", i, d.label, d.id);
+      //   }
+      // };
 
       // logger.info("Proposing subdomain registrations...");
 
@@ -189,7 +191,7 @@ const main = async () => {
           // console.log("lvl2 with 0x0 parent", i, d.label, d.id, d.parent?.label, d.parent?.id, d.parentHash);
 
           // The parents domain information, to register ourselves (the lvl1 that is missing)
-          console.log(i, d.parent?.label, d.parent?.parentHash, d.parent?.parent?.id)
+          console.log(i, d.parent?.label, d.parent?.id,)
         }
       }
 
@@ -211,13 +213,13 @@ const main = async () => {
       //   }
       // }
     
-      // let depth = 2;
-      // transfers = await proposeRegistrations(
-      //   await zns.subRegistrar.getAddress(),
-      //   safeKit,
-      //   subdomains.filter(d => d.depth === depth),
-      //   SUBDOMAIN_BULK_SELECTOR
-      // );
+      let depth = 2;
+      transfers = await proposeRegistrations(
+        await zns.subRegistrar.getAddress(),
+        safeKit,
+        subdomains.filter(d => d.depth === depth),
+        SUBDOMAIN_BULK_SELECTOR
+      );
       break;
     case "transfer":
       // Grab stored transfer txs from earlier runs
