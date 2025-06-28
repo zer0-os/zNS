@@ -1,4 +1,4 @@
-import { SafeKit } from "./safeKit"
+import { SafeKit } from "./safeKit";
 import { CreateBatchesResponse, Domain } from "./types";
 import { createBatches } from "./helpers";
 
@@ -23,4 +23,4 @@ export const proposeRegistrations = async (
   // To avoid iterating domains multiple times, we get transfers as well
   // and store them for later use
   return transfers;
-}
+};

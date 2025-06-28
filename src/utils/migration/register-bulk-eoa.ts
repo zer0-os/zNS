@@ -14,8 +14,8 @@ const main = async () => {
 
   const client = await connectToDb();
 
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
-  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
+  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
   const zns = await getZNS(migrationAdmin);
 
@@ -26,7 +26,7 @@ const main = async () => {
   // Send each batch
   console.log("Sending root domain registrations...");
 
-  for(let batch of rootRegisterBatches) {
+  for(const batch of rootRegisterBatches) {
     const registerTx = await zns.rootRegistrar.connect(migrationAdmin).registerRootDomainBulk(
       batch
     );
@@ -42,7 +42,7 @@ const main = async () => {
 
   count = 0;
   console.log("Sending subdomain registrations...");
-  for(let batch of subRegisterBatches) {
+  for(const batch of subRegisterBatches) {
     const registerTx = await zns.subRegistrar.connect(migrationAdmin).registerSubdomainBulk(tx);
 
     // Wait for network confirmations
@@ -57,7 +57,7 @@ const main = async () => {
   // Transfer all domains
   count = 0;
   console.log("Sending transfers...");
-  for (let domain of [...rootDomains, ...subdomains]) {
+  for (const domain of [...rootDomains, ...subdomains]) {
     const transferTx = await zns.domainToken.connect(migrationAdmin).transferFrom(
       migrationAdmin.address,
       domain.owner.id,
@@ -76,7 +76,7 @@ const main = async () => {
   console.log("Done!");
 
   process.exit(0);
-}
+};
 
 main().catch(error => {
   console.error(error);

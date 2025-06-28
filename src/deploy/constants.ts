@@ -40,7 +40,6 @@ export const ResolverTypes = {
 export const SupportedChains : ISupportedChains = {
   z: "zchain",
   eth: "ethereum",
-  // sep: "sepolia",
 };
 
 export const PricerTypes = {

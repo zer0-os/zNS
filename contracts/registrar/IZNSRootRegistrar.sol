@@ -49,7 +49,7 @@ interface IZNSRootRegistrar is IDistributionConfig {
         string name;
         address domainAddress;
         address tokenOwner;
-        string tokenURI; // todo should be packed, move params?
+        string tokenURI;
         DistributionConfig distrConfig; // pricecontract, access, payment
         PaymentConfig paymentConfig; // token, beneficiary
     }

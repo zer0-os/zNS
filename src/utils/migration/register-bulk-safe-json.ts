@@ -1,12 +1,12 @@
 import * as hre from "hardhat";
-import { DeployZNSParams, } from "../../../test/helpers";
-import { REGISTER_ROOT_BULK_ABI, REGISTER_SUBS_BULK_ABI, ROOT_COLL_NAME, SAFE_TRANSFER_FROM_ABI, SUB_COLL_NAME } from "./constants";
+import { ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
 import { connectToDb } from "./helpers";
 import { IZNSContractsCache } from "../../deploy/campaign/types";
 import { getZNS } from "./zns-contract-data";
 import * as fs from "fs";
+import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 
 
 /**
@@ -20,7 +20,7 @@ const main = async () => {
   fs.mkdirSync(outputDir, { recursive: true });
 
   // First, create batches for all root domains
-  const rootsFolderName = "registration/roots"
+  const rootsFolderName = "registration/roots";
   fs.mkdirSync(`${outputDir}/${rootsFolderName}`, { recursive: true });
 
   const zns = await getZNS(migrationAdmin);
@@ -29,7 +29,7 @@ const main = async () => {
   const client = await connectToDb();
 
   // Get all root domain documents from collection
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
 
   // Create batch JSON files for root domains
   createBatches(
@@ -43,23 +43,23 @@ const main = async () => {
   fs.mkdirSync(`${outputDir}/${subsFolderName}`, { recursive: true });
 
   // Get all subdomain documents from collection, sorted by depth
-  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
+  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
   createBatches(
     subdomains,
     zns,
     `${outputDir}/${subsFolderName}`
-  ); 
+  );
 
   // Now setup transfer calls
-  const allDomains = [ ...rootDomains, ...subdomains ]
+  const allDomains = [ ...rootDomains, ...subdomains ];
 
   const sliceSize = Number(process.env.TRANSFER_SLICE) ?? 500;
 
-  let batchIndex = 0
+  let batchIndex = 0;
   let batch = allDomains.slice(batchIndex, batchIndex + sliceSize);
 
   while (batch.length > 0) {
-    let batchTx = createBatchTemplate("Batch Transfer");
+    const batchTx = createBatchTemplate("Batch Transfer");
 
     for (let i = 0; i < batch.length; i++) {
       const domain = batch[i];
@@ -68,7 +68,7 @@ const main = async () => {
         createTx(
           zns.domainToken.target,
           "safeTransferFrom",
-          SAFE_TRANSFER_FROM_ABI
+          ZNSDomainToken__factory.createInterface().getFunction("safeTransferFrom(address,address,uint256)")
         )
       );
 
@@ -93,10 +93,10 @@ const main = async () => {
 };
 
 const createBatches = async (
-  domains : Domain[],
+  domains : Array<Domain>,
   zns : IZNSContractsCache,
   outputFile : string,
-  rootDomains : boolean = false,
+  rootDomains  = false,
   sliceSize : number = Number(process.env.DOMAIN_SLICE) || 50
 ) => {
   let index = 0;
@@ -113,11 +113,11 @@ const createBatches = async (
     if (rootDomains) {
       contractAddress = await zns.rootRegistrar.getAddress();
       funcName = "registerRootDomainBulk";
-      funcAbi = REGISTER_ROOT_BULK_ABI;
+      funcAbi = ZNSRootRegistrar__factory.createInterface().getFunction("registerRootDomainBulk");
     } else {
       contractAddress = await zns.subRegistrar.getAddress();
       funcName = "registerSubDomainBulk";
-      funcAbi = REGISTER_SUBS_BULK_ABI;
+      funcAbi = ZNSSubRegistrar__factory.createInterface().getFunction("registerSubdomainBulk");
     }
 
     batchTx.transactions.push(
@@ -130,7 +130,7 @@ const createBatches = async (
 
     batchTx.transactions[0].contractInputsValues.args = [];
 
-    for (let domain of domainsBatch) {
+    for (const domain of domainsBatch) {
       const valuesArr = [
         domain.label,
         domain.address,
@@ -138,7 +138,7 @@ const createBatches = async (
         domain.tokenURI,
         `[\"${ZeroAddress}\",0,0,"0x"]`,
         `[\"${ZeroAddress}\",\"${ZeroAddress}\"]`,
-      ]
+      ];
 
       if (domain.parentHash !== ZeroHash) {
         batchTx.transactions[0].contractInputsValues.args.push([domain.parentHash, ...valuesArr]);
@@ -155,44 +155,40 @@ const createBatches = async (
     const nextSlice = index * sliceSize;
     domainsBatch = domains.slice(nextSlice, nextSlice + sliceSize);
   }
-}
+};
 
 const createBatchTemplate = (
-  name : string = "Batch Transaction"
-) : SafeBatch => {
-  return {
-    version: "1.0",
-    chainId: process.env.CHAIN_ID ?? "1", 
-    createdAt: Date.now(),
-    meta: {
-      name,
-      description: "",
-      txBuilderVersion: "1.18.0",
-      createdFromSafeAddress: process.env.SAFE_ADDRESS ?? "",
-      createdFromOwnerAddress: process.env.SAFE_OWNER_ADDRESS ?? "",
-      checksum: ""
-    },
-    transactions: [ ]
-  }
-}
+  name  = "Batch Transaction"
+) : SafeBatch => ({
+  version: "1.0",
+  chainId: process.env.CHAIN_ID ?? "1",
+  createdAt: Date.now(),
+  meta: {
+    name,
+    description: "",
+    txBuilderVersion: "1.18.0",
+    createdFromSafeAddress: process.env.SAFE_ADDRESS ?? "",
+    createdFromOwnerAddress: process.env.SAFE_OWNER_ADDRESS ?? "",
+    checksum: "",
+  },
+  transactions: [ ],
+});
 
 const createTx = (
-  to: string | Addressable,
+  to : string | Addressable,
   funcName : string,
   funcAbi : Object,
-) : SafeTx => {
-  return {
-    to: to,
-    value: "0",
-    data: null,
-    contractMethod: {
-      inputs: [ funcAbi ],
-      name:  funcName,
-      payable: false,
-    },
-    contractInputsValues: {}
-  }
-}
+) : SafeTx => ({
+  to,
+  value: "0",
+  data: null,
+  contractMethod: {
+    inputs: [ funcAbi ],
+    name:  funcName,
+    payable: false,
+  },
+  contractInputsValues: {},
+});
 
 main().catch(error => {
   console.error(error);

@@ -6,28 +6,17 @@ import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BUL
 import { proposeRegistrations } from "./proposeRegisterDomains";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
-
-import * as fs from "fs"; // TODO for debuggig, remove  
-
-import { TLogger } from '@zero-tech/zdc';
-import { getZnsLogger } from '../../deploy/get-logger';
-
-// it would be good as a backup to always create batches for safe API
-// along with creating JSON for same batches AND JSON for each individual domain
-// to call singular `registerSubdomain` function as well
-
-import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse, SafeMultisigTransactionListResponse } from '@safe-global/api-kit'
-import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
-import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
+import { TLogger } from "@zero-tech/zdc";
+import { getZnsLogger } from "../../deploy/get-logger";
 
 /**
  * Script to create and propose signed transactions to the Safe for
  * as part of the second half of the ZNS domain migration.
- * 
+ *
  * This script will get the latest ZNS contracts as well as the domain information
  * from MongoDB. Then that data is formed into batches of raw txData encoding to
  * propose to the safe.
- * 
+ *
  * Required .env variables for running this script:
  * - MONGO_DB_URI
  * - MONGO_DB_NAME
@@ -38,32 +27,32 @@ import { MetaTransactionData, OperationType } from "@safe-global/types-kit";
  * - SAFE_OWNER (for HardHat config)
  * - CHAIN_ID
  * - [NETWORK]_RPC_URL (substitute NETWORK for the specific network being used)
- * 
+ *
  * Optional .env vars
  * - DELAY
  * - RETRIES
- * 
+ *
  * Required steps:
  * - ZNS v1.5 contracts must have been deployed to the target network
  * - ERC20 contract must have been deployed to the target network
  * - The Safe must already exist
- * - The Safe must have given approval for the ZNSTreasury to spend  
+ * - The Safe must have given approval for the ZNSTreasury to spend
  * - The Safe must have the need ERC20 balance to register
  * - The Safe must have enough native token to fund the gas needed for each batch
- * 
+ *
  * Execution: After manually setting the `action` desired, run
  * `yarn hardhat run src/utils/migration/register-main.ts --network [NETWORK]
- * 
+ *
  * Note: Parent domains must exist for child domains to be minted. This will fail in
- * gas estimation by the SafeKit if the parent domain does not exist already, so we 
+ * gas estimation by the SafeKit if the parent domain does not exist already, so we
  * must propose *and* execute all root domains before we can propose any subdomains
- * 
+ *
  * Note: Manual gas estimation is done in the SafeKit as the documentation specifies
  * that while estimation is done automatically if excluded, it may not be accurate for
  * more complex transactions. To avoid the possibility of this failing downstream, this
  * is done here.
- * 
- * Note: Executing more than ~20 transactions sequentially isn't recommended. 
+ *
+ * Note: Executing more than ~20 transactions sequentially isn't recommended.
  * This may cause the provider to ignore transactions, incorrectly showing
  * they executed successfully.
  */
@@ -92,9 +81,9 @@ const main = async () => {
     safeAddress,
     safeOwnerAddress: migrationAdmin.address,
     delay: Number(process.env.DELAY) || 10000, // ms to wait between proposing/executing transactions
-    retryAttempts: Number(process.env.RETRIES) || 3, // Number of times to retry executing a tx if it fails TODO impl
-    db: client
-  }
+    retryAttempts: Number(process.env.RETRIES) || 3, // Number of times to retry executing a tx if it fails
+    db: client,
+  };
 
   // Setup the SafeKit
   const safeKit = await SafeKit.init(config);
@@ -110,131 +99,111 @@ const main = async () => {
   // must be proposed *and* executed before subdomain registration can be proposed
   // Likewise, any transfers will fail gas estimation for domains that do not exist yet.
 
-  let action = "subs"; // <--- Set this variable before each run as "roots", "subs", or "transfer"
+  let action : "roots" | "subs" | "transfers" = "subs"; // <--- Set this variable before each run as "roots", "subs", or "transfer"
 
   const zns = await getZNS(migrationAdmin);
 
-  let transfers;
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
+
+  let transfers = [];
+
   switch (action) {
-    case "roots":
-      logger.info("Proposing root domain registrations...");
+  case "roots": // TODO type error because action is hardcoded? read as env would fix but...
+    logger.info("Proposing root domain registrations...");
 
-      const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Domain[];
+    transfers = await proposeRegistrations(
+      await zns.rootRegistrar.getAddress(),
+      safeKit,
+      rootDomains,
+      ROOT_DOMAIN_BULK_SELECTOR
+    );
 
-      transfers = await proposeRegistrations(
-        await zns.rootRegistrar.getAddress(),
-        safeKit,
-        rootDomains.slice(50),
-        ROOT_DOMAIN_BULK_SELECTOR
-      );
+    // Store transfers for after execution of registrations
+    await client.collection(`${ROOT_COLL_NAME}-transfers`).insertOne({ batches: transfers });
+    break;
+  case "subs":
+    const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
-      // Store transfers for after execution of registrations
-      await client.collection(`${ROOT_COLL_NAME}-transfers`).insertOne({ batches: transfers });
-      break;
-    case "subs":
-      // let pendingTxs = await safeKit.apiKit.getPendingTransactions(config.safeAddress, { ordering: "nonce" });
-      // for (let [i,tx] of pendingTxs.results.entries()) {
-      //   console.log(i, tx.nonce, tx.safeTxHash);
-      //   await safeKit.protocolKit.executeTransaction(tx);
-      // }
+    const depth = 1;
+    const atDepth = subdomains.filter(d => d.depth === depth);
 
-      // For debugging, verify that parents exist
-      // for (let [i,d] of rootDomains.entries()) {
-      //   const owner = await zns.registry.getDomainOwner(d.id);
-      //   if (owner === ZeroAddress) {
-      //     console.log(i, d.label, d.id)
-      //   }
-      // }
-      // const txs = await safeKit.apiKit.getAllTransactions(safeAddress);
-      // 8630200
-      // for (let [i,tx] of txs.results.entries()) {
-      //   if (tx.blockNumber == 8630200) {
-      //     console.log(txs.results.length - i - 1, i, tx.blockNumber, tx.to)
-      //   }
-      // }
+    // Store revoked parents, if we find any
+    const revokedParents : Array<Partial<Domain>> = [];
 
-
-      const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1}).toArray() as unknown as Domain[];
-      // const lvl1s = subdomains.filter(d => d.depth === 1);
-
-      // for (let [i,d] of [...rootDomains, ...lvl1s].entries()) {
-      //   const owner = await zns.registry.getDomainOwner(d.id);
-      //   if (owner === ZeroAddress) {
-      //     console.log("unminted lvl1:", i, d.label, d.id);
-      //   }
-      // };
-
-      // logger.info("Proposing subdomain registrations...");
-
-      const lvl2s = subdomains.filter(d => d.depth === 2);
-
-      // lvl2s.forEach((d,i) => { console.log(i, d.label, d.id, d.parent?.label, d.parent?.id)});
-      for(let [i,d] of lvl2s.entries()) {
-        let parentHash;
-        if (d.parent && d.parent.id) {
-          parentHash = d.parent.id
-        } else {
-          parentHash = d.parentHash
-        }
-        
-        // check lvl1 subs that didnt get minted
-        // vs lvl2 subs who have parent.id or parent hash as 0x0 in reg
-        if (!parentHash) {
-          console.log("lvl2 with no parenthash or parent.id")
-          console.log(i, d.label, d.id)
-        }
-
-        const owner = await zns.registry.getDomainOwner(parentHash);
-
-        if (owner === ZeroAddress) {
-          // console.log("resolved parentHash: ", parentHash)
-          // console.log("lvl2 with 0x0 parent", i, d.label, d.id, d.parent?.label, d.parent?.id, d.parentHash);
-
-          // The parents domain information, to register ourselves (the lvl1 that is missing)
-          console.log(i, d.parent?.label, d.parent?.id,)
-        }
+    // Verify the existence of parent domains before proposing subdomain registration batches
+    for (const [i,d] of atDepth.entries()) {
+      let parentHash;
+      if (d.parent && d.parent.id) {
+        parentHash = d.parent.id;
+      } else if (d.parentHash) {
+        parentHash = d.parentHash;
+      } else {
+        // Neither value is readable
+        throw Error(`No parent information found for subdomain at ${i}: ${d.label}, ${d.id}`);
       }
 
+      const owner = await zns.registry.getDomainOwner(parentHash);
+      if (owner === ZeroAddress) {
+        // Recreate domain to have the information needed to re-register
+        // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
+        // of the rest
+        let missingDomain : Partial<Domain> = {
+          label: d.parent?.label,
+          owner: {
+            id: safeAddress,
+            domains: []
+          },
+          address: d.parent?.address || safeAddress,
+          tokenURI: d.parent?.tokenURI || "http.zero.io", // TODO if some values not in subgraph, how could we recreate at all?
+          tokenId: d.parent?.tokenId, // TODO be sure 01 query has this for PARENTrecreate as uint(hash(label)) but hash is of entire parent name, not JUST label, maybe?
+          parentHash: d.parent?.parentHash, // TODO be sure we get this in subgraph query
+          parent: {
+            id: d.parent?.id
+          }
+        };
 
+        // If the missing parent is itself a subdomain, add `parentHash` and use `label` instead
+        revokedParents.push(missingDomain);
+      }
+    }
 
-      // for(let [i,d] of lvl1s.entries()) {
-      //   if (
-      //          d.label === "nft"
-      //       || d.label === "belshe"
-      //       || d.label === "exhibition"
-      //       || d.label === "commission"
-      //     ) {
-      //       const owner = await zns.registry.getDomainOwner(d.id);
-      //       console.log(i, d.label, d.depth, owner.toString(), d.parentHash, d.parent?.id);
-      //   }
-      // }
-      //   if (await zns.registry.getDomainOwner(d.id) === ZeroAddress) {
-      //     console.log(i, d.label, d.id)
-      //   }
-      // }
-    
-      let depth = 2;
-      transfers = await proposeRegistrations(
+    if (revokedParents.length > 0) {
+      // We specifically do not cath `transfers` here as we don't care about
+      // transferring after these domains are reminted, we just do so to allow downstream
+      // registration to work
+      await proposeRegistrations(
         await zns.subRegistrar.getAddress(),
         safeKit,
-        subdomains.filter(d => d.depth === depth),
+        atDepth,
         SUBDOMAIN_BULK_SELECTOR
       );
-      break;
-    case "transfer":
-      // Grab stored transfer txs from earlier runs
-      const rootTransfers = client.collection(`${ROOT_COLL_NAME}-transfers`).find() as unknown as string[];
-      const subTransfers = client.collection(`${SUB_COLL_NAME}-transfers`).find() as unknown as string[];
 
-      await safeKit.createProposeSignedTxs(
-        await zns.domainToken.getAddress(),
-        [ ...rootTransfers, ...subTransfers ]
-      )
       break;
-    default:
-      throw Error("Unknown action");
+    }
+
+    transfers = await proposeRegistrations(
+      await zns.subRegistrar.getAddress(),
+      safeKit,
+      atDepth,
+      SUBDOMAIN_BULK_SELECTOR
+    );
+
+    await client.collection(`${SUB_COLL_NAME}-transfers`).insertOne({ batches: transfers });
+    break;
+  case "transfer":
+    // Grab stored transfer txs from earlier runs
+    const rootTransfers = client.collection(`${ROOT_COLL_NAME}-transfers`).find() as unknown as Array<string>;
+    const subTransfers = client.collection(`${SUB_COLL_NAME}-transfers`).find() as unknown as Array<string>;
+
+    await safeKit.createProposeSignedTxs(
+      await zns.domainToken.getAddress(),
+      [ ...rootTransfers, ...subTransfers ]
+    );
+    break;
+  default:
+    throw Error("Unknown action");
   }
-}
+};
 
 main().catch(error => {
   console.error(error);

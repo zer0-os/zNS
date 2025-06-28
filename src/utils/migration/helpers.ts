@@ -1,51 +1,51 @@
 import { Db } from "mongodb";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { getDBAdapter } from "./database";
-import { CreateBatchesResponse, Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs, SafeTransactionOptionsExtended } from "./types";
+import { CreateBatchesResponse, Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
-import { getZnsLogger } from '../../deploy/get-logger';
+import { getZnsLogger } from "../../deploy/get-logger";
 
 // Connect to the MongoDB database to read domain data for migration
 export const connectToDb = async (
-  mongoUri?: string,
-  mongoDbName?: string
+  mongoUri ?: string,
+  mongoDbName ?: string
 ) : Promise<Db> => {
-    const uri = process.env.MONGO_DB_URI_MIG ?? mongoUri;
-    if (!uri) throw Error("No connection string given");
-  
-    const dbName = process.env.MONGO_DB_NAME_MIG ?? mongoDbName;
-    if (!dbName) throw Error("No DB name given");
-  
-    // Return socket connection
-    return (await getDBAdapter(uri)).db(dbName);
-}
+  const uri = process.env.MONGO_DB_URI_MIG ?? mongoUri;
+  if (!uri) throw Error("No connection string given");
+
+  const dbName = process.env.MONGO_DB_NAME_MIG ?? mongoDbName;
+  if (!dbName) throw Error("No DB name given");
+
+  // Return socket connection
+  return (await getDBAdapter(uri)).db(dbName);
+};
 
 // Create registration and transfer batches to use as txData
 export const createBatches = (
   domains : Array<Domain>,
   functionSelector ?: string,
-  registerSliceSize : number = 50,
-  transferSliceSize : number = 500
-) : CreateBatchesResponse | Array<IRootDomainRegistrationArgs[]> | Array<ISubdomainRegisterArgs[]> => {
+  registerSliceSize  = 50,
+  transferSliceSize  = 500
+) : CreateBatchesResponse | Array<Array<IRootDomainRegistrationArgs>> | Array<Array<ISubdomainRegisterArgs>> => {
   if (functionSelector) {
     return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize) as CreateBatchesResponse;
   } else {
-    return createBatchesEOA(domains, registerSliceSize) as Array<IRootDomainRegistrationArgs[]> | Array<ISubdomainRegisterArgs[]>;
+    return createBatchesEOA(domains, registerSliceSize) as Array<Array<IRootDomainRegistrationArgs>> | Array<Array<ISubdomainRegisterArgs>>;
   }
-}
+};
 
 // Create transaction batches used in the `register-bulk-eoa.ts` script
 const createBatchesEOA = (
   domains : Array<Domain>,
-  sliceSize : number = 50
+  sliceSize  = 50
 ) => {
-  let txs : IRootDomainRegistrationArgs[] | ISubdomainRegisterArgs[] = [];
-  let batchTxs : Array<IRootDomainRegistrationArgs[] | ISubdomainRegisterArgs[]> = [];
+  const txs : Array<IRootDomainRegistrationArgs> | Array<ISubdomainRegisterArgs> = [];
+  let batchTxs : Array<Array<IRootDomainRegistrationArgs> | Array<ISubdomainRegisterArgs>> = [];
 
   // Create batch txs for domains
   for (const [index, domain] of domains.entries()) {
-    let domainArg = {
+    const domainArg = {
       name : domain.label,
       domainAddress: domain.address,
       tokenOwner: domain.owner.id,
@@ -59,17 +59,17 @@ const createBatchesEOA = (
       paymentConfig: {
         token: ZeroAddress,
         beneficiary: ZeroAddress,
-      }
-    }
+      },
+    };
 
     // "label" is parameter name for subdomain registration, "name" for root domains
     // but "label" is used for both in the subgraph
     if (domain.parentHash !== ZeroHash) {
       const { name, ...rest } = domainArg;
       const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest };
-      (txs as ISubdomainRegisterArgs[]).push(subArg as ISubdomainRegisterArgs);
+      (txs as Array<ISubdomainRegisterArgs>).push(subArg as ISubdomainRegisterArgs);
     } else {
-      (txs as IRootDomainRegistrationArgs[]).push(domainArg as IRootDomainRegistrationArgs);
+      (txs as Array<IRootDomainRegistrationArgs>).push(domainArg as IRootDomainRegistrationArgs);
     }
 
     if (batchTxs.length === sliceSize || index + 1 === domains.length) {
@@ -79,7 +79,7 @@ const createBatchesEOA = (
   }
 
   return batchTxs;
-}
+};
 
 const createBatchesSafe = (
   domains : Array<Domain>,
@@ -88,10 +88,10 @@ const createBatchesSafe = (
   transferSliceSize : number
 ) : CreateBatchesResponse => {
   // For registration we already have bulk functions, so each push to this array is an encoded batch
-  let batchRegisterTxs : Array<string> = [];
+  const batchRegisterTxs : Array<string> = [];
 
   // For transfer we don't have bulk functions, so each push to this array is an array of encoded transfers
-  let batchTransferTxs : Array<string[]> = [];
+  const batchTransferTxs : Array<Array<string>> = [];
 
   // Get safe address being used
   const safeAddress = process.env.SAFE_ADDRESS;
@@ -103,7 +103,7 @@ const createBatchesSafe = (
   let transfersBatch : Array<string> = [];
 
   for (const [index, domain] of domains.entries()) {
-    let args = {
+    const args = {
       name: domain.label,
       domainAddress: domain.owner.id,
       tokenOwner: process.env.SAFE_ADDRESS!,
@@ -117,8 +117,8 @@ const createBatchesSafe = (
       paymentConfig: {
         token: ZeroAddress,
         beneficiary: ZeroAddress,
-      }
-    }
+      },
+    };
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
       // Subdomain, check parentHash
@@ -127,21 +127,21 @@ const createBatchesSafe = (
       if (domain.parentHash && domain.parentHash !== ZeroHash) {
         parentHash = domain.parentHash;
       } else if (domain.parent?.id && domain.parent?.id !== ZeroHash) {
-        parentHash = domain.parent?.id
+        parentHash = domain.parent?.id;
       } else {
         throw Error("No parentHash for subdomain. Registration requires parent hash to be set");
       }
 
       // remove `name` from args, leave rest of args in `rest`
       const { name, ...rest } = args;
-      
+
       // Make sure priceConfig is included in distrConfig
-      const subArgs = { 
-        parentHash: domain.parentHash, 
-        label: domain.label, 
+      const subArgs = {
+        parentHash: parentHash,
+        label: domain.label,
         ...rest,
       };
-      
+
       registrationBatch.push(subArgs);
 
       if (registrationBatch.length === registerSliceSize || index + 1 === domains.length) {
@@ -151,7 +151,7 @@ const createBatchesSafe = (
         );
         batchRegisterTxs.push(batchData);
         registrationBatch = []; // reset batch
-      }      
+      }
     } else {
       registrationBatch.push(args);
 
@@ -183,20 +183,20 @@ const createBatchesSafe = (
     }
   }
 
-  return [ batchRegisterTxs, batchTransferTxs ]
-}
+  return [ batchRegisterTxs, batchTransferTxs ];
+};
 
 
 // Get the logger instance for the decorator function below
 const logger = getZnsLogger();
 
 // Function decorator to log each execution
-export function LogExecution(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function LogExecution (target : any, propertyKey : string, descriptor : PropertyDescriptor) {
   const originalMethod = descriptor.value;
 
-  descriptor.value = function(...args: any[]) {
+  descriptor.value = function (...args : Array<any>) {
     const argsCopy = { ...args };
-    for (let [i,arg] of args.entries()) {
+    for (const [i,arg] of args.entries()) {
       if (typeof arg === "string" && arg.length > 42) {
         // // We slice txData bytes to avoid unnecessarily long logs
         argsCopy[i] = argsCopy[i].slice(0,10);

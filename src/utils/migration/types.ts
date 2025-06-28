@@ -111,61 +111,61 @@ export interface SafeTxArgType {
 
 // Structs or arrays
 export interface SafeTxComponentsArg {
-  components: Array<SafeTxArgType>;
+  components : Array<SafeTxArgType>;
 }
 // For Gnosis Safe batch transaction creation
 export interface SafeTxContractMethod {
-  inputs: Array<SafeTxArgType | SafeTxComponentsArg>;
-  name: string;
-  payable: boolean;
+  inputs : Array<SafeTxArgType | SafeTxComponentsArg>;
+  name : string;
+  payable : boolean;
 }
 
 export interface SafeTx {
-  to: string | Addressable;
-  value: string;
-  data: string | null;
-  contractMethod: SafeTxContractMethod;
-  contractInputsValues: { 
+  to : string | Addressable;
+  value : string;
+  data : string | null;
+  contractMethod : SafeTxContractMethod;
+  contractInputsValues : {
     // The names and values of the input params
     // e.g. for call to approve, "spender" : "0x...", "value" : "100000..."
-    [key: string]: any;
-  }
+    [key : string] : any;
+  };
 }
 
 export interface SafeBatch {
-  version: string; // 1.0
-  chainId: string; // 9369
-  createdAt: number; // timestamp
+  version : string; // 1.0
+  chainId : string; // 9369
+  createdAt : number; // timestamp
   meta ?: {
-    name: string;
-    description: string;
-    txBuilderVersion: string; // 1.18.0
-    createdFromSafeAddress: string; // 0x...
-    createdFromOwnerAddress: string; // 0x
-    checksum: string;
-  }
-  transactions: SafeTx[];
+    name : string;
+    description : string;
+    txBuilderVersion : string; // 1.18.0
+    createdFromSafeAddress : string; // 0x...
+    createdFromOwnerAddress : string; // 0x
+    checksum : string;
+  };
+  transactions : Array<SafeTx>;
 }
 
 export interface IRootDomainRegistrationArgs {
-  name: string;
-  domainAddress: string;
-  tokenOwner: string;
-  tokenURI: string;
-  distrConfig: IDistributionConfig;
-  paymentConfig: IPaymentConfig;
+  name : string;
+  domainAddress : string;
+  tokenOwner : string;
+  tokenURI : string;
+  distrConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
 }
 
 export interface ISubdomainRegisterArgs extends Omit<IRootDomainRegistrationArgs, "name"> {
-  parentHash: string;
-  label: string
+  parentHash : string;
+  label : string;
 }
 
 /**
  * The configuration to specify a SafeKit instance
  */
 export interface SafeKitConfig {
-  network : string,
+  network : string;
   chainId : bigint;
   rpcUrl : string;
   safeAddress : string;
@@ -173,19 +173,19 @@ export interface SafeKitConfig {
   delay : number;
   retryAttempts : number;
   txServiceUrl ?: string; // Optional when using a supported network
-  db ?: Db
+  db ?: Db;
 }
 
 export interface SafeRetryOptions {
-  attempts: number;
-  delayMs: number;
-  exponential?: boolean;
+  attempts : number;
+  delayMs : number;
+  exponential ?: boolean;
 }
 
-export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & { execute ?: boolean, numPendingTxs ?: number }
-export type ProposeTransactionPropsExtended = ProposeTransactionProps & { safeTx: SafeTransaction }
+export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & { execute ?: boolean; numPendingTxs ?: number; };
+export type ProposeTransactionPropsExtended = ProposeTransactionProps & { safeTx : SafeTransaction; };
 
 // Batch registerations are simply a string array,
 // but batch transfers aren't possible on the contract
 // so we group single transactions into a second array
-export type CreateBatchesResponse = [ string[], string[][] ];
+export type CreateBatchesResponse = [ Array<string>, Array<Array<string>> ];

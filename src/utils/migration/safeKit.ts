@@ -1,22 +1,22 @@
 // Gnosis Safe Modules
-import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse, SafeMultisigTransactionListResponse } from '@safe-global/api-kit'
-import Safe, { SafeTransactionOptionalProps } from '@safe-global/protocol-kit'
+import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse, SafeMultisigTransactionListResponse } from "@safe-global/api-kit";
+import Safe, { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
 import { MetaTransactionData, OperationType, SafeMultisigTransactionResponse, SafeSignature, SafeTransaction, TransactionResult } from "@safe-global/types-kit";
-import { SAFE_SUPPORTED_NETWORKS } from './constants';
-import { ProposeTransactionPropsExtended, SafeKitConfig, SafeRetryOptions, SafeTransactionOptionsExtended } from './types';
-import { Db } from 'mongodb';
-import { connectToDb } from './helpers';
+import { SAFE_SUPPORTED_NETWORKS } from "./constants";
+import { ProposeTransactionPropsExtended, SafeKitConfig, SafeRetryOptions, SafeTransactionOptionsExtended } from "./types";
+import { Db } from "mongodb";
+import { connectToDb } from "./helpers";
 
-import { LogExecution } from './helpers';
-import { TLogger } from '@zero-tech/zdc';
-import { getZnsLogger } from '../../deploy/get-logger';
+import { LogExecution } from "./helpers";
+import { TLogger } from "@zero-tech/zdc";
+import { getZnsLogger } from "../../deploy/get-logger";
 
 /**
  * Wrapper around the safeApiKit and protocolKit that Safe provides
- * 
+ *
  * Instantiation is done through `init`
  */
-export class SafeKit { // TODO we want a DB connection for adding details from EACH STEP, make here?
+export class SafeKit {
   apiKit : SafeApiKit;
   protocolKit : Safe;
   config : SafeKitConfig;
@@ -59,13 +59,13 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
 
     const apiKit = new SafeApiKit({
       chainId: config.chainId,
-      txServiceUrl: config.txServiceUrl
+      txServiceUrl: config.txServiceUrl,
     });
 
     const protocolKit = await Safe.init({
       provider: config.rpcUrl,
       signer: process.env.SAFE_OWNER!, // Must be private key, not address
-      safeAddress: config.safeAddress
+      safeAddress: config.safeAddress,
     });
 
     // If not given a client for the database connection already,
@@ -83,21 +83,21 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
     return new SafeKit(apiKit, protocolKit, config, db);
   }
 
-  async isOwner(address: string): Promise<boolean> {
-    return this.protocolKit!.isOwner(address);
+  async isOwner (address : string) : Promise<boolean> {
+    return this.protocolKit.isOwner(address);
   }
 
   /**
    * Create, sign, and propose multiple transactions to the Safe
-   * 
-   * @param to The address to send the transaction to 
-   * @param txDataBatches The data for the batch transaction, an array of strings 
+   *
+   * @param to The address to send the transaction to
+   * @param txDataBatches The data for the batch transaction, an array of strings
    * @param options Optional options for the transaction, such as nonce and execute flag
    */
   @LogExecution
   async createProposeSignedTxs (
-    to: string,
-    txDataBatches : string[],
+    to : string,
+    txDataBatches : Array<string>,
     options ?: SafeTransactionOptionsExtended
   ) {
     // Get the current nonce from the Safe to begin indexing
@@ -106,9 +106,9 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
 
     for (const [index, txData] of txDataBatches.entries()) {
       const txNonce = Number(nonce) + index;
-      
+
       const proposalData = await this.retry(
-        this.createSignedTx(to, txData, { nonce: txNonce, execute: false, ...options}),
+        this.createSignedTx(to, txData, { nonce: txNonce, execute: false, ...options }),
       );
 
       // Because we always submit with `execute` as false, we know
@@ -128,7 +128,7 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
 
   /**
    * Create a signed safe transaction ready for proposal
-   * 
+   *
    * @param to The address to send the transaction to
    * @param txData The data for the batch transaction
    * @returns ProposeTransactionPropsExtend object containing formed data
@@ -144,7 +144,7 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
 
     if (options && options.execute) {
       // Immediately execute the transaction instead of proposing it
-      await this.execute(safeTx, safeTxHash); // TODO technically dont have to return if dont check anything
+      await this.execute(safeTx, safeTxHash);
     } else {
       return {
         safeAddress: this.config.safeAddress,
@@ -152,35 +152,35 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
         safeTx,
         safeTxHash,
         senderAddress: this.config.safeOwnerAddress,
-        senderSignature: signature.data
-      } as ProposeTransactionPropsExtended
+        senderSignature: signature.data,
+      } as ProposeTransactionPropsExtended;
     }
   }
 
   /**
    * Create a transaction with the estimated gas necessary
-   * 
+   *
    * @param to The address to send the transaction to
    * @param txData The data for the batch transaction
    * @param options Optional
    * @returns The SafeTransaction and its hash
    */
-  async createTx(
+  async createTx (
     to : string,
     txData : string,
     options ?: SafeTransactionOptionsExtended,
   ) : Promise<[ SafeTransaction, string ]> {
     const safeTransaction : SafeMultisigTransactionEstimate = {
-      to: to,
+      to,
       value: "0",
       data: txData,
-      operation: OperationType.Call
-    }
+      operation: OperationType.Call,
+    };
 
     const manualOptions : SafeTransactionOptionalProps = {
       baseGas: "160000",
       refundReceiver: this.config.safeAddress,
-      ...options
+      ...options,
     };
 
     // Estimate gas for transaction
@@ -196,13 +196,13 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
       // not be enough for complex transactions
       manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
     } catch (e) {
-      this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options })
+      this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
       throw e;
     }
 
     const safeTx = await this.protocolKit.createTransaction({
       transactions: [safeTransaction as MetaTransactionData],
-      options: manualOptions
+      options: manualOptions,
     });
 
     const safeTxHash = await this.protocolKit.getTransactionHash(safeTx);
@@ -215,17 +215,17 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
    * @param safeTxHash The transaction hash before signing
    * @returns The signature created after signing
    */
-  async signTx(safeTxHash : string) : Promise<SafeSignature> {
+  async signTx (safeTxHash : string) : Promise<SafeSignature> {
     return await this.protocolKit.signHash(safeTxHash);
   }
 
   /**
    * Propose a signed transaction to the Safe
-   * 
-   * @param txProposeData The proposal data returned from  
+   *
+   * @param txProposeData The proposal data returned from
    */
   @LogExecution
-  async proposeTx(
+  async proposeTx (
     txProposeData : ProposeTransactionPropsExtended
   ) : Promise<void> {
     const beforeTxs = await this.apiKit.getPendingTransactions(this.config.safeAddress);
@@ -241,24 +241,24 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
       this.logger.info("Successfully proposed transaction", { safeTxHash: txProposeData.safeTxHash });
     } else {
       this.logger.error("Error: failed to propose tx", { safeTxHash: txProposeData.safeTxHash });
-      throw Error()
+      throw Error();
     }
   }
 
   // Execute all pending transactions in the Safe queue that have been confirmed
   @LogExecution
-  async executeAll(options ?: PendingTransactionsOptions) : Promise<void> {
+  async executeAll (options ?: PendingTransactionsOptions) : Promise<void> {
     const txs = await this.apiKit.getPendingTransactions(
       this.config.safeAddress,
       {
         hasConfirmations: true,
         ordering: "nonce",
-        ...options
+        ...options,
       }
     );
 
     this.logger.info("Pending transactions", { count: txs.count });
-    for (let tx of txs.results) {
+    for (const tx of txs.results) {
       await this.execute(tx, tx.safeTxHash);
       await this.delay(this.config.delay * 10);
     }
@@ -270,41 +270,40 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
   ) : Promise<TransactionResult> {
     this.logger.info(
       "Executing transaction",
-      { 
+      {
         nonce: (tx as SafeMultisigTransactionResponse).nonce,
-        txHash
+        txHash,
       }
     );
 
     // Recreate signature
     await this.protocolKit.signTransaction(tx);
 
-    // todo reenable, just do this to debug in tenderly
     // Estimate gas again as it may have changed since initial gas estimation
-    // const estimateTx = await this.apiKit.estimateSafeTransaction(
-    //   this.config.safeAddress,
-    //   tx as SafeMultisigTransactionEstimate 
-    // );
+    const estimateTx = await this.apiKit.estimateSafeTransaction(
+      this.config.safeAddress,
+      tx as SafeMultisigTransactionEstimate
+    );
 
-    this.logger.debug((tx as SafeMultisigTransactionResponse).nonce)
-    this.logger.debug((tx as SafeMultisigTransactionResponse).safeTxHash)
-    
+    this.logger.debug((tx as SafeMultisigTransactionResponse).nonce);
+    this.logger.debug((tx as SafeMultisigTransactionResponse).safeTxHash);
+
     // Give new gas estimate as gas limit when executing tx
     const result = await this.protocolKit.executeTransaction(tx, { gasLimit: Number(estimateTx.safeTxGas) * 2 });
     return result;
   }
 
   async retry <T> (
-    func: Promise<T>,
-    options: SafeRetryOptions = { attempts: this.config.retryAttempts, delayMs: this.config.delay, exponential: true }
+    func : Promise<T>,
+    options : SafeRetryOptions = { attempts: this.config.retryAttempts, delayMs: this.config.delay, exponential: true }
   ) : Promise<T> {
     const {
       attempts,
       delayMs,
-      exponential
+      exponential,
     } = options;
 
-    let lastError: Error | undefined;
+    let lastError : Error | undefined;
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
@@ -313,7 +312,7 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
       } catch (error) {
         // Store the error to throw later if all attempts fail
         lastError = error as Error;
-        
+
         // Call the optional onRetry callback
         this.logger.debug(`Retry attempt ${attempt} for ${func} failed: ${error}`);
 
@@ -321,10 +320,10 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
         if (attempt === attempts) {
           break;
         }
-        
+
         // Calculate delay with exponential backoff if enabled
         const waitTime = exponential ? delayMs * Math.pow(2, attempt - 1) : delayMs;
-        
+
         // Wait before the next attempt
         await this.delay(waitTime);
       }
@@ -332,7 +331,7 @@ export class SafeKit { // TODO we want a DB connection for adding details from E
 
     // If we've reached here, all attempts failed
     throw lastError;
-  };
+  }
 
   async delay (ms : number)  {
     new Promise(resolve => setTimeout(resolve, ms));

@@ -46,22 +46,22 @@ import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 
-const logDeploy = (name : string, address : string, args : any[], implAddress ?: string) => {
+const logDeploy = (name : string, address : string, args : Array<any>, implAddress ?: string) => {
   console.log(`Deployed ${name} at: ${address}`);
   if (implAddress) {
     console.log(`Implementation address: ${implAddress}`);
   }
   console.log(`With args: ${args.join(", ")}`);
-}
+};
 
-const verifyContract = async (contractAddress : string, args ?: any[]) => {
+const verifyContract = async (contractAddress : string, args ?: Array<any>) => {
   if (hre.network.name !== "hardhat") {
     await hre.run("verify:verify", {
-        address: contractAddress,
-        constructorArguments: args,
+      address: contractAddress,
+      constructorArguments: args,
     });
   }
-}
+};
 
 export const deployAccessController = async ({
   deployer,
@@ -118,7 +118,7 @@ export const deployRegistry = async (
   await registry.waitForDeployment();
   const proxyAddress = await registry.getAddress();
   const impl = await getProxyImplAddress(proxyAddress);
-  
+
   if (isTenderlyRun) {
     await hre.tenderly.verify({
       name: erc1967ProxyName,
@@ -223,7 +223,7 @@ export const deployMeowToken = async (
   await meowToken.waitForDeployment();
   const tokenAddress = await meowToken.getAddress();
 
-  await hre.ethers.ver
+  await hre.ethers.ver;
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -335,7 +335,7 @@ export const deployCurvePricer = async ({
   logDeploy("ZNSCurvePricer", proxyAddress, [
     accessControllerAddress,
     registryAddress,
-    priceConfig
+    priceConfig,
   ]);
 
   return curvePricer as unknown as ZNSCurvePricer;
