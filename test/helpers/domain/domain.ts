@@ -1,17 +1,16 @@
 import * as hre from "hardhat";
-import { IZNSContracts, ZNSContract } from "../../../src/deploy/campaign/types";
+import { IZNSContracts } from "../../../src/deploy/campaign/types";
 import { IFullDomainConfig } from "./types";
 import { IDistributionConfig, IPaymentConfig } from "../types";
 import { CurvePriceConfig, FixedPriceConfig } from "../../../src/deploy/missions/types";
 import { curvePriceConfigEmpty, distrConfigEmpty, fixedPriceConfigEmpty, paymentConfigEmpty } from "../constants";
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
 import { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 import { hashDomainLabel } from "../hashing";
 import { expect } from "chai";
-import { ZNSDomainToken, ZNSRegistry } from "../../../typechain";
-import { ZNSRegistryDM } from "../../../src/deploy/missions/contracts";
+import { encodePriceConfig } from "../pricing";
 
 
 export default class Domain {
@@ -79,7 +78,7 @@ export default class Domain {
   }
 
   async ownerOfToken () : Promise<string> {
-    return this.zns.domainToken.ownerOf(this.tokenId);
+    return this.zns.domainToken.ownerOf(BigInt(this.tokenId));
   }
 
   async getDomainHashFromEvent (domainOwner ?: SignerWithAddress) : Promise<string> {
@@ -219,12 +218,14 @@ export default class Domain {
   }
 
   async setPricerDataForDomain (
+    priceConfig : CurvePriceConfig | FixedPriceConfig,
+    pricerContract : string,
     executor ?: SignerWithAddress
   ) : Promise<void> {
     await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
       this.hash,
-      this.priceConfig,
-      this.distrConfig.pricerContract
+      encodePriceConfig(priceConfig),
+      pricerContract ? pricerContract : this.distrConfig.pricerContract
     );
   }
 
