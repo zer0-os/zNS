@@ -25,6 +25,20 @@ export const getUsersAndDomains = gql`
         parent {
           id
           label
+          tokenId
+          parentHash
+          parent {
+            id
+            label
+            tokenId
+            parentHash
+            parent {
+              id
+              label
+              tokenId
+              parentHash
+            }
+          }
         }
         accessType
         pricerContract

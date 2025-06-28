@@ -14,9 +14,6 @@ import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
  * - MONGO_DB_VERSION
  * - MONGO_DB_URI_WRITE - For writing valid collections to a separate database
  * - MONGO_DB_NAME_WRITE
- * 
- * // env-level?
- * 
  */
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
@@ -40,7 +37,11 @@ const main = async () => {
   // Doing this creates strong typing and extensibility that allows
   // the below `insertMany` calls to add properties to the object for `_id`
   const roots = rootDomainObjects.map(d => d as Domain);
+  console.log(`Found ${roots.length} root domains`);
+
   const subs = subdomainObjects.map(d => d as Domain);
+  console.log(`Found ${subs.length} subdomains`);
+
 
   const dbName = process.env.MONGO_DB_NAME_WRITE;
   if (!dbName) throw Error("Missing MONGO_DB_NAME_WRITE environment variable");
@@ -52,6 +53,7 @@ const main = async () => {
   let index = 0;
   for(const domain of [...roots, ...subs]) {
     try {
+      await validateDomain(domain, zns);
       if (domain.isWorld) {
         validRoots.push({ ...domain } as Domain);
       } else {
