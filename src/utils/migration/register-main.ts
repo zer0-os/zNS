@@ -99,17 +99,17 @@ const main = async () => {
   // must be proposed *and* executed before subdomain registration can be proposed
   // Likewise, any transfers will fail gas estimation for domains that do not exist yet.
 
-  let action : "roots" | "subs" | "transfers" = "subs"; // <--- Set this variable before each run as "roots", "subs", or "transfer"
+  // "roots" | "subs" | "transfers"
+  const action = process.env.ACTION; // <--- Set this variable before each run as "roots", "subs", or "transfer"
 
   const zns = await getZNS(migrationAdmin);
-
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
 
   let transfers = [];
 
   switch (action) {
-  case "roots": // TODO type error because action is hardcoded? read as env would fix but...
+  case "roots":
     logger.info("Proposing root domain registrations...");
+    const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
 
     transfers = await proposeRegistrations(
       await zns.rootRegistrar.getAddress(),
@@ -122,16 +122,29 @@ const main = async () => {
     await client.collection(`${ROOT_COLL_NAME}-transfers`).insertOne({ batches: transfers });
     break;
   case "subs":
-    const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
+    logger.info("Proposing subdomain registrations...");
+    const subdomains = await client.collection(
+      SUB_COLL_NAME
+    ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
-    const depth = 1;
+    const depth = 1; // <--- This value must also be changed manually between each iteration
     const atDepth = subdomains.filter(d => d.depth === depth);
 
     // Store revoked parents, if we find any
     const revokedParents : Array<Partial<Domain>> = [];
 
     // Verify the existence of parent domains before proposing subdomain registration batches
+    // Some may be missing in the subgraph, to be sure we recreate and register them
     for (const [i,d] of atDepth.entries()) {
+
+
+      // TODO in theory wont need this?
+      // if subgraph no longer deletes on revoke
+      // then domain data is complete when it is created in validation script
+      // then here we dont have to worry about non existence.
+      // Should we still check to be sure we didnt miss anything?
+
+
       let parentHash;
       if (d.parent && d.parent.id) {
         parentHash = d.parent.id;
@@ -147,19 +160,19 @@ const main = async () => {
         // Recreate domain to have the information needed to re-register
         // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
         // of the rest
-        let missingDomain : Partial<Domain> = {
+        const missingDomain : Partial<Domain> = {
           label: d.parent?.label,
           owner: {
             id: safeAddress,
-            domains: []
+            domains: [],
           },
           address: d.parent?.address || safeAddress,
-          tokenURI: d.parent?.tokenURI || "http.zero.io", // TODO if some values not in subgraph, how could we recreate at all?
-          tokenId: d.parent?.tokenId, // TODO be sure 01 query has this for PARENTrecreate as uint(hash(label)) but hash is of entire parent name, not JUST label, maybe?
-          parentHash: d.parent?.parentHash, // TODO be sure we get this in subgraph query
+          tokenURI: d.parent?.tokenURI || "http.zero.io",
+          tokenId: d.parent?.tokenId,
+          parentHash: d.parent?.parentHash || d.parent?.id,
           parent: {
-            id: d.parent?.id
-          }
+            id: d.parent?.id,
+          },
         };
 
         // If the missing parent is itself a subdomain, add `parentHash` and use `label` instead
@@ -167,15 +180,14 @@ const main = async () => {
       }
     }
 
+    // If there are revoked parents, we propose those instead
     if (revokedParents.length > 0) {
-      // We specifically do not cath `transfers` here as we don't care about
-      // transferring after these domains are reminted, we just do so to allow downstream
-      // registration to work
+      // We don't catch `transfers` here, we just want these for valid registration
       await proposeRegistrations(
-        await zns.subRegistrar.getAddress(),
+        depth - 1 === 0 ? await zns.rootRegistrar.getAddress() : await zns.subRegistrar.getAddress(),
         safeKit,
         atDepth,
-        SUBDOMAIN_BULK_SELECTOR
+        depth - 1 === 0 ? ROOT_DOMAIN_BULK_SELECTOR : SUBDOMAIN_BULK_SELECTOR,
       );
 
       break;

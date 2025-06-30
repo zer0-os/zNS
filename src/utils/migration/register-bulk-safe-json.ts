@@ -32,7 +32,7 @@ const main = async () => {
   const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
 
   // Create batch JSON files for root domains
-  createBatches(
+  await createBatches(
     rootDomains,
     zns,
     `${outputDir}/${rootsFolderName}`,
@@ -43,8 +43,11 @@ const main = async () => {
   fs.mkdirSync(`${outputDir}/${subsFolderName}`, { recursive: true });
 
   // Get all subdomain documents from collection, sorted by depth
-  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
-  createBatches(
+  const subdomains = await client.collection(
+    SUB_COLL_NAME
+  ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
+
+  await createBatches(
     subdomains,
     zns,
     `${outputDir}/${subsFolderName}`
@@ -92,7 +95,7 @@ const main = async () => {
   process.exit(0);
 };
 
-const createBatches = async (
+const createBatches = (
   domains : Array<Domain>,
   zns : IZNSContractsCache,
   outputFile : string,
@@ -108,14 +111,14 @@ const createBatches = async (
 
     let contractAddress : string;
     let funcName : string;
-    let funcAbi : Object;
+    let funcAbi : object;
 
     if (rootDomains) {
-      contractAddress = await zns.rootRegistrar.getAddress();
+      contractAddress = zns.rootRegistrar.target.toString();
       funcName = "registerRootDomainBulk";
       funcAbi = ZNSRootRegistrar__factory.createInterface().getFunction("registerRootDomainBulk");
     } else {
-      contractAddress = await zns.subRegistrar.getAddress();
+      contractAddress = zns.subRegistrar.target.toString();
       funcName = "registerSubDomainBulk";
       funcAbi = ZNSSubRegistrar__factory.createInterface().getFunction("registerSubdomainBulk");
     }
@@ -177,7 +180,7 @@ const createBatchTemplate = (
 const createTx = (
   to : string | Addressable,
   funcName : string,
-  funcAbi : Object,
+  funcAbi : object,
 ) : SafeTx => ({
   to,
   value: "0",

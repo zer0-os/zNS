@@ -1,21 +1,21 @@
 import * as hre from "hardhat";
-import { deployZNS, DeployZNSParams } from "../../../test/helpers";
-import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
-
-import { Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
-import { ZeroAddress, ZeroHash } from "ethers";
-
+import { ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 import { connectToDb, createBatches } from "./helpers";
-import { ZNSRootRegistrar, ZNSRootRegistrar__factory } from "../../../typechain";
 import { getZNS } from "./zns-contract-data";
+import { Domain, IRootDomainRegistrationArgs, ISubdomainRegistrationArgs, RootRegistrationArgsArrays } from "./types";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
   const client = await connectToDb();
 
-  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
-  const subdomains = await client.collection(SUB_COLL_NAME).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
+  const rootDomains = await client.collection(
+    ROOT_COLL_NAME
+  ).find().toArray() as unknown as Array<Domain>;
+
+  const subdomains = await client.collection(
+    SUB_COLL_NAME
+  ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
   const zns = await getZNS(migrationAdmin);
 
@@ -28,7 +28,7 @@ const main = async () => {
 
   for(const batch of rootRegisterBatches) {
     const registerTx = await zns.rootRegistrar.connect(migrationAdmin).registerRootDomainBulk(
-      batch
+      batch as unknown as Array<IRootDomainRegistrationArgs>
     );
 
     // Wait for network confirmations
@@ -43,7 +43,9 @@ const main = async () => {
   count = 0;
   console.log("Sending subdomain registrations...");
   for(const batch of subRegisterBatches) {
-    const registerTx = await zns.subRegistrar.connect(migrationAdmin).registerSubdomainBulk(tx);
+    const registerTx = await zns.subRegistrar.connect(migrationAdmin).registerSubdomainBulk(
+      batch as unknown as Array<ISubdomainRegistrationArgs>
+    );
 
     // Wait for network confirmations
     await registerTx.wait(hre.network.name === "hardhat" ? 0 : 3);

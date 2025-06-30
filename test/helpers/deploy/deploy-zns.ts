@@ -46,14 +46,16 @@ import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 
-const logDeploy = (name : string, address : string, args : Array<any>, implAddress ?: string) => {
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+const logDeploy = (name : string, address : string, args ?: Array<any>, implAddress ?: string) => {
   console.log(`Deployed ${name} at: ${address}`);
   if (implAddress) {
     console.log(`Implementation address: ${implAddress}`);
   }
-  console.log(`With args: ${args.join(", ")}`);
+  if (args) console.log(`With args: ${args.join(", ")}`);
 };
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const verifyContract = async (contractAddress : string, args ?: Array<any>) => {
   if (hre.network.name !== "hardhat") {
     await hre.run("verify:verify", {
@@ -84,7 +86,7 @@ export const deployAccessController = async ({
   const proxyAddress = await controller.getAddress();
 
   if (isTenderlyRun) {
-    await hre.ethers.verify({
+    await hre.tenderly.verify({
       name: accessControllerName,
       address: proxyAddress,
     });
@@ -188,23 +190,18 @@ export const deployDomainToken = async (
                 implementation: ${impl}`);
   }
 
-  await verifyContract(proxyAddress, [
+  const verifyArgs = [
     await accessController.getAddress(),
     ZNS_DOMAIN_TOKEN_NAME,
     ZNS_DOMAIN_TOKEN_SYMBOL,
     royaltyReceiverAddress,
     royaltyFraction.toString(),
     await registry.getAddress(),
-  ]);
+  ];
 
-  logDeploy("ZNSDomainToken", proxyAddress, [
-    await accessController.getAddress(),
-    ZNS_DOMAIN_TOKEN_NAME,
-    ZNS_DOMAIN_TOKEN_SYMBOL,
-    royaltyReceiverAddress,
-    royaltyFraction.toString(),
-    await registry.getAddress(),
-  ]);
+  await verifyContract(proxyAddress, verifyArgs);
+
+  logDeploy("ZNSDomainToken", proxyAddress, verifyArgs);
 
   return domainToken as unknown as ZNSDomainToken;
 };
@@ -222,8 +219,6 @@ export const deployMeowToken = async (
 
   await meowToken.waitForDeployment();
   const tokenAddress = await meowToken.getAddress();
-
-  await hre.ethers.ver;
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -293,7 +288,7 @@ export const deployAddressResolver = async (
     );
   }
 
-  verifyContract(proxyAddress, [
+  await verifyContract(proxyAddress, [
     accessControllerAddress,
     registryAddress,
   ]);
@@ -326,17 +321,9 @@ export const deployCurvePricer = async ({
     console.log(`${curvePricerName} deployed at: ${address}`);
   }
 
-  await verifyContract(proxyAddress, [
-    accessControllerAddress,
-    registryAddress,
-    priceConfig,
-  ]);
+  await verifyContract(address);
 
-  logDeploy("ZNSCurvePricer", proxyAddress, [
-    accessControllerAddress,
-    registryAddress,
-    priceConfig,
-  ]);
+  logDeploy("ZNSCurvePricer", address);
 
   return curvePricer as unknown as ZNSCurvePricer;
 };
@@ -499,12 +486,9 @@ export const deployFixedPricer = async ({
     );
   }
 
-  await verifyContract(proxyAddress, [
-    acAddress,
-    regAddress,
-  ]);
+  await verifyContract(address);
 
-  logDeploy("ZNSFixedPricer", proxyAddress, [acAddress, regAddress]);
+  logDeploy("ZNSFixedPricer", address);
 
   return fixedPricer as unknown as ZNSFixedPricer;
 };

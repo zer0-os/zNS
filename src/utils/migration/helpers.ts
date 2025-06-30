@@ -1,7 +1,14 @@
 import { Db } from "mongodb";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { getDBAdapter } from "./database";
-import { CreateBatchesResponse, Domain, IRootDomainRegistrationArgs, ISubdomainRegisterArgs } from "./types";
+import {
+  CreateBatchesResponse,
+  Domain,
+  IRootDomainRegistrationArgs,
+  ISubdomainRegistrationArgs,
+  RootRegistrationArgsArrays,
+  SubRegistrationArgsArrays,
+} from "./types";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZnsLogger } from "../../deploy/get-logger";
@@ -25,23 +32,31 @@ export const connectToDb = async (
 export const createBatches = (
   domains : Array<Domain>,
   functionSelector ?: string,
-  registerSliceSize  = 50,
-  transferSliceSize  = 500
-) : CreateBatchesResponse | Array<Array<IRootDomainRegistrationArgs>> | Array<Array<ISubdomainRegisterArgs>> => {
+  registerSliceSize = 50,
+  transferSliceSize = 500
+) : CreateBatchesResponse | RootRegistrationArgsArrays | SubRegistrationArgsArrays => {
   if (functionSelector) {
-    return createBatchesSafe(domains, functionSelector, registerSliceSize, transferSliceSize) as CreateBatchesResponse;
+    return createBatchesSafe(
+      domains,
+      functionSelector,
+      registerSliceSize,
+      transferSliceSize
+    ) as CreateBatchesResponse;
   } else {
-    return createBatchesEOA(domains, registerSliceSize) as Array<Array<IRootDomainRegistrationArgs>> | Array<Array<ISubdomainRegisterArgs>>;
+    return createBatchesEOA(
+      domains,
+      registerSliceSize
+    ) as RootRegistrationArgsArrays | SubRegistrationArgsArrays;
   }
 };
 
 // Create transaction batches used in the `register-bulk-eoa.ts` script
 const createBatchesEOA = (
   domains : Array<Domain>,
-  sliceSize  = 50
+  sliceSize = 50
 ) => {
-  const txs : Array<IRootDomainRegistrationArgs> | Array<ISubdomainRegisterArgs> = [];
-  let batchTxs : Array<Array<IRootDomainRegistrationArgs> | Array<ISubdomainRegisterArgs>> = [];
+  const txs : Array<IRootDomainRegistrationArgs | ISubdomainRegistrationArgs> = [];
+  let batchTxs : Array<Array<IRootDomainRegistrationArgs | ISubdomainRegistrationArgs>> = [];
 
   // Create batch txs for domains
   for (const [index, domain] of domains.entries()) {
@@ -66,10 +81,10 @@ const createBatchesEOA = (
     // but "label" is used for both in the subgraph
     if (domain.parentHash !== ZeroHash) {
       const { name, ...rest } = domainArg;
-      const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest };
-      (txs as Array<ISubdomainRegisterArgs>).push(subArg as ISubdomainRegisterArgs);
+      const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest } as ISubdomainRegistrationArgs;
+      txs.push(subArg);
     } else {
-      (txs as Array<IRootDomainRegistrationArgs>).push(domainArg as IRootDomainRegistrationArgs);
+      txs.push(domainArg);
     }
 
     if (batchTxs.length === sliceSize || index + 1 === domains.length) {
@@ -99,6 +114,8 @@ const createBatchesSafe = (
     throw Error("No Safe address set in environment variables");
   }
 
+  // Add better typing for this
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   let registrationBatch : Array<any> = [];
   let transfersBatch : Array<string> = [];
 
@@ -137,7 +154,7 @@ const createBatchesSafe = (
 
       // Make sure priceConfig is included in distrConfig
       const subArgs = {
-        parentHash: parentHash,
+        parentHash,
         label: domain.label,
         ...rest,
       };
@@ -165,12 +182,16 @@ const createBatchesSafe = (
       }
     }
 
-    const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
-      "safeTransferFrom(address,address,uint256)",
-      [ safeAddress, domain.owner.id, domain.tokenId ]
-    );
+    // Domains marked as `revoked` won't need to be transferred to any user
+    // So we can ignore this
+    if (!domain.isRevoked) {
+      const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
+        "safeTransferFrom(address,address,uint256)",
+        [ safeAddress, domain.owner.id, domain.tokenId ]
+      );
 
-    transfersBatch.push(transferEncoding);
+      transfersBatch.push(transferEncoding);
+    }
 
     if (transfersBatch.length === transferSliceSize) {
       batchTransferTxs.push(transfersBatch);
@@ -191,9 +212,11 @@ const createBatchesSafe = (
 const logger = getZnsLogger();
 
 // Function decorator to log each execution
-export function LogExecution (target : any, propertyKey : string, descriptor : PropertyDescriptor) {
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+export const LogExecution = (target : any, propertyKey : string, descriptor : PropertyDescriptor) => {
   const originalMethod = descriptor.value;
 
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   descriptor.value = function (...args : Array<any>) {
     const argsCopy = { ...args };
     for (const [i,arg] of args.entries()) {
@@ -209,5 +232,5 @@ export function LogExecution (target : any, propertyKey : string, descriptor : P
   };
 
   return descriptor;
-}
+};
 

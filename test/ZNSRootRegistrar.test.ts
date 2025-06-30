@@ -33,6 +33,7 @@ import {
   DIVISION_BY_ZERO_ERR,
   INVALID_CONFIG_LENGTH_ERR,
   PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR,
+  deployZNS,
 } from "./helpers";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
@@ -90,9 +91,9 @@ describe("ZNSRootRegistrar", () => {
       admins: [deployer.address, admin.address],
     });
 
-    // const campaign = await runZnsCampaign({
-    //   config,
-    // });
+    const campaign = await runZnsCampaign({
+      config,
+    });
 
     zns = await deployZNS({
       deployer,
@@ -101,11 +102,11 @@ describe("ZNSRootRegistrar", () => {
       zeroVaultAddress: zeroVault.address,
     });
 
-    // zns = campaign.state.contracts;
+    zns = campaign.state.contracts;
 
     await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
 
-    // mongoAdapter = campaign.dbAdapter;
+    mongoAdapter = campaign.dbAdapter;
 
     await zns.meowToken.connect(deployer).approve(
       await zns.treasury.getAddress(),
@@ -119,9 +120,9 @@ describe("ZNSRootRegistrar", () => {
     await zns.meowToken.mint(user.address, userBalanceInitial);
   });
 
-  // afterEach(async () => {
-  //   await mongoAdapter.dropDB();
-  // });
+  afterEach(async () => {
+    await mongoAdapter.dropDB();
+  });
 
   it("Gas tests", async () => {
     const tokenURI = "https://example.com/817c64af";

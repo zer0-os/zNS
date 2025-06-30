@@ -1,6 +1,5 @@
 import {
   ERC20Mock,
-  MeowTokenMock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,

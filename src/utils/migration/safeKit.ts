@@ -1,18 +1,28 @@
 // Gnosis Safe Modules
-import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse, SafeMultisigTransactionListResponse } from "@safe-global/api-kit";
+import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate } from "@safe-global/api-kit";
 import Safe, { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
-import { MetaTransactionData, OperationType, SafeMultisigTransactionResponse, SafeSignature, SafeTransaction, TransactionResult } from "@safe-global/types-kit";
-import { SAFE_SUPPORTED_NETWORKS } from "./constants";
-import { ProposeTransactionPropsExtended, SafeKitConfig, SafeRetryOptions, SafeTransactionOptionsExtended } from "./types";
-import { Db } from "mongodb";
-import { connectToDb } from "./helpers";
-
-import { LogExecution } from "./helpers";
+import {
+  MetaTransactionData,
+  OperationType,
+  SafeMultisigTransactionResponse,
+  SafeSignature,
+  SafeTransaction,
+  TransactionResult,
+} from "@safe-global/types-kit";
 import { TLogger } from "@zero-tech/zdc";
+import { Db } from "mongodb";
+import { connectToDb, LogExecution } from "./helpers";
+import { SAFE_SUPPORTED_NETWORKS } from "./constants";
+import {
+  ProposeTransactionPropsExtended,
+  SafeKitConfig,
+  SafeRetryOptions,
+  SafeTransactionOptionsExtended,
+} from "./types";
 import { getZnsLogger } from "../../deploy/get-logger";
 
 /**
- * Wrapper around the safeApiKit and protocolKit that Safe provides
+ * Wrapper class around the safeApiKit and protocolKit that Safe provides
  *
  * Instantiation is done through `init`
  */
@@ -185,20 +195,20 @@ export class SafeKit {
 
     // Estimate gas for transaction
     // This throws an error if the inner transaction will revert
-    let estimateTx : SafeMultisigTransactionEstimateResponse;
-    try {
-      estimateTx = await this.apiKit.estimateSafeTransaction(
-        this.config.safeAddress,
-        safeTransaction
-      );
+    // let estimateTx : SafeMultisigTransactionEstimateResponse;
+    // try {
+    //   estimateTx = await this.apiKit.estimateSafeTransaction(
+    //     this.config.safeAddress,
+    //     safeTransaction
+    //   );
 
-      // Provide gas manually instead of relying on defaults which can sometimes
-      // not be enough for complex transactions
-      manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
-    } catch (e) {
-      this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
-      throw e;
-    }
+    //   // Provide gas manually instead of relying on defaults which can sometimes
+    //   // not be enough for complex transactions
+    //   manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
+    // } catch (e) {
+    //   this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
+    //   throw e;
+    // }
 
     const safeTx = await this.protocolKit.createTransaction({
       transactions: [safeTransaction as MetaTransactionData],
@@ -216,7 +226,7 @@ export class SafeKit {
    * @returns The signature created after signing
    */
   async signTx (safeTxHash : string) : Promise<SafeSignature> {
-    return await this.protocolKit.signHash(safeTxHash);
+    return this.protocolKit.signHash(safeTxHash);
   }
 
   /**
@@ -333,7 +343,7 @@ export class SafeKit {
     throw lastError;
   }
 
-  async delay (ms : number)  {
-    new Promise(resolve => setTimeout(resolve, ms));
+  async delay (ms : number) {
+    await new Promise(resolve => setTimeout(resolve, ms));
   }
 }

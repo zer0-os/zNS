@@ -1,5 +1,5 @@
 import { Addressable } from "ethers";
-import { IDistributionConfig, IPaymentConfig, IZNSContractsLocal } from "../../../test/helpers/types";
+import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
 import { SafeTransaction } from "@safe-global/types-kit";
 import { ProposeTransactionProps } from "@safe-global/api-kit";
@@ -17,7 +17,8 @@ export interface Domain {
   isWorld : boolean;
   address : string;
   parentHash : string;
-  parent : Domain | null;
+  parent : Partial<Domain> | null;
+  isRevoked : boolean;
   accessType : string;
   paymentType : string;
   pricerContract : string;
@@ -29,9 +30,6 @@ export interface Domain {
   treasury : Treasury;
   creationBlock : number;
 }
-
-export type RootRegistrarArgs = Pick<Domain, "label" |  "owner" | "tokenURI" | "treasury">;
-export type SubRegistrarArgs = RootRegistrarArgs & Pick<Domain, "parentHash">;
 
 interface CurvePriceConfig {
   id : string;
@@ -67,39 +65,8 @@ interface DomainToken {
   tokenURI : string;
 }
 
-export interface SubgraphError {
-  label : string;
-  hash : string;
-  parentHash : string;
-  parent : Domain | null;
-  error : string;
-}
-
-export interface RootDomainData {
-  name : string;
-  domainAddress : string;
-  tokenUri : string;
-  distrConfig : IDistributionConfig;
-  paymentConfig : IPaymentConfig;
-}
-
-export interface SubdomainData extends Pick<RootDomainData, "domainAddress" | "tokenUri" | "distrConfig" | "paymentConfig"> {
-  parentHash : string;
-  label : string;
-}
-
-export interface RegisteredDomains {
-  domainHashes : Array<string>;
-  txHash : string;
-}
-
 export interface User { id : string; domains : Array<Domain>; }
-export interface InvalidDomain { message : string; domain : Domain; }
-export interface ValidatedUser {
-  address : string;
-  validDomains : Array<Domain>;
-  invalidDomains : Array<InvalidDomain>;
-}
+
 
 // Singular variables
 export interface SafeTxArgType {
@@ -128,6 +95,7 @@ export interface SafeTx {
   contractInputsValues : {
     // The names and values of the input params
     // e.g. for call to approve, "spender" : "0x...", "value" : "100000..."
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
     [key : string] : any;
   };
 }
@@ -156,7 +124,7 @@ export interface IRootDomainRegistrationArgs {
   paymentConfig : IPaymentConfig;
 }
 
-export interface ISubdomainRegisterArgs extends Omit<IRootDomainRegistrationArgs, "name"> {
+export interface ISubdomainRegistrationArgs extends IRootDomainRegistrationArgs {
   parentHash : string;
   label : string;
 }
@@ -182,10 +150,15 @@ export interface SafeRetryOptions {
   exponential ?: boolean;
 }
 
-export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & { execute ?: boolean; numPendingTxs ?: number; };
+export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & {
+  execute ?: boolean;
+  numPendingTxs ?: number;
+};
 export type ProposeTransactionPropsExtended = ProposeTransactionProps & { safeTx : SafeTransaction; };
 
 // Batch registerations are simply a string array,
 // but batch transfers aren't possible on the contract
 // so we group single transactions into a second array
 export type CreateBatchesResponse = [ Array<string>, Array<Array<string>> ];
+export type RootRegistrationArgsArrays = Array<Array<IRootDomainRegistrationArgs>>;
+export type SubRegistrationArgsArrays = Array<Array<ISubdomainRegistrationArgs>>;
