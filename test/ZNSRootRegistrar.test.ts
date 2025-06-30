@@ -205,7 +205,7 @@ describe("ZNSRootRegistrar", () => {
         operator.address,
         operator.address,
         operator.address,
-        0n,
+        0n
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
