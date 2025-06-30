@@ -12,6 +12,33 @@ import {
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZnsLogger } from "../../deploy/get-logger";
+import { SafeKit } from "./safeKit";
+
+// Create and propose batch transactions to the Safe
+export const proposeRegistrations = async (
+  to : string,
+  safeKit : SafeKit,
+  domains : Array<Domain>,
+  selector : string
+) => {
+  const [ registrations, transfers ] = createBatches(
+    domains,
+    selector,
+  ) as CreateBatchesResponse;
+
+  // Create proposals for registering domains
+  await Promise.all([
+    // Wrapping in a Promise object reduces execution time
+    safeKit.createProposeSignedTxs(
+      to,
+      registrations
+    ),
+  ]);
+
+  // To avoid iterating domains multiple times, we get transfers as well
+  // and store them for later use
+  return transfers;
+};
 
 // Connect to the MongoDB database to read domain data for migration
 export const connectToDb = async (

@@ -1,5 +1,5 @@
 // Gnosis Safe Modules
-import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate } from "@safe-global/api-kit";
+import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse } from "@safe-global/api-kit";
 import Safe, { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
 import {
   MetaTransactionData,
@@ -195,20 +195,20 @@ export class SafeKit {
 
     // Estimate gas for transaction
     // This throws an error if the inner transaction will revert
-    // let estimateTx : SafeMultisigTransactionEstimateResponse;
-    // try {
-    //   estimateTx = await this.apiKit.estimateSafeTransaction(
-    //     this.config.safeAddress,
-    //     safeTransaction
-    //   );
+    let estimateTx : SafeMultisigTransactionEstimateResponse;
+    try {
+      estimateTx = await this.apiKit.estimateSafeTransaction(
+        this.config.safeAddress,
+        safeTransaction
+      );
 
-    //   // Provide gas manually instead of relying on defaults which can sometimes
-    //   // not be enough for complex transactions
-    //   manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
-    // } catch (e) {
-    //   this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
-    //   throw e;
-    // }
+      // Provide gas manually instead of relying on defaults which can sometimes
+      // not be enough for complex transactions
+      manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
+    } catch (e) {
+      this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
+      throw e;
+    }
 
     const safeTx = await this.protocolKit.createTransaction({
       transactions: [safeTransaction as MetaTransactionData],

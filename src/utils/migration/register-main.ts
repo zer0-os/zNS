@@ -1,9 +1,8 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb } from "./helpers";
+import { connectToDb, proposeRegistrations } from "./helpers";
 import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
-import { proposeRegistrations } from "./proposeRegisterDomains";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
 import { TLogger } from "@zero-tech/zdc";
@@ -136,15 +135,6 @@ const main = async () => {
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
     for (const [i,d] of atDepth.entries()) {
-
-
-      // TODO in theory wont need this?
-      // if subgraph no longer deletes on revoke
-      // then domain data is complete when it is created in validation script
-      // then here we dont have to worry about non existence.
-      // Should we still check to be sure we didnt miss anything?
-
-
       let parentHash;
       if (d.parent && d.parent.id) {
         parentHash = d.parent.id;
@@ -155,7 +145,9 @@ const main = async () => {
         throw Error(`No parent information found for subdomain at ${i}: ${d.label}, ${d.id}`);
       }
 
-      const owner = await zns.registry.getDomainOwner(parentHash);
+      // Even with a single promise doing this reduces execution time
+      const ownerPromise = zns.registry.getDomainOwner(parentHash);
+      const [ owner ] = await Promise.all([ownerPromise]);
       if (owner === ZeroAddress) {
         // Recreate domain to have the information needed to re-register
         // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
