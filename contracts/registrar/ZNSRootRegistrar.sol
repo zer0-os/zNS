@@ -45,15 +45,7 @@ contract ZNSRootRegistrar is
     IZNSRootRegistrar {
     using StringUtils for string;
 
-    /**
-     * @notice Address of the `IZNSPricer` type contract that is used for root domains.
-     */
-    IZNSPricer public override rootPricer;
-    /**
-     * @notice The price config for the root domains, encoded as bytes.
-     * This is used by the `IZNSPricer` to determine the price for root domains.
-     */
-    bytes public override rootPriceConfig;
+    /** ZNS Contracts **/
     /**
      * @notice The `ZNSTreasury` contract that is used to handle payments and staking for domains.
      */
@@ -68,6 +60,21 @@ contract ZNSRootRegistrar is
      * This contract is used to set distribution configs and manage subdomain registrations.
      */
     IZNSSubRegistrar public override subRegistrar;
+
+    /** Root Domains Config **/
+    /**
+     * @notice Address of the `IZNSPricer` type contract that is used for root domains.
+     */
+    IZNSPricer public override rootPricer;
+    /**
+     * @notice The price config for the root domains, encoded as bytes.
+     * This is used by the `IZNSPricer` to determine the price for root domains.
+     */
+    bytes public override rootPriceConfig;
+    /**
+     * @notice The `PaymentType` used for all root domains.
+     */
+    PaymentType public override rootPaymentType;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -87,6 +94,7 @@ contract ZNSRootRegistrar is
      * @param priceConfig_  IZNSPricer pricer config data encoded as bytes for root domains
      * @param treasury_ Address of the ZNSTreasury contract
      * @param domainToken_ Address of the ZNSDomainToken contract
+     * @param rootPaymentType_ The payment type for root domains
      */
     function initialize(
         address accessController_,
@@ -94,7 +102,8 @@ contract ZNSRootRegistrar is
         address rootPricer_,
         bytes calldata priceConfig_,
         address treasury_,
-        address domainToken_
+        address domainToken_,
+        PaymentType rootPaymentType_
     ) external override initializer {
         _setAccessController(accessController_);
         setRegistry(registry_);
@@ -102,6 +111,7 @@ contract ZNSRootRegistrar is
         setRootPricerAndConfig(rootPricer_, priceConfig_);
         setTreasury(treasury_);
         setDomainToken(domainToken_);
+        setRootPaymentType(rootPaymentType_);
     }
 
     /**
@@ -145,7 +155,7 @@ contract ZNSRootRegistrar is
                 stakeFee: 0,
                 label: args.name,
                 tokenURI: args.tokenURI,
-                isStakePayment: true,
+                isStakePayment: rootPaymentType == PaymentType.STAKE,
                 paymentConfig: args.paymentConfig
             })
         );
@@ -476,6 +486,23 @@ contract ZNSRootRegistrar is
 
         subRegistrar = IZNSSubRegistrar(subRegistrar_);
         emit SubRegistrarSet(subRegistrar_);
+    }
+
+    /**
+     * @notice Setter for the root payment type in state.
+     * Only ADMIN in `ZNSAccessController` can call this function.
+     *
+     * @param rootPaymentType_ The new root payment type to set
+     *  > Can be either `PaymentType.DIRECT` or `PaymentType.STAKE`
+     */
+    function setRootPaymentType(PaymentType rootPaymentType_) public override onlyAdmin {
+        if (
+            rootPaymentType_ != PaymentType.DIRECT
+            && rootPaymentType_ != PaymentType.STAKE
+        ) revert InvalidRootPaymentType(rootPaymentType_);
+
+        rootPaymentType = rootPaymentType_;
+        emit RootPaymentTypeSet(rootPaymentType_);
     }
 
     /**

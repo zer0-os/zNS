@@ -19,6 +19,7 @@ import {
 export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {
   env : TEnvironment;
   deployAdmin : SignerWithAddress;
+  pauseRegistration ?: boolean;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -27,6 +28,7 @@ export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddr
     defaultRoyaltyReceiver : string;
     defaultRoyaltyFraction : bigint;
   };
+  rootPaymentType : bigint;
   rootPricerType : string;
   rootPriceConfig : string;
   zeroVaultAddress : string;

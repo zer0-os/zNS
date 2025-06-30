@@ -7,7 +7,7 @@ import {
   STAKING_TOKEN_ERR,
   INVALID_CURVE_ERR,
   MONGO_URI_ERR,
-  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR, encodePriceConfig, IFixedPriceConfig,
+  INVALID_ENV_ERR, NO_ZERO_VAULT_ERR, encodePriceConfig, IFixedPriceConfig, PaymentType,
 } from "../../../test/helpers";
 import { ethers } from "ethers";
 import { ICurvePriceConfig } from "../missions/types";
@@ -102,6 +102,7 @@ export const getConfig = async ({
     confirmationsN: Number(process.env.CONFIRMATION_N),
     srcChainName: SupportedChains.z, // should be sepolia
     deployAdmin: deployer,
+    pauseRegistration: process.env.PAUSE_REGISTRATION === "true",
     governorAddresses,
     adminAddresses,
     domainToken: {
@@ -110,6 +111,7 @@ export const getConfig = async ({
       defaultRoyaltyReceiver: royaltyReceiver as string,
       defaultRoyaltyFraction: royaltyFraction,
     },
+    rootPaymentType: BigInt(process.env.ROOT_PAYMENT_TYPE),
     rootPricerType: process.env.ROOT_PRICER_TYPE,
     rootPriceConfig: priceConfig,
     zeroVaultAddress: zeroVaultAddressConf as string,
@@ -187,6 +189,24 @@ export const validateEnv = (
     requires(!!process.env.TENDERLY_PROJECT_SLUG, "Must provide a Tenderly Project Slug to monitor contracts");
     requires(!!process.env.TENDERLY_ACCOUNT_ID, "Must provide a Tenderly Account ID to monitor contracts");
     requires(!!process.env.TENDERLY_ACCESS_KEY, "Must provide a Tenderly Access Key to monitor contracts");
+  }
+
+  if (
+    process.env.ROOT_PRICER_TYPE !== PricerTypes.curve
+    && process.env.ROOT_PRICER_TYPE !== PricerTypes.fixed
+  ) {
+    throw new Error(
+      `Must provide a valid ROOT_PRICER_TYPE env variable, got: ${process.env.ROOT_PRICER_TYPE}`
+    );
+  }
+
+  if (
+    BigInt(process.env.ROOT_PAYMENT_TYPE) !== PaymentType.DIRECT
+    && BigInt(process.env.ROOT_PAYMENT_TYPE) !== PaymentType.STAKE
+  ) {
+    throw new Error(
+      `Must provide a valid ROOT_PAYMENT_TYPE env variable, got: ${process.env.ROOT_PAYMENT_TYPE}`
+    );
   }
 
   return priceConfig;

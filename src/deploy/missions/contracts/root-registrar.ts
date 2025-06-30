@@ -23,6 +23,9 @@ IZNSContracts
   contractName = znsNames.rootRegistrar.contract;
   instanceName = znsNames.rootRegistrar.instance;
 
+  private isRegistrar ?: boolean;
+  private needsPause ?: boolean;
+
   async deployArgs () : Promise<TDeployArgs> {
     const {
       accessController,
@@ -45,6 +48,7 @@ IZNSContracts
       config.rootPriceConfig,
       await treasury.getAddress(),
       await domainToken.getAddress(),
+      config.rootPaymentType,
     ];
   }
 
@@ -52,18 +56,25 @@ IZNSContracts
     const {
       accessController,
       rootRegistrar,
-      config: { deployAdmin },
+      config: {
+        deployAdmin,
+        pauseRegistration,
+      },
     } = this.campaign;
 
-    const isRegistrar = await accessController
+    this.isRegistrar = await accessController
       .connect(deployAdmin)
       .isRegistrar(await rootRegistrar.getAddress());
 
-    const msg = !isRegistrar ? "needs" : "doesn't need";
+    this.needsPause = pauseRegistration && !await rootRegistrar.registrationPaused();
+
+    const needs = !this.isRegistrar || this.needsPause;
+
+    const msg = needs ? "needs" : "doesn't need";
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return !isRegistrar;
+    return needs as boolean;
   }
 
   async postDeploy () {
@@ -76,11 +87,21 @@ IZNSContracts
       deployer,
     } = this.campaign;
 
-    const tx = await accessController
-      .connect(deployAdmin)
-      .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
+    if (!this.isRegistrar) {
+      const tx = await accessController
+        .connect(deployAdmin)
+        .grantRole(REGISTRAR_ROLE, await rootRegistrar.getAddress());
 
-    await deployer.awaitConfirmation(tx);
+      await deployer.awaitConfirmation(tx);
+    }
+
+    if (this.needsPause) {
+      const tx = await rootRegistrar
+        .connect(deployAdmin)
+        .pauseRegistration();
+
+      await deployer.awaitConfirmation(tx);
+    }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }
