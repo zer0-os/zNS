@@ -344,7 +344,6 @@ export const deployTreasury = async ({
                 implementation: ${impl}`);
   }
 
-  
 
   logDeploy("ZNSTreasury", proxyAddress, [
     accessControllerAddress,
@@ -403,7 +402,6 @@ export const deployRootRegistrar = async (
                 implementation: ${impl}`);
   }
 
-  
 
   logDeploy("ZNSRootRegistrar", proxyAddress, [
     await accessController.getAddress(),

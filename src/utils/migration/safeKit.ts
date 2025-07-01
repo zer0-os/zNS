@@ -1,5 +1,9 @@
 // Gnosis Safe Modules
-import SafeApiKit, { PendingTransactionsOptions, SafeMultisigTransactionEstimate, SafeMultisigTransactionEstimateResponse } from "@safe-global/api-kit";
+import SafeApiKit, {
+  PendingTransactionsOptions,
+  SafeMultisigTransactionEstimate,
+  SafeMultisigTransactionEstimateResponse,
+} from "@safe-global/api-kit";
 import Safe, { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
 import {
   MetaTransactionData,
@@ -125,14 +129,14 @@ export class SafeKit {
       // we will get proposal data back unless something has failed
       if (!proposalData) {
         const message = "Error: Failed to create proposal data for tx";
-        const data = { to, txData: txData.slice(0,10), txNonce }
-        this.logger.error(message, data)
-        this.db.collection("execution-logs").insertOne({
+        const data = { to, txData: txData.slice(0,10), txNonce };
+        this.logger.error(message, data);
+        await this.db.collection("execution-logs").insertOne({
           message: "Error: Failed to create proposal data for tx",
           data: {
             index,
-            ...data
-          }
+            ...data,
+          },
         });
         throw Error();
       } else {
@@ -140,12 +144,12 @@ export class SafeKit {
         const data = { safeTxHash: proposalData.safeTxHash };
 
         this.logger.info(message, data);
-        this.db.collection("execution-logs").insertOne({
+        await this.db.collection("execution-logs").insertOne({
           message: "Successfully created proposal data for tx",
           data: {
             index,
-            ...data
-          }
+            ...data,
+          },
         });
       }
 

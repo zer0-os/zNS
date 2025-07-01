@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 import { connectToDb, createBatches } from "./helpers";
 import { getZNS } from "./zns-contract-data";
-import { Domain, IRootDomainRegistrationArgs, ISubdomainRegistrationArgs, RootRegistrationArgsArrays } from "./types";
+import { Domain, IRootDomainRegistrationArgs, ISubdomainRegistrationArgs } from "./types";
 
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();

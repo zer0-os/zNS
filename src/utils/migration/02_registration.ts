@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
 import { connectToDb, proposeRegistrations } from "./helpers";
-import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SAFE_SUPPORTED_NETWORKS, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
+import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
 import { TLogger } from "@zero-tech/zdc";
@@ -32,10 +32,6 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - TX_SERVICE_URL - Optional only when using a Safe supported network
  * - DELAY
  * - RETRIES
- *
- * For more information on what networks are supported by Safe, read more below
- * eslint-disable-next-line max-len
- * https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
  *
  * Required steps:
  * - ZNS v1.5 contracts must have been deployed to the target network
@@ -90,6 +86,11 @@ const main = async () => {
     db: client,
     txServiceUrl: process.env.TX_SERVICE_URL, // Optional, specify only when using a network not supported by Safe
   };
+
+
+  // For more information on what networks are supported by Safe, read more below
+  /* eslint-disable-next-line max-len */
+  // https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 
   // Setup the SafeKit
   const safeKit = await SafeKit.init(config);
