@@ -83,14 +83,6 @@ export const validateDomain = async (
     `
   );
 
-  // Not important. Could be a bug in the subgraph
-  // assert.equal(distrConfig.pricerContract.toLowerCase(), domain.pricerContract?.toLowerCase() ?? ZeroAddress,
-  //   `Domain ${domain.id} has different pricer contracts.
-  //   Contract: ${distrConfig.pricerContract.toLowerCase()}
-  //   Subgraph: ${domain.pricerContract?.toLowerCase() ?? ZeroAddress}
-  //   `
-  // );
-
   if (domain.isWorld) {
     assert.equal(resolvedParentHash, ZeroHash, `Domain ${domain.id} 'isWorld' is true, but has parent hash ${resolvedParentHash}`);
     assert.ok(!(!!domain.parent), `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`);
@@ -99,7 +91,6 @@ export const validateDomain = async (
     // Because we do not delete from the subgraph store on revoke, the domain is always present
     // even if `isRevoked` is true
     // Not important. Could be a bug in the subgraph
-    // assert.ok(!!domain.parent, `Domain ${domain.id} 'isWorld' is false, but 'parent' is undefined`);
     assert.notEqual(resolvedParentHash, ZeroHash,`Domain ${domain.id} 'isWorld' is false, but 'resolvedParentHash' is 0x0`);
     assert.ok(domain.depth > 0,`Domain ${domain.id} 'isWorld' is false, but 'depth' is 0`);
   }

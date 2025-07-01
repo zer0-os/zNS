@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { getDomains } from "./subgraph";
 import { Domain, InvalidDomain } from "./types";
-import { getDBAdapter } from "./database";
+import { getDBAdapter, getZNSFromDB } from "./database";
 import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
 import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
@@ -14,6 +14,7 @@ import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
  * - MONGO_DB_VERSION
  * - MONGO_DB_URI_WRITE - For writing valid collections to a separate database
  * - MONGO_DB_NAME_WRITE
+ * - ENV_LEVEL - Should be set to `prod` with  **READ ONLY** private key in hardhat to read mainnet contracts
  */
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
@@ -35,13 +36,12 @@ const main = async () => {
   const invalidDomains : Array<InvalidDomain> = [];
 
   // Doing this creates strong typing and extensibility that allows
-  // the below `insertMany` calls to add properties to the object for `_id`
+  // the below `insertMany` calls to add properties to the object for `_id` properly
   const roots = rootDomainObjects.map(d => d as Domain);
   console.log(`Found ${roots.length} root domains`);
 
   const subs = subdomainObjects.map(d => d as Domain);
   console.log(`Found ${subs.length} subdomains`);
-
 
   const dbName = process.env.MONGO_DB_NAME_WRITE;
   if (!dbName) throw Error("Missing MONGO_DB_NAME_WRITE environment variable");
@@ -53,11 +53,15 @@ const main = async () => {
   let index = 0;
   for(const domain of [...roots, ...subs]) {
     try {
-      await validateDomain(domain, zns);
-      if (domain.isWorld) {
-        validRoots.push({ ...domain } as Domain);
-      } else {
-        validSubs.push({ ...domain } as Domain);
+      // Revoked domains are kept in the subgraph for data integrity
+      // but will not match any onchain data, so we can skip
+      if (!domain.isRevoked) {
+        await Promise.all([validateDomain(domain, zns)]);
+        if (domain.isWorld) {
+          validRoots.push({ ...domain } as Domain);
+        } else {
+          validSubs.push({ ...domain } as Domain);
+        }
       }
     } catch (e) {
       // For debugging we keep invalid domains rather than throw errors
