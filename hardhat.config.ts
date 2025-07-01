@@ -62,22 +62,22 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    zephyr: {
-      url: `${process.env.ZEPHYR_RPC_URL}`,
-      chainId: 1417429182,
-      // accounts: [
-      //   `${process.env.ZNS_DEPLOYER}`,
-      //   `${process.env.ZERO_VAULT_KEY}`,
-      //   `${process.env.TEST_USER_A_KEY}`,
-      //   `${process.env.TEST_USER_B_KEY}`,
-      //   `${process.env.TEST_USER_C_KEY}`,
-      //   `${process.env.TEST_USER_D_KEY}`,
-      //   `${process.env.TEST_USER_E_KEY}`,
-      //   `${process.env.TEST_USER_F_KEY}`,
-      // ],
-      timeout: 10000000,
-      loggingEnabled: true,
-    },
+    // zephyr: {
+    //   url: `${process.env.ZEPHYR_RPC_URL}`,
+    //   chainId: 1417429182,
+    //   // accounts: [
+    //   //   `${process.env.ZNS_DEPLOYER}`,
+    //   //   `${process.env.ZERO_VAULT_KEY}`,
+    //   //   `${process.env.TEST_USER_A_KEY}`,
+    //   //   `${process.env.TEST_USER_B_KEY}`,
+    //   //   `${process.env.TEST_USER_C_KEY}`,
+    //   //   `${process.env.TEST_USER_D_KEY}`,
+    //   //   `${process.env.TEST_USER_E_KEY}`,
+    //   //   `${process.env.TEST_USER_F_KEY}`,
+    //   // ],
+    //   timeout: 10000000,
+    //   loggingEnabled: true,
+    // },
     // mainnet: {
     //   url: `${process.env.MAINNET_RPC_URL}`,
     //   gasPrice: 80000000000,
@@ -104,13 +104,13 @@ const config : HardhatUserConfig = {
         // },
       ],
     },
-    zchain: {
-      // url: process.env.ZCHAIN_RPC_URL,
-      accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        // `${process.env.TESTNET_PRIVATE_KEY}`,
-      ],
-      // chainId: Number(process.env.ZCHAIN_ID!),
-    },
+    // zchain: {
+    //   url: process.env.ZCHAIN_RPC_URL,
+    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+    //     // `${process.env.TESTNET_PRIVATE_KEY}`,
+    //   ],
+    //   // chainId: Number(process.env.ZCHAIN_ID!),
+    // },
     // devnet: {
     //   // Add current URL that you spawned if not using automated spawning
     //   url: `${process.env.DEVNET_RPC_URL}`,
