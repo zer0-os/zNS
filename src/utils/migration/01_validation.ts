@@ -57,11 +57,12 @@ const main = async () => {
       // but will not match any onchain data, so we can skip
       if (!domain.isRevoked) {
         await Promise.all([validateDomain(domain, zns)]);
-        if (domain.isWorld) {
-          validRoots.push({ ...domain } as Domain);
-        } else {
-          validSubs.push({ ...domain } as Domain);
-        }
+      }
+
+      if (domain.isWorld) {
+        validRoots.push({ ...domain } as Domain);
+      } else {
+        validSubs.push({ ...domain } as Domain);
       }
     } catch (e) {
       // For debugging we keep invalid domains rather than throw errors
@@ -81,7 +82,7 @@ const main = async () => {
   await client.dropCollection(SUB_COLL_NAME);
   await client.collection(SUB_COLL_NAME).insertMany(validSubs);
 
-  // Domains that have split ownership will be considered invalid domains
+  // Domains that have data inconsistencies
   if (invalidDomains.length > 0) {
     await client.dropCollection(INVALID_COLL_NAME);
     await client.collection(INVALID_COLL_NAME).insertMany(invalidDomains);

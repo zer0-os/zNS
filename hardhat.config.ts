@@ -98,12 +98,11 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    // TODO upg: add forking, but make an env var to turn it on/off in the upgrade test
     mainnet: {
       url: `${process.env.MAINNET_RPC_URL}`,
       accounts: [
         // Read only
-        `${process.env.TESTNET_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
+        `${process.env.MAINNET_TEST_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
       ],
       gasPrice: 80000000000,
     },

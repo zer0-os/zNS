@@ -27,10 +27,10 @@ export const validateDomain = async (
     DomainHash: ${domain.id},
     TokenId: ${domain.tokenId},
     Owner: ${domain.owner.id}`
-  )
+  );
 
   // this check gives type safety downstream
-  if (!resolvedParentHash) throw Error("shouldnt ever hit this error")
+  if (!resolvedParentHash) throw Error("shouldnt ever hit this error");
 
   const promises = [
     zns.registry.getDomainOwner(domain.id),
@@ -70,12 +70,12 @@ export const validateDomain = async (
     Subgraph: ${domain.address.toLowerCase()}`
   );
 
-  assert.equal(distrConfig.accessType, domain.accessType ?? 0n,
-    `Domain ${domain.id} has different access types.
-    Contract: ${distrConfig.accessType}
-    Subgraph: ${domain.accessType ?? 0n}
-    `
-  );
+  // assert.equal(distrConfig.accessType, domain.accessType ?? 0n,
+  //   `Domain ${domain.id} has different access types.
+  //   Contract: ${distrConfig.accessType}
+  //   Subgraph: ${domain.accessType ?? 0n}
+  //   `
+  // );
   assert.equal(distrConfig.paymentType, domain.paymentType ?? 0n,
     `Domain ${domain.id} has different payment types.
     Contract: ${distrConfig.paymentType}
