@@ -86,7 +86,7 @@ const config : HardhatUserConfig = {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
       accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.SAFE_OWNER}`,
+        // `${process.env.SAFE_OWNER}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
       //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
@@ -98,18 +98,18 @@ const config : HardhatUserConfig = {
     },
     hardhat: {
       accounts: [
-        {
-          privateKey: process.env.TESTNET_PRIVATE_KEY!,
-          balance: "10000000000000000000000", // 10k ETH
-        },
+        // {
+        //   privateKey: process.env.TESTNET_PRIVATE_KEY!,
+        //   balance: "10000000000000000000000", // 10k ETH
+        // },
       ],
     },
     zchain: {
-      url: process.env.ZCHAIN_RPC_URL,
+      // url: process.env.ZCHAIN_RPC_URL,
       accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.TESTNET_PRIVATE_KEY}`,
+        // `${process.env.TESTNET_PRIVATE_KEY}`,
       ],
-      chainId: Number(process.env.ZCHAIN_ID!),
+      // chainId: Number(process.env.ZCHAIN_ID!),
     },
     // devnet: {
     //   // Add current URL that you spawned if not using automated spawning
