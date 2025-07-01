@@ -9,9 +9,10 @@ export interface Domain {
   label : string;
   isReclaimable : boolean;
   reclaimableAddress : string;
-  isWorld : boolean;
   address : string;
   parentHash : string;
+  isWorld : boolean;
+  isRevoked: boolean;
   parent : Domain | null;
   accessType : string;
   paymentType : string;
