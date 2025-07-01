@@ -46,14 +46,6 @@ import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const logDeploy = (name : string, address : string, args ?: Array<any>, implAddress ?: string) => {
-  console.log(`Deployed ${name} at: ${address}`);
-  if (implAddress) {
-    console.log(`Implementation address: ${implAddress}`);
-  }
-  if (args) console.log(`With args: ${args.join(", ")}`);
-};
 
 export const deployAccessController = async ({
   deployer,
@@ -67,10 +59,7 @@ export const deployAccessController = async ({
   isTenderlyRun ?: boolean;
 }) : Promise<ZNSAccessController> => {
   const accessControllerFactory = new ZNSAccessController__factory(deployer);
-  const controller = await accessControllerFactory.deploy(
-    governorAddresses,
-    adminAddresses
-  );
+  const controller = await accessControllerFactory.deploy(governorAddresses, adminAddresses);
 
   await controller.waitForDeployment();
   const proxyAddress = await controller.getAddress();
@@ -80,9 +69,9 @@ export const deployAccessController = async ({
       name: accessControllerName,
       address: proxyAddress,
     });
-  }
 
-  logDeploy("AccessController", proxyAddress, [governorAddresses, adminAddresses]);
+    console.log(`AccessController deployed at: ${proxyAddress}`);
+  }
 
   return controller as ZNSAccessController;
 };
@@ -104,7 +93,6 @@ export const deployRegistry = async (
 
   await registry.waitForDeployment();
   const proxyAddress = await registry.getAddress();
-  const impl = await getProxyImplAddress(proxyAddress);
 
   if (isTenderlyRun) {
     await hre.tenderly.verify({
@@ -112,13 +100,17 @@ export const deployRegistry = async (
       address: proxyAddress,
     });
 
+    const impl = await getProxyImplAddress(proxyAddress);
+
     await hre.tenderly.verify({
       name: registryName,
       address: impl,
     });
-  }
 
-  logDeploy("ZNSRegistry", proxyAddress, [accessControllerAddress], impl);
+    console.log(`ZNSRegistry deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
+  }
 
   return registry as unknown as ZNSRegistry;
 };
@@ -171,17 +163,6 @@ export const deployDomainToken = async (
                 implementation: ${impl}`);
   }
 
-  const verifyArgs = [
-    await accessController.getAddress(),
-    ZNS_DOMAIN_TOKEN_NAME,
-    ZNS_DOMAIN_TOKEN_SYMBOL,
-    royaltyReceiverAddress,
-    royaltyFraction.toString(),
-    await registry.getAddress(),
-  ];
-
-  logDeploy("ZNSDomainToken", proxyAddress, verifyArgs);
-
   return domainToken as unknown as ZNSDomainToken;
 };
 
@@ -210,8 +191,6 @@ export const deployMeowToken = async (
       implementation: ${tokenAddress}`
     );
   }
-
-  logDeploy("MeowToken", tokenAddress, [meowTokenName, meowTokenSymbol]);
 
   // Mint 10,000 ZERO for self
   await meowToken.mint(tokenAddress, ethers.parseEther("10000"));
@@ -262,8 +241,6 @@ export const deployAddressResolver = async (
     );
   }
 
-  logDeploy("ZNSAddressResolver", proxyAddress, [accessControllerAddress, registryAddress]);
-
   return resolver as unknown as ZNSAddressResolver;
 };
 
@@ -289,8 +266,6 @@ export const deployCurvePricer = async ({
 
     console.log(`${curvePricerName} deployed at: ${address}`);
   }
-
-  logDeploy("ZNSCurvePricer", address);
 
   return curvePricer as unknown as ZNSCurvePricer;
 };
@@ -344,14 +319,6 @@ export const deployTreasury = async ({
                 implementation: ${impl}`);
   }
 
-
-  logDeploy("ZNSTreasury", proxyAddress, [
-    accessControllerAddress,
-    registryAddress,
-    zTokenMockAddress,
-    zeroVaultAddress,
-  ]);
-
   return treasury as unknown as ZNSTreasury;
 };
 
@@ -402,15 +369,6 @@ export const deployRootRegistrar = async (
                 implementation: ${impl}`);
   }
 
-
-  logDeploy("ZNSRootRegistrar", proxyAddress, [
-    await accessController.getAddress(),
-    config.registryAddress,
-    config.curvePricerAddress,
-    config.treasuryAddress,
-    config.domainTokenAddress,
-  ]);
-
   return registrar as unknown as ZNSRootRegistrar;
 };
 
@@ -440,7 +398,6 @@ export const deployFixedPricer = async ({
       implementation: ${address}`
     );
   }
-  logDeploy("ZNSFixedPricer", address);
 
   return fixedPricer as unknown as ZNSFixedPricer;
 };
@@ -494,14 +451,11 @@ export const deploySubRegistrar = async ({
       name: subRegistrarName,
       address: impl,
     });
+
+    console.log(`${subRegistrarName} deployed at:
+                proxy: ${proxyAddress}
+                implementation: ${impl}`);
   }
-
-
-  logDeploy("ZNSSubRegistrar", proxyAddress, [
-    await accessController.getAddress(),
-    await registry.getAddress(),
-    await rootRegistrar.getAddress(),
-  ]);
 
   return subRegistrar as unknown as ZNSSubRegistrar;
 };
