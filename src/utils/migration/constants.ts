@@ -15,10 +15,7 @@ export const SAFE_TRANSFER_FROM_SELECTOR = ZNSDomainToken__factory.createInterfa
 ).selector;
 
 // Safe supported networks, based on the networks we care about specifically
-// More can be found here:
-/* eslint-disable-next-line max-len */
-// https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 export const SAFE_SUPPORTED_NETWORKS = [
-  "ethereum",
+  "mainnet",
   "sepolia",
 ];

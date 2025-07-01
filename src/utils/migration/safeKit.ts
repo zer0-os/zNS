@@ -124,10 +124,29 @@ export class SafeKit {
       // Because we always submit with `execute` as false, we know
       // we will get proposal data back unless something has failed
       if (!proposalData) {
-        this.logger.error("Error: Failed to create proposal data for tx", { to, txData: txData.slice(0,10), txNonce });
+        const message = "Error: Failed to create proposal data for tx";
+        const data = { to, txData: txData.slice(0,10), txNonce }
+        this.logger.error(message, data)
+        this.db.collection("execution-logs").insertOne({
+          message: "Error: Failed to create proposal data for tx",
+          data: {
+            index,
+            ...data
+          }
+        });
         throw Error();
       } else {
-        this.logger.info("Successfully created proposal data for tx", { safeTxHash: proposalData.safeTxHash });
+        const message = "Successfully created proposal data for tx";
+        const data = { safeTxHash: proposalData.safeTxHash };
+
+        this.logger.info(message, data);
+        this.db.collection("execution-logs").insertOne({
+          message: "Successfully created proposal data for tx",
+          data: {
+            index,
+            ...data
+          }
+        });
       }
 
       await this.retry(

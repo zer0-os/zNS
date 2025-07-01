@@ -2,7 +2,7 @@ import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
 import { connectToDb, proposeRegistrations } from "./helpers";
-import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
+import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SAFE_SUPPORTED_NETWORKS, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
 import { TLogger } from "@zero-tech/zdc";
@@ -17,19 +17,25 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * propose to the safe.
  *
  * Required .env variables for running this script:
- * - MONGO_DB_URI
+ * - MONGO_DB_URI - Get ZNS on zchain
  * - MONGO_DB_NAME
  * - MONGO_DB_VERSION
- * - MONGO_DB_URI_MIG (The domain data is in a different cluster that needs a different connection)
- * - MONGO_DB_NAME_MIG
+ * - MONGO_DB_URI_WRITE - Get Domain data (The domain data is in a different cluster that needs a different connection)
+ * - MONGO_DB_NAME_WRITE
  * - SAFE_ADDRESS
  * - SAFE_OWNER (for HardHat config)
  * - CHAIN_ID
  * - [NETWORK]_RPC_URL (substitute NETWORK for the specific network being used)
+ * - ACTION - What action to take on this execution, to register `roots`, `subs` or to propose `transfers`
  *
  * Optional .env vars
+ * - TX_SERVICE_URL - Optional only when using a Safe supported network
  * - DELAY
  * - RETRIES
+ *
+ * For more information on what networks are supported by Safe, read more below
+ * eslint-disable-next-line max-len
+ * https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
  *
  * Required steps:
  * - ZNS v1.5 contracts must have been deployed to the target network
@@ -82,6 +88,7 @@ const main = async () => {
     delay: Number(process.env.DELAY) || 10000, // ms to wait between proposing/executing transactions
     retryAttempts: Number(process.env.RETRIES) || 3, // Number of times to retry executing a tx if it fails
     db: client,
+    txServiceUrl: process.env.TX_SERVICE_URL, // Optional, specify only when using a network not supported by Safe
   };
 
   // Setup the SafeKit

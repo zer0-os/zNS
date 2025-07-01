@@ -45,10 +45,10 @@ export const connectToDb = async (
   mongoUri ?: string,
   mongoDbName ?: string
 ) : Promise<Db> => {
-  const uri = process.env.MONGO_DB_URI_MIG ?? mongoUri;
+  const uri = process.env.MONGO_DB_URI_WRITE ?? mongoUri;
   if (!uri) throw Error("No connection string given");
 
-  const dbName = process.env.MONGO_DB_NAME_MIG ?? mongoDbName;
+  const dbName = process.env.MONGO_DB_NAME_WRITE ?? mongoDbName;
   if (!dbName) throw Error("No DB name given");
 
   // Return socket connection
@@ -209,8 +209,8 @@ const createBatchesSafe = (
       }
     }
 
-    // Domains marked as `revoked` won't need to be transferred to any user
-    // So we can ignore this
+    // Domains marked as `revoked` are recreated for registration to be successfull at all depths but
+    // won't need to be transferred to any user
     if (!domain.isRevoked) {
       const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
         "safeTransferFrom(address,address,uint256)",

@@ -5,8 +5,8 @@ import { Addressable, ZeroAddress, ZeroHash } from "ethers";
 import { connectToDb } from "./helpers";
 import { IZNSContractsCache } from "../../deploy/campaign/types";
 import { getZNS } from "./zns-contract-data";
-import * as fs from "fs";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
+import * as fs from "fs";
 
 
 /**

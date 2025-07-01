@@ -2,7 +2,7 @@
 import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 import { setDefaultEnvironment } from "./src/environment/set-env";
 
-// import * as tenderly from "@tenderly/hardhat-tenderly";
+import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
