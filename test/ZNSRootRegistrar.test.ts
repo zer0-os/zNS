@@ -35,7 +35,7 @@ import {
   PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR, createEncodeFixedPriceConfig,
 } from "./helpers";
 import * as ethers from "ethers";
-import { defaultRootRegistration, registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
@@ -43,7 +43,7 @@ import {
   IDistributionConfig,
   IRootDomainConfig,
 } from "./helpers/types";
-import { getDomainRegisteredEvents } from "./helpers/events";
+import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import {
   IERC20,
   ZNSRootRegistrar,
@@ -122,7 +122,7 @@ describe.only("ZNSRootRegistrar", () => {
     domain = undefined as unknown as Domain;
   });
 
-  it("Gas tests", async () => {
+  it.only("Gas tests", async () => {
     const candidates = [
       deployer.address,
       user.address,
@@ -154,12 +154,12 @@ describe.only("ZNSRootRegistrar", () => {
         tokenOwner: ethers.ZeroAddress,
         parentHash: ethers.ZeroHash,
         distrConfig,
-        priceConfig: DEFAULT_CURVE_PRICE_CONFIG,
         paymentConfig: paymentConfigEmpty,
         domainAddress: ethers.ZeroAddress,
         tokenURI: DEFAULT_TOKEN_URI,
       },
     });
+    await domain.register();
 
     await domain.updateMintlistForDomain(
       candidates,
@@ -715,27 +715,20 @@ describe.only("ZNSRootRegistrar", () => {
     });
 
     it("Sets the correct data in Registry", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
+      // validates in Registry and events
+      await domain.registerAndValidateDomain();
 
       const namehashRef = hashDomainLabel(defaultDomain);
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
 
-      expect(domainHash).to.eq(namehashRef);
-
-      const {
-        owner: ownerFromReg,
-        resolver: resolverFromReg,
-      } = await zns.registry.getDomainRecord(domainHash);
-
-      expect(ownerFromReg).to.eq(user.address);
-      expect(resolverFromReg).to.eq(await zns.addressResolver.getAddress());
+      expect(domain.hash).to.eq(namehashRef);
     });
 
     it("Fails when the user does not have enough funds", async () => {
@@ -1061,8 +1054,6 @@ describe.only("ZNSRootRegistrar", () => {
 
     it("Should revert if assigning to existing owner", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: "tokennn" });
-
       domain = new Domain({
         zns,
         domainConfig: {
@@ -1249,7 +1240,7 @@ describe.only("ZNSRootRegistrar", () => {
 
       await domain.setPricerDataForDomain(
         newConfig,
-        zns.fixedPricer.target,
+        zns.fixedPricer.target as string,
       );
 
       expect(await zns.fixedPricer.getPrice(asBytes, defaultDomain, false)).to.eq(ogPrice);
@@ -1476,7 +1467,15 @@ describe.only("ZNSRootRegistrar", () => {
         });
 
         // "DomainRegistered" event log
-        const { parentHash, domainHash, tokenOwner, label, localTokenURI, domainOwner, domainAddress } = logs[0].args;
+        const {
+          parentHash,
+          domainHash,
+          tokenOwner,
+          label,
+          tokenURI: localTokenURI,
+          domainOwner,
+          domainAddress,
+        } = logs[0].args;
 
         expect(parentHash).to.eq(ethers.ZeroHash);
         expect(domainHash).to.eq(hashDomainLabel(domain.name));

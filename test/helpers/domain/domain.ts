@@ -2,13 +2,15 @@ import * as hre from "hardhat";
 import { IZNSContracts } from "../../../src/deploy/campaign/types";
 import { IFullDomainConfig } from "./types";
 import { IDistributionConfig, IPaymentConfig } from "../types";
-import { CurvePriceConfig, FixedPriceConfig } from "../../../src/deploy/missions/types";
+import {
+  ICurvePriceConfig,
+  IFixedPriceConfig,
+} from "../../../src/deploy/missions/types";
 import { curvePriceConfigEmpty, distrConfigEmpty, fixedPriceConfigEmpty, paymentConfigEmpty } from "../constants";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
 import { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
-import { hashDomainLabel } from "../hashing";
 import { expect } from "chai";
 import { encodePriceConfig } from "../pricing";
 
@@ -25,7 +27,7 @@ export default class Domain {
   label : string;
   parentHash : string;
   distrConfig : IDistributionConfig;
-  priceConfig : CurvePriceConfig | FixedPriceConfig;
+  priceConfig : ICurvePriceConfig | IFixedPriceConfig;
   paymentConfig : IPaymentConfig;
   domainAddress : string;
   tokenURI : string;
@@ -46,20 +48,20 @@ export default class Domain {
     this.distrConfig = domainConfig.distrConfig || distrConfigEmpty;
     this.tokenOwner = domainConfig.tokenOwner || hre.ethers.ZeroAddress;
 
-    if (!domainConfig.priceConfig) {
+    if (domainConfig.distrConfig && !domainConfig.distrConfig.priceConfig) {
       switch (this.distrConfig.pricerContract) {
       case zns.curvePricer.target:
         this.priceConfig = curvePriceConfigEmpty;
         break;
       case zns.fixedPricer.target:
         // TODO dom: fix this since with proper types casting is not needed
-        this.priceConfig = fixedPriceConfigEmpty as FixedPriceConfig;
+        this.priceConfig = fixedPriceConfigEmpty;
         break;
       default:
         this.priceConfig = {};
       }
     } else {
-      this.priceConfig = domainConfig.priceConfig;
+      this.priceConfig = domainConfig.distrConfig.priceConfig;
     }
 
     this.paymentConfig = domainConfig.paymentConfig || paymentConfigEmpty;
@@ -116,7 +118,6 @@ export default class Domain {
       label,
       parentHash,
       distrConfig,
-      priceConfig,
       paymentConfig,
       tokenURI,
       tokenOwner,
@@ -136,7 +137,6 @@ export default class Domain {
         tokenURI,
         distrConfig,
         paymentConfig,
-        priceConfig,
       });
     } else {
       txPromise = await zns.subRegistrar.connect(executor ? executor : owner).registerSubdomain({
@@ -147,7 +147,6 @@ export default class Domain {
         tokenURI,
         distrConfig,
         paymentConfig,
-        priceConfig,
       });
     }
 
@@ -218,7 +217,7 @@ export default class Domain {
   }
 
   async setPricerDataForDomain (
-    priceConfig : CurvePriceConfig | FixedPriceConfig,
+    priceConfig : ICurvePriceConfig | IFixedPriceConfig,
     pricerContract : string,
     executor ?: SignerWithAddress
   ) : Promise<void> {
@@ -260,19 +259,9 @@ export default class Domain {
     );
   }
 
-  // TODO: delete this
-  async getResolverAddressByLabel (label : string) : Promise<string> {
-    const hash = hashDomainLabel(label);
-    return this.zns.registry.getDomainResolver(hash);
-  }
-
   // ------------------------------------------------------
   // VALIDATION
   // ------------------------------------------------------
-  async validateDomainHash (expectedHash : string) : Promise<void> {
-
-  }
-
   async registerAndValidateDomain (
     executor ?: SignerWithAddress
   ) : Promise<void> {
@@ -296,7 +285,7 @@ export default class Domain {
 
     // check domain existence with registry
     const record = await this.zns.registry.getDomainRecord(this.hash);
-    const resolverAddress = await this.getResolverAddressByLabel(this.label);
+    const resolverAddress = await this.zns.registry.getDomainResolver(this.hash);
 
     expect(
       await this.zns.registry.getDomainOwner(this.hash)

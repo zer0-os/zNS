@@ -4049,7 +4049,6 @@ describe("ZNSSubRegistrar", () => {
     });
 
     describe("#setAccessController", () => {
-
       it("should allow ADMIN to set a valid AccessController", async () => {
         await zns.subRegistrar.connect(deployer).setAccessController(zns.accessController.target);
 

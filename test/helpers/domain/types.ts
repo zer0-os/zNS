@@ -1,5 +1,5 @@
 import { IDistributionConfig, IPaymentConfig } from "../types";
-import { CurvePriceConfig, FixedPriceConfig } from "../../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../../src/deploy/missions/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 
@@ -9,7 +9,7 @@ export interface IFullDomainConfig {
   tokenOwner ?: string;
   parentHash ?: string;
   distrConfig ?: IDistributionConfig;
-  priceConfig ?: CurvePriceConfig | FixedPriceConfig;
+  priceConfig ?: ICurvePriceConfig | IFixedPriceConfig;
   paymentConfig ?: IPaymentConfig;
   domainAddress ?: string;
   tokenURI ?: string;
