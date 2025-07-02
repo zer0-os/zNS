@@ -48,7 +48,7 @@ describe("ZNSCurvePricer", () => {
     });
 
     await zns.meowToken.connect(user).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-    await zns.meowToken.mint(user.address, 26000000000000000000000n);
+    await zns.meowToken.mint(user.address, hre.ethers.parseEther("250000"));
   });
 
   after(async () => {

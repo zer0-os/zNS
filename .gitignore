@@ -24,3 +24,6 @@ docker*.tgz
 
 # Don't source control log files from deployment
 deploy-*.log
+
+# Dismiss any generated output from script executions
+output/

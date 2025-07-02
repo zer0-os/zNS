@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IContractState, IDeployCampaignConfig, TEnvironment } from "@zero-tech/zdc";
 import {
-  ERC20Mock as MeowTokenMock,
+  ERC20Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSCurvePricer,
@@ -45,7 +45,7 @@ export type ZNSContract =
   ZNSAccessController |
   ZNSRegistry |
   ZNSDomainToken |
-  MeowTokenMock |
+  ERC20Mock |
   MeowToken |
   ZNSAddressResolver |
   ZNSStringResolver |
@@ -59,7 +59,21 @@ export interface IZNSContracts extends IContractState<ZNSContract> {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  meowToken : MeowTokenMock;
+  meowToken : ERC20Mock;
+  addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
+  curvePricer : ZNSCurvePricer;
+  treasury : ZNSTreasury;
+  rootRegistrar : ZNSRootRegistrar;
+  fixedPricer : ZNSFixedPricer;
+  subRegistrar : ZNSSubRegistrar;
+}
+
+export interface IZNSContractsCache {
+  meowToken : ERC20Mock;
+  accessController : ZNSAccessController;
+  registry : ZNSRegistry;
+  domainToken : ZNSDomainToken;
   addressResolver : ZNSAddressResolver;
   stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
