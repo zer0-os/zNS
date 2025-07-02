@@ -98,14 +98,14 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    mainnet: {
-      url: `${process.env.MAINNET_RPC_URL}`,
-      accounts: [
-        // Read only
-        `${process.env.MAINNET_TEST_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
-      ],
-      gasPrice: 80000000000,
-    },
+    // mainnet: {
+    //   url: `${process.env.MAINNET_RPC_URL}`,
+    //   accounts: [
+    //     // Read only
+    //     `${process.env.MAINNET_TEST_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
+    //   ],
+    //   gasPrice: 80000000000,
+    // },
     sepolia: {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
