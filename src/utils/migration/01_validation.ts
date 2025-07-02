@@ -1,10 +1,11 @@
 import * as hre from "hardhat";
 import { getDomains } from "./subgraph";
 import { Domain, InvalidDomain } from "./types";
-import { getDBAdapter, getZNSFromDB } from "./database";
+import { getDBAdapter } from "./database";
 import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
 import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
+
 
 /**
  * Reqiuired .env vars

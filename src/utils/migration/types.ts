@@ -12,7 +12,7 @@ export interface Domain {
   address : string;
   parentHash : string;
   isWorld : boolean;
-  isRevoked: boolean;
+  isRevoked : boolean;
   parent : Domain | null;
   accessType : string;
   paymentType : string;

@@ -1,4 +1,4 @@
-import { ZeroAddress, ZeroHash } from "ethers";
+import { ZeroHash } from "ethers";
 import { Domain } from "./types";
 import { IDistributionConfig, IZNSContracts } from "../../../test/helpers/types";
 import assert from "assert";
@@ -84,14 +84,22 @@ export const validateDomain = async (
   );
 
   if (domain.isWorld) {
-    assert.equal(resolvedParentHash, ZeroHash, `Domain ${domain.id} 'isWorld' is true, but has parent hash ${resolvedParentHash}`);
+    assert.equal(
+      resolvedParentHash,
+      ZeroHash,
+      `Domain ${domain.id} 'isWorld' is true, but has parent hash ${resolvedParentHash}`
+    );
     assert.ok(!(!!domain.parent), `Domain ${domain.id} 'isWorld' is true, but 'hasParent' is true`);
     assert.ok(domain.depth === 0, `Domain ${domain.id} 'isWorld' is true, but 'depth' is not 0`);
   } else {
     // Because we do not delete from the subgraph store on revoke, the domain is always present
     // even if `isRevoked` is true
     // Not important. Could be a bug in the subgraph
-    assert.notEqual(resolvedParentHash, ZeroHash,`Domain ${domain.id} 'isWorld' is false, but 'resolvedParentHash' is 0x0`);
+    assert.notEqual(
+      resolvedParentHash,
+      ZeroHash,
+      `Domain ${domain.id} 'isWorld' is false, but 'resolvedParentHash' is 0x0`
+    );
     assert.ok(domain.depth > 0,`Domain ${domain.id} 'isWorld' is false, but 'depth' is 0`);
   }
 };
