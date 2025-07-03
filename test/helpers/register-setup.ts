@@ -67,6 +67,7 @@ export const fundApprove = async ({
 
   let price = BigInt(0);
   let parentFee = BigInt(0);
+  let toMint = BigInt(0);
 
   if (pricerContract === await zns.curvePricer.getAddress()) {
     [price, parentFee] = await zns.curvePricer.getPriceAndFee(priceConfig, domainLabel, false);
@@ -80,14 +81,19 @@ export const fundApprove = async ({
 
   const rootPriceConfig = await zns.rootRegistrar.rootPriceConfig();
   const protocolFee = await zns.curvePricer.getFeeForPrice(rootPriceConfig, price + parentFee);
-  const toApprove = price + parentFee + protocolFee;
+  const totalPrice = price + parentFee + protocolFee;
 
   const userBalance = await tokenContract.balanceOf(user.address);
-  if (userBalance < toApprove) {
-    await tokenContract.connect(user).mint(user.address, toApprove);
+  if (userBalance < totalPrice) {
+    toMint = totalPrice - userBalance;
+    await tokenContract.connect(user).mint(user.address, toMint);
   }
 
-  return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
+  const allowance = await tokenContract.allowance(user.address, await zns.treasury.getAddress());
+  if (allowance < totalPrice) {
+    const toApprove = totalPrice - allowance;
+    return tokenContract.connect(user).approve(await zns.treasury.getAddress(), toApprove);
+  }
 };
 
 /**

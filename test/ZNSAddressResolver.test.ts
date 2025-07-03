@@ -19,18 +19,21 @@ import {
   AC_WRONGADDRESS_ERR,
   distrConfigEmpty,
   paymentConfigEmpty,
+  hashDomainLabel,
+  IFixedPriceConfig,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
 import Domain from "./helpers/domain/domain";
 import { IZNSContracts } from "../src/deploy/campaign/types";
+import { ICurvePriceConfig } from "../src/deploy/missions/types";
 
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
 
 
-describe("ZNSAddressResolver", () => {
+describe.only("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let user : SignerWithAddress;
@@ -65,9 +68,6 @@ describe("ZNSAddressResolver", () => {
         owner: deployer,
         parentHash: ethers.ZeroHash,
         tokenOwner: deployer.address,
-        distrConfig: distrConfigEmpty,
-        priceConfig: {},
-        paymentConfig: paymentConfigEmpty,
         tokenURI: "wilder",
       },
     });
@@ -90,13 +90,13 @@ describe("ZNSAddressResolver", () => {
 
   it("Should get the AddressResolver", async () => { // Copy of registry tests
     // The domain exists
-    const existResolver = await domain.getResolverAddressByLabel(domain.label);
+    const existResolver = await zns.registry.getDomainResolver(hashDomainLabel(domain.label));
     expect(existResolver).to.eq(await zns.addressResolver.getAddress());
   });
 
   it("Returns 0 when the domain doesnt exist", async () => {
     // The domain does not exist
-    const notExistResolver = await domain.getResolverAddressByLabel("random-record");
+    const notExistResolver = await zns.registry.getDomainResolver(hashDomainLabel("random-record"));
     expect(notExistResolver).to.eq(hre.ethers.ZeroAddress);
   });
 
@@ -201,7 +201,7 @@ describe("ZNSAddressResolver", () => {
   it("Should support full discovery flow from zns.registry", async () => {
     await zns.addressResolver.connect(deployer).setAddress(domain.hash, user.address);
 
-    const resolverAddress = await domain.getResolverAddressByLabel(domain.label);
+    const resolverAddress = await zns.registry.getDomainResolver(hashDomainLabel(domain.label));
     expect(resolverAddress).to.eq(await zns.addressResolver.getAddress());
 
     const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domain.hash);

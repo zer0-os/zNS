@@ -19,6 +19,8 @@ import {
   ZNSFixedPricer,
   ZNSSubRegistrar,
   ERC20Mock,
+  ZNSStringResolver,
+  ZNSStringResolver__factory,
 } from "../../../typechain";
 import { DeployZNSParams, RegistrarConfig } from "../types";
 import * as hre from "hardhat";
@@ -250,8 +252,8 @@ export const deployStringResolver = async (
   accessControllerAddress : string,
   registryAddress : string,
   isTenderlyRun : boolean
-) : Promise<ZNSAddressResolver> => {
-  const stringResolverFactory = new ZNSAddressResolver__factory(deployer);
+) : Promise<ZNSStringResolver> => {
+  const stringResolverFactory = new ZNSStringResolver__factory(deployer);
 
   const resolver = await upgrades.deployProxy(
     stringResolverFactory,
@@ -288,7 +290,7 @@ export const deployStringResolver = async (
     );
   }
 
-  return resolver as unknown as ZNSAddressResolver;
+  return resolver as unknown as ZNSStringResolver;
 };
 
 export const deployCurvePricer = async ({
@@ -520,13 +522,13 @@ export const deployZNS = async ({
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
   rootPaymentType = PaymentType.STAKE,
-} : DeployZNSParams) : Promise<IZNSContractsLocal> => {
+} : DeployZNSParams) => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
   // warn when this is the case, we silence the warning from hardhat here
   // to not clog the test output.
-  await hre.upgrades.silenceWarnings();
+  hre.upgrades.silenceWarnings();
 
   if (!zeroVaultAddress) {
     zeroVaultAddress = deployer.address;
@@ -617,7 +619,7 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
-  const znsContracts : IZNSContracts = {
+  const znsContracts = {
     accessController,
     registry,
     domainToken,
@@ -629,6 +631,7 @@ export const deployZNS = async ({
     rootRegistrar,
     fixedPricer,
     subRegistrar,
+    zeroVault: zeroVaultAddress,
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury

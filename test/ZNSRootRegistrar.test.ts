@@ -62,7 +62,7 @@ import Domain from "./helpers/domain/domain";
 require("@nomicfoundation/hardhat-chai-matchers");
 
 
-describe.only("ZNSRootRegistrar", () => {
+describe("ZNSRootRegistrar", () => {
   let deployer : SignerWithAddress;
   let user : SignerWithAddress;
   let governor : SignerWithAddress;
@@ -119,10 +119,11 @@ describe.only("ZNSRootRegistrar", () => {
   afterEach(async () => {
     await mongoAdapter.dropDB();
 
+    // TODO dom: remove
     domain = undefined as unknown as Domain;
   });
 
-  it.only("Gas tests", async () => {
+  it("Gas tests", async () => {
     const candidates = [
       deployer.address,
       user.address,
@@ -518,13 +519,12 @@ describe.only("ZNSRootRegistrar", () => {
       });
 
       await domain.registerAndValidateDomain();
-      const domainHash = await domain.getDomainHashFromEvent(user);
 
       const {
         pricerContract,
         accessType,
         paymentType,
-      } = await zns.subRegistrar.distrConfigs(domainHash);
+      } = await zns.subRegistrar.distrConfigs(domain.hash);
 
       expect(pricerContract).to.eq(distrConfig.pricerContract);
       expect(paymentType).to.eq(distrConfig.paymentType);
@@ -609,9 +609,7 @@ describe.only("ZNSRootRegistrar", () => {
       });
       await domain.register();
 
-      directPaymentDomainHash = await domain.getDomainHashFromEvent(user);
-
-      const { amount: staked, token } = await zns.treasury.stakedForDomain(directPaymentDomainHash);
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domain.hash);
       expect(staked).to.eq(0n);
       expect(token).to.eq(hre.ethers.ZeroAddress);
 

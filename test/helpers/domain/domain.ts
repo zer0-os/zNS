@@ -12,7 +12,7 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
 import { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
 import { expect } from "chai";
-import { encodePriceConfig } from "../pricing";
+import { decodePriceConfig, encodePriceConfig } from "../pricing";
 
 
 export default class Domain {
@@ -48,20 +48,27 @@ export default class Domain {
     this.distrConfig = domainConfig.distrConfig || distrConfigEmpty;
     this.tokenOwner = domainConfig.tokenOwner || hre.ethers.ZeroAddress;
 
-    if (domainConfig.distrConfig && !domainConfig.distrConfig.priceConfig) {
+    if (this.distrConfig.priceConfig && !domainConfig.priceConfig) {
+      if (this.distrConfig.priceConfig !== hre.ethers.ZeroHash) {
+        this.priceConfig = decodePriceConfig(this.distrConfig.priceConfig);
+      } else {
+        throw new Error("Domain Helper: Price config should not have zero hash");
+      }
+    } else if (domainConfig.priceConfig) {
+      this.priceConfig = domainConfig.priceConfig;
+    } else if (!this.distrConfig.priceConfig && !domainConfig.priceConfig) {
       switch (this.distrConfig.pricerContract) {
       case zns.curvePricer.target:
         this.priceConfig = curvePriceConfigEmpty;
         break;
       case zns.fixedPricer.target:
-        // TODO dom: fix this since with proper types casting is not needed
         this.priceConfig = fixedPriceConfigEmpty;
         break;
       default:
-        this.priceConfig = {};
+        this.priceConfig = {} as ICurvePriceConfig | IFixedPriceConfig;
       }
     } else {
-      this.priceConfig = domainConfig.distrConfig.priceConfig;
+      throw new Error("Domain Helper: Price config specified twice");
     }
 
     this.paymentConfig = domainConfig.paymentConfig || paymentConfigEmpty;
@@ -80,7 +87,7 @@ export default class Domain {
   }
 
   async ownerOfToken () : Promise<string> {
-    return this.zns.domainToken.ownerOf(BigInt(this.tokenId));
+    return this.zns.domainToken.ownerOf(this.tokenId);
   }
 
   async getDomainHashFromEvent (domainOwner ?: SignerWithAddress) : Promise<string> {
@@ -103,12 +110,12 @@ export default class Domain {
   }
 
   async mintAndApproveForDomain (user ?: SignerWithAddress) : Promise<ContractTransactionResponse> {
-    return fundApprove({
+    return (fundApprove({
       zns: this.zns,
       parentHash: this.parentHash,
       user: user ? user : this.owner,
       domainLabel: this.label,
-    });
+    })) as Promise<ContractTransactionResponse>;
   }
 
   async register (executor ?: SignerWithAddress) : Promise<ContractTransactionResponse> {
@@ -123,6 +130,10 @@ export default class Domain {
       tokenOwner,
       domainAddress,
     } = this;
+
+    if (!distrConfig.priceConfig) {
+      distrConfig.priceConfig = encodePriceConfig(this.priceConfig);
+    }
 
     let txPromise : ContractTransactionResponse;
 
@@ -155,26 +166,25 @@ export default class Domain {
     return txPromise;
   }
 
-  async revoke (executor ?: SignerWithAddress) : Promise<void> {
-    await this.zns.rootRegistrar.connect(executor ? executor : this.owner).revokeDomain(this.hash);
+  async revoke (executor ?: SignerWithAddress) : Promise<ContractTransactionResponse> {
+    return this.zns.rootRegistrar.connect(executor ? executor : this.owner).revokeDomain(this.hash);
   }
 
   async assignDomainToken (
     to : string,
     executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionReceipt | null> {
-    const tx = await this.zns.rootRegistrar.connect(executor ? executor : this.owner).assignDomainToken(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.rootRegistrar.connect(executor ? executor : this.owner).assignDomainToken(
       this.hash,
       to
     );
-    return tx.wait();
   }
 
   async updateDomainRecord (
     resolverType : string,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.registry.connect(executor ? executor : this.owner).updateDomainRecord(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.registry.connect(executor ? executor : this.owner).updateDomainRecord(
       this.hash,
       this.owner,
       resolverType,
@@ -185,14 +195,14 @@ export default class Domain {
     candidates : Array<string>,
     allowed : Array<boolean>,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
+  ) : Promise<ContractTransactionResponse> {
     if (candidates.length !== allowed.length)
       throw new Error("Domain Helper: Candidates and allowed arrays must have the same length");
 
-    await this.zns.subRegistrar.connect(executor ? executor : this.owner).updateMintlistForDomain(
+    return this.zns.subRegistrar.connect(executor ? executor : this.owner).updateMintlistForDomain(
       this.hash,
-      candidates ? candidates : [this.owner.address],
-      allowed ? allowed : [true],
+      candidates,
+      allowed,
     );
   }
 
@@ -203,27 +213,27 @@ export default class Domain {
     operator : string,
     allowed : boolean,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(operator, allowed);
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(operator, allowed);
   }
 
   async setDistributionConfigForDomain (
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setDistributionConfigForDomain(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.subRegistrar.connect(executor ? executor : this.owner).setDistributionConfigForDomain(
       this.hash,
       this.distrConfig,
     );
   }
 
   async setPricerDataForDomain (
-    priceConfig : ICurvePriceConfig | IFixedPriceConfig,
-    pricerContract : string,
+    priceConfig ?: ICurvePriceConfig | IFixedPriceConfig,
+    pricerContract ?: string,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
       this.hash,
-      encodePriceConfig(priceConfig),
+      priceConfig ? encodePriceConfig(priceConfig) : encodePriceConfig(this.priceConfig),
       pricerContract ? pricerContract : this.distrConfig.pricerContract
     );
   }
@@ -231,8 +241,8 @@ export default class Domain {
   async setPaymentTypeForDomain (
     paymentType : bigint,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setPaymentTypeForDomain(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.subRegistrar.connect(executor ? executor : this.owner).setPaymentTypeForDomain(
       this.hash,
       paymentType,
     );
@@ -241,21 +251,10 @@ export default class Domain {
   async setAccessTypeForDomain (
     accessType : bigint,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
+  ) : Promise<ContractTransactionResponse> {
+    return this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
       this.hash,
       accessType,
-    );
-  }
-
-  async setOwnersOperator (
-    operator : string,
-    allowed : boolean,
-    executor ?: SignerWithAddress
-  ) : Promise<void> {
-    await this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(
-      operator,
-      allowed
     );
   }
 
