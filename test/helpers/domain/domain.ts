@@ -45,30 +45,18 @@ export default class Domain {
     this.parentHash = domainConfig.parentHash || hre.ethers.ZeroHash;
     this.isRoot = this.parentHash === hre.ethers.ZeroHash;
     this.label = domainConfig.label;
-    this.distrConfig = domainConfig.distrConfig || distrConfigEmpty;
     this.tokenOwner = domainConfig.tokenOwner || hre.ethers.ZeroAddress;
+    this.distrConfig = domainConfig.distrConfig || distrConfigEmpty;
 
-    if (this.distrConfig.priceConfig && !domainConfig.priceConfig) {
-      if (this.distrConfig.priceConfig !== hre.ethers.ZeroHash) {
-        this.priceConfig = decodePriceConfig(this.distrConfig.priceConfig);
-      } else {
-        throw new Error("Domain Helper: Price config should not have zero hash");
-      }
-    } else if (domainConfig.priceConfig) {
-      this.priceConfig = domainConfig.priceConfig;
-    } else if (!this.distrConfig.priceConfig && !domainConfig.priceConfig) {
-      switch (this.distrConfig.pricerContract) {
-      case zns.curvePricer.target:
-        this.priceConfig = curvePriceConfigEmpty;
-        break;
-      case zns.fixedPricer.target:
-        this.priceConfig = fixedPriceConfigEmpty;
-        break;
-      default:
-        this.priceConfig = {} as ICurvePriceConfig | IFixedPriceConfig;
-      }
-    } else {
-      throw new Error("Domain Helper: Price config specified twice");
+    switch (this.distrConfig.pricerContract) {
+    case zns.curvePricer.target:
+      this.priceConfig = curvePriceConfigEmpty;
+      break;
+    case zns.fixedPricer.target:
+      this.priceConfig = fixedPriceConfigEmpty;
+      break;
+    default:
+      this.priceConfig = {} as ICurvePriceConfig | IFixedPriceConfig;
     }
 
     this.paymentConfig = domainConfig.paymentConfig || paymentConfigEmpty;
@@ -209,7 +197,7 @@ export default class Domain {
   // ------------------------------------------------------
   // SETTERS
   // ------------------------------------------------------
-  async setOperator (
+  async setOwnersOperator (
     operator : string,
     allowed : boolean,
     executor ?: SignerWithAddress

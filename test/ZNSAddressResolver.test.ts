@@ -33,7 +33,7 @@ import { ICurvePriceConfig } from "../src/deploy/missions/types";
 const { expect } = require("chai");
 
 
-describe.only("ZNSAddressResolver", () => {
+describe("ZNSAddressResolver", () => {
   let deployer : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let user : SignerWithAddress;
