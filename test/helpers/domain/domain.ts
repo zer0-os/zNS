@@ -10,9 +10,9 @@ import { curvePriceConfigEmpty, distrConfigEmpty, fixedPriceConfigEmpty, payment
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { fundApprove } from "../register-setup";
-import { ContractTransactionReceipt, ContractTransactionResponse } from "ethers";
+import { ContractTransactionResponse } from "ethers";
 import { expect } from "chai";
-import { decodePriceConfig, encodePriceConfig } from "../pricing";
+import { encodePriceConfig } from "../pricing";
 
 
 export default class Domain {

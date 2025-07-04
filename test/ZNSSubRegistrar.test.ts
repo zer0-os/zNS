@@ -59,6 +59,7 @@ import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ICurvePriceConfig, IFixedPriceConfig } from "../src/deploy/missions/types";
 import { IZNSContracts } from "../src/deploy/campaign/types";
+import Domain from "./helpers/domain/domain";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -82,7 +83,7 @@ describe("ZNSSubRegistrar", () => {
   let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
 
-  let rootHash : string;
+  let domain : Domain;
   let rootPriceConfig : IFixedPriceConfig;
   const subTokenURI = "https://token-uri.com/8756a4b6f";
 
@@ -126,13 +127,13 @@ describe("ZNSSubRegistrar", () => {
         feePercentage: BigInt(0),
       };
 
-      // register root domain
-      rootHash = await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "root",
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "root",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig(rootPriceConfig),
@@ -145,6 +146,8 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
+
+      await domain.register();
     });
 
     it("Sets the payment config when given", async () => {
@@ -155,7 +158,7 @@ describe("ZNSSubRegistrar", () => {
       await defaultSubdomainRegistration({
         user: lvl2SubOwner,
         zns,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         subdomainLabel: subdomain,
         domainContent: lvl2SubOwner.address,
         tokenURI: subTokenURI,
@@ -166,7 +169,7 @@ describe("ZNSSubRegistrar", () => {
         },
       });
 
-      const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
+      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, subdomain);
       const config = await zns.treasury.paymentConfigs(subHash);
       expect(config.token).to.eq(await zns.meowToken.getAddress());
       expect(config.beneficiary).to.eq(lvl2SubOwner.address);
@@ -178,12 +181,12 @@ describe("ZNSSubRegistrar", () => {
       await defaultSubdomainRegistration({
         zns,
         user: lvl2SubOwner,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         subdomainLabel: subdomain,
         tokenURI: subTokenURI,
       });
 
-      const subHash = await zns.subRegistrar.hashWithParent(rootHash, subdomain);
+      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, subdomain);
       const config = await zns.treasury.paymentConfigs(subHash);
       expect(config.token).to.eq(ethers.ZeroAddress);
       expect(config.beneficiary).to.eq(ethers.ZeroAddress);
@@ -267,7 +270,7 @@ describe("ZNSSubRegistrar", () => {
       // try to register a subdomain
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: "subpaused",
           domainAddress: lvl2SubOwner.address,
           tokenOwner: ethers.ZeroAddress,
@@ -299,7 +302,7 @@ describe("ZNSSubRegistrar", () => {
       await registrationWithSetup({
         user: admin,
         zns,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "subadmin",
       });
 
@@ -322,7 +325,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "sub",
         tokenURI: subTokenURI,
         fullConfig: {
@@ -360,7 +363,7 @@ describe("ZNSSubRegistrar", () => {
         {
           user: lvl2SubOwner,
           zns,
-          parentHash: rootHash,
+          parentHash: domain.hash,
           subdomainLabel: alphaNumeric,
           domainContent: lvl2SubOwner.address,
           tokenURI: subTokenURI,
@@ -373,12 +376,12 @@ describe("ZNSSubRegistrar", () => {
       await defaultSubdomainRegistration({
         user: lvl2SubOwner,
         zns,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         subdomainLabel: "subbbb",
         tokenOwner: zeroVault.address, // <--
       });
 
-      const subHash = await zns.subRegistrar.hashWithParent(rootHash, "subbbb");
+      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, "subbbb");
 
       // check owners of hash and token
       const ownerFromReg = await zns.registry.getDomainOwner(subHash);
@@ -398,7 +401,7 @@ describe("ZNSSubRegistrar", () => {
           {
             user: lvl2SubOwner,
             zns,
-            parentHash: rootHash,
+            parentHash: domain.hash,
             subdomainLabel: nameA,
             domainContent: lvl2SubOwner.address,
             tokenURI: subTokenURI,
@@ -411,7 +414,7 @@ describe("ZNSSubRegistrar", () => {
           {
             user: lvl2SubOwner,
             zns,
-            parentHash: rootHash,
+            parentHash: domain.hash,
             subdomainLabel: nameB,
             domainContent: lvl2SubOwner.address,
             tokenURI: subTokenURI,
@@ -424,7 +427,7 @@ describe("ZNSSubRegistrar", () => {
           {
             user: lvl2SubOwner,
             zns,
-            parentHash: rootHash,
+            parentHash: domain.hash,
             subdomainLabel: nameC,
             domainContent: lvl2SubOwner.address,
             tokenURI: subTokenURI,
@@ -437,7 +440,7 @@ describe("ZNSSubRegistrar", () => {
           {
             user: lvl2SubOwner,
             zns,
-            parentHash: rootHash,
+            parentHash: domain.hash,
             subdomainLabel: nameD,
             domainContent: lvl2SubOwner.address,
             tokenURI: subTokenURI,
@@ -486,7 +489,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "a",
         tokenURI: subTokenURI,
         fullConfig: {
@@ -522,7 +525,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "a".repeat(100000),
         tokenURI: subTokenURI,
         fullConfig: FULL_DISTR_CONFIG_EMPTY,
@@ -550,7 +553,7 @@ describe("ZNSSubRegistrar", () => {
 
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: "subfunds",
           domainAddress: lvl2SubOwner.address,
           tokenOwner: ethers.ZeroAddress,
@@ -576,7 +579,7 @@ describe("ZNSSubRegistrar", () => {
 
       await expect(
         zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: "suballowance",
           domainAddress: lvl2SubOwner.address,
           tokenOwner: ethers.ZeroAddress,
@@ -685,7 +688,7 @@ describe("ZNSSubRegistrar", () => {
         const isOdd = i % 2 !== 0;
 
         const subdomainObj : ISubRegistrarConfig = {
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: `subdomain${i + 1}`,
           domainAddress: admin.address,
           tokenOwner: ethers.ZeroAddress,
@@ -728,7 +731,7 @@ describe("ZNSSubRegistrar", () => {
         // "DomainRegistered" event log
         const { parentHash, domainHash, label, tokenOwner, tokenURI, domainOwner, domainAddress } = logs[i].args;
 
-        expect(parentHash).to.eq(rootHash);
+        expect(parentHash).to.eq(domain.hash);
         expect(domainHashExpected).to.eq(domainHash);
         expect(label).to.eq(subdomain.label);
         expect(tokenURI).to.eq(subdomain.tokenURI);
@@ -749,7 +752,7 @@ describe("ZNSSubRegistrar", () => {
         const isOdd = i % 2 !== 0;
 
         const subdomainObj : ISubRegistrarConfig = {
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: `sub${i + 1}`,
           domainAddress: lvl3SubOwner.address,
           tokenOwner: ethers.ZeroAddress,
@@ -773,7 +776,7 @@ describe("ZNSSubRegistrar", () => {
         // first goes with rootHash
         parentHashes.push(
           await zns.subRegistrar.hashWithParent(
-            i === 0 ? rootHash : parentHashes[i - 1],
+            i === 0 ? domain.hash : parentHashes[i - 1],
             subdomainObj.label
           )
         );
@@ -797,7 +800,7 @@ describe("ZNSSubRegistrar", () => {
 
         i > 0 ?
           expect(parentHash).to.eq(parentHashes[i - 1]) :
-          expect(parentHash).to.eq(rootHash);
+          expect(parentHash).to.eq(domain.hash);
         expect(domainHash).to.eq(parentHashes[i]);
         expect(label).to.eq(subdomain.label);
         expect(tokenURI).to.eq(subdomain.tokenURI);
@@ -809,7 +812,7 @@ describe("ZNSSubRegistrar", () => {
 
     it("Should revert when register the same domain twice using #registerSubdomainBulk", async () => {
       const subdomainObj : ISubRegistrarConfig = {
-        parentHash: rootHash,
+        parentHash: domain.hash,
         label: "subdomain1",
         domainAddress: admin.address,
         tokenOwner: ethers.ZeroAddress,
@@ -909,7 +912,7 @@ describe("ZNSSubRegistrar", () => {
         let referenceParentHash;
 
         if (i === 0) {
-          parentHash = rootHash;
+          parentHash = domain.hash;
           referenceParentHash = parentHash;
         } else if (i > 0 && i < 5) {
           parentHash = ethers.ZeroHash;
@@ -993,7 +996,7 @@ describe("ZNSSubRegistrar", () => {
 
       const registrations : Array<ISubRegistrarConfig> = [
         {
-          parentHash: rootHash,
+          parentHash: domain.hash,
           label: "subpaused",
           domainAddress: lvl2SubOwner.address,
           tokenOwner: ethers.ZeroAddress,
@@ -1865,7 +1868,6 @@ describe("ZNSSubRegistrar", () => {
   });
 
   describe("Token movements with different distr setups", () => {
-    let rootHash : string;
     let fixedPrice : bigint;
     let feePercentage : bigint;
     let token2 : CustomDecimalTokenMock;
@@ -1938,12 +1940,13 @@ describe("ZNSSubRegistrar", () => {
       await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
       // register root domain
-      rootHash = await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "root",
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          tokenOwner: rootOwner.address,
+          label: "root",
+          parentHash: ethers.ZeroHash,
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig({
@@ -1959,6 +1962,8 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
+
+      await domain.register();
     });
 
     it("FixedPricer - StakePayment - stake fee - 5 decimals", async () => {
@@ -1977,7 +1982,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "fixedstake",
         fullConfig: {
           distrConfig: {
@@ -2057,7 +2062,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         tokenOwner: rootOwner.address,
         user: rootOwner,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "subdomain",
       });
 
@@ -2079,7 +2084,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "fixedstakenofee",
         fullConfig: {
           distrConfig: {
@@ -2158,7 +2163,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "fixeddirectnofee",
         fullConfig: {
           distrConfig: {
@@ -2243,7 +2248,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "asympstake",
         fullConfig: {
           distrConfig: {
@@ -2331,7 +2336,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "curvestakenofee",
         fullConfig: {
           distrConfig: {
@@ -2410,7 +2415,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "curvedirectnofee",
         fullConfig: {
           distrConfig: {
@@ -2482,7 +2487,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "zeroprice",
         fullConfig: {
           distrConfig: {
@@ -2569,7 +2574,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "zeropricead",
         fullConfig: {
           distrConfig: {
@@ -2659,7 +2664,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "zeropriceas",
         fullConfig: {
           distrConfig: {
@@ -2748,7 +2753,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "zeropricefs",
         fullConfig: {
           distrConfig: {
@@ -2841,7 +2846,7 @@ describe("ZNSSubRegistrar", () => {
         zns,
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         domainLabel: "incorrectparent",
         fullConfig: {
           distrConfig: {
@@ -4129,7 +4134,6 @@ describe("ZNSSubRegistrar", () => {
 
   describe("UUPS", () => {
     let fixedPrice : bigint;
-    let rootHash : string;
 
     beforeEach(async () => {
       [
@@ -4160,12 +4164,12 @@ describe("ZNSSubRegistrar", () => {
 
       fixedPrice = ethers.parseEther("397.13");
       // register root domain
-      rootHash = await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "root",
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          tokenOwner: rootOwner.address,
+          label: "root",
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig({
@@ -4181,6 +4185,8 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
+
+      await domain.register();
     });
 
     it("Allows an authorized user to upgrade the contract", async () => {
@@ -4248,7 +4254,7 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
         tokenOwner: lvl2SubOwner.address,
         domainLabel,
-        parentHash: rootHash,
+        parentHash: domain.hash,
         fullConfig: {
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
@@ -4268,7 +4274,7 @@ describe("ZNSSubRegistrar", () => {
 
       await zns.subRegistrar.setRootRegistrar(lvl2SubOwner.address);
 
-      const rootDistrConfig = await zns.subRegistrar.distrConfigs(rootHash);
+      const rootDistrConfig = await zns.subRegistrar.distrConfigs(domain.hash);
 
       const contractCalls = [
         zns.subRegistrar.getAccessController(),
@@ -4300,7 +4306,7 @@ describe("ZNSSubRegistrar", () => {
       const newRegistrarProxy = factory.attach(await zns.subRegistrar.getAddress()) as ZNSSubRegistrarUpgradeMock;
 
       // check values in storage
-      const rootConfigBefore = await newRegistrarProxy.distrConfigs(rootHash);
+      const rootConfigBefore = await newRegistrarProxy.distrConfigs(domain.hash);
       expect(rootConfigBefore.accessType).to.eq(AccessType.OPEN);
       expect(rootConfigBefore.pricerContract).to.eq(await zns.fixedPricer.getAddress());
       expect(rootConfigBefore.paymentType).to.eq(PaymentType.DIRECT);
@@ -4319,7 +4325,7 @@ describe("ZNSSubRegistrar", () => {
 
       // register a subdomain with new logic
       await newRegistrarProxy.connect(lvl2SubOwner).registerSubdomain({
-        parentHash: rootHash,
+        parentHash: domain.hash,
         label: "subbb",
         domainAddress: lvl2SubOwner.address,
         tokenOwner: ethers.ZeroAddress,
@@ -4333,7 +4339,7 @@ describe("ZNSSubRegistrar", () => {
         user: lvl2SubOwner,
       });
 
-      const rootConfigAfter = await zns.subRegistrar.distrConfigs(rootHash);
+      const rootConfigAfter = await zns.subRegistrar.distrConfigs(domain.hash);
       expect(rootConfigAfter.accessType).to.eq(rootConfigBefore.accessType);
       expect(rootConfigAfter.pricerContract).to.eq(rootConfigBefore.pricerContract);
       expect(rootConfigAfter.priceConfig).to.eq(rootConfigBefore.priceConfig);
@@ -4351,12 +4357,12 @@ describe("ZNSSubRegistrar", () => {
 
       // try setting new fields to the new struct
       await newRegistrarProxy.connect(rootOwner).setDistributionConfigForDomain(
-        rootHash,
+        domain.hash,
         updatedStructConfig
       );
 
       // check what we got for new
-      const rootConfigFinal = await newRegistrarProxy.distrConfigs(rootHash);
+      const rootConfigFinal = await newRegistrarProxy.distrConfigs(domain.hash);
       const subConfigAfter = await newRegistrarProxy.distrConfigs(subHash);
 
       // validate the new config has been set correctly
