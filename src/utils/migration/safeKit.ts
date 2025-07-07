@@ -210,9 +210,12 @@ export class SafeKit {
       operation: OperationType.Call,
     };
 
+    const safeInfo = await this.apiKit.getSafeInfo(this.config.safeAddress);
+
     const manualOptions : SafeTransactionOptionalProps = {
       baseGas: "160000",
       refundReceiver: this.config.safeAddress,
+      nonce: Number(safeInfo.nonce),
       ...options,
     };
 
@@ -227,7 +230,7 @@ export class SafeKit {
 
       // Provide gas manually instead of relying on defaults which can sometimes
       // not be enough for complex transactions
-      manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 4n).toString();
+      manualOptions.safeTxGas = (BigInt(estimateTx.safeTxGas) * 2n).toString();
     } catch (e) {
       this.logger.error("Error: Failed to estimate gas for tx", { to, txData: txData.slice(0,10), options });
       throw e;
