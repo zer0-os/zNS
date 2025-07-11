@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { Db, MongoClient, ServerApiVersion } from "mongodb";
 
 export let dbVersion : string;
 
@@ -42,3 +42,21 @@ export const getZNSFromDB = async () => {
 
   return zns;
 };
+
+// Wrapper around `insertMany` mongo function
+// That first drops the db name given and then verifies insertion quantity
+export const insertMany = async <T extends Document>(
+  client : Db,
+  collectionName : string,
+  documents : Array<T>
+) => {
+  await client.dropCollection(collectionName);
+  const result = await client.collection(collectionName).insertMany(documents);
+  const diff = documents.length - result.insertedCount;
+
+  if (diff > 0) {
+    throw new Error(
+      `Error: call to "insertMany" on collection ${collectionName} failed to insert ${diff} documents`
+    );
+  }
+}
