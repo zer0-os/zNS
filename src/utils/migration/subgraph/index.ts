@@ -18,7 +18,8 @@ export const getDomains = async (isWorld : boolean) => {
     },
   });
 
-  if (result.error) throw Error(`Error in graph query: ${result.error}`);
+  // Check if any errors occurred from the query
+  if (result.errors) throw Error(`Error in graph query: ${result.errors}`);
 
   const domains = [];
 
@@ -37,6 +38,7 @@ export const getDomains = async (isWorld : boolean) => {
     // Refresh client each iteration
     client = await createClient();
 
+    // Get next set of domains
     result = await client.query({
       query: q.getDomains,
       variables: {
@@ -45,6 +47,9 @@ export const getDomains = async (isWorld : boolean) => {
         isWorld,
       },
     });
+
+    // Check if any errors occurred from the query
+    if (result.errors) throw Error(`Error in graph query: ${result.errors}`);
   }
 
   return domains;
