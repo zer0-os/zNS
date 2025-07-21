@@ -181,7 +181,7 @@ const main = async () => {
       await proposeRegistrations(
         depth - 1 === 0 ? await zns.rootRegistrar.getAddress() : await zns.subRegistrar.getAddress(),
         safeKit,
-        atDepth,
+        revokedParents as Domain[],
         depth - 1 === 0 ? ROOT_DOMAIN_BULK_SELECTOR : SUBDOMAIN_BULK_SELECTOR,
       );
 
