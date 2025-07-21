@@ -14,7 +14,7 @@ artifacts
 # hardhat-tenderly plugin
 deployments
 
-*.env
+*.env*
 docker
 docker*.tgz
 
