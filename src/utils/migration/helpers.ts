@@ -301,7 +301,7 @@ export const createTransfers = (
     if (!domain.isRevoked) {
       const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
         "safeTransferFrom(address,address,uint256)",
-        [ safeAddress, domain.owner.id, domain.tokenId ]
+        [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
       );
 
       // The `to` address must be the contract the multisig will call,
