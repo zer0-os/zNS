@@ -131,6 +131,7 @@ const createBatchesEOA = (
     // "label" is parameter name for subdomain registration, "name" for root domains
     // but "label" is used for both in the subgraph
     if (domain.parentHash !== ZeroHash) {
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
       const { name, ...rest } = domainArg;
       const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest } as ISubdomainRegistrationArgs;
       txs.push(subArg);
@@ -204,6 +205,7 @@ const createBatchesSafe = (
       }
 
       // remove `name` from args, leave rest of args in `rest`
+      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
       const { name, ...rest } = args;
 
       // Make sure priceConfig is included in distrConfig

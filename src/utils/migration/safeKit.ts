@@ -82,9 +82,15 @@ export class SafeKit {
       txServiceUrl: config.txServiceUrl,
     });
 
+    const safeOwner = process.env.SAFE_OWNER;
+
+    if (!safeOwner) {
+      throw new Error("Error: No Safe Owner address found. Did you forget to set `SAFE_OWNER`?");
+    }
+
     const protocolKit = await Safe.init({
       provider: config.rpcUrl,
-      signer: process.env.SAFE_OWNER!, // Must be private key, not address
+      signer: safeOwner, // Must be private key, not address
       safeAddress: config.safeAddress,
     });
 
