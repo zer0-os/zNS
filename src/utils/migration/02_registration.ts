@@ -131,7 +131,7 @@ const main = async () => {
     const atDepth = subdomains.filter(d => d.depth === depth);
 
     // Store revoked parents, if we find any
-    const revokedParents : Array<Partial<Domain>> = [];
+    const revokedParents : Map<string, Partial<Domain>> = new Map();
 
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
@@ -155,7 +155,7 @@ const main = async () => {
         // Recreate domain to have the information needed to re-register
         // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
         // of the rest
-        const missingDomain : Partial<Domain> = {
+        const missingParent : Partial<Domain> = {
           label: d.parent?.label,
           owner: {
             id: safeAddress,
@@ -171,17 +171,19 @@ const main = async () => {
         };
 
         // If the missing parent is itself a subdomain, add `parentHash` and use `label` instead
-        revokedParents.push(missingDomain);
+        if (!revokedParents.has(parentHash)) {
+          revokedParents.set(parentHash, missingParent);
+        }
       }
     }
 
     // If there are revoked parents, we propose those instead
-    if (revokedParents.length > 0) {
+    if (revokedParents.size > 0) {
       // We don't catch `transfers` here, we just want these for valid registration
       await proposeRegistrations(
         depth - 1 === 0 ? await zns.rootRegistrar.getAddress() : await zns.subRegistrar.getAddress(),
         safeKit,
-        revokedParents as Domain[],
+        [ ...revokedParents.values() ] as Array<Domain>,
         depth - 1 === 0 ? ROOT_DOMAIN_BULK_SELECTOR : SUBDOMAIN_BULK_SELECTOR,
       );
 
