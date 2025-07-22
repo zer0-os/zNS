@@ -164,9 +164,9 @@ const main = async () => {
           address: d.parent?.address || safeAddress,
           tokenURI: d.parent?.tokenURI || "http.zero.io",
           tokenId: d.parent?.tokenId,
-          parentHash: d.parent?.parentHash || d.parent?.id,
+          parentHash: d.parent?.parent?.parentHash || ZeroAddress,
           parent: {
-            id: d.parent?.id,
+            id: d.parent?.parent?.id || ZeroAddress,
           },
         };
 
