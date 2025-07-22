@@ -194,15 +194,7 @@ const createBatchesSafe = (
 
     if (functionSelector === SUBDOMAIN_BULK_SELECTOR) {
       // Subdomain, check parentHash
-      let parentHash;
-
-      if (domain.parentHash && domain.parentHash !== ZeroHash) {
-        parentHash = domain.parentHash;
-      } else if (domain.parent?.id && domain.parent?.id !== ZeroHash) {
-        parentHash = domain.parent?.id;
-      } else {
-        throw new Error("No parentHash for subdomain. Registration requires parent hash to be set");
-      }
+      const parentHash = getSubdomainParentHash(domain);
 
       // remove `name` from args, leave rest of args in `rest`
       /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
@@ -318,4 +310,19 @@ export const createTransfers = (
   }
 
   return transfers;
+};
+
+export const getSubdomainParentHash = (domain : Domain) => {
+  let parentHash;
+
+  // No subdomain should have parentHash of `0x0`
+  if (domain.parentHash && domain.parentHash !== ZeroHash) {
+    parentHash = domain.parentHash;
+  } else if (domain.parent?.id && domain.parent?.id !== ZeroHash) {
+    parentHash = domain.parent?.id;
+  } else {
+    throw new Error("No parentHash for subdomain. Registration requires parent hash to be set");
+  }
+
+  return parentHash;
 };

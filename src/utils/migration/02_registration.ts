@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, createTransfers, proposeRegistrations } from "./helpers";
+import { connectToDb, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
@@ -135,18 +135,8 @@ const main = async () => {
 
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
-    for (const [i,d] of atDepth.entries()) {
-      let parentHash;
-      if (d.parent && d.parent.id) {
-        parentHash = d.parent.id;
-      } else if (d.parentHash) {
-        parentHash = d.parentHash;
-      } else {
-        // Neither value is readable
-        throw new Error(
-          `No parent information found for subdomain at index ${i}: label="${d.label}", id="${d.id}"`
-        );
-      }
+    for (const domain of atDepth) {
+      const parentHash = getSubdomainParentHash(domain);
 
       // Even with a single promise doing this reduces execution time
       const ownerPromise = zns.registry.getDomainOwner(parentHash);
@@ -156,17 +146,17 @@ const main = async () => {
         // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
         // of the rest
         const missingParent : Partial<Domain> = {
-          label: d.parent?.label,
+          label: domain.parent?.label,
           owner: {
             id: safeAddress,
             domains: [],
           },
-          address: d.parent?.address || safeAddress,
-          tokenURI: d.parent?.tokenURI || "http.zero.io",
-          tokenId: d.parent?.tokenId,
-          parentHash: d.parent?.parent?.parentHash || ZeroAddress,
+          address: domain.parent?.address || safeAddress,
+          tokenURI: domain.parent?.tokenURI || "http.zero.io",
+          tokenId: domain.parent?.tokenId,
+          parentHash: domain.parent?.parent?.parentHash || ZeroAddress,
           parent: {
-            id: d.parent?.parent?.id || ZeroAddress,
+            id: domain.parent?.parent?.id || ZeroAddress,
           },
         };
 
