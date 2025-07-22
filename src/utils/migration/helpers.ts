@@ -177,7 +177,7 @@ const createBatchesSafe = (
   for (const [index, domain] of domains.entries()) {
     const args = {
       name: domain.label,
-      domainAddress: domain.owner.id,
+      domainAddress: domain.address || ZeroAddress,
       tokenOwner: safeAddress,
       tokenURI: domain.tokenURI,
       distrConfig: {

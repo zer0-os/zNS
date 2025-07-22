@@ -151,7 +151,7 @@ const main = async () => {
             id: safeAddress,
             domains: [],
           },
-          address: domain.parent?.address || safeAddress,
+          address: domain.parent?.address || ZeroAddress,
           tokenURI: domain.parent?.tokenURI || "http.zero.io",
           tokenId: domain.parent?.tokenId,
           parentHash: domain.parent?.parent?.parentHash || ZeroAddress,
