@@ -78,7 +78,7 @@ export class SafeKit {
 
     const protocolKit = await Safe.init({
       provider: config.rpcUrl,
-      signer: process.env.SAFE_OWNER!, // Must be private key, not address
+      signer: process.env.SAFE_OWNER as string, // Must be private key, not address
       safeAddress: config.safeAddress,
     });
 

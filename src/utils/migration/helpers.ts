@@ -107,7 +107,7 @@ const createBatchesEOA = (
     // "label" is parameter name for subdomain registration, "name" for root domains
     // but "label" is used for both in the subgraph
     if (domain.parentHash !== ZeroHash) {
-      const { name, ...rest } = domainArg;
+      const { ...rest } = domainArg;
       const subArg = { parentHash: domain.parentHash, label: domain.label, ...rest } as ISubdomainRegistrationArgs;
       txs.push(subArg);
     } else {
@@ -150,7 +150,7 @@ const createBatchesSafe = (
     const args = {
       name: domain.label,
       domainAddress: domain.owner.id,
-      tokenOwner: process.env.SAFE_ADDRESS!,
+      tokenOwner: process.env.SAFE_ADDRESS as string,
       tokenURI: domain.tokenURI,
       distrConfig: {
         pricerContract: ZeroAddress,
@@ -177,7 +177,7 @@ const createBatchesSafe = (
       }
 
       // remove `name` from args, leave rest of args in `rest`
-      const { name, ...rest } = args;
+      const { ...rest } = args;
 
       // Make sure priceConfig is included in distrConfig
       const subArgs = {
