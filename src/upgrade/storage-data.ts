@@ -32,7 +32,7 @@ export const readContractStorage = async (
     ) : Promise<ContractStorageData> => {
       const newAcc = await acc;
 
-      if (!type.includes("mapping") && !type.includes("array")) {
+      if (!type.includes("mapping") && !type.includes("array") && label.slice(0, 1) !== "_") {
         try {
           const value = await contractObj[(label as keyof ZNSContract)]();
 
@@ -56,6 +56,8 @@ export const compareStorageData = (
   const storageDiff = dataAfter.reduce(
     (acc : ContractStorageDiff | undefined, stateVar, idx) => {
       const [key, value] = Object.entries(stateVar)[0];
+
+      if (!dataBefore[idx]) return acc;
 
       if (value !== dataBefore[idx][key]) {
         console.error(
