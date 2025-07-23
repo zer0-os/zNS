@@ -2,7 +2,13 @@ import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
 import { connectToDb, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
-import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
+import {
+  INVALID_TX_COLL_NAME,
+  ROOT_COLL_NAME,
+  ROOT_DOMAIN_BULK_SELECTOR,
+  SUB_COLL_NAME,
+  SUBDOMAIN_BULK_SELECTOR,
+} from "./constants";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
 import { getZnsLogger } from "../../deploy/get-logger";
@@ -189,10 +195,19 @@ const main = async () => {
 
     break;
   case "transfers":
-    const transferTxs = createTransfers(
-      await zns.domainToken.getAddress(),
+    const [ transferTxs, failedTransferTxs ] = await createTransfers(
+      hre,
+      zns.domainToken,
       [...rootDomains, ...subdomains],
     );
+
+    if (failedTransferTxs.length > 0) {
+      const result = await client.collection(INVALID_TX_COLL_NAME).insertMany(failedTransferTxs);
+      const diff = failedTransferTxs.length - result.insertedCount;
+      if (diff > 0) {
+        throw new Error(`Failed to insert ${diff} failed domain transfers`);
+      }
+    }
 
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);
