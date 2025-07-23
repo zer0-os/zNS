@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { Db, MongoClient, ServerApiVersion, Document } from "mongodb";
 
 export let dbVersion : string;
 
@@ -41,4 +41,20 @@ export const getZNSFromDB = async () => {
   ).toArray();
 
   return zns;
+};
+
+export const updateCollection = async <T extends Document> (
+  client : Db,
+  collName : string,
+  documents : Array<T>,
+) => {
+  // To avoid duplicate data, we clear the DB before any inserts
+  await client.dropCollection(collName);
+
+  const result = await client.collection(collName).insertMany(documents);
+  const diff = documents.length - result.insertedCount;
+
+  if (diff > 0) {
+    throw new Error(`Error: Failed to insert ${diff} domains on call to \`insertMany\``);
+  }
 };
