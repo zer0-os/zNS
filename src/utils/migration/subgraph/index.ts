@@ -18,7 +18,7 @@ export const getDomains = async (isWorld : boolean) => {
     },
   });
 
-  if (result.error) throw Error(`Error in graph query: ${result.error}`);
+  if (result.errors) throw Error(`Error in graph query: ${result.errors}`);
 
   const domains = [];
 
@@ -45,6 +45,8 @@ export const getDomains = async (isWorld : boolean) => {
         isWorld,
       },
     });
+
+    if (result.errors) throw Error(`Error in graph query: ${result.errors}`);
   }
 
   return domains;
