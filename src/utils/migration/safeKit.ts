@@ -22,13 +22,19 @@ import {
   SafeKitConfig,
   SafeRetryOptions,
   SafeTransactionOptionsExtended,
+  Tx,
 } from "./types";
 import { getZnsLogger } from "../../deploy/get-logger";
 
 /**
- * Wrapper class around the safeApiKit and protocolKit that Safe provides
+ * Wrapper class around the Safe API Kit and Protocol Kit for Gnosis Safe operations
  *
- * Instantiation is done through `init`
+ * Provides high-level methods for creating, signing, and executing Safe transactions
+ * with built-in retry logic, gas estimation, and database logging.
+ *
+ * @example
+ * const safeKit = await SafeKit.init(config);
+ * await safeKit.createProposeSignedTxs(contractAddress, txDataArray);
  */
 export class SafeKit {
   apiKit : SafeApiKit;
@@ -76,9 +82,15 @@ export class SafeKit {
       txServiceUrl: config.txServiceUrl,
     });
 
+    const safeOwner = process.env.SAFE_OWNER;
+
+    if (!safeOwner) {
+      throw new Error("Error: No Safe Owner address found. Did you forget to set `SAFE_OWNER`?");
+    }
+
     const protocolKit = await Safe.init({
       provider: config.rpcUrl,
-      signer: process.env.SAFE_OWNER as string, // Must be private key, not address
+      signer: safeOwner, // Must be private key, not address
       safeAddress: config.safeAddress,
     });
 
@@ -92,11 +104,17 @@ export class SafeKit {
     }
 
     // If still not connected, error
-    if (!db) throw Error("No DB connection provided");
+    if (!db) throw new Error("No database connection could be established");
 
     return new SafeKit(apiKit, protocolKit, config, db);
   }
 
+  /**
+   * Check if the given address is an owner of the Safe
+   *
+   * @param address The address to check
+   * @returns Promise resolving to true if the address is an owner
+   */
   async isOwner (address : string) : Promise<boolean> {
     return this.protocolKit.isOwner(address);
   }
@@ -117,6 +135,8 @@ export class SafeKit {
     // Get the current nonce from the Safe to begin indexing
     // This value is inclusive of any pending transactions in the queue
     const nonce = await this.apiKit.getNextNonce(this.config.safeAddress);
+    // Use the below value for *real* nonce value NOT inclusive of pending transaction list
+    // const nonce = await this.protocolKit.getNonce();
 
     for (const [index, txData] of txDataBatches.entries()) {
       const txNonce = Number(nonce) + index;
@@ -132,13 +152,13 @@ export class SafeKit {
         const data = { to, txData: txData.slice(0,10), txNonce };
         this.logger.error(message, data);
         await this.db.collection("execution-logs").insertOne({
-          message: "Error: Failed to create proposal data for tx",
+          message,
           data: {
             index,
             ...data,
           },
         });
-        throw Error();
+        throw Error(`${message}: ${data}`);
       } else {
         const message = "Successfully created proposal data for tx";
         const data = { safeTxHash: proposalData.safeTxHash };
@@ -247,6 +267,71 @@ export class SafeKit {
   }
 
   /**
+   * Create and propose transaction batches with automatic gas estimation
+   *
+   * @param txData Array of transaction data to batch
+   * @param batchSize Number of transactions per batch
+   */
+  async createProposeBatches (
+    txData : Array<Tx>,
+    batchSize : number,
+  ) {
+    let transactions : Array<MetaTransactionData> = [];
+
+    let nonceCount = 0;
+    for (const [index, tx] of txData.entries()) {
+      this.logger.debug(`Processing transaction batch index: ${index}`);
+
+      try {
+        // Estimate individual tx to be sure the batch will pass.
+        // If one fails during execution of the batch, they will all fail.
+        await this.apiKit.estimateSafeTransaction(
+          this.config.safeAddress,
+          tx
+        );
+      } catch (e) {
+        // Proceed without adding failing tx to batch
+        // this.logger.error("Error: Failed to estimate gas for tx", { index, to: tx.to, txData: tx.data });
+        continue;
+      }
+
+      transactions.push(tx);
+
+      if ((index + 1) % batchSize === 0 || index + 1 === txData.length) {
+        // Nonce value that is NOT inclusive of the pending tx queue
+        // Use `this.apiKit.getNextNonce(this.config.safeAddress)` to include
+        // the number of pending transactions
+        const realNonce = await this.protocolKit.getNonce();
+        const safeTx = await this.protocolKit.createTransaction({
+          transactions,
+          options: {
+            nonce: realNonce + nonceCount,
+          },
+        });
+
+        const safeTxHash = await this.protocolKit.getTransactionHash(safeTx);
+        const signature = await this.signTx(safeTxHash);
+
+        const proposalData = {
+          safeAddress: this.config.safeAddress,
+          safeTransactionData: safeTx.data,
+          safeTx,
+          safeTxHash,
+          senderAddress: this.config.safeOwnerAddress,
+          senderSignature: signature.data,
+        };
+
+        await this.retry(
+          this.proposeTx(proposalData),
+        );
+
+        transactions = [];
+        nonceCount++;
+      }
+    }
+  }
+
+  /**
    * Sign the given transaction
    * @param safeTxHash The transaction hash before signing
    * @returns The signature created after signing
@@ -269,19 +354,24 @@ export class SafeKit {
     await this.retry(
       this.apiKit.proposeTransaction(txProposeData)
     );
-    // await this.apiKit.proposeTransaction(txProposeData);
 
     // Verify the proposal was successful by comparing the length of pending transactions before and after
     const afterTxs = await this.apiKit.getPendingTransactions(this.config.safeAddress);
     if (afterTxs.count === beforeTxs.count + 1) {
       this.logger.info("Successfully proposed transaction", { safeTxHash: txProposeData.safeTxHash });
     } else {
-      this.logger.error("Error: failed to propose tx", { safeTxHash: txProposeData.safeTxHash });
-      throw Error();
+      const message = "Error: failed to propose tx";
+      const data = { safeTxHash: txProposeData.safeTxHash };
+      this.logger.error(message, data);
+      throw Error(`${message}: ${data}`);
     }
   }
 
-  // Execute all pending transactions in the Safe queue that have been confirmed
+  /**
+   * Execute all pending transactions in the Safe queue that have been confirmed
+   *
+   * @param options Optional parameters for filtering pending transactions
+   */
   @LogExecution
   async executeAll (options ?: PendingTransactionsOptions) : Promise<void> {
     const txs = await this.apiKit.getPendingTransactions(
@@ -293,13 +383,22 @@ export class SafeKit {
       }
     );
 
-    this.logger.info("Pending transactions", { count: txs.count });
     for (const tx of txs.results) {
-      await this.execute(tx, tx.safeTxHash);
-      await this.delay(this.config.delay * 10);
+      const result = await this.execute(tx, tx.safeTxHash);
+      // Unknown type declared internally but runtime has `wait` func
+      await (result.transactionResponse as { wait : () => Promise<void>; }).wait();
+      this.logger.info(`Executed transaction: ${result.hash} with nonce ${tx.nonce}`);
+      break;
     }
   }
 
+  /**
+   * Execute a Safe transaction
+   *
+   * @param tx The transaction to execute
+   * @param txHash The transaction hash
+   * @returns Promise resolving to the transaction result
+   */
   async execute (
     tx : SafeTransaction | SafeMultisigTransactionResponse,
     txHash : string
@@ -329,6 +428,13 @@ export class SafeKit {
     return result;
   }
 
+  /**
+   * Retry a function with exponential backoff
+   *
+   * @param func The promise-returning function to retry
+   * @param options Retry configuration options
+   * @returns Promise resolving to the function result
+   */
   async retry <T> (
     func : Promise<T>,
     options : SafeRetryOptions = { attempts: this.config.retryAttempts, delayMs: this.config.delay, exponential: true }
@@ -369,6 +475,11 @@ export class SafeKit {
     throw lastError;
   }
 
+  /**
+   * Utility method to delay execution for a specified number of milliseconds
+   *
+   * @param ms Number of milliseconds to delay
+   */
   async delay (ms : number) {
     await new Promise(resolve => setTimeout(resolve, ms));
   }

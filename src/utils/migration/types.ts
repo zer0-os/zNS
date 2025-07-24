@@ -1,7 +1,7 @@
 import { Addressable } from "ethers";
 import { IDistributionConfig, IPaymentConfig } from "../../../test/helpers/types";
 import { SafeTransactionOptionalProps } from "@safe-global/protocol-kit";
-import { SafeTransaction } from "@safe-global/types-kit";
+import { OperationType, SafeTransaction } from "@safe-global/types-kit";
 import { ProposeTransactionProps } from "@safe-global/api-kit";
 import { Db } from "mongodb";
 
@@ -87,6 +87,13 @@ export interface SafeTxContractMethod {
   payable : boolean;
 }
 
+export interface Tx {
+  to : string; // | Addressable;
+  value : string;
+  data : string; // TODO why this | null
+  operation : OperationType;
+}
+
 export interface SafeTx {
   to : string | Addressable;
   value : string;
@@ -154,11 +161,9 @@ export type SafeTransactionOptionsExtended = SafeTransactionOptionalProps & {
   execute ?: boolean;
   numPendingTxs ?: number;
 };
+
 export type ProposeTransactionPropsExtended = ProposeTransactionProps & { safeTx : SafeTransaction; };
 
-// Batch registerations are simply a string array,
-// but batch transfers aren't possible on the contract
-// so we group single transactions into a second array
-export type CreateBatchesResponse = [ Array<string>, Array<Array<string>> ];
-export type RootRegistrationArgsArrays = Array<Array<IRootDomainRegistrationArgs>>;
-export type SubRegistrationArgsArrays = Array<Array<ISubdomainRegistrationArgs>>;
+// Arrays of batches for registration args
+export type RootRegistrationArgsBatches = Array<Array<IRootDomainRegistrationArgs>>;
+export type SubRegistrationArgsBatches = Array<Array<ISubdomainRegistrationArgs>>;
