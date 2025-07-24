@@ -315,21 +315,17 @@ export const createTransfers = async (
       operation: OperationType.Call,
     };
 
-    const bytecode = await hre.ethers.provider.getCode(domain.domainToken.owner.id);
-
-    if (bytecode.length > 2) {
-      try {
-        // If destination address is EOA or contract that implements `onERC721Received`
-        // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
-        // the entire batch later
-        await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
-          safeAddress,
-          domain.domainToken.owner.id,
-          domain.tokenId
-        );
-      } catch (e) {
-        failedTransfers.push(domain);
-      }
+    try {
+      // If destination address is EOA or contract that implements `onERC721Received`
+      // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
+      // the entire batch later
+      await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
+        safeAddress,
+        domain.domainToken.owner.id,
+        domain.tokenId
+      );
+    } catch (e) {
+      failedTransfers.push(domain);
     }
 
     if (!domain.isRevoked) {
