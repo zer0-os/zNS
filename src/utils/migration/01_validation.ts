@@ -1,10 +1,11 @@
 import * as hre from "hardhat";
 import { getDomains } from "./subgraph";
 import { Domain, InvalidDomain } from "./types";
-import { getDBAdapter } from "./database";
+import { getDBAdapter, updateCollection } from "./database";
 import { getZNS } from "./zns-contract-data";
 import { validateDomain } from "./validate";
 import { INVALID_COLL_NAME, ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
+import { Db } from "mongodb";
 
 
 /**
@@ -74,19 +75,27 @@ const main = async () => {
   }
 
   // Connect to database collection and write user domain data to DB
-  const client = (await getDBAdapter(uri)).db(dbName);
+  const client : Db = (await getDBAdapter(uri)).db(dbName);
 
-  // To avoid duplicate data, we clear the DB before any inserts
-  await client.dropCollection(ROOT_COLL_NAME);
-  await client.collection(ROOT_COLL_NAME).insertMany(validRoots);
+  await updateCollection(
+    client,
+    ROOT_COLL_NAME,
+    validRoots
+  );
 
-  await client.dropCollection(SUB_COLL_NAME);
-  await client.collection(SUB_COLL_NAME).insertMany(validSubs);
+  await updateCollection(
+    client,
+    SUB_COLL_NAME,
+    validSubs
+  );
 
   // Domains that have data inconsistencies
   if (invalidDomains.length > 0) {
-    await client.dropCollection(INVALID_COLL_NAME);
-    await client.collection(INVALID_COLL_NAME).insertMany(invalidDomains);
+    await updateCollection(
+      client,
+      INVALID_COLL_NAME,
+      invalidDomains
+    );
   }
 };
 
