@@ -301,39 +301,38 @@ export const createTransfers = async (
   }
 
   for (const domain of domains) {
-    if (!domain.isRevoked) {
-      const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
-        "safeTransferFrom(address,address,uint256)",
-        [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
-      );
+    const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
+      "safeTransferFrom(address,address,uint256)",
+      [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
+    );
 
-      const tx : Tx = {
-        to: await domainToken.getAddress(),
-        value: "0",
-        data: transferEncoding,
-        operation: OperationType.Call,
-      };
+    // The `to` address must be the contract the multisig will call,
+    // not the multisig itself
+    const tx : Tx = {
+      to: await domainToken.getAddress(),
+      value: "0",
+      data: transferEncoding,
+      operation: OperationType.Call,
+    };
 
-      const bytecode = await hre.ethers.provider.getCode(domain.domainToken.owner.id);
+    const bytecode = await hre.ethers.provider.getCode(domain.domainToken.owner.id);
 
-      if (bytecode.length > 2) {
-        console.log("address is contract, reading...");
-        try {
-          // If destination address is EOA or contract that implements `onERC721Received`
-          // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
-          // the entire batch later
-          await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
-            safeAddress,
-            domain.domainToken.owner.id,
-            domain.tokenId
-          );
-        } catch (e) {
-          failedTransfers.push(domain);
-        }
+    if (bytecode.length > 2) {
+      try {
+        // If destination address is EOA or contract that implements `onERC721Received`
+        // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
+        // the entire batch later
+        await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
+          safeAddress,
+          domain.domainToken.owner.id,
+          domain.tokenId
+        );
+      } catch (e) {
+        failedTransfers.push(domain);
       }
+    }
 
-      // The `to` address must be the contract the multisig will call,
-      // not the multisig itself
+    if (!domain.isRevoked) {
       transfers.push(tx);
     }
   }
