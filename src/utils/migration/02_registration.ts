@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
+import { connectToDb, createBatches, createRevokeBatches, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import {
   INVALID_TX_COLL_NAME,
   ROOT_COLL_NAME,
@@ -108,7 +108,7 @@ const main = async () => {
   // must be proposed *and* executed before subdomain registration can be proposed
   // Likewise, any transfers will fail gas estimation for domains that do not exist yet.
 
-  // "roots" | "subs" | "transfers"
+  // "roots" | "subs" | "transfers" | "revoke"
   const action = process.env.ACTION; // <--- Set this variable before each run as "roots", "subs", or "transfer"
 
   const zns = await getZNS(migrationAdmin);
@@ -117,6 +117,22 @@ const main = async () => {
   const subdomains = await client.collection(
     SUB_COLL_NAME
   ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
+
+  const rootsToRevoke = await client.collection(ROOT_COLL_NAME).find(
+    {
+      isRevoked: false,
+      // "owner.id": safeAddress,
+    }
+  ).toArray();
+
+  const subsToRevoke = await client.collection(SUB_COLL_NAME).find(
+    {
+      isRevoked: false,
+      // "owner.id": safeAddress,
+    }
+  ).toArray();
+
+  const domainsToRevoke = [ ...rootsToRevoke, ...subsToRevoke ] as unknown as Array<Domain>;
 
   switch (action) {
   case "roots":
@@ -212,6 +228,28 @@ const main = async () => {
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);
     break;
+  case "revoke":
+    // Revoke domains that are owned by the Safe
+    const {
+      revokeBatches,
+      failedRevokes,
+    } = await createRevokeBatches(
+      domainsToRevoke,
+      zns.rootRegistrar,
+    );
+
+    if (failedRevokes.length > 0) {
+      const result = await client.collection(INVALID_TX_COLL_NAME).insertMany(failedRevokes);
+      const diff = failedRevokes.length - result.insertedCount;
+      if (diff > 0) {
+        throw new Error(`Failed to insert ${diff} failed domain transfers`);
+      }
+    }
+
+    // Create and propose the batch transactions
+    await safeKit.createProposeBatches(revokeBatches, 100);
+    break;
+
   default:
     throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }

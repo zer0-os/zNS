@@ -12,6 +12,7 @@ import {
 import {
   ZNSDomainToken,
   ZNSDomainToken__factory,
+  ZNSRootRegistrar,
   ZNSRootRegistrar__factory,
   ZNSSubRegistrar__factory,
 } from "../../../typechain";
@@ -88,6 +89,8 @@ export const createBatches = (
   functionSelector ?: string,
   registerSliceSize = 50,
 ) : Array<string> | RootRegistrationArgsBatches | SubRegistrationArgsBatches => {
+  if (functionSelector === "revokeDomain")
+    return createRevokeBatches();
   if (functionSelector) {
     return createBatchesSafe(
       domains,
@@ -276,6 +279,49 @@ export const LogExecution = (target : any, propertyKey : string, descriptor : Pr
   };
 
   return descriptor;
+};
+
+export const createRevokeBatches = async (
+  domains : Array<Domain>,
+  rootRegistrar : ZNSRootRegistrar,
+) : Promise<{
+  revokeBatches : Array<Tx>;
+  failedRevokes : Array<Domain>;
+}> => {
+  const revokeBatches : Array<Tx> = [];
+  const failedRevokes : Array<Domain> = [];
+
+  const safeAddress = process.env.SAFE_ADDRESS;
+  if (!safeAddress)
+    throw new Error("No Safe address set in environment variables. Set SAFE_ADDRESS environment variable");
+
+  // Create revoke batches for each domain
+  for (const domain of domains) {
+    const revokeEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+      "revokeDomain",
+      [ domain.id ]
+    );
+
+    const tx : Tx = {
+      to: await rootRegistrar.getAddress(),
+      value: "0",
+      data: revokeEncoding,
+      operation: OperationType.Call,
+    };
+
+    try {
+      await rootRegistrar.revokeDomain.estimateGas(domain.id);
+    } catch (e) {
+      failedRevokes.push(domain);
+    }
+
+    revokeBatches.push(tx);
+  }
+
+  return {
+    revokeBatches,
+    failedRevokes,
+  };
 };
 
 /**
