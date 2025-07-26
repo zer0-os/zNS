@@ -89,8 +89,6 @@ export const createBatches = (
   functionSelector ?: string,
   registerSliceSize = 50,
 ) : Array<string> | RootRegistrationArgsBatches | SubRegistrationArgsBatches => {
-  if (functionSelector === "revokeDomain")
-    return createRevokeBatches();
   if (functionSelector) {
     return createBatchesSafe(
       domains,

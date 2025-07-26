@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, createBatches, createRevokeBatches, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
+import { connectToDb, createRevokeBatches, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import {
   INVALID_TX_COLL_NAME,
   ROOT_COLL_NAME,
@@ -57,7 +57,7 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - Executing more than ~20 transactions sequentially is not recommended
  * - Manual gas estimation is used for complex transaction accuracy
  */
-const main = async () => {
+export const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
   const logger = getZnsLogger();
@@ -93,14 +93,14 @@ const main = async () => {
   // https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 
   // Setup the SafeKit
-  const safeKit = await SafeKit.init(config);
+  // const safeKit = await SafeKit.init(config);
 
-  // If admin given is not a Safe owner, fail early
-  if (!await safeKit.isOwner(migrationAdmin.address)) {
-    throw new Error(
-      `Migration admin ${migrationAdmin.address} is not a Safe owner. Ensure the admin address is added as a Safe owner`
-    );
-  }
+  // // If admin given is not a Safe owner, fail early
+  // if (!await safeKit.isOwner(migrationAdmin.address)) {
+  //   throw new Error(
+  //     `Migration admin ${migrationAdmin.address} is not a Safe owner. Ensure the admin address is added as a Safe owner`
+  //   );
+  // }
 
   // We use this flag to separate root domain and subdomain registration
   // This is because gas estimation of a tx that includes registration of
@@ -120,14 +120,14 @@ const main = async () => {
 
   const rootsToRevoke = await client.collection(ROOT_COLL_NAME).find(
     {
-      isRevoked: false,
+      isRevoked: true,
       // "owner.id": safeAddress,
     }
   ).toArray();
 
   const subsToRevoke = await client.collection(SUB_COLL_NAME).find(
     {
-      isRevoked: false,
+      isRevoked: true,
       // "owner.id": safeAddress,
     }
   ).toArray();
@@ -238,16 +238,20 @@ const main = async () => {
       zns.rootRegistrar,
     );
 
-    if (failedRevokes.length > 0) {
-      const result = await client.collection(INVALID_TX_COLL_NAME).insertMany(failedRevokes);
-      const diff = failedRevokes.length - result.insertedCount;
-      if (diff > 0) {
-        throw new Error(`Failed to insert ${diff} failed domain transfers`);
-      }
-    }
+    // if (failedRevokes.length > 0) {
+    //   const result = await client.collection(INVALID_REVOKES_COLL_NAME).insertMany(failedRevokes);
+    //   const diff = failedRevokes.length - result.insertedCount;
+    //   if (diff > 0) {
+    //     throw new Error(`Failed to insert ${diff} failed domain transfers`);
+    //   }
+    // }
 
     // Create and propose the batch transactions
-    await safeKit.createProposeBatches(revokeBatches, 100);
+    // await safeKit.createProposeBatches(revokeBatches, 100);
+    return {
+      revokeBatches,
+      failedRevokes,
+    };
     break;
 
   default:
@@ -255,10 +259,10 @@ const main = async () => {
   }
 };
 
-main().catch(error => {
-  const logger = getZnsLogger();
-  logger.error("Migration script failed:", error);
-  process.exitCode = 1;
-}).finally(() => {
-  process.exit(0);
-});
+// main().catch(error => {
+//   const logger = getZnsLogger();
+//   logger.error("Migration script failed:", error);
+//   process.exitCode = 1;
+// }).finally(() => {
+//   process.exit(0);
+// });
