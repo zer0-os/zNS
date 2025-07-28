@@ -7,12 +7,19 @@ import {
   ISubdomainRegistrationArgs,
   RootRegistrationArgsBatches,
   SubRegistrationArgsBatches,
+  Tx,
 } from "./types";
-import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
+import {
+  ZNSDomainToken,
+  ZNSDomainToken__factory,
+  ZNSRootRegistrar__factory,
+  ZNSSubRegistrar__factory,
+} from "../../../typechain";
 import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZnsLogger } from "../../deploy/get-logger";
 import { SafeKit } from "./safeKit";
 import { OperationType } from "@safe-global/types-kit";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 /**
  * Create and propose batch transactions to the Safe for domain registrations
@@ -274,16 +281,18 @@ export const LogExecution = (target : any, propertyKey : string, descriptor : Pr
 /**
  * Create transfer transactions for domain tokens to their respective owners
  *
- * @param to The contract address to send transfer transactions to
+ * @param domainToken The contract to send the tx to
  * @param domains Array of domains to create transfers for
  * @returns Array of transfer transaction objects for Safe execution
  * @throws {Error} When Safe address is not configured
  */
-export const createTransfers = (
-  to : string,
+export const createTransfers = async (
+  hre : HardhatRuntimeEnvironment,
+  domainToken : ZNSDomainToken,
   domains : Array<Domain>,
-) => {
-  const transfers = [];
+) : Promise<[Array<Tx>, Array<Domain>]> => {
+  const transfers : Array<Tx> = [];
+  const failedTransfers : Array<Domain> = [];
 
   // Get safe address being used
   const safeAddress = process.env.SAFE_ADDRESS;
@@ -292,24 +301,39 @@ export const createTransfers = (
   }
 
   for (const domain of domains) {
-    if (!domain.isRevoked) {
-      const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
-        "safeTransferFrom(address,address,uint256)",
-        [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
-      );
+    const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
+      "safeTransferFrom(address,address,uint256)",
+      [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
+    );
 
-      // The `to` address must be the contract the multisig will call,
-      // not the multisig itself
-      transfers.push({
-        to,
-        value: "0",
-        data: transferEncoding,
-        operation: OperationType.Call,
-      });
+    // The `to` address must be the contract the multisig will call,
+    // not the multisig itself
+    const tx : Tx = {
+      to: await domainToken.getAddress(),
+      value: "0",
+      data: transferEncoding,
+      operation: OperationType.Call,
+    };
+
+    try {
+      // If destination address is EOA or contract that implements `onERC721Received`
+      // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
+      // the entire batch later
+      await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
+        safeAddress,
+        domain.domainToken.owner.id,
+        domain.tokenId
+      );
+    } catch (e) {
+      failedTransfers.push(domain);
+    }
+
+    if (!domain.isRevoked) {
+      transfers.push(tx);
     }
   }
 
-  return transfers;
+  return [ transfers, failedTransfers ];
 };
 
 export const getSubdomainParentHash = (domain : Domain) => {
