@@ -32,14 +32,15 @@ export const readContractStorage = async (
     ) : Promise<ContractStorageData> => {
       const newAcc = await acc;
 
-      if (!type.includes("mapping") && !type.includes("array") && label.slice(0, 1) !== "_") {
-        try {
-          const value = await contractObj[(label as keyof ZNSContract)]();
+      if (type.includes("mapping") || type.includes("array") || label.slice(0, 1) === "_")
+        return newAcc; // Skip mappings, arrays and private variables
 
-          newAcc.push({ [label]: value });
-        } catch (e : unknown) {
-          logger.debug(`Error on LABEL ${label}: ${(e as Error).message}`);
-        }
+      try {
+        const value = await contractObj[(label as keyof ZNSContract)]();
+
+        newAcc.push({ [label]: value });
+      } catch (e : unknown) {
+        logger.debug(`Error on LABEL ${label}: ${(e as Error).message}`);
       }
 
       return newAcc;
