@@ -4044,7 +4044,6 @@ describe("ZNSSubRegistrar", () => {
     });
 
     describe("#setAccessController", () => {
-
       it("should allow ADMIN to set a valid AccessController", async () => {
         await zns.subRegistrar.connect(deployer).setAccessController(zns.accessController.target);
 
@@ -4091,7 +4090,7 @@ describe("ZNSSubRegistrar", () => {
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           AC_UNAUTHORIZED_ERR
-        ).withArgs(lvl2SubOwner.address, ADMIN_ROLE);
+        ).withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
@@ -4113,8 +4112,9 @@ describe("ZNSSubRegistrar", () => {
       });
 
       it("should revert when setting a zero address as AccessController", async () => {
+        // deployer is the governor
         await expect(
-          zns.subRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
+          zns.subRegistrar.connect(deployer).setAccessController(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           AC_WRONGADDRESS_ERR

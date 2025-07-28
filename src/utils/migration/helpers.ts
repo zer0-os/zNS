@@ -21,6 +21,7 @@ import { SafeKit } from "./safeKit";
 import { OperationType } from "@safe-global/types-kit";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+
 /**
  * Create and propose batch transactions to the Safe for domain registrations
  *
