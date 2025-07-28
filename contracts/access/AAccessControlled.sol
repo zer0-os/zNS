@@ -74,9 +74,9 @@ abstract contract AAccessControlled {
     /**
      * @notice Internal function to set the access controller address.
      *
-     * @dev This function checks if the caller has the admin role in the current
+     * @dev This function checks if the caller has the GOVERNOR_ROLE in the current
      * in-state contract and checks if the new access controller address passed is in fact a `ZNSAccessController`
-     * contract that is already set up with the same caller as an admin. This prevents from setting the wrong address.
+     * contract that is already set up with the same caller as GOVERNOR. This prevents from setting the wrong address.
      *
      * @param _accessController Address of the ZNSAccessController contract.
      */
