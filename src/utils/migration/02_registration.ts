@@ -1,79 +1,73 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, proposeRegistrations } from "./helpers";
+import { connectToDb, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import { ROOT_COLL_NAME, ROOT_DOMAIN_BULK_SELECTOR, SUB_COLL_NAME, SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZNS } from "./zns-contract-data";
 import { ZeroAddress } from "ethers";
-import { TLogger } from "@zero-tech/zdc";
 import { getZnsLogger } from "../../deploy/get-logger";
 
 /**
- * Script to create and propose signed transactions to the Safe for
- * as part of the second half of the ZNS domain migration.
+ * ZNS Domain Migration Registration Script
  *
- * This script will get the latest ZNS contracts as well as the domain information
- * from MongoDB. Then that data is formed into batches of raw txData encoding to
- * propose to the safe.
+ * Creates and proposes signed transactions to the Safe for domain registration
+ * as part of the second half of the ZNS domain migration process.
  *
- * Required .env variables for running this script:
- * - MONGO_DB_URI - Get ZNS on zchain
- * - MONGO_DB_NAME
- * - MONGO_DB_VERSION
- * - MONGO_DB_URI_WRITE - Get Domain data (The domain data is in a different cluster that needs a different connection)
- * - MONGO_DB_NAME_WRITE
- * - SAFE_ADDRESS
- * - SAFE_OWNER (for HardHat config)
- * - CHAIN_ID
- * - [NETWORK]_RPC_URL (substitute NETWORK for the specific network being used)
- * - ACTION - What action to take on this execution, to register `roots`, `subs` or to propose `transfers`
+ * This script retrieves the latest ZNS contracts and domain information from MongoDB,
+ * then forms the data into batches of encoded transaction data to propose to the Safe.
  *
- * Optional .env vars
- * - TX_SERVICE_URL - Optional only when using a Safe supported network
- * - DELAY
- * - RETRIES
+ * @requires Environment Variables:
+ * - MONGO_DB_URI - MongoDB connection for ZNS on zchain
+ * - MONGO_DB_NAME - MongoDB database name
+ * - MONGO_DB_VERSION - MongoDB version
+ * - MONGO_DB_URI_WRITE - MongoDB connection for domain data (different cluster)
+ * - MONGO_DB_NAME_WRITE - Write database name
+ * - SAFE_ADDRESS - Gnosis Safe contract address
+ * - SAFE_OWNER - Safe owner private key (for HardHat config)
+ * - CHAIN_ID - Target blockchain chain ID
+ * - [NETWORK]_RPC_URL - RPC URL for the specific network
+ * - ACTION - Action type: "roots", "subs", or "transfers"
  *
- * Required steps:
- * - ZNS v1.5 contracts must have been deployed to the target network
- * - ERC20 contract must have been deployed to the target network
- * - The Safe must already exist
- * - The Safe must have given approval for the ZNSTreasury to spend
- * - The Safe must have the need ERC20 balance to register
- * - The Safe must have enough native token to fund the gas needed for each batch
+ * @optional Environment Variables:
+ * - TX_SERVICE_URL - Safe transaction service URL (only for unsupported networks)
+ * - DELAY - Delay between transactions in milliseconds (default: 10000)
+ * - RETRIES - Number of retry attempts (default: 3)
  *
- * Execution: After manually setting the `action` desired, run
- * `yarn hardhat run src/utils/migration/register-main.ts --network [NETWORK]
+ * @prerequisites:
+ * - ZNS v1.5 contracts deployed to target network
+ * - ERC20 contract deployed to target network
+ * - Gnosis Safe must exist and be configured
+ * - Safe must have approval for ZNSTreasury to spend tokens
+ * - Safe must have sufficient ERC20 balance for registrations
+ * - Safe must have sufficient native tokens for gas fees
  *
- * Note: Parent domains must exist for child domains to be minted. This will fail in
- * gas estimation by the SafeKit if the parent domain does not exist already, so we
- * must propose *and* execute all root domains before we can propose any subdomains
+ * @usage:
+ * Set ACTION environment variable to "roots", "subs", or "transfers", then run:
+ * `yarn hardhat run src/utils/migration/02_registration.ts --network [NETWORK]`
  *
- * Note: Manual gas estimation is done in the SafeKit as the documentation specifies
- * that while estimation is done automatically if excluded, it may not be accurate for
- * more complex transactions. To avoid the possibility of this failing downstream, this
- * is done here.
- *
- * Note: Executing more than ~20 transactions sequentially isn't recommended.
- * This may cause the provider to ignore transactions, incorrectly showing
- * they executed successfully.
+ * @important:
+ * - Parent domains must exist before child domains can be registered
+ * - Root domains must be proposed AND executed before subdomains
+ * - Executing more than ~20 transactions sequentially is not recommended
+ * - Manual gas estimation is used for complex transaction accuracy
  */
 const main = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
-  const logger : TLogger = getZnsLogger();
+  const logger = getZnsLogger();
 
   // Get domain data from different db
   const client = await connectToDb();
 
   const safeAddress = process.env.SAFE_ADDRESS;
-  if (!safeAddress) throw Error("No Safe address was provided");
+  if (!safeAddress) throw new Error("No Safe address was provided. Set SAFE_ADDRESS environment variable");
 
   // Modify as needed, using Sepolia for testing
   const rpcUrl = process.env.SEPOLIA_RPC_URL;
-  if (!rpcUrl) throw Error("No RPC URL was provided");
+  if (!rpcUrl) throw new Error("No RPC URL was provided. Set SEPOLIA_RPC_URL environment variable");
 
   const chainId = process.env.CHAIN_ID;
-  if (!chainId) throw Error("No chain ID was provided");
+  if (!chainId) throw new Error("No chain ID was provided. Set CHAIN_ID environment variable");
 
   const config : SafeKitConfig = {
     network : hre.network.name,
@@ -97,7 +91,9 @@ const main = async () => {
 
   // If admin given is not a Safe owner, fail early
   if (!await safeKit.isOwner(migrationAdmin.address)) {
-    throw Error("Migration admin is not a Safe owner");
+    throw new Error(
+      `Migration admin ${migrationAdmin.address} is not a Safe owner. Ensure the admin address is added as a Safe owner`
+    );
   }
 
   // We use this flag to separate root domain and subdomain registration
@@ -111,47 +107,36 @@ const main = async () => {
 
   const zns = await getZNS(migrationAdmin);
 
-  let transfers = [];
+  const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
+  const subdomains = await client.collection(
+    SUB_COLL_NAME
+  ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
   switch (action) {
   case "roots":
     logger.info("Proposing root domain registrations...");
-    const rootDomains = await client.collection(ROOT_COLL_NAME).find().toArray() as unknown as Array<Domain>;
 
-    transfers = await proposeRegistrations(
+    await proposeRegistrations(
       await zns.rootRegistrar.getAddress(),
       safeKit,
       rootDomains,
       ROOT_DOMAIN_BULK_SELECTOR
     );
 
-    // Store transfers for after execution of registrations
-    await client.collection(`${ROOT_COLL_NAME}-transfers`).insertOne({ batches: transfers });
     break;
   case "subs":
     logger.info("Proposing subdomain registrations...");
-    const subdomains = await client.collection(
-      SUB_COLL_NAME
-    ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
     const depth = 1; // <--- This value must also be changed manually between each iteration
     const atDepth = subdomains.filter(d => d.depth === depth);
 
     // Store revoked parents, if we find any
-    const revokedParents : Array<Partial<Domain>> = [];
+    const revokedParents : Map<string, Partial<Domain>> = new Map();
 
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
-    for (const [i,d] of atDepth.entries()) {
-      let parentHash;
-      if (d.parent && d.parent.id) {
-        parentHash = d.parent.id;
-      } else if (d.parentHash) {
-        parentHash = d.parentHash;
-      } else {
-        // Neither value is readable
-        throw Error(`No parent information found for subdomain at ${i}: ${d.label}, ${d.id}`);
-      }
+    for (const domain of atDepth) {
+      const parentHash = getSubdomainParentHash(domain);
 
       // Even with a single promise doing this reduces execution time
       const ownerPromise = zns.registry.getDomainOwner(parentHash);
@@ -160,65 +145,66 @@ const main = async () => {
         // Recreate domain to have the information needed to re-register
         // Only needs to recreate the meaningful data from subgraph, `createBatches` takes care
         // of the rest
-        const missingDomain : Partial<Domain> = {
-          label: d.parent?.label,
+        const missingParent : Partial<Domain> = {
+          label: domain.parent?.label,
           owner: {
             id: safeAddress,
             domains: [],
           },
-          address: d.parent?.address || safeAddress,
-          tokenURI: d.parent?.tokenURI || "http.zero.io",
-          tokenId: d.parent?.tokenId,
-          parentHash: d.parent?.parentHash || d.parent?.id,
+          address: domain.parent?.address || ZeroAddress,
+          tokenURI: domain.parent?.tokenURI || "http.zero.io",
+          tokenId: domain.parent?.tokenId,
+          parentHash: domain.parent?.parent?.parentHash || ZeroAddress,
           parent: {
-            id: d.parent?.id,
+            id: domain.parent?.parent?.id || ZeroAddress,
           },
         };
 
         // If the missing parent is itself a subdomain, add `parentHash` and use `label` instead
-        revokedParents.push(missingDomain);
+        if (!revokedParents.has(parentHash)) {
+          revokedParents.set(parentHash, missingParent);
+        }
       }
     }
 
     // If there are revoked parents, we propose those instead
-    if (revokedParents.length > 0) {
+    if (revokedParents.size > 0) {
       // We don't catch `transfers` here, we just want these for valid registration
       await proposeRegistrations(
         depth - 1 === 0 ? await zns.rootRegistrar.getAddress() : await zns.subRegistrar.getAddress(),
         safeKit,
-        atDepth,
+        [ ...revokedParents.values() ] as Array<Domain>,
         depth - 1 === 0 ? ROOT_DOMAIN_BULK_SELECTOR : SUBDOMAIN_BULK_SELECTOR,
       );
 
       break;
     }
 
-    transfers = await proposeRegistrations(
+    await proposeRegistrations(
       await zns.subRegistrar.getAddress(),
       safeKit,
       atDepth,
       SUBDOMAIN_BULK_SELECTOR
     );
 
-    await client.collection(`${SUB_COLL_NAME}-transfers`).insertOne({ batches: transfers });
     break;
-  case "transfer":
-    // Grab stored transfer txs from earlier runs
-    const rootTransfers = client.collection(`${ROOT_COLL_NAME}-transfers`).find() as unknown as Array<string>;
-    const subTransfers = client.collection(`${SUB_COLL_NAME}-transfers`).find() as unknown as Array<string>;
-
-    await safeKit.createProposeSignedTxs(
+  case "transfers":
+    const transferTxs = createTransfers(
       await zns.domainToken.getAddress(),
-      [ ...rootTransfers, ...subTransfers ]
+      [...rootDomains, ...subdomains],
     );
+
+    // Create and propose the batch transactions
+    await safeKit.createProposeBatches(transferTxs, 100);
     break;
   default:
-    throw Error("Unknown action");
+    throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }
 };
 
 main().catch(error => {
-  console.error(error);
+  const logger = getZnsLogger();
+  logger.error("Migration script failed:", error);
   process.exitCode = 1;
 }).finally(() => {
   process.exit(0);

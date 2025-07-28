@@ -100,13 +100,6 @@ describe("ZNSRootRegistrar", () => {
       config,
     });
 
-    zns = await deployZNS({
-      deployer,
-      governorAddresses: [governor.address],
-      adminAddresses: [admin.address],
-      zeroVaultAddress: zeroVault.address,
-    });
-
     zns = campaign.state.contracts;
 
     await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
