@@ -88,9 +88,9 @@ export interface SafeTxContractMethod {
 }
 
 export interface Tx {
-  to : string; // | Addressable;
+  to : string;
   value : string;
-  data : string; // TODO why this | null
+  data : string;
   operation : OperationType;
 }
 
@@ -109,14 +109,14 @@ export interface SafeTx {
 
 export interface SafeBatch {
   version : string; // 1.0
-  chainId : string; // 9369
+  chainId : string;
   createdAt : number; // timestamp
   meta ?: {
     name : string;
     description : string;
     txBuilderVersion : string; // 1.18.0
     createdFromSafeAddress : string; // 0x...
-    createdFromOwnerAddress : string; // 0x
+    createdFromOwnerAddress : string; // 0x...
     checksum : string;
   };
   transactions : Array<SafeTx>;

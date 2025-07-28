@@ -74,25 +74,25 @@ abstract contract AAccessControlled {
     /**
      * @notice Internal function to set the access controller address.
      *
-     * @dev This function checks if the caller has the admin role in the current
+     * @dev This function checks if the caller has the GOVERNOR_ROLE in the current
      * in-state contract and checks if the new access controller address passed is in fact a `ZNSAccessController`
-     * contract that is already set up with the same caller as an admin. This prevents from setting the wrong address.
+     * contract that is already set up with the same caller as GOVERNOR. This prevents from setting the wrong address.
      *
      * @param _accessController Address of the ZNSAccessController contract.
      */
     function _setAccessController(address _accessController) internal {
-        // Validate if `msg.sender` has the admin role in the *current* in-state contract
+        // Validate if `msg.sender` has the governor role in the *current* in-state contract
         if (address(accessController) != address(0)) {
-            if (!IAccessControl(accessController).hasRole(accessController.ADMIN_ROLE(), msg.sender)) {
-                revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, accessController.ADMIN_ROLE());
+            if (!IAccessControl(accessController).hasRole(accessController.GOVERNOR_ROLE(), msg.sender)) {
+                revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, accessController.GOVERNOR_ROLE());
             }
         }
 
-        // Similarly, validate admin alignment in the *new* contract
+        // Similarly, validate governor alignment in the *new* contract
         if (_accessController.code.length != 0) {
-            try IZNSAccessController(_accessController).ADMIN_ROLE() returns (bytes32 adminRole) {
-                if (!IAccessControl(_accessController).hasRole(adminRole, msg.sender)) {
-                    revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, adminRole);
+            try IZNSAccessController(_accessController).GOVERNOR_ROLE() returns (bytes32 governorRole) {
+                if (!IAccessControl(_accessController).hasRole(governorRole, msg.sender)) {
+                    revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, governorRole);
                 }
             } catch {
                 revert WrongAccessControllerAddress(_accessController);

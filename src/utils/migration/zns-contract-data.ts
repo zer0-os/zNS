@@ -14,13 +14,13 @@ import {
   ERC20Mock__factory,
   ZNSStringResolver__factory,
 } from "../../../typechain/index";
-import { IZNSContractsCache } from "../../deploy/campaign/types";
+import { IZNSContracts } from "../../deploy/campaign/types";
 
-let znsCache : IZNSContractsCache | null = null;
+let znsCache : IZNSContracts | null = null;
 
 export const getZNS = async (
   signer : SignerWithAddress,
-) : Promise<IZNSContractsCache> => {
+) : Promise<IZNSContracts> => {
   if (!znsCache || Object.values(znsCache).length < 10) {
     const zns = await getZNSFromDB();
 

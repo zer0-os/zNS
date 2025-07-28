@@ -100,13 +100,6 @@ describe("ZNSRootRegistrar", () => {
       config,
     });
 
-    zns = await deployZNS({
-      deployer,
-      governorAddresses: [governor.address],
-      adminAddresses: [admin.address],
-      zeroVaultAddress: zeroVault.address,
-    });
-
     zns = campaign.state.contracts;
 
     await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
@@ -296,7 +289,7 @@ describe("ZNSRootRegistrar", () => {
     );
 
     await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(user.address, ADMIN_ROLE);
+      .withArgs(user.address, GOVERNOR_ROLE);
   });
 
   it("Should NOT initialize twice", async () => {
@@ -1926,7 +1919,7 @@ describe("ZNSRootRegistrar", () => {
         ).to.be.revertedWithCustomError(
           zns.rootRegistrar,
           AC_UNAUTHORIZED_ERR
-        ).withArgs(user.address, ADMIN_ROLE);
+        ).withArgs(user.address, GOVERNOR_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
@@ -1949,7 +1942,7 @@ describe("ZNSRootRegistrar", () => {
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
-          zns.rootRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
+          zns.rootRegistrar.connect(governor).setAccessController(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(
           zns.rootRegistrar,
           AC_WRONGADDRESS_ERR
