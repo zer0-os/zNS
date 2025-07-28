@@ -3,7 +3,7 @@ import { ROOT_COLL_NAME, SUB_COLL_NAME } from "./constants";
 import { Domain, SafeBatch, SafeTx } from "./types";
 import { Addressable, ZeroAddress, ZeroHash } from "ethers";
 import { connectToDb } from "./helpers";
-import { IZNSContractsCache } from "../../deploy/campaign/types";
+import { IZNSContracts } from "../../deploy/campaign/types";
 import { getZNS } from "./zns-contract-data";
 import { ZNSDomainToken__factory, ZNSRootRegistrar__factory, ZNSSubRegistrar__factory } from "../../../typechain";
 import * as fs from "fs";
@@ -97,7 +97,7 @@ const main = async () => {
 
 const createBatches = (
   domains : Array<Domain>,
-  zns : IZNSContractsCache,
+  zns : IZNSContracts,
   outputFile : string,
   rootDomains  = false,
   sliceSize : number = Number(process.env.DOMAIN_SLICE) || 50

@@ -56,20 +56,6 @@ export type ZNSContract =
   ZNSSubRegistrar;
 
 export interface IZNSContracts extends IContractState<ZNSContract> {
-  accessController : ZNSAccessController;
-  registry : ZNSRegistry;
-  domainToken : ZNSDomainToken;
-  meowToken : ERC20Mock;
-  addressResolver : ZNSAddressResolver;
-  stringResolver : ZNSStringResolver;
-  curvePricer : ZNSCurvePricer;
-  treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
-  fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
-}
-
-export interface IZNSContractsCache {
   meowToken : ERC20Mock;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
