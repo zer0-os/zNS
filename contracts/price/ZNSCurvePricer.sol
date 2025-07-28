@@ -239,9 +239,6 @@ contract ZNSCurvePricer is IZNSCurvePricer {
      * with truncated values past precision. So having a value of `15.235234324234512365 * 10^18`
      * with precision `2` would give us `15.230000000000000000 * 10^18`
      *
-     * If the `rawPrice` calculated before truncation is less than the `precisionMultiplier` set,
-     * we return the `precisionMultiplier` as the price to avoid returning 0.
-     *
      * @param config The curve price config of the parent domain under which price is determined
      * @param length The length of the domain name
      */

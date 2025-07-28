@@ -164,15 +164,17 @@ contract ZNSTreasury is AAccessControlled, ARegistryWired, UUPSUpgradeable, IZNS
         Stake memory stakeData = stakedForDomain[domainHash];
         delete stakedForDomain[domainHash];
 
+        uint256 refundAmount = stakeData.amount;
         if (protocolFee > 0) {
-            stakeData.token.safeTransferFrom(
-                owner,
+            refundAmount -= protocolFee;
+
+            stakeData.token.safeTransfer(
                 paymentConfigs[0x0].beneficiary,
                 protocolFee
             );
         }
 
-        stakeData.token.safeTransfer(owner, stakeData.amount);
+        stakeData.token.safeTransfer(owner, refundAmount);
 
         emit StakeWithdrawn(
             domainHash,
