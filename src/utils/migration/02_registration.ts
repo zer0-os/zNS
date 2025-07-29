@@ -99,17 +99,14 @@ export const migration = async () => {
   // https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 
   // Setup the SafeKit
-  let safeKit : SafeKit | undefined;
-  if (hre.network.name !== "hardhat") {
-    safeKit = await SafeKit.init(config);
+  const safeKit = await SafeKit.init(config);
 
-    // If admin given is not a Safe owner, fail early
-    if (!await safeKit.isOwner(migrationAdmin.address)) {
-      throw new Error(
-        `Migration admin ${migrationAdmin.address} is not a Safe owner.
+  // If the admin given is not a Safe owner, fail early
+  if (!await safeKit.isOwner(migrationAdmin.address)) {
+    throw new Error(
+      `Migration admin ${migrationAdmin.address} is not a Safe owner.
           Ensure the admin address is added as a Safe owner`
-      );
-    }
+    );
   }
 
   // We use this flag to separate root domain and subdomain registration
@@ -252,7 +249,7 @@ export const migration = async () => {
     } = await createRevokes(
       domainsToRevoke,
       zns.rootRegistrar,
-      safeAddress
+      safeAddress,
     );
 
     if (failedRevokes.length > 0) {
@@ -263,33 +260,23 @@ export const migration = async () => {
       }
     }
 
-    if (hre.network.name !== "hardhat") { // TODO remove
-      if (!safeKit) {
-        throw new Error(
-          "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
-        );
-      }
-
-      // Create and propose the batch transactions
-      await safeKit.createProposeBatches(revokeTxs, 100);
-
-      break;
-    } else {
-      // If in dev environment, we return for testing purposes
-      return {
-        revokeTxs,
-        failedRevokes,
-      };
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
     }
 
+    // Create and propose the batch transactions
+    await safeKit.createProposeBatches(revokeTxs, 100);
+
+    break;
   default:
     throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }
 };
 
 migration().catch(error => {
-  const logger = getZnsLogger();
-  logger.error("Migration script failed:", error);
+  getZnsLogger().error("Migration script failed:", error);
   process.exitCode = 1;
 }).finally(() => {
   process.exit(0);
