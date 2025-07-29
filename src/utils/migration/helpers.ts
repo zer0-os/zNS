@@ -279,6 +279,14 @@ export const LogExecution = (target : any, propertyKey : string, descriptor : Pr
   return descriptor;
 };
 
+/**
+ * Create batches of transactions to revoke domains
+ *
+ * @param domains Array of domains to revoke
+ * @param rootRegistrar The ZNSRootRegistrar contract instance
+ * @returns Object containing arrays of transaction data and failed revokes
+ * @throws {Error} When Safe address is not configured
+ */
 export const createRevokeBatches = async (
   domains : Array<Domain>,
   rootRegistrar : ZNSRootRegistrar,
@@ -309,11 +317,10 @@ export const createRevokeBatches = async (
 
     try {
       await rootRegistrar.revokeDomain.estimateGas(domain.id);
+      revokeBatches.push(tx);
     } catch (e) {
       failedRevokes.push(domain);
     }
-
-    revokeBatches.push(tx);
   }
 
   return {

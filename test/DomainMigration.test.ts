@@ -1,38 +1,34 @@
 import * as hre from "hardhat";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
-import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 import { Domain } from "../src/utils/migration/types";
 import { ROOT_COLL_NAME, SUB_COLL_NAME } from "../src/utils/migration/constants";
 import { distrConfigEmpty, IZNSContractsLocal, paymentConfigEmpty } from "./helpers";
-import { main } from "../src/utils/migration/02_registration";
-import { connectToDb } from "../src/utils/migration/helpers";
+import { migration } from "../src/utils/migration/02_registration";
+import { connectToDb, getSubdomainParentHash } from "../src/utils/migration/helpers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { MongoDBAdapter } from "@zero-tech/zdc";
+import { ZeroAddress } from "ethers";
+import { expect } from "chai";
 
 
 let deployer : SignerWithAddress;
 let zeroVault : SignerWithAddress;
-let user : SignerWithAddress;
+let safe : SignerWithAddress;
 let governor : SignerWithAddress;
 let admin : SignerWithAddress;
 
 let userBalanceInitial : bigint;
 
 let zns : IZNSContractsLocal;
-let mongoAdapter : MongoDBAdapter;
+
+let rootsToRevoke : Array<Domain>;
+let subsToRevoke : Array<Domain>;
 
 let domains : Array<Domain>;
-let rootsToRevoke;
-let subsToRevoke;
 
 describe.only("Domain Migration", () => {
   before(async () => {
-    // set it up because it needs to be passed manually,
-    //  since we use two different MongoDB clusters and one of them is on chain
-    // process.env.MONGO_DB_VERSION = Date.now().toString();
-
-    [deployer, zeroVault, user, governor, admin] = await hre.ethers.getSigners();
+    [deployer, zeroVault, governor, admin, safe] = await hre.ethers.getSigners();
 
     const config = await getConfig({
       deployer,
@@ -46,10 +42,6 @@ describe.only("Domain Migration", () => {
     });
 
     zns = campaign.state.contracts;
-
-    await zns.accessController.connect(deployer).grantRole(DOMAIN_TOKEN_ROLE, await zns.domainToken.getAddress());
-
-    mongoAdapter = campaign.dbAdapter;
 
     await zns.meowToken.connect(deployer).approve(
       await zns.treasury.getAddress(),
@@ -65,58 +57,93 @@ describe.only("Domain Migration", () => {
     const domainsDbClient = await connectToDb();
 
     rootsToRevoke = await domainsDbClient.collection(ROOT_COLL_NAME).find(
-      {
-        isRevoked: true,
-        // "owner.id": safeAddress,
-      }
-    ).toArray();
+      { isRevoked: true }
+    ).toArray() as unknown as Array<Domain>;
 
     subsToRevoke = await domainsDbClient.collection(SUB_COLL_NAME).find(
-      {
-        isRevoked: true,
-        // "owner.id": safeAddress,
-      }
-    ).toArray();
+      { isRevoked: true }
+    ).toArray() as unknown as Array<Domain>;
 
     domains = [ ...rootsToRevoke, ...subsToRevoke ] as unknown as Array<Domain>;
 
-    for (const domain of rootsToRevoke) {
-      await zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: domain.label,
-        domainAddress: domain.address,
-        tokenOwner: domain.owner.id,
-        tokenURI: domain.tokenURI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: paymentConfigEmpty,
-      });
-    }
+    const sortedDomains = domains.sort((a, b) => a.depth - b.depth);
 
-    // for (const domain of subsToRevoke) {
-    //   await zns.subRegistrar.connect(deployer).registerSubdomain({
-    //     parentHash: domain.parentHash,
-    //     label: domain.label,
-    //     domainAddress: domain.address,
-    //     tokenOwner: domain.owner.id,
-    //     tokenURI: domain.tokenURI,
-    //     distrConfig: distrConfigEmpty,
-    //     paymentConfig: paymentConfigEmpty,
-    //   });
-    // }
+    for (const domain of sortedDomains) {
+      if (domain.depth === 0) {
+        await zns.rootRegistrar.connect(deployer).registerRootDomain({
+          name: domain.label,
+          domainAddress: domain.address,
+          tokenOwner: domain.owner.id,
+          tokenURI: domain.tokenURI,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: paymentConfigEmpty,
+        });
+      } else {
+        const parHash = getSubdomainParentHash(domain);
+        const exist = await zns.registry.exists(parHash);
+        const { label, tokenURI, id } = domain.parent as Domain;
+
+        expect(parHash).to.eq(id);
+
+        if (!exist) {
+          await zns.rootRegistrar.connect(deployer).registerRootDomain({
+            name: label,
+            domainAddress: ZeroAddress,
+            tokenOwner: safe.address,
+            tokenURI,
+            distrConfig: distrConfigEmpty,
+            paymentConfig: paymentConfigEmpty,
+          });
+        } else {
+          await zns.subRegistrar.connect(deployer).registerSubdomain({
+            parentHash: parHash,
+            label: domain.label,
+            domainAddress: domain.address,
+            tokenOwner: domain.owner.id,
+            tokenURI: domain.tokenURI,
+            distrConfig: distrConfigEmpty,
+            paymentConfig: paymentConfigEmpty,
+          });
+        }
+      }
+
+      // expect(
+      //   await zns.registry.exists(domain.id)
+      // ).to.be.true;
+
+      // expect(
+      //   await zns.domainToken.ownerOf(domain.tokenId)
+      // ).to.be.equal(domain.owner.id);
+    }
   });
 
-  it("run", async () => {
-    const {
-      revokeBatches,
-      failedRevokes,
-    } = await main();
+  it("Should revoke all domains using batches", async () => {
+    const result = await migration();
+    if (!result) {
+      throw new Error("migration() did not return a result");
+    }
+    const { revokeBatches } = result;
 
-    const tx = await deployer.sendTransaction({
-      to: zns.rootRegistrar.getAddress(),
-      data: hre.ethers.concat(
-        revokeBatches.map(tx => tx.data)
-      ),
-    });
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let i = 0; i < revokeBatches.length; i++) {
+      const tx = await deployer.sendTransaction({
+        to: zns.rootRegistrar.getAddress(),
+        data: revokeBatches[i].data,
+      });
+      await tx.wait();
 
-    console.log("Transaction sent:", tx.hash);
+      const {
+        id,
+        tokenId,
+      } = domains[i];
+
+      expect(
+        await zns.registry.exists(id)
+      ).to.be.false;
+
+      await expect(
+        zns.domainToken.ownerOf(tokenId)
+      ).to.be.reverted;
+    }
   });
 });

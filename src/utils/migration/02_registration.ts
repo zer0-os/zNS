@@ -1,8 +1,15 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, createRevokeBatches, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import {
+  connectToDb,
+  createRevokeBatches,
+  createTransfers,
+  getSubdomainParentHash,
+  proposeRegistrations,
+} from "./helpers";
+import {
+  INVALID_REVOKES_COLL_NAME,
   INVALID_TX_COLL_NAME,
   ROOT_COLL_NAME,
   ROOT_DOMAIN_BULK_SELECTOR,
@@ -57,7 +64,7 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - Executing more than ~20 transactions sequentially is not recommended
  * - Manual gas estimation is used for complex transaction accuracy
  */
-export const main = async () => {
+export const migration = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
   const logger = getZnsLogger();
@@ -87,20 +94,25 @@ export const main = async () => {
     txServiceUrl: process.env.TX_SERVICE_URL, // Optional, specify only when using a network not supported by Safe
   };
 
-
   // For more information on what networks are supported by Safe, read more below
   /* eslint-disable-next-line max-len */
   // https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
 
   // Setup the SafeKit
-  // const safeKit = await SafeKit.init(config);
+  let safeKit : SafeKit | undefined;
+  if (hre.network.name !== "hardhat") {
+    safeKit = await SafeKit.init(config);
 
-  // // If admin given is not a Safe owner, fail early
-  // if (!await safeKit.isOwner(migrationAdmin.address)) {
-  //   throw new Error(
-  //     `Migration admin ${migrationAdmin.address} is not a Safe owner. Ensure the admin address is added as a Safe owner`
-  //   );
-  // }
+    // If admin given is not a Safe owner, fail early
+    if (!await safeKit.isOwner(migrationAdmin.address)) {
+      throw new Error(
+        `Migration admin ${migrationAdmin.address} is not a Safe owner.
+          Ensure the admin address is added as a Safe owner`
+      );
+    }
+  } else {
+    safeKit = undefined;
+  }
 
   // We use this flag to separate root domain and subdomain registration
   // This is because gas estimation of a tx that includes registration of
@@ -118,25 +130,17 @@ export const main = async () => {
     SUB_COLL_NAME
   ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
-  const rootsToRevoke = await client.collection(ROOT_COLL_NAME).find(
-    {
-      isRevoked: true,
-      // "owner.id": safeAddress,
-    }
-  ).toArray();
-
-  const subsToRevoke = await client.collection(SUB_COLL_NAME).find(
-    {
-      isRevoked: true,
-      // "owner.id": safeAddress,
-    }
-  ).toArray();
-
+  const rootsToRevoke = rootDomains.filter(domain => domain.isRevoked);
+  const subsToRevoke = subdomains.filter(domain => domain.isRevoked);
   const domainsToRevoke = [ ...rootsToRevoke, ...subsToRevoke ] as unknown as Array<Domain>;
 
   switch (action) {
   case "roots":
     logger.info("Proposing root domain registrations...");
+
+    if (!safeKit)
+      throw new Error("SafeKit is not initialized." +
+        "Ensure you are running this script with a valid Safe configuration.");
 
     await proposeRegistrations(
       await zns.rootRegistrar.getAddress(),
@@ -154,6 +158,10 @@ export const main = async () => {
 
     // Store revoked parents, if we find any
     const revokedParents : Map<string, Partial<Domain>> = new Map();
+
+    if (!safeKit)
+      throw new Error("SafeKit is not initialized." +
+        "Ensure you are running this script with a valid Safe configuration.");
 
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
@@ -225,6 +233,10 @@ export const main = async () => {
       }
     }
 
+    if (!safeKit)
+      throw new Error("SafeKit is not initialized." +
+        "Ensure you are running this script with a valid Safe configuration.");
+
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);
     break;
@@ -238,31 +250,34 @@ export const main = async () => {
       zns.rootRegistrar,
     );
 
-    // if (failedRevokes.length > 0) {
-    //   const result = await client.collection(INVALID_REVOKES_COLL_NAME).insertMany(failedRevokes);
-    //   const diff = failedRevokes.length - result.insertedCount;
-    //   if (diff > 0) {
-    //     throw new Error(`Failed to insert ${diff} failed domain transfers`);
-    //   }
-    // }
+    if (failedRevokes.length > 0) {
+      const result = await client.collection(INVALID_REVOKES_COLL_NAME).insertMany(failedRevokes);
+      const diff = failedRevokes.length - result.insertedCount;
+      if (diff > 0) {
+        throw new Error(`Failed to insert ${diff} failed domain revocations`);
+      }
+    }
 
-    // Create and propose the batch transactions
-    // await safeKit.createProposeBatches(revokeBatches, 100);
-    return {
-      revokeBatches,
-      failedRevokes,
-    };
-    break;
+    if (hre.network.name !== "hardhat") {
+      if (!safeKit) {
+        throw new Error(
+          "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+        );
+      }
+
+      // Create and propose the batch transactions
+      await safeKit.createProposeBatches(revokeBatches, 100);
+      break;
+
+    } else {
+      // If in dev environment, we return the batches for testing purposes
+      return {
+        revokeBatches,
+        failedRevokes,
+      };
+    }
 
   default:
     throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }
 };
-
-// main().catch(error => {
-//   const logger = getZnsLogger();
-//   logger.error("Migration script failed:", error);
-//   process.exitCode = 1;
-// }).finally(() => {
-//   process.exit(0);
-// });
