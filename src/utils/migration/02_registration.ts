@@ -1,8 +1,15 @@
 import * as hre from "hardhat";
 import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
-import { connectToDb, createTransfers, getSubdomainParentHash, proposeRegistrations } from "./helpers";
 import {
+  connectToDb,
+  createRevokes,
+  createTransfers,
+  getSubdomainParentHash,
+  proposeRegistrations,
+} from "./helpers";
+import {
+  INVALID_REVOKES_COLL_NAME,
   INVALID_TX_COLL_NAME,
   ROOT_COLL_NAME,
   ROOT_DOMAIN_BULK_SELECTOR,
@@ -23,16 +30,16 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * then forms the data into batches of encoded transaction data to propose to the Safe.
  *
  * @requires Environment Variables:
- * - MONGO_DB_URI - MongoDB connection for ZNS on zchain
- * - MONGO_DB_NAME - MongoDB database name
- * - MONGO_DB_VERSION - MongoDB version
+ * - MONGO_DB_URI - MongoDB connection for ZNS contracts
+ * - MONGO_DB_NAME - MongoDB database name with contracts
+ * - MONGO_DB_VERSION - MongoDB version with contracts
  * - MONGO_DB_URI_WRITE - MongoDB connection for domain data (different cluster)
  * - MONGO_DB_NAME_WRITE - Write database name
  * - SAFE_ADDRESS - Gnosis Safe contract address
  * - SAFE_OWNER - Safe owner private key (for HardHat config)
  * - CHAIN_ID - Target blockchain chain ID
  * - [NETWORK]_RPC_URL - RPC URL for the specific network
- * - ACTION - Action type: "roots", "subs", or "transfers"
+ * - ACTION - Action type: "roots", "subs", "transfers", "revoke"
  *
  * @optional Environment Variables:
  * - TX_SERVICE_URL - Safe transaction service URL (only for unsupported networks)
@@ -40,15 +47,15 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - RETRIES - Number of retry attempts (default: 3)
  *
  * @prerequisites:
- * - ZNS v1.5 contracts deployed to target network
+ * - ZNS v2 contracts deployed to target network
  * - ERC20 contract deployed to target network
  * - Gnosis Safe must exist and be configured
  * - Safe must have approval for ZNSTreasury to spend tokens
- * - Safe must have sufficient ERC20 balance for registrations
+ * - Contracts need to be configured to have price 0 for root domains
  * - Safe must have sufficient native tokens for gas fees
  *
  * @usage:
- * Set ACTION environment variable to "roots", "subs", or "transfers", then run:
+ * Set ACTION environment variable to "roots", "subs", "transfers" or "revoke", then run:
  * `yarn hardhat run src/utils/migration/02_registration.ts --network [NETWORK]`
  *
  * @important:
@@ -57,7 +64,7 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - Executing more than ~20 transactions sequentially is not recommended
  * - Manual gas estimation is used for complex transaction accuracy
  */
-const main = async () => {
+export const migration = async () => {
   const [ migrationAdmin ] = await hre.ethers.getSigners();
 
   const logger = getZnsLogger();
@@ -87,7 +94,6 @@ const main = async () => {
     txServiceUrl: process.env.TX_SERVICE_URL, // Optional, specify only when using a network not supported by Safe
   };
 
-
   // For more information on what networks are supported by Safe, read more below
   /* eslint-disable-next-line max-len */
   // https://docs.safe.global/advanced/smart-account-supported-networks?service=Transaction+Service&service=Safe%7BCore%7D+SDK
@@ -95,10 +101,11 @@ const main = async () => {
   // Setup the SafeKit
   const safeKit = await SafeKit.init(config);
 
-  // If admin given is not a Safe owner, fail early
+  // If the admin given is not a Safe owner, fail early
   if (!await safeKit.isOwner(migrationAdmin.address)) {
     throw new Error(
-      `Migration admin ${migrationAdmin.address} is not a Safe owner. Ensure the admin address is added as a Safe owner`
+      `Migration admin ${migrationAdmin.address} is not a Safe owner.
+          Ensure the admin address is added as a Safe owner`
     );
   }
 
@@ -108,7 +115,7 @@ const main = async () => {
   // must be proposed *and* executed before subdomain registration can be proposed
   // Likewise, any transfers will fail gas estimation for domains that do not exist yet.
 
-  // "roots" | "subs" | "transfers"
+  // "roots" | "subs" | "transfers" | "revoke"
   const action = process.env.ACTION; // <--- Set this variable before each run as "roots", "subs", or "transfer"
 
   const zns = await getZNS(migrationAdmin);
@@ -121,6 +128,12 @@ const main = async () => {
   switch (action) {
   case "roots":
     logger.info("Proposing root domain registrations...");
+
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
 
     await proposeRegistrations(
       await zns.rootRegistrar.getAddress(),
@@ -173,6 +186,12 @@ const main = async () => {
       }
     }
 
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
+
     // If there are revoked parents, we propose those instead
     if (revokedParents.size > 0) {
       // We don't catch `transfers` here, we just want these for valid registration
@@ -196,7 +215,6 @@ const main = async () => {
     break;
   case "transfers":
     const [ transferTxs, failedTransferTxs ] = await createTransfers(
-      hre,
       zns.domainToken,
       [...rootDomains, ...subdomains],
     );
@@ -209,17 +227,56 @@ const main = async () => {
       }
     }
 
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
+
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);
+    break;
+  case "revoke":
+    const domainsToRevoke = [
+      ...rootDomains.filter(domain => domain.isRevoked),
+      ...subdomains.filter(domain => domain.isRevoked),
+    ];
+
+    // Revoke domains that are owned by the Safe
+    const {
+      revokeTxs,
+      failedRevokes,
+    } = await createRevokes(
+      domainsToRevoke,
+      zns.rootRegistrar,
+      safeAddress,
+    );
+
+    if (failedRevokes.length > 0) {
+      const result = await client.collection(INVALID_REVOKES_COLL_NAME).insertMany(failedRevokes);
+      const diff = failedRevokes.length - result.insertedCount;
+      if (diff > 0) {
+        throw new Error(`Failed to insert ${diff} failed domain revocations`);
+      }
+    }
+
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
+
+    // Create and propose the batch transactions
+    await safeKit.createProposeBatches(revokeTxs, 100);
+
     break;
   default:
     throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }
 };
 
-main().catch(error => {
-  const logger = getZnsLogger();
-  logger.error("Migration script failed:", error);
+migration().catch(error => {
+  getZnsLogger().error("Migration script failed:", error);
   process.exitCode = 1;
 }).finally(() => {
   process.exit(0);

@@ -32,6 +32,10 @@ export const getZNSFromDB = async () => {
     throw new Error(`Failed to connect: database "${dbName}" not found`);
   }
 
+  if(!version) {
+    throw new Error("Failed to connect: version is not provided");
+  }
+
   const db = await dbAdapter.db(dbName);
 
   const zns = await db.collection("contracts").find(

@@ -36,7 +36,6 @@ import {
   REGISTRATION_PAUSED_ERR,
   AC_WRONGADDRESS_ERR,
   createEncodeFixedPriceConfig,
-  deployZNS,
 } from "./helpers";
 import * as ethers from "ethers";
 import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";

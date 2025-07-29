@@ -299,9 +299,11 @@ export class SafeKit {
 
       if ((index + 1) % batchSize === 0 || index + 1 === txData.length) {
         // Nonce value that is NOT inclusive of the pending tx queue
-        // Use `this.apiKit.getNextNonce(this.config.safeAddress)` to include
-        // the number of pending transactions
         const realNonce = await this.protocolKit.getNonce();
+
+        // Use below to include the number of pending transactions in nonce
+        // const realNonce = await this.apiKit.getNextNonce(this.config.safeAddress);
+
         const safeTx = await this.protocolKit.createTransaction({
           transactions,
           options: {
