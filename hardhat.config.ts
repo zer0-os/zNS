@@ -15,12 +15,6 @@ import "hardhat-gas-reporter";
 import { HardhatUserConfig, subtask } from "hardhat/config";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
 
-// This will set the default environment variables before running any hardhat scripts
-// most of this code relies on. This is needed to ensure that the default environment for tests is set
-// up correctly before running any scripts on any machine, including CI, and is not dependent
-// on the default environment variables set in the .env file.
-// The environment CAN still be overridden by the .env file, but this is the default setup.
-setDefaultEnvironment();
 
 subtask(TASK_TEST_RUN_MOCHA_TESTS)
   .setAction(async (args, hre, runSuper) => {
@@ -86,7 +80,7 @@ const config : HardhatUserConfig = {
       url: `${process.env.SEPOLIA_RPC_URL}`,
       timeout: 10000000,
       // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        // `${process.env.SAFE_OWNER}`,
+      // `${process.env.SAFE_OWNER}`,
       // //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
       // //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
       // //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
@@ -151,5 +145,16 @@ const config : HardhatUserConfig = {
     ],
   },
 };
+
+// This will set the default environment variables before running any hardhat scripts
+// most of this code relies on. This is needed to ensure that the default environment for tests is set
+// up correctly before running any scripts on any machine, including CI, and is not dependent
+// on the default environment variables set in the .env file.
+// The environment CAN still be overridden by the .env file, but this is the default setup.
+// If the current network is hardhat, this will NOT use your local .env file to prevent accidental errors.
+const networkArg = process.argv.indexOf("--network");
+const isHardhatNetwork = networkArg === -1 || process.argv[networkArg + 1] === "hardhat";
+
+setDefaultEnvironment(!isHardhatNetwork);
 
 export default config;
