@@ -30,16 +30,16 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * then forms the data into batches of encoded transaction data to propose to the Safe.
  *
  * @requires Environment Variables:
- * - MONGO_DB_URI - MongoDB connection for ZNS on zchain
- * - MONGO_DB_NAME - MongoDB database name
- * - MONGO_DB_VERSION - MongoDB version
+ * - MONGO_DB_URI - MongoDB connection for ZNS contracts
+ * - MONGO_DB_NAME - MongoDB database name with contracts
+ * - MONGO_DB_VERSION - MongoDB version with contracts
  * - MONGO_DB_URI_WRITE - MongoDB connection for domain data (different cluster)
  * - MONGO_DB_NAME_WRITE - Write database name
  * - SAFE_ADDRESS - Gnosis Safe contract address
  * - SAFE_OWNER - Safe owner private key (for HardHat config)
  * - CHAIN_ID - Target blockchain chain ID
  * - [NETWORK]_RPC_URL - RPC URL for the specific network
- * - ACTION - Action type: "roots", "subs", or "transfers"
+ * - ACTION - Action type: "roots", "subs", "transfers", "revoke"
  *
  * @optional Environment Variables:
  * - TX_SERVICE_URL - Safe transaction service URL (only for unsupported networks)
@@ -47,15 +47,15 @@ import { getZnsLogger } from "../../deploy/get-logger";
  * - RETRIES - Number of retry attempts (default: 3)
  *
  * @prerequisites:
- * - ZNS v1.5 contracts deployed to target network
+ * - ZNS v2 contracts deployed to target network
  * - ERC20 contract deployed to target network
  * - Gnosis Safe must exist and be configured
  * - Safe must have approval for ZNSTreasury to spend tokens
- * - Safe must have sufficient ERC20 balance for registrations
+ * - Contracts need to be configured to have price 0 for root domains
  * - Safe must have sufficient native tokens for gas fees
  *
  * @usage:
- * Set ACTION environment variable to "roots", "subs", or "transfers", then run:
+ * Set ACTION environment variable to "roots", "subs", "transfers" or "revoke", then run:
  * `yarn hardhat run src/utils/migration/02_registration.ts --network [NETWORK]`
  *
  * @important:
