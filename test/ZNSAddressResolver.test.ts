@@ -119,7 +119,7 @@ describe("ZNSAddressResolver", () => {
     await expect(
       zns.addressResolver.connect(operator).setAccessController(operator.address)
     ).to.be.revertedWithCustomError(zns.addressResolver, AC_UNAUTHORIZED_ERR)
-      .withArgs(operator.address, ADMIN_ROLE);
+      .withArgs(operator.address, GOVERNOR_ROLE);
   });
 
   it("Should not allow non-owner address to setAddress", async () => {
@@ -248,7 +248,7 @@ describe("ZNSAddressResolver", () => {
       await expect(
         zns.addressResolver.connect(user).setAccessController(zns.accessController.target)
       ).to.be.revertedWithCustomError(zns.addressResolver, AC_UNAUTHORIZED_ERR)
-        .withArgs(user.address, ADMIN_ROLE);
+        .withArgs(user.address, GOVERNOR_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {

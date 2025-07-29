@@ -1448,6 +1448,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalanceBefore = await zns.meowToken.balanceOf(lvl5SubOwner.address);
       const parentBalBefore = await zns.meowToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalBefore = await zns.meowToken.balanceOf(await zns.treasury.getAddress());
+      const zeroVaultBalBefore = await zns.meowToken.balanceOf(zeroVault.address);
 
       const stake = await zns.treasury.stakedForDomain(domainHash);
       const protocolFee = getStakingOrProtocolFee(stake.amount);
@@ -1459,6 +1460,7 @@ describe("ZNSSubRegistrar", () => {
       const userBalAfter = await zns.meowToken.balanceOf(lvl5SubOwner.address);
       const parentBalAfter = await zns.meowToken.balanceOf(lvl4SubOwner.address);
       const paymentContractBalAfter = await zns.meowToken.balanceOf(await zns.treasury.getAddress());
+      const zeroVaultBalAfter = await zns.meowToken.balanceOf(zeroVault.address);
 
       const { expectedPrice } = getPriceObject(domainConfigs[4].domainLabel);
 
@@ -1476,6 +1478,11 @@ describe("ZNSSubRegistrar", () => {
         paymentContractBalBefore - paymentContractBalAfter
       ).to.eq(
         expectedPrice
+      );
+      expect(
+        zeroVaultBalAfter - zeroVaultBalBefore
+      ).to.eq(
+        protocolFee
       );
 
       // make sure that accessType has been set to LOCKED
@@ -1623,6 +1630,7 @@ describe("ZNSSubRegistrar", () => {
       expect(childStakedAmt).to.eq(expectedPrice);
 
       const userBalBefore = await zns.meowToken.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalBefore = await zns.meowToken.balanceOf(zeroVault.address);
 
       const subStake = await zns.treasury.stakedForDomain(lvl3Hash);
       const subProtocolFee = getStakingOrProtocolFee(subStake.amount);
@@ -1635,8 +1643,10 @@ describe("ZNSSubRegistrar", () => {
       );
 
       const userBalAfter = await zns.meowToken.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalAfter = await zns.meowToken.balanceOf(zeroVault.address);
 
       expect(userBalAfter - userBalBefore).to.eq(expectedPrice - subProtocolFee);
+      expect(zeroVaultBalAfter - zeroVaultBalBefore).to.eq(subProtocolFee);
 
       const childExistsAfter = await zns.registry.exists(lvl3Hash);
       assert.ok(!childExistsAfter);
@@ -2038,7 +2048,7 @@ describe("ZNSSubRegistrar", () => {
         childHash,
       );
 
-      // should offer refund !
+      // should offer refund with exempt protocol fee !
       const contractBalAfterRevoke = await token5.balanceOf(await zns.treasury.getAddress());
       const childBalAfterRevoke = await token5.balanceOf(lvl3SubOwner.address);
       const parentBalAfterRevoke = await token5.balanceOf(lvl2SubOwner.address);
@@ -3923,6 +3933,7 @@ describe("ZNSSubRegistrar", () => {
       expect(stakedAfter).to.eq(stakedBefore);
 
       const userBalbefore = await zns.meowToken.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalBefore = await zns.meowToken.balanceOf(zeroVault.address);
 
       const protocolFee = getStakingOrProtocolFee(stakedAfter);
 
@@ -3934,7 +3945,10 @@ describe("ZNSSubRegistrar", () => {
 
       // verify that refund has been acquired by the new owner
       const userBalAfter = await zns.meowToken.balanceOf(lvl3SubOwner.address);
+      const zeroVaultBalAfter = await zns.meowToken.balanceOf(zeroVault.address);
+
       expect(userBalAfter - userBalbefore).to.eq(fixedPrice - protocolFee);
+      expect(zeroVaultBalAfter - zeroVaultBalBefore).to.eq(protocolFee);
     });
   });
 
@@ -4044,7 +4058,6 @@ describe("ZNSSubRegistrar", () => {
     });
 
     describe("#setAccessController", () => {
-
       it("should allow ADMIN to set a valid AccessController", async () => {
         await zns.subRegistrar.connect(deployer).setAccessController(zns.accessController.target);
 
@@ -4091,7 +4104,7 @@ describe("ZNSSubRegistrar", () => {
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           AC_UNAUTHORIZED_ERR
-        ).withArgs(lvl2SubOwner.address, ADMIN_ROLE);
+        ).withArgs(lvl2SubOwner.address, GOVERNOR_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
@@ -4113,8 +4126,9 @@ describe("ZNSSubRegistrar", () => {
       });
 
       it("should revert when setting a zero address as AccessController", async () => {
+        // deployer is the governor
         await expect(
-          zns.subRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
+          zns.subRegistrar.connect(deployer).setAccessController(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(
           zns.subRegistrar,
           AC_WRONGADDRESS_ERR
