@@ -3,7 +3,7 @@ import { SafeKit } from "./safeKit";
 import { Domain, SafeKitConfig } from "./types";
 import {
   connectToDb,
-  createRevokeBatches,
+  createRevokes,
   createTransfers,
   getSubdomainParentHash,
   proposeRegistrations,
@@ -110,8 +110,6 @@ export const migration = async () => {
           Ensure the admin address is added as a Safe owner`
       );
     }
-  } else {
-    safeKit = undefined;
   }
 
   // We use this flag to separate root domain and subdomain registration
@@ -130,17 +128,15 @@ export const migration = async () => {
     SUB_COLL_NAME
   ).find().sort({ depth: 1, _id: 1 }).toArray() as unknown as Array<Domain>;
 
-  const rootsToRevoke = rootDomains.filter(domain => domain.isRevoked);
-  const subsToRevoke = subdomains.filter(domain => domain.isRevoked);
-  const domainsToRevoke = [ ...rootsToRevoke, ...subsToRevoke ] as unknown as Array<Domain>;
-
   switch (action) {
   case "roots":
     logger.info("Proposing root domain registrations...");
 
-    if (!safeKit)
-      throw new Error("SafeKit is not initialized." +
-        "Ensure you are running this script with a valid Safe configuration.");
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
 
     await proposeRegistrations(
       await zns.rootRegistrar.getAddress(),
@@ -158,10 +154,6 @@ export const migration = async () => {
 
     // Store revoked parents, if we find any
     const revokedParents : Map<string, Partial<Domain>> = new Map();
-
-    if (!safeKit)
-      throw new Error("SafeKit is not initialized." +
-        "Ensure you are running this script with a valid Safe configuration.");
 
     // Verify the existence of parent domains before proposing subdomain registration batches
     // Some may be missing in the subgraph, to be sure we recreate and register them
@@ -197,6 +189,12 @@ export const migration = async () => {
       }
     }
 
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
+
     // If there are revoked parents, we propose those instead
     if (revokedParents.size > 0) {
       // We don't catch `transfers` here, we just want these for valid registration
@@ -220,7 +218,6 @@ export const migration = async () => {
     break;
   case "transfers":
     const [ transferTxs, failedTransferTxs ] = await createTransfers(
-      hre,
       zns.domainToken,
       [...rootDomains, ...subdomains],
     );
@@ -233,21 +230,29 @@ export const migration = async () => {
       }
     }
 
-    if (!safeKit)
-      throw new Error("SafeKit is not initialized." +
-        "Ensure you are running this script with a valid Safe configuration.");
+    if (!safeKit) {
+      throw new Error(
+        "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
+      );
+    }
 
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);
     break;
   case "revoke":
+    const domainsToRevoke = [
+      ...rootDomains.filter(domain => domain.isRevoked),
+      ...subdomains.filter(domain => domain.isRevoked),
+    ];
+
     // Revoke domains that are owned by the Safe
     const {
-      revokeBatches,
+      revokeTxs,
       failedRevokes,
-    } = await createRevokeBatches(
+    } = await createRevokes(
       domainsToRevoke,
       zns.rootRegistrar,
+      safeAddress
     );
 
     if (failedRevokes.length > 0) {
@@ -258,7 +263,7 @@ export const migration = async () => {
       }
     }
 
-    if (hre.network.name !== "hardhat") {
+    if (hre.network.name !== "hardhat") { // TODO remove
       if (!safeKit) {
         throw new Error(
           "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
@@ -266,13 +271,13 @@ export const migration = async () => {
       }
 
       // Create and propose the batch transactions
-      await safeKit.createProposeBatches(revokeBatches, 100);
-      break;
+      await safeKit.createProposeBatches(revokeTxs, 100);
 
+      break;
     } else {
-      // If in dev environment, we return the batches for testing purposes
+      // If in dev environment, we return for testing purposes
       return {
-        revokeBatches,
+        revokeTxs,
         failedRevokes,
       };
     }
@@ -281,3 +286,11 @@ export const migration = async () => {
     throw new Error(`Unknown action: "${action}". Valid actions are: "roots", "subs", or "transfers"`);
   }
 };
+
+migration().catch(error => {
+  const logger = getZnsLogger();
+  logger.error("Migration script failed:", error);
+  process.exitCode = 1;
+}).finally(() => {
+  process.exit(0);
+});

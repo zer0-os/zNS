@@ -20,7 +20,8 @@ import { SUBDOMAIN_BULK_SELECTOR } from "./constants";
 import { getZnsLogger } from "../../deploy/get-logger";
 import { SafeKit } from "./safeKit";
 import { OperationType } from "@safe-global/types-kit";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+
+import * as hre from "hardhat";
 
 
 /**
@@ -281,56 +282,6 @@ export const LogExecution = (target : any, propertyKey : string, descriptor : Pr
 };
 
 /**
- * Create batches of transactions to revoke domains
- *
- * @param domains Array of domains to revoke
- * @param rootRegistrar The ZNSRootRegistrar contract instance
- * @returns Object containing arrays of transaction data and failed revokes
- * @throws {Error} When Safe address is not configured
- */
-export const createRevokeBatches = async (
-  domains : Array<Domain>,
-  rootRegistrar : ZNSRootRegistrar,
-) : Promise<{
-  revokeBatches : Array<Tx>;
-  failedRevokes : Array<Domain>;
-}> => {
-  const revokeBatches : Array<Tx> = [];
-  const failedRevokes : Array<Domain> = [];
-
-  const safeAddress = process.env.SAFE_ADDRESS;
-  if (!safeAddress)
-    throw new Error("No Safe address set in environment variables. Set SAFE_ADDRESS environment variable");
-
-  // Create revoke batches for each domain
-  for (const domain of domains) {
-    const revokeEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
-      "revokeDomain",
-      [ domain.id ]
-    );
-
-    const tx : Tx = {
-      to: await rootRegistrar.getAddress(),
-      value: "0",
-      data: revokeEncoding,
-      operation: OperationType.Call,
-    };
-
-    try {
-      await rootRegistrar.revokeDomain.estimateGas(domain.id);
-      revokeBatches.push(tx);
-    } catch (e) {
-      failedRevokes.push(domain);
-    }
-  }
-
-  return {
-    revokeBatches,
-    failedRevokes,
-  };
-};
-
-/**
  * Create transfer transactions for domain tokens to their respective owners
  *
  * @param domainToken The contract to send the tx to
@@ -339,7 +290,6 @@ export const createRevokeBatches = async (
  * @throws {Error} When Safe address is not configured
  */
 export const createTransfers = async (
-  hre : HardhatRuntimeEnvironment,
   domainToken : ZNSDomainToken,
   domains : Array<Domain>,
 ) : Promise<[Array<Tx>, Array<Domain>]> => {
@@ -371,21 +321,76 @@ export const createTransfers = async (
       // If destination address is EOA or contract that implements `onERC721Received`
       // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
       // the entire batch later
-      await domainToken["safeTransferFrom(address,address,uint256)"].estimateGas(
-        safeAddress,
-        domain.domainToken.owner.id,
-        domain.tokenId
-      );
+      await hre.ethers.provider.estimateGas({
+        to: await domainToken.getAddress(),
+        from: safeAddress,
+        data: transferEncoding,
+      });
+
+      if (!domain.isRevoked) {
+        transfers.push(tx);
+      }
+
     } catch (e) {
       failedTransfers.push(domain);
-    }
-
-    if (!domain.isRevoked) {
-      transfers.push(tx);
     }
   }
 
   return [ transfers, failedTransfers ];
+};
+
+/**
+ * Create revoke transactions
+ *
+ * @param domains Array of domains to revoke
+ * @param rootRegistrar The ZNSRootRegistrar contract instance
+ * @returns Object containing arrays of transaction data and failed revokes
+ * @throws {Error} When Safe address is not configured
+ */
+export const createRevokes = async (
+  domains : Array<Domain>,
+  rootRegistrar : ZNSRootRegistrar,
+  safeAddress : string,
+) : Promise<{
+  revokeTxs : Array<Tx>;
+  failedRevokes : Array<Domain>;
+}> => {
+  const revokeTxs : Array<Tx> = [];
+  const failedRevokes : Array<Domain> = [];
+
+  // Create revoke batches for each domain
+  for (const domain of domains) {
+    const revokeEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+      "revokeDomain",
+      [ domain.id ]
+    );
+
+    const tx : Tx = {
+      to: await rootRegistrar.getAddress(),
+      value: "0",
+      data: revokeEncoding,
+      operation: OperationType.Call,
+    };
+
+    try {
+      await hre.ethers.provider.estimateGas({
+        to: await rootRegistrar.getAddress(),
+        from: safeAddress,
+        data: revokeEncoding,
+      });
+
+      // If gas estimation succeeded, the tx will pass
+      // Push to tx array
+      revokeTxs.push(tx);
+    } catch (e) {
+      failedRevokes.push(domain);
+    }
+  }
+
+  return {
+    revokeTxs,
+    failedRevokes,
+  };
 };
 
 export const getSubdomainParentHash = (domain : Domain) => {
