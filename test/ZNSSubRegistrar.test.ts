@@ -60,9 +60,10 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { ICurvePriceConfig, IFixedPriceConfig } from "../src/deploy/missions/types";
 import { IZNSContracts } from "../src/deploy/campaign/types";
 import Domain from "./helpers/domain/domain";
+import { ZeroHash } from "ethers";
 
 
-describe("ZNSSubRegistrar", () => {
+describe.only("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -84,6 +85,7 @@ describe("ZNSSubRegistrar", () => {
   let zeroVault : SignerWithAddress;
 
   let domain : Domain;
+  let subdomain : Domain;
   let rootPriceConfig : IFixedPriceConfig;
   const subTokenURI = "https://token-uri.com/8756a4b6f";
 
@@ -151,43 +153,52 @@ describe("ZNSSubRegistrar", () => {
     });
 
     it("Sets the payment config when given", async () => {
-      const subdomain = "world-subdomain";
+      const subdomainLabel = "world-subdomain";
 
       await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
-      await defaultSubdomainRegistration({
-        user: lvl2SubOwner,
+      subdomain = new Domain({
         zns,
-        parentHash: domain.hash,
-        subdomainLabel: subdomain,
-        domainContent: lvl2SubOwner.address,
-        tokenURI: subTokenURI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: await zns.meowToken.getAddress(),
-          beneficiary: lvl2SubOwner.address,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          parentHash: domain.hash,
+          label: subdomainLabel,
+          domainAddress: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
         },
       });
+      await subdomain.register();
 
-      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, subdomain);
-      const config = await zns.treasury.paymentConfigs(subHash);
+      const config = await zns.treasury.paymentConfigs(subdomain.hash);
       expect(config.token).to.eq(await zns.meowToken.getAddress());
       expect(config.beneficiary).to.eq(lvl2SubOwner.address);
     });
 
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
-      const subdomain = "not-world-subdomain";
+      const subdomainLabel = "not-world-subdomain";
 
-      await defaultSubdomainRegistration({
+      subdomain = new Domain({
         zns,
-        user: lvl2SubOwner,
-        parentHash: domain.hash,
-        subdomainLabel: subdomain,
-        tokenURI: subTokenURI,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          parentHash: domain.hash,
+          label: subdomainLabel,
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: ethers.ZeroAddress,
+          },
+        },
       });
+      await subdomain.register();
 
-      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, subdomain);
-      const config = await zns.treasury.paymentConfigs(subHash);
+      const config = await zns.treasury.paymentConfigs(subdomain.hash);
       expect(config.token).to.eq(ethers.ZeroAddress);
       expect(config.beneficiary).to.eq(ethers.ZeroAddress);
     });
@@ -195,13 +206,29 @@ describe("ZNSSubRegistrar", () => {
     // eslint-disable-next-line max-len
     it("should revert when trying to register a subdomain before parent has set it's config with FixedPricer", async () => {
       // register a new root domain
-      const newRootHash = await registrationWithSetup({
+      domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "rootunsetfixed",
-        setConfigs: false,
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootunsetfixed",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
+      subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "subunset",
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
           distrConfig: distrConfigEmpty,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -211,18 +238,7 @@ describe("ZNSSubRegistrar", () => {
       });
 
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: newRootHash,
-          label: "subunset",
-          domainAddress: lvl2SubOwner.address,
-          tokenOwner: ethers.ZeroAddress,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-          paymentConfig: {
-            token: await zns.meowToken.getAddress(),
-            beneficiary : rootOwner.address,
-          },
-        })
+        subdomain.register()
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -232,13 +248,13 @@ describe("ZNSSubRegistrar", () => {
     // eslint-disable-next-line max-len
     it("should revert when trying to register a subdomain before parent has set it's config with CurvePricer", async () => {
       // register a new root domain
-      const newRootHash = await registrationWithSetup({
+
+      domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: lvl2SubOwner.address,
-        domainLabel: "rootunsetcurve",
-        setConfigs: false,
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          tokenOwner: lvl2SubOwner.address,
+          label: "rootunsetcurve",
           distrConfig: distrConfigEmpty,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
@@ -246,17 +262,22 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
+      await domain.register();
 
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: newRootHash,
+      subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
           label: "subunset",
-          domainAddress: lvl2SubOwner.address,
-          tokenOwner: ethers.ZeroAddress,
-          tokenURI: subTokenURI,
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        },
+      });
+
+      await expect(
+        subdomain.register()
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -267,29 +288,62 @@ describe("ZNSSubRegistrar", () => {
       // pause the sub registrar
       await zns.subRegistrar.connect(admin).pauseRegistration();
 
+      expect(await zns.subRegistrar.registrationPaused()).to.be.true;
+
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootpaused",
+          parentHash: hre.ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          distrConfig: {
+            pricerContract: ethers.ZeroAddress,
+            paymentType: PaymentType.DIRECT,
+            accessType: AccessType.OPEN,
+            priceConfig: ZeroHash,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
+      const sub = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl3SubOwner,
+          label: "subpaused",
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
+          distrConfig: {
+            pricerContract: ethers.ZeroAddress,
+            paymentType: PaymentType.DIRECT,
+            accessType: AccessType.OPEN,
+            priceConfig: ZeroHash,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
       // try to register a subdomain
       await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: domain.hash,
-          label: "subpaused",
-          domainAddress: lvl2SubOwner.address,
-          tokenOwner: ethers.ZeroAddress,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-          paymentConfig: paymentConfigEmpty,
-        })
+        sub.register(lvl3SubOwner)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         REGISTRATION_PAUSED_ERR,
       );
-
-      // unpause the sub registrar
-      await zns.subRegistrar.connect(admin).unpauseRegistration();
     });
 
     it("should register successfully as ADMIN_ROLE during a registration pause", async () => {
-      // pause the sub registrar
-      await zns.subRegistrar.connect(admin).pauseRegistration();
+      expect(await zns.accessController.isAdmin(admin.address)).to.be.true;
+      expect(zns.accessController.target).eq(await zns.subRegistrar.getAccessController());
+
       expect(await zns.subRegistrar.registrationPaused()).to.be.true;
 
       // approve treasury
@@ -299,23 +353,27 @@ describe("ZNSSubRegistrar", () => {
       );
 
       // try to register a subdomain as admin
-      await registrationWithSetup({
-        user: admin,
+      subdomain = new Domain({
         zns,
-        parentHash: domain.hash,
-        domainLabel: "subadmin",
+        domainConfig: {
+          owner: admin,
+          label: "subadmin",
+          parentHash: domain.hash,
+          tokenOwner: admin.address,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: admin.address,
+          },
+        },
       });
-
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user: admin,
-      });
+      await subdomain.register(admin);
 
       // check that the domain was registered
-      const owner = await zns.registry.getDomainOwner(domainHash);
+      const owner = await zns.registry.getDomainOwner(subdomain.hash);
       expect(owner).to.eq(admin.address);
 
-      // unpause the sub registrar
+      // unpause the sub registrar for further tests
       await zns.subRegistrar.connect(admin).unpauseRegistration();
       expect(await zns.subRegistrar.registrationPaused()).to.be.false;
     });
@@ -353,23 +411,23 @@ describe("ZNSSubRegistrar", () => {
     it("Can register a subdomain with characters [a-z0-9-]", async () => {
       const alphaNumeric = "0x0dwidler0x0";
 
-      // Add allowance
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-
-      // While "to.not.be.reverted" isn't really a full "test"
-      // we don't emit a custom event here, only in the `rootRegistrar.coreRegister`
-      // call. So we can't use the `.to.emit` syntax
-      await expect(defaultSubdomainRegistration(
-        {
-          user: lvl2SubOwner,
-          zns,
+      subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: alphaNumeric,
           parentHash: domain.hash,
-          subdomainLabel: alphaNumeric,
-          domainContent: lvl2SubOwner.address,
+          tokenOwner: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
-        }
-      )).to.not.be.reverted;
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+
+      await subdomain.registerAndValidateDomain();
     });
 
     it("should register a subdomain with token assigned to a different address if provided", async () => {

@@ -47,7 +47,6 @@ import {
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
-import { IZNSContracts } from "../../../src/deploy/campaign/types";
 
 
 export const deployAccessController = async ({

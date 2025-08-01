@@ -103,7 +103,7 @@ export default class Domain {
       parentHash: this.parentHash,
       user: user ? user : this.owner,
       domainLabel: this.label,
-    })) as Promise<ContractTransactionResponse>;
+    }));
   }
 
   async register (executor ?: SignerWithAddress) : Promise<ContractTransactionResponse> {
@@ -126,7 +126,7 @@ export default class Domain {
     let txPromise : ContractTransactionResponse;
 
     // mint and approve strict amount of tokens for domain registration
-    await this.mintAndApproveForDomain(executor);
+    await this.mintAndApproveForDomain(executor ? executor : owner);
 
     if (this.isRoot) {
       txPromise = await zns.rootRegistrar.connect(executor ? executor : owner).registerRootDomain({
@@ -149,7 +149,7 @@ export default class Domain {
       });
     }
 
-    this.hash = await this.getDomainHashFromEvent(executor);
+    this.hash = await this.getDomainHashFromEvent(executor ? executor : owner);
 
     return txPromise;
   }
@@ -252,7 +252,7 @@ export default class Domain {
   async registerAndValidateDomain (
     executor ?: SignerWithAddress
   ) : Promise<void> {
-    const txPromise = await this.register(executor);
+    const txPromise = await this.register(executor ? executor : this.owner);
 
     // check domain existence with event
     await expect(txPromise)
