@@ -26,6 +26,27 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
   });
 
 
+const placeHolderRpcUrl = "https://placeholder.rpc.url";
+
+/**
+ * @description Retrieves private keys from environment variables.
+ * @param {string[]} varNames - An array of env var names.
+ * @returns {string[]} An array of the private keys that were found.
+ */
+const getAccounts = (varNames : Array<string>) => {
+  if (!varNames) {
+    return [];
+  }
+
+  return varNames.reduce((accounts : Array<string>, envVarName) => {
+    const account = process.env[envVarName];
+    if (account) {
+      accounts.push(account);
+    }
+    return accounts;
+  }, []);
+};
+
 const config : HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -56,60 +77,54 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    // zephyr: {
-    //   url: `${process.env.ZEPHYR_RPC_URL}`,
-    //   chainId: 1417429182,
-    //   // accounts: [
-    //   //   `${process.env.ZNS_DEPLOYER}`,
-    //   //   `${process.env.ZERO_VAULT_KEY}`,
-    //   //   `${process.env.TEST_USER_A_KEY}`,
-    //   //   `${process.env.TEST_USER_B_KEY}`,
-    //   //   `${process.env.TEST_USER_C_KEY}`,
-    //   //   `${process.env.TEST_USER_D_KEY}`,
-    //   //   `${process.env.TEST_USER_E_KEY}`,
-    //   //   `${process.env.TEST_USER_F_KEY}`,
-    //   // ],
-    //   timeout: 10000000,
-    //   loggingEnabled: true,
-    // },
-    // mainnet: {
-    //   url: `${process.env.MAINNET_RPC_URL}`,
-    //   gasPrice: 80000000000,
-    // },
-    sepolia: {
-      url: `${process.env.SEPOLIA_RPC_URL}`,
+    zephyr: {
+      url: process.env.ZEPHYR_RPC_URL || placeHolderRpcUrl,
+      chainId: 1417429182,
+      accounts: getAccounts([
+        "ZNS_DEPLOYER",
+        "ZERO_VAULT_KEY",
+        "TEST_USER_A_KEY",
+        "TEST_USER_B_KEY",
+        "TEST_USER_C_KEY",
+        "TEST_USER_D_KEY",
+        "TEST_USER_E_KEY",
+        "TEST_USER_F_KEY",
+      ]),
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      // `${process.env.SAFE_OWNER}`,
-      // //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      // //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-      // //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-      // //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-      // //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
-      // // Must have to avoid instead failing as `invalid length for result data` error
-      // throwOnCallFailures: false, // not sure if this even works
+      loggingEnabled: true,
     },
-    // hardhat: {
-    //   accounts: [
-    //     // {
-    //     //   privateKey: process.env.TESTNET_PRIVATE_KEY!,
-    //     //   balance: "10000000000000000000000", // 10k ETH
-    //     // },
-    //   ],
-    // },
-    // zchain: {
-    //   url: process.env.ZCHAIN_RPC_URL,
-    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
-    //     // `${process.env.TESTNET_PRIVATE_KEY}`,
-    //   ],
-    //   // chainId: Number(process.env.ZCHAIN_ID!),
-    // },
-    // devnet: {
-    //   // Add current URL that you spawned if not using automated spawning
-    //   url: `${process.env.DEVNET_RPC_URL}`,
-    //   chainId: 1,
-    // },
+    zchain: {
+      url: process.env.ZCHAIN_RPC_URL || placeHolderRpcUrl,
+      chainId: 9369,
+      accounts: getAccounts([
+        "ZNS_DEPLOYER",
+        "ZERO_VAULT_KEY",
+        "TEST_USER_A_KEY",
+        "TEST_USER_B_KEY",
+        "TEST_USER_C_KEY",
+        "TEST_USER_D_KEY",
+        "TEST_USER_E_KEY",
+        "TEST_USER_F_KEY",
+      ]),
+    },
+    mainnet: {
+      url: process.env.MAINNET_RPC_URL || placeHolderRpcUrl,
+      gasPrice: 80000000000,
+    },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || placeHolderRpcUrl,
+      timeout: 10000000,
+      accounts: getAccounts([
+        "SAFE_OWNER",
+        "TESTNET_PRIVATE_KEY_B",
+        "TESTNET_PRIVATE_KEY_C",
+        "TESTNET_PRIVATE_KEY_D",
+        "TESTNET_PRIVATE_KEY_E",
+        "TESTNET_PRIVATE_KEY_F",
+      ]),
+      // Must have to avoid instead failing as `invalid length for result data` error
+      throwOnCallFailures: false, // not sure if this even works
+    },
   },
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
