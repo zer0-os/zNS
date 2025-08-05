@@ -10,6 +10,8 @@ import { Db } from "mongodb";
 
 /**
  * Reqiuired .env vars
+ * - SUBGRAPH_URL_DEV - The URL to read from `zns-mainnet-dev` subgraph
+ * - MAINNET_PRIVATE_KEY - A **READ ONLY** private key to use in validation on chain
  * - MAINNET_RPC_URL
  * - MONGO_DB_URI - For read only access to mainnet contracts
  * - MONGO_DB_NAME
@@ -71,7 +73,11 @@ const main = async () => {
       invalidDomains.push({ message: (e as Error).message, domain });
     }
 
-    console.log(`Processed ${++index} domains`);
+    ++index;
+
+    if (index % 50 === 0) {
+      console.log(`Processed ${index} domains`);
+    }
   }
 
   // Connect to database collection and write user domain data to DB
