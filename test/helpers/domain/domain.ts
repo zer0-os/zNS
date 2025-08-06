@@ -119,6 +119,8 @@ export default class Domain {
       domainAddress,
     } = this;
 
+    const signer = !executor ? owner : executor;
+
     if (!distrConfig.priceConfig) {
       distrConfig.priceConfig = encodePriceConfig(this.priceConfig);
     }
@@ -126,10 +128,10 @@ export default class Domain {
     let txPromise : ContractTransactionResponse;
 
     // mint and approve strict amount of tokens for domain registration
-    await this.mintAndApproveForDomain(executor ? executor : owner);
+    await this.mintAndApproveForDomain(signer);
 
     if (this.isRoot) {
-      txPromise = await zns.rootRegistrar.connect(executor ? executor : owner).registerRootDomain({
+      txPromise = await zns.rootRegistrar.connect(signer).registerRootDomain({
         name: label,
         domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
         tokenOwner,
@@ -138,7 +140,7 @@ export default class Domain {
         paymentConfig,
       });
     } else {
-      txPromise = await zns.subRegistrar.connect(executor ? executor : owner).registerSubdomain({
+      txPromise = await zns.subRegistrar.connect(signer).registerSubdomain({
         parentHash,
         label,
         domainAddress: hre.ethers.isAddress(domainAddress) ? domainAddress : owner.address,
@@ -149,7 +151,7 @@ export default class Domain {
       });
     }
 
-    this.hash = await this.getDomainHashFromEvent(executor ? executor : owner);
+    this.hash = await this.getDomainHashFromEvent(signer);
 
     return txPromise;
   }

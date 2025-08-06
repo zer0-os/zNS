@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-shadow, no-shadow */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
+  IDistributionConfig,
   IDomainConfigForTest,
   IPathRegResult,
   ISubRegistrarConfig,
@@ -84,9 +85,8 @@ describe.only("ZNSSubRegistrar", () => {
   let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
 
-  let domain : Domain;
-  let subdomain : Domain;
   let rootPriceConfig : IFixedPriceConfig;
+  let defaultDistrConfig : IDistributionConfig;
   const subTokenURI = "https://token-uri.com/8756a4b6f";
 
   describe("Single Subdomain Registration", () => {
@@ -129,50 +129,48 @@ describe.only("ZNSSubRegistrar", () => {
         feePercentage: BigInt(0),
       };
 
-      domain = new Domain({
+      defaultDistrConfig = {
+        pricerContract: zns.fixedPricer.target,
+        paymentType: PaymentType.DIRECT,
+        accessType: AccessType.OPEN,
+        priceConfig: encodePriceConfig(rootPriceConfig),
+      };
+    });
+
+    it("Sets the payment config when given", async () => {
+      const domain = new Domain({
         zns,
         domainConfig: {
           owner: rootOwner,
-          label: "root",
+          label: "world1",
           parentHash: ethers.ZeroHash,
           tokenOwner: rootOwner.address,
-          distrConfig: {
-            pricerContract: await zns.fixedPricer.getAddress(),
-            priceConfig: encodePriceConfig(rootPriceConfig),
-            accessType: AccessType.OPEN,
-            paymentType: PaymentType.DIRECT,
-          },
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
           },
         },
       });
+      await domain.register(rootOwner);
 
-      await domain.register();
-    });
-
-    it("Sets the payment config when given", async () => {
-      const subdomainLabel = "world-subdomain";
-
-      await zns.meowToken.connect(lvl2SubOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
-
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl2SubOwner,
           parentHash: domain.hash,
-          label: subdomainLabel,
+          label: "world-subdomain",
           domainAddress: lvl2SubOwner.address,
           tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
+          distrConfig: defaultDistrConfig,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: lvl2SubOwner.address,
           },
         },
       });
-      await subdomain.register();
+      await subdomain.register(lvl2SubOwner);
 
       const config = await zns.treasury.paymentConfigs(subdomain.hash);
       expect(config.token).to.eq(await zns.meowToken.getAddress());
@@ -180,16 +178,31 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
-      const subdomainLabel = "not-world-subdomain";
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "world",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
 
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl2SubOwner,
           parentHash: domain.hash,
-          label: subdomainLabel,
+          label: "not-world-subdomain",
           tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
+          distrConfig: defaultDistrConfig,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: ethers.ZeroAddress,
@@ -205,8 +218,7 @@ describe.only("ZNSSubRegistrar", () => {
 
     // eslint-disable-next-line max-len
     it("should revert when trying to register a subdomain before parent has set it's config with FixedPricer", async () => {
-      // register a new root domain
-      domain = new Domain({
+      const domain = new Domain({
         zns,
         domainConfig: {
           owner: rootOwner,
@@ -222,7 +234,7 @@ describe.only("ZNSSubRegistrar", () => {
       });
       await domain.register();
 
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl2SubOwner,
@@ -248,8 +260,7 @@ describe.only("ZNSSubRegistrar", () => {
     // eslint-disable-next-line max-len
     it("should revert when trying to register a subdomain before parent has set it's config with CurvePricer", async () => {
       // register a new root domain
-
-      domain = new Domain({
+      const domain = new Domain({
         zns,
         domainConfig: {
           owner: rootOwner,
@@ -264,7 +275,7 @@ describe.only("ZNSSubRegistrar", () => {
       });
       await domain.register();
 
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl2SubOwner,
@@ -290,19 +301,14 @@ describe.only("ZNSSubRegistrar", () => {
 
       expect(await zns.subRegistrar.registrationPaused()).to.be.true;
 
-      domain = new Domain({
+      const domain = new Domain({
         zns,
         domainConfig: {
           owner: rootOwner,
           label: "rootpaused",
           parentHash: hre.ethers.ZeroHash,
           tokenOwner: rootOwner.address,
-          distrConfig: {
-            pricerContract: ethers.ZeroAddress,
-            paymentType: PaymentType.DIRECT,
-            accessType: AccessType.OPEN,
-            priceConfig: ZeroHash,
-          },
+          distrConfig: defaultDistrConfig,
           paymentConfig: {
             token: await zns.meowToken.getAddress(),
             beneficiary: rootOwner.address,
@@ -311,7 +317,7 @@ describe.only("ZNSSubRegistrar", () => {
       });
       await domain.register();
 
-      const sub = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl3SubOwner,
@@ -333,7 +339,7 @@ describe.only("ZNSSubRegistrar", () => {
 
       // try to register a subdomain
       await expect(
-        sub.register(lvl3SubOwner)
+        subdomain.register(lvl3SubOwner)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         REGISTRATION_PAUSED_ERR,
@@ -341,9 +347,8 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should register successfully as ADMIN_ROLE during a registration pause", async () => {
-      expect(await zns.accessController.isAdmin(admin.address)).to.be.true;
       expect(zns.accessController.target).eq(await zns.subRegistrar.getAccessController());
-
+      expect(await zns.accessController.isAdmin(admin.address)).to.be.true;
       expect(await zns.subRegistrar.registrationPaused()).to.be.true;
 
       // approve treasury
@@ -352,8 +357,24 @@ describe.only("ZNSSubRegistrar", () => {
         ethers.MaxUint256,
       );
 
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: admin,
+          label: "root1paused1for1sub",
+          parentHash: hre.ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
       // try to register a subdomain as admin
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: admin,
@@ -367,7 +388,7 @@ describe.only("ZNSSubRegistrar", () => {
           },
         },
       });
-      await subdomain.register(admin);
+      await subdomain.register();
 
       // check that the domain was registered
       const owner = await zns.registry.getDomainOwner(subdomain.hash);
@@ -379,14 +400,31 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should register subdomain with the correct tokenURI assigned to the domain token minted", async () => {
-      const subHash = await registrationWithSetup({
+      const domain = new Domain({
         zns,
-        user: lvl2SubOwner,
-        tokenOwner: lvl2SubOwner.address,
-        parentHash: domain.hash,
-        domainLabel: "sub",
-        tokenURI: subTokenURI,
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "root1for1sub",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
+      const sub = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "sub",
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig({
@@ -402,20 +440,36 @@ describe.only("ZNSSubRegistrar", () => {
           },
         },
       });
+      await sub.register();
 
-      const tokenId = BigInt(subHash).toString();
+      const tokenId = BigInt(sub.hash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
     });
 
     it("Can register a subdomain with characters [a-z0-9-]", async () => {
-      const alphaNumeric = "0x0dwidler0x0";
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "root555",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
 
-      subdomain = new Domain({
+      const subdomain = new Domain({
         zns,
         domainConfig: {
           owner: lvl2SubOwner,
-          label: alphaNumeric,
+          label: "0x0dwidler0x0", // valid characters
           parentHash: domain.hash,
           tokenOwner: lvl2SubOwner.address,
           tokenURI: subTokenURI,
@@ -431,21 +485,45 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should register a subdomain with token assigned to a different address if provided", async () => {
-      await defaultSubdomainRegistration({
-        user: lvl2SubOwner,
+      const domain = new Domain({
         zns,
-        parentHash: domain.hash,
-        subdomainLabel: "subbbb",
-        tokenOwner: zeroVault.address, // <--
+        domainConfig: {
+          owner: rootOwner,
+          label: "root1diff1address",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
       });
+      await domain.register();
 
-      const subHash = await zns.subRegistrar.hashWithParent(domain.hash, "subbbb");
+      const subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "sub1diff1address",
+          parentHash: domain.hash,
+          tokenOwner: lvl3SubOwner.address, // different address
+          tokenURI: subTokenURI,
+          distrConfig: distrConfigEmpty,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
+      await subdomain.register();
 
       // check owners of hash and token
-      const ownerFromReg = await zns.registry.getDomainOwner(subHash);
+      const ownerFromReg = await zns.registry.getDomainOwner(subdomain.hash);
       expect(ownerFromReg).to.eq(lvl2SubOwner.address);
-      const ownerFromToken = await zns.domainToken.ownerOf(subHash);
-      expect(ownerFromToken).to.eq(zeroVault.address);
+      const ownerFromToken = await zns.domainToken.ownerOf(subdomain.hash);
+      expect(ownerFromToken).to.eq(lvl3SubOwner.address);
     });
 
     it("Fails for a subdomain that uses any invalid characters", async () => {
@@ -454,88 +532,80 @@ describe.only("ZNSSubRegistrar", () => {
       const nameC = "!%$#^*?!#👍3^29";
       const nameD = "wo.rld";
 
-      await expect(
-        defaultSubdomainRegistration(
-          {
-            user: lvl2SubOwner,
-            zns,
-            parentHash: domain.hash,
-            subdomainLabel: nameA,
-            domainContent: lvl2SubOwner.address,
-            tokenURI: subTokenURI,
-            distrConfig: distrConfigEmpty,
-          }
-        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootin",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
 
-      await expect(
-        defaultSubdomainRegistration(
-          {
-            user: lvl2SubOwner,
-            zns,
+      for (const name of [nameA, nameB, nameC, nameD]) {
+        const subdomain = new Domain({
+          zns,
+          domainConfig: {
+            owner: lvl2SubOwner,
+            label: name,
             parentHash: domain.hash,
-            subdomainLabel: nameB,
-            domainContent: lvl2SubOwner.address,
+            tokenOwner: lvl2SubOwner.address,
             tokenURI: subTokenURI,
             distrConfig: distrConfigEmpty,
-          }
-        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+            paymentConfig: paymentConfigEmpty,
+          },
+        });
 
-      await expect(
-        defaultSubdomainRegistration(
-          {
-            user: lvl2SubOwner,
-            zns,
-            parentHash: domain.hash,
-            subdomainLabel: nameC,
-            domainContent: lvl2SubOwner.address,
-            tokenURI: subTokenURI,
-            distrConfig: distrConfigEmpty,
-          }
-        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-
-      await expect(
-        defaultSubdomainRegistration(
-          {
-            user: lvl2SubOwner,
-            zns,
-            parentHash: domain.hash,
-            subdomainLabel: nameD,
-            domainContent: lvl2SubOwner.address,
-            tokenURI: subTokenURI,
-            distrConfig: distrConfigEmpty,
-          }
-        )).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+        await expect(
+          subdomain.register()
+        ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+      }
     });
 
     it("should revert when trying to register a subdomain under a non-existent parent", async () => {
-      // check that 0x0 hash can NOT be passed as parentHash
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootnonexistent",
           parentHash: ethers.ZeroHash,
-          label: "sub",
-          domainAddress: lvl2SubOwner.address,
-          tokenOwner: ethers.ZeroAddress,
-          tokenURI: subTokenURI,
-          distrConfig: distrConfigEmpty,
-          paymentConfig: paymentConfigEmpty,
-        })
-      ).to.be.revertedWithCustomError(
-        zns.subRegistrar,
-        DISTRIBUTION_LOCKED_NOT_EXIST_ERR
-      );
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
 
-      // check that a random non-existent hash can NOT be passed as parentHash
-      const randomHash = ethers.keccak256(ethers.toUtf8Bytes("random"));
-      await expect(
-        zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
-          parentHash: randomHash,
-          label: "sub",
-          domainAddress: lvl2SubOwner.address,
-          tokenOwner: ethers.ZeroAddress,
+      await domain.register();
+      const nonExistentHash = domain.hash;
+      await domain.revoke();
+
+      const subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "subnonexistent",
+          parentHash: nonExistentHash,
+          tokenOwner: lvl2SubOwner.address,
           tokenURI: subTokenURI,
           distrConfig: distrConfigEmpty,
           paymentConfig: paymentConfigEmpty,
-        })
+        },
+      });
+
+      // check that this hash can NOT be passed as parentHash
+      await expect(
+        subdomain.register(lvl2SubOwner)
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -543,14 +613,31 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should register subdomain with a single char label", async () => {
-      const subHash = await registrationWithSetup({
+      const domain = new Domain({
         zns,
-        user: lvl2SubOwner,
-        tokenOwner: lvl2SubOwner.address,
-        parentHash: domain.hash,
-        domainLabel: "a",
-        tokenURI: subTokenURI,
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "root96115691",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
+      const subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "a",
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig({
@@ -566,35 +653,57 @@ describe.only("ZNSSubRegistrar", () => {
           },
         },
       });
+      await subdomain.register();
 
-      const tokenId = BigInt(subHash).toString();
+      const tokenId = BigInt(subdomain.hash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
 
       // check registry
-      const dataFromReg = await zns.registry.getDomainRecord(subHash);
+      const dataFromReg = await zns.registry.getDomainRecord(subdomain.hash);
       expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
       expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
     });
 
     // ! this value can change based on the block gas limit !
     it("should register subdomain with a label length of 100000 chars [ @skip-on-coverage ]", async () => {
-      const subHash = await registrationWithSetup({
+      const domain = new Domain({
         zns,
-        user: lvl2SubOwner,
-        tokenOwner: lvl2SubOwner.address,
-        parentHash: domain.hash,
-        domainLabel: "a".repeat(100000),
-        tokenURI: subTokenURI,
-        fullConfig: FULL_DISTR_CONFIG_EMPTY,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "root345678",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
       });
+      await domain.register();
 
-      const tokenId = BigInt(subHash).toString();
+      const subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "a".repeat(100000),
+          parentHash: domain.hash,
+          tokenOwner: lvl2SubOwner.address,
+          tokenURI: subTokenURI,
+          distrConfig: FULL_DISTR_CONFIG_EMPTY.distrConfig,
+          paymentConfig: FULL_DISTR_CONFIG_EMPTY.paymentConfig,
+        },
+      });
+      await subdomain.register();
+
+      const tokenId = BigInt(subdomain.hash).toString();
       const tokenURI = await zns.domainToken.tokenURI(tokenId);
       expect(tokenURI).to.eq(subTokenURI);
 
       // check registry
-      const dataFromReg = await zns.registry.getDomainRecord(subHash);
+      const dataFromReg = await zns.registry.getDomainRecord(subdomain.hash);
       expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
       expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
     });
