@@ -11,15 +11,7 @@ export const updateDbAndVerifyAll = async (
 ) => {
   const logger = getLogger();
 
-  const version = process.env.MONGO_DB_VERSION
-  
-  let newDbVersion : string;
-
-  if (version) {
-    newDbVersion = version;
-  } else {
-    newDbVersion = Date.now().toString();
-  }
+  const newDbVersion = Date.now().toString();
 
   const newContractsVersion = dbAdapter.getContractsVersionFromFile();
   logger.info(
@@ -81,9 +73,9 @@ export const updateDbAndVerifyAll = async (
       contractsVersion: newContractsVersion,
     },
     {
-      upsert: true
+      upsert: true,
     }
-  )
+  );
 
   if (replaceResult.matchedCount === 0) {
     throw new Error(`Failed to update db data entry for version ${newDbVersion}`);
