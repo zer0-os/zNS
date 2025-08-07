@@ -7,7 +7,7 @@ const execute = async () => {
   const logger = getLogger();
   const dbAdapter = await getMongoAdapter(logger);
 
-  logger.info("Prepairing contract data for the upgrade...");
+  logger.info("Preparing contract data for the upgrade...");
 
   const contractData = await getContractDataForUpgrade(
     dbAdapter,
