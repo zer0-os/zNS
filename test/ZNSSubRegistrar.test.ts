@@ -901,6 +901,27 @@ describe.only("ZNSSubRegistrar", () => {
   });
 
   describe("Bulk Subdomain Registration", () => {
+    let domain : Domain;
+
+    before(async () => {
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "root1bulk",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+    });
+
     it("Should #registerSubdomainBulk and the event must be triggered", async () => {
       const registrations : Array<ISubRegistrarConfig> = [];
 
@@ -2095,6 +2116,8 @@ describe.only("ZNSSubRegistrar", () => {
     let token8 : CustomDecimalTokenMock;
     let token13 : CustomDecimalTokenMock;
     let token18 : CustomDecimalTokenMock;
+
+    let domain : Domain;
 
     const decimalValues = {
       two: BigInt(2),
@@ -4354,6 +4377,8 @@ describe.only("ZNSSubRegistrar", () => {
 
   describe("UUPS", () => {
     let fixedPrice : bigint;
+
+    let domain : Domain;
 
     beforeEach(async () => {
       [
