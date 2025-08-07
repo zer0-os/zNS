@@ -34,9 +34,9 @@
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
-    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
-    "run-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
-    "run-zephyr": "hardhat run src/deploy/run-campaign.ts --network zephyr"
+    "deploy-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
+    "deploy-hardhat": "hardhat run src/deploy/run-campaign.ts --network hardhat",
+    "deploy-zephyr": "hardhat run src/deploy/run-campaign.ts --network zephyr"
   },
   "pre-commit": [
     "lint"
