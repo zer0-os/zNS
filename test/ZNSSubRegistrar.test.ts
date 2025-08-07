@@ -709,6 +709,23 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should revert when user has insufficient funds", async () => {
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootinsufficientfunds",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
       const label = "subinsufficientfunds";
       const { expectedPrice } = getPriceObject(label, rootPriceConfig);
       const userBalanceBefore = await zns.meowToken.balanceOf(lvl2SubOwner.address);
@@ -738,6 +755,23 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should revert when user has insufficient allowance", async () => {
+      const domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: rootOwner,
+          label: "rootinsufficientallowance",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: DEFAULT_TOKEN_URI,
+          distrConfig: defaultDistrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: rootOwner.address,
+          },
+        },
+      });
+      await domain.register();
+
       const label = "subinsufficientallowance";
       const { expectedPrice } = getPriceObject(label, rootPriceConfig);
 
@@ -762,12 +796,14 @@ describe.only("ZNSSubRegistrar", () => {
 
     it("should revert on payment when parent's beneficiary has not yet been set and when stakeFee is > 0", async () => {
       // register a new parent with direct payment and no payment config
-      const parentHash1 = await registrationWithSetup({
+      const domain = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "parentnoconfigdirect",
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "parentnoconfigdirect",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: subTokenURI,
           distrConfig: {
             pricerContract: await zns.fixedPricer.getAddress(),
             priceConfig: encodePriceConfig(rootPriceConfig),
@@ -777,17 +813,20 @@ describe.only("ZNSSubRegistrar", () => {
           paymentConfig: paymentConfigEmpty,
         },
       });
+      await domain.register();
 
       // set the token address
-      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash1, await zns.meowToken.getAddress());
+      await zns.treasury.connect(rootOwner).setPaymentToken(domain.hash, await zns.meowToken.getAddress());
 
       // register a new parent with stake payment and no payment config
-      const parentHash2 = await registrationWithSetup({
+      const domain2 = new Domain({
         zns,
-        user: rootOwner,
-        tokenOwner: rootOwner.address,
-        domainLabel: "parentnoconfigstake",
-        fullConfig: {
+        domainConfig: {
+          owner: rootOwner,
+          label: "parentnoconfigstake",
+          parentHash: ethers.ZeroHash,
+          tokenOwner: rootOwner.address,
+          tokenURI: subTokenURI,
           distrConfig: {
             pricerContract: await zns.curvePricer.getAddress(),
             priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
@@ -797,53 +836,67 @@ describe.only("ZNSSubRegistrar", () => {
           paymentConfig: paymentConfigEmpty,
         },
       });
+      await domain2.register();
 
       // set the token address
-      await zns.treasury.connect(rootOwner).setPaymentToken(parentHash2, await zns.meowToken.getAddress());
+      await zns.treasury.connect(rootOwner).setPaymentToken(domain2.hash, await zns.meowToken.getAddress());
 
       // register subdomains under new parents
-      await expect(
-        registrationWithSetup({
-          zns,
+      const subdomain = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "sub1",
+          parentHash: domain.hash,
           tokenOwner: lvl2SubOwner.address,
-          user: lvl2SubOwner,
-          parentHash: parentHash1,
-          domainLabel: "sub1",
-        })
-      ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
+          tokenURI: subTokenURI,
+          distrConfig: {
+            pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: encodePriceConfig(rootPriceConfig),
+            accessType: AccessType.OPEN,
+            paymentType: PaymentType.STAKE,
+          },
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: lvl2SubOwner.address,
+          },
+        },
+      });
 
       await expect(
-        registrationWithSetup({
-          zns,
+        subdomain.register()
+      ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
+
+      const subdomain2 = new Domain({
+        zns,
+        domainConfig: {
+          owner: lvl2SubOwner,
+          label: "sub2",
+          parentHash: domain2.hash,
           tokenOwner: lvl2SubOwner.address,
-          user: lvl2SubOwner,
-          parentHash: parentHash2,
-          domainLabel: "sub2",
-        })
+        },
+      });
+
+      await expect(
+        subdomain2.register()
       ).to.be.revertedWithCustomError(zns.treasury, NO_BENEFICIARY_ERR);
 
       // change stakeFee to 0
-      const currDistrConfig = await zns.subRegistrar.distrConfigs(parentHash2);
+      const currDistrConfig = await zns.subRegistrar.distrConfigs(domain2.hash);
       const decodedConfig = decodePriceConfig(currDistrConfig.priceConfig);
 
       decodedConfig.feePercentage = BigInt(0);
 
       await zns.subRegistrar.connect(rootOwner).setPricerDataForDomain(
-        parentHash2,
+        domain2.hash,
         encodePriceConfig(decodedConfig),
         currDistrConfig.pricerContract
       );
 
       // try register a subdomain again
-      const subHash = await registrationWithSetup({
-        zns,
-        tokenOwner: lvl2SubOwner.address,
-        user: lvl2SubOwner,
-        parentHash: parentHash2,
-        domainLabel: "sub2",
-      });
+      await subdomain2.register();
 
-      await zns.registry.exists(subHash);
+      await zns.registry.exists(subdomain2.hash);
     });
   });
 
