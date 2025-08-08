@@ -1,5 +1,6 @@
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 import { setDefaultEnvironment } from "../src/environment/set-env";
+import hre from "hardhat";
 
 
 export const mochaGlobalSetup = async () => {
@@ -16,7 +17,10 @@ export const mochaGlobalSetup = async () => {
 
 export const mochaGlobalTeardown = async () => {
   const mongoAdapter = await getZnsMongoAdapter();
-  // the next line can be commented out to leave the DB after test to manually test
-  await mongoAdapter.dropDB();
+
+  if (hre.network.name === "hardhat") {
+    await mongoAdapter.dropDB();
+  }
+
   await mongoAdapter.close();
 };
