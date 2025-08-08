@@ -43,9 +43,11 @@ export const withdrawStakedByGovernor = async ({
     recipient,
   );
 
-  await tx.wait(
-    process.env.CONFIRMATIONS_N ? Number(process.env.CONFIRMATIONS_N) : 2
-  );
+  if (hre.network.name !== "hardhat") {
+    await tx.wait(
+      process.env.CONFIRMATIONS_N ? Number(process.env.CONFIRMATIONS_N) : 2
+    );
+  }
 
   return tx;
 };
