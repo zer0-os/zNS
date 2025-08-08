@@ -18,7 +18,7 @@ export const mochaGlobalTeardown = async () => {
   const mongoAdapter = await getZnsMongoAdapter();
 
   const hre = await import("hardhat");
-  if (hre.network.name === "hardhat") {
+  if (hre.network && hre.network.name === "hardhat") {
     await mongoAdapter.dropDB();
   }
 
