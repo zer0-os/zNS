@@ -9,11 +9,9 @@ import { ZNSTreasuryPausable } from "../../typechain/contracts/zns-pausable/trea
 export const withdrawStakedByGovernor = async ({
   token,
   to,
-  version,
 } : {
   token : string;
   to ?: string;
-  version ?: IDBVersion | null;
 }) => {
   const [ governor ] = await hre.ethers.getSigners();
 
@@ -22,14 +20,6 @@ export const withdrawStakedByGovernor = async ({
   }
 
   const dbAdapter = await getMongoAdapter();
-
-  if (!version) {
-    version = await dbAdapter.getUpgradedVersion();
-  }
-
-  if (!version) {
-    throw new Error("Version is undefined");
-  }
 
   const contractName = znsNames.treasury.contract;
 
@@ -54,10 +44,37 @@ export const withdrawStakedByGovernor = async ({
     recipient,
   );
 
-  if (hre.network.name !== "hardhat")
-    await tx.wait(
-      process.env.CONFIRMATIONS_N ? Number(process.env.CONFIRMATIONS_N) : 2
-    );
+  await tx.wait(
+    process.env.CONFIRMATIONS_N ? Number(process.env.CONFIRMATIONS_N) : 2
+  );
 
   return tx;
 };
+
+// call the above function with await properly below
+void (async () => {
+  try {
+    const token = process.env.WITHDRAW_TOKEN_ADDRESS;
+    const to = process.env.TREASURY_WITHDRAW_RECIPIENT;
+
+    if (!token || !to) {
+      throw new Error("TOKEN_ADDRESS environment variable is not set");
+    }
+
+    const tx = await withdrawStakedByGovernor({
+      token,
+      to,
+    });
+
+    console.log(`Withdrawal transaction successful: ${tx.hash}`);
+    process.exit(0);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+  } catch (error : Error) {
+    console.error(
+      `Error withdrawing staked tokens: ${error.message}
+      ${error.stack}`
+    );
+    process.exit(1);
+  }
+})();
