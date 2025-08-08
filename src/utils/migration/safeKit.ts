@@ -291,7 +291,7 @@ export class SafeKit {
         );
       } catch (e) {
         // Proceed without adding failing tx to batch
-        // this.logger.error("Error: Failed to estimate gas for tx", { index, to: tx.to, txData: tx.data });
+        this.logger.error("Error: Failed to estimate gas for tx", { index, to: tx.to, txData: tx.data });
         continue;
       }
 
