@@ -112,20 +112,20 @@ const config : HardhatUserConfig = {
     //   ],
     //   gasPrice: 80000000000,
     // },
-    sepolia: {
-      url: `${process.env.SEPOLIA_RPC_URL}`,
-      timeout: 10000000,
-      accounts: [ // Comment out for CI, uncomment this when using Sepolia
-        `${process.env.TEST_USER_A_KEY}`,
-        // `${process.env.TESTNET_PRIVATE_KEY_B}`,
-        // `${process.env.TESTNET_PRIVATE_KEY_C}`,
-        // `${process.env.TESTNET_PRIVATE_KEY_D}`,
-        `${process.env.TEST_USER_E_KEY}`,
-        // `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      ],
-      // // Must have to avoid instead failing as `invalid length for result data` error
-      // throwOnCallFailures: false, // not sure if this even works
-    },
+    // sepolia: {
+    //   url: `${process.env.SEPOLIA_RPC_URL}`,
+    //   timeout: 10000000,
+    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+    //     `${process.env.TEST_USER_A_KEY}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+    //     `${process.env.TEST_USER_E_KEY}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+    //   ],
+    //   // // Must have to avoid instead failing as `invalid length for result data` error
+    //   // throwOnCallFailures: false, // not sure if this even works
+    // },
     devnet: {
       // Add current URL that you spawned if not using automated spawning
       url: `${process.env.DEVNET_RPC_URL}`,
