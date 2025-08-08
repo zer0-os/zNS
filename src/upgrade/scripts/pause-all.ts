@@ -19,10 +19,13 @@ const pauseAllContracts = async () => {
     const contract = factory.attach(address) as IZNSPausable;
 
     if (typeof contract.pause === "function") {
-      logger.info(`Pausing ${contractName} at ${address}`);
-      const tx = await contract.connect(governor).pause();
-      await tx.wait(2);
-      logger.info(`${contractName} paused successfully`);
+      const isPaused = await contract.paused();
+      if (!isPaused) {
+        logger.info(`Pausing ${contractName} at ${address}`);
+        const tx = await contract.connect(governor).pause();
+        await tx.wait(2);
+        logger.info(`${contractName} paused successfully`);
+      }
     } else {
       logger.warn(`${contractName} does not have a pause function`);
     }

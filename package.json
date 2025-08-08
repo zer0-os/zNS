@@ -34,8 +34,9 @@
     "mongo:stop": "docker-compose stop",
     "mongo:down": "docker-compose down",
     "mongo:drop": "ts-node src/utils/drop-db.ts",
-    "run-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
-    "get-domain-data": "hardhat run src/utils/migration/01_validation.ts --network mainnet"
+    "deploy-sepolia": "hardhat run src/deploy/run-campaign.ts --network sepolia",
+    "run-validation": "hardhat run src/utils/migration/01_validation.ts --network mainnet",
+    "upgrade-sepolia": "hardhat run src/upgrade/scripts/execute-upgrade.ts --network sepolia"
   },
   "pre-commit": [
     "lint"

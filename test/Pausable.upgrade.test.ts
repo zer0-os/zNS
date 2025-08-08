@@ -31,7 +31,7 @@ import { getLogger } from "../src/deploy/logger/create-logger";
 import { updateDbAndVerifyAll } from "../src/upgrade/db";
 import { VERSION_TYPES } from "../src/deploy/db/mongo-adapter/constants";
 import { getGitTag } from "../src/utils/git-tag/get-tag";
-import { withdrawStakedByGovernor } from "../src/scripts/withdraw-staked";
+import { withdrawStakedByGovernor } from "../src/utils/withdraw-staked";
 
 
 describe("ZNS Upgrade and Pause Test", () => {

@@ -11,6 +11,20 @@ export const updateDbAndVerifyAll = async (
 ) => {
   const logger = getLogger();
 
+  const newDbVersion = Date.now().toString();
+
+  const newContractsVersion = dbAdapter.getContractsVersionFromFile();
+  logger.info(
+    `Updating DB "${dbAdapter.dbName}" with new version: ${newDbVersion} and contracts version: ${newContractsVersion}`
+  );
+
+  // Update the version in the DB to TEMP while processing
+  const insertResult = await dbAdapter.versions.insertOne({
+    type: VERSION_TYPES.temp,
+    dbVersion: newDbVersion,
+    contractsVersion: newContractsVersion,
+  });
+
   const contractNames = JSON.parse(JSON.stringify(znsNames));
   delete contractNames.erc1967Proxy;
   contractNames.meowToken.contract = process.env.MOCK_MEOW_TOKEN === "true"
@@ -18,12 +32,6 @@ export const updateDbAndVerifyAll = async (
     : contractNames.meowToken.contract;
 
   const contractData = await getContractDataForUpgrade(dbAdapter, contractNames);
-
-  const newDbVersion = Date.now().toString();
-  const newContractsVersion = dbAdapter.getContractsVersionFromFile();
-  logger.info(
-    `Updating DB "${dbAdapter.dbName}" with new version: ${newDbVersion} and contracts version: ${newContractsVersion}`
-  );
 
   for (const { contractName, address } of contractData) {
     let implAddress : string | null;
@@ -44,18 +52,34 @@ export const updateDbAndVerifyAll = async (
     });
 
     if (hre.network.name !== "hardhat" && contractName !== znsNames.accessController.contract) {
-      await hre.run("verify:verify", {
-        address: implAddress,
-      });
+      try {
+        await hre.run("verify:verify", {
+          address: implAddress,
+        });
+      } catch (e) {
+        logger.error(`Verification of ${address} failed with error ${e}`);
+      }
     }
   }
 
-  // Update the version in the DB
-  await dbAdapter.versions.insertOne({
-    type: VERSION_TYPES.upgraded,
-    dbVersion: newDbVersion,
-    contractsVersion: newContractsVersion,
-  });
+  // Update the version in the DB as UPGRADED
+  const replaceResult = await dbAdapter.versions.replaceOne(
+    {
+      _id: insertResult.insertedId,
+    },
+    {
+      type: VERSION_TYPES.upgraded,
+      dbVersion: newDbVersion,
+      contractsVersion: newContractsVersion,
+    },
+    {
+      upsert: true,
+    }
+  );
+
+  if (replaceResult.matchedCount === 0) {
+    throw new Error(`Failed to update db data entry for version ${newDbVersion}`);
+  }
 
   logger.info("DB update finished successfully.");
 };

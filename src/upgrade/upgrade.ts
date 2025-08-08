@@ -112,7 +112,8 @@ export const getContractDataForUpgrade = async (
   ) => {
     const contractData = await acc;
 
-    const { address } = await dbAdapter.getContract(contract) as IContractDbData;
+    const contractDoc = await dbAdapter.getContract(contract, dbAdapter.curVersion) as IContractDbData;
+    const { address } = contractDoc;
 
     contractData.push({
       contractName: contract,

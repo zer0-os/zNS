@@ -1,5 +1,4 @@
 import * as hre from "hardhat";
-import { IDBVersion } from "../deploy/db/mongo-adapter/types";
 import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
 import { znsNames } from "../deploy/missions/contracts/names";
 import { ZNSTreasuryPausable__factory } from "../../typechain/factories/contracts/zns-pausable/treasury";
@@ -9,11 +8,9 @@ import { ZNSTreasuryPausable } from "../../typechain/contracts/zns-pausable/trea
 export const withdrawStakedByGovernor = async ({
   token,
   to,
-  version,
 } : {
   token : string;
   to ?: string;
-  version ?: IDBVersion | null;
 }) => {
   const [ governor ] = await hre.ethers.getSigners();
 
@@ -22,14 +19,6 @@ export const withdrawStakedByGovernor = async ({
   }
 
   const dbAdapter = await getMongoAdapter();
-
-  if (!version) {
-    version = await dbAdapter.getUpgradedVersion();
-  }
-
-  if (!version) {
-    throw new Error("Version is undefined");
-  }
 
   const contractName = znsNames.treasury.contract;
 
@@ -54,10 +43,11 @@ export const withdrawStakedByGovernor = async ({
     recipient,
   );
 
-  if (hre.network.name !== "hardhat")
+  if (hre.network.name !== "hardhat") {
     await tx.wait(
       process.env.CONFIRMATIONS_N ? Number(process.env.CONFIRMATIONS_N) : 2
     );
+  }
 
   return tx;
 };
