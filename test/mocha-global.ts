@@ -1,6 +1,6 @@
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 import { setDefaultEnvironment } from "../src/environment/set-env";
-import hre from "hardhat";
+import * as hre from "hardhat";
 
 
 export const mochaGlobalSetup = async () => {
