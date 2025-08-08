@@ -188,7 +188,7 @@ const createBatchesSafe = (
     const args = {
       name: domain.label,
       domainAddress: domain.address || ZeroAddress,
-      tokenOwner: safeAddress,
+      tokenOwner: ZeroAddress,
       tokenURI: domain.tokenURI,
       distrConfig: {
         pricerContract: ZeroAddress,

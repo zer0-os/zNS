@@ -75,9 +75,9 @@ export const migration = async () => {
   const safeAddress = process.env.SAFE_ADDRESS;
   if (!safeAddress) throw new Error("No Safe address was provided. Set SAFE_ADDRESS environment variable");
 
-  // Modify as needed, using Sepolia for testing
-  const rpcUrl = process.env.SEPOLIA_RPC_URL;
-  if (!rpcUrl) throw new Error("No RPC URL was provided. Set SEPOLIA_RPC_URL environment variable");
+  // Modify as needed
+  const rpcUrl = process.env.ZEPHYR_RPC_URL;
+  if (!rpcUrl) throw new Error("No RPC URL was provided. Set ..._RPC_URL environment variable for your network");
 
   const chainId = process.env.CHAIN_ID;
   if (!chainId) throw new Error("No chain ID was provided. Set CHAIN_ID environment variable");
