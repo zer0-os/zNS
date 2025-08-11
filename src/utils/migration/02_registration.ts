@@ -149,6 +149,19 @@ export const migration = async () => {
     const depth = 1; // <--- This value must also be changed manually between each iteration
     const atDepth = subdomains.filter(d => d.depth === depth);
 
+    // ! ONLY UNBLOCK THIS CODE IF CERTAIN DOMAINS HAVE BEEN MISSED DURING REGISTRATION
+    // SWAP IT WITH THE .filter() ABOVE
+    // const atDepth = await subdomains.reduce(async (acc, domain) => {
+    //   const newAcc = await acc;
+    //
+    //   const domainOwner = await zns.registry.getDomainOwner(domain.id);
+    //
+    //   if (domain.depth === depth && domainOwner === ZeroAddress) {
+    //     newAcc.push(domain);
+    //   }
+    //   return newAcc;
+    // }, Promise.resolve([]) as Promise<Array<Domain>>);
+
     // Store revoked parents, if we find any
     const revokedParents : Map<string, Partial<Domain>> = new Map();
 
