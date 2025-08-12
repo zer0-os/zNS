@@ -48,15 +48,19 @@ export default class Domain {
     this.tokenOwner = domainConfig.tokenOwner || hre.ethers.ZeroAddress;
     this.distrConfig = domainConfig.distrConfig || distrConfigEmpty;
 
-    switch (this.distrConfig.pricerContract) {
-    case zns.curvePricer.target:
-      this.priceConfig = curvePriceConfigEmpty;
-      break;
-    case zns.fixedPricer.target:
-      this.priceConfig = fixedPriceConfigEmpty;
-      break;
-    default:
-      this.priceConfig = {} as ICurvePriceConfig | IFixedPriceConfig;
+    if (!domainConfig.priceConfig) {
+      switch (this.distrConfig.pricerContract) {
+      case zns.curvePricer.target:
+        this.priceConfig = curvePriceConfigEmpty;
+        break;
+      case zns.fixedPricer.target:
+        this.priceConfig = fixedPriceConfigEmpty;
+        break;
+      default:
+        this.priceConfig = {} as ICurvePriceConfig | IFixedPriceConfig;
+      }
+    } else {
+      this.priceConfig = domainConfig.priceConfig;
     }
 
     this.paymentConfig = domainConfig.paymentConfig || paymentConfigEmpty;
@@ -251,11 +255,10 @@ export default class Domain {
   // ------------------------------------------------------
   // VALIDATION
   // ------------------------------------------------------
-  async registerAndValidateDomain (
+  async validate (
+    txPromise : ContractTransactionResponse,
     executor ?: SignerWithAddress
-  ) : Promise<void> {
-    const txPromise = await this.register(executor ? executor : this.owner);
-
+  ) {
     // check domain existence with event
     await expect(txPromise)
       .to.emit(
@@ -285,5 +288,13 @@ export default class Domain {
     expect(
       await this.zns.domainToken.tokenURI(this.hash)
     ).to.equal(this.tokenURI);
+  }
+
+  async registerAndValidateDomain (
+    executor ?: SignerWithAddress
+  ) : Promise<void> {
+    const txPromise = await this.register(executor ? executor : this.owner);
+
+    await this.validate(txPromise, executor);
   }
 }
