@@ -8,6 +8,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ZeroAddress } from "ethers";
 import { expect } from "chai";
 import { IZNSContracts } from "../src/deploy/campaign/types";
+import { getZnsLogger } from "../src/deploy/get-logger";
 
 let deployer : SignerWithAddress;
 let zeroVault : SignerWithAddress;
@@ -152,7 +153,12 @@ describe("Domain Migration", () => {
     const { revokeTxs, failedRevokes } = await createRevokes(
       domainsToRevoke,
       zns.rootRegistrar,
-      safe.address
+      safe.address,
+      getZnsLogger({
+        logLevel: "debug",
+        silence: true,
+        makeLogFile: false,
+      }),
     );
 
     expect(failedRevokes.length).to.eq(0);

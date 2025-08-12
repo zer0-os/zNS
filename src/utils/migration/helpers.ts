@@ -368,6 +368,8 @@ export const createTransfers = async (
  *
  * @param domains Array of domains to revoke
  * @param rootRegistrar The ZNSRootRegistrar contract instance
+ * @param safeAddress
+ * @param logger
  * @returns Object containing arrays of transaction data and failed revokes
  * @throws {Error} When Safe address is not configured
  */
