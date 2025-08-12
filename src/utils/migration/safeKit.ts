@@ -280,7 +280,7 @@ export class SafeKit {
 
     let nonceCount = 0;
     for (const [index, tx] of txData.entries()) {
-      this.logger.debug(`Processing transaction batch index: ${index}`);
+      this.logger.debug(`Processing transaction at index: ${index}`);
 
       try {
         // Estimate individual tx to be sure the batch will pass.

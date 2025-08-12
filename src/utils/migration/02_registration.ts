@@ -230,6 +230,7 @@ export const migration = async () => {
     const [ transferTxs, failedTransferTxs ] = await createTransfers(
       zns.domainToken,
       [...rootDomains, ...subdomains],
+      logger,
     );
 
     if (failedTransferTxs.length > 0) {
@@ -245,6 +246,8 @@ export const migration = async () => {
         "SafeKit is not initialized. Ensure you are running this script with a valid Safe configuration."
       );
     }
+
+    logger.info(`Total transfer transactions to propose: ${transferTxs.length}`);
 
     // Create and propose the batch transactions
     await safeKit.createProposeBatches(transferTxs, 100);

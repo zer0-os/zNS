@@ -22,6 +22,7 @@ import { SafeKit } from "./safeKit";
 import { OperationType } from "@safe-global/types-kit";
 
 import * as hre from "hardhat";
+import { TLogger } from "@zero-tech/zdc";
 
 
 /**
@@ -292,6 +293,7 @@ export const LogExecution = (target : any, propertyKey : string, descriptor : Pr
 export const createTransfers = async (
   domainToken : ZNSDomainToken,
   domains : Array<Domain>,
+  logger : TLogger,
 ) : Promise<[Array<Tx>, Array<Domain>]> => {
   const transfers : Array<Tx> = [];
   const failedTransfers : Array<Domain> = [];
@@ -302,11 +304,30 @@ export const createTransfers = async (
     throw new Error("No Safe address set in environment variables. Set SAFE_ADDRESS environment variable");
   }
 
+  const erc721Interface = ZNSDomainToken__factory.createInterface();
+
+  let ctr = 0;
   for (const domain of domains) {
-    const transferEncoding = ZNSDomainToken__factory.createInterface().encodeFunctionData(
+    // Skip revoked early to avoid unnecessary RPC calls
+    if (domain.isRevoked) {
+      logger.info(`Skipping revoked domain ${domain.label} (${domain.id})`);
+      continue;
+    }
+
+    // TODO: REMOVE THIS FOR PROD !!!
+    // Test User A or Test User D
+    const receiver = ctr % 2 !== 0
+      ? "0xaE3153c9F5883FD2E78031ca2716520748c521dB"
+      : "0x0f3b88095e750bdD54A25B2109c7b166A34B6dDb";
+
+    const transferEncoding = erc721Interface.encodeFunctionData(
       "safeTransferFrom(address,address,uint256)",
-      [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
+      // TODO: REVERT THIS "ctr" CODE BACK FOR PROD !!!
+      [ safeAddress, receiver, domain.tokenId ]
+      // [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
     );
+
+    ctr++;
 
     // The `to` address must be the contract the multisig will call,
     // not the multisig itself
@@ -318,6 +339,7 @@ export const createTransfers = async (
     };
 
     try {
+      logger.info(`Estimating gas for transfer of ${domain.label} (${domain.tokenId}) to ${receiver}`);
       // If destination address is EOA or contract that implements `onERC721Received`
       // this should pass. Otherwise, we mark the transfer as a failure to avoid failing
       // the entire batch later
@@ -327,11 +349,12 @@ export const createTransfers = async (
         data: transferEncoding,
       });
 
-      if (!domain.isRevoked) {
-        transfers.push(tx);
-      }
+      transfers.push(tx);
 
     } catch (e) {
+      logger.error(
+        `Gas estimation failed for transfer of ${domain.label} (${domain.tokenId}) to ${receiver} with: ${e}`
+      );
       failedTransfers.push(domain);
     }
   }
