@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow, @typescript-eslint/no-shadow */
 import { Db } from "mongodb";
 import { ZeroAddress, ZeroHash } from "ethers";
 import { getDBAdapter } from "./database";
