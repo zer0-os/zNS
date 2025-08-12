@@ -374,6 +374,7 @@ export const createRevokes = async (
   domains : Array<Domain>,
   rootRegistrar : ZNSRootRegistrar,
   safeAddress : string,
+  logger : TLogger,
 ) : Promise<{
   revokeTxs : Array<Tx>;
   failedRevokes : Array<Domain>;
@@ -381,9 +382,11 @@ export const createRevokes = async (
   const revokeTxs : Array<Tx> = [];
   const failedRevokes : Array<Domain> = [];
 
+  const registrarInterface = ZNSRootRegistrar__factory.createInterface();
+
   // Create revoke batches for each domain
-  for (const domain of domains) {
-    const revokeEncoding = ZNSRootRegistrar__factory.createInterface().encodeFunctionData(
+  for (const [idx, domain] of domains.entries()) {
+    const revokeEncoding = registrarInterface.encodeFunctionData(
       "revokeDomain",
       [ domain.id ]
     );
@@ -405,7 +408,12 @@ export const createRevokes = async (
       // If gas estimation succeeded, the tx will pass
       // Push to tx array
       revokeTxs.push(tx);
+
+      logger.info(`Revoke transaction created for domain ${domain.label} (${domain.id}) at index ${idx}`);
     } catch (e) {
+      logger.error(
+        `Gas estimation failed for revoke of domain ${domain.label} (${domain.id}) at index ${idx} with: ${e}`
+      );
       failedRevokes.push(domain);
     }
   }

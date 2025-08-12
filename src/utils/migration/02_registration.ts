@@ -266,7 +266,10 @@ export const migration = async () => {
       domainsToRevoke,
       zns.rootRegistrar,
       safeAddress,
+      logger,
     );
+
+    logger.info(`Total revoke transactions to propose: ${revokeTxs.length}. Failed revokes: ${failedRevokes.length}`);
 
     if (failedRevokes.length > 0) {
       const result = await client.collection(INVALID_REVOKES_COLL_NAME).insertMany(failedRevokes);
@@ -283,7 +286,7 @@ export const migration = async () => {
     }
 
     // Create and propose the batch transactions
-    await safeKit.createProposeBatches(revokeTxs, 100);
+    await safeKit.createProposeBatches(revokeTxs, 80);
 
     break;
   default:

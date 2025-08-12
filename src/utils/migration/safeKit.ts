@@ -282,19 +282,6 @@ export class SafeKit {
     for (const [index, tx] of txData.entries()) {
       this.logger.debug(`Processing transaction at index: ${index}`);
 
-      try {
-        // Estimate individual tx to be sure the batch will pass.
-        // If one fails during execution of the batch, they will all fail.
-        await this.apiKit.estimateSafeTransaction(
-          this.config.safeAddress,
-          tx
-        );
-      } catch (e) {
-        // Proceed without adding failing tx to batch
-        this.logger.error("Error: Failed to estimate gas for tx", { index, to: tx.to, txData: tx.data });
-        continue;
-      }
-
       transactions.push(tx);
 
       if ((index + 1) % batchSize === 0 || index + 1 === txData.length) {
