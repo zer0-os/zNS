@@ -94,7 +94,7 @@ export const registerRootDomainBulk = async (
   config : IZNSCampaignConfig,
   tokenUri : string,
   distrConfig : IDistributionConfig,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {
   let index = 0;

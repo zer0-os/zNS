@@ -522,7 +522,7 @@ export const deployZNS = async ({
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
   rootPaymentType = PaymentType.STAKE,
-} : DeployZNSParams) => {
+} : DeployZNSParams) : Promise<IZNSContracts> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
@@ -631,7 +631,6 @@ export const deployZNS = async ({
     rootRegistrar,
     fixedPricer,
     subRegistrar,
-    zeroVault: zeroVaultAddress,
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury

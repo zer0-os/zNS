@@ -70,7 +70,7 @@ describe("ZNSDomainToken", () => {
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
     expect(await zns.domainToken.registry()).to.equal(await zns.registry.getAddress());
     const royaltyInfo = await zns.domainToken.royaltyInfo("0", ethers.parseEther("100"));
-    expect(royaltyInfo[0]).to.equal(zns.zeroVault);
+    expect(royaltyInfo[0]).to.equal(zeroVault.address);
     expect(royaltyInfo[1]).to.equal(ethers.parseEther("2"));
   });
 
@@ -618,7 +618,7 @@ describe("ZNSDomainToken", () => {
       // try pulling with incorrect tokenID - should return default values from initizlize()
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
 
-      expect(royaltyInfoNoID[0]).to.equal(zns.zeroVault);
+      expect(royaltyInfoNoID[0]).to.equal(zeroVault.address);
       expect(royaltyInfoNoID[1]).to.equal(assetPrice * DEFAULT_ROYALTY_FRACTION / DEFAULT_PERCENTAGE_BASIS);
 
       // try pulling with correct tokenID - should return correct amount

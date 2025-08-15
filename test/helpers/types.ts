@@ -1,31 +1,21 @@
 import {
-  ERC20Mock,
-  ZNSAccessController,
-  ZNSAddressResolver,
+
   ZNSAddressResolverUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
-  ZNSCurvePricer,
   ZNSCurvePricerUpgradeMock,
   ZNSCurvePricerUpgradeMock__factory,
-  ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
   ZNSFixedPricerUpgradeMock__factory,
-  ZNSRegistry,
   ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
   ZNSRootRegistrarUpgradeMock__factory,
-  ZNSStringResolver,
   ZNSStringResolverUpgradeMock,
   ZNSStringResolverUpgradeMock__factory,
-  ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
-  ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
@@ -78,21 +68,6 @@ export interface RegistrarConfig {
   treasuryAddress : string;
   domainTokenAddress : string;
   rootPaymentType : bigint;
-}
-
-export interface IZNSContractsLocal {
-  accessController : ZNSAccessController;
-  registry : ZNSRegistry;
-  domainToken : ZNSDomainToken;
-  meowToken : ERC20Mock;
-  addressResolver : ZNSAddressResolver;
-  stringResolver : ZNSStringResolver;
-  curvePricer : ZNSCurvePricer;
-  treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
-  fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
-  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
