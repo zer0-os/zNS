@@ -1460,11 +1460,11 @@ describe("ZNSRootRegistrar", () => {
 
       await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
 
-      for (const domain of registrations) {
+      for (const dom of registrations) {
         // get by `domainHash`
         const logs = await getDomainRegisteredEvents({
           zns,
-          domainHash: hashDomainLabel(domain.name),
+          domainHash: hashDomainLabel(dom.name),
         });
 
         // "DomainRegistered" event log
@@ -1479,12 +1479,12 @@ describe("ZNSRootRegistrar", () => {
         } = logs[0].args;
 
         expect(parentHash).to.eq(ethers.ZeroHash);
-        expect(domainHash).to.eq(hashDomainLabel(domain.name));
-        expect(label).to.eq(domain.name);
+        expect(domainHash).to.eq(hashDomainLabel(dom.name));
+        expect(label).to.eq(dom.name);
         expect(tokenOwner).to.eq(domainOwner);
-        expect(localTokenURI).to.eq(domain.tokenURI);
+        expect(localTokenURI).to.eq(dom.tokenURI);
         expect(domainOwner).to.eq(user.address);
-        expect(domainAddress).to.eq(domain.domainAddress);
+        expect(domainAddress).to.eq(dom.domainAddress);
       }
     });
 

@@ -17,17 +17,12 @@ import {
   AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   AC_WRONGADDRESS_ERR,
-  distrConfigEmpty,
-  paymentConfigEmpty,
   hashDomainLabel,
-  IFixedPriceConfig,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
 import { ethers } from "hardhat";
 import Domain from "./helpers/domain/domain";
 import { IZNSContracts } from "../src/deploy/campaign/types";
-import { ICurvePriceConfig } from "../src/deploy/missions/types";
-
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { expect } = require("chai");
