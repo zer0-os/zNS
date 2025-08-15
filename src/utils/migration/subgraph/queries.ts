@@ -25,6 +25,16 @@ export const getDomains = gql`
       isWorld
       isRevoked
       parentHash
+      amountPaidStake
+      amountPaidDirect
+      accessType
+      pricerContract
+      paymentType
+      subdomainCount
+      tokenId
+      tokenURI
+      creationBlock
+      creationTimestamp
       parent {
         id
         label
@@ -34,6 +44,13 @@ export const getDomains = gql`
         tokenId
         tokenURI
         parentHash
+        treasury {
+          paymentToken {
+            id
+            name
+            symbol
+          }
+        }
         parent {
           id
           label
@@ -43,6 +60,13 @@ export const getDomains = gql`
           tokenId
           tokenURI
           parentHash
+          treasury {
+            paymentToken {
+              id
+              name
+              symbol
+            }
+          }
           parent {
             id
             label
@@ -52,28 +76,22 @@ export const getDomains = gql`
             tokenId
             tokenURI
             parentHash
+            treasury {
+              paymentToken {
+                id
+                name
+                symbol
+              }
+            }
           }
         }
       }
-      accessType
-      pricerContract
-      paymentType
       curvePriceConfig {
         id
       }
       fixedPriceConfig {
         id
       }
-      subdomainCount
-      address
-      tokenId
-      tokenURI
-      treasury {
-        id
-        beneficiaryAddress
-      }
-      creationBlock
-      creationTimestamp
     }
   }
 `;

@@ -13,6 +13,8 @@ export interface Domain {
   parentHash : string;
   isWorld : boolean;
   isRevoked : boolean;
+  amountPaidStake : bigint;
+  amountPaidDirect : bigint;
   parent : Domain | null;
   accessType : string;
   paymentType : string;
@@ -45,7 +47,14 @@ interface FixedPriceConfig {
 interface Treasury {
   id : string;
   beneficiaryAddress : string;
-  domain : Domain; // cyclic?
+  paymentToken : PaymentToken;
+  domain : Domain;
+}
+
+interface PaymentToken {
+  id : string;
+  name : string;
+  symbol : string;
 }
 
 interface DomainToken {
