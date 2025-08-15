@@ -307,7 +307,6 @@ export const createTransfers = async (
 
   const erc721Interface = ZNSDomainToken__factory.createInterface();
 
-  let ctr = 0;
   for (const domain of domains) {
     // Skip revoked early to avoid unnecessary RPC calls
     if (domain.isRevoked) {
@@ -315,20 +314,12 @@ export const createTransfers = async (
       continue;
     }
 
-    // TODO: REMOVE THIS FOR PROD !!!
-    // Test User A or Test User D
-    const receiver = ctr % 2 !== 0
-      ? "0xaE3153c9F5883FD2E78031ca2716520748c521dB"
-      : "0x0f3b88095e750bdD54A25B2109c7b166A34B6dDb";
+    const receiver = domain.domainToken.owner.id;
 
     const transferEncoding = erc721Interface.encodeFunctionData(
       "safeTransferFrom(address,address,uint256)",
-      // TODO: REVERT THIS "ctr" CODE BACK FOR PROD !!!
-      [ safeAddress, receiver, domain.tokenId ]
-      // [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
+      [ safeAddress, domain.domainToken.owner.id, domain.tokenId ]
     );
-
-    ctr++;
 
     // The `to` address must be the contract the multisig will call,
     // not the multisig itself
