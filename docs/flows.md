@@ -9,8 +9,8 @@
 ## Domain Transfer
 ![Domain transfer flow](./img/transfer.jpg)
 
-## Domain Reclamation
-![Domain reclaim flow](./img/reclamation.jpg)
+## Domain Token Assignment
+![Token assignment flow](./img/token-assignment.jpg)
 
 ## Domain Revocation
 ![Domain revoke flow](./img/revoke.jpg)
