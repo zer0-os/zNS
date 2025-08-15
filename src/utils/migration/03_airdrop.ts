@@ -7,14 +7,14 @@ import { getLogger } from "../../deploy/logger/create-logger";
 const logger = getLogger();
 
 /**
- * Reqiuired .env vars
+ * Required .env vars
  * - SUBGRAPH_URL_DEV - The URL to read from `zns-mainnet-dev` subgraph
  * - DEFAULT_PAYMENT_TOKEN - The symbol of the default payment token used
  */
 const main = async () => {
   // Keeping as separate collections from the start will help downstream registration
-  const roots = await getDomains(true) as Domain[];
-  const subs = await getDomains(false) as Domain[];
+  const roots = await getDomains(true) as Array<Domain>;
+  const subs = await getDomains(false) as Array<Domain>;
 
   // Track totals owed to users for payments from domain registration
   const userAmounts = new Map<string, Map<string, bigint>>();
@@ -22,7 +22,7 @@ const main = async () => {
   // If payment token resolution fails for a domain we hold onto it for debugging
   const errorDomains = [];
 
-  // Keep tack of tokens as we iterate for later use
+  // Keep track of tokens as we iterate for later use
   const tokensMap : Map<string, string> = new Map();
 
   logger.info("Processing...");
