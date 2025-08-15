@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { deployZNS } from "./helpers/deploy/deploy-zns";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
-import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
+import { DeployZNSParams } from "./helpers/types";
 import { ZNSRegistry, ZNSRegistry__factory, ZNSRegistryUpgradeMock__factory } from "../typechain";
 import { ethers } from "hardhat";
 import {
@@ -18,6 +18,7 @@ import {
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require("@nomicfoundation/hardhat-chai-matchers");
@@ -32,7 +33,7 @@ describe("ZNSRegistry", () => {
   let mockResolver : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
   let wilderDomainHash : string;
 
   beforeEach(async () => {

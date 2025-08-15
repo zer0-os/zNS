@@ -19,8 +19,10 @@ import {
   ZNSFixedPricer,
   ZNSSubRegistrar,
   ERC20Mock,
+  ZNSStringResolver,
+  ZNSStringResolver__factory,
 } from "../../../typechain";
-import { DeployZNSParams, RegistrarConfig, IZNSContractsLocal } from "../types";
+import { DeployZNSParams, RegistrarConfig } from "../types";
 import * as hre from "hardhat";
 import { ethers, upgrades } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -45,6 +47,7 @@ import {
 import { DOMAIN_TOKEN_ROLE, REGISTRAR_ROLE } from "../../../src/deploy/constants";
 import { getProxyImplAddress } from "../utils";
 import { meowTokenName, meowTokenSymbol } from "../../../src/deploy/missions/contracts";
+import { IZNSContracts } from "../../../src/deploy/campaign/types";
 
 
 export const deployAccessController = async ({
@@ -242,6 +245,52 @@ export const deployAddressResolver = async (
   }
 
   return resolver as unknown as ZNSAddressResolver;
+};
+
+export const deployStringResolver = async (
+  deployer : SignerWithAddress,
+  accessControllerAddress : string,
+  registryAddress : string,
+  isTenderlyRun : boolean
+) : Promise<ZNSStringResolver> => {
+  const stringResolverFactory = new ZNSStringResolver__factory(deployer);
+
+  const resolver = await upgrades.deployProxy(
+    stringResolverFactory,
+    [
+      accessControllerAddress,
+      registryAddress,
+    ],
+    {
+      kind: "uups",
+    }
+  );
+
+  await resolver.waitForDeployment();
+
+  const proxyAddress = await resolver.getAddress();
+
+  if (isTenderlyRun) {
+    await hre.tenderly.verify({
+      name: erc1967ProxyName,
+      address: proxyAddress,
+    });
+
+    const impl = await getProxyImplAddress(proxyAddress);
+
+    await hre.tenderly.verify({
+      name: addressResolverName,
+      address: impl,
+    });
+
+    console.log(
+      `ZNSStringResolver deployed at:
+      proxy: ${proxyAddress}
+      implementation: ${impl}`
+    );
+  }
+
+  return resolver as unknown as ZNSStringResolver;
 };
 
 export const deployCurvePricer = async ({
@@ -473,13 +522,13 @@ export const deployZNS = async ({
   zeroVaultAddress = deployer.address,
   isTenderlyRun = false,
   rootPaymentType = PaymentType.STAKE,
-} : DeployZNSParams) : Promise<IZNSContractsLocal> => {
+} : DeployZNSParams) : Promise<IZNSContracts> => {
   // We deploy every contract as a UUPS proxy, but ZERO is already
   // deployed as a transparent proxy. This means that there is already
   // a proxy admin deployed to the network. Because future deployments
   // warn when this is the case, we silence the warning from hardhat here
   // to not clog the test output.
-  await hre.upgrades.silenceWarnings();
+  hre.upgrades.silenceWarnings();
 
   if (!zeroVaultAddress) {
     zeroVaultAddress = deployer.address;
@@ -513,6 +562,13 @@ export const deployZNS = async ({
   const meowTokenMock = await deployMeowToken(deployer, isTenderlyRun);
 
   const addressResolver = await deployAddressResolver(
+    deployer,
+    await accessController.getAddress(),
+    await registry.getAddress(),
+    isTenderlyRun
+  );
+
+  const stringResolver = await deployStringResolver(
     deployer,
     await accessController.getAddress(),
     await registry.getAddress(),
@@ -563,18 +619,18 @@ export const deployZNS = async ({
     isTenderlyRun,
   });
 
-  const znsContracts : IZNSContractsLocal = {
+  const znsContracts = {
     accessController,
     registry,
     domainToken,
     meowToken: meowTokenMock,
     addressResolver,
+    stringResolver,
     curvePricer,
     treasury,
     rootRegistrar,
     fixedPricer,
     subRegistrar,
-    zeroVaultAddress,
   };
 
   // Give 15 ZERO to the deployer and allowance to the treasury

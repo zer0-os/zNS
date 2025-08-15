@@ -20,9 +20,9 @@ import {
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   DEFAULT_FIXED_PRICER_CONFIG_BYTES,
 } from "./helpers/constants";
-import { IZNSContractsLocal } from "./helpers/types";
 import { getMongoAdapter } from "@zero-tech/zdc";
 import { ICurvePriceConfig } from "../src/deploy/missions/types";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -32,7 +32,7 @@ describe("ZNSCurvePricer", () => {
   let user : SignerWithAddress;
   let admin : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
 
   beforeEach(async () => {
     [

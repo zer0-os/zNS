@@ -7,7 +7,6 @@ import {
   encodePriceConfig,
   decodePriceConfig,
   DEFAULT_PROTOCOL_FEE_PERCENT,
-  IZNSContractsLocal,
   IFixedPriceConfig,
   INVALID_CONFIG_LENGTH_ERR,
   FEE_TOO_LARGE_ERR,
@@ -19,6 +18,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "./helpers/register-setup";
 import { expect } from "chai";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 
 describe("ZNSFixedPricer", () => {
@@ -27,7 +27,7 @@ describe("ZNSFixedPricer", () => {
   let user : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
   let domainHash : string;
 
   let parentPrice : bigint;

@@ -4,7 +4,7 @@ import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { IZNSCampaignConfig, IZNSContracts } from "../../src/deploy/campaign/types";
 import { ethers } from "ethers";
-import { IDistributionConfig, IZNSContractsLocal } from "./types";
+import { IDistributionConfig } from "./types";
 import { expect } from "chai";
 import { DEFAULT_CURVE_PRICE_CONFIG_BYTES, hashDomainLabel, paymentConfigEmpty } from ".";
 import { TLogger } from "@zero-tech/zdc";
@@ -12,7 +12,7 @@ import { TLogger } from "@zero-tech/zdc";
 
 export const approveBulk = async (
   signers : Array<SignerWithAddress>,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
 ) => {
   for (const signer of signers) {
     // if (hre.network.name === "hardhat") {
@@ -33,7 +33,7 @@ export const approveBulk = async (
 export const mintBulk = async (
   signers : Array<SignerWithAddress>,
   amount : bigint,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
 ) => {
   for (const signer of signers) {
     const tx = await zns.meowToken.connect(signer).mint(
@@ -46,7 +46,7 @@ export const mintBulk = async (
 
 export const getPriceBulk = async (
   domains : Array<string>,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
   parentHashes ?: Array<string>,
 ) => {
   let index = 0;
@@ -94,7 +94,7 @@ export const registerRootDomainBulk = async (
   config : IZNSCampaignConfig,
   tokenUri : string,
   distrConfig : IDistributionConfig,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
   logger : TLogger,
 ) : Promise<void> => {
   let index = 0;
@@ -144,7 +144,7 @@ export const registerSubdomainBulk = async (
   domainAddress : string,
   tokenUri : string,
   distConfig : IDistributionConfig,
-  zns : IZNSContractsLocal | IZNSContracts,
+  zns : IZNSContracts,
   logger : TLogger,
 ) => {
   let index = 0;

@@ -1,7 +1,6 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { TypedContractEvent, TypedEventLog } from "../../typechain/common";
-import { IZNSContractsLocal } from "./types";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 
@@ -12,7 +11,7 @@ export const getDomainRegisteredEvents = async ({
   registrant = undefined,
   blockRange = 50,
 } : {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   domainHash ?: string | undefined;
   tokenId ?: bigint | undefined;
   registrant ?: string | undefined;
@@ -37,7 +36,7 @@ export const getDomainHashFromEvent = async ({
   user,
   tokenOwner,
 } : {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   user : SignerWithAddress;
   tokenOwner ?: string;
 }) : Promise<string> => {

@@ -22,7 +22,6 @@ import {
   ERC721_NOT_APPROVED_ERR,
   ZERO_ADDRESS_ERR,
   DeployZNSParams,
-  IZNSContractsLocal,
   getProxyImplAddress,
   ALREADY_FULL_OWNER_ERR,
   NOT_FULL_OWNER_ERR,
@@ -32,6 +31,7 @@ import {
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 
 describe("ZNSDomainToken", () => {
@@ -40,15 +40,17 @@ describe("ZNSDomainToken", () => {
   let mockRegistrar : SignerWithAddress;
   let mockRegistry : SignerWithAddress;
   let beneficiary : SignerWithAddress;
+  let zeroVault : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
   let deployParams : DeployZNSParams;
 
   const randomTokenURI = "https://www.zNS.domains/1a3c2f5";
 
   beforeEach(async () => {
-    [deployer, caller, mockRegistrar, mockRegistry, beneficiary] = await hre.ethers.getSigners();
+    [deployer, caller, mockRegistrar, mockRegistry, beneficiary, zeroVault] = await hre.ethers.getSigners();
     deployParams = {
+      zeroVaultAddress: zeroVault.address,
       deployer,
       governorAddresses: [deployer.address],
       adminAddresses: [deployer.address],
@@ -68,7 +70,7 @@ describe("ZNSDomainToken", () => {
     expect(await zns.domainToken.symbol()).to.equal(ZNS_DOMAIN_TOKEN_SYMBOL);
     expect(await zns.domainToken.registry()).to.equal(await zns.registry.getAddress());
     const royaltyInfo = await zns.domainToken.royaltyInfo("0", ethers.parseEther("100"));
-    expect(royaltyInfo[0]).to.equal(zns.zeroVaultAddress);
+    expect(royaltyInfo[0]).to.equal(zeroVault.address);
     expect(royaltyInfo[1]).to.equal(ethers.parseEther("2"));
   });
 
@@ -77,7 +79,7 @@ describe("ZNSDomainToken", () => {
       deployer.address,
       ZNS_DOMAIN_TOKEN_NAME,
       ZNS_DOMAIN_TOKEN_SYMBOL,
-      zns.zeroVaultAddress,
+      zeroVault,
       DEFAULT_ROYALTY_FRACTION,
       await zns.registry.getAddress()
     )).to.be.revertedWithCustomError(zns.domainToken, INITIALIZED_ERR);
@@ -93,7 +95,7 @@ describe("ZNSDomainToken", () => {
         deployer.address,
         ZNS_DOMAIN_TOKEN_NAME,
         ZNS_DOMAIN_TOKEN_SYMBOL,
-        zns.zeroVaultAddress,
+        zeroVault,
         DEFAULT_ROYALTY_FRACTION,
         await zns.registry.getAddress()
       )
@@ -616,7 +618,7 @@ describe("ZNSDomainToken", () => {
       // try pulling with incorrect tokenID - should return default values from initizlize()
       const royaltyInfoNoID = await zns.domainToken.royaltyInfo("0", assetPrice);
 
-      expect(royaltyInfoNoID[0]).to.equal(zns.zeroVaultAddress);
+      expect(royaltyInfoNoID[0]).to.equal(zeroVault.address);
       expect(royaltyInfoNoID[1]).to.equal(assetPrice * DEFAULT_ROYALTY_FRACTION / DEFAULT_PERCENTAGE_BASIS);
 
       // try pulling with correct tokenID - should return correct amount

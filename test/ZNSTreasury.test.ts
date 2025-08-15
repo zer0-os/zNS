@@ -14,13 +14,14 @@ import {
   DEFAULT_CURVE_PRICE_CONFIG_BYTES,
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
-import { DeployZNSParams, IZNSContractsLocal } from "./helpers/types";
+import { DeployZNSParams } from "./helpers/types";
 import { ethers } from "hardhat";
 import { hashDomainLabel, hashSubdomainName } from "./helpers/hashing";
 import { ADMIN_ROLE, REGISTRAR_ROLE, GOVERNOR_ROLE } from "../src/deploy/constants";
 import { ZNSTreasury, ZNSTreasury__factory, ZNSTreasuryUpgradeMock__factory } from "../typechain";
 import { getProxyImplAddress } from "./helpers/utils";
 import { defaultRootRegistration } from "./helpers/register-setup";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -33,7 +34,7 @@ describe("ZNSTreasury", () => {
   let zeroVault : SignerWithAddress;
   let mockRegistrar : SignerWithAddress;
   let randomAcc : SignerWithAddress;
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
 
   const domainName = "wilderrr";
   const domainHash = hashDomainLabel(domainName);
@@ -94,7 +95,7 @@ describe("ZNSTreasury", () => {
 
     expect(registry).to.eq(await zns.registry.getAddress());
     expect(token).to.eq(await zns.meowToken.getAddress());
-    expect(beneficiary).to.eq(zns.zeroVaultAddress);
+    expect(beneficiary).to.eq(zeroVault);
     expect(accessController).to.eq(await zns.accessController.getAddress());
   });
 
@@ -102,7 +103,7 @@ describe("ZNSTreasury", () => {
     const tx = zns.treasury.initialize(
       await zns.registry.getAddress(),
       await zns.meowToken.getAddress(),
-      zns.zeroVaultAddress,
+      zeroVault,
       await zns.accessController.getAddress()
     );
     await expect(tx).to.be.revertedWithCustomError(
@@ -120,7 +121,7 @@ describe("ZNSTreasury", () => {
       implContract.initialize(
         await zns.registry.getAddress(),
         await zns.meowToken.getAddress(),
-        zns.zeroVaultAddress,
+        zeroVault,
         await zns.accessController.getAddress()
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
@@ -132,7 +133,7 @@ describe("ZNSTreasury", () => {
       accessControllerAddress: await zns.accessController.getAddress(),
       registryAddress: await zns.registry.getAddress(),
       zTokenMockAddress: await zns.meowToken.getAddress(),
-      zeroVaultAddress: zns.zeroVaultAddress,
+      zeroVaultAddress: zeroVault.address,
       isTenderlyRun: false,
     };
 

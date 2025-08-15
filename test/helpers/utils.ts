@@ -15,10 +15,10 @@ import {
   IDomainConfigForTest,
   IFullDistributionConfig,
   IPaymentConfig,
-  IZNSContractsLocal,
 } from "./types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 export const getProxyImplAddress = async (proxyAddress : string) => {
   let impl;
@@ -52,7 +52,7 @@ export const getRandomString = (length : number) => {
 };
 
 const createConfig = async (
-  zns : IZNSContractsLocal,
+  zns : IZNSContracts,
   args : CreateConfigArgs
 ) : Promise<IDomainConfigForTest> => {
   let distrConfigToUse : IDistributionConfig;
@@ -129,11 +129,11 @@ const createConfig = async (
 
 export class Utils {
   hre : HardhatRuntimeEnvironment;
-  zns : IZNSContractsLocal;
+  zns : IZNSContracts;
 
   constructor (
     hre : HardhatRuntimeEnvironment,
-    zns : IZNSContractsLocal
+    zns : IZNSContracts
   ) {
     this.hre = hre;
     this.zns = zns;

@@ -1,33 +1,26 @@
 import {
-  ERC20Mock,
-  ZNSAccessController,
-  ZNSAddressResolver,
+
   ZNSAddressResolverUpgradeMock,
   ZNSAddressResolverUpgradeMock__factory,
-  ZNSCurvePricer,
   ZNSCurvePricerUpgradeMock,
   ZNSCurvePricerUpgradeMock__factory,
-  ZNSDomainToken,
   ZNSDomainTokenUpgradeMock,
   ZNSDomainTokenUpgradeMock__factory,
-  ZNSFixedPricer,
   ZNSFixedPricerUpgradeMock,
   ZNSFixedPricerUpgradeMock__factory,
-  ZNSRegistry,
   ZNSRegistryUpgradeMock,
   ZNSRegistryUpgradeMock__factory,
-  ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
-  ZNSSubRegistrar,
+  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSStringResolverUpgradeMock,
+  ZNSStringResolverUpgradeMock__factory,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
-  ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../../src/deploy/missions/types";
 import { Addressable } from "ethers";
 import { IZNSContracts } from "../../src/deploy/campaign/types";
 
@@ -68,11 +61,6 @@ export type ZNSContractMock =
   ZNSDomainTokenUpgradeMock |
   ZNSStringResolverUpgradeMock;
 
-export interface IFixedPriceConfig {
-  price : bigint;
-  feePercentage : bigint;
-}
-
 export interface RegistrarConfig {
   registryAddress : string;
   curvePricerAddress : string;
@@ -80,20 +68,6 @@ export interface RegistrarConfig {
   treasuryAddress : string;
   domainTokenAddress : string;
   rootPaymentType : bigint;
-}
-
-export interface IZNSContractsLocal {
-  accessController : ZNSAccessController;
-  registry : ZNSRegistry;
-  domainToken : ZNSDomainToken;
-  meowToken : ERC20Mock;
-  addressResolver : ZNSAddressResolver;
-  curvePricer : ZNSCurvePricer;
-  treasury : ZNSTreasury;
-  rootRegistrar : ZNSRootRegistrar;
-  fixedPricer : ZNSFixedPricer;
-  subRegistrar : ZNSSubRegistrar;
-  zeroVaultAddress : string;
 }
 
 export interface DeployZNSParams {
@@ -146,14 +120,14 @@ export interface IDomainConfigForTest extends ConfigArgsBase {
 }
 
 export interface IRegisterWithSetupArgs extends ConfigArgsBase {
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   fullConfig ?: IFullDistributionConfig;
   setConfigs ?: boolean;
 }
 
 export interface DefaultRootRegistrationArgs {
   user : SignerWithAddress;
-  zns : IZNSContractsLocal | IZNSContracts;
+  zns : IZNSContracts;
   domainName : string;
   tokenOwner ?: string;
   domainContent ?: string;

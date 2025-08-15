@@ -2,10 +2,8 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import {
   IDomainConfigForTest,
-  IFixedPriceConfig,
   IPathRegResult,
   ISubRegistrarConfig,
-  IZNSContractsLocal,
 } from "./helpers/types";
 import {
   AccessType,
@@ -59,7 +57,8 @@ import {
 } from "../typechain";
 import { deployCustomDecToken } from "./helpers/deploy/mocks";
 import { getProxyImplAddress } from "./helpers/utils";
-import { ICurvePriceConfig } from "../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig } from "../src/deploy/missions/types";
+import { IZNSContracts } from "../src/deploy/campaign/types";
 
 
 describe("ZNSSubRegistrar", () => {
@@ -80,7 +79,7 @@ describe("ZNSSubRegistrar", () => {
   let operator : SignerWithAddress;
   let multiOwner : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
 
   let rootHash : string;
@@ -1173,6 +1172,7 @@ describe("ZNSSubRegistrar", () => {
       regResults = await registerDomainPath({
         zns,
         domainConfigs,
+        zeroVaultAddress: zeroVault.address,
       });
 
       assert.equal(regResults.length, domainConfigs.length);
@@ -1565,6 +1565,7 @@ describe("ZNSSubRegistrar", () => {
       const newRegResults = await registerDomainPath({
         zns,
         domainConfigs: newConfigs,
+        zeroVaultAddress: zeroVault.address,
       });
 
       await validatePathRegistration({
@@ -1720,6 +1721,7 @@ describe("ZNSSubRegistrar", () => {
       const newResult = await registerDomainPath({
         zns,
         domainConfigs: newConfig,
+        zeroVaultAddress: zeroVault.address,
       });
 
       await validatePathRegistration({
@@ -3060,6 +3062,7 @@ describe("ZNSSubRegistrar", () => {
       regResults = await registerDomainPath({
         zns,
         domainConfigs,
+        zeroVaultAddress: zeroVault.address,
       });
     });
 
@@ -3181,6 +3184,7 @@ describe("ZNSSubRegistrar", () => {
             fullConfig: FULL_DISTR_CONFIG_EMPTY,
           },
         ],
+        zeroVaultAddress: zeroVault.address,
       });
 
       // try to register child
@@ -3623,6 +3627,7 @@ describe("ZNSSubRegistrar", () => {
       regResults = await registerDomainPath({
         zns,
         domainConfigs,
+        zeroVaultAddress: zeroVault.address,
       });
     });
 

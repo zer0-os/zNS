@@ -38,15 +38,13 @@ import {
   createEncodeFixedPriceConfig,
 } from "./helpers";
 import * as ethers from "ethers";
-import { defaultRootRegistration, defaultSubdomainRegistration, registrationWithSetup } from "./helpers/register-setup";
+import { defaultRootRegistration } from "./helpers/register-setup";
 import { checkBalance } from "./helpers/balances";
 import { decodePriceConfig, encodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "./helpers/pricing";
 import { ADMIN_ROLE, GOVERNOR_ROLE, DOMAIN_TOKEN_ROLE } from "../src/deploy/constants";
 import {
   IDistributionConfig,
-  IFixedPriceConfig,
   IRootDomainConfig,
-  IZNSContractsLocal,
 } from "./helpers/types";
 import { getDomainHashFromEvent, getDomainRegisteredEvents } from "./helpers/events";
 import {
@@ -60,8 +58,9 @@ import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { getProxyImplAddress } from "./helpers/utils";
 import { getConfig } from "../src/deploy/campaign/get-config";
 import { ZeroHash } from "ethers";
-import { ICurvePriceConfig  } from "../src/deploy/missions/types";
+import { ICurvePriceConfig, IFixedPriceConfig  } from "../src/deploy/missions/types";
 import { IZNSContracts } from "../src/deploy/campaign/types";
+import Domain from "./helpers/domain/domain";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -73,13 +72,16 @@ describe("ZNSRootRegistrar", () => {
   let admin : SignerWithAddress;
   let randomUser : SignerWithAddress;
 
-  let zns : IZNSContractsLocal | IZNSContracts;
+  let zns : IZNSContracts;
   let zeroVault : SignerWithAddress;
   let operator : SignerWithAddress;
   let userBalanceInitial : bigint;
 
   let mongoAdapter : MongoDBAdapter;
 
+  let domain : Domain;
+
+  const tokenURI = "https://example.com/817c64af";
   const defaultDomain = normalizeName("wilder");
 
   let directPaymentDomainHash : string;
@@ -119,41 +121,12 @@ describe("ZNSRootRegistrar", () => {
 
   afterEach(async () => {
     await mongoAdapter.dropDB();
+
+    // TODO dom: remove
+    domain = undefined as unknown as Domain;
   });
 
   it("Gas tests", async () => {
-    const tokenURI = "https://example.com/817c64af";
-    const distrConfig : IDistributionConfig = {
-      pricerContract: await zns.curvePricer.getAddress(),
-      paymentType: PaymentType.STAKE,
-      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-      accessType: AccessType.OPEN,
-    };
-
-    await defaultRootRegistration({
-      user: deployer,
-      zns,
-      domainName: defaultDomain,
-      tokenURI,
-      distrConfig,
-    });
-
-    const domainHash = await getDomainHashFromEvent({
-      zns,
-      user: deployer,
-    });
-
-    // Registering as deployer (owner of parent) and user is different gas values
-    await defaultSubdomainRegistration({
-      user: deployer,
-      zns,
-      parentHash: domainHash,
-      tokenOwner: ethers.ZeroAddress,
-      subdomainLabel: "subdomain",
-      tokenURI,
-      distrConfig,
-    });
-
     const candidates = [
       deployer.address,
       user.address,
@@ -170,15 +143,35 @@ describe("ZNSRootRegistrar", () => {
       true,
     ];
 
-    await zns.subRegistrar.updateMintlistForDomain(
-      domainHash,
+    const distrConfig : IDistributionConfig = {
+      pricerContract: await zns.curvePricer.getAddress(),
+      paymentType: PaymentType.STAKE,
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+      accessType: AccessType.OPEN,
+    };
+
+    domain = new Domain({
+      zns,
+      domainConfig: {
+        owner: deployer,
+        label: defaultDomain,
+        tokenOwner: ethers.ZeroAddress,
+        parentHash: ethers.ZeroHash,
+        distrConfig,
+        paymentConfig: paymentConfigEmpty,
+        domainAddress: ethers.ZeroAddress,
+        tokenURI: DEFAULT_TOKEN_URI,
+      },
+    });
+    await domain.register();
+
+    await domain.updateMintlistForDomain(
       candidates,
       allowed
     );
   });
 
   it("Should NOT initialize the implementation contract", async () => {
-
     const otherFact = await hre.ethers.getContractFactory(
       "ZNSRootRegistrar",
       deployer
@@ -407,149 +400,75 @@ describe("ZNSRootRegistrar", () => {
   });
 
   describe("Registers a root domain", () => {
-    it("Can NOT register a TLD with an empty name", async () => {
+    it("Can NOT register a root domain with an empty name", async () => {
       const emptyName = "";
 
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: deployer,
+          label: emptyName,
+        },
+      });
+
       await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: emptyName,
-        })
+        domain.register()
       ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LENGTH_ERR);
     });
 
-    it("Can register a TLD with characters [a-z0-9-]", async () => {
-      const letters = "world";
-      const lettersHash = hashDomainLabel(letters);
+    it("Can register a root domain with characters [a-z0-9-]", async () => {
+      const labels = ["world", "0x0dwidler0x0", "0x0-dwidler-0x0"];
 
-      const alphaNumeric = "0x0dwidler0x0";
-      const alphaNumericHash = hashDomainLabel(alphaNumeric);
+      for (const label of labels) {
+        const args = {
+          zns,
+          domainConfig: {
+            owner: deployer,
+            label,
+          },
+        };
 
-      const withHyphen = "0x0-dwidler-0x0";
-      const withHyphenHash = hashDomainLabel(withHyphen);
-
-      const tx1 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: letters,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      await expect(tx1).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        lettersHash,
-        letters,
-        BigInt(lettersHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
-
-      const tx2 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: alphaNumeric,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      await expect(tx2).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        alphaNumericHash,
-        alphaNumeric,
-        BigInt(alphaNumericHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
-
-      const tx3 = zns.rootRegistrar.connect(deployer).registerRootDomain({
-        name: withHyphen,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
-        },
-      });
-
-      await expect(tx3).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        withHyphenHash,
-        withHyphen,
-        BigInt(withHyphenHash),
-        DEFAULT_TOKEN_URI,
-        deployer.address,
-        deployer.address,
-        ethers.ZeroAddress,
-      );
+        domain = new Domain(args);
+        await domain.registerAndValidateDomain();
+      }
     });
 
     it("Fails for domains that use any invalid character", async () => {
       // Valid names must match the pattern [a-z0-9]
-      const nameA = "WILDER";
-      const nameB = "!?w1Id3r!?";
-      const nameC = "!%$#^*?!#👍3^29";
-      const nameD = "wo.rld";
+      const labels = ["WILDER", "!?w1Id3r!", "?", "!%$#^*?!#👍3^29", "wo.rld"];
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
+      for (const label of labels) {
+        const args = {
           zns,
-          domainName: nameA,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+          domainConfig: {
+            owner: deployer,
+            label,
+          },
+        };
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameB,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+        domain = new Domain(args);
 
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameC,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
-
-      await expect(
-        defaultRootRegistration({
-          user: deployer,
-          zns,
-          domainName: nameD,
-        })
-      ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+        await expect(
+          domain.register()
+        ).to.be.revertedWithCustomError(zns.curvePricer, INVALID_LABEL_ERR);
+      }
     });
 
     it("Fails when registering during a registration pause when called publicly", async () => {
       await zns.rootRegistrar.connect(admin).pauseRegistration();
       expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
 
-      const tx = defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+        },
       });
 
-      await expect(tx).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
+      await expect(
+        domain.register()
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, REGISTRATION_PAUSED_ERR);
 
       await zns.rootRegistrar.connect(admin).unpauseRegistration();
     });
@@ -558,54 +477,30 @@ describe("ZNSRootRegistrar", () => {
       await zns.rootRegistrar.connect(admin).pauseRegistration();
       expect(await zns.rootRegistrar.registrationPaused()).to.be.true;
 
-      await registrationWithSetup({
-        user: admin,
+      domain = new Domain({
         zns,
-        domainLabel: defaultDomain,
-        setConfigs: false,
+        domainConfig: {
+          owner: admin,
+          label: defaultDomain,
+        },
       });
-
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user: admin,
-      });
-
-      const owner = await zns.registry.getDomainOwner(domainHash);
-      expect(owner).to.eq(admin.address);
+      await domain.registerAndValidateDomain();
 
       await zns.rootRegistrar.connect(admin).unpauseRegistration();
     });
 
     // eslint-disable-next-line max-len
     it("Successfully registers a domain without a resolver or resolver content and fires a #DomainRegistered event", async () => {
-      const tokenURI = "https://example.com/817c64af";
-      const tx = await zns.rootRegistrar.connect(user).registerRootDomain({
-        name: defaultDomain,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
         },
       });
 
-      const hashFromTS = hashDomainLabel(defaultDomain);
-
-      await expect(tx).to.emit(zns.rootRegistrar, "DomainRegistered").withArgs(
-        ethers.ZeroHash,
-        hashFromTS,
-        defaultDomain,
-        BigInt(hashFromTS),
-        tokenURI,
-        user.address,
-        user.address,
-        ethers.ZeroAddress,
-      );
-
-      const tokenURISC = await zns.domainToken.tokenURI(hashFromTS);
-      expect(tokenURISC).to.eq(tokenURI);
+      await domain.registerAndValidateDomain();
     });
 
     it("Successfully registers a domain with distrConfig and adds it to state properly", async () => {
@@ -616,58 +511,42 @@ describe("ZNSRootRegistrar", () => {
         paymentType: PaymentType.DIRECT,
       };
 
-      const tokenURI = "https://example.com/817c64af";
-
-      await zns.rootRegistrar.connect(user).registerRootDomain({
-        name: defaultDomain,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI,
-        distrConfig,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+          distrConfig,
         },
       });
 
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      await domain.registerAndValidateDomain();
 
       const {
         pricerContract,
         accessType,
         paymentType,
-      } = await zns.subRegistrar.distrConfigs(domainHash);
+      } = await zns.subRegistrar.distrConfigs(domain.hash);
 
       expect(pricerContract).to.eq(distrConfig.pricerContract);
       expect(paymentType).to.eq(distrConfig.paymentType);
       expect(accessType).to.eq(distrConfig.accessType);
-
-      const tokenURISC = await zns.domainToken.tokenURI(domainHash);
-      expect(tokenURISC).to.eq(tokenURI);
     });
 
     it("Registers a domain with assigning token owner to a different address", async () => {
-      const tokenOwner = randomUser.address;
-
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        tokenOwner,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenOwner: randomUser.address,
+          tokenURI,
+        },
       });
+      await domain.registerAndValidateDomain(randomUser);
 
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
-
-      const { owner } = await zns.registry.getDomainRecord(domainHash);
-      expect(owner).to.eq(user.address);
-      const tokenOwnerFromContr = await zns.domainToken.ownerOf(domainHash);
-      expect(tokenOwnerFromContr).to.eq(tokenOwner);
+      expect(await domain.ownerOfToken()).to.eq(randomUser.address);
     });
 
     it("Stakes and saves the correct amount and token, takes the correct fee and sends fee to Zero Vault", async () => {
@@ -675,15 +554,15 @@ describe("ZNSRootRegistrar", () => {
       const balanceBeforeVault = await zns.meowToken.balanceOf(zeroVault.address);
 
       // Deploy "wilder" with default configuration
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      await domain.register();
 
       const {
         totalPrice,
@@ -706,7 +585,7 @@ describe("ZNSRootRegistrar", () => {
         shouldDecrease: false,
       });
 
-      const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domain.hash);
 
       expect(staked).to.eq(expectedPrice);
       expect(token).to.eq(await zns.meowToken.getAddress());
@@ -723,18 +602,17 @@ describe("ZNSRootRegistrar", () => {
 
       const directPaymentDomainName = "direct-payment";
 
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: directPaymentDomainName,
+        domainConfig: {
+          owner: user,
+          label: directPaymentDomainName,
+          tokenURI,
+        },
       });
+      await domain.register();
 
-      directPaymentDomainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
-
-      const { amount: staked, token } = await zns.treasury.stakedForDomain(directPaymentDomainHash);
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domain.hash);
       expect(staked).to.eq(0n);
       expect(token).to.eq(hre.ethers.ZeroAddress);
 
@@ -838,27 +716,20 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Sets the correct data in Registry", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
+      // validates in Registry and events
+      await domain.registerAndValidateDomain();
 
       const namehashRef = hashDomainLabel(defaultDomain);
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
 
-      expect(domainHash).to.eq(namehashRef);
-
-      const {
-        owner: ownerFromReg,
-        resolver: resolverFromReg,
-      } = await zns.registry.getDomainRecord(domainHash);
-
-      expect(ownerFromReg).to.eq(user.address);
-      expect(resolverFromReg).to.eq(await zns.addressResolver.getAddress());
+      expect(domain.hash).to.eq(namehashRef);
     });
 
     it("Fails when the user does not have enough funds", async () => {
@@ -885,89 +756,67 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Disallows creation of a duplicate domain", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
+      await domain.register();
 
-      const failTx = defaultRootRegistration({
-        user: deployer,
-        zns,
-        domainName: defaultDomain,
-      });
-
-      await expect(failTx).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
+      // Try to register the same domain again
+      await expect(
+        domain.register()
+      ).to.be.revertedWithCustomError(zns.rootRegistrar, DOMAIN_EXISTS_ERR);
     });
 
     it("Successfully registers a domain without resolver content", async () => {
-      const tx = zns.rootRegistrar.connect(user).registerRootDomain({
-        name: defaultDomain,
-        domainAddress: ethers.ZeroAddress,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI: DEFAULT_TOKEN_URI,
-        distrConfig: distrConfigEmpty,
-        paymentConfig: {
-          token: ethers.ZeroAddress,
-          beneficiary: ethers.ZeroAddress,
+      domain = new Domain({
+        zns,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI: DEFAULT_TOKEN_URI,
         },
       });
 
-      await expect(tx).to.not.be.reverted;
-    });
-
-    it("Records the correct domain hash", async () => {
-      await defaultRootRegistration({
-        user,
-        zns,
-        domainName: defaultDomain,
-      });
-
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
-
-      const exists = await zns.registry.exists(domainHash);
-      expect(exists).to.be.true;
-      expect(domainHash).to.eq(hashDomainLabel(defaultDomain));
+      await expect(
+        domain.register()
+      ).to.not.be.reverted;
     });
 
     it("Creates and finds the correct tokenId", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+        },
       });
+      await domain.register();
 
-      const tokenId = BigInt(
-        await getDomainHashFromEvent({
-          zns,
-          user,
-        })
-      );
-      const owner = await zns.domainToken.ownerOf(tokenId);
+      const owner = await zns.domainToken.ownerOf(await domain.tokenId);
       expect(owner).to.eq(user.address);
     });
 
     it("Resolves the correct address from the domain", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        domainContent: await zns.rootRegistrar.getAddress(),
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          domainAddress: await zns.rootRegistrar.getAddress(),
+        },
       });
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      await domain.register();
 
-      const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domainHash);
+      const resolvedAddress = await zns.addressResolver.resolveDomainAddress(domain.hash);
       expect(resolvedAddress).to.eq(await zns.rootRegistrar.getAddress());
     });
 
     it("Should NOT charge any tokens if price and/or stake fee is 0", async () => {
-
       const localConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };
       localConfig.maxPrice = 0n;
 
@@ -1012,7 +861,6 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Sets the payment config when provided with the domain registration", async () => {
-      const tokenURI = "https://example.com/817c64af";
       const distrConfig : IDistributionConfig = {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
@@ -1020,26 +868,27 @@ describe("ZNSRootRegistrar", () => {
         priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       };
 
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        tokenURI,
-        distrConfig,
-        paymentConfig: {
-          token: await zns.meowToken.getAddress(),
-          beneficiary: user.address,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+          distrConfig,
+          paymentConfig: {
+            token: await zns.meowToken.getAddress(),
+            beneficiary: user.address,
+          },
         },
       });
+      await domain.register();
 
-      const domainHash = hashDomainLabel(defaultDomain);
-      const config = await zns.treasury.paymentConfigs(domainHash);
-      expect(config.token).to.eq(await zns.meowToken.getAddress());
-      expect(config.beneficiary).to.eq(user.address);
+      const { token, beneficiary } = await zns.treasury.paymentConfigs(domain.hash);
+      expect(token).to.eq(await zns.meowToken.getAddress());
+      expect(beneficiary).to.eq(user.address);
     });
 
     it("Does not set the payment config when the beneficiary is the zero address", async () => {
-      const tokenURI = "https://example.com/817c64af";
       const distrConfig : IDistributionConfig = {
         pricerContract: await zns.curvePricer.getAddress(),
         paymentType: PaymentType.STAKE,
@@ -1047,89 +896,105 @@ describe("ZNSRootRegistrar", () => {
         priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       };
 
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        tokenOwner: ethers.ZeroAddress,
-        tokenURI,
-        distrConfig,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          distrConfig,
+          paymentConfig: {
+            token: ethers.ZeroAddress,
+            beneficiary: ethers.ZeroAddress,
+          },
+        },
       });
+      await domain.register();
 
-      const domainHash = hashDomainLabel(defaultDomain);
-      const config = await zns.treasury.paymentConfigs(domainHash);
-      expect(config.token).to.eq(ethers.ZeroAddress);
-      expect(config.beneficiary).to.eq(ethers.ZeroAddress);
+      const { token, beneficiary } = await zns.treasury.paymentConfigs(domain.hash);
+      expect(token).to.eq(ethers.ZeroAddress);
+      expect(beneficiary).to.eq(ethers.ZeroAddress);
     });
   });
 
   describe("Assigning Domain Token Owners - #assignDomainToken()", () => {
     it("Can assign token to another address and reclaim token if domain hash is owned", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
-      const tokenId = BigInt(domainHash);
-      const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
+      await domain.register();
+
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domain.hash);
 
       // Change domain owner to different address
-      await zns.registry.connect(deployer).updateDomainOwner(domainHash, user.address);
+      await zns.registry.connect(deployer).updateDomainOwner(domain.hash, user.address);
 
       // Verify owner in Registry is changed
-      const originalOwner = await zns.registry.getDomainOwner(domainHash);
-      expect(originalOwner).to.equal(user.address);
+      expect(await domain.ownerOfHash()).to.equal(user.address);
 
       // Reclaim the Domain Token
-      await zns.rootRegistrar.connect(user).assignDomainToken(domainHash, user.address);
+      await domain.assignDomainToken(user.address, user);
 
       // Verify domain token is now owned by new hash owner
-      const owner = await zns.domainToken.ownerOf(tokenId);
-      expect(owner).to.equal(user.address);
+      expect(await domain.ownerOfToken()).to.equal(user.address);
 
       // Verify domain is still owned in registry
-      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
-      expect(registryOwner).to.equal(user.address);
+      expect(await domain.ownerOfHash()).to.equal(user.address);
 
       // Verify same amount is staked
-      const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
+      const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domain.hash);
       expect(staked).to.equal(stakedAfterReclaim);
       expect(tokenAfterReclaim).to.equal(await zns.meowToken.getAddress());
       expect(token).to.equal(tokenAfterReclaim);
     });
 
     it("Assigning domain token emits DomainTokenReassigned event", async () => {
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+        },
       });
+      await domain.register();
 
       // Assign the Domain token
-      const tx = zns.rootRegistrar.connect(deployer).assignDomainToken(domainHash, user.address);
-      await expect(tx).to.emit(zns.rootRegistrar, "DomainTokenReassigned").withArgs(
-        domainHash,
+      await expect(
+        domain.assignDomainToken(user.address, deployer)
+      ).to.emit(zns.rootRegistrar, "DomainTokenReassigned").withArgs(
+        domain.hash,
         user.address
       );
     });
 
     it("Cannot assign token if hash is not owned", async () => {
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
+      await domain.register();
+
       // Reclaim the Domain
-      const tx = zns.rootRegistrar.connect(user).assignDomainToken(domainHash, user.address);
-      await expect(tx).to.be.revertedWithCustomError(
+      await expect(
+        domain.assignDomainToken(user.address, user)
+      ).to.be.revertedWithCustomError(
         zns.rootRegistrar,
         NOT_AUTHORIZED_ERR,
-      ).withArgs(user.address, domainHash);
+      ).withArgs(user.address, domain.hash);
 
       // Verify domain is not owned in registry
-      const registryOwner = await zns.registry.connect(user).getDomainOwner(domainHash);
-      expect(registryOwner).to.equal(deployer.address);
+      expect(
+        await domain.ownerOfHash()
+      ).to.equal(deployer.address);
     });
 
     it("Cannot assign token if domain does not exist", async () => {
@@ -1147,44 +1012,42 @@ describe("ZNSRootRegistrar", () => {
     // eslint-disable-next-line max-len
     it("Domain hash can change owner, claim token, transfer, and then be assigned to a diff address again", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+          tokenURI,
+        },
       });
-      const tokenId = BigInt(domainHash);
-      const { amount: staked, token } = await zns.treasury.stakedForDomain(domainHash);
+      await domain.register();
+      const { amount: staked, token } = await zns.treasury.stakedForDomain(domain.hash);
 
       // Transfer the hash owner
-      await zns.registry.connect(deployer).updateDomainOwner(domainHash, user.address);
+      await zns.registry.connect(deployer).updateDomainOwner(domain.hash, user.address);
 
       // Claim the Domain token
-      await zns.rootRegistrar.connect(user).assignDomainToken(domainHash, user.address);
+      await domain.assignDomainToken(user.address, user);
       // Verify domain token is owned
-      let owner = await zns.domainToken.connect(user).ownerOf(tokenId);
-      expect(owner).to.equal(user.address);
+      expect(await domain.ownerOfToken()).to.equal(user.address);
 
       // Transfer the domain token back
-      await zns.domainToken.connect(user).transferFrom(user.address, deployer.address, tokenId);
+      await zns.domainToken.connect(user).transferFrom(user.address, deployer.address, domain.tokenId);
 
       // check that hash and token owners changed to the same address
-      const tokenOwner = await zns.domainToken.connect(deployer).ownerOf(tokenId);
-      expect(tokenOwner).to.equal(deployer.address);
-      const registryOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
-      expect(registryOwner).to.equal(deployer.address);
+      expect(await domain.ownerOfToken()).to.equal(deployer.address);
+      expect(await domain.ownerOfHash()).to.equal(deployer.address);
 
       // Assign the Domain token to diff address again
-      await zns.rootRegistrar.connect(deployer).assignDomainToken(domainHash, user.address);
+      await domain.assignDomainToken(user.address, deployer);
 
       // Verify domain token is owned
-      owner = await zns.domainToken.connect(deployer).ownerOf(tokenId);
-      expect(owner).to.equal(user.address);
+      expect(await domain.ownerOfToken()).to.equal(user.address);
       // but not the hash
-      const hashOwner = await zns.registry.connect(deployer).getDomainOwner(domainHash);
-      expect(hashOwner).to.equal(deployer.address);
+      expect(await domain.ownerOfHash()).to.equal(deployer.address);
 
       // Verify same amount is staked
-      const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domainHash);
+      const { amount: stakedAfterReclaim, token: tokenAfterReclaim } = await zns.treasury.stakedForDomain(domain.hash);
       expect(staked).to.equal(stakedAfterReclaim);
       expect(tokenAfterReclaim).to.equal(await zns.meowToken.getAddress());
       expect(token).to.equal(tokenAfterReclaim);
@@ -1192,15 +1055,21 @@ describe("ZNSRootRegistrar", () => {
 
     it("Should revert if assigning to existing owner", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: "tokennn" });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: "tokennn",
+        },
       });
+      await domain.register();
+
+      const domainHash = await domain.getDomainHashFromEvent(deployer);
 
       // Assign the Domain token
-      const tx = zns.rootRegistrar.connect(deployer).assignDomainToken(domainHash, deployer.address);
-      await expect(tx).to.be.revertedWithCustomError(
+      await expect(
+        domain.assignDomainToken(deployer.address)
+      ).to.be.revertedWithCustomError(
         zns.rootRegistrar,
         "AlreadyTokenOwner",
       ).withArgs(domainHash, deployer.address);
@@ -1210,11 +1079,16 @@ describe("ZNSRootRegistrar", () => {
   describe("Revoking Domains", () => {
     it("Can revoke even if token assigned to a different address", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+        },
       });
+      await domain.register();
+
+      const domainHash = await domain.getDomainHashFromEvent(deployer);
 
       // Validated staked values
       const {
@@ -1250,22 +1124,16 @@ describe("ZNSRootRegistrar", () => {
     });
 
     it("Charges a protocol fee to the owner as part of the revoke flow", async () => {
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        distrConfig: {
-          pricerContract: await zns.curvePricer.getAddress(),
-          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
-          paymentType: PaymentType.STAKE,
-          accessType: AccessType.OPEN,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
         },
       });
+      await domain.register();
 
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      const domainHash = await domain.getDomainHashFromEvent(user);
 
       const price = await zns.curvePricer.getPrice(
         DEFAULT_CURVE_PRICE_CONFIG_BYTES,
@@ -1278,14 +1146,13 @@ describe("ZNSRootRegistrar", () => {
         price
       );
 
-      const balanceBefore = await zns.meowToken.balanceOf(user.address);
-
-      // is revoke meant to be free if owner of parent? register subdomain is
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
-
-      const balanceAfter = await zns.meowToken.balanceOf(user.address);
-
-      expect(balanceAfter).to.eq(balanceBefore + price - protocolFee);
+      await expect(
+        zns.rootRegistrar.connect(user).revokeDomain(domainHash)
+      ).to.changeTokenBalance(
+        zns.meowToken,
+        user,
+        price - protocolFee
+      );
     });
 
     it("Revokes without returning funds if domain was registered with DIRECT payment type", async () => {
@@ -1294,16 +1161,16 @@ describe("ZNSRootRegistrar", () => {
 
       const directPaymentDomainName = "direct-payment";
 
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: directPaymentDomainName,
+        domainConfig: {
+          owner: user,
+          label: directPaymentDomainName,
+        },
       });
+      await domain.register();
 
-      directPaymentDomainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      directPaymentDomainHash = await domain.getDomainHashFromEvent(user);
 
       const { amount: staked, token } = await zns.treasury.stakedForDomain(directPaymentDomainHash);
       expect(staked).to.eq(0n);
@@ -1338,28 +1205,29 @@ describe("ZNSRootRegistrar", () => {
 
     it("Revokes a Top level Domain, locks distribution and removes mintlist", async () => {
       // Register Top level
-      await defaultRootRegistration({
-        user,
+      domain = new Domain({
         zns,
-        domainName: defaultDomain,
-        distrConfig: {
-          pricerContract: await zns.fixedPricer.getAddress(),
-          priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
-          paymentType: PaymentType.DIRECT,
-          accessType: AccessType.OPEN,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+          tokenURI,
+          distrConfig: {
+            pricerContract: await zns.fixedPricer.getAddress(),
+            priceConfig: DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+            paymentType: PaymentType.DIRECT,
+            accessType: AccessType.OPEN,
+          },
         },
       });
+      await domain.register();
 
-      const domainHash = await getDomainHashFromEvent({
-        zns,
-        user,
-      });
+      const domainHash = await domain.getDomainHashFromEvent(user);
 
       // add mintlist to check revocation
-      await zns.subRegistrar.connect(user).updateMintlistForDomain(
-        domainHash,
+      await domain.updateMintlistForDomain(
         [user.address, zeroVault.address],
-        [true, true]
+        [true, true],
+        user
       );
 
       const ogPrice = BigInt(135);
@@ -1371,27 +1239,20 @@ describe("ZNSRootRegistrar", () => {
 
       const asBytes = encodePriceConfig(newConfig);
 
-      await zns.subRegistrar.connect(user).setPricerDataForDomain(
-        domainHash,
-        asBytes,
-        zns.fixedPricer.target,
+      await domain.setPricerDataForDomain(
+        newConfig,
+        zns.fixedPricer.target as string,
       );
 
       expect(await zns.fixedPricer.getPrice(asBytes, defaultDomain, false)).to.eq(ogPrice);
 
-      const tokenId = BigInt(
-        await getDomainHashFromEvent({
-          zns,
-          user,
-        })
-      );
-
       // Revoke the domain and then verify
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await domain.revoke(user);
 
       // Verify token has been burned
-      const ownerOfTx = zns.domainToken.connect(user).ownerOf(tokenId);
-      await expect(ownerOfTx).to.be.revertedWithCustomError(
+      await expect(
+        domain.ownerOfToken()
+      ).to.be.revertedWithCustomError(
         zns.domainToken,
         NONEXISTENT_TOKEN_ERC_ERR
       ).withArgs(BigInt(domainHash));
@@ -1429,11 +1290,16 @@ describe("ZNSRootRegistrar", () => {
       expect(balance).to.eq(userBalanceInitial);
 
       // Register Top level
-      await defaultRootRegistration({ user, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+        },
       });
+      await domain.register();
+
+      const domainHash = await domain.getDomainHashFromEvent(user);
 
       // Validated staked values
       const {
@@ -1448,8 +1314,7 @@ describe("ZNSRootRegistrar", () => {
       const balanceAfterStaking = await zns.meowToken.balanceOf(user.address);
 
       // Revoke the domain
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
-
+      await domain.revoke(user);
 
       // Validated funds are unstaked
       const { amount: finalstaked, token: finalToken } = await zns.treasury.stakedForDomain(domainHash);
@@ -1468,17 +1333,21 @@ describe("ZNSRootRegistrar", () => {
 
     it("Cannot revoke if Name is owned by another user", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const parentDomainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+        },
       });
-      const owner = await zns.registry.connect(user).getDomainOwner(parentDomainHash);
+      await domain.register();
+      const parentDomainHash = await domain.getDomainHashFromEvent(deployer);
+
+      const owner = await domain.ownerOfHash();
       expect(owner).to.not.equal(user.address);
 
       // Try to revoke domain
-      const tx = zns.rootRegistrar.connect(user).revokeDomain(parentDomainHash);
-      await expect(tx).to.be.revertedWithCustomError(
+      await expect(domain.revoke(user)).to.be.revertedWithCustomError(
         zns.rootRegistrar,
         NOT_AUTHORIZED_ERR
       ).withArgs(user.address, parentDomainHash);
@@ -1486,46 +1355,56 @@ describe("ZNSRootRegistrar", () => {
 
     it("Only token owner can NOT revoke if hash is owned by different address", async () => {
       // Register Top level
-      await defaultRootRegistration({ user: deployer, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user: deployer,
+        domainConfig: {
+          owner: deployer,
+          label: defaultDomain,
+        },
       });
-      const owner = await zns.registry.getDomainOwner(domainHash);
-      expect(owner).to.not.equal(user.address);
+      await domain.register();
 
-      await zns.rootRegistrar.connect(deployer).assignDomainToken(domainHash, user.address);
+      expect(
+        await domain.ownerOfHash()
+      ).to.not.equal(user.address);
+
+      await domain.assignDomainToken(user.address, deployer);
 
       // Try to revoke domain as a new owner of the token
-      const tx = zns.rootRegistrar.connect(user).revokeDomain(domainHash);
-      await expect(tx).to.be.revertedWithCustomError(
+      await expect(
+        domain.revoke(user)
+      ).to.be.revertedWithCustomError(
         zns.rootRegistrar,
         NOT_AUTHORIZED_ERR,
       );
 
-      const tx2 = zns.rootRegistrar.connect(deployer).revokeDomain(domainHash);
-      await expect(tx2).to.not.be.reverted;
+      await expect(
+        domain.revoke()
+      ).to.not.be.reverted;
     });
 
     it("After domain has been revoked, an old operator can NOT access Registry", async () => {
       // Register Top level
-      await defaultRootRegistration({ user, zns, domainName: defaultDomain });
-      const domainHash = await getDomainHashFromEvent({
+      domain = new Domain({
         zns,
-        user,
+        domainConfig: {
+          owner: user,
+          label: defaultDomain,
+        },
       });
+      await domain.register();
 
       // assign an operator
-      await zns.registry.connect(user).setOwnersOperator(operator.address, true);
+      await domain.setOwnersOperator(operator.address, true);
 
       // Revoke the domain
-      await zns.rootRegistrar.connect(user).revokeDomain(domainHash);
+      await domain.revoke();
 
       // check operator access to the revoked domain
       const tx2 = zns.registry
         .connect(operator)
         .updateDomainOwner(
-          domainHash,
+          domain.hash,
           operator.address
         );
       await expect(tx2).to.be.revertedWithCustomError(
@@ -1536,7 +1415,7 @@ describe("ZNSRootRegistrar", () => {
       const tx3 = zns.registry
         .connect(operator)
         .updateDomainRecord(
-          domainHash,
+          domain.hash,
           user.address,
           operator.address
         );
@@ -1545,7 +1424,7 @@ describe("ZNSRootRegistrar", () => {
       const tx4 = zns.registry
         .connect(operator)
         .updateDomainResolver(
-          domainHash,
+          domain.hash,
           zeroVault.address
         );
       await expect(tx4).to.be.revertedWithCustomError(zns.registry, NOT_AUTHORIZED_ERR);
@@ -1581,23 +1460,31 @@ describe("ZNSRootRegistrar", () => {
 
       await zns.rootRegistrar.connect(user).registerRootDomainBulk(registrations);
 
-      for (const domain of registrations) {
+      for (const dom of registrations) {
         // get by `domainHash`
         const logs = await getDomainRegisteredEvents({
           zns,
-          domainHash: hashDomainLabel(domain.name),
+          domainHash: hashDomainLabel(dom.name),
         });
 
         // "DomainRegistered" event log
-        const { parentHash, domainHash, tokenOwner, label, tokenURI, domainOwner, domainAddress } = logs[0].args;
+        const {
+          parentHash,
+          domainHash,
+          tokenOwner,
+          label,
+          tokenURI: localTokenURI,
+          domainOwner,
+          domainAddress,
+        } = logs[0].args;
 
         expect(parentHash).to.eq(ethers.ZeroHash);
-        expect(domainHash).to.eq(hashDomainLabel(domain.name));
-        expect(label).to.eq(domain.name);
+        expect(domainHash).to.eq(hashDomainLabel(dom.name));
+        expect(label).to.eq(dom.name);
         expect(tokenOwner).to.eq(domainOwner);
-        expect(tokenURI).to.eq(domain.tokenURI);
+        expect(localTokenURI).to.eq(dom.tokenURI);
         expect(domainOwner).to.eq(user.address);
-        expect(domainAddress).to.eq(domain.domainAddress);
+        expect(domainAddress).to.eq(dom.domainAddress);
       }
     });
 
@@ -1766,6 +1653,7 @@ describe("ZNSRootRegistrar", () => {
           ZERO_ADDRESS_ERR
         );
       });
+
       // fails when giving an invalid config with a pricer
       it("Fails when setting an invalid config with a pricer", async () => {
         const invalidConfig = { ...DEFAULT_CURVE_PRICE_CONFIG };

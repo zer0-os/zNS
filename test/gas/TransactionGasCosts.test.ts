@@ -1,4 +1,4 @@
-import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
+import { IDistributionConfig } from "../helpers/types";
 import * as hre from "hardhat";
 import { AccessType,
   DEFAULT_TOKEN_URI, deployZNS,
@@ -10,6 +10,7 @@ import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import fs from "fs";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
 
 const gasCostFile = `${process.cwd()}/test/gas/gas-costs.json`;
@@ -23,7 +24,7 @@ describe("Transaction Gas Costs Test", () => {
   let lvl2SubOwner : SignerWithAddress;
   let zeroVault : SignerWithAddress;
 
-  let zns : IZNSContractsLocal;
+  let zns : IZNSContracts;
 
   let rootHashDirect : string;
   // let rootHashStake : string;
