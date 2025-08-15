@@ -3,7 +3,6 @@ import * as hre from "hardhat";
 import {
   AC_UNAUTHORIZED_ERR,
   AC_WRONGADDRESS_ERR,
-  ADMIN_ROLE,
   GOVERNOR_ROLE,
   hashDomainLabel,
   INITIALIZED_ERR, NOT_AUTHORIZED_ERR,
@@ -403,7 +402,7 @@ describe("ZNSStringResolver", () => {
         ).to.be.revertedWithCustomError(
           stringResolver,
           AC_UNAUTHORIZED_ERR
-        ).withArgs(user.address, ADMIN_ROLE);
+        ).withArgs(user.address, GOVERNOR_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
@@ -426,7 +425,7 @@ describe("ZNSStringResolver", () => {
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
-          stringResolver.connect(admin).setAccessController(ethers.ZeroAddress)
+          stringResolver.connect(deployAdmin).setAccessController(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(
           stringResolver,
           AC_WRONGADDRESS_ERR

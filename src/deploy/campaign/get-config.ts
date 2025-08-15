@@ -100,7 +100,7 @@ export const getConfig = async ({
   const config : IZNSCampaignConfig = {
     env: process.env.ENV_LEVEL,
     confirmationsN: Number(process.env.CONFIRMATION_N),
-    srcChainName: SupportedChains.z,
+    srcChainName: SupportedChains.z, // should be sepolia
     deployAdmin: deployer,
     pauseRegistration: process.env.PAUSE_REGISTRATION === "true",
     governorAddresses,
@@ -132,7 +132,7 @@ export const validateEnv = (
   env ?: TEnvironment, // this is ONLY used for tests!
 ) : string => {
   // Prioritize reading from the env variable first, and only then fallback to the param
-  let envLevel = process.env.ENV_LEVEL ;
+  let envLevel = process.env.ENV_LEVEL;
 
   if (env) {
     // We only ever specify an `env` param in tests
@@ -141,6 +141,7 @@ export const validateEnv = (
     envLevel = env;
   }
 
+  // TODO doesnt seem to work on windows?
   findMissingEnvVars();
 
   // Validate price config first since we have to return it

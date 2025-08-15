@@ -32,7 +32,10 @@ import {
   ZERO_VALUE_FIXED_PRICE_CONFIG_BYTES,
   DIVISION_BY_ZERO_ERR,
   INVALID_CONFIG_LENGTH_ERR,
-  PAUSE_SAME_VALUE_ERR, REGISTRATION_PAUSED_ERR, AC_WRONGADDRESS_ERR, createEncodeFixedPriceConfig,
+  PAUSE_SAME_VALUE_ERR,
+  REGISTRATION_PAUSED_ERR,
+  AC_WRONGADDRESS_ERR,
+  createEncodeFixedPriceConfig,
 } from "./helpers";
 import * as ethers from "ethers";
 import { defaultRootRegistration } from "./helpers/register-setup";
@@ -187,7 +190,7 @@ describe("ZNSRootRegistrar", () => {
         operator.address,
         operator.address,
         operator.address,
-        0n,
+        0n
       )
     ).to.be.revertedWithCustomError(implContract, INITIALIZED_ERR);
   });
@@ -278,7 +281,7 @@ describe("ZNSRootRegistrar", () => {
     );
 
     await expect(tx).to.be.revertedWithCustomError(zns.accessController, AC_UNAUTHORIZED_ERR)
-      .withArgs(user.address, ADMIN_ROLE);
+      .withArgs(user.address, GOVERNOR_ROLE);
   });
 
   it("Should NOT initialize twice", async () => {
@@ -1803,7 +1806,7 @@ describe("ZNSRootRegistrar", () => {
         ).to.be.revertedWithCustomError(
           zns.rootRegistrar,
           AC_UNAUTHORIZED_ERR
-        ).withArgs(user.address, ADMIN_ROLE);
+        ).withArgs(user.address, GOVERNOR_ROLE);
       });
 
       it("should revert when setting an AccessController as EOA address", async () => {
@@ -1826,7 +1829,7 @@ describe("ZNSRootRegistrar", () => {
 
       it("should revert when setting a zero address as AccessController", async () => {
         await expect(
-          zns.rootRegistrar.connect(admin).setAccessController(ethers.ZeroAddress)
+          zns.rootRegistrar.connect(governor).setAccessController(ethers.ZeroAddress)
         ).to.be.revertedWithCustomError(
           zns.rootRegistrar,
           AC_WRONGADDRESS_ERR

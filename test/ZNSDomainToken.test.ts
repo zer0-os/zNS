@@ -176,7 +176,7 @@ describe("ZNSDomainToken", () => {
       ).to.be.revertedWithCustomError(
         zns.domainToken,
         AC_UNAUTHORIZED_ERR
-      ).withArgs(caller.address, ADMIN_ROLE);
+      ).withArgs(caller.address, GOVERNOR_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
@@ -546,7 +546,7 @@ describe("ZNSDomainToken", () => {
     it("Should revert when setting access controller if caller does not have ADMIN_ROLE", async () => {
       await expect(zns.domainToken.connect(caller).setAccessController(caller.address))
         .to.be.revertedWithCustomError(zns.domainToken, AC_UNAUTHORIZED_ERR)
-        .withArgs(caller.address, ADMIN_ROLE);
+        .withArgs(caller.address, GOVERNOR_ROLE);
     });
   });
 

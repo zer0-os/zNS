@@ -12,13 +12,13 @@ export const environment : IZNSEnvironment = {
   // RPCs for actual networks
   MAINNET_RPC_URL: "",
   SEPOLIA_RPC_URL: "",
-  ZCHAIN_TEST_RPC_URL: "", // Zephyr Testnet
-  ZCHAIN_MAIN_RPC_URL: "",
+  ZEPHYR_RPC_URL: "", // Zephyr Testnet
+  ZCHAIN_RPC_URL: "", // ZChain Mainnet
   // Private keys for deployment
   DEPLOY_ADMIN_MAINNET_PK: "",
   DEPLOY_ADMIN_SEPOLIA_PK: "",
-  DEPLOY_ADMIN_ZCHAIN_TEST_PK: "",
-  DEPLOY_ADMIN_ZCHAIN_MAIN_PK: "",
+  DEPLOY_ADMIN_ZEPHYR_PK: "",
+  DEPLOY_ADMIN_ZCHAIN_PK: "",
   // MongoDB setup
   MONGO_DB_URI: `mongodb://localhost:2701${process.argv.includes("coverage") ? "7" : "8"}`,
   MONGO_DB_NAME: "zns-campaign",

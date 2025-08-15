@@ -15,7 +15,6 @@ import {
   AC_UNAUTHORIZED_ERR,
   NOT_AUTHORIZED_ERR,
   ZERO_ADDRESS_ERR,
-  ADMIN_ROLE,
   AC_WRONGADDRESS_ERR,
 } from "./helpers";
 import { getProxyImplAddress } from "./helpers/utils";
@@ -111,7 +110,7 @@ describe("ZNSRegistry", () => {
     await expect(
       zns.registry.connect(randomUser).setAccessController(deployer.address)
     ).to.be.revertedWithCustomError(zns.registry, AC_UNAUTHORIZED_ERR)
-      .withArgs(randomUser.address, ADMIN_ROLE);
+      .withArgs(randomUser.address, GOVERNOR_ROLE);
   });
 
   describe("Audit fix with approved address resolvers", () => {
@@ -614,7 +613,7 @@ describe("ZNSRegistry", () => {
       ).to.be.revertedWithCustomError(
         zns.registry,
         AC_UNAUTHORIZED_ERR
-      ).withArgs(operator.address, ADMIN_ROLE);
+      ).withArgs(operator.address, GOVERNOR_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {

@@ -50,8 +50,8 @@ interface IZNSRootRegistrar is IDistributionConfig {
         address domainAddress;
         address tokenOwner;
         string tokenURI;
-        DistributionConfig distrConfig;
-        PaymentConfig paymentConfig;
+        DistributionConfig distrConfig; // pricecontract, access, payment
+        PaymentConfig paymentConfig; // token, beneficiary
     }
 
     /**

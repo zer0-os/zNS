@@ -584,7 +584,7 @@ describe("ZNSTreasury", () => {
       ).to.be.revertedWithCustomError(
         zns.treasury,
         AC_UNAUTHORIZED_ERR
-      ).withArgs(user.address, ADMIN_ROLE);
+      ).withArgs(user.address, GOVERNOR_ROLE);
     });
 
     it("should revert when setting an AccessController as EOA address", async () => {
@@ -607,7 +607,7 @@ describe("ZNSTreasury", () => {
 
     it("should revert when setting a zero address as AccessController", async () => {
       await expect(
-        zns.treasury.connect(admin).setAccessController(ethers.ZeroAddress)
+        zns.treasury.connect(governor).setAccessController(ethers.ZeroAddress)
       ).to.be.revertedWithCustomError(
         zns.treasury,
         AC_WRONGADDRESS_ERR
