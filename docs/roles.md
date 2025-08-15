@@ -41,4 +41,7 @@ domain revocation process.
 - The function `ZNSTreasury.processDirectPayment()` allows registrars to process registration fees to beneficiaries directly.
 >The `REGISTRAR_ROLE` is reserved for contracts ZNSRootRegistrar and ZNSSubRegistrar only.
 
+## `DOMAIN_TOKEN_ROLE` privileges:
+- The function `ZNSRegistry.updateDomainOwner` allows the domain token to update the domain owner in the registry upon Domain Token transfer to fully transfer all right to the domain by transferring the token.
+
 >`EXECUTOR_ROLE` does not have any privileges. This role may be used for future implementations and additions.
