@@ -27,11 +27,9 @@ const main = async () => {
 
   logger.info("Processing...");
   for (const [i,d] of [...roots, ...subs].entries()) {
-    // Both will be null if the domain was free (register by parent owner)
+    // Will be null if the domain was free (registered by parent owner)
     // In this case user isn't owed any refund, so we skip
-    if (!d.amountPaidDirect && !d.amountPaidStake) {
-      continue;
-    } else if (!d.isRevoked) {
+    if (d.amountPaidStake && !d.isRevoked) {
       // Because of how the contracts are structured, it isn't possible
       // to get the contract address of the payment token at registration
       // so we must specify a default here instead
@@ -42,7 +40,7 @@ const main = async () => {
       }
 
       if (!d.isWorld) {
-        // Subdomains may use other tokens, so resolve
+        // Subdomains may use other tokens, resolve here
         if (d.parent && d.parent.treasury && d.parent.treasury.paymentToken) {
           // Override the default name if it is specified
           paymentToken = d.parent.treasury.paymentToken.symbol;
@@ -56,7 +54,6 @@ const main = async () => {
         }
       }
 
-      const amountPaid = !d.amountPaidDirect ? d.amountPaidStake : d.amountPaidDirect;
       const tokenAmounts = userAmounts.get(d.owner.id);
 
       if (tokenAmounts) {
@@ -66,11 +63,11 @@ const main = async () => {
         // They may be paying with `parentPaymentToken` for the first time, get amount
         const realAmount = !amount ? 0n : amount;
 
-        tokenAmounts.set(paymentToken, realAmount + BigInt(amountPaid));
+        tokenAmounts.set(paymentToken, realAmount + BigInt(d.amountPaidStake));
         userAmounts.set(d.owner.id, tokenAmounts);
       } else {
         const tokenAmount = new Map();
-        tokenAmount.set(paymentToken, BigInt(amountPaid));
+        tokenAmount.set(paymentToken, BigInt(d.amountPaidStake));
         userAmounts.set(d.owner.id, tokenAmount);
       }
     }
