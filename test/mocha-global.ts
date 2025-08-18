@@ -1,3 +1,4 @@
+import { logger } from "@tenderly/hardhat-tenderly/dist/logger";
 import { getZnsMongoAdapter } from "../src/deploy/mongo";
 import { setDefaultEnvironment } from "../src/environment/set-env";
 
@@ -16,7 +17,16 @@ export const mochaGlobalSetup = async () => {
 
 export const mochaGlobalTeardown = async () => {
   const mongoAdapter = await getZnsMongoAdapter();
-  // the next line can be commented out to leave the DB after test to manually test
-  await mongoAdapter.dropDB();
+
+  if (process.env.ENV_LEVEL === "dev") {
+    await mongoAdapter.dropDB();
+    logger.info("Dropped MongoDB database for `dev` enviroment.");
+  } else {
+    logger.info(
+      "Skipping MongoDB database drop for non-dev environment. " +
+      "This is to prevent accidental data loss in production or staging environments."
+    );
+  }
+
   await mongoAdapter.close();
 };
