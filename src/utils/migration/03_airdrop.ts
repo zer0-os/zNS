@@ -88,7 +88,7 @@ const main = async () => {
     }
   }
 
-  for (let token of totals.entries()) {
+  for (const token of totals.entries()) {
     logger.info(`Total for token ${token[0]}: ${token[1]}`);
   }
 
