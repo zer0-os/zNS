@@ -62,24 +62,24 @@ const main = async () => {
       if (tokenAmounts) {
         // Get the amount of `parentPaymentToken` they have paid
         const amount = tokenAmounts.get(paymentToken);
-        const total = totals.get(paymentToken);
 
         // They may be paying with `parentPaymentToken` for the first time, get amount
         const realAmount = !amount ? 0n : amount;
-        const realTotal = !total ? 0n : total;
-
-        totals.set(paymentToken, realTotal + realAmount);
 
         tokenAmounts.set(paymentToken, realAmount + BigInt(d.amountPaidStake));
         userAmounts.set(d.owner.id, tokenAmounts);
       } else {
         const tokenAmount = new Map<string, bigint>();
 
-        totals.set(paymentToken, BigInt(d.amountPaidStake));
-
         tokenAmount.set(paymentToken, BigInt(d.amountPaidStake));
         userAmounts.set(d.owner.id, tokenAmount);
       }
+
+      // Update totals tracking
+      const totalForToken = totals.get(paymentToken);
+      const realTotalForToken = !totalForToken ? 0n : totalForToken;
+
+      totals.set(paymentToken, realTotalForToken + BigInt(d.amountPaidStake));
     }
 
     // Track our progress
