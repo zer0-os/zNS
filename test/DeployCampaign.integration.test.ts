@@ -1,14 +1,11 @@
-import {
-  getLogger,
-} from "@zero-tech/zdc";
 import * as hre from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { getConfig } from "../src/deploy/campaign/environments";
+import { getConfig } from "../src/deploy/campaign/get-config";
 import { runZnsCampaign } from "../src/deploy/zns-campaign";
 import { ethers } from "ethers";
 import { IDistributionConfig } from "./helpers/types";
 import { expect } from "chai";
-import { hashDomainLabel, PaymentType, AccessType } from "./helpers";
+import { hashDomainLabel, PaymentType, AccessType, DEFAULT_CURVE_PRICE_CONFIG_BYTES } from "./helpers";
 import {
   approveBulk,
   getPriceBulk,
@@ -16,8 +13,8 @@ import {
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
 import { IZNSCampaignConfig, IZNSContracts } from "../src/deploy/campaign/types";
+import { getZnsLogger } from "../src/deploy/get-logger";
 
 
 describe("zNS + zDC Single Integration Test", () => {
@@ -31,7 +28,7 @@ describe("zNS + zDC Single Integration Test", () => {
   let userE : SignerWithAddress;
   let userF : SignerWithAddress;
 
-  let config : IZNSCampaignConfig<SignerWithAddress>;
+  let config : IZNSCampaignConfig;
 
   let zns : IZNSContracts;
   // let mongoAdapter : MongoDBAdapter;
@@ -39,23 +36,23 @@ describe("zNS + zDC Single Integration Test", () => {
   let users : Array<SignerWithAddress>;
   let distConfig : IDistributionConfig;
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   // Default baselength is 4, maxLength is 50
-  const shortDomain = "mazz"; // Length 4
-  const mediumDomain = "mesder"; // Length 6
-  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const shortDomain = "mazzz"; // Length 4
+  const mediumDomain = "messder"; // Length 6
+  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwill"; // Length 51
   const shortHash = hashDomainLabel(shortDomain);
   const mediumHash = hashDomainLabel(mediumDomain);
   const longHash = hashDomainLabel(longDomain);
 
-  const freeShortSubdomain = "pubj"; // Length 4
-  const freeMediumSubdomain = "pubjer"; // Length 6
-  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const freeShortSubdomain = "pubjj"; // Length 4
+  const freeMediumSubdomain = "pubjjer"; // Length 6
+  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwilj"; // Length 51
 
-  const paidShortSubdomain = "purf"; // Length 4
-  const paidMediumSubdomain = "purfer"; // Length 6
-  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const paidShortSubdomain = "purff"; // Length 4
+  const paidMediumSubdomain = "purffer"; // Length 6
+  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwilf"; // Length 51
 
   // Resolve subdomain hashes through async call `hashWithParent` in `before` hook
   let freeShortSubHash : string;
@@ -69,53 +66,29 @@ describe("zNS + zDC Single Integration Test", () => {
 
   const domains = [shortDomain, mediumDomain, longDomain];
 
+  const confirmationsN = Number(process.env.CONFIRMATION_N);
+
   before(async () => {
     [ deployAdmin, zeroVault, userA, userB, userC, userD, userE, userF ] = await hre.ethers.getSigners();
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
 
-    let deployer;
-    let provider;
-
-    if (hre.network.name === "hardhat") {
-      deployer = deployAdmin;
-      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    } else {
-      const credentials = {
-        apiKey: process.env.DEFENDER_KEY,
-        apiSecret: process.env.DEFENDER_SECRET,
-        relayerApiKey: process.env.RELAYER_KEY,
-        relayerApiSecret: process.env.RELAYER_SECRET,
-      };
-
-      const client = new Defender(credentials);
-      provider = client.relaySigner.getProvider();
-      deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
-    }
-
     config = await getConfig({
-      deployer: deployer as unknown as SignerWithAddress,
+      deployer: deployAdmin,
       zeroVaultAddress: zeroVault.address,
     });
-
-    config.mockMeowToken = hre.network.name === "hardhat";
 
     // First run the `run-campaign` script, then modify the `MONGO_DB_VERSION` environment variable
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
     const campaign = await runZnsCampaign({ config });
 
-    // TODO the zns.zeroVaultAddress is not set internally by the treasury, fix this
-    // because not new deployment?
     // Using config.zeroVaultAddress in funcs for now, which is set properly
     zns = campaign.state.contracts;
-
-    // Surprised this typing works for signer of tx
-    // await zns.treasury.connect(deployer as unknown as Signer)
-    // .setBeneficiary(ethers.ZeroHash, config.zeroVaultAddress);
 
     //  CurvePricer, stake, open
     distConfig = {
       pricerContract: await zns.curvePricer.getAddress(),
+      priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
       paymentType: PaymentType.STAKE,
       accessType: AccessType.OPEN,
     };
@@ -139,7 +112,7 @@ describe("zNS + zDC Single Integration Test", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (hre.network.name === "hardhat" && config.mockMeowToken) {
+    if (config.mockMeowToken) {
       await mintBulk(
         users,
         mintAmount,
@@ -169,9 +142,8 @@ describe("zNS + zDC Single Integration Test", () => {
       config, // domainAddress
       "https://zns.domains/", // tokenUri
       distConfig,
-      config.rootPriceConfig,
       zns,
-      logger
+      logger,
     );
 
     logger.info(`Domain ${shortHash} registered for user ${userA.address}`);
@@ -286,7 +258,7 @@ describe("zNS + zDC Single Integration Test", () => {
     // internal promise error somewhere? issue reading 'any'?
     const tx = await zns.rootRegistrar.connect(userA).revokeDomain(freeShortSubHash);
 
-    if (hre.network.name !== "hardhat") await tx.wait(1);
+    if (hre.network.name !== "hardhat") await tx.wait(confirmationsN);
 
     await expect(tx).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeShortSubHash, userA.address, false);
     logger.info(
@@ -295,45 +267,39 @@ describe("zNS + zDC Single Integration Test", () => {
     );
   });
 
-  it("Reclaims a domain correctly", async () => {
+  it("Reclaims a domain correctly by assigning token back to hash owner", async () => {
     // 4. Reclaim domain
     const tx = await zns.registry.connect(userB).updateDomainOwner(freeMediumSubHash, userA.address);
     logger.info(
       `Subdomain ${freeMediumSubHash} ownership given to user ${userA.address} from user ${userB.address}`
     );
 
-    if (hre.network.name !== "hardhat") await tx.wait(1);
+    if (hre.network.name !== "hardhat") await tx.wait(confirmationsN);
 
-    const tx1 = await zns.rootRegistrar.connect(userB).reclaimDomain(freeMediumSubHash);
+    const tx1 = await zns.rootRegistrar.connect(userA).assignDomainToken(freeMediumSubHash, userA.address);
 
-    if (hre.network.name !== "hardhat") await tx1.wait(1);
+    if (hre.network.name !== "hardhat") await tx1.wait(confirmationsN);
 
-    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeMediumSubHash, userB.address);
-    expect(await zns.registry.getDomainOwner(freeMediumSubHash)).to.equal(userB.address);
+    await expect(tx1).to.emit(zns.rootRegistrar, "DomainTokenReassigned").withArgs(freeMediumSubHash, userA.address);
+    expect(await zns.domainToken.ownerOf(freeMediumSubHash)).to.equal(userA.address);
 
-    logger.info(`Subdomain ${freeMediumSubHash} reclaimed by user ${userB.address} from user ${userA.address}`);
+    logger.info(`Subdomain token ${freeMediumSubHash} reclaimed by user ${userA.address} from user ${userB.address}`);
   });
 
-  it("Reclaims then revokes correctly", async () => {
+  it("Revokes the domain correctly", async () => {
     // 5. Reclaim and revoke domain
     const tx = await zns.registry.connect(userC).updateDomainOwner(freeLongSubHash, userA.address);
     await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
     logger.info(`Subdomain ${freeLongSubHash} ownership given to user ${userA.address} from user ${userC.address}`);
 
-    if (hre.network.name !== "hardhat") await tx.wait(1);
+    if (hre.network.name !== "hardhat") await tx.wait(confirmationsN);
 
-    const tx1 = await zns.rootRegistrar.connect(userC).reclaimDomain(freeLongSubHash);
-    await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);
+    const tx2 = await zns.rootRegistrar.connect(userA).revokeDomain(freeLongSubHash);
+    if (hre.network.name !== "hardhat") await tx2.wait(confirmationsN);
 
-    if (hre.network.name !== "hardhat") await tx1.wait(1);
+    expect(await zns.registry.exists(freeLongSubHash)).to.be.false;
 
-    logger.info(`Subdomain ${freeLongSubHash} reclaimed by user ${userC.address}`);
-    expect(await zns.registry.getDomainOwner(freeLongSubHash)).to.equal(userC.address);
-
-    const tx2 = await zns.rootRegistrar.connect(userC).revokeDomain(freeLongSubHash);
-    if (hre.network.name !== "hardhat") await tx2.wait(1);
-
-    await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userC.address, false);
-    logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userC.address}`);
+    await expect(tx2).to.emit(zns.rootRegistrar, "DomainRevoked").withArgs(freeLongSubHash, userA.address, false);
+    logger.info(`Subdomain ${freeLongSubHash} revoked by user ${userA.address}`);
   });
 });

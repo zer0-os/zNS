@@ -12,7 +12,7 @@ mapping(bytes32 => address) domainAddresses
 ```
 
 Mapping of domain hash to address used to bind domains
-to Ethereum wallets or contracts registered in ZNS.
+to wallet, contract or any other addresses.
 
 ### constructor
 
@@ -76,7 +76,7 @@ function supportsInterface(bytes4 interfaceId) public view virtual returns (bool
 ```
 
 ERC-165 check for implementation identifier
-Supports interfaces IZNSAddressResolver and IERC165
+Supports interfaces `IZNSAddressResolver` and `IERC165`
 
 #### Parameters
 
@@ -111,14 +111,8 @@ Emits a `RegistrySet` event.
 ### _authorizeUpgrade
 
 ```solidity
-function _authorizeUpgrade(address newImplementation) internal view
+function _authorizeUpgrade(address) internal view
 ```
 
 To use UUPS proxy we override this function and revert if `msg.sender` isn't authorized
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| newImplementation | address | The implementation contract to upgrade to |
 

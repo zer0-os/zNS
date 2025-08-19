@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars */
 require("dotenv").config();
 
-import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
+import { mochaGlobalSetup, mochaGlobalTeardown } from "./test/mocha-global";
 
 import * as tenderly from "@tenderly/hardhat-tenderly";
 import "@nomicfoundation/hardhat-toolbox";
@@ -27,60 +27,41 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
     return testFailures;
   });
 
-// This call is needed to initialize Tenderly with Hardhat,
-// the automatic verifications, though, don't seem to work,
-// needing us to verify explicitly in code, however,
-// for Tenderly to work properly with Hardhat this method
-// needs to be called. The call below is commented out
-// because if we leave it here, solidity-coverage
-// does not work properly locally or in CI, so we
-// keep it commented out and uncomment when using DevNet
-// locally.
-// !!! Uncomment this when using Tenderly !!!
-tenderly.setup({ automaticVerifications: false });
+
+const placeHolderRpcUrl = "https://placeholder.rpc.url";
+
+/**
+ * @description Retrieves private keys from environment variables.
+ * @param {string[]} varNames - An array of env var names.
+ * @returns {string[]} An array of the private keys that were found.
+ */
+const getAccounts = (varNames : Array<string>) : Array<string> | undefined => {
+  const accounts = varNames.reduce(
+    (acc : Array<string>, envVarName) => {
+      const account = process.env[envVarName];
+      if (account) {
+        acc.push(account);
+      }
+      return acc;
+    }, []);
+
+  // Return the accounts array if it's not empty, otherwise return undefined
+  return accounts.length > 0 ? accounts : undefined;
+};
 
 const config : HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.18",
+        version: "0.8.26",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.3",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
+            runs: 20000,
           },
         },
       },
     ],
-    overrides: {
-      "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol": {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol": {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    },
   },
   paths: {
     sources: "./contracts",
@@ -98,45 +79,79 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
+    zephyr: {
+      url: process.env.ZEPHYR_RPC_URL || placeHolderRpcUrl,
+      chainId: 1417429182,
+      accounts: getAccounts([
+        "DEPLOY_ADMIN_ZEPHYR_PK",
+        "ZERO_VAULT_KEY",
+        "TEST_USER_A_KEY",
+        "TEST_USER_B_KEY",
+        "TEST_USER_C_KEY",
+        "TEST_USER_D_KEY",
+        "TEST_USER_E_KEY",
+        "TEST_USER_F_KEY",
+      ]),
+      timeout: 10000000,
+      loggingEnabled: true,
+    },
+    zchain: {
+      url: process.env.ZCHAIN_RPC_URL || placeHolderRpcUrl,
+      chainId: 9369,
+      accounts: getAccounts([
+        "DEPLOY_ADMIN_ZCHAIN_PK",
+        "ZERO_VAULT_KEY",
+        "TEST_USER_A_KEY",
+        "TEST_USER_B_KEY",
+        "TEST_USER_C_KEY",
+        "TEST_USER_D_KEY",
+        "TEST_USER_E_KEY",
+        "TEST_USER_F_KEY",
+      ]),
+    },
     mainnet: {
-      url: `${process.env.MAINNET_RPC_URL}`,
+      url: process.env.MAINNET_RPC_URL || placeHolderRpcUrl,
       gasPrice: 80000000000,
     },
     sepolia: {
-      url: `${process.env.SEPOLIA_RPC_URL}`,
+      url: process.env.SEPOLIA_RPC_URL || placeHolderRpcUrl,
       timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
-      // // Must have to avoid instead failing as `invalid length for result data` error
-      // throwOnCallFailures: false, // not sure if this even works
+      accounts: getAccounts([
+        "SAFE_OWNER",
+        "TESTNET_PRIVATE_KEY_B",
+        "TESTNET_PRIVATE_KEY_C",
+        "TESTNET_PRIVATE_KEY_D",
+        "TESTNET_PRIVATE_KEY_E",
+        "TESTNET_PRIVATE_KEY_F",
+      ]),
+      // Must have to avoid instead failing as `invalid length for result data` error
+      throwOnCallFailures: false, // not sure if this even works
     },
-    devnet: {
-      // Add current URL that you spawned if not using automated spawning
-      url: `${process.env.DEVNET_RPC_URL}`,
-      chainId: 1,
-    },
-  },
-  defender: {
-    useDefenderDeploy: false,
-    apiKey: `${process.env.DEFENDER_KEY}`,
-    apiSecret: `${process.env.DEFENDER_SECRET}`,
-  },
-  etherscan: {
-    apiKey: `${process.env.ETHERSCAN_API_KEY}`,
-  },
-  sourcify: {
-    // If set to "true", will try to verify the contracts after deployment
-    enabled: false,
   },
   tenderly: {
     project: `${process.env.TENDERLY_PROJECT_SLUG}`,
     username: `${process.env.TENDERLY_ACCOUNT_ID}`,
+  },
+  etherscan: {
+    apiKey: {
+      mainnet: `${process.env.ETHERSCAN_API_KEY}`,
+      zephyr: "placeholder", // Zephyr does not need an API key
+      zchain: "placeholder", // ZChain does not need an API key
+    },
+    customChains: [
+      {
+        network: "zephyr",
+        chainId: 1417429182,
+        urls: {
+          apiURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/api/",
+          browserURL: "https://zephyr-blockscout.eu-north-2.gateway.fm/",
+        },
+      },
+    ],
+  },
+  sourcify: {
+    // If set to "true", will try to verify the contracts after deployment
+    enabled: false,
   },
   docgen: {
     pages: "files",
@@ -151,5 +166,6 @@ const config : HardhatUserConfig = {
     ],
   },
 };
+
 
 export default config;

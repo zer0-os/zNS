@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 
 /**
@@ -7,14 +7,11 @@ pragma solidity 0.8.18;
  * about a domain, such as its owner and resolver.
  * - `owner` (address): The owner of the domain (also called the owner of the Name).
  * - `resolver` (address): The address of the Resolver contract where this domain's source records are stored.
- *
- * In the future, there will be multiple Resolver contracts that support different types of sources.
- * Currently, only the `ZNSAddressResolver` is implemented.
  */
 interface IZNSRegistry {
 
     /**
-     * @notice Description of a domain record, pointing to the 
+     * @notice Description of a domain record, pointing to the
      * owner address of that record as well as the address of
      * its resolver
      */
@@ -24,7 +21,8 @@ interface IZNSRegistry {
     }
 
     /**
-     * @notice Emits when ownership of a domain is modified in ``records``
+     * @notice Emits when ownership of a domain is modified in `records`
+     *
      * @param domainHash the hash of a domain's name
      * @param owner The new domain owner
      */
@@ -34,7 +32,8 @@ interface IZNSRegistry {
     );
 
     /**
-     * @notice Emit when a domain's resolver is modified in ``records``
+     * @notice Emit when a domain's resolver is modified in `records`
+     *
      * @param domainHash the hash of a domain's name
      * @param resolver The new resolver address
      */
@@ -45,6 +44,7 @@ interface IZNSRegistry {
 
     /**
      * @notice Emits when a domain record is deleted
+     *
      * @param domainHash The hash of a domain's name
      */
     event DomainRecordDeleted(
@@ -53,6 +53,7 @@ interface IZNSRegistry {
 
     /**
      * @notice Emit when an owner allows/disallows permissions for an operator
+     *
      * @param owner Owner of the domain in question
      * @param operator Address that was allowed/disallowed
      * @param allowed Boolean status of their permission
@@ -65,6 +66,7 @@ interface IZNSRegistry {
 
     /**
      * @notice Emitted when a new resolver type is added to ZNS
+     *
      * @param resolverType The name of the resolver type
      * @param resolver The address of the resolver contract
      */
@@ -75,6 +77,7 @@ interface IZNSRegistry {
 
     /**
      * @notice Emitted when a resolver is deleted from ZNS
+     *
      * @param resolverType The name of the resolver type
      */
     event ResolverDeleted(
@@ -98,6 +101,7 @@ interface IZNSRegistry {
     /**
      * @notice Set an `operator` as `allowed` to give or remove permissions for all
      * domains owned by `msg.sender`
+     *
      * @param operator The account to allow/disallow
      * @param allowed The true/false value to set
      */
@@ -123,7 +127,7 @@ interface IZNSRegistry {
 
     function getResolverType(
         string calldata resolverType
-    ) external returns (address); 
+    ) external returns (address);
 
     function addResolverType(
         string calldata resolverType,

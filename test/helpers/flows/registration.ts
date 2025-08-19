@@ -1,12 +1,25 @@
+/* eslint-disable no-shadow, @typescript-eslint/no-shadow */
 import { IDomainConfigForTest, IPathRegResult, IZNSContractsLocal } from "../types";
 import { registrationWithSetup } from "../register-setup";
 import { ethers } from "ethers";
-import { getPriceObject, getStakingOrProtocolFee } from "../pricing";
+import { decodePriceConfig, getPriceObject, getStakingOrProtocolFee } from "../pricing";
 import { expect } from "chai";
 import { getDomainRegisteredEvents } from "../events";
 import { PaymentType } from "../constants";
 import { getTokenContract } from "../tokens";
+import { ICurvePriceConfig } from "../../../src/deploy/missions/types";
 
+interface DomainObj {
+  domainHash : string;
+  userBalanceBefore : bigint;
+  userBalanceAfter : bigint;
+  parentBalanceBefore : bigint;
+  parentBalanceAfter : bigint;
+  treasuryBalanceBefore : bigint;
+  treasuryBalanceAfter : bigint;
+  zeroVaultBalanceBefore : bigint;
+  zeroVaultBalanceAfter : bigint;
+}
 
 export const registerDomainPath = async ({
   zns,
@@ -14,7 +27,7 @@ export const registerDomainPath = async ({
 } : {
   zns : IZNSContractsLocal;
   domainConfigs : Array<IDomainConfigForTest>;
-}) => domainConfigs.reduce(
+}) : Promise<Array<IPathRegResult>> => domainConfigs.reduce(
   async (
     acc : Promise<Array<IPathRegResult>>,
     config,
@@ -72,7 +85,7 @@ export const registerDomainPath = async ({
     const treasuryBalanceAfter = await paymentTokenContract.balanceOf(await zns.treasury.getAddress());
     const zeroVaultBalanceAfter = await paymentTokenContract.balanceOf(zns.zeroVaultAddress);
 
-    const domainObj = {
+    const domainObj : DomainObj = {
       domainHash,
       userBalanceBefore,
       userBalanceAfter,
@@ -117,14 +130,16 @@ export const validatePathRegistration = async ({
       parentHashFound = !!regResults[idx - 1] ? regResults[idx - 1].domainHash : ethers.ZeroHash;
     }
 
+    const rootConfigBytes = await zns.rootRegistrar.rootPriceConfig();
+
     const {
-      maxPrice: curveMaxPrice,
-      minPrice: curveMinPrice,
-      maxLength: curveMaxLength,
-      baseLength: curveBaseLength,
-      precisionMultiplier: curvePrecisionMultiplier,
-      feePercentage: curveFeePercentage,
-    } = await zns.curvePricer.priceConfigs(ethers.ZeroHash);
+      maxPrice,
+      curveMultiplier,
+      maxLength,
+      baseLength,
+      precisionMultiplier,
+      feePercentage,
+    } = decodePriceConfig(rootConfigBytes) as ICurvePriceConfig;
 
     let expParentBalDiff;
     let expTreasuryBalDiff;
@@ -135,12 +150,12 @@ export const validatePathRegistration = async ({
       } = getPriceObject(
         domainLabel,
         {
-          maxPrice: curveMaxPrice,
-          minPrice: curveMinPrice,
-          maxLength: curveMaxLength,
-          baseLength: curveBaseLength,
-          precisionMultiplier: curvePrecisionMultiplier,
-          feePercentage: curveFeePercentage,
+          maxPrice,
+          curveMultiplier,
+          maxLength,
+          baseLength,
+          precisionMultiplier,
+          feePercentage,
         },
       ));
       expParentBalDiff = BigInt(0);
@@ -156,16 +171,18 @@ export const validatePathRegistration = async ({
         ({
           price: expectedPrice,
           fee: stakeFee,
-        } = await zns.fixedPricer.getPriceAndFee(parentHashFound, domainLabel, false));
+        } = await zns.fixedPricer.getPriceAndFee(config.priceConfig, domainLabel, false));
       } else {
+        const priceConfig = await (await zns.subRegistrar.distrConfigs(parentHashFound)).priceConfig;
+
         const {
           maxPrice,
-          minPrice,
+          curveMultiplier,
           maxLength,
           baseLength,
           precisionMultiplier,
           feePercentage,
-        } = await zns.curvePricer.priceConfigs(parentHashFound);
+        } = decodePriceConfig(priceConfig) as ICurvePriceConfig;
 
         ({
           expectedPrice,
@@ -174,7 +191,7 @@ export const validatePathRegistration = async ({
           domainLabel,
           {
             maxPrice,
-            minPrice,
+            curveMultiplier,
             maxLength,
             baseLength,
             precisionMultiplier,
@@ -197,7 +214,7 @@ export const validatePathRegistration = async ({
 
     const protocolFee = getStakingOrProtocolFee(
       expectedPrice + stakeFee,
-      curveFeePercentage
+      feePercentage
     );
 
     const {

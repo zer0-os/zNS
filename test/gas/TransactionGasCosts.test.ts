@@ -1,6 +1,11 @@
 import { IDistributionConfig, IZNSContractsLocal } from "../helpers/types";
 import * as hre from "hardhat";
-import { AccessType, DEFAULT_TOKEN_URI, deployZNS, PaymentType, DEFAULT_PRICE_CONFIG } from "../helpers";
+import { AccessType,
+  DEFAULT_TOKEN_URI, deployZNS,
+  PaymentType,
+  DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
+} from "../helpers";
 import * as ethers from "ethers";
 import { registrationWithSetup } from "../helpers/register-setup";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
@@ -38,14 +43,17 @@ describe("Transaction Gas Costs Test", () => {
       deployer,
       governorAddresses: [deployer.address, governor.address],
       adminAddresses: [admin.address],
-      priceConfig: DEFAULT_PRICE_CONFIG,
       zeroVaultAddress: zeroVault.address,
     });
 
-    await zns.curvePricer.connect(deployer).setPriceConfig(ethers.ZeroHash, DEFAULT_PRICE_CONFIG);
+    await zns.rootRegistrar.connect(deployer).setRootPricerAndConfig(
+      await zns.curvePricer.getAddress(),
+      DEFAULT_CURVE_PRICE_CONFIG_BYTES,
+    );
 
     config = {
       pricerContract: await zns.fixedPricer.getAddress(),
+      priceConfig:  DEFAULT_FIXED_PRICER_CONFIG_BYTES,
       paymentType: PaymentType.DIRECT,
       accessType: AccessType.OPEN,
     };
@@ -58,23 +66,25 @@ describe("Transaction Gas Costs Test", () => {
       ].map(async ({ address }) =>
         zns.meowToken.mint(address, ethers.parseEther("1000000")))
     );
+
     await zns.meowToken.connect(rootOwner).approve(await zns.treasury.getAddress(), ethers.MaxUint256);
 
     rootHashDirect = await registrationWithSetup({
       zns,
+      tokenOwner: hre.ethers.ZeroAddress,
       user: rootOwner,
       domainLabel: "rootdirect",
       fullConfig: {
         distrConfig: {
           accessType: AccessType.OPEN,
           pricerContract: await zns.curvePricer.getAddress(),
+          priceConfig: DEFAULT_CURVE_PRICE_CONFIG_BYTES,
           paymentType: PaymentType.DIRECT,
         },
         paymentConfig: {
           token: await zns.meowToken.getAddress(),
           beneficiary: rootOwner.address,
         },
-        priceConfig: DEFAULT_PRICE_CONFIG,
       },
     });
 
@@ -90,13 +100,14 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain(
-      "root",
-      rootOwner.address,
-      DEFAULT_TOKEN_URI,
-      config,
-      paymentConfig
-    );
+    const tx = await zns.rootRegistrar.connect(rootOwner).registerRootDomain({
+      name: "root",
+      domainAddress: rootOwner.address,
+      tokenOwner: hre.ethers.ZeroAddress,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distrConfig: config,
+      paymentConfig,
+    });
 
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
@@ -140,14 +151,16 @@ describe("Transaction Gas Costs Test", () => {
       beneficiary: rootOwner.address,
     };
 
-    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain(
-      rootHashDirect,
-      "subdomain",
-      lvl2SubOwner.address,
-      DEFAULT_TOKEN_URI,
-      config,
-      paymentConfig
-    );
+    const tx = await zns.subRegistrar.connect(lvl2SubOwner).registerSubdomain({
+      parentHash: rootHashDirect,
+      label: "subdomain",
+      domainAddress: lvl2SubOwner.address,
+      tokenOwner: hre.ethers.ZeroAddress,
+      tokenURI: DEFAULT_TOKEN_URI,
+      distrConfig: config,
+      paymentConfig,
+    });
+
     const receipt = await tx.wait();
     const gasUsed = receipt?.gasUsed as bigint;
 

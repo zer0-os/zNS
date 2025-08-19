@@ -3,13 +3,12 @@ import {
   IDeployMissionArgs,
   TDeployArgs,
 } from "@zero-tech/zdc";
-import { ProxyKinds } from "../../../constants";
 import { ethers } from "ethers";
 import { znsNames } from "../names";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { IZNSContracts } from "../../../campaign/types";
+import { IZNSCampaignConfig, IZNSContracts } from "../../../campaign/types";
+import { ZToken__factory } from "../../../../../typechain";
 
 
 export const meowTokenName = "MEOW";
@@ -19,12 +18,11 @@ export const meowTokenSymbol = "MEOW";
 export class MeowTokenDM extends BaseDeployMission<
 HardhatRuntimeEnvironment,
 SignerWithAddress,
-DefenderRelayProvider,
+IZNSCampaignConfig,
 IZNSContracts
 > {
   proxyData = {
-    isProxy: true,
-    kind: ProxyKinds.transparent,
+    isProxy: false,
   };
 
   contractName = znsNames.meowToken.contract;
@@ -33,7 +31,7 @@ IZNSContracts
   constructor (args : IDeployMissionArgs<
   HardhatRuntimeEnvironment,
   SignerWithAddress,
-  DefenderRelayProvider,
+  IZNSCampaignConfig,
   IZNSContracts
   >) {
     super(args);
@@ -49,8 +47,9 @@ IZNSContracts
     if (!this.config.mockMeowToken) {
       this.logger.info("Using MEOW token from Mainnet");
 
-      // TODO dep: add proper bytecode comparison here and throw if different!
-      // const bytecodeFromChain = await this.campaign.deployer.getBytecodeFromChain(this.config.stakingTokenAddress);
+      // TODO upg: add proper bytecode comparison here and throw if different!
+      // const bytecodeFromChain = await this.campaign.deployer
+      // .getBytecodeFromChain(this.config.rootPaymentTokenAddress);
 
       // const {
       //   bytecode,
@@ -65,10 +64,8 @@ IZNSContracts
 
       this.logger.debug(`Writing ${this.contractName} to DB...`);
 
-      const baseContract = await this.campaign.deployer.getContractObject(
-        this.contractName,
-        this.config.stakingTokenAddress as string,
-      );
+      const factory = new ZToken__factory(this.config.deployAdmin);
+      const baseContract = factory.attach(this.config.rootPaymentTokenAddress as string);
 
       await this.saveToDB(baseContract);
 
@@ -90,7 +87,7 @@ IZNSContracts
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return this.config.mockMeowToken as boolean;
+    return this.config.mockMeowToken ;
   }
 
   async postDeploy () {
@@ -99,13 +96,16 @@ IZNSContracts
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     // Mint 100,000 MEOW to the deployer
-    await meowToken.connect(deployAdmin).mint(
+    const tx = await meowToken.connect(deployAdmin).mint(
       await deployAdmin.getAddress?.(),
       ethers.parseEther("100000")
     );
+
+    await deployer.awaitConfirmation(tx);
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);
   }

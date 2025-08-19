@@ -1,6 +1,6 @@
 # System Architecture
 
-![zNS Smart Contract Connections and Call Routing](./img/full-architecture.jpg)
+![zNS Smart Contract Connections and Call Routing](./img/contract-structure.jpg)
 
 
 ## [ZNSAccessController](./contracts/access/ZNSAccessController.md) and [AccessControlled](./contracts/access/AccessControlled.md)
@@ -53,10 +53,10 @@ A single token contract (ERC-721) responsible for tokenizing every domain/subdom
 - Mint a new token every time a domain is registered atomically within the register transaction (i.e. `ZNSRegistrar.registerRootDomain()` -> `ZNSDomainToken.register()`)
 - Burn the respective token every time a domain is revoked atomically within the revoke transaction (`ZNSRegistrar.revokeDomain()` -> `ZNSDomainToken.revoke()`)
 - Determine and check owner of any given domain token by the tokenId
-- Transfer/sell domain token to change the owner of the Token
+- Transfer/sell domain token to change the owner of the domain
 - Serve as a standard ERC-721 token with all the functionality provided so the token can be traded and managed by other applications.
 
-## Resolvers and [ZNSAddressResolver](./contracts/resolver/ZNSAddressResolver.md)
+## Resolvers, [ZNSStringResolver](./contracts/resolver/ZNSStringResolver.md) and [ZNSAddressResolver](./contracts/resolver/ZNSAddressResolver.md)
 The zNS system is expected to have multiple Resolver contracts, each being responsible for resolutions to their own supported types for domain sources. Zero will deploy a certain amount of them to support different data types in the future, but resolvers can potentially be developed, deployed and managed by any parent domain owner to provide more data type resolutions for their subdomains.
 
 A resolver is structured to be a simple contract, having a mapping of a domain namehash to the specific source type (e.g. `bytes32 => address` OR `bytes32 => bytes`, etc.). Each Resolver can support one data type at a time or can be a combined one, supporting multiple.
@@ -68,6 +68,7 @@ The only resolver currently implemented is `ZNSAddressResolver`. It supports onl
 - Provide a simple and straightforward resolution from a name to domain source
 - Provide the way for any domain owner to change their domain source at any point in time along with simple access control which will not allow anyone else, other than the domain owner, to change this data
 - Interface checking logic (ERC-165) to provide easy type checking on supported types for the current Resolver.
+
 
 ## ZNSPricers
 The zNS system supports using multiple different contracts as "pricers". A Pricer contract is a contract that encompases a certain mathematical model
@@ -81,7 +82,7 @@ Currently, 2 different pricers are implemented and supported:
 The curve has 3 main parts:
 - the flat beginning, until `baseLength`, where a fixed `maxPrice` is returned;
 - a curve part where the price declines the longer the domain label is;
-- the flat end, from `maxLength`, where a fixed `minPrice` is returned.
+- the flat end, from `maxLength`, where a fixed price at that length is returned.
 
 This contract also includes the possibility to set a certain `feePercentage` that will be applied to the calculated price and will be sent to the domain owner.
 The `feePercentage` is set by the domain owner and can be changed at any point in time, but **not** be taken into account unless the distribution type of the parent domain is set to `STAKE`.

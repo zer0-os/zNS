@@ -1,9 +1,7 @@
-import { HardhatEthersSigner, SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { DefenderRelaySigner } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-import { ICurvePriceConfig } from "../missions/types";
-import { IContractState, IDeployCampaignConfig } from "@zero-tech/zdc";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IContractState, IDeployCampaignConfig, TEnvironment } from "@zero-tech/zdc";
 import {
-  MeowTokenMock,
+  ERC20Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSCurvePricer,
@@ -13,14 +11,15 @@ import {
   ZNSRootRegistrar,
   ZNSSubRegistrar,
   ZNSTreasury,
-  MeowToken,
+  ZNSStringResolver,
+  ZToken as MeowToken,
 } from "../../../typechain";
 
-export type IZNSSigner = HardhatEthersSigner | DefenderRelaySigner | SignerWithAddress;
 
-export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signer> {
-  env : string;
-  deployAdmin : Signer;
+export interface IZNSCampaignConfig extends IDeployCampaignConfig<SignerWithAddress> {
+  env : TEnvironment;
+  deployAdmin : SignerWithAddress;
+  pauseRegistration ?: boolean;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
   domainToken : {
@@ -29,10 +28,12 @@ export interface IZNSCampaignConfig <Signer> extends IDeployCampaignConfig<Signe
     defaultRoyaltyReceiver : string;
     defaultRoyaltyFraction : bigint;
   };
-  rootPriceConfig : ICurvePriceConfig;
+  rootPaymentType : bigint;
+  rootPricerType : string;
+  rootPriceConfig : string;
   zeroVaultAddress : string;
   mockMeowToken : boolean;
-  stakingTokenAddress : string;
+  rootPaymentTokenAddress ?: string;
   postDeploy : {
     tenderlyProjectSlug : string;
     monitorContracts : boolean;
@@ -44,9 +45,10 @@ export type ZNSContract =
   ZNSAccessController |
   ZNSRegistry |
   ZNSDomainToken |
-  MeowTokenMock |
+  ERC20Mock |
   MeowToken |
   ZNSAddressResolver |
+  ZNSStringResolver |
   ZNSCurvePricer |
   ZNSTreasury |
   ZNSRootRegistrar |
@@ -54,11 +56,12 @@ export type ZNSContract =
   ZNSSubRegistrar;
 
 export interface IZNSContracts extends IContractState<ZNSContract> {
+  meowToken : ERC20Mock;
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  meowToken : MeowTokenMock;
   addressResolver : ZNSAddressResolver;
+  stringResolver : ZNSStringResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
   rootRegistrar : ZNSRootRegistrar;
