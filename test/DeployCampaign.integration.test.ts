@@ -15,7 +15,7 @@ import {
   registerRootDomainBulk,
   registerSubdomainBulk,
 } from "./helpers/deploy-helpers";
-import { Defender } from "@openzeppelin/defender-sdk";
+
 
 describe("DeployCampaign - Integration", () => {
   // Minters
@@ -39,20 +39,20 @@ describe("DeployCampaign - Integration", () => {
   const logger = getLogger();
 
   // Default baselength is 4, maxLength is 50
-  const shortDomain = "mazz"; // Length 4
-  const mediumDomain = "mesder"; // Length 6
-  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const shortDomain = "mazzz"; // Length 4
+  const mediumDomain = "mesderz"; // Length 6
+  const longDomain = "mesderwilderwilderwilderwilderwilderwilderwilderwilz"; // Length 51
   const shortHash = hashDomainLabel(shortDomain);
   const mediumHash = hashDomainLabel(mediumDomain);
   const longHash = hashDomainLabel(longDomain);
 
-  const freeShortSubdomain = "pubj"; // Length 4
-  const freeMediumSubdomain = "pubjer"; // Length 6
-  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const freeShortSubdomain = "pubjj"; // Length 4
+  const freeMediumSubdomain = "pubjjer"; // Length 6
+  const freeLongSubdomain = "pubjerwilderwilderwilderwilderwilderwilderwilderwilj"; // Length 51
 
-  const paidShortSubdomain = "purf"; // Length 4
-  const paidMediumSubdomain = "purfer"; // Length 6
-  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwil"; // Length 51
+  const paidShortSubdomain = "purfj"; // Length 4
+  const paidMediumSubdomain = "purferj"; // Length 6
+  const paidLongSubdomain = "purferwilderwilderwilderwilderwilderwilderwilderwilj"; // Length 51
 
   // Resolve subdomain hashes through async call `hashWithParent` in `before` hook
   let freeShortSubHash : string;
@@ -62,41 +62,21 @@ describe("DeployCampaign - Integration", () => {
   let paidMediumSubHash : string;
   let paidLongSubHash : string;
 
-  const mintAmount = ethers.parseEther("10000000");
+  const mintAmount = ethers.parseEther("1000000000");
 
   const domains = [shortDomain, mediumDomain, longDomain];
 
   before(async () => {
-    [ deployAdmin, zeroVault, userA, userB, userC, userD, userE, userF ] = await hre.ethers.getSigners();
+    [ deployAdmin, userA, userB, userC, userD, userE, userF, zeroVault ] = await hre.ethers.getSigners();
 
     // Reads `ENV_LEVEL` environment variable to determine rules to be enforced
 
-    let deployer;
-    let provider;
-
-    if (hre.network.name === "hardhat") {
-      deployer = deployAdmin;
-      provider = new hre.ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
-    } else {
-      const credentials = {
-        apiKey: process.env.DEFENDER_KEY,
-        apiSecret: process.env.DEFENDER_SECRET,
-        relayerApiKey: process.env.RELAYER_KEY,
-        relayerApiSecret: process.env.RELAYER_SECRET,
-      };
-
-      const client = new Defender(credentials);
-      provider = client.relaySigner.getProvider();
-      deployer = client.relaySigner.getSigner(provider, { speed: "fast" });
-    }
-
+    const deployer = deployAdmin;
 
     config = await getConfig({
       deployer,
       zeroVaultAddress: zeroVault.address,
     });
-
-    config.mockMeowToken = hre.network.name === "hardhat";
 
     // First run the `run-campaign` script, then modify the `MONGO_DB_VERSION` environment variable
     // Then run this test. The campaign won't be run, but those addresses will be picked up from the DB
@@ -137,7 +117,7 @@ describe("DeployCampaign - Integration", () => {
     await approveBulk(users, zns);
 
     // Give the user funds
-    if (hre.network.name === "hardhat" && config.mockMeowToken) {
+    if (config.mockMeowToken) {
       await mintBulk(
         users,
         mintAmount,
@@ -315,10 +295,9 @@ describe("DeployCampaign - Integration", () => {
   it("Reclaims then revokes correctly", async () => {
     // 5. Reclaim and revoke domain
     const tx = await zns.registry.connect(userC).updateDomainOwner(freeLongSubHash, userA.address);
+    if (hre.network.name !== "hardhat") await tx.wait(1);
     await expect(tx).to.emit(zns.registry, "DomainOwnerSet").withArgs(freeLongSubHash, userA.address);
     logger.info(`Subdomain ${freeLongSubHash} ownership given to user ${userA.address} from user ${userC.address}`);
-
-    if (hre.network.name !== "hardhat") await tx.wait(1);
 
     const tx1 = await zns.rootRegistrar.connect(userC).reclaimDomain(freeLongSubHash);
     await expect(tx1).to.emit(zns.rootRegistrar, "DomainReclaimed").withArgs(freeLongSubHash, userC.address);

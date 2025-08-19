@@ -35,10 +35,14 @@ export const mintBulk = async (
   zns : TZNSContractState,
 ) => {
   for (const signer of signers) {
-    await zns.meowToken.connect(signer).mint(
+    const tx = await zns.meowToken.connect(signer).mint(
       signer.address,
       amount
     );
+
+    if (hre.network.name !== "hardhat") {
+      await tx.wait(2);
+    }
   }
 };
 
@@ -112,7 +116,7 @@ export const registerRootDomainBulk = async (
 
     const balanceAfter = await zns.meowToken.balanceOf(signers[index].address);
     const [price, protocolFee] = await zns.curvePricer.getPriceAndFee(ethers.ZeroHash, domain, true);
-    expect(balanceAfter).to.be.eq(balanceBefore - price - protocolFee);
+    expect(balanceBefore - balanceAfter).to.be.eq(price + protocolFee);
 
     const domainHash = hashDomainLabel(domain);
     expect(await zns.registry.exists(domainHash)).to.be.true;
@@ -165,7 +169,7 @@ export const registerSubdomainBulk = async (
       const [price, stakeFee] = await zns.curvePricer.getPriceAndFee(parents[index], subdomain, true);
       const protocolFee = await zns.curvePricer.getFeeForPrice(ethers.ZeroHash, price + stakeFee);
 
-      expect(balanceAfter).to.be.eq(balanceBefore - price - stakeFee - protocolFee);
+      expect(balanceBefore - balanceAfter).to.be.eq(price + stakeFee + protocolFee);
     }
 
 

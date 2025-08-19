@@ -37,7 +37,7 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS)
 // keep it commented out and uncomment when using DevNet
 // locally.
 // !!! Uncomment this when using Tenderly !!!
-tenderly.setup({ automaticVerifications: false });
+// tenderly.setup({ automaticVerifications: false });
 
 const config : HardhatUserConfig = {
   solidity: {
@@ -98,24 +98,34 @@ const config : HardhatUserConfig = {
     enabled: false,
   },
   networks: {
-    mainnet: {
-      url: `${process.env.MAINNET_RPC_URL}`,
-      gasPrice: 80000000000,
-    },
-    sepolia: {
-      url: `${process.env.SEPOLIA_RPC_URL}`,
-      timeout: 10000000,
-      // accounts: [ // Comment out for CI, uncomment this when using Sepolia
-      //   `${process.env.TESTNET_PRIVATE_KEY_A}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_B}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_C}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_D}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_E}`,
-      //   `${process.env.TESTNET_PRIVATE_KEY_F}`,
-      // ],
-      // // Must have to avoid instead failing as `invalid length for result data` error
-      // throwOnCallFailures: false, // not sure if this even works
-    },
+    // zephyr: {
+    //   url: `${process.env.ZEPHYR_RPC_URL}`,
+    //   accounts: [
+    //     `${process.env.ZNS_DEPLOYER}`
+    //   ]
+    // },
+    // mainnet: {
+    //   url: `${process.env.MAINNET_RPC_URL}`,
+    //   accounts: [
+    //     // Read only
+    //     `${process.env.MAINNET_TEST_PRIVATE_KEY}`, // Commented for CI, uncomment this when using Mainnet
+    //   ],
+    //   gasPrice: 80000000000,
+    // },
+    // sepolia: {
+    //   url: `${process.env.SEPOLIA_RPC_URL}`,
+    //   timeout: 10000000,
+    //   accounts: [ // Comment out for CI, uncomment this when using Sepolia
+    //     `${process.env.TEST_USER_A_KEY}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_B}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_C}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_D}`,
+    //     `${process.env.TEST_USER_E_KEY}`,
+    //     // `${process.env.TESTNET_PRIVATE_KEY_F}`,
+    //   ],
+    //   // // Must have to avoid instead failing as `invalid length for result data` error
+    //   // throwOnCallFailures: false, // not sure if this even works
+    // },
     devnet: {
       // Add current URL that you spawned if not using automated spawning
       url: `${process.env.DEVNET_RPC_URL}`,

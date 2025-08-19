@@ -98,7 +98,7 @@ export interface IZNSContracts {
   rootRegistrar : ZNSRootRegistrar;
   fixedPricer : ZNSFixedPricer;
   subRegistrar : ZNSSubRegistrar;
-  zeroVaultAddress : string;
+  zeroVaultAddress ?: string;
 }
 
 export interface DeployZNSParams {

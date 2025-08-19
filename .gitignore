@@ -1,10 +1,13 @@
 node_modules
-.env
+*.env*
 coverage
 coverage.json
 typechain
 typechain-types
 .idea
+.vscode
+dist
+*.log
 
 # Hardhat files
 cache
@@ -19,3 +22,5 @@ docker*.tgz
 
 # We don't ever use the generated manifests
 .openzeppelin
+
+output

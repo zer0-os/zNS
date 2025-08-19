@@ -28,7 +28,7 @@ export const getLogger = () : TLogger => {
 
   const logFileName = `deploy-${Date.now()}.log`;
 
-  if (process.env.ENV_LEVEL?.includes("prod") || process.env.ENV_LEVEL?.includes("test")) {
+  if (process.env.MAKE_LOG_FILE === "true") {
     logger.add(
       new winston.transports.File({ filename: logFileName }),
     );

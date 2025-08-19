@@ -11,9 +11,11 @@ import { getTokenContract } from "../tokens";
 export const registerDomainPath = async ({
   zns,
   domainConfigs,
+  confirmations,
 } : {
   zns : IZNSContracts;
   domainConfigs : Array<IDomainConfigForTest>;
+  confirmations ?: number;
 }) => domainConfigs.reduce(
   async (
     acc : Promise<Array<IPathRegResult>>,
@@ -62,6 +64,7 @@ export const registerDomainPath = async ({
     const domainHash = await registrationWithSetup({
       zns,
       parentHash,
+      confirmations,
       ...config,
     });
 

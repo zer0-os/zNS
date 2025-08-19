@@ -46,6 +46,7 @@ import { getProxyImplAddress } from "./helpers/utils";
 import { upgrades } from "hardhat";
 import { MongoDBAdapter } from "../src/deploy/db/mongo-adapter/mongo-adapter";
 import { getConfig } from "../src/deploy/campaign/environments";
+import { resetMongoAdapter } from "../src/deploy/db/mongo-adapter/get-adapter";
 
 require("@nomicfoundation/hardhat-chai-matchers");
 
@@ -100,6 +101,7 @@ describe("ZNSRootRegistrar", () => {
 
   afterEach(async () => {
     await mongoAdapter.dropDB();
+    resetMongoAdapter();
   });
 
   it("Sets the payment config when provided with the domain registration", async () => {
