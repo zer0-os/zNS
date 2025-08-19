@@ -1,11 +1,11 @@
 import fs from "fs";
 import { tagFilePath } from "./constants";
-import { getLogger } from "../../deploy/logger/create-logger";
+import { getZnsLogger } from "../../deploy/get-logger";
 
-
-const logger = getLogger();
 
 export const getGitTag = () => {
+  const logger = getZnsLogger();
+
   if (!fs.existsSync(tagFilePath)) {
     throw Error(`No git tag found at ${tagFilePath}`);
   }

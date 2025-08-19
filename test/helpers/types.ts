@@ -1,4 +1,5 @@
 import {
+  ERC20Mock,
   ZNSAccessController,
   ZNSAddressResolver,
   ZNSAddressResolverUpgradeMock,
@@ -17,20 +18,19 @@ import {
   ZNSRegistryUpgradeMock__factory,
   ZNSRootRegistrar,
   ZNSRootRegistrarUpgradeMock,
-  ZNSRootRegistrarUpgradeMock__factory,
+  ZNSRootRegistrarUpgradeMock__factory, ZNSStringResolverUpgradeMock, ZNSStringResolverUpgradeMock__factory,
   ZNSSubRegistrar,
   ZNSSubRegistrarUpgradeMock,
   ZNSSubRegistrarUpgradeMock__factory,
   ZNSTreasury,
   ZNSTreasuryUpgradeMock,
   ZNSTreasuryUpgradeMock__factory,
-  MeowTokenMock,
 } from "../../typechain";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { ICurvePriceConfig } from "../../src/deploy/missions/types";
+import { Addressable } from "ethers";
+import { IZNSContracts } from "../../src/deploy/campaign/types";
 
-
-export type Maybe<T> = T | undefined;
 
 export type GeneralContractGetter = Promise<
 string
@@ -43,6 +43,7 @@ string
 & { token : string; beneficiary : string; }
 | ICurvePriceConfig
 | IFixedPriceConfig
+| IDistributionConfig
 >;
 
 export type ZNSContractMockFactory =
@@ -53,7 +54,8 @@ export type ZNSContractMockFactory =
   ZNSTreasuryUpgradeMock__factory |
   ZNSRegistryUpgradeMock__factory |
   ZNSAddressResolverUpgradeMock__factory |
-  ZNSDomainTokenUpgradeMock__factory;
+  ZNSDomainTokenUpgradeMock__factory |
+  ZNSStringResolverUpgradeMock__factory;
 
 export type ZNSContractMock =
   ZNSRootRegistrarUpgradeMock |
@@ -63,17 +65,8 @@ export type ZNSContractMock =
   ZNSTreasuryUpgradeMock |
   ZNSRegistryUpgradeMock |
   ZNSAddressResolverUpgradeMock |
-  ZNSDomainTokenUpgradeMock;
-
-export type ZNSContract =
-  ZNSRootRegistrar |
-  ZNSSubRegistrar |
-  ZNSCurvePricer |
-  ZNSFixedPricer |
-  ZNSTreasury |
-  ZNSRegistry |
-  ZNSAddressResolver |
-  ZNSDomainToken;
+  ZNSDomainTokenUpgradeMock |
+  ZNSStringResolverUpgradeMock;
 
 export interface IFixedPriceConfig {
   price : bigint;
@@ -81,17 +74,19 @@ export interface IFixedPriceConfig {
 }
 
 export interface RegistrarConfig {
-  treasuryAddress : string;
   registryAddress : string;
   curvePricerAddress : string;
+  curvePriceConfig : string;
+  treasuryAddress : string;
   domainTokenAddress : string;
+  rootPaymentType : bigint;
 }
 
-export interface IZNSContracts {
+export interface IZNSContractsLocal {
   accessController : ZNSAccessController;
   registry : ZNSRegistry;
   domainToken : ZNSDomainToken;
-  meowToken : MeowTokenMock;
+  meowToken : ERC20Mock;
   addressResolver : ZNSAddressResolver;
   curvePricer : ZNSCurvePricer;
   treasury : ZNSTreasury;
@@ -105,14 +100,15 @@ export interface DeployZNSParams {
   deployer : SignerWithAddress;
   governorAddresses : Array<string>;
   adminAddresses : Array<string>;
-  priceConfig ?: ICurvePriceConfig;
   registrationFeePerc ?: bigint;
   zeroVaultAddress ?: string;
   isTenderlyRun ?: boolean;
+  rootPaymentType ?: bigint;
 }
 
 export interface IDistributionConfig {
-  pricerContract : string;
+  pricerContract : string | Addressable;
+  priceConfig : string;
   paymentType : bigint;
   accessType : bigint;
 }
@@ -123,19 +119,49 @@ export interface IPaymentConfig {
 }
 
 export interface IFullDistributionConfig {
-  paymentConfig : IPaymentConfig;
   distrConfig : IDistributionConfig;
-  priceConfig : ICurvePriceConfig | IFixedPriceConfig | undefined;
+  paymentConfig : IPaymentConfig;
 }
 
-export interface IDomainConfigForTest {
+export interface CreateConfigArgs {
+  user : SignerWithAddress;
+  tokenOwner ?: string;
+  domainLabel ?: string;
+  parentHash ?: string;
+  distrConfig ?: Partial<IDistributionConfig>;
+  paymentConfig ?: Partial<IPaymentConfig>;
+}
+
+interface ConfigArgsBase {
   user : SignerWithAddress;
   domainLabel : string;
+  tokenOwner ?: string;
   domainContent ?: string;
   parentHash ?: string;
-  fullConfig : IFullDistributionConfig;
   tokenURI ?: string;
 }
+
+export interface IDomainConfigForTest extends ConfigArgsBase {
+  fullConfig : IFullDistributionConfig;
+}
+
+export interface IRegisterWithSetupArgs extends ConfigArgsBase {
+  zns : IZNSContractsLocal | IZNSContracts;
+  fullConfig ?: IFullDistributionConfig;
+  setConfigs ?: boolean;
+}
+
+export interface DefaultRootRegistrationArgs {
+  user : SignerWithAddress;
+  zns : IZNSContractsLocal | IZNSContracts;
+  domainName : string;
+  tokenOwner ?: string;
+  domainContent ?: string;
+  tokenURI ?: string;
+  distrConfig ?: IDistributionConfig;
+  paymentConfig ?: IPaymentConfig;
+}
+
 
 export interface IPathRegResult {
   domainHash : string;
@@ -149,3 +175,21 @@ export interface IPathRegResult {
   zeroVaultBalanceAfter : bigint;
 }
 
+export interface IRootDomainConfig {
+  name : string;
+  domainAddress : string;
+  tokenOwner : string;
+  tokenURI : string;
+  distrConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
+}
+
+export interface ISubRegistrarConfig {
+  parentHash : string;
+  label : string;
+  domainAddress : string;
+  tokenOwner : string;
+  tokenURI : string;
+  distrConfig : IDistributionConfig;
+  paymentConfig : IPaymentConfig;
+}

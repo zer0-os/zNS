@@ -28,6 +28,14 @@ bytes32 REGISTRAR_ROLE
 
 This role is here specifically for the ZNSRootRegistrar.sol contract
 
+### DOMAIN_TOKEN_ROLE
+
+```solidity
+bytes32 DOMAIN_TOKEN_ROLE
+```
+
+This role is here specifically for the ZNSDomainToken.sol contract
+
 ### EXECUTOR_ROLE
 
 ```solidity

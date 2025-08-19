@@ -1,5 +1,9 @@
 ## PaymentConfig
 
+The `PaymentConfig` struct describes the two pieces of information
+needed to create a payment configuration for a domain. The address of the
+user to send funds to in a sale, and what token those funds are in.
+
 ```solidity
 struct PaymentConfig {
   contract IERC20 token;
@@ -19,7 +23,19 @@ Below are docs for the types in this file:
      + `token`: The address of the ERC-20 compliant staking token used to deposit a specific stake for domain
      + `amount`: The amount of the staking token above deposited by the user
 
+### NoBeneficiarySetForParent
+
+```solidity
+error NoBeneficiarySetForParent(bytes32 domainHash)
+```
+
+Emitted when a user tries to pay for a domain when parent's domain payment beneficiary is not set yet.
+
 ### Stake
+
+Describes a stake for a domain. This could be
+in any ERC20 token so the address of the specific token
+as well as the amount is required.
 
 ```solidity
 struct Stake {
@@ -149,7 +165,7 @@ function stakeForDomain(bytes32 parentHash, bytes32 domainHash, address deposito
 ### unstakeForDomain
 
 ```solidity
-function unstakeForDomain(bytes32 domainHash, address owner) external
+function unstakeForDomain(bytes32 domainHash, address owner, uint256 protocolFee) external
 ```
 
 ### processDirectPayment

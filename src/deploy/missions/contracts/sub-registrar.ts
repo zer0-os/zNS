@@ -1,10 +1,20 @@
-import { BaseDeployMission } from "../base-deploy-mission";
+import {
+  BaseDeployMission,
+  TDeployArgs,
+} from "@zero-tech/zdc";
 import { ProxyKinds, REGISTRAR_ROLE } from "../../constants";
-import { TDeployArgs } from "../types";
 import { znsNames } from "./names";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { IZNSCampaignConfig, IZNSContracts } from "../../campaign/types";
 
 
-export class ZNSSubRegistrarDM extends BaseDeployMission {
+export class ZNSSubRegistrarDM extends BaseDeployMission<
+HardhatRuntimeEnvironment,
+SignerWithAddress,
+IZNSCampaignConfig,
+IZNSContracts
+> {
   proxyData = {
     isProxy: true,
     kind: ProxyKinds.uups,
@@ -13,8 +23,9 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
   contractName = znsNames.subRegistrar.contract;
   instanceName = znsNames.subRegistrar.instance;
 
-  private hasRegistrarRole : boolean | undefined;
-  private isSetOnRoot : boolean | undefined;
+  private hasRegistrarRole ?: boolean;
+  private isSetOnRoot ?: boolean;
+  private needsPause ?: boolean;
 
   async deployArgs () : Promise<TDeployArgs> {
     const {
@@ -31,22 +42,23 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
       accessController,
       subRegistrar,
       rootRegistrar,
-      config: { deployAdmin },
+      config: { pauseRegistration },
     } = this.campaign;
 
     this.hasRegistrarRole = await accessController
-      .connect(deployAdmin)
       .isRegistrar(await subRegistrar.getAddress());
 
     const currentSubRegistrarOnRoot = await rootRegistrar.subRegistrar();
     this.isSetOnRoot = currentSubRegistrarOnRoot === await subRegistrar.getAddress();
 
-    const needs = !this.hasRegistrarRole || !this.isSetOnRoot;
+    this.needsPause = pauseRegistration && !await subRegistrar.registrationPaused();
+
+    const needs = !this.hasRegistrarRole || !this.isSetOnRoot || this.needsPause;
     const msg = needs ? "needs" : "doesn't need";
 
     this.logger.debug(`${this.contractName} ${msg} post deploy sequence`);
 
-    return needs;
+    return needs as boolean;
   }
 
   async postDeploy () {
@@ -64,16 +76,29 @@ export class ZNSSubRegistrarDM extends BaseDeployMission {
       config: {
         deployAdmin,
       },
+      deployer,
     } = this.campaign;
 
     if (!this.isSetOnRoot) {
-      await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+      const tx = await rootRegistrar.connect(deployAdmin).setSubRegistrar(await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
     }
 
     if (!this.hasRegistrarRole) {
-      await accessController
+      const tx = await accessController
         .connect(deployAdmin)
         .grantRole(REGISTRAR_ROLE, await subRegistrar.getAddress());
+
+      await deployer.awaitConfirmation(tx);
+    }
+
+    if (this.needsPause) {
+      const tx = await subRegistrar
+        .connect(deployAdmin)
+        .pauseRegistration();
+
+      await deployer.awaitConfirmation(tx);
     }
 
     this.logger.debug(`${this.contractName} post deploy sequence completed`);

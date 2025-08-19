@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
-import { IERC721Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
-import { IERC2981Upgradeable } from "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC2981 } from "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 
-interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
-
+interface IZNSDomainToken is IERC2981, IERC721 {
     /**
      * @notice Emitted when a Default Royalty (for all tokens) is set.
     */
@@ -21,20 +20,38 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
     event BaseURISet(string indexed baseURI);
     /**
      * @notice Emitted when a Token URI is set for individual tokens per tokenID.
+     *
      * @dev Note that this event is fired ONLY when the tokenURI is set externally
      * through an external setter and NOT during the registration.
     */
     event TokenURISet(uint256 indexed tokenId, string indexed tokenURI);
+
+    /**
+     * @notice Emitted when doing an override transfer of the token separately from the domain hash.
+     */
+    event OverrideTransfer(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId
+    );
+
+    /**
+     * @notice Revert when trying to burn the token separately from domain revocation.
+     */
+    error CannotBurnToken();
 
     function initialize(
         address accessController,
         string calldata tokenName,
         string calldata tokenSymbol,
         address defaultRoyaltyReceiver,
-        uint96 defaultRoyaltyFraction
+        uint96 defaultRoyaltyFraction,
+        address registry
     ) external;
 
     function totalSupply() external view returns (uint256);
+
+    function isControlled(bytes32 domainHash) external view returns (bool);
 
     function register(
         address to,
@@ -43,6 +60,11 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
     ) external;
 
     function revoke(uint256 tokenId) external;
+
+    function transferOverride(
+        address to,
+        uint256 tokenId
+    ) external;
 
     function tokenURI(uint256 tokenId)
     external
@@ -60,6 +82,8 @@ interface IZNSDomainToken is IERC2981Upgradeable, IERC721Upgradeable {
         address receiver,
         uint96 royaltyFraction
     ) external;
+
+    function setRegistry(address registry_) external;
 
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }

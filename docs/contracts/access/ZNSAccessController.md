@@ -8,6 +8,7 @@ Uses a role-based access control scheme with levels:
 - ADMIN: The main maintainer role, that gets access to all system functions (managed by Governor)
 - EXECUTOR: Can be here to future proof, if we need a new role (managed by Governor)
 - REGISTRAR: This role is here specifically for the ZNSRootRegistrar.sol contract (managed by Admin)
+- DOMAIN_TOKEN: This role is here specifically for the ZNSDomainToken.sol contract (managed by Admin)
 
 > This contract is NOT proxied. When new implementation is needed, a new contract will be deployed
 and all modules will be updated to use the new address, since they all inherit from `AAccessControlled.sol`.
@@ -42,6 +43,12 @@ function checkExecutor(address account) external view
 function checkRegistrar(address account) external view
 ```
 
+### checkDomainToken
+
+```solidity
+function checkDomainToken(address account) external view
+```
+
 ### isAdmin
 
 ```solidity
@@ -52,6 +59,12 @@ function isAdmin(address account) external view returns (bool)
 
 ```solidity
 function isRegistrar(address account) external view returns (bool)
+```
+
+### isDomainToken
+
+```solidity
+function isDomainToken(address account) external view returns (bool)
 ```
 
 ### isGovernor

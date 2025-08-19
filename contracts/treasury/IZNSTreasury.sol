@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/** 
+/**
  * @notice The `PaymentConfig` struct describes the two pieces of information
  * needed to create a payment configuration for a domain. The address of the
  * user to send funds to in a sale, and what token those funds are in.
@@ -17,6 +17,7 @@ struct PaymentConfig {
 
 /**
  * @title IZNSTreasury.sol - Interface for the ZNSTreasury contract responsible for managing payments and staking.
+ *
  * @dev Below are docs for the types in this file:
  *  - `PaymentConfig`: Struct containing data for the payment configuration of the parent distributing subdomains:
  *      + `token`: The address of the ERC-20 compliant payment token contract chosen by the parent
@@ -26,9 +27,13 @@ struct PaymentConfig {
  *      + `amount`: The amount of the staking token above deposited by the user
 */
 interface IZNSTreasury {
+    /**
+     * @notice Emitted when a user tries to pay for a domain when parent's domain payment beneficiary is not set yet.
+     */
+    error NoBeneficiarySetForParent(bytes32 domainHash);
 
     /**
-     * @notice Describe a stake for a domain. This could be 
+     * @notice Describes a stake for a domain. This could be
      * in any ERC20 token so the address of the specific token
      * as well as the amount is required.
      */
@@ -39,6 +44,7 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when a new stake is deposited upon registration of a new domain.
+     *
      * @param domainHash The hash of the domain name
      * @param depositor The address of the depositing user / new domain owner
      * @param stakeAmount The amount they are depositing / price of the domain based on name length
@@ -56,6 +62,7 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when a stake is withdrawn upon domain revocation.
+     *
      * @param domainHash The hash of the domain name being revoked
      * @param owner The owner of the domain being revoked
      * @param stakeAmount The staked amount withdrawn to the user after revoking
@@ -69,6 +76,7 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when a direct payment is processed upon registration of a new domain.
+     *
      * @param parentHash The hash of the parent domain
      * @param domainHash The full namehash of the domain registered
      * @param payer The address of the user who paid for the domain
@@ -87,18 +95,21 @@ interface IZNSTreasury {
 
     /**
      * @notice Emitted when `curvePricer` is set in state.
+     *
      * @param curvePricer The new address of the CurvePricer contract
      */
     event CurvePricerSet(address curvePricer);
 
     /**
      * @notice Emitted when `stakingToken` is set in state.
+     *
      * @param token The new address of the ERC-20 compliant payment token contract
      */
     event PaymentTokenSet(bytes32 indexed domainHash, address indexed token);
 
     /**
      * @notice Emitted when `zeroVault` is set in state.
+     *
      * @param beneficiary The new address of the beneficiary contract or wallet
      */
     event BeneficiarySet(bytes32 indexed domainHash, address indexed beneficiary);
@@ -121,7 +132,11 @@ interface IZNSTreasury {
         uint256 protocolFee
     ) external;
 
-    function unstakeForDomain(bytes32 domainHash, address owner) external;
+    function unstakeForDomain(
+        bytes32 domainHash,
+        address owner,
+        uint256 protocolFee
+    ) external;
 
     function processDirectPayment(
         bytes32 parentHash,

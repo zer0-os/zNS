@@ -1,52 +1,64 @@
 import * as hre from "hardhat";
-import { DefenderRelayProvider } from "@openzeppelin/defender-sdk-relay-signer-client/lib/ethers";
-
-import { IDeployCampaignConfig } from "./campaign/types";
-import { HardhatDeployer } from "./deployer/hardhat-deployer";
-import { DeployCampaign } from "./campaign/deploy-campaign";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import {
+  HardhatDeployer,
+  DeployCampaign,
+} from "@zero-tech/zdc";
 import {
   MeowTokenDM,
   ZNSAccessControllerDM,
   ZNSAddressResolverDM,
+  ZNSStringResolverDM,
   ZNSDomainTokenDM, ZNSCurvePricerDM, ZNSRootRegistrarDM,
   ZNSRegistryDM, ZNSTreasuryDM, ZNSFixedPricerDM, ZNSSubRegistrarDM,
 } from "./missions/contracts";
-import { getMongoAdapter } from "./db/mongo-adapter/get-adapter";
-import { getLogger } from "./logger/create-logger";
+import { IZNSCampaignConfig, IZNSContracts } from "./campaign/types";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { getZnsMongoAdapter } from "./mongo";
+import { getZnsLogger } from "./get-logger";
 
-// TODO how do we mock certain things for tests
+
 export const runZnsCampaign = async ({
   config,
-  provider,
   dbVersion,
   deployer,
 } : {
-  config : IDeployCampaignConfig;
-  provider ?: DefenderRelayProvider;
+  config : IZNSCampaignConfig;
   dbVersion ?: string;
-  deployer ?: HardhatDeployer;
+  deployer ?: HardhatDeployer<HardhatRuntimeEnvironment, SignerWithAddress>;
 }) => {
   hre.upgrades.silenceWarnings();
 
-  const logger = getLogger();
+  const logger = getZnsLogger();
 
   if (!deployer) {
-    deployer = new HardhatDeployer(config.deployAdmin, config.env, provider);
+    deployer = new HardhatDeployer({
+      hre,
+      confirmationsN: config.confirmationsN,
+      signer: config.deployAdmin,
+      env: config.env,
+    });
   }
 
-  const dbAdapter = await getMongoAdapter();
+  const dbAdapter = await getZnsMongoAdapter();
 
-  const campaign = new DeployCampaign({
+  const campaign = new DeployCampaign<
+  HardhatRuntimeEnvironment,
+  SignerWithAddress,
+  IZNSCampaignConfig,
+  IZNSContracts
+  >({
     missions: [
       ZNSAccessControllerDM,
       ZNSRegistryDM,
       ZNSDomainTokenDM,
       MeowTokenDM,
       ZNSAddressResolverDM,
+      ZNSStringResolverDM,
       ZNSCurvePricerDM,
+      ZNSFixedPricerDM,
       ZNSTreasuryDM,
       ZNSRootRegistrarDM,
-      ZNSFixedPricerDM,
       ZNSSubRegistrarDM,
     ],
     deployer,
@@ -57,7 +69,7 @@ export const runZnsCampaign = async ({
 
   await campaign.execute();
 
-  await dbAdapter.finalizeDeployedVersion(dbVersion);
+  await dbAdapter.finalize(dbVersion);
 
   return campaign;
 };

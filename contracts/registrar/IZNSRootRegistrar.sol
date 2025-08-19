@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
-import { IDistributionConfig } from "../types/IDistributionConfig.sol";
+import { IDistributionConfig } from "./IDistributionConfig.sol";
 import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
+import { IZNSDomainToken } from "../token/IZNSDomainToken.sol";
+import { IZNSSubRegistrar } from "./IZNSSubRegistrar.sol";
+import { IZNSPricer } from "../price/IZNSPricer.sol";
+import { IZNSTreasury } from "../treasury/IZNSTreasury.sol";
 
 
 /**
@@ -12,69 +16,93 @@ import { PaymentConfig } from "../treasury/IZNSTreasury.sol";
 struct CoreRegisterArgs {
     bytes32 parentHash;
     bytes32 domainHash;
-    address registrant;
+    bool isStakePayment;
+    address domainOwner;
+    address tokenOwner;
     address domainAddress;
     uint256 price;
     uint256 stakeFee;
+    PaymentConfig paymentConfig;
     string label;
     string tokenURI;
-    bool isStakePayment;
-    PaymentConfig paymentConfig;
 }
 
 /**
  * @title IZNSRootRegistrar.sol - Interface for the ZNSRootRegistrar contract resposible for registering root domains.
  * @notice Below are docs for the types in this file:
- *  - `OwnerOf`: Enum signifying ownership of ZNS entities
- *      + NAME: The owner of the Name only
- *      + TOKEN: The owner of the Token only
- *      + BOTH: The owner of both the Name and the Token
  *  - `CoreRegisterArgs`: Struct containing all the arguments required to register a domain
  *  with ZNSRootRegistrar.coreRegister():
  *      + `parentHash`: The hash of the parent domain (0x0 for root domains)
  *      + `domainHash`: The hash of the domain to be registered
- *      + `label`: The label of the domain to be registered
- *      + `registrant`: The address of the user who is registering the domain
+ *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
+ *      + `domainOwner`: The address that will be set as owner in Registry record
+ *      + `tokenOwner`: The address that will be set as owner in DomainToken contract
+ *      + `domainAddress`: The address to which the domain will be resolved to
  *      + `price`: The determined price for the domain to be registered based on parent rules
  *      + `stakeFee`: The determined stake fee for the domain to be registered (only for PaymentType.STAKE!)
- *      + `domainAddress`: The address to which the domain will be resolved to
+ *      + `paymentConfig`: The payment config for the domain to be registered
+ *      + `label`: The label of the domain to be registered
  *      + `tokenURI`: The tokenURI for the domain to be registered
- *      + `isStakePayment`: A flag for whether the payment is a stake payment or not
  */
 interface IZNSRootRegistrar is IDistributionConfig {
-
-    enum OwnerOf {
-        NAME,
-        TOKEN,
-        BOTH
+    struct RootDomainRegistrationArgs {
+        string name;
+        address domainAddress;
+        address tokenOwner;
+        string tokenURI;
+        DistributionConfig distrConfig; // pricecontract, access, payment
+        PaymentConfig paymentConfig; // token, beneficiary
     }
 
     /**
+     * @notice Reverted when trying to assign a token to address that is already an owner
+     *
+     * @param domainHash The hash of the domain
+     * @param currentOwner The address that is already an owner of the token
+     */
+    error AlreadyTokenOwner(
+        bytes32 domainHash,
+        address currentOwner
+    );
+
+    /**
+     * @notice Reverted when trying to set new `rootPaymentType` that is not supported.
+     *
+     * @param paymentType The payment type passed to the setter
+     */
+    error InvalidRootPaymentType(PaymentType paymentType);
+
+    /**
      * @notice Emitted when a NEW domain is registered.
+     *
      * @dev `domainAddress` parameter is the address to which a domain name will relate to in ZNS.
      * E.g. if a user made a domain for his wallet, the address of the wallet will be the `domainAddress`.
      * This can be 0 as this variable is not required to perform registration process
      * and can be set at a later time by the domain owner.
+     *
      * @param parentHash The hash of the parent domain (0x0 for root domains)
      * @param label The name as the last part of the full domain string (level) registered
      * @param domainHash The hash of the domain registered
      * @param tokenId The tokenId of the domain registered
      * @param tokenURI The tokenURI of the domain registered
-     * @param registrant The address that called `ZNSRootRegistrar.registerRootDomain()`
+     * @param domainOwner The address became owner in Registry record
+     * @param tokenOwner The optinal address the token will be assigned to, to offer domain usage without ownership
      * @param domainAddress The domain address of the domain registered
      */
     event DomainRegistered(
         bytes32 parentHash,
         bytes32 indexed domainHash,
         string label,
-        uint256 indexed tokenId,
+        uint256 tokenId,
         string tokenURI,
-        address indexed registrant,
+        address indexed domainOwner,
+        address indexed tokenOwner,
         address domainAddress
     );
 
     /**
      * @notice Emitted when a domain is revoked.
+     *
      * @param domainHash The hash of the domain revoked
      * @param owner The address that called `ZNSRootRegistrar.sol.revokeDomain()` and domain owner
      * @param stakeRefunded A flag for whether the stake was refunded or not
@@ -86,54 +114,83 @@ interface IZNSRootRegistrar is IDistributionConfig {
     );
 
     /**
-     * @notice Emitted when an ownership of the Name is reclaimed by the Token owner.
+     * @notice Emitted when the hash (registry record) owner is sending a token to another address
+     * through the RootRegistrar.
+     *
      * @param domainHash The hash of the domain reclaimed
-     * @param registrant The address that called `ZNSRootRegistrar.sol.reclaimDomain()`
+     * @param newOwner The address that called `ZNSRootRegistrar.reclaimDomain()`
      */
-    event DomainReclaimed(
+    event DomainTokenReassigned(
         bytes32 indexed domainHash,
-        address indexed registrant
+        address indexed newOwner
     );
 
     /**
-     * @notice Emitted when the `rootPricer` address is set in state.
+     * @notice Emitted when the `rootPricer` address and the `rootPriceConfig`
+     * values are set in state.
+     *
      * @param rootPricer The new address of any IZNSPricer type contract
+     * @param priceConfig The encoded bytes for the price config
      */
-    event RootPricerSet(address rootPricer);
+    event RootPricerSet(
+        address indexed rootPricer,
+        bytes priceConfig
+    );
+
+    /**
+     * @notice Emitted when the `rootPriceConfig` value is set in state.
+     *
+     * @param priceConfig The encoded bytes for the price config
+     */
+    event RootPriceConfigSet(
+        bytes indexed priceConfig
+    );
 
     /**
      * @notice Emitted when the `treasury` address is set in state.
+     *
      * @param treasury The new address of the Treasury contract
      */
     event TreasurySet(address treasury);
 
     /**
      * @notice Emitted when the `domainToken` address is set in state.
+     *
      * @param domainToken The new address of the DomainToken contract
      */
     event DomainTokenSet(address domainToken);
 
     /**
      * @notice Emitted when the `subRegistrar` address is set in state.
+     *
      * @param subRegistrar The new address of the SubRegistrar contract
      */
     event SubRegistrarSet(address subRegistrar);
+
+    /**
+     * @notice Emitted when the `rootPaymentType` is set in state.
+     *
+     * @param newRootPaymentType The new type of payment for root domains
+     */
+    event RootPaymentTypeSet(PaymentType newRootPaymentType);
 
     function initialize(
         address accessController_,
         address registry_,
         address rootPricer_,
+        bytes memory priceConfig_,
         address treasury_,
-        address domainToken_
+        address domainToken_,
+        PaymentType rootPaymentType_
     ) external;
 
     function registerRootDomain(
-        string calldata name,
-        address domainAddress,
-        string calldata tokenURI,
-        DistributionConfig calldata distributionConfig,
-        PaymentConfig calldata paymentConfig
+        RootDomainRegistrationArgs calldata args
     ) external returns (bytes32);
+
+    function registerRootDomainBulk(
+        RootDomainRegistrationArgs[] calldata args
+    ) external returns (bytes32[] memory);
 
     function coreRegister(
         CoreRegisterArgs memory args
@@ -141,17 +198,40 @@ interface IZNSRootRegistrar is IDistributionConfig {
 
     function revokeDomain(bytes32 domainHash) external;
 
-    function reclaimDomain(bytes32 domainHash) external;
-
-    function isOwnerOf(bytes32 domainHash, address candidate, OwnerOf ownerOf) external view returns (bool);
+    function assignDomainToken(bytes32 domainHash, address to) external;
 
     function setRegistry(address registry_) external;
 
-    function setRootPricer(address rootPricer_) external;
+    function setRootPricerAndConfig(
+        address rootPricer_,
+        bytes memory priceConfig_
+    ) external;
+
+    function setRootPriceConfig(
+        bytes memory priceConfig_
+    ) external;
+
+    function setRootPaymentType(PaymentType rootPaymentType_) external;
 
     function setTreasury(address treasury_) external;
 
     function setDomainToken(address domainToken_) external;
 
     function setSubRegistrar(address subRegistrar_) external;
+
+    function pauseRegistration() external;
+
+    function unpauseRegistration() external;
+
+    function rootPricer() external returns (IZNSPricer);
+
+    function rootPriceConfig() external returns (bytes memory);
+
+    function rootPaymentType() external returns (PaymentType);
+
+    function treasury() external returns (IZNSTreasury);
+
+    function domainToken() external returns (IZNSDomainToken);
+
+    function subRegistrar() external returns (IZNSSubRegistrar);
 }

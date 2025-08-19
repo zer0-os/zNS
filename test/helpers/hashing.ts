@@ -22,8 +22,6 @@ export const reverseInputName = (name : string) => {
  */
 export const hashSubdomainName = (name : string) => {
   // ens namehash lib expects child.parent for hashing algorithm as opposed to our format: parent.child
-  // TODO sub: how do we deal with this? since the hash would be the reverse of what we expect
-  // TODO sub: figure this out!
   const reversedInputName = reverseInputName(name);
   return ensjs.namehash(reversedInputName);
 };

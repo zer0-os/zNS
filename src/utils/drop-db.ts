@@ -1,24 +1,27 @@
-import { getMongoAdapter } from "../deploy/db/mongo-adapter/get-adapter";
-import { startMongo, stopMongo } from "../deploy/db/service/mongo-service";
-import { getLogger } from "../deploy/logger/create-logger";
+import { startMongo, stopMongo, getZnsMongoAdapter } from "../deploy/mongo";
+import { getZnsLogger } from "../deploy/get-logger";
 
 
-const logger = getLogger();
+export const dropDB = async (retries = 2) => {
+  if (retries <= 0) return;
 
-export const dropDB = async () => {
   try {
-    const adapter = await getMongoAdapter();
+    const adapter = await getZnsMongoAdapter();
     await adapter.dropDB();
     await stopMongo();
   } catch (e) {
+    const error = e as Error;
+    console.error(
+      `drop-db failed with error: ${error.message}\n${error.stack}.\nAttempting to retry...`,
+    );
     await startMongo();
-    await dropDB();
+    await dropDB(retries - 1);
   }
 };
 
 dropDB()
   .then(() => process.exit(0))
   .catch(error => {
-    logger.debug(error);
+    getZnsLogger().debug(error);
     process.exit(1);
   });

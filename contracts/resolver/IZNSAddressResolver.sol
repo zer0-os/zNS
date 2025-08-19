@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.26;
 
 
 interface IZNSAddressResolver {
     /**
-     * @dev Emit when ownership of a domain is modified
+     * @dev Emitted when address resolution value is set for a domain.
+     *
      * @param newAddress The new domain owner
      * @param domainHash The identifying hash of a domain's name
      */
