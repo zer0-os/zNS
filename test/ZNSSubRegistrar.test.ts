@@ -65,7 +65,7 @@ import { ZeroHash } from "ethers";
 import { IFullDomainConfig } from "./helpers/domain/types";
 
 
-describe.only("ZNSSubRegistrar", () => {
+describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -1262,13 +1262,14 @@ describe.only("ZNSSubRegistrar", () => {
     });
   });
 
-  describe.only("Operations with domain paths", () => {
+  describe("Operations with domain paths", () => {
     let domainConfigs : Array<IFullDomainConfig>;
 
     interface RegRes {
       domainHash : string;
       label : string;
       owner : SignerWithAddress;
+      parentHash : string | undefined;
     }
     const regResults : Array<RegRes> = [];
 
@@ -1317,6 +1318,7 @@ describe.only("ZNSSubRegistrar", () => {
           domainHash: domain.hash,
           label: config.label,
           owner: config.owner,
+          parentHash: config.parentHash,
         };
 
         if (extrArray) {
@@ -1489,7 +1491,7 @@ describe.only("ZNSSubRegistrar", () => {
     });
 
     it("should be able to register multiple domains under multiple levels for the same owner", async () => {
-      domainConfigs = [
+      const configs = [
         {
           owner: multiOwner,
           label: "multiownerdomone",
@@ -1604,7 +1606,7 @@ describe.only("ZNSSubRegistrar", () => {
       ];
 
       const regResultsLocal = await regValidateAndSaveHashes({
-        configs: domainConfigs,
+        configs,
       }) as Array<RegRes>;
 
       // check
@@ -1624,16 +1626,16 @@ describe.only("ZNSSubRegistrar", () => {
             accessType,
             paymentType,
           } = await zns.subRegistrar.distrConfigs(regResultsLocal[idx].domainHash);
-          expect(pricerContract).to.eq(domainConfigs[idx].distrConfig?.pricerContract);
-          expect(accessType).to.eq(domainConfigs[idx].distrConfig?.accessType);
-          expect(paymentType).to.eq(domainConfigs[idx].distrConfig?.paymentType);
+          expect(pricerContract).to.eq(configs[idx].distrConfig?.pricerContract);
+          expect(accessType).to.eq(configs[idx].distrConfig?.accessType);
+          expect(paymentType).to.eq(configs[idx].distrConfig?.paymentType);
 
           const {
             token,
             beneficiary,
           } = await zns.treasury.paymentConfigs(regResultsLocal[idx].domainHash);
-          expect(token).to.eq(domainConfigs[idx].paymentConfig?.token);
-          expect(beneficiary).to.eq(domainConfigs[idx].paymentConfig?.beneficiary);
+          expect(token).to.eq(configs[idx].paymentConfig?.token);
+          expect(beneficiary).to.eq(configs[idx].paymentConfig?.beneficiary);
 
           const domainAddress = await zns.addressResolver.resolveDomainAddress(regResultsLocal[idx].domainHash);
           expect(domainAddress).to.eq(multiOwner.address);
@@ -1643,7 +1645,6 @@ describe.only("ZNSSubRegistrar", () => {
 
     it("should revoke lvl 6 domain without refund, lock registration and remove mintlist", async () => {
       const domainHash = regResults[5].domainHash;
-      const howMuch = await zns.treasury.stakedForDomain(domainHash);
 
       // add to mintlist
       await zns.subRegistrar.connect(lvl6SubOwner).updateMintlistForDomain(
@@ -2145,12 +2146,9 @@ describe.only("ZNSSubRegistrar", () => {
           },
         },
       });
+      await newChildHash.registerAndValidateDomain(branchLvl2Owner);
 
       const childBalAfter = await zns.meowToken.balanceOf(branchLvl2Owner.address);
-
-      // check that the new child has been registered
-      const childOwnerFromReg = await zns.registry.getDomainOwner(newChildHash);
-      expect(childOwnerFromReg).to.eq(branchLvl2Owner.address);
 
       const protocolFee = getStakingOrProtocolFee(fixedPrice);
 
