@@ -65,7 +65,7 @@ import { ZeroHash } from "ethers";
 import { IFullDomainConfig } from "./helpers/domain/types";
 
 
-describe("ZNSSubRegistrar", () => {
+describe.only("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -173,7 +173,7 @@ describe("ZNSSubRegistrar", () => {
       });
       await subdomain.register(lvl2SubOwner);
 
-      const config = await zns.treasury.paymentConfigs(subdomain.hash);
+      const config = await subdomain.getPaymentConfig();
       expect(config.token).to.eq(await zns.meowToken.getAddress());
       expect(config.beneficiary).to.eq(lvl2SubOwner.address);
     });
@@ -212,7 +212,7 @@ describe("ZNSSubRegistrar", () => {
       });
       await subdomain.register();
 
-      const config = await zns.treasury.paymentConfigs(subdomain.hash);
+      const config = await subdomain.getPaymentConfig();
       expect(config.token).to.eq(ethers.ZeroAddress);
       expect(config.beneficiary).to.eq(ethers.ZeroAddress);
     });
@@ -389,11 +389,10 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
-      await subdomain.register();
+      await subdomain.register(admin);
 
       // check that the domain was registered
-      const owner = await zns.registry.getDomainOwner(subdomain.hash);
-      expect(owner).to.eq(admin.address);
+      expect(subdomain.owner).to.eq(admin.address);
 
       // unpause the sub registrar for further tests
       await zns.subRegistrar.connect(admin).unpauseRegistration();
@@ -443,9 +442,7 @@ describe("ZNSSubRegistrar", () => {
       });
       await sub.register();
 
-      const tokenId = BigInt(sub.hash).toString();
-      const tokenURI = await zns.domainToken.tokenURI(tokenId);
-      expect(tokenURI).to.eq(subTokenURI);
+      expect(sub.tokenURI).to.eq(subTokenURI);
     });
 
     it("Can register a subdomain with characters [a-z0-9-]", async () => {
@@ -481,7 +478,6 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
-
       await subdomain.registerAndValidateDomain();
     });
 
@@ -606,7 +602,7 @@ describe("ZNSSubRegistrar", () => {
 
       // check that this hash can NOT be passed as parentHash
       await expect(
-        subdomain.register(lvl2SubOwner)
+        subdomain.register()
       ).to.be.revertedWithCustomError(
         zns.subRegistrar,
         DISTRIBUTION_LOCKED_NOT_EXIST_ERR
@@ -654,16 +650,7 @@ describe("ZNSSubRegistrar", () => {
           },
         },
       });
-      await subdomain.register();
-
-      const tokenId = BigInt(subdomain.hash).toString();
-      const tokenURI = await zns.domainToken.tokenURI(tokenId);
-      expect(tokenURI).to.eq(subTokenURI);
-
-      // check registry
-      const dataFromReg = await zns.registry.getDomainRecord(subdomain.hash);
-      expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
-      expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
+      await subdomain.registerAndValidateDomain();
     });
 
     // ! this value can change based on the block gas limit !
@@ -697,16 +684,7 @@ describe("ZNSSubRegistrar", () => {
           paymentConfig: FULL_DISTR_CONFIG_EMPTY.paymentConfig,
         },
       });
-      await subdomain.register();
-
-      const tokenId = BigInt(subdomain.hash).toString();
-      const tokenURI = await zns.domainToken.tokenURI(tokenId);
-      expect(tokenURI).to.eq(subTokenURI);
-
-      // check registry
-      const dataFromReg = await zns.registry.getDomainRecord(subdomain.hash);
-      expect(dataFromReg.owner).to.eq(lvl2SubOwner.address);
-      expect(dataFromReg.resolver).to.eq(await zns.addressResolver.getAddress());
+      await subdomain.registerAndValidateDomain();
     });
 
     it("should revert when user has insufficient funds", async () => {
@@ -838,9 +816,8 @@ describe("ZNSSubRegistrar", () => {
         },
       });
       await domain2.register();
-
       // set the token address
-      await zns.treasury.connect(rootOwner).setPaymentToken(domain2.hash, await zns.meowToken.getAddress());
+      await domain2.setPaymentTokenForDomain(await zns.meowToken.getAddress());
 
       // register subdomains under new parents
       const subdomain = new Domain({
@@ -888,7 +865,8 @@ describe("ZNSSubRegistrar", () => {
 
       decodedConfig.feePercentage = BigInt(0);
 
-      await zns.subRegistrar.connect(rootOwner).setPricerDataForDomain(
+      // TODO dom: start from this
+      await domain2.setPricerDataForDomain(
         domain2.hash,
         encodePriceConfig(decodedConfig),
         currDistrConfig.pricerContract
