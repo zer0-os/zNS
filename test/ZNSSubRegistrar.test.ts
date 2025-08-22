@@ -65,7 +65,7 @@ import { ZeroHash } from "ethers";
 import { IFullDomainConfig } from "./helpers/domain/types";
 
 
-describe.only("ZNSSubRegistrar", () => {
+describe("ZNSSubRegistrar", () => {
   let deployer : SignerWithAddress;
   let rootOwner : SignerWithAddress;
   let specificRootOwner : SignerWithAddress;
@@ -817,7 +817,7 @@ describe.only("ZNSSubRegistrar", () => {
       });
       await domain2.register();
       // set the token address
-      await domain2.setPaymentTokenForDomain(await zns.meowToken.getAddress());
+      await domain2.setPaymentTokenForDomain({ tokenAddress: await zns.meowToken.getAddress() });
 
       // register subdomains under new parents
       const subdomain = new Domain({
@@ -866,11 +866,10 @@ describe.only("ZNSSubRegistrar", () => {
       decodedConfig.feePercentage = BigInt(0);
 
       // TODO dom: start from this
-      await domain2.setPricerDataForDomain(
-        domain2.hash,
-        encodePriceConfig(decodedConfig),
-        currDistrConfig.pricerContract
-      );
+      await domain2.setPricerDataForDomain({
+        priceConfig: decodedConfig,
+        pricerContract: currDistrConfig.pricerContract,
+      });
 
       // try register a subdomain again
       await subdomain2.register();

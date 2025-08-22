@@ -164,20 +164,26 @@ export default class Domain {
     return this.zns.rootRegistrar.connect(executor ? executor : this.owner).revokeDomain(this.hash);
   }
 
-  async assignDomainToken (
-    to : string,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async assignDomainToken ({
+    to,
+    executor,
+  } : {
+    to : string;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.rootRegistrar.connect(executor ? executor : this.owner).assignDomainToken(
       this.hash,
       to
     );
   }
 
-  async updateDomainRecord (
-    resolverType : string,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async updateDomainRecord ({
+    resolverType,
+    executor,
+  } : {
+    resolverType : string;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.registry.connect(executor ? executor : this.owner).updateDomainRecord(
       this.hash,
       this.owner,
@@ -185,11 +191,15 @@ export default class Domain {
     );
   }
 
-  async updateMintlistForDomain (
-    candidates : Array<string>,
-    allowed : Array<boolean>,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async updateMintlistForDomain ({
+    candidates,
+    allowed,
+    executor,
+  } : {
+    candidates : Array<string>;
+    allowed : Array<boolean>;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     if (candidates.length !== allowed.length)
       throw new Error("Domain Helper: Candidates and allowed arrays must have the same length");
 
@@ -217,11 +227,15 @@ export default class Domain {
   // ------------------------------------------------------
   // SETTERS
   // ------------------------------------------------------
-  async setOwnersOperator (
-    operator : string,
-    allowed : boolean,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async setOwnersOperator ({
+    operator,
+    allowed,
+    executor,
+  } : {
+    operator : string;
+    allowed : boolean;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.registry.connect(executor ? executor : this.owner).setOwnersOperator(operator, allowed);
   }
 
@@ -234,11 +248,15 @@ export default class Domain {
     );
   }
 
-  async setPricerDataForDomain (
-    priceConfig ?: ICurvePriceConfig | IFixedPriceConfig,
-    pricerContract ?: string,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async setPricerDataForDomain ({
+    priceConfig,
+    pricerContract,
+    executor,
+  } : {
+    priceConfig ?: ICurvePriceConfig | IFixedPriceConfig;
+    pricerContract ?: string;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.subRegistrar.connect(executor ? executor : this.owner).setPricerDataForDomain(
       this.hash,
       priceConfig ? encodePriceConfig(priceConfig) : encodePriceConfig(this.priceConfig),
@@ -246,30 +264,39 @@ export default class Domain {
     );
   }
 
-  async setPaymentTypeForDomain (
-    paymentType : bigint,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async setPaymentTypeForDomain ({
+    paymentType,
+    executor,
+  } : {
+    paymentType : bigint;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.subRegistrar.connect(executor ? executor : this.owner).setPaymentTypeForDomain(
       this.hash,
       paymentType,
     );
   }
 
-  async setAccessTypeForDomain (
-    accessType : bigint,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async setAccessTypeForDomain ({
+    accessType,
+    executor,
+  } : {
+    accessType : bigint;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     return this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
       this.hash,
       accessType,
     );
   }
 
-  async setPaymentTokenForDomain (
-    tokenAddress : string,
-    executor ?: SignerWithAddress
-  ) : Promise<ContractTransactionResponse> {
+  async setPaymentTokenForDomain ({
+    tokenAddress,
+    executor,
+  } : {
+    tokenAddress : string;
+    executor ?: SignerWithAddress;
+  }) : Promise<ContractTransactionResponse> {
     if (!hre.ethers.isAddress(tokenAddress)) {
       throw new Error("Domain Helper: Invalid token address provided");
     }
@@ -283,10 +310,13 @@ export default class Domain {
   // ------------------------------------------------------
   // VALIDATION
   // ------------------------------------------------------
-  async validate (
-    txPromise : ContractTransactionResponse,
-    executor ?: SignerWithAddress
-  ) {
+  async validate ({
+    txPromise,
+    executor,
+  } : {
+    txPromise : ContractTransactionResponse;
+    executor ?: SignerWithAddress;
+  }) {
     // check domain existence with event
     await expect(txPromise)
       .to.emit(
@@ -323,6 +353,9 @@ export default class Domain {
   ) : Promise<void> {
     const txPromise = await this.register(executor ? executor : this.owner);
 
-    await this.validate(txPromise, executor);
+    await this.validate({
+      txPromise,
+      executor,
+    });
   }
 }
