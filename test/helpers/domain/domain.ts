@@ -201,6 +201,20 @@ export default class Domain {
   }
 
   // ------------------------------------------------------
+  // GETTERS
+  // ------------------------------------------------------
+  async getDomainRecord () : Promise<{
+    owner : string;
+    resolver : string;
+  }> {
+    return this.zns.registry.getDomainRecord(this.hash);
+  }
+
+  async getPaymentConfig () : Promise<IPaymentConfig> {
+    return this.zns.treasury.paymentConfigs(this.hash);
+  }
+
+  // ------------------------------------------------------
   // SETTERS
   // ------------------------------------------------------
   async setOwnersOperator (
@@ -249,6 +263,20 @@ export default class Domain {
     return this.zns.subRegistrar.connect(executor ? executor : this.owner).setAccessTypeForDomain(
       this.hash,
       accessType,
+    );
+  }
+
+  async setPaymentTokenForDomain (
+    tokenAddress : string,
+    executor ?: SignerWithAddress
+  ) : Promise<ContractTransactionResponse> {
+    if (!hre.ethers.isAddress(tokenAddress)) {
+      throw new Error("Domain Helper: Invalid token address provided");
+    }
+
+    return this.zns.treasury.connect(executor ? executor : this.owner).setPaymentToken(
+      this.hash,
+      tokenAddress
     );
   }
 
